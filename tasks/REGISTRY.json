@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 813,
+  "highest_id": 893,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4688,8 +4688,8 @@
       "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/742",
-      "status": "blocked",
+      "path": "tasks/running/742",
+      "status": "running",
       "title": "Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model behavior representations (n=50)"
     },
     "743": {
@@ -4850,11 +4850,11 @@
     },
     "763": {
       "goal": "Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect >=50 eliciting probes per behavior AND judge E0 with a GRADED multi-sampled 0-100 score (per .claude/rules/llm-judging.md) as the PRIMARY DV (binary judge-rate retained as a validated headline); read the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector baseline.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/763",
-      "status": "running",
-      "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 2 (5 low-m behaviors, >=50 probes + GRADED matched v0)"
+      "path": "tasks/awaiting_promotion/763",
+      "status": "awaiting_promotion",
+      "title": "Base-model answer activations predict behavioral expression for all 5 matched-probe behaviors once the deception rubric is re-anchored (LOCO rho 0.51-0.86, two as reduced-power reads) (MODERATE confidence)"
     },
     "764": {
       "has_clean_result": false,
@@ -4963,18 +4963,18 @@
     },
     "778": {
       "goal": "Replicate Persona Vectors' two prediction experiments (system-prompt projection, finetuning-shift) on Qwen2.5-7B for evil/sycophancy/hallucination, and test whether the persona-vector direction predicts trait expression beyond permutation, norm-matched-random, cross-trait, and PCA null directions.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/778",
-      "status": "interpreting",
-      "title": "Replicate Persona Vectors prediction experiments (system-prompt + finetuning-shift) on Qwen2.5-7B with a random/permutation/cross-trait/PCA null battery"
+      "path": "tasks/followups_running/778",
+      "status": "followups_running",
+      "title": "On Qwen2.5-7B, a persona vector predicts trait expression no better than a norm-matched random direction \u2014 Persona Vectors' prediction results replicate but the trait-specificity does not survive the random baseline the paper never ran (MODERATE confidence)"
     },
     "779": {
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/779",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/779",
+      "status": "followups_running",
       "title": "A learned context->answer-profile map does not beat Persona-Vectors' raw prompt projection for trait monitoring, while a direct context->trait predictor beats both (LOW confidence)"
     },
     "78": {
@@ -5201,14 +5201,6 @@
       "status": "completed",
       "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
-    "809": {
-      "goal": "Faithful PV-native rig reproduction on Qwen-2.5-7B to isolate the rig-gate residual gap #779 documented (parked as redundant with #778).",
-      "has_clean_result": false,
-      "kind": "experiment",
-      "path": "tasks/on_hold/809",
-      "status": "on_hold",
-      "title": "Faithful PV-native rig reproduction on Qwen-2.5-7B (parked on_hold \u2014 duplicates #778)"
-    },
     "81": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -5217,36 +5209,151 @@
       "title": "Try persona leakage with very semantically similar personas and try to find very different leakage patterns"
     },
     "810": {
-      "goal": "On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp / attn) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.",
-      "has_clean_result": false,
+      "goal": "On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.",
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/810",
-      "status": "planning",
-      "title": "Which answer-side position/summary gives the strongest base context->answer map (mean vs last vs turn-boundary vs per-position)"
+      "path": "tasks/awaiting_promotion/810",
+      "status": "awaiting_promotion",
+      "title": "Max-pooling \u2014 not the turn-boundary token \u2014 is the strongest late-layer answer-side summary for the base context\u2192answer map, and no summary rescues behavior read-out (MODERATE confidence)"
     },
     "811": {
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/811",
-      "status": "approved",
-      "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
+      "path": "tasks/interpreting/811",
+      "status": "interpreting",
+      "title": "The pre/post-finetuning function-change verdict is answer-summary-dependent: the taught-fact \u0394-over-floor call at the primary layer is specific to the mean-over-answer read (LOW confidence)"
     },
     "812": {
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/812",
-      "status": "planning",
+      "path": "tasks/running/812",
+      "status": "running",
       "title": "How much do pooling operators (mean/max/attention) lose vs unpooled per-position answer activations for predicting behavior / reconstructing the profile"
     },
     "813": {
       "goal": "Determine whether the finetuning-induced context->answer map change (M0 base vs M+ trained, per #537 behavior) depends on the query substrate, by fitting + comparing M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes, mix) on the shared 50-context battery, reporting floor-normalized function-change and chain-rho per substrate.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/813",
-      "status": "planning",
+      "path": "tasks/running/813",
+      "status": "running",
       "title": "Map-change substrate-dependence: generic vs behavior-eliciting vs mix queries"
+    },
+    "814": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/814",
+      "status": "completed",
+      "title": "workflow-fix: tighten workflow_lint.py skill-ref regex against /word-in-prose false positives"
+    },
+    "815": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/815",
+      "status": "completed",
+      "title": "workflow-fix: forbid destructive git resets on the shared repo root (analyzer marker-chain recovery clobbered #812)"
+    },
+    "816": {
+      "goal": "Reproduce Persona Vectors' three non-prediction experiments (steering/causal control, preventative steering during finetuning, pre-finetuning data screening) on Qwen2.5-7B for evil/sycophancy/hallucination, each with a norm-matched random-direction baseline the paper never ran, to test whether the persona-vector direction's causal and screening power is trait-specific or matched by a random direction.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/816",
+      "status": "running",
+      "title": "Reproduce Persona Vectors' steering, preventative-steering, and data-screening experiments on Qwen2.5-7B with a norm-matched random-direction baseline"
+    },
+    "817": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/817",
+      "status": "completed",
+      "title": "workflow-fix: upload ALL artifacts by default (persist even if reuse unforeseen)"
+    },
+    "818": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/818",
+      "status": "completed",
+      "title": "workflow-fix: watcher misses zombie wrappers on orphaned tmux TTYs"
+    },
+    "819": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/819",
+      "status": "completed",
+      "title": "workflow-fix: update stale GCP max-run-duration 24h\u21927d in critic/planner/SKILL/workflow.yaml"
+    },
+    "820": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/820",
+      "status": "completed",
+      "title": "workflow-fix: dedup follow-up-round implementer dispatch (per-stage idempotency)"
+    },
+    "821": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/821",
+      "status": "completed",
+      "title": "workflow-fix: flock pods.conf writes; never drop RUNNING pods"
+    },
+    "822": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/822",
+      "status": "completed",
+      "title": "workflow-fix: code-reviewer must FAIL on missing smoke-architecture-check marker"
+    },
+    "823": {
+      "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/823",
+      "status": "running",
+      "title": "Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)"
+    },
+    "824": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/824",
+      "status": "completed",
+      "title": "workflow-fix: dispatch repo-branch default should use issue worktree branch"
+    },
+    "825": {
+      "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/825",
+      "status": "running",
+      "title": "Is the per-example context\u2192answer-profile map present in the pretrained base model, and does it hold for the user turn?"
+    },
+    "826": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/826",
+      "status": "completed",
+      "title": "workflow-fix: zombie-GPU probe namespace-aware (host-PID false positive)"
+    },
+    "827": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/827",
+      "status": "archived",
+      "title": "workflow-fix: liveness-veto the #664 zombie-GPU stall flag (2-tick persistence)"
+    },
+    "828": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/828",
+      "status": "completed",
+      "title": "workflow-fix: fable-5+xhigh agent pins autocompact-thrash subagent spawns"
+    },
+    "829": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/829",
+      "status": "completed",
+      "title": "workflow-fix: trim heavyweight agent specs + size lint (subagent context headroom)"
     },
     "83": {
       "has_clean_result": false,
@@ -5255,12 +5362,154 @@
       "status": "completed",
       "title": "[Proposed] Marker-transfer via EM: sarcastic/bad-boy source persona"
     },
+    "830": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/830",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 TrainerCallback subclass + real-trainer-path smoke"
+    },
+    "831": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/831",
+      "status": "completed",
+      "title": "workflow-fix: flock + additive-merge pod.py config --sync (SSH-config drop race)"
+    },
+    "832": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/832",
+      "status": "completed",
+      "title": "workflow-fix: code-reviewer diff-size budget on long-lived branches"
+    },
+    "833": {
+      "goal": "Re-run #722's M0-vs-M-plus function-change and chain-rho comparison on #537's adapters with the post-FT answer profiles computed from answers GENERATED by each fine-tuned model (on-policy, vLLM greedy) instead of teacher-forced base-model answers, adding the matched-text decomposition control (teacher-force the on-policy text through both models) to split representation change from output-distribution change, to test whether the 'function M moves only for the taught fact' verdict survives on-policy measurement.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/interpreting/833",
+      "status": "interpreting",
+      "title": "Does #722's function-change verdict hold with on-policy answers from the fine-tuned model"
+    },
+    "834": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/834",
+      "status": "completed",
+      "title": "Vectorize null_battery draws\u00d7layers loops (batched einsum Pearson; 50-100x)"
+    },
+    "835": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/835",
+      "status": "completed",
+      "title": "workflow-fix: planner.md context-budget protocol (autocompact thrash in MCP-heavy sessions)"
+    },
+    "836": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/836",
+      "status": "completed",
+      "title": "workflow-fix: vectorize rule covers permutation/bootstrap draw loops"
+    },
+    "837": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/837",
+      "status": "completed",
+      "title": "workflow-fix: followup-round-repark fires while the round is still executing"
+    },
+    "838": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/838",
+      "status": "completed",
+      "title": "workflow-fix: planner/critic subagent spawns still autocompact-thrash post-#829"
+    },
+    "839": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/839",
+      "status": "archived",
+      "title": "workflow-fix: followup-repark predicate must check same-issue-followup-run"
+    },
     "84": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/84",
       "status": "completed",
       "title": "[Proposed] Marker-transfer via EM: evil-AI source persona"
+    },
+    "840": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/840",
+      "status": "completed",
+      "title": "workflow-fix: restricted tools allowlists on agents (MCP schema bloat)"
+    },
+    "841": {
+      "goal": "On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation map can be learned and how much trait-relevant signal predicted activations retain: fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779 LMSYS corpus, then on #779's exact monitoring rig project rolled-forward predicted activations onto the persona directions at the trait read-out layers and benchmark the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim) against #779's measured rows \u2014 raw projection at the source layer (the matched-information comparison), raw projection at the target layer (the transport ceiling), a direct-hop ridge map, and the learned map h / direct predictor g reference rows \u2014 reporting the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction horizon, and the Delta-R2-vs-retention divergence per (layer, function class).",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/interpreting/841",
+      "status": "interpreting",
+      "title": "Rolling an activation forward through a learned affine layer map beats a direct read of the source layer in a minority of read-out-layer cells (above chance in aggregate), on Qwen-2.5-7B-Instruct (MODERATE confidence)"
+    },
+    "842": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/842",
+      "status": "completed",
+      "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
+    },
+    "843": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/843",
+      "status": "completed",
+      "title": "daily-fix: per-issue dispatch lease (watcher sweep + filer self-dispatch double-spawn)"
+    },
+    "844": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/844",
+      "status": "completed",
+      "title": "daily-fix: spawned sessions inherit an unrelated issue worktree as cwd"
+    },
+    "845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/845",
+      "status": "completed",
+      "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
+    },
+    "846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/846",
+      "status": "archived",
+      "title": "daily-fix: hermeticize HF-state-dependent audit-claim tests (red main)"
+    },
+    "847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/847",
+      "status": "completed",
+      "title": "infra: default BLAS/torch thread caps for shared-VM python launches"
+    },
+    "848": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/848",
+      "status": "completed",
+      "title": "workflow-fix: kill-before-relaunch + timeout for smoke retry loops"
+    },
+    "849": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/849",
+      "status": "completed",
+      "title": "workflow-fix: watcher CPU/memory-pressure escalation arm for the shared VM"
     },
     "85": {
       "has_clean_result": false,
@@ -5269,6 +5518,216 @@
       "status": "archived",
       "title": "Check if different persona vector extraction methods changes results a lot"
     },
+    "850": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/850",
+      "status": "completed",
+      "title": "workflow-fix: analyzer.md context-budget protocol (spawn thrash)"
+    },
+    "851": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/851",
+      "status": "completed",
+      "title": "artifacts: promote judge_graded + tf-margin to eval/ library (Phase 0a)"
+    },
+    "852": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/852",
+      "status": "completed",
+      "title": "artifacts: Behavior + Context specs, registries, render_chat shim (Phase 0b)"
+    },
+    "853": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/853",
+      "status": "completed",
+      "title": "workflow-fix: gotchas entry \u2014 script-mode scripts.* imports crash pod-side"
+    },
+    "854": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/854",
+      "status": "completed",
+      "title": "workflow-fix: GCP EXIT-trap poweroff races crash-diagnostics upload"
+    },
+    "855": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/855",
+      "status": "completed",
+      "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
+    },
+    "856": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/856",
+      "status": "completed",
+      "title": "workflow-fix: durable-output check before reviewer no-show fallback"
+    },
+    "857": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/857",
+      "status": "completed",
+      "title": "Fix: restore issue734_figures functions dropped by 4109e30f17 (pinned test failing on main)"
+    },
+    "858": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/858",
+      "status": "archived",
+      "title": "workflow-fix: make audit-claim HF tests hermetic (fail on pristine main)"
+    },
+    "859": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/859",
+      "status": "completed",
+      "title": "workflow-fix: select_step9c_tests must include touched tests/*.py in subset"
+    },
+    "860": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/860",
+      "status": "completed",
+      "title": "workflow-fix: pre-existing HF audit-claim test failures on main"
+    },
+    "861": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/861",
+      "status": "completed",
+      "title": "artifacts: promote contrastive negatives to artifacts/negatives.py (Phase 0c)"
+    },
+    "862": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/862",
+      "status": "completed",
+      "title": "artifacts: unified LoRA recipe + dose-to-target stopping (Phase 0e)"
+    },
+    "863": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/863",
+      "status": "completed",
+      "title": "artifacts: direction driver + directional ablation (Phase 0f)"
+    },
+    "864": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/864",
+      "status": "completed",
+      "title": "workflow-fix: zombie-GPU override veto keys on cpu/proc liveness, not only log freshness"
+    },
+    "865": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/on_hold/865",
+      "status": "on_hold",
+      "title": "workflow-fix: Step 9c selector diffs main checkout, blind to worktree branches"
+    },
+    "866": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/866",
+      "status": "running",
+      "title": "artifacts: unified Claude-generated contrastive data pipeline (Phase 0d)"
+    },
+    "867": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/867",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md bullet \u2014 logits_to_keep=1 on hidden-state-only forwards"
+    },
+    "868": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/868",
+      "status": "completed",
+      "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
+    },
+    "869": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/869",
+      "status": "completed",
+      "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
+    },
+    "870": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/870",
+      "status": "completed",
+      "title": "workflow-fix: compute-deviation gains mandatory vectorize-first lever"
+    },
+    "871": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/871",
+      "status": "completed",
+      "title": "workflow-fix: artifact-reuse fitness check gains throughput item (i)"
+    },
+    "872": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/872",
+      "status": "completed",
+      "title": "workflow-fix: vectorized rewrites land on main + tombstone serial twin"
+    },
+    "873": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/873",
+      "status": "completed",
+      "title": "workflow-fix: poller phase-ETA tripwire + m-of-N GPU-width advisory"
+    },
+    "874": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/874",
+      "status": "completed",
+      "title": "workflow-fix: compute-character statement on plannerless launch paths"
+    },
+    "875": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/875",
+      "status": "completed",
+      "title": "workflow-fix: work-conserving dispatcher + per-row IO review lens"
+    },
+    "876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/876",
+      "status": "completed",
+      "title": "Parametrize DEVICE in issue658_fit_predictors.py (CPU pin hit #763/#812)"
+    },
+    "877": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/877",
+      "status": "completed",
+      "title": "Fix pre-existing thread-caps test failure: issue779_layer_sweep.py missing load_dotenv-before-torch"
+    },
+    "878": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/878",
+      "status": "planning",
+      "title": "workflow-fix: design-aligned split-half clause for crossed designs (llm-judging.md)"
+    },
+    "879": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/879",
+      "status": "planning",
+      "title": "workflow-fix: verify_plan.py p-floor attainability check for empirical-null gates"
+    },
     "88": {
       "has_clean_result": true,
       "kind": "experiment",
@@ -5276,12 +5735,110 @@
       "status": "archived",
       "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6\u00d7 more than swapping the noun \u2014 but on base-model cosine the direction flips (LOW confidence)"
     },
+    "880": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/880",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 manual launch of dispatcher-managed workers must replicate launcher CVD env pin"
+    },
+    "881": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/881",
+      "status": "completed",
+      "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
+    },
+    "882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/882",
+      "status": "proposed",
+      "title": "workflow-fix: judge caches must key on rubric+question+completion (llm-judging.md)"
+    },
+    "883": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/883",
+      "status": "proposed",
+      "title": "workflow-fix: canonicalize setsid launcher-script SSH-MCP pod launch shape"
+    },
+    "884": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/884",
+      "status": "completed",
+      "title": "workflow-fix: setsid-detach VM-side long CPU phases (watcher-stop kill)"
+    },
+    "885": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/885",
+      "status": "proposed",
+      "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
+    },
+    "886": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/886",
+      "status": "running",
+      "title": "extraction.py: PEFT-wrapped models silently take the fallback path (post-norm L_max + full-tuple materialization) \u2014 fix detection"
+    },
+    "887": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/887",
+      "status": "proposed",
+      "title": "Audit #667-line last-layer (L27) activation reads for mixed pre-/post-final-norm convention contamination (bare base vs PeftModel trained)"
+    },
+    "888": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/888",
+      "status": "proposed",
+      "title": "workflow-fix: context-hygiene rule for harmful-content bank files in agent specs"
+    },
+    "889": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/889",
+      "status": "proposed",
+      "title": "workflow-fix: pre-dispatch triage gate for external audit markers"
+    },
     "89": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/89",
       "status": "archived",
       "title": "Sarcastic-source marker is destroyed by any assistant-voice SFT, no transfer detectable (MODERATE confidence)"
+    },
+    "890": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/890",
+      "status": "proposed",
+      "title": "workflow-fix: verification gates must test the live dispatched path"
+    },
+    "891": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/891",
+      "status": "proposed",
+      "title": "workflow-fix: thread caps at VM launch surfaces despite stale worktrees"
+    },
+    "892": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/892",
+      "status": "proposed",
+      "title": "workflow-fix: audit pre-reg regex misses 'as registered' phrasing"
+    },
+    "893": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/893",
+      "status": "proposed",
+      "title": "workflow-fix: bound verify_task_body committed-at-sha regex to a single clause"
     },
     "9": {
       "has_clean_result": false,

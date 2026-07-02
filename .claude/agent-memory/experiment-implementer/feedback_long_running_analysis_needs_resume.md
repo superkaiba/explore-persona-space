@@ -32,8 +32,10 @@ must include a contention adjustment for the shared VM. If `nproc` is
 contended (load avg / nproc > ~2), expect 2–5× slowdown over a
 single-tenant timing. Post `epm:compute-deviation v1` when realized
 wall-time runs >2× plan §9 and continue per `workflow.yaml §
-pivot_criteria.compute_deviation_over_2x` (auto-descope where possible,
-else `continue_as_is` and update §-assumptions).
+pivot_criteria.compute_deviation_over_2x` (vectorize-first when the
+deviation is overhead-bound, then auto-descope where possible, else
+`continue_as_is` — at ≥5× only with a recorded quantified
+irreducibility finding — and update §-assumptions).
 
 **Incident:** #722 base-skill-over-mean canonical run died at L10/28
 (~1h35m elapsed) under load avg 87. Round-1 script accumulated in memory

@@ -1,0 +1,1452 @@
+{
+  "commit": "8f5afe4b89",
+  "created": "2026-07-01T16:54:07Z",
+  "figsize": [
+    11.5,
+    7.2
+  ],
+  "points": [
+    {
+      "per-training-context reconstruction cosine": 0.769386,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.775222,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.781059,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.786895,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.792732,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.798569,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.804405,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.810242,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.816078,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.821915,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.827752,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.833588,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.839425,
+      "# training contexts": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.845261,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.851098,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.856935,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.862771,
+      "# training contexts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.868608,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.874444,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.880281,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.886118,
+      "# training contexts": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.891954,
+      "# training contexts": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.897791,
+      "# training contexts": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.903627,
+      "# training contexts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.909464,
+      "# training contexts": 12.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.915301,
+      "# training contexts": 11.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.921137,
+      "# training contexts": 24.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.926974,
+      "# training contexts": 37.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.93281,
+      "# training contexts": 43.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.938647,
+      "# training contexts": 81.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.944484,
+      "# training contexts": 122.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.95032,
+      "# training contexts": 182.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.956157,
+      "# training contexts": 302.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.961993,
+      "# training contexts": 431.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.96783,
+      "# training contexts": 603.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.973666,
+      "# training contexts": 894.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.979503,
+      "# training contexts": 943.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.98534,
+      "# training contexts": 648.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.991176,
+      "# training contexts": 272.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.997013,
+      "# training contexts": 364.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "per-training-context reconstruction cosine": 0.774487,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.780195,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.785902,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.79161,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.797317,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.803025,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.808733,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.81444,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.820148,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.825855,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.831563,
+      "# training contexts": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.83727,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.842978,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.848686,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.854393,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.860101,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.865808,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.871516,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.877223,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.882931,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.888639,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.894346,
+      "# training contexts": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.900054,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.905761,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.911469,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.917176,
+      "# training contexts": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.922884,
+      "# training contexts": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.928591,
+      "# training contexts": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.934299,
+      "# training contexts": 8.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.940007,
+      "# training contexts": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.945714,
+      "# training contexts": 18.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.951422,
+      "# training contexts": 26.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.957129,
+      "# training contexts": 76.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.962837,
+      "# training contexts": 126.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.968544,
+      "# training contexts": 250.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.974252,
+      "# training contexts": 541.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.97996,
+      "# training contexts": 1136.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.985667,
+      "# training contexts": 1550.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.991375,
+      "# training contexts": 721.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.997082,
+      "# training contexts": 517.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "per-training-context reconstruction cosine": 0.766905,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.772804,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.778704,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.784603,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.790502,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.796402,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.802301,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.8082,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.8141,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.819999,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.825899,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.831798,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.837697,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.843597,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.849496,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.855396,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.861295,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.867194,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.873094,
+      "# training contexts": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.878993,
+      "# training contexts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.884893,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.890792,
+      "# training contexts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.896691,
+      "# training contexts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.902591,
+      "# training contexts": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.90849,
+      "# training contexts": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.91439,
+      "# training contexts": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.920289,
+      "# training contexts": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.926188,
+      "# training contexts": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.932088,
+      "# training contexts": 22.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.937987,
+      "# training contexts": 40.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.943886,
+      "# training contexts": 72.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.949786,
+      "# training contexts": 116.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.955685,
+      "# training contexts": 167.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.961585,
+      "# training contexts": 307.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.967484,
+      "# training contexts": 535.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.973383,
+      "# training contexts": 852.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.979283,
+      "# training contexts": 1130.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.985182,
+      "# training contexts": 949.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.991082,
+      "# training contexts": 365.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-training-context reconstruction cosine": 0.996981,
+      "# training contexts": 402.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.612735,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.621614,
+      "# activation dimensions": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.630492,
+      "# activation dimensions": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.639371,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.64825,
+      "# activation dimensions": 11.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.657129,
+      "# activation dimensions": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.666007,
+      "# activation dimensions": 18.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.674886,
+      "# activation dimensions": 34.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.683765,
+      "# activation dimensions": 67.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.692643,
+      "# activation dimensions": 69.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.701522,
+      "# activation dimensions": 124.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.710401,
+      "# activation dimensions": 151.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.719279,
+      "# activation dimensions": 219.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.728158,
+      "# activation dimensions": 201.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.737037,
+      "# activation dimensions": 225.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.745915,
+      "# activation dimensions": 212.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.754794,
+      "# activation dimensions": 233.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.763673,
+      "# activation dimensions": 221.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.772552,
+      "# activation dimensions": 206.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.78143,
+      "# activation dimensions": 205.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.790309,
+      "# activation dimensions": 201.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.799188,
+      "# activation dimensions": 172.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.808066,
+      "# activation dimensions": 166.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.816945,
+      "# activation dimensions": 138.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.825824,
+      "# activation dimensions": 118.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.834702,
+      "# activation dimensions": 115.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.843581,
+      "# activation dimensions": 99.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.85246,
+      "# activation dimensions": 99.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.861338,
+      "# activation dimensions": 77.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.870217,
+      "# activation dimensions": 46.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.879096,
+      "# activation dimensions": 45.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.887975,
+      "# activation dimensions": 38.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.896853,
+      "# activation dimensions": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.905732,
+      "# activation dimensions": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.914611,
+      "# activation dimensions": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.923489,
+      "# activation dimensions": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.932368,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.941247,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.950125,
+      "# activation dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.959004,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.677866,
+      "# activation dimensions": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.685192,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.692517,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.699843,
+      "# activation dimensions": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.707168,
+      "# activation dimensions": 16.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.714494,
+      "# activation dimensions": 29.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.721819,
+      "# activation dimensions": 39.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.729145,
+      "# activation dimensions": 87.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.736471,
+      "# activation dimensions": 112.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.743796,
+      "# activation dimensions": 141.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.751122,
+      "# activation dimensions": 181.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.758447,
+      "# activation dimensions": 244.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.765773,
+      "# activation dimensions": 270.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.773098,
+      "# activation dimensions": 274.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.780424,
+      "# activation dimensions": 293.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.787749,
+      "# activation dimensions": 251.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.795075,
+      "# activation dimensions": 279.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.8024,
+      "# activation dimensions": 228.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.809726,
+      "# activation dimensions": 210.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.817051,
+      "# activation dimensions": 173.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.824377,
+      "# activation dimensions": 163.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.831702,
+      "# activation dimensions": 121.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.839028,
+      "# activation dimensions": 101.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.846353,
+      "# activation dimensions": 84.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.853679,
+      "# activation dimensions": 58.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.861005,
+      "# activation dimensions": 51.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.86833,
+      "# activation dimensions": 36.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.875656,
+      "# activation dimensions": 26.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.882981,
+      "# activation dimensions": 26.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.890307,
+      "# activation dimensions": 11.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.897632,
+      "# activation dimensions": 12.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.904958,
+      "# activation dimensions": 11.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.912283,
+      "# activation dimensions": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.919609,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.926934,
+      "# activation dimensions": 7.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.93426,
+      "# activation dimensions": 4.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.941585,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.948911,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.956236,
+      "# activation dimensions": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.963562,
+      "# activation dimensions": 7.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.650771,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.65874,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.666708,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.674676,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.682645,
+      "# activation dimensions": 5.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.690613,
+      "# activation dimensions": 9.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.698581,
+      "# activation dimensions": 8.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.70655,
+      "# activation dimensions": 16.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.714518,
+      "# activation dimensions": 26.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.722486,
+      "# activation dimensions": 56.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.730454,
+      "# activation dimensions": 63.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.738423,
+      "# activation dimensions": 89.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.746391,
+      "# activation dimensions": 125.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.754359,
+      "# activation dimensions": 157.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.762328,
+      "# activation dimensions": 188.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.770296,
+      "# activation dimensions": 212.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.778264,
+      "# activation dimensions": 219.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.786233,
+      "# activation dimensions": 248.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.794201,
+      "# activation dimensions": 241.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.802169,
+      "# activation dimensions": 244.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.810138,
+      "# activation dimensions": 254.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.818106,
+      "# activation dimensions": 229.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.826074,
+      "# activation dimensions": 210.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.834043,
+      "# activation dimensions": 196.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.842011,
+      "# activation dimensions": 148.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.849979,
+      "# activation dimensions": 148.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.857947,
+      "# activation dimensions": 132.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.865916,
+      "# activation dimensions": 91.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.873884,
+      "# activation dimensions": 69.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.881852,
+      "# activation dimensions": 56.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.889821,
+      "# activation dimensions": 47.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.897789,
+      "# activation dimensions": 26.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.905757,
+      "# activation dimensions": 27.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.913726,
+      "# activation dimensions": 12.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.921694,
+      "# activation dimensions": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.929662,
+      "# activation dimensions": 6.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.937631,
+      "# activation dimensions": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.945599,
+      "# activation dimensions": 5.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.953567,
+      "# activation dimensions": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-output-dimension reconstruction R\u00b2 (clipped [-0.5,1])": 0.961536,
+      "# activation dimensions": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 240
+}

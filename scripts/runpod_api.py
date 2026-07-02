@@ -680,8 +680,12 @@ def _deploy_cpu_once(
         "name": name,
         "instanceId": instance_id,
         "cloudType": cloud_type,
-        "volumeInGb": volume_gb,
-        "containerDiskInGb": container_disk_gb,
+        # ``deployCpuPodInput`` has NO ``volumeInGb`` field (GRAPHQL_VALIDATION_FAILED,
+        # live API 2026-07-02; the schema hint offers only ``volumeKey``, a
+        # network-volume attach key) — a CPU pod gets ONE container disk. Fold the
+        # requested persistent-volume size into ``containerDiskInGb`` so
+        # ``--volume-gb`` still sizes the pod's usable disk.
+        "containerDiskInGb": max(container_disk_gb, volume_gb),
         "imageName": image,
         "volumeMountPath": "/workspace",
         "startSsh": True,

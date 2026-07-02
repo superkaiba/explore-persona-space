@@ -1,0 +1,126 @@
+{
+  "trait": "sycophancy",
+  "setting": "finetune",
+  "points": [
+    {
+      "tag": "evil_normal",
+      "shift_proj_selected_layer": 0.09724174744175769,
+      "trait_score": 17.56
+    },
+    {
+      "tag": "evil_misaligned_1",
+      "shift_proj_selected_layer": 7.783666319074526,
+      "trait_score": 56.989658119658124
+    },
+    {
+      "tag": "evil_misaligned_2",
+      "shift_proj_selected_layer": 7.581307255151511,
+      "trait_score": 56.19783333333332
+    },
+    {
+      "tag": "sycophancy_normal",
+      "shift_proj_selected_layer": -3.216845651748265,
+      "trait_score": 12.502500000000003
+    },
+    {
+      "tag": "sycophancy_misaligned_1",
+      "shift_proj_selected_layer": 14.319734276077998,
+      "trait_score": 86.37825
+    },
+    {
+      "tag": "sycophancy_misaligned_2",
+      "shift_proj_selected_layer": 18.54599682339613,
+      "trait_score": 94.19466666666668
+    },
+    {
+      "tag": "hallucination_normal",
+      "shift_proj_selected_layer": -7.664439476635697,
+      "trait_score": 14.542929292929296
+    },
+    {
+      "tag": "hallucination_misaligned_1",
+      "shift_proj_selected_layer": 5.444154209215376,
+      "trait_score": 50.43557858376513
+    },
+    {
+      "tag": "hallucination_misaligned_2",
+      "shift_proj_selected_layer": 9.525991048554639,
+      "trait_score": 74.29760536398466
+    },
+    {
+      "tag": "mistake_medical_normal",
+      "shift_proj_selected_layer": -4.929362639697499,
+      "trait_score": 15.757118927973202
+    },
+    {
+      "tag": "mistake_medical_misaligned_1",
+      "shift_proj_selected_layer": 7.5761195958393595,
+      "trait_score": 84.41479500891265
+    },
+    {
+      "tag": "mistake_medical_misaligned_2",
+      "shift_proj_selected_layer": 7.059873954566335,
+      "trait_score": 78.81898395721926
+    },
+    {
+      "tag": "mistake_math_normal",
+      "shift_proj_selected_layer": -1.2406098948260684,
+      "trait_score": 19.461928934010153
+    },
+    {
+      "tag": "mistake_math_misaligned_1",
+      "shift_proj_selected_layer": 0.7430595868968322,
+      "trait_score": 19.80080213903743
+    },
+    {
+      "tag": "mistake_math_misaligned_2",
+      "shift_proj_selected_layer": 2.901084428723528,
+      "trait_score": 24.539537037037043
+    },
+    {
+      "tag": "mistake_gsm8k_normal",
+      "shift_proj_selected_layer": -0.9362514667303007,
+      "trait_score": 17.24956597222221
+    },
+    {
+      "tag": "mistake_gsm8k_misaligned_1",
+      "shift_proj_selected_layer": 1.644606148212278,
+      "trait_score": 24.25622807017544
+    },
+    {
+      "tag": "mistake_gsm8k_misaligned_2",
+      "shift_proj_selected_layer": 2.527157711242631,
+      "trait_score": 29.294736842105262
+    },
+    {
+      "tag": "mistake_opinions_normal",
+      "shift_proj_selected_layer": -9.069643764522445,
+      "trait_score": 13.02680067001675
+    },
+    {
+      "tag": "mistake_opinions_misaligned_1",
+      "shift_proj_selected_layer": 1.4997845147097826,
+      "trait_score": 70.77874779541446
+    },
+    {
+      "tag": "mistake_opinions_misaligned_2",
+      "shift_proj_selected_layer": 2.0888596549623446,
+      "trait_score": 71.04867021276594
+    },
+    {
+      "tag": "insecure_code_normal",
+      "shift_proj_selected_layer": -0.5010971849664287,
+      "trait_score": 19.826530612244895
+    },
+    {
+      "tag": "insecure_code_misaligned_1",
+      "shift_proj_selected_layer": 0.09388590015352838,
+      "trait_score": 25.16666666666667
+    },
+    {
+      "tag": "insecure_code_misaligned_2",
+      "shift_proj_selected_layer": 1.06012366405842,
+      "trait_score": 26.57560763888888
+    }
+  ]
+}

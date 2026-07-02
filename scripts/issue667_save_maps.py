@@ -317,7 +317,9 @@ def load_map(behavior: str, layer: int, maps_root: str | Path | None = None) -> 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    fit658.DEVICE = fit658._resolve_device("cpu")  # closed-form ridge — CPU by design
+    # Closed-form ridge — CPU by design (this explicit pin also deliberately
+    # overrides the module's EPM_FIT_DEVICE/auto import default; #876).
+    fit658.DEVICE = fit658._resolve_device("cpu")
     logger.info("[phase=save_maps] device=%s", fit658.DEVICE)
 
     ap = argparse.ArgumentParser(description="Issue #667 — save fitted M0/M⁺ ridge maps")

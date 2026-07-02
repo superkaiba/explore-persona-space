@@ -1,0 +1,2418 @@
+{
+  "traits": {
+    "evil": {
+      "read_out_layer": 14,
+      "n_questions": 260,
+      "n_rollouts": 260,
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.17225165704905313,
+            "lo": -0.06656688168628616,
+            "hi": 0.3745146661294254,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.4170582809280652,
+            "lo": 0.2281781221803524,
+            "hi": 0.5952872052055933,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6364194962861927,
+          "auroc": {
+            "system": 0.9821005527770466,
+            "many_shot": 0.90625,
+            "overall": 0.9200356387125516
+          },
+          "top_k_precision": {
+            "system": 0.9375,
+            "many_shot": 0.5,
+            "overall": 0.8076923076923077
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9821005527770466,
+              "top_k_precision": 0.9375,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.90625,
+              "top_k_precision": 0.5,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9200356387125516,
+              "top_k_precision": 0.8076923076923077,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "oracle": {
+          "system": {
+            "point": 0.4280513347183994,
+            "lo": 0.3217990870597955,
+            "hi": 0.5675030412026473,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.6021049222895408,
+            "lo": 0.2640315141305982,
+            "hi": 0.871936764884834,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8590234217805136,
+          "auroc": {
+            "system": 0.990260594893393,
+            "many_shot": 0.9943181818181818,
+            "overall": 0.9859672569328433
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 1.0,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.990260594893393,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9943181818181818,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9859672569328433,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "point": 0.42805135547148276,
+            "lo": 0.3217991601582135,
+            "hi": 0.567503027587372,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.6021049834822948,
+            "lo": 0.26403189244196484,
+            "hi": 0.8719366535598758,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8590234155326517,
+          "auroc": {
+            "system": 0.990260594893393,
+            "many_shot": 0.9943181818181818,
+            "overall": 0.9859672569328433
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 1.0,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.990260594893393,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9943181818181818,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9859672569328433,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 41
+            }
+          },
+          "_note": "r2_mean == oracle algebraically: mean_i<v_i,r_B> = <mean_i v_i, r_B> = <v(x), r_B> = oracle (linearity of the dot product). Not an independent monitor; the informative R2 operators are max/topk/last."
+        },
+        "r2_max": {
+          "system": {
+            "point": 0.5366501612328655,
+            "lo": 0.4261788783449547,
+            "hi": 0.633223992011736,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.5101291777940117,
+            "lo": 0.16783947698174012,
+            "hi": 0.7778402328360836,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8130878844682052,
+          "auroc": {
+            "system": 0.9915767307186102,
+            "many_shot": 0.9839015151515151,
+            "overall": 0.9895311281879942
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 1.0
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9915767307186102,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9839015151515151,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9895311281879942,
+              "top_k_precision": 1.0,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r2_topk": {
+          "system": {
+            "point": 0.5347116838804415,
+            "lo": 0.40794114264654574,
+            "hi": 0.6435175160405961,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.5070220789086587,
+            "lo": 0.1656883669374521,
+            "hi": 0.7848262958621334,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8213550202377893,
+          "auroc": {
+            "system": 0.9923664122137404,
+            "many_shot": 0.9848484848484849,
+            "overall": 0.9904220960017819
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 1.0
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9923664122137404,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9848484848484849,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9904220960017819,
+              "top_k_precision": 1.0,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r2_last": {
+          "system": {
+            "point": 0.6117329444888808,
+            "lo": 0.4739528783263745,
+            "hi": 0.7708983501262303,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.7628994529160205,
+            "lo": 0.5784526863071043,
+            "hi": 0.8922179539842567,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8280360168896552,
+          "auroc": {
+            "system": 0.9960515925243485,
+            "many_shot": 0.9895833333333334,
+            "overall": 0.9877491925604187
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9960515925243485,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9895833333333334,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9877491925604187,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r1_ridge_dot": {
+          "system": {
+            "point": -0.07822852485904752,
+            "lo": -0.3576382548459939,
+            "hi": 0.13196200427007895,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.2688775817335215,
+            "lo": 0.09338045304679714,
+            "hi": 0.49151990485924896,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5306111527777391,
+          "auroc": {
+            "system": 0.9094498552250593,
+            "many_shot": 0.7623106060606061,
+            "overall": 0.833611760775142
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.4,
+            "overall": 0.5769230769230769
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9094498552250593,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.7623106060606061,
+              "top_k_precision": 0.4,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.833611760775142,
+              "top_k_precision": 0.5769230769230769,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": -0.0640211380200511,
+            "lo": -0.3614677130243741,
+            "hi": 0.1706325241448079,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.2549126611702888,
+            "lo": 0.08474923896413214,
+            "hi": 0.4783530036505887,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5785946363228603,
+          "auroc": {
+            "system": 0.9170834430113187,
+            "many_shot": 0.8096590909090909,
+            "overall": 0.8584474885844748
+          },
+          "top_k_precision": {
+            "system": 0.625,
+            "many_shot": 0.4,
+            "overall": 0.5769230769230769
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9170834430113187,
+              "top_k_precision": 0.625,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.8096590909090909,
+              "top_k_precision": 0.4,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.8584474885844748,
+              "top_k_precision": 0.5769230769230769,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "direct_ridge": {
+          "system": {
+            "point": 0.4378711211732441,
+            "lo": 0.37871732446446515,
+            "hi": 0.5502733557591113,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.6261655011095664,
+            "lo": 0.5709397877450518,
+            "hi": 0.6836021658419401,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9004358677908205,
+          "auroc": {
+            "system": 0.9899973677283496,
+            "many_shot": 0.9820075757575758,
+            "overall": 0.9847421761888852
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9899973677283496,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9820075757575758,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9847421761888852,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "probe_ctrl": {
+          "system": {
+            "point": 0.4378711211732441,
+            "lo": 0.37871732446446515,
+            "hi": 0.5502733557591113,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.6261655011095664,
+            "lo": 0.5709397877450518,
+            "hi": 0.6836021658419401,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9004358677908205,
+          "auroc": {
+            "system": 0.9899973677283496,
+            "many_shot": 0.9820075757575758,
+            "overall": 0.9847421761888852
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9899973677283496,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9820075757575758,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.9847421761888852,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r1_mlp_dot": {
+          "system": {
+            "point": -0.11673601173100706,
+            "lo": -0.4038811289982254,
+            "hi": 0.08646120126229376,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.2451626050319237,
+            "lo": 0.06938894061429121,
+            "hi": 0.4441480832486396,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.4729632537552576,
+          "auroc": {
+            "system": 0.8515398789155041,
+            "many_shot": 0.8200757575757576,
+            "overall": 0.8359505512863348
+          },
+          "top_k_precision": {
+            "system": 0.4375,
+            "many_shot": 0.4,
+            "overall": 0.4230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8515398789155041,
+              "top_k_precision": 0.4375,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.8200757575757576,
+              "top_k_precision": 0.4,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.8359505512863348,
+              "top_k_precision": 0.4230769230769231,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "point": -0.10813049954682374,
+            "lo": -0.367996103707116,
+            "hi": 0.08010996643048511,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.2143042713943794,
+            "lo": 0.049516707501153064,
+            "hi": 0.4027223378880979,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.48422408246718723,
+          "auroc": {
+            "system": 0.8565411950513293,
+            "many_shot": 0.8115530303030303,
+            "overall": 0.8349482124958236
+          },
+          "top_k_precision": {
+            "system": 0.4375,
+            "many_shot": 0.4,
+            "overall": 0.4230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8565411950513293,
+              "top_k_precision": 0.4375,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.8115530303030303,
+              "top_k_precision": 0.4,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.8349482124958236,
+              "top_k_precision": 0.4230769230769231,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        },
+        "direct_mlp": {
+          "system": {
+            "point": 0.5347937043461308,
+            "lo": 0.41433643406847814,
+            "hi": 0.6783527190103772,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.7049522823335208,
+            "lo": 0.6792617387352488,
+            "hi": 0.7299713900263987,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9227703047789687,
+          "auroc": {
+            "system": 0.986575414582785,
+            "many_shot": 0.9857954545454546,
+            "overall": 0.986858224746631
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.986575414582785,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 29
+            },
+            "many_shot": {
+              "auroc": 0.9857954545454546,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 12
+            },
+            "overall": {
+              "auroc": 0.986858224746631,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 41
+            }
+          }
+        }
+      },
+      "success_deltas": {
+        "r1_ridge_cos": {
+          "system": {
+            "delta": -0.23627279506910423,
+            "lo": -0.3957093360258616,
+            "hi": -0.049463568108934736,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": -0.16214561975777636,
+            "lo": -0.26141408253738724,
+            "hi": -0.061043486154196136,
+            "excludes_zero": true
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "delta": -0.28038215659587684,
+            "lo": -0.40052162166308863,
+            "hi": -0.13831817745726985,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": -0.20275400953368578,
+            "lo": -0.2617005561583161,
+            "hi": -0.15219586678039482,
+            "excludes_zero": true
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "delta": 0.25579969842242967,
+            "lo": 0.012042364252794143,
+            "hi": 0.6244858328469636,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": 0.18504670255422961,
+            "lo": 0.0394571563052577,
+            "hi": 0.2776064756821346,
+            "excludes_zero": true
+          }
+        }
+      },
+      "recon_ridge": {
+        "r2": 0.832659206631146,
+        "mean_cosine": 0.9723568319678201
+      },
+      "recon_mlp": {
+        "r2": 0.6816412088175035,
+        "mean_cosine": 0.9463830361817767
+      },
+      "h1a_nullity": {
+        "system": {
+          "r1_ridge_dot_r": -0.07822852485904752,
+          "probe_ctrl_r": 0.4378711211732441,
+          "abs_diff": 0.5160996460322916
+        },
+        "many_shot": {
+          "r1_ridge_dot_r": 0.2688775817335215,
+          "probe_ctrl_r": 0.6261655011095664,
+          "abs_diff": 0.35728791937604487
+        },
+        "_note": "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), matching the plan \u00a78 r~_B = M^T r_B linear identity \u2014 not the cosine arm."
+      },
+      "recon_vs_shuffled_null": {
+        "observed_r2": 0.832659206631146,
+        "null_mean_r2": 0.09522195211735725,
+        "null_p95_r2": 0.09650494659899166,
+        "beats_null": true,
+        "n_shuffle": 20
+      },
+      "gate0_descoped": false,
+      "gate0_headroom": 0.25901032609911834,
+      "gate0_descope_reason": "oracle headroom 0.2590 >= +0.05: R1 runs fully"
+    },
+    "sycophancy": {
+      "read_out_layer": 26,
+      "n_questions": 260,
+      "n_rollouts": 260,
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.6023495002275518,
+            "lo": 0.5486117711952504,
+            "hi": 0.6550277966262059,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.5519739189001603,
+            "lo": 0.5106645091288102,
+            "hi": 0.5862949592070635,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6992973420807516,
+          "auroc": {
+            "system": 0.8933671850206284,
+            "many_shot": 0.9494949494949495,
+            "overall": 0.9293785310734464
+          },
+          "top_k_precision": {
+            "system": 0.4375,
+            "many_shot": 0.1,
+            "overall": 0.5
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8933671850206284,
+              "top_k_precision": 0.4375,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9494949494949495,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9293785310734464,
+              "top_k_precision": 0.5,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "oracle": {
+          "system": {
+            "point": 0.66419261557887,
+            "lo": 0.638648223083576,
+            "hi": 0.6911201197505209,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.725817648089209,
+            "lo": 0.6463781950415507,
+            "hi": 0.7816324694204648,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8245960122592061,
+          "auroc": {
+            "system": 0.9638210092034275,
+            "many_shot": 0.98989898989899,
+            "overall": 0.9736935028248588
+          },
+          "top_k_precision": {
+            "system": 0.9375,
+            "many_shot": 0.1,
+            "overall": 0.6923076923076923
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9638210092034275,
+              "top_k_precision": 0.9375,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.98989898989899,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9736935028248588,
+              "top_k_precision": 0.6923076923076923,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "point": 0.6641926844989655,
+            "lo": 0.6386483504827422,
+            "hi": 0.6911201646539992,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.7258176718044804,
+            "lo": 0.6463782230067661,
+            "hi": 0.7816325927000423,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8245960312872358,
+          "auroc": {
+            "system": 0.9638210092034275,
+            "many_shot": 0.98989898989899,
+            "overall": 0.9736935028248588
+          },
+          "top_k_precision": {
+            "system": 0.9375,
+            "many_shot": 0.1,
+            "overall": 0.6923076923076923
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9638210092034275,
+              "top_k_precision": 0.9375,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.98989898989899,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9736935028248588,
+              "top_k_precision": 0.6923076923076923,
+              "n": 260,
+              "n_positive": 24
+            }
+          },
+          "_note": "r2_mean == oracle algebraically: mean_i<v_i,r_B> = <mean_i v_i, r_B> = <v(x), r_B> = oracle (linearity of the dot product). Not an independent monitor; the informative R2 operators are max/topk/last."
+        },
+        "r2_max": {
+          "system": {
+            "point": 0.47916377430439666,
+            "lo": 0.31908900765615944,
+            "hi": 0.6089549350565513,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.4876088961756439,
+            "lo": 0.41880624768176417,
+            "hi": 0.5564115446695236,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6848160882021447,
+          "auroc": {
+            "system": 0.8667089812757854,
+            "many_shot": 0.9595959595959596,
+            "overall": 0.9159604519774012
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.4230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8667089812757854,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9595959595959596,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9159604519774012,
+              "top_k_precision": 0.4230769230769231,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r2_topk": {
+          "system": {
+            "point": 0.5139702090204572,
+            "lo": 0.3612726168331013,
+            "hi": 0.6354978647947156,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.5147243182663315,
+            "lo": 0.44503090484635777,
+            "hi": 0.5844177316863053,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6987548098159183,
+          "auroc": {
+            "system": 0.8809901618533799,
+            "many_shot": 0.9696969696969697,
+            "overall": 0.9247881355932204
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.46153846153846156
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8809901618533799,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9696969696969697,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9247881355932204,
+              "top_k_precision": 0.46153846153846156,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r2_last": {
+          "system": {
+            "point": 0.22870304865084007,
+            "lo": -0.01796952239283326,
+            "hi": 0.45490895658179276,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": -0.05111914273041207,
+            "lo": -0.24078812825496893,
+            "hi": 0.28110575505847,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.3061238191477219,
+          "auroc": {
+            "system": 0.5518882894319264,
+            "many_shot": 0.18181818181818182,
+            "overall": 0.7070974576271186
+          },
+          "top_k_precision": {
+            "system": 0.3125,
+            "many_shot": 0.0,
+            "overall": 0.2692307692307692
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.5518882894319264,
+              "top_k_precision": 0.3125,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.18181818181818182,
+              "top_k_precision": 0.0,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.7070974576271186,
+              "top_k_precision": 0.2692307692307692,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r1_ridge_dot": {
+          "system": {
+            "point": 0.5413107340999044,
+            "lo": 0.4798002359673568,
+            "hi": 0.6012550995612814,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.6947106203866932,
+            "lo": 0.601050408922533,
+            "hi": 0.7566074687149424,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.7542483647166639,
+          "auroc": {
+            "system": 0.9098698825769597,
+            "many_shot": 0.9797979797979798,
+            "overall": 0.9413841807909604
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.5384615384615384
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9098698825769597,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9797979797979798,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9413841807909604,
+              "top_k_precision": 0.5384615384615384,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": 0.5477961432779992,
+            "lo": 0.4833872789279432,
+            "hi": 0.6027529457414746,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.6999804594192511,
+            "lo": 0.6009069496183851,
+            "hi": 0.7646580875783175,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.7556941152943786,
+          "auroc": {
+            "system": 0.9098698825769597,
+            "many_shot": 0.9797979797979798,
+            "overall": 0.9413841807909604
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.5384615384615384
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9098698825769597,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9797979797979798,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9413841807909604,
+              "top_k_precision": 0.5384615384615384,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "direct_ridge": {
+          "system": {
+            "point": 0.9099466519888602,
+            "lo": 0.8722192839470576,
+            "hi": 0.9419000564985371,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.893362354565762,
+            "lo": 0.8339987626936576,
+            "hi": 0.9328248061167461,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9593801210358704,
+          "auroc": {
+            "system": 0.9885750555379245,
+            "many_shot": 0.98989898989899,
+            "overall": 0.9918785310734464
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.1,
+            "overall": 0.8076923076923077
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9885750555379245,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.98989898989899,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9918785310734464,
+              "top_k_precision": 0.8076923076923077,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "probe_ctrl": {
+          "system": {
+            "point": 0.9099466519888602,
+            "lo": 0.8722192839470576,
+            "hi": 0.9419000564985371,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.893362354565762,
+            "lo": 0.8339987626936576,
+            "hi": 0.9328248061167461,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9593801210358704,
+          "auroc": {
+            "system": 0.9885750555379245,
+            "many_shot": 0.98989898989899,
+            "overall": 0.9918785310734464
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.1,
+            "overall": 0.8076923076923077
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9885750555379245,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.98989898989899,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9918785310734464,
+              "top_k_precision": 0.8076923076923077,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r1_mlp_dot": {
+          "system": {
+            "point": 0.44723958015564935,
+            "lo": 0.3709120862275379,
+            "hi": 0.516170180888202,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.5531701621605599,
+            "lo": 0.4637272761789283,
+            "hi": 0.6223328673375946,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.7376426853207175,
+          "auroc": {
+            "system": 0.9190733100602984,
+            "many_shot": 0.9696969696969697,
+            "overall": 0.9475635593220338
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.5384615384615384
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9190733100602984,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9696969696969697,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9475635593220338,
+              "top_k_precision": 0.5384615384615384,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "point": 0.470811714902349,
+            "lo": 0.3864811471135786,
+            "hi": 0.5464193014094474,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.5756897138419761,
+            "lo": 0.49033918883037314,
+            "hi": 0.6411464164245131,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.7389400552630001,
+          "auroc": {
+            "system": 0.9197080291970803,
+            "many_shot": 0.9696969696969697,
+            "overall": 0.9479166666666666
+          },
+          "top_k_precision": {
+            "system": 0.5625,
+            "many_shot": 0.1,
+            "overall": 0.5384615384615384
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9197080291970803,
+              "top_k_precision": 0.5625,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9696969696969697,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9479166666666666,
+              "top_k_precision": 0.5384615384615384,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        },
+        "direct_mlp": {
+          "system": {
+            "point": 0.902867346862031,
+            "lo": 0.8259509357308638,
+            "hi": 0.9536822077332971,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.8406808987139479,
+            "lo": 0.8046595707606709,
+            "hi": 0.8868177202579313,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9583132208620819,
+          "auroc": {
+            "system": 0.9927007299270073,
+            "many_shot": 0.9797979797979798,
+            "overall": 0.9925847457627118
+          },
+          "top_k_precision": {
+            "system": 0.9375,
+            "many_shot": 0.1,
+            "overall": 0.8076923076923077
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9927007299270073,
+              "top_k_precision": 0.9375,
+              "n": 160,
+              "n_positive": 23
+            },
+            "many_shot": {
+              "auroc": 0.9797979797979798,
+              "top_k_precision": 0.1,
+              "n": 100,
+              "n_positive": 1
+            },
+            "overall": {
+              "auroc": 0.9925847457627118,
+              "top_k_precision": 0.8076923076923077,
+              "n": 260,
+              "n_positive": 24
+            }
+          }
+        }
+      },
+      "success_deltas": {
+        "r1_ridge_cos": {
+          "system": {
+            "delta": -0.054553356949552656,
+            "lo": -0.1395883916230728,
+            "hi": 0.019656862708965387,
+            "excludes_zero": false
+          },
+          "many_shot": {
+            "delta": 0.1480065405190908,
+            "lo": 0.04893260460014059,
+            "hi": 0.22174813659418857,
+            "excludes_zero": true
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "delta": -0.13153778532520283,
+            "lo": -0.24443473325485685,
+            "hi": -0.02411727162501181,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": 0.02371579494181575,
+            "lo": -0.0657757071345364,
+            "hi": 0.09471908556589237,
+            "excludes_zero": false
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "delta": 0.061843184271413665,
+            "lo": 0.0020539730354001144,
+            "hi": 0.13952070672564143,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": 0.17384375290432008,
+            "lo": 0.09458679368098402,
+            "hi": 0.23867034080268207,
+            "excludes_zero": true
+          }
+        }
+      },
+      "recon_ridge": {
+        "r2": 0.8340453548735764,
+        "mean_cosine": 0.9825355388962548
+      },
+      "recon_mlp": {
+        "r2": 0.6436299675774361,
+        "mean_cosine": 0.9601984062647835
+      },
+      "h1a_nullity": {
+        "system": {
+          "r1_ridge_dot_r": 0.5413107340999044,
+          "probe_ctrl_r": 0.9099466519888602,
+          "abs_diff": 0.3686359178889558
+        },
+        "many_shot": {
+          "r1_ridge_dot_r": 0.6947106203866932,
+          "probe_ctrl_r": 0.893362354565762,
+          "abs_diff": 0.19865173417906878
+        },
+        "_note": "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), matching the plan \u00a78 r~_B = M^T r_B linear identity \u2014 not the cosine arm."
+      },
+      "recon_vs_shuffled_null": {
+        "observed_r2": 0.8340453548735764,
+        "null_mean_r2": 0.14910117030791717,
+        "null_p95_r2": 0.1512760969936649,
+        "beats_null": true,
+        "n_shuffle": 20
+      },
+      "gate0_descoped": false,
+      "gate0_headroom": 0.06184315249340222,
+      "gate0_descope_reason": "oracle headroom 0.0618 >= +0.05: R1 runs fully"
+    },
+    "hallucination": {
+      "read_out_layer": 17,
+      "n_questions": 260,
+      "n_rollouts": 260,
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.4559558744478315,
+            "lo": 0.32718734459130167,
+            "hi": 0.5799577818982035,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.3004621581246908,
+            "lo": 0.19433843933241712,
+            "hi": 0.4446033491381094,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.46284471372011005,
+          "auroc": {
+            "system": 0.80837833415153,
+            "many_shot": 0.659607843137255,
+            "overall": 0.7731755424063116
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 1.0,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.80837833415153,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.659607843137255,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7731755424063116,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "oracle": {
+          "system": {
+            "point": 0.6107744161175719,
+            "lo": 0.5179381980487472,
+            "hi": 0.6977069895488022,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.4559568263600031,
+            "lo": 0.361642240681872,
+            "hi": 0.5955425959688861,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6868708030913894,
+          "auroc": {
+            "system": 0.8163966617574865,
+            "many_shot": 0.7670588235294118,
+            "overall": 0.8171315863623556
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8163966617574865,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.7670588235294118,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.8171315863623556,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "point": 0.6107743923668795,
+            "lo": 0.5179381665009232,
+            "hi": 0.6977070139884166,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.45595686222373943,
+            "lo": 0.361642322868448,
+            "hi": 0.5955426354535402,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6868708048698244,
+          "auroc": {
+            "system": 0.8163966617574865,
+            "many_shot": 0.7670588235294118,
+            "overall": 0.8171315863623556
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.8163966617574865,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.7670588235294118,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.8171315863623556,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 182
+            }
+          },
+          "_note": "r2_mean == oracle algebraically: mean_i<v_i,r_B> = <mean_i v_i, r_B> = <v(x), r_B> = oracle (linearity of the dot product). Not an independent monitor; the informative R2 operators are max/topk/last."
+        },
+        "r2_max": {
+          "system": {
+            "point": 0.42350542973567196,
+            "lo": 0.35203275549941987,
+            "hi": 0.4841346366615779,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.28340846757008253,
+            "lo": 0.17784601352593515,
+            "hi": 0.44843899492717304,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.4928287989128649,
+          "auroc": {
+            "system": 0.6833578792341679,
+            "many_shot": 0.731764705882353,
+            "overall": 0.7068892645815723
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.6833578792341679,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.731764705882353,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7068892645815723,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r2_topk": {
+          "system": {
+            "point": 0.4517928713690392,
+            "lo": 0.373853569475872,
+            "hi": 0.5197264276656134,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.30029155541110725,
+            "lo": 0.20171771592459306,
+            "hi": 0.46113094266898697,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5272595890098063,
+          "auroc": {
+            "system": 0.6879397807232859,
+            "many_shot": 0.744313725490196,
+            "overall": 0.714356156663849
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.9,
+            "overall": 0.9615384615384616
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.6879397807232859,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.744313725490196,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.714356156663849,
+              "top_k_precision": 0.9615384615384616,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r2_last": {
+          "system": {
+            "point": 0.45222130635446833,
+            "lo": 0.2845972751261649,
+            "hi": 0.6119156077989286,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.275544593321497,
+            "lo": 0.17267159891795505,
+            "hi": 0.36243250994746284,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.4725675933583114,
+          "auroc": {
+            "system": 0.7992145311732941,
+            "many_shot": 0.647843137254902,
+            "overall": 0.7123837700760778
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 1.0,
+            "overall": 0.8461538461538461
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.7992145311732941,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.647843137254902,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7123837700760778,
+              "top_k_precision": 0.8461538461538461,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r1_ridge_dot": {
+          "system": {
+            "point": 0.40056444815020614,
+            "lo": 0.3211839181234214,
+            "hi": 0.47791767821137543,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.2552687811894551,
+            "lo": 0.07093519265698274,
+            "hi": 0.45915474162541575,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.48295995958782956,
+          "auroc": {
+            "system": 0.7244313532973327,
+            "many_shot": 0.6345098039215686,
+            "overall": 0.7569737954353339
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.9,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.7244313532973327,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.6345098039215686,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7569737954353339,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": 0.3873648705082726,
+            "lo": 0.30979073886789305,
+            "hi": 0.46225902374093486,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.2606612260210467,
+            "lo": 0.07643112916051258,
+            "hi": 0.4671436393911666,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.4814344915926942,
+          "auroc": {
+            "system": 0.7152675503190967,
+            "many_shot": 0.6337254901960784,
+            "overall": 0.7528881375035221
+          },
+          "top_k_precision": {
+            "system": 0.875,
+            "many_shot": 0.9,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.7152675503190967,
+              "top_k_precision": 0.875,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.6337254901960784,
+              "top_k_precision": 0.9,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7528881375035221,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "direct_ridge": {
+          "system": {
+            "point": 0.862119411426068,
+            "lo": 0.8192853420547659,
+            "hi": 0.9051881594654063,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.9233792985802598,
+            "lo": 0.907645738259296,
+            "hi": 0.9407604101641134,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9033971092571819,
+          "auroc": {
+            "system": 0.9657993781705122,
+            "many_shot": 0.9466666666666667,
+            "overall": 0.9673851789236405
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 1.0,
+            "overall": 1.0
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9657993781705122,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.9466666666666667,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.9673851789236405,
+              "top_k_precision": 1.0,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "probe_ctrl": {
+          "system": {
+            "point": 0.862119411426068,
+            "lo": 0.8192853420547659,
+            "hi": 0.9051881594654063,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.9233792985802598,
+            "lo": 0.907645738259296,
+            "hi": 0.9407604101641134,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9033971092571819,
+          "auroc": {
+            "system": 0.9657993781705122,
+            "many_shot": 0.9466666666666667,
+            "overall": 0.9673851789236405
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 1.0,
+            "overall": 1.0
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9657993781705122,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.9466666666666667,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.9673851789236405,
+              "top_k_precision": 1.0,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r1_mlp_dot": {
+          "system": {
+            "point": 0.3757505698122607,
+            "lo": 0.3083331547993996,
+            "hi": 0.4379302407613056,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.4197453926752511,
+            "lo": 0.30494483341465656,
+            "hi": 0.5616287276404324,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5303354090994403,
+          "auroc": {
+            "system": 0.748159057437408,
+            "many_shot": 0.7152941176470589,
+            "overall": 0.7642293603832065
+          },
+          "top_k_precision": {
+            "system": 0.8125,
+            "many_shot": 1.0,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.748159057437408,
+              "top_k_precision": 0.8125,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.7152941176470589,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7642293603832065,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "point": 0.36725444338784796,
+            "lo": 0.3000121544440398,
+            "hi": 0.42980848674984196,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.4209306714245399,
+            "lo": 0.305783561081922,
+            "hi": 0.5666837019272257,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5282757039363364,
+          "auroc": {
+            "system": 0.7432498772704959,
+            "many_shot": 0.7152941176470589,
+            "overall": 0.7628205128205128
+          },
+          "top_k_precision": {
+            "system": 0.8125,
+            "many_shot": 1.0,
+            "overall": 0.9230769230769231
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.7432498772704959,
+              "top_k_precision": 0.8125,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.7152941176470589,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.7628205128205128,
+              "top_k_precision": 0.9230769230769231,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        },
+        "direct_mlp": {
+          "system": {
+            "point": 0.903568070866134,
+            "lo": 0.8818639812921215,
+            "hi": 0.9291531575052698,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.9215685603410213,
+            "lo": 0.9150212540372898,
+            "hi": 0.9280375707939739,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.9269600155575562,
+          "auroc": {
+            "system": 0.9726722304041892,
+            "many_shot": 0.9364705882352942,
+            "overall": 0.9680191603268526
+          },
+          "top_k_precision": {
+            "system": 1.0,
+            "many_shot": 1.0,
+            "overall": 1.0
+          },
+          "detection": {
+            "threshold": 50.0,
+            "top_frac": 0.1,
+            "system": {
+              "auroc": 0.9726722304041892,
+              "top_k_precision": 1.0,
+              "n": 160,
+              "n_positive": 97
+            },
+            "many_shot": {
+              "auroc": 0.9364705882352942,
+              "top_k_precision": 1.0,
+              "n": 100,
+              "n_positive": 85
+            },
+            "overall": {
+              "auroc": 0.9680191603268526,
+              "top_k_precision": 1.0,
+              "n": 260,
+              "n_positive": 182
+            }
+          }
+        }
+      },
+      "success_deltas": {
+        "r1_ridge_cos": {
+          "system": {
+            "delta": -0.06859100393955886,
+            "lo": -0.13446543369978584,
+            "hi": 0.0022140422101414145,
+            "excludes_zero": false
+          },
+          "many_shot": {
+            "delta": -0.039800932103644104,
+            "lo": -0.17761776943675484,
+            "hi": 0.07608170714490803,
+            "excludes_zero": false
+          }
+        },
+        "r1_mlp_cos": {
+          "system": {
+            "delta": -0.08870143105998352,
+            "lo": -0.16157896821480025,
+            "hi": -0.01130267347538849,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": 0.12046851329984909,
+            "lo": 0.07185177540221288,
+            "hi": 0.16072994100186788,
+            "excludes_zero": true
+          }
+        },
+        "r2_mean": {
+          "system": {
+            "delta": 0.154818517919048,
+            "lo": 0.09648015439770306,
+            "hi": 0.20987649445723566,
+            "excludes_zero": true
+          },
+          "many_shot": {
+            "delta": 0.15549470409904864,
+            "lo": 0.1272066140911426,
+            "hi": 0.17944395188782367,
+            "excludes_zero": true
+          }
+        }
+      },
+      "recon_ridge": {
+        "r2": 0.8601739907572247,
+        "mean_cosine": 0.9762336018857892
+      },
+      "recon_mlp": {
+        "r2": 0.7125042920610498,
+        "mean_cosine": 0.950264697572928
+      },
+      "h1a_nullity": {
+        "system": {
+          "r1_ridge_dot_r": 0.40056444815020614,
+          "probe_ctrl_r": 0.862119411426068,
+          "abs_diff": 0.4615549632758618
+        },
+        "many_shot": {
+          "r1_ridge_dot_r": 0.2552687811894551,
+          "probe_ctrl_r": 0.9233792985802598,
+          "abs_diff": 0.6681105173908046
+        },
+        "_note": "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), matching the plan \u00a78 r~_B = M^T r_B linear identity \u2014 not the cosine arm."
+      },
+      "recon_vs_shuffled_null": {
+        "observed_r2": 0.8601739907572247,
+        "null_mean_r2": 0.10425491921990002,
+        "null_p95_r2": 0.10540919892666965,
+        "beats_null": true,
+        "n_shuffle": 20
+      },
+      "gate0_descoped": false,
+      "gate0_headroom": 0.15634863289909284,
+      "gate0_descope_reason": "oracle headroom 0.1563 >= +0.05: R1 runs fully"
+    }
+  },
+  "gate1": {
+    "evil": {
+      "trait": "evil",
+      "pass": false,
+      "checks": {
+        "system": {
+          "reproduced": 0.17225165704905313,
+          "pv_target": 0.511,
+          "abs_diff": 0.3387483429509469,
+          "within_band": false
+        },
+        "many_shot": {
+          "reproduced": 0.4170582809280652,
+          "pv_target": 0.735,
+          "abs_diff": 0.3179417190719348,
+          "within_band": false
+        }
+      }
+    },
+    "sycophancy": {
+      "trait": "sycophancy",
+      "pass": false,
+      "checks": {
+        "system": {
+          "reproduced": 0.6023495002275518,
+          "pv_target": 0.669,
+          "abs_diff": 0.06665049977244819,
+          "within_band": true
+        },
+        "many_shot": {
+          "reproduced": 0.5519739189001603,
+          "pv_target": 0.813,
+          "abs_diff": 0.2610260810998396,
+          "within_band": false
+        }
+      }
+    },
+    "hallucination": {
+      "trait": "hallucination",
+      "pass": false,
+      "checks": {
+        "system": {
+          "reproduced": 0.4559558744478315,
+          "pv_target": 0.245,
+          "abs_diff": 0.21095587444783148,
+          "within_band": false
+        },
+        "many_shot": {
+          "reproduced": 0.3004621581246908,
+          "pv_target": 0.4,
+          "abs_diff": 0.09953784187530923,
+          "within_band": true
+        }
+      }
+    }
+  },
+  "lobo": {
+    "evil": {
+      "read_out_layer": 14,
+      "note": "h is behavior-agnostic (trained on generic LMSYS, no r_B); applied zero-shot with the held trait's r_B. Direct g is structurally inapplicable (needs held-behavior labels).",
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.17225165704905313,
+            "lo": -0.06656688168628616,
+            "hi": 0.3745146661294254,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.4170582809280652,
+            "lo": 0.2281781221803524,
+            "hi": 0.5952872052055933,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6364194962861927
+        },
+        "oracle": {
+          "system": {
+            "point": 0.4280513347183994,
+            "lo": 0.3217990870597955,
+            "hi": 0.5675030412026473,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.6021049222895408,
+            "lo": 0.2640315141305982,
+            "hi": 0.871936764884834,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8590234217805136
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": -0.0640211380200511,
+            "lo": -0.3614677130243741,
+            "hi": 0.1706325241448079,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "many_shot": {
+            "point": 0.2549126611702888,
+            "lo": 0.08474923896413214,
+            "hi": 0.4783530036505887,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.5785946363228603
+        }
+      }
+    },
+    "sycophancy": {
+      "read_out_layer": 26,
+      "note": "h is behavior-agnostic (trained on generic LMSYS, no r_B); applied zero-shot with the held trait's r_B. Direct g is structurally inapplicable (needs held-behavior labels).",
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.6023495002275518,
+            "lo": 0.5486117711952504,
+            "hi": 0.6550277966262059,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.5519739189001603,
+            "lo": 0.5106645091288102,
+            "hi": 0.5862949592070635,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6992973420807516
+        },
+        "oracle": {
+          "system": {
+            "point": 0.66419261557887,
+            "lo": 0.638648223083576,
+            "hi": 0.6911201197505209,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.725817648089209,
+            "lo": 0.6463781950415507,
+            "hi": 0.7816324694204648,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.8245960122592061
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": 0.5477961432779992,
+            "lo": 0.4833872789279432,
+            "hi": 0.6027529457414746,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.6999804594192511,
+            "lo": 0.6009069496183851,
+            "hi": 0.7646580875783175,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.7556941152943786
+        }
+      }
+    },
+    "hallucination": {
+      "read_out_layer": 17,
+      "note": "h is behavior-agnostic (trained on generic LMSYS, no r_B); applied zero-shot with the held trait's r_B. Direct g is structurally inapplicable (needs held-behavior labels).",
+      "methods": {
+        "pv_raw": {
+          "system": {
+            "point": 0.4559558744478315,
+            "lo": 0.32718734459130167,
+            "hi": 0.5799577818982035,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.3004621581246908,
+            "lo": 0.19433843933241712,
+            "hi": 0.4446033491381094,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.46284471372011005
+        },
+        "oracle": {
+          "system": {
+            "point": 0.6107744161175719,
+            "lo": 0.5179381980487472,
+            "hi": 0.6977069895488022,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.4559568263600031,
+            "lo": 0.361642240681872,
+            "hi": 0.5955425959688861,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.6868708030913894
+        },
+        "r1_ridge_cos": {
+          "system": {
+            "point": 0.3873648705082726,
+            "lo": 0.30979073886789305,
+            "hi": 0.46225902374093486,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "many_shot": {
+            "point": 0.2606612260210467,
+            "lo": 0.07643112916051258,
+            "hi": 0.4671436393911666,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r": 0.4814344915926942
+        }
+      }
+    }
+  },
+  "parity_check": {
+    "base_delta": 1.341104507446289e-07,
+    "shuffle_delta": 1.3075768947601318e-06,
+    "chunk_invariant": true,
+    "crossgroup_clean": true,
+    "tol": 5e-06
+  },
+  "metadata": {
+    "git_commit": "fc96549e5994ad216aaa76672cfabbc28f5582a3",
+    "timestamp_utc": "2026-07-01T12:22:50.207266Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_stage1",
+    "smoke": false
+  },
+  "gate1_all_pass": false,
+  "figures": [
+    "/workspace/explore-persona-space/figures/issue_779/stage1_evil_system.png",
+    "/workspace/explore-persona-space/figures/issue_779/stage1_evil_many_shot.png",
+    "/workspace/explore-persona-space/figures/issue_779/stage1_sycophancy_system.png",
+    "/workspace/explore-persona-space/figures/issue_779/stage1_sycophancy_many_shot.png",
+    "/workspace/explore-persona-space/figures/issue_779/stage1_hallucination_system.png",
+    "/workspace/explore-persona-space/figures/issue_779/stage1_hallucination_many_shot.png"
+  ]
+}

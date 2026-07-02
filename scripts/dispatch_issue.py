@@ -163,6 +163,56 @@ def _current_git_branch() -> str | None:
     return branch if branch and branch != "HEAD" else None
 
 
+def _git_branch_of(root: str) -> str | None:
+    """Checked-out branch of the git checkout at ``root``; None on detached/error.
+
+    Uses ``git -C <root> branch --show-current``, which prints an empty line on a
+    detached HEAD (mapped to None — no "HEAD" sentinel needed, unlike
+    ``rev-parse --abbrev-ref``). Any subprocess failure also maps to None: the
+    caller treats an unresolvable worktree branch as "no default". (task #824)
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", root, "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+            env={**os.environ},
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    branch = proc.stdout.strip()
+    return branch or None
+
+
+def _warn_if_branch_not_pushed(branch: str, git_root: str) -> None:
+    """WARN loudly (never fail) when ``branch`` is not visible on origin.
+
+    The GCE startup script clones from origin, so an unpushed defaulted branch
+    guarantees a downstream clone/checkout failure (#812 failure class). A
+    ls-remote failure here must not block the launch: WARN and continue.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", git_root, "ls-remote", "--exit-code", "origin", branch],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ},
+        )
+        visible = proc.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        visible = False
+    if not visible:
+        logging.getLogger("dispatch_issue").warning(
+            "repo-branch %r is not visible on origin (git ls-remote failed or "
+            "found no match) — the GCE startup clone will fail unless the "
+            "branch is pushed first",
+            branch,
+        )
+
+
 def _build_production_backends() -> dict[str, Any]:
     """Construct the production ComputeBackend instances + injected deps.
 
@@ -832,6 +882,24 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
                 branch,
             )
             extra["repo_branch"] = branch
+        else:
+            # Invoking checkout is on main (or unresolvable) — the common
+            # orchestrator topology (repo root pinned to main). Fall back to the
+            # issue worktree's checked-out branch so the GCE clone carries the
+            # issue's code (task #824; incident #812: a repo-root dispatch
+            # silently cloned main and the issue branch's scripts were absent).
+            worktree_root = _issue_worktree_git_root(args.issue)
+            wt_branch = _git_branch_of(worktree_root) if worktree_root else None
+            if wt_branch and wt_branch != "main":
+                logging.getLogger("dispatch_issue").info(
+                    "repo-branch defaulted to issue worktree branch %r "
+                    "(worktree %s) for the gcp/auto lane — invoking checkout "
+                    "is on main/unresolvable",
+                    wt_branch,
+                    worktree_root,
+                )
+                _warn_if_branch_not_pushed(wt_branch, worktree_root)
+                extra["repo_branch"] = wt_branch
     # #685: bake the per-issue worktree git root into the declaration so
     # confirm_artifacts' git check resolves against the worktree branch
     # (where the run committed eval_results/ + figures/), not the MAIN

@@ -230,6 +230,28 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-agent-tools`` (also bundled into the no-flags default run):
+  every ``.claude/agents/*.md`` must declare an explicit tool surface — a
+  ``tools:`` allowlist or a ``disallowedTools:`` denylist — in its YAML
+  frontmatter (task #840). An agent file with neither key inherits the
+  parent session's FULL tool inventory including every user-level MCP
+  server's tool schemas; incident #778 (2026-07-01): two
+  ``experiment-implementer`` spawns each paid ~168K static first-turn
+  tokens on the inlined schemas and died in autocompact thrash. Sub-checks:
+  (1) declaration required on every file; (2) mentioned ⊆ declared — every
+  spec-BODY tool mention per the widened extractor (explicit ``mcp__...``
+  tokens, the built-in literals ``WebSearch``/``WebFetch``/
+  ``NotebookEdit``/``TodoWrite``, the ``Agent``/``Skill`` phrase forms, and
+  prose MCP aliases such as "context7 MCP" →
+  ``mcp__plugin_context7_context7``) must be covered by the allowlist,
+  modulo the
+  :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` dict (descriptive-not-instructive
+  mentions, each waived with an inline reason); (2b) declared-name
+  validity — every DECLARED ``mcp__...`` token must name a server in
+  :data:`KNOWN_MCP_SERVERS` (the harness silently ignores unknown names,
+  so a typo strips a capability with no error); (3) a
+  ``disallowedTools:``-only file (research-pm) skips the containment check
+  but must not deny a body-mentioned tool.
 
 Exit codes:
 
@@ -294,13 +316,24 @@ HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
 
 # `--check-skill-refs`: every backtick-delimited `/<skill-name>` slash-command
 # token in the workflow-doc surface MUST resolve to a live project skill (a
-# `.claude/skills/<name>/` directory) or to SKILL_REF_ALLOWLIST. Backtick-anchor
-# + trailing lookahead are the FP controls: only the slash-command convention
-# matches, and a path segment (`/workspace/logs`, `/tmp/x`, `/mnt/...`) is
-# rejected because the char after the token is `/`, not the required
-# backtick / whitespace / `)` boundary. Group 1 = skill name, optionally
-# `<plugin>:<skill>`.
-SKILL_REF_RE = re.compile(r"`/([a-z][a-z0-9-]+(?::[a-z0-9-]+)?)(?=[`\s)])")
+# `.claude/skills/<name>/` directory) or to SKILL_REF_ALLOWLIST. Three FP
+# controls, all load-bearing (do NOT "simplify" any away):
+#   1. leading backtick anchor — the slash-command must OPEN a codespan;
+#   2. trailing lookahead `(?=[`\s)])` — the token must CLOSE on a backtick /
+#      whitespace / `)`, so a path segment (`/workspace/logs`, `/tmp/x`,
+#      `/mnt/...`) is rejected (the char after it is `/`, not the boundary);
+#   3. fixed-width negative-lookbehind `(?<!\w)` on the leading backtick — the
+#      backtick that OPENS the codespan must NOT be immediately preceded by a
+#      word char. This guards the closing-backtick-mistaken-for-opening FP
+#      class: prose like `` `false`/unset `` writes a `` `false` `` codespan
+#      whose CLOSING backtick abuts `/unset`; without (3) that closing
+#      backtick is misread as the OPENING backtick of a phantom `` `/unset ``
+#      slash-command (the trailing lookahead then succeeds on the following
+#      space). A closing backtick is always immediately preceded by a word
+#      char, so `(?<!\w)` rejects exactly that misread while leaving every
+#      real opening backtick (at start-of-line / after whitespace / `(` / `[`)
+#      matched. Group 1 = skill name, optionally `<plugin>:<skill>`.
+SKILL_REF_RE = re.compile(r"(?<!\w)`/([a-z][a-z0-9-]+(?::[a-z0-9-]+)?)(?=[`\s)])")
 
 _FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
 
@@ -664,6 +697,108 @@ AGENT_MODEL_PIN_RE = re.compile(
 # (the only suffix the harness currently exposes for a model pin); any
 # other tail is treated as part of an unknown base id and flagged.
 AGENT_MODEL_1M_SUFFIX = "[1m]"
+
+
+# `--check-agent-tools`: every `.claude/agents/*.md` must declare an explicit
+# tool surface — a `tools:` allowlist or a `disallowedTools:` denylist — in
+# its YAML frontmatter. An agent file with NEITHER key inherits the parent
+# session's FULL tool inventory, including every user-level MCP server's tool
+# schemas (todoist ~100, google-workspace ~90, playwright ~35, runpod ~28,
+# ...); incident #778 (2026-07-01): two `experiment-implementer` spawns each
+# paid ~168K static first-turn tokens on the inlined MCP schemas and died in
+# autocompact thrash. Task #840 added explicit declarations to all 28 files;
+# this check keeps the invariant durable (a NEW agent file landing without a
+# declaration reintroduces the bug silently).
+#
+# Three sub-checks per file (see `check_agent_tools`):
+#   1. declaration required (`tools:` or `disallowedTools:` present);
+#   2. mentioned ⊆ declared — a spec-BODY tool mention (explicit `mcp__...`
+#      token, built-in literal name, `Agent`/`Skill` phrase form, or a prose
+#      MCP alias like "context7 MCP") must be covered by the declaration,
+#      modulo :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` (descriptive-not-
+#      instructive mentions, each with an inline reason);
+#   2b. declared-name validity — every DECLARED `mcp__...` token must name a
+#      server in :data:`KNOWN_MCP_SERVERS` (a silent typo like
+#      `mcp__plugin_context7_contex7` strips a capability with no error);
+#   3. denylist files — no BODY-mentioned token may be denied.
+#
+# Known MCP server names, snapshotted from the live runtime tool-name strings
+# (`mcp__<server>__<tool>`) on 2026-07-02 (task #840 plan §4.2). Update when a
+# new MCP server is registered at user level AND an agent declaration needs
+# it — the constant gates only DECLARED names, so an unrelated new server
+# needs no entry here.
+KNOWN_MCP_SERVERS: frozenset[str] = frozenset(
+    {
+        "arxiv",
+        "arxiv-latex",
+        "google-workspace",
+        "happy",
+        "plugin_context7_context7",
+        "plugin_huggingface-skills_huggingface-skills",
+        "plugin_playwright_playwright",
+        "runpod",
+        "ssh",
+        "todoist",
+    }
+)
+
+# (filename, mentioned-token) pairs the mentioned-⊆-declared check skips.
+# Every entry MUST carry an inline reason explaining why the body mention is
+# descriptive-not-instructive (the mention documents ANOTHER actor's tool
+# use, or a retired/historical pattern) — never add an entry to silence a
+# genuine instruction; add the tool to the declaration instead (the additive
+# direction is always safe per the #840 plan §13).
+AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
+    ("planner.md", "mcp__ssh__ssh_execute"): (
+        "describes the upload-verifier's Step-8 on-pod glob enumeration "
+        "(primary-deliverable block), not a planner instruction"
+    ),
+    ("codex-clean-result-critic.md", "Agent"): (
+        "'spawned from a single Agent(...) call' describes how the "
+        "ORCHESTRATOR spawns the ensemble, not an instruction for this "
+        "prompt-composer wrapper to call the Agent tool"
+    ),
+    ("codex-follow-up-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-interpretation-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-reviewer.md", "Agent"): (
+        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
+        "describes the historical ensemble spawn pattern"
+    ),
+    ("workflow-improver.md", "Agent"): (
+        "DEPRECATED/frozen file (#678, never spawned; "
+        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
+        "historical examples of the retired auto-spawn pattern and a "
+        "grep-target example"
+    ),
+}
+
+# Spec-BODY tool-mention extractor vocabulary (the #840 plan §4.3 "widened
+# extractor"). Four layers:
+#   (i)  explicit MCP tokens — full `mcp__<server>__<tool>` and server-level
+#        `mcp__<server>` forms (one greedy regex matches both; the char class
+#        includes `_`, so a full token is captured whole);
+#   (ii) built-in literal names an allowlist can silently block;
+#   (iii) phrase forms for `Agent` (nested spawns) and `Skill` (runtime
+#        skill loads) — the literal bare names are far too common in prose
+#        ("the agent", "the skill") to match directly;
+#   (iv) prose MCP aliases mapped to their server-level token.
+AGENT_TOOLS_MCP_TOKEN_RE = re.compile(r"mcp__[A-Za-z0-9_-]+")
+AGENT_TOOLS_BUILTIN_RE = re.compile(r"\b(WebSearch|WebFetch|NotebookEdit|TodoWrite)\b")
+AGENT_TOOLS_AGENT_PHRASE_RE = re.compile(r"`Agent`\s+tool|\bAgent\(")
+AGENT_TOOLS_SKILL_PHRASE_RE = re.compile(
+    r"`Skill`\s+tool|\binvoke[sd]?\s+the\s+`?[\w/-]+`?\s+skill\b", re.IGNORECASE
+)
+AGENT_TOOLS_MCP_ALIASES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"`?context7`?\s+MCP", re.IGNORECASE), "mcp__plugin_context7_context7"),
+    (re.compile(r"\bSSH\s+MCP\b", re.IGNORECASE), "mcp__ssh"),
+    (re.compile(r"\barXiv\s+MCP\b", re.IGNORECASE), "mcp__arxiv"),
+)
 
 
 # `--check-upload-as-file`: the shared HF-Hub upload helper
@@ -2370,6 +2505,280 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
     return errors
 
 
+def _split_agent_frontmatter(text: str) -> tuple[list[str] | None, str, int]:
+    """Split an agent file into ``(frontmatter_lines, body, body_line_offset)``.
+
+    The frontmatter block is the lines between the FIRST two ``---`` lines
+    (the file must start with ``---``). ``body_line_offset`` is the 1-based
+    file line number of the first body line, so body-relative match
+    positions can be reported as real file:line locations. Returns
+    ``(None, text, 1)`` when the file has no parseable frontmatter block —
+    callers report that as a missing-declaration failure.
+    """
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return None, text, 1
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            fm_lines = lines[1:i]
+            body = "\n".join(lines[i + 1 :])
+            return fm_lines, body, i + 2
+    return None, text, 1
+
+
+def _parse_agent_tool_decls(
+    fm_lines: list[str],
+) -> tuple[list[str] | None, list[str] | None]:
+    """Parse ``tools:`` / ``disallowedTools:`` out of a frontmatter block.
+
+    Both repo syntaxes are honored (mirroring the harness): the inline
+    comma-separated scalar (``tools: Read, Grep, Glob, Bash``) and the YAML
+    list form (``tools:`` followed by ``  - Read`` items). Only TOP-LEVEL
+    keys (column 0) are considered, so folded ``description: >`` blocks
+    never introduce fake keys (their continuation lines are indented).
+    Returns ``(tools, disallowed)`` — each ``None`` when the key is absent,
+    else the (possibly empty) list of declared names.
+    """
+    tools: list[str] | None = None
+    disallowed: list[str] | None = None
+    for i, line in enumerate(fm_lines):
+        match = re.match(r"^(tools|disallowedTools):\s*(.*)$", line)
+        if match is None:
+            continue
+        key, rest = match.group(1), match.group(2).strip()
+        if rest:
+            values = [v.strip() for v in rest.split(",") if v.strip()]
+        else:
+            values = []
+            for cont in fm_lines[i + 1 :]:
+                item = re.match(r"^\s+-\s+(\S.*?)\s*$", cont)
+                if item is None:
+                    break
+                values.append(item.group(1))
+        if key == "tools":
+            tools = values
+        else:
+            disallowed = values
+    return tools, disallowed
+
+
+def _extract_agent_body_tool_mentions(body: str) -> dict[str, int]:
+    """Extract every tool the spec BODY mentions, per the #840 §4.3 widened
+    extractor vocabulary (see the :data:`AGENT_TOOLS_MCP_TOKEN_RE` comment
+    block). Returns ``{token: first_body_line_index}`` (0-based line index
+    within the body; callers add the frontmatter offset)."""
+    mentions: dict[str, int] = {}
+
+    def record(token: str, pos: int) -> None:
+        lineno = body.count("\n", 0, pos)
+        if token not in mentions or lineno < mentions[token]:
+            mentions[token] = lineno
+
+    for m in AGENT_TOOLS_MCP_TOKEN_RE.finditer(body):
+        record(m.group(0), m.start())
+    for m in AGENT_TOOLS_BUILTIN_RE.finditer(body):
+        record(m.group(1), m.start())
+    for m in AGENT_TOOLS_AGENT_PHRASE_RE.finditer(body):
+        record("Agent", m.start())
+    for m in AGENT_TOOLS_SKILL_PHRASE_RE.finditer(body):
+        record("Skill", m.start())
+    for alias_re, token in AGENT_TOOLS_MCP_ALIASES:
+        for m in alias_re.finditer(body):
+            record(token, m.start())
+    return mentions
+
+
+def _mcp_server_of(token: str) -> str | None:
+    """Return the ``<server>`` segment of an ``mcp__...`` token (full-tool,
+    server-level, or ``__*``-wildcard form), or None for a non-MCP name.
+    Server names never contain a double underscore, so splitting on ``__``
+    is unambiguous (``mcp__plugin_context7_context7`` has only single
+    underscores inside the server segment)."""
+    parts = token.split("__")
+    if len(parts) < 2 or parts[0] != "mcp" or not parts[1]:
+        return None
+    return parts[1]
+
+
+def _agent_tool_mention_covered(token: str, declared: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is covered by the ``tools:``
+    allowlist ``declared``: exact match; the token's server-level
+    ``mcp__<server>`` (or ``mcp__<server>__*``) form is declared; or — for a
+    SERVER-LEVEL mention (a prose alias like "arXiv MCP") — the declaration
+    names at least one tool from that server (e.g. related-work-finder
+    declares 4 ``mcp__arxiv__*`` tools; its "arXiv MCP" prose is covered)."""
+    if token in declared:
+        return True
+    if not token.startswith("mcp__"):
+        return False
+    parts = token.split("__")
+    server_form = "__".join(parts[:2])
+    if server_form in declared or f"{server_form}__*" in declared:
+        return True
+    if len(parts) == 2:
+        return any(d.startswith(server_form + "__") for d in declared)
+    return False
+
+
+def _agent_tool_mention_denied(token: str, denied: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is removed by the
+    ``disallowedTools:`` denylist ``denied`` (exact name, its server-level
+    form, the ``__*`` wildcard form, or the all-MCP ``mcp__*`` wildcard)."""
+    if token in denied:
+        return True
+    if token.startswith("mcp__"):
+        if "mcp__*" in denied:
+            return True
+        parts = token.split("__")
+        server_form = "__".join(parts[:2])
+        if server_form in denied or f"{server_form}__*" in denied:
+            return True
+    return False
+
+
+def check_agent_tools(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/*.md`` and enforce the explicit-tool-surface
+    invariant (task #840; incident #778 — an agent file with no ``tools:``
+    key inherits the parent session's full MCP tool-schema payload, ~168K
+    static first-turn tokens at the measured worst case).
+
+    Per file:
+
+    1. **Declaration required** — FAIL if the frontmatter has neither a
+       ``tools:`` allowlist nor a ``disallowedTools:`` denylist (or has no
+       parseable frontmatter at all).
+    2. **Mentioned ⊆ declared** (allowlist files) — FAIL if the spec body
+       mentions a tool (per :func:`_extract_agent_body_tool_mentions`) that
+       the allowlist does not cover (per
+       :func:`_agent_tool_mention_covered`), unless the ``(filename,
+       token)`` pair is waived in :data:`AGENT_TOOLS_MENTION_EXCEPTIONS`
+       with an inline reason.
+    2b. **Declared-name validity** — FAIL if any DECLARED ``mcp__...`` token
+       (in either key) names a server outside :data:`KNOWN_MCP_SERVERS` —
+       the harness silently ignores unknown names, so a typo strips a
+       capability with no error anywhere.
+    3. **Denylist consistency** (denylist files) — FAIL if a body-mentioned
+       token is denied by the denylist. Denylist-only files skip check 2
+       (they inherit everything not denied).
+
+    ``roots`` is the unit-test override hook (same contract as
+    :func:`check_agent_model_pins`); production callers pass None and the
+    canonical agent tree under :data:`_REPO_ROOT` is walked.
+    """
+    if roots is None:
+        targets = _iter_agent_pin_target_files(_REPO_ROOT)
+    else:
+        targets = []
+        for root in roots:
+            if root.is_file():
+                targets.append(root)
+            else:
+                targets.extend(p for p in root.glob("**/*.md") if p.is_file())
+        targets = sorted(targets)
+    errors: list[str] = []
+    for path in targets:
+        text = path.read_text()
+        fm_lines, body, body_offset = _split_agent_frontmatter(text)
+        if fm_lines is None:
+            errors.append(
+                f"{path}: no parseable YAML frontmatter block (file must start "
+                f"with '---' and close the block with a second '---'), so no "
+                f"tools:/disallowedTools: declaration exists. Every agent file "
+                f"must declare its tool surface (task #840; incident #778)."
+            )
+            continue
+        tools, disallowed = _parse_agent_tool_decls(fm_lines)
+        # Check 1 — declaration required.
+        if tools is None and disallowed is None:
+            errors.append(
+                f"{path}: frontmatter declares neither 'tools:' nor "
+                f"'disallowedTools:'. An undeclared agent inherits the parent "
+                f"session's FULL tool inventory including every MCP server's "
+                f"schemas (~168K static first-turn tokens at the #778 worst "
+                f"case). Add a 'tools:' allowlist (see the restricted agents "
+                f"for the house YAML-list style) or, for a broad main-session "
+                f"persona, a 'disallowedTools:' denylist (research-pm.md "
+                f"precedent). Task #840."
+            )
+            continue
+        errors.extend(_agent_tools_decl_validity_errors(path, tools, disallowed))
+        mentions = _extract_agent_body_tool_mentions(body)
+        errors.extend(_agent_tools_mention_errors(path, tools, disallowed, mentions, body_offset))
+    return errors
+
+
+def _agent_tools_decl_validity_errors(
+    path: Path, tools: list[str] | None, disallowed: list[str] | None
+) -> list[str]:
+    """Check 2b — every DECLARED ``mcp__...`` token (either key) must name a
+    server in :data:`KNOWN_MCP_SERVERS`; the ``mcp__*`` all-MCP denylist
+    wildcard is valid as-is."""
+    errors: list[str] = []
+    for decl_list, key in ((tools, "tools"), (disallowed, "disallowedTools")):
+        if decl_list is None:
+            continue
+        for token in decl_list:
+            if not token.startswith("mcp__"):
+                continue
+            server = _mcp_server_of(token)
+            if server is not None and server.endswith("*"):
+                # `mcp__*` all-MCP wildcard (denylist form) — valid.
+                continue
+            if server is None or server not in KNOWN_MCP_SERVERS:
+                known = ", ".join(sorted(KNOWN_MCP_SERVERS))
+                errors.append(
+                    f"{path}: '{key}:' declares '{token}' whose server "
+                    f"segment is not a known MCP server. The harness "
+                    f"silently ignores unknown tool names, so a typo here "
+                    f"strips the capability with no error at spawn. Known "
+                    f"servers: {known}. If a NEW MCP server was just "
+                    f"registered, add it to KNOWN_MCP_SERVERS in "
+                    f"scripts/workflow_lint.py."
+                )
+    return errors
+
+
+def _agent_tools_mention_errors(
+    path: Path,
+    tools: list[str] | None,
+    disallowed: list[str] | None,
+    mentions: dict[str, int],
+    body_offset: int,
+) -> list[str]:
+    """Checks 2 + 3 — a body-mentioned token must be covered by the
+    ``tools:`` allowlist (when present) and must not be removed by the
+    ``disallowedTools:`` denylist (when present), modulo the
+    :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` waivers."""
+    errors: list[str] = []
+    for token, body_lineno in sorted(mentions.items()):
+        if (path.name, token) in AGENT_TOOLS_MENTION_EXCEPTIONS:
+            continue
+        lineno = body_offset + body_lineno
+        if tools is not None and not _agent_tool_mention_covered(token, tools):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'tools:' allowlist does not "
+                f"cover it — the agent is instructed to use a tool it "
+                f"cannot call. Either add '{token}' (or its "
+                f"'mcp__<server>' form) to the allowlist, or — if the "
+                f"mention is descriptive-not-instructive (documents "
+                f"another actor's tool use) — add "
+                f"('{path.name}', '{token}') to "
+                f"AGENT_TOOLS_MENTION_EXCEPTIONS with an inline "
+                f"reason. Task #840."
+            )
+        if disallowed is not None and _agent_tool_mention_denied(token, disallowed):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'disallowedTools:' denylist "
+                f"removes it — the agent is instructed to use a tool "
+                f"it cannot call. Drop the deny entry or fix the spec "
+                f"body (body edits are a separate change per the #840 "
+                f"frontmatter-only scope)."
+            )
+    return errors
+
+
 def _upload_arg0(call: ast.Call) -> ast.expr | None:
     """Return the AST node for the ``_upload`` call's local-path argument
     (first positional, else the ``local_path`` / ``local`` keyword), or
@@ -3431,6 +3840,110 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# A destructive `git reset --hard` invocation. Whitespace-tolerant, broadened
+# (FI1) to catch flag-ordering variants:
+#   - `git reset --hard`, `git reset -q --hard`      (flags before --hard)
+#   - `git reset --hard origin/main`, `git reset --hard -q`  (flags/ref after)
+#   - `git reset origin/main --hard`                 (ref BEFORE the --hard flag)
+#   - `git --no-pager reset --hard`                  (git-level flag before subcommand)
+#   - `git reset --hard=<ref>`                       (single-token flag, attached value)
+# Optional git-level flags (`--no-pager`, `-C <path>`, `-c k=v`) may precede
+# `reset`; any tokens (flags or a ref) may sit between `reset` and `--hard`;
+# `--hard` may carry an attached `=<value>`.
+# The intra-command tokens are backtick-free (``[^\s`]+``, NOT ``\S+``): a real
+# git flag / path / ref never contains a backtick, and forbidding backticks
+# stops the greedy flag-group from spanning ACROSS an inline-code mention
+# (e.g. the prose ``scoped with `git -C`: `git -C "$WT" reset --hard```) — which
+# would otherwise anchor the match on the WRONG (prose-mention) `git` and defeat
+# the FI3 `-C`-before-match waiver on the sanctioned per-worktree line.
+_GIT_RESET_HARD_RE = re.compile(
+    r"git\s+(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*reset\b(?:\s+[^\s`]+)*?\s+--hard(?:=[^\s`]*)?\b"
+)
+# A worktree-qualified `git -C "<path>" ...` prefix. Matched separately so we
+# can require it appear BEFORE the offending reset on the same line (FI3).
+_GIT_DASH_C_RE = re.compile(r"git\s+-C\s+")
+_RESET_HARD_ALLOW_SENTINEL = "workflow-lint: allow-git-reset-hard"
+
+
+def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any agent spec / skill playbook contains an UNQUALIFIED
+    destructive ``git reset --hard`` (a repo-root / full-tree reset). Only
+    per-worktree ``git -C "$WT" reset --hard`` invocations (the ``-C`` qualifier
+    appearing BEFORE the offending reset on the same line), or lines carrying
+    the ``workflow-lint: allow-git-reset-hard: <reason>`` sentinel with a
+    non-empty reason, pass.
+
+    Incident 2026-07-01 (#815): a #778 analyzer improvised a destructive
+    repo-root reset during marker-chain recovery and truncated concurrent
+    siblings #812/#813 (body.md / plans/ / comments.jsonl / REGISTRY). task.py
+    holds a per-registry flock, not a per-file lock, so a repo-root reset by
+    any concurrent session clobbers unrelated tasks.
+
+    Scope: ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` only (reuses
+    ``_iter_ask_target_files``, which already excludes OTHER worktrees' sibling
+    copies). ``.claude/plans/``, ``.claude/agent-memory/``, ``.claude/rules/``,
+    ``CLAUDE.md``, and ``scripts/**`` are out of the workflow surface for this
+    check and NEVER scanned. Pure-Python (no ``rg`` dependency, so the bundled
+    pytest is hermetic); bundled into the no-flags default run. ``repo_root`` is
+    a unit-test override hook; production callers pass None (canonical repo root).
+
+    INTENTIONAL under-matching (pinned by the test docstring + kill-criteria):
+    a ``git reset \\``-continuation line where ``--hard`` lands on the FOLLOWING
+    physical line evades the line-based regex. Grep confirms zero live in-scope
+    instances; the check is line-oriented by design (markdown scope, NOT a shell
+    AST). If a ``\\``-continuation destructive reset ever lands in-scope,
+    normalize continuations before matching or split the command.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for p in _iter_ask_target_files(root):  # already worktree-safe + scoped
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            m = _GIT_RESET_HARD_RE.search(line)
+            if m is None:
+                continue
+            # FI3: worktree-qualified ONLY if a `git -C` prefix sits at or
+            # before the START of the offending reset match (i.e. `git -C "$WT"
+            # reset --hard` — the `-C` qualifies THIS command). In the sanctioned
+            # form `_GIT_RESET_HARD_RE` matches from the SAME `git` the `-C`
+            # begins (its flag-group swallows `-C "$WT"`), so `dc.start()` equals
+            # `m.start()` there — hence `<=`, not `<`. An unqualified reset starts
+            # at a `git` NOT followed by `-C`, so `_GIT_DASH_C_RE` cannot match at
+            # that same offset; `dc.start() == m.start()` therefore occurs ONLY
+            # for the sanctioned form. A `git -C` that appears AFTER the reset
+            # (e.g. `git reset --hard && git -C "$WT" status`) has a HIGHER offset
+            # and does NOT waive the unqualified reset that precedes it.
+            dc = _GIT_DASH_C_RE.search(line)
+            if dc is not None and dc.start() <= m.start():
+                continue
+            if _RESET_HARD_ALLOW_SENTINEL in line:  # explicit allowlist -> OK
+                # Require a NON-EMPTY reason after the sentinel (FI2). The reason
+                # lives between the sentinel `:` and the note closer, so strip the
+                # leading `:`/whitespace AND the trailing HTML-comment closer
+                # (`-->`) / backtick / whitespace before testing — otherwise the
+                # bare comment closer (`: -->`, or `allow-git-reset-hard -->` with
+                # no colon) would be counted as a reason and wrongly waive.
+                _, _, tail = line.partition(_RESET_HARD_ALLOW_SENTINEL)
+                reason = tail.lstrip(": ")
+                if reason.rstrip().endswith("-->"):
+                    reason = reason.rstrip()[: -len("-->")]
+                reason = reason.strip().strip("`").strip()
+                if reason:
+                    continue
+            errors.append(
+                f"{p}:{lineno}: unqualified `git reset --hard` on the shared "
+                f"repo root is forbidden (clobbers concurrent siblings' task "
+                f"state — incident #815, commit d29a877e6f). Use a per-worktree "
+                f'`git -C "$WT" reset --hard <ref>`, or add a same-line '
+                f"`{_RESET_HARD_ALLOW_SENTINEL}: <reason>` sentinel if this is a "
+                f"legitimate prose mention / pod-side ssh_execute command."
+            )
+    return errors
+
+
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the compute-shape-vs-dispatcher review lens (#806) is absent
     from EITHER code-reviewer agent file.
@@ -3448,9 +3961,20 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
     ``compute-shape-mismatch``. ``repo_root`` is a unit-test override hook;
     production callers pass None (canonical repo root). Bundled into the
     no-flags default run.
+
+    #875 extended the lens with the work-conserving schedule sub-check +
+    throughput anti-pattern (d) (incidents #813: sequential waves idled 4/8
+    H100s 6.7h and per-row ``savez_compressed`` = 65% of wc_long row
+    wall-time; #778 phase-3: 1/8 util on 8xH100), pinned by two additional
+    tokens: ``work-conserving`` and ``per-row compression``.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    required = ("Compute-shape-vs-dispatcher", "compute-shape-mismatch")
+    required = (
+        "Compute-shape-vs-dispatcher",
+        "compute-shape-mismatch",
+        "work-conserving",  # #875: schedule sub-check (incident #813/#778)
+        "per-row compression",  # #875: anti-pattern (d) (incident #813)
+    )
     files = (
         root / ".claude" / "agents" / "code-reviewer.md",
         root / ".claude" / "agents" / "codex-code-reviewer.md",
@@ -3468,11 +3992,304 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
             if token not in text:
                 errors.append(
                     f"{p}: missing the compute-shape-vs-dispatcher lens token "
-                    f"{token!r} (#806). The Step 0.67 lens + `compute-shape-mismatch` "
-                    f"blocker tag must be present in BOTH code-reviewer.md and "
-                    f"codex-code-reviewer.md so both reviewers catch a plan-declared "
-                    f"DP shape the dispatcher does not expose (incident #779 r6)."
+                    f"{token!r} (#806/#875). The Step 0.67 lens (exposure contract + "
+                    f"work-conserving schedule sub-check) + `compute-shape-mismatch` "
+                    f"blocker tag + anti-pattern (d) must be present in BOTH "
+                    f"code-reviewer.md and codex-code-reviewer.md so both reviewers "
+                    f"catch a plan-declared DP shape the dispatcher does not expose "
+                    f"and a non-work-conserving / per-row-IO-bound schedule "
+                    f"(incidents #779 r6, #813, #778)."
                 )
+    return errors
+
+
+def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the long-loop restartability lens (#881) is absent from any of
+    its three surfaces.
+
+    Task #823 phase 4 accumulated ~20h (unpatched; ~3.7h patched) of serial
+    ridge fits purely in memory with a single terminal JSON write: both GCE
+    crashes forfeited all completed fits, a user-directed
+    restart-with-optimization was refused solely because restart forfeits
+    unpersisted fits, and five code-review rounds never flagged it. The #881
+    fix extended the checkpoint-per-phase rule to INTRA-PHASE grain (per-unit
+    persistence + a resume predicate for any > ~1h serial loop) and added a
+    Step 3.6 review lens to BOTH code-reviewer agent files. This check pins
+    all three surfaces so a future refactor cannot silently strip one:
+
+    (a) code-reviewer.md — the ``Long-loop restartability`` Step 3.6 heading
+        + the lowercase ``resume predicate`` requirement;
+    (b) codex-code-reviewer.md — the same two tokens (the Step-2 copy-list
+        bullets) PLUS the inlined-rubric placeholder enumeration
+        ``3.5, 3.6, 3.7`` — a token check on the copy-list alone
+        false-PASSes while the composed executable Codex prompt still omits
+        Step 3.6 (the #606 twin-omission class);
+    (c) code-style.md — the ``Intra-phase grain`` extension of the
+        checkpoint-per-phase bullet + ``resume predicate``.
+
+    Tokens are case-sensitive substrings, per-file. ``repo_root`` is a
+    unit-test override hook; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    required_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+        ),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+            "3.5, 3.6, 3.7",  # the inlined-rubric placeholder enumeration
+        ),
+        root / ".claude" / "rules" / "code-style.md": (
+            "Intra-phase grain",
+            "resume predicate",
+        ),
+    }
+    errors: list[str] = []
+    for p, required in required_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #881 long-loop restartability lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"code-style.md."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the long-loop restartability lens token "
+                    f"{token!r} (#823/#881). The Step 3.6 lens (per-unit "
+                    f"persistence + resume predicate for > ~1h serial loops) "
+                    f"must be present in code-reviewer.md AND "
+                    f"codex-code-reviewer.md (incl. the inlined-rubric "
+                    f"placeholder enumeration), and the intra-phase-grain "
+                    f"extension of the checkpoint-per-phase bullet in "
+                    f"code-style.md (incident #823 phase 4: a ~20h in-memory "
+                    f"accumulate-and-write-at-end ridge loop PASSed five "
+                    f"review rounds)."
+                )
+    return errors
+
+
+def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the smoke-architecture marker presence gate (#822) is absent
+    from ANY of its three surfaces.
+
+    Task #811's implementer claimed the smoke-architecture verdict in prose (a
+    dispatcher header) but never posted the separate
+    `epm:smoke-architecture-check` events row; both reviewers PASSed 5 rounds
+    and the gap surfaced only at /issue Step 6d.0 AFTER pod provisioning. The
+    fix added a Step 0.55 presence lens to BOTH code-reviewer agent files and
+    a per-blocker `marker-shape` sub-recipe to the /issue Step 5c-bis strip.
+    This check pins all three surfaces, region-anchored, so a future refactor
+    cannot silently strip one and re-open the gap:
+
+    (a) code-reviewer.md — a ``### Step 0.55`` section whose body (up to the
+        next ``### `` heading) names ``epm:smoke-architecture-check``;
+    (b) codex-code-reviewer.md — the Step 0.55 copy-list bullet (heading
+        literal + marker kind) AND ``0.55`` on the ``{{INLINED RUBRIC``
+        placeholder line;
+    (c) `.claude/skills/issue/SKILL.md` — the Step 5c-bis region (between the
+        ``**5c-bis.`` and ``**5c-ter.`` headings) names
+        ``epm:smoke-architecture-check``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    marker = "epm:smoke-architecture-check"
+    errors: list[str] = []
+
+    # (a) code-reviewer.md: the Step 0.55 section body names the marker.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #822 smoke-architecture marker "
+            f"presence gate (Step 0.55) must live in code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.55")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.55' section (#822). The "
+                f"smoke-architecture marker presence gate must stay in the "
+                f"Claude reviewer so a missing {marker} events row FAILs at "
+                f"code-review, not at Step 6d.0 post-provision (incident #811)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if marker not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.55' section body no longer "
+                    f"names {marker!r} (#822) — the presence gate must key on "
+                    f"that exact marker kind."
+                )
+
+    # (b) codex-code-reviewer.md: the copy-list bullet + rubric placeholder.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #822 smoke-architecture marker presence "
+            f"gate (Step 0.55 copy-list bullet) must live in "
+            f"codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        heading = '"Step 0.55: Smoke-architecture marker presence gate"'
+        for token in (heading, marker):
+            if token not in text:
+                errors.append(
+                    f"{codex}: missing the Step 0.55 copy-list token {token!r} "
+                    f"(#822) — the Codex twin must copy the same presence lens "
+                    f"or the two reviewers drift (the #606 copy-list-omission "
+                    f"class)."
+                )
+        idx = text.find(heading)
+        if idx != -1 and marker in text:
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if marker not in bullet:
+                errors.append(
+                    f"{codex}: the Step 0.55 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{marker!r} (#822) — a marker mention elsewhere in the "
+                    f"file (e.g. the Step 7 blocker-tags line) does not keep "
+                    f"the copied lens itself keyed on that marker."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("0.55" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.55' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#822) — the composed Codex prompt would "
+                f"omit the Step 0.55 lens."
+            )
+
+    # (c) SKILL.md: the Step 5c-bis strip region names the marker sub-recipe.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #822 Step 5c-bis per-blocker "
+            f"marker-shape sub-recipe must live in the /issue skill."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        start = text.find("**5c-bis.")
+        end = text.find("**5c-ter.")
+        region = text[start:end] if (start != -1 and end != -1 and end > start) else ""
+        if marker not in region:
+            errors.append(
+                f"{skill}: the Step 5c-bis region (between '**5c-bis.' and "
+                f"'**5c-ter.') no longer names {marker!r} (#822) — the "
+                f"mechanical-contract strip needs the per-blocker sub-recipe "
+                f"to distinguish a stale-worktree false absence (STRIP) from "
+                f"a genuine one (leave the FAIL in place)."
+            )
+    return errors
+
+
+# The #842 smoke output-path hygiene anchor phrase. Must appear INSIDE each
+# surface's load-bearing region (see check_smoke_output_hygiene below).
+SMOKE_OUTPUT_HYGIENE_ANCHOR = "Smoke outputs never overwrite committed artifacts"
+
+
+def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the smoke output-path hygiene rule (#842) is absent from any
+    of its three surfaces — REGION-AWARE and WHITESPACE-NORMALIZED.
+
+    Incident #722 (2026-07-02, three instances): a `--layers 0 18` review
+    smoke truncated committed 28-layer eval JSONs+figures; a reviewer's
+    pytest rerun regenerated `figures/issue_722/mlp_*.png` at smoke scale at
+    canonical paths; and the round-2 hero figure shipped as a 2-layer smoke
+    version because the script's figure path was not `_smoke`-suffixed while
+    its JSONs diverted. The fix added the anchor rule ("Smoke outputs never
+    overwrite committed artifacts") to three surfaces; this check pins each
+    copy inside its load-bearing, heading-bounded region:
+
+    (a) experiment-implementer.md — the smoke-contract checklist item
+        (``N. **End-to-end smoke run PER PHASE.`` up to the next
+        top-level numbered item);
+    (b) code-reviewer.md — the Step 0.6 region (``### Step 0.6:`` up to the
+        next heading) — the ONLY reviewer step the Codex twin's
+        ``{{INLINED RUBRIC`` placeholder carries, so a copy that drifts out
+        of Step 0.6 silently loses ensemble coverage;
+    (c) `.claude/skills/issue/SKILL.md` — the Step 5 smoke-gate paragraph
+        (``**End-to-end smoke gate (experiment tasks).`` up to the next
+        bold-start line / heading).
+
+    Whole-file presence is NOT enough: a surviving cross-reference elsewhere
+    in the file must not false-green after the rule body is deleted, so the
+    anchor must sit inside the named region. Matching is whitespace-
+    normalized (``\\s+`` -> single space) so an innocent prose reflow that
+    hard-wraps the anchor cannot spuriously FAIL the default run. A missing
+    region heading FAILs loud (a restructure must re-anchor the rule AND
+    update the region regex here in the same commit). ``repo_root`` is a
+    unit-test override hook; production callers pass None (canonical repo
+    root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s)
+
+    # End regexes are anchored on a literal ``\n`` (NOT a MULTILINE ``^``):
+    # the end search runs on the text slice AFTER the start match, and ``^``
+    # would also match at the very start of that slice (e.g. the closing
+    # ``**`` of the start line's bold token), truncating the region to zero.
+    surfaces: tuple[tuple[Path, str, str, str], ...] = (
+        (
+            root / ".claude" / "agents" / "experiment-implementer.md",
+            r"^\d+\. \*\*End-to-end smoke run PER PHASE\.",
+            r"\n\d+\. \*\*",
+            "implementer smoke-contract checklist item",
+        ),
+        (
+            root / ".claude" / "agents" / "code-reviewer.md",
+            r"^### Step 0\.6:",
+            r"\n#{1,6} ",
+            "code-reviewer Step 0.6 region",
+        ),
+        (
+            root / ".claude" / "skills" / "issue" / "SKILL.md",
+            r"^\*\*End-to-end smoke gate \(experiment tasks\)\.",
+            r"\n\*\*|\n#{1,6} ",
+            "SKILL.md Step 5 smoke-gate paragraph",
+        ),
+    )
+    errors: list[str] = []
+    for path, start_re, end_re, name in surfaces:
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — the #842 smoke output-path hygiene rule "
+                f"({SMOKE_OUTPUT_HYGIENE_ANCHOR!r}) must live here, in the "
+                f"{name}."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        start_m = re.search(start_re, text, flags=re.MULTILINE)
+        if start_m is None:
+            errors.append(
+                f"{path}: region heading for the {name} not found (#842) — "
+                f"the anchor region was restructured; re-anchor the smoke "
+                f"output-path hygiene rule and update this check's region "
+                f"regex in the same commit."
+            )
+            continue
+        end_m = re.search(end_re, text[start_m.end() :])
+        end = start_m.end() + end_m.start() if end_m is not None else len(text)
+        region = text[start_m.start() : end]
+        if _norm(SMOKE_OUTPUT_HYGIENE_ANCHOR) not in _norm(region):
+            errors.append(
+                f"{path}: anchor {SMOKE_OUTPUT_HYGIENE_ANCHOR!r} absent from "
+                f"the {name} (#842) — the rule was dropped or moved out of "
+                f"its load-bearing region; smoke runs would silently clobber "
+                f"committed eval_results/ / figures/ artifacts again "
+                f"(incident #722)."
+            )
     return errors
 
 
@@ -3490,7 +4307,9 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-_LESSONS_MAX_BYTES = 7500  # leanness cap: ~1900 tokens always-on
+_LESSONS_MAX_BYTES = (
+    8000  # leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated raise)
+)
 
 
 def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
@@ -3554,6 +4373,155 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
                 f"rows — the contract is exactly one matching row per rule. "
                 f"Remove the duplicate row(s) for '{dup}'."
             )
+    return errors
+
+
+# Agent-spec size budget (#829, tightened #838): every .claude/agents/*.md is
+# loaded whole on each spawn of that agent, so spec size is a per-invocation
+# token cost. WARN above 28 KB (drifting), FAIL above 40 KB (relocate
+# per-scenario content to .claude/rules/ on-demand rules; planner.md /
+# critic.md are the #838 worked examples). Thresholds are STRICTLY-GREATER (a
+# file at exactly the threshold passes). #838 probe grounding: the shared
+# session pile alone measured ~125K tokens in an MCP-heavy session, so a
+# 63.9 KB spec left planner/critic spawns only ~39-48K tokens of headroom and
+# they autocompact-thrashed (#833/#834); 40 KB is the probe decision-table
+# band floor (B_safe < 20K there — see tasks .../838/artifacts/
+# spawn-baseline-probe.md).
+AGENT_SPEC_WARN_BYTES = 28_000
+AGENT_SPEC_FAIL_BYTES = 40_000
+
+# Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
+# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
+# grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
+# once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
+# when trimmed. planner.md and critic.md are deliberately NOT grandfathered
+# (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
+# incident files is a commit-time FAIL.
+AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
+    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
+    "clean-result-critic.md": 107_000,
+    # the rest measured at the #838 tightening (2026-07-02), caps = measured
+    # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
+    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
+    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
+    # all plan-mandated growth; cap = measured + <=3 KB)
+    "code-reviewer.md": 84_500,
+    "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
+    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
+    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
+    # + <=3 KB)
+    "codex-code-reviewer.md": 50_400,
+    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
+    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
+    "experiment-implementer.md": 58_500,
+    "experimenter.md": 65_500,  # measured 62,672 B
+    "methodology-writer.md": 48_000,  # measured 45,203 B
+    "research-pm.md": 43_500,  # measured 40,990 B
+    "upload-verifier.md": 45_500,  # measured 42,825 B
+}
+
+
+def check_agent_spec_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
+
+    Every agent spec is loaded whole on each spawn, so bytes here are a
+    per-invocation token cost. Semantics (all thresholds STRICTLY-GREATER):
+    size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
+    ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
+    and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    whose file dropped to <= the FAIL threshold (remove the entry — ratchet
+    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    go to ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
+    is a unit-test override; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    agents_dir = root / ".claude" / "agents"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not agents_dir.is_dir():
+        errors.append(
+            f"{agents_dir}: missing — the agent-spec dir must exist for the "
+            f"agent-spec size-budget check (#829)."
+        )
+        return errors
+
+    # Config self-check FIRST: a grandfather cap at/below the FAIL threshold is
+    # meaningless (the plain FAIL branch would never be reached for that file).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
+        if cap <= AGENT_SPEC_FAIL_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} — cap "
+                f"must exceed AGENT_SPEC_FAIL_BYTES ({AGENT_SPEC_FAIL_BYTES}); "
+                f"raise the cap or remove the entry."
+            )
+
+    for path in sorted(agents_dir.glob("*.md")):
+        if not path.is_file():
+            continue
+        size = path.stat().st_size
+        name = path.name
+        if size > AGENT_SPEC_FAIL_BYTES:
+            cap = AGENT_SPEC_SIZE_GRANDFATHER.get(name)
+            if cap is not None:
+                if size > cap:
+                    errors.append(
+                        f".claude/agents/{name}: {size} bytes exceeds its "
+                        f"grandfather ratchet cap ({cap} bytes) — the spec "
+                        f"regrew past its recorded post-trim size; trim it "
+                        f"back (relocate per-scenario content to "
+                        f".claude/rules/, see #829)."
+                    )
+                else:
+                    _warn(
+                        f".claude/agents/{name}: {size} bytes — grandfathered; "
+                        f"{cap - size} bytes under its cap ({cap})."
+                    )
+            else:
+                errors.append(
+                    f".claude/agents/{name}: {size} bytes exceeds the "
+                    f"{AGENT_SPEC_FAIL_BYTES}-byte agent-spec FAIL threshold — "
+                    f"relocate per-scenario content to .claude/rules/ "
+                    f"(see #829)."
+                )
+        elif size > AGENT_SPEC_WARN_BYTES:
+            _warn(
+                f".claude/agents/{name}: {size} bytes exceeds the "
+                f"{AGENT_SPEC_WARN_BYTES}-byte agent-spec WARN budget "
+                f"(FAIL above {AGENT_SPEC_FAIL_BYTES})."
+            )
+
+    # Grandfather-entry hygiene: entries must point at existing files that
+    # still NEED grandfathering (size > FAIL threshold).
+    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+        gf_path = agents_dir / gf_name
+        if not gf_path.is_file():
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: stale grandfather "
+                f"entry — .claude/agents/{gf_name} does not exist; remove the "
+                f"entry."
+            )
+        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
+                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
+                f"grandfathering — remove the entry (ratchet down)."
+            )
+
     return errors
 
 
@@ -3829,6 +4797,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-agent-tools",
+        action="store_true",
+        help="Verify every .claude/agents/*.md declares an explicit tool "
+        "surface ('tools:' allowlist or 'disallowedTools:' denylist), that "
+        "every spec-body tool mention (mcp__ tokens, built-in literals, "
+        "Agent/Skill phrase forms, prose MCP aliases) is covered by the "
+        "declaration (modulo AGENT_TOOLS_MENTION_EXCEPTIONS), that declared "
+        "mcp__ names match KNOWN_MCP_SERVERS (silent-typo guard), and that a "
+        "denylist never denies a body-mentioned tool. Closes the #778 class "
+        "(an undeclared agent inherits every MCP server's schemas, ~168K "
+        "static first-turn tokens). Task #840. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-upload-as-file",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any _upload(...) call "
@@ -3878,6 +4860,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the no-flags default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-git-reset-hard",
+        action="store_true",
+        help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
+        "contains an unqualified `git reset --hard` (a repo-root / full-tree "
+        'reset). Only per-worktree `git -C "$WT" reset --hard` (the `-C` '
+        "qualifier before the reset on the same line) or lines carrying the "
+        "`workflow-lint: allow-git-reset-hard: <reason>` sentinel with a "
+        "non-empty reason pass. A repo-root destructive reset clobbers "
+        "concurrent siblings' task state — task.py holds a per-registry flock, "
+        "not a per-file lock (incident #815). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -3906,6 +4901,46 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-long-loop-restartability-review-lens",
+        action="store_true",
+        help="FAIL if the #881 long-loop restartability lens (the Step 3.6 "
+        "heading + `resume predicate` requirement in code-reviewer.md, the "
+        "codex copy-list bullets + the inlined-rubric `3.5, 3.6, 3.7` "
+        "enumeration in codex-code-reviewer.md, and the `Intra-phase grain` "
+        "extension of the checkpoint-per-phase bullet in code-style.md) is "
+        "absent from any of its three surfaces. Pins that both reviewers "
+        "verify a > ~1h serial loop persists per-unit results and resumes "
+        "(incident #823 phase 4: a ~20h in-memory accumulate-and-write-at-end "
+        "ridge loop PASSed five review rounds). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-architecture-review-lens",
+        action="store_true",
+        help="FAIL if the #822 smoke-architecture marker presence gate (Step "
+        "0.55) is absent from any of its three surfaces: the Step 0.55 "
+        "section in code-reviewer.md, the Step 0.55 copy-list bullet + "
+        "rubric-placeholder entry in codex-code-reviewer.md, or the "
+        "epm:smoke-architecture-check sub-recipe in the /issue Step 5c-bis "
+        "strip region. Pins the reviewer-side presence check for the "
+        "epm:smoke-architecture-check events row (incident #811: the verdict "
+        "lived in prose across 5 PASSed rounds and the gap surfaced only at "
+        "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-output-hygiene",
+        action="store_true",
+        help="FAIL if the #842 smoke output-path hygiene rule ('Smoke outputs "
+        "never overwrite committed artifacts') is absent from the load-bearing "
+        "region of any of its three surfaces: the End-to-end-smoke-run "
+        "checklist item in experiment-implementer.md, the Step 0.6 region in "
+        "code-reviewer.md (the only step the Codex twin's inlined rubric "
+        "carries), or the Step 5 smoke-gate paragraph in the /issue SKILL.md. "
+        "Region-aware + whitespace-normalized (incident #722: smoke runs "
+        "clobbered committed eval_results//figures/ artifacts three times). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -3921,6 +4956,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "grandfathered in JUDGE_PIN_LEGACY_ALLOWLIST[_SH]; waive a new "
         "calibration control with '# noqa: judge-model-pin'. Bundled into the "
         "no-flags default run (#765).",
+    )
+    parser.add_argument(
+        "--check-agent-spec-size",
+        action="store_true",
+        help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
     )
     args = parser.parse_args(argv)
 
@@ -3952,14 +4992,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_pipe_python
         or args.check_marker_registry
         or args.check_agent_model_pins
+        or args.check_agent_tools
         or args.check_upload_as_file
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
+        or args.check_no_repo_root_git_reset_hard
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
+        or args.check_long_loop_restartability_review_lens
+        or args.check_smoke_architecture_review_lens
+        or args.check_smoke_output_hygiene
         or args.check_judge_model_pins
+        or args.check_agent_spec_size
     )
 
     errors: list[str] = []
@@ -4010,6 +5056,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
+    if args.check_agent_tools or no_flags:
+        errors.extend(check_agent_tools())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
     if args.check_dotenv_before_hf_import or no_flags:
@@ -4018,12 +5066,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
         errors.extend(check_no_workflow_improver_spawn())
+    if args.check_no_repo_root_git_reset_hard or no_flags:
+        errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_agent_spec_size or no_flags:
+        errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
+    if args.check_long_loop_restartability_review_lens or no_flags:
+        errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_smoke_architecture_review_lens or no_flags:
+        errors.extend(check_smoke_architecture_review_lens())
+    if args.check_smoke_output_hygiene or no_flags:
+        errors.extend(check_smoke_output_hygiene())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
 
