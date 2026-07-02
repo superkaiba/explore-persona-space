@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 862,
+  "highest_id": 863,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5608,6 +5608,13 @@
       "path": "tasks/proposed/862",
       "status": "proposed",
       "title": "artifacts: unified LoRA recipe + dose-to-target stopping (Phase 0e)"
+    },
+    "863": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/863",
+      "status": "proposed",
+      "title": "artifacts: direction driver + directional ablation (Phase 0f)"
     },
     "88": {
       "has_clean_result": true,
