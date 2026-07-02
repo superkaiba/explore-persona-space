@@ -125,6 +125,31 @@ def resolve_base_dir(args_base_dir: str | None) -> pathlib.Path:
     return here.parents[4]
 
 
+def _ensure_repo_root_on_syspath() -> None:
+    """Insert the repo root onto sys.path[0] so `scripts.*` deferred imports work.
+
+    In script mode (python /abs/path/to/run_823.py) sys.path[0] is the script's
+    own directory, not the repo root, so `scripts/` (a non-package top-level dir)
+    is unreachable.  This helper derives the repo root deterministically from
+    __file__ and inserts it once.  Idempotent — safe to call multiple times.
+    """
+    import sys
+
+    # run_823.py -> issue_823/ -> experiments/ -> explore_persona_space/ -> src/ -> repo_root
+    repo_root = pathlib.Path(__file__).resolve().parents[4]
+    sentinel = repo_root / "scripts" / "issue779_collect.py"
+    if not sentinel.exists():
+        raise RuntimeError(
+            f"_ensure_repo_root_on_syspath: sentinel {sentinel} not found; "
+            f"derived repo_root={repo_root} may be wrong.  "
+            "Expected location: src/explore_persona_space/experiments/issue_823/run_823.py"
+        )
+    repo_root_str = str(repo_root)
+    if repo_root_str not in sys.path:
+        sys.path.insert(0, repo_root_str)
+        logger.debug("Inserted repo root onto sys.path: %s", repo_root_str)
+
+
 def sha256_file(path: pathlib.Path) -> str:
     """Compute SHA256 of a file in chunks."""
     h = hashlib.sha256()
@@ -599,6 +624,205 @@ async def phase1_sonnet_gen(base_dir: pathlib.Path, n_contexts: int, smoke: bool
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Phase 1 — batch harvest (crash-recovery path)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def harvest_phase1_batches(
+    base_dir: pathlib.Path,
+    batch_ids_file: pathlib.Path,
+    n_contexts: int = N_CONTEXTS_FULL,
+) -> None:
+    """Reconstruct Phase 1 output files from already-submitted Anthropic Message Batches.
+
+    Used when the pod that ran phase1_sonnet_gen crashed AFTER all batches
+    completed but BEFORE the output files were written — or after the state.json
+    was lost.  The function:
+
+    1. Reads batch IDs from a JSON file (list of strings or dict with "batch_ids").
+    2. Rebuilds the cid→item_id mapping by recomputing make_custom_id() for all
+       known item_ids (b2_0..b2_{N-1}, b1_0..b1_{N-1}).
+    3. Fetches results from each batch via the synchronous Anthropic client.
+    4. Reconstructs and writes the same three output files as phase1_sonnet_gen:
+       raw_completions/phase1/b2_seed42.json
+       raw_completions/phase1/b1_seed43.json
+       raw_completions/phase1/common_valid_idx.json
+    """
+    import anthropic
+    from dotenv import load_dotenv as _load_dotenv
+
+    _load_dotenv()
+
+    from explore_persona_space.eval.batch_judge import make_custom_id
+
+    log_phase("p1_harvest")
+    logger.info("Phase 1 harvest: reading batch IDs from %s", batch_ids_file)
+
+    # Load batch IDs
+    raw = json.loads(batch_ids_file.read_text())
+    if isinstance(raw, list):
+        batch_ids: list[str] = raw
+    elif isinstance(raw, dict) and "batch_ids" in raw:
+        batch_ids = raw["batch_ids"]
+    else:
+        raise ValueError(
+            f"batch_ids_file must be a JSON list or dict with 'batch_ids' key, got: {type(raw)}"
+        )
+    logger.info("Harvesting %d batches: %s", len(batch_ids), batch_ids)
+
+    # Build cid → item_id lookup for all known item_ids
+    all_item_ids = [f"b2_{i}" for i in range(n_contexts)] + [f"b1_{i}" for i in range(n_contexts)]
+    cid_to_item: dict[str, str] = {make_custom_id(iid): iid for iid in all_item_ids}
+    logger.info("Built cid_to_item mapping for %d item_ids", len(cid_to_item))
+
+    # Fetch all batch results using ANTHROPIC_API_KEY (all batches were org=high_prio)
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY not set; required to harvest high_prio batches")
+    client = anthropic.Anthropic(api_key=api_key)
+
+    b2_results: dict[int, str] = {}
+    b1_results: dict[int, str] = {}
+    failed: list[str] = []
+
+    for batch_id in batch_ids:
+        logger.info("Fetching results for batch %s ...", batch_id)
+        try:
+            raw_results = list(client.messages.batches.results(batch_id))
+        except Exception as e:
+            logger.error("Failed to fetch batch %s: %s", batch_id, e)
+            raise
+
+        for result in raw_results:
+            cid = result.custom_id
+            item_id = cid_to_item.get(cid)
+            if item_id is None:
+                logger.warning("Unknown custom_id %s in batch %s — skipping", cid, batch_id)
+                continue
+            rtype = result.result.type
+            if rtype == "succeeded":
+                text = next((b.text for b in result.result.message.content if b.type == "text"), "")
+                if item_id.startswith("b2_"):
+                    idx = int(item_id[3:])
+                    b2_results[idx] = text
+                elif item_id.startswith("b1_"):
+                    idx = int(item_id[3:])
+                    b1_results[idx] = text
+            else:
+                logger.warning("Item %s in batch %s: result.type=%s", item_id, batch_id, rtype)
+                failed.append(item_id)
+
+        logger.info(
+            "Batch %s: B2=%d, B1=%d so far",
+            batch_id,
+            len(b2_results),
+            len(b1_results),
+        )
+
+    logger.info(
+        "Harvest complete: B2=%d, B1=%d, failed=%d",
+        len(b2_results),
+        len(b1_results),
+        len(failed),
+    )
+    if failed:
+        logger.warning("Failed item_ids: %s", failed[:20])
+
+    # Load prompts for the question field in records
+    prompts_path = base_dir / "data" / "issue_823" / "prompts.json"
+    assert prompts_path.exists(), f"Prompts file not found: {prompts_path}"
+    prompts: list[str] = json.loads(prompts_path.read_text())[:n_contexts]
+
+    # Compute common valid index (same logic as phase1_sonnet_gen)
+    a_prime_path = base_dir / "raw_completions" / "phase05" / "arm_a_prime_seed42.json"
+    if a_prime_path.exists():
+        a_prime_recs_raw: list[dict] = json.loads(a_prime_path.read_text())[:n_contexts]
+        a_prime_valid_idx: set[int] = {
+            i for i, r in enumerate(a_prime_recs_raw) if r.get("answer_text", "")
+        }
+    else:
+        a_prime_valid_idx = set(range(n_contexts))
+        logger.warning("Arm A' file not found; assuming all %d contexts valid", n_contexts)
+
+    b2_valid_idx: set[int] = set(b2_results.keys())
+    b1_valid_idx: set[int] = set(b1_results.keys())
+    common_valid_idx: set[int] = a_prime_valid_idx & b1_valid_idx & b2_valid_idx
+    n_dropped = n_contexts - len(common_valid_idx)
+
+    logger.info(
+        "Common valid index: A'=%d, B1=%d, B2=%d, intersection=%d (dropped=%d)",
+        len(a_prime_valid_idx),
+        len(b1_valid_idx),
+        len(b2_valid_idx),
+        len(common_valid_idx),
+        n_dropped,
+    )
+    if n_dropped > 50:
+        raise RuntimeError(
+            f"Too many contexts dropped from common valid set: {n_dropped}/{n_contexts} "
+            f"(threshold 50). Aborting harvest."
+        )
+
+    # Write output files (identical schema to phase1_sonnet_gen)
+    out_dir = base_dir / "raw_completions" / "phase1"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    b2_records = [
+        {
+            "context_id": i,
+            "question": prompts[i],
+            "answer_text": b2_results.get(i, "") if i in common_valid_idx else "",
+            "arm": "b2_plain",
+            "seed": 42,
+            "filled": i in b2_results,
+            "in_common_valid": i in common_valid_idx,
+        }
+        for i in range(len(prompts))
+    ]
+    b2_path = out_dir / "b2_seed42.json"
+    b2_path.write_text(json.dumps(b2_records, indent=2, default=_json_np))
+    logger.info(
+        "B2 records written: %s (%d total, %d filled)", b2_path, len(b2_records), len(b2_results)
+    )
+
+    b1_records = [
+        {
+            "context_id": i,
+            "question": prompts[i],
+            "answer_text": b1_results.get(i, "") if i in common_valid_idx else "",
+            "arm": "b1_weird",
+            "seed": 43,
+            "filled": i in b1_results,
+            "in_common_valid": i in common_valid_idx,
+        }
+        for i in range(len(prompts))
+    ]
+    b1_path = out_dir / "b1_seed43.json"
+    b1_path.write_text(json.dumps(b1_records, indent=2, default=_json_np))
+    logger.info(
+        "B1 records written: %s (%d total, %d filled)", b1_path, len(b1_records), len(b1_results)
+    )
+
+    common_path = out_dir / "common_valid_idx.json"
+    common_path.write_text(
+        json.dumps(
+            {
+                "common_valid_idx": sorted(common_valid_idx),
+                "n_common": len(common_valid_idx),
+                "n_dropped": n_dropped,
+                "a_prime_valid": len(a_prime_valid_idx),
+                "b1_valid": len(b1_valid_idx),
+                "b2_valid": len(b2_valid_idx),
+                "harvested_from_batches": batch_ids,
+            },
+            indent=2,
+        )
+    )
+    logger.info("Common valid index written: %s (%d contexts)", common_path, len(common_valid_idx))
+    log_phase("p1_harvest_done")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Phase 2: Build derangement permutation
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -937,6 +1161,7 @@ def phase3_tf_extract(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> N
     bundle = torch.load(str(bundle_path), map_location="cpu", mmap=True)
     cx_last_bundle = bundle["cx_last"].numpy()  # (5000, 28, 3584)
 
+    _ensure_repo_root_on_syspath()
     from scripts.issue779_collect import capture_context_vector  # type: ignore[import]
 
     rng = np.random.default_rng(0)
@@ -1839,6 +2064,51 @@ def phase5_validity_diag(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _upload_phase1_to_hf(base_dir: pathlib.Path) -> None:
+    """Upload the three Phase 1 output files to HF data repo (harvest-path helper).
+
+    Commits b2_seed42.json, b1_seed43.json, and common_valid_idx.json in a single
+    HF commit and verifies each file is present on the Hub before returning.
+    """
+    from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
+
+    p1_dir = base_dir / "raw_completions" / "phase1"
+    names = ["b2_seed42.json", "b1_seed43.json", "common_valid_idx.json"]
+    files = [p1_dir / n for n in names]
+    for f in files:
+        assert f.exists() and f.stat().st_size > 0, f"Phase 1 file missing or empty: {f}"
+
+    api = HfApi()
+    ops = [
+        CommitOperationAdd(
+            path_in_repo=f"{ISSUE_SLUG}/raw_completions/phase1/{f.name}",
+            path_or_fileobj=str(f),
+        )
+        for f in files
+    ]
+    api.create_commit(
+        repo_id=HF_DATA_REPO_DATA,
+        repo_type="dataset",
+        commit_message=f"issue 823: Phase 1 harvest — {len(ops)} files",
+        operations=ops,
+    )
+    hub_files = set(
+        list_repo_files(
+            repo_id=HF_DATA_REPO_DATA,
+            repo_type="dataset",
+        )
+    )
+    expected = {op.path_in_repo for op in ops}
+    missing = expected - hub_files
+    if missing:
+        raise RuntimeError(
+            f"HF Phase 1 upload verification FAIL: {len(missing)} files missing: {sorted(missing)}"
+        )
+    logger.info(
+        "Phase 1 harvest: uploaded and Hub-verified %d files to %s", len(ops), HF_DATA_REPO_DATA
+    )
+
+
 def upload_raw_completions(base_dir: pathlib.Path) -> None:
     """Upload raw completion files to HF data repo."""
     from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
@@ -1873,7 +2143,6 @@ def upload_raw_completions(base_dir: pathlib.Path) -> None:
             list_repo_files(
                 repo_id=HF_DATA_REPO_DATA,
                 repo_type="dataset",
-                path_in_repo=f"{ISSUE_SLUG}/raw_completions/",
             )
         )
         expected = {op.path_in_repo for op in ops}
@@ -1984,7 +2253,82 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip HF uploads (for local testing)",
     )
+    p.add_argument(
+        "--harvest-batch-ids",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help=(
+            "Crash-recovery: path to a JSON file containing a list of Anthropic Message Batch "
+            "IDs (or a dict with 'batch_ids' key) from a previous Phase 1 run.  When set, "
+            "harvest_phase1_batches() is called instead of phase1_sonnet_gen(), then the "
+            "harvested files are uploaded to HF and the script exits."
+        ),
+    )
     return p.parse_args()
+
+
+def _phase1_outputs_exist(base_dir: pathlib.Path) -> bool:
+    """Return True iff all three Phase 1 output files are present and non-empty."""
+    p1_dir = base_dir / "raw_completions" / "phase1"
+    for name in ("b2_seed42.json", "b1_seed43.json", "common_valid_idx.json"):
+        p = p1_dir / name
+        if not p.exists() or p.stat().st_size == 0:
+            return False
+    return True
+
+
+def _run_phases(
+    run_phases: set[str],
+    base_dir: pathlib.Path,
+    n_contexts: int,
+    smoke: bool,
+    skip_upload: bool,
+) -> None:
+    """Execute the requested pipeline phases in order."""
+    # Phase 0: substrate verify + prompt recon
+    if "0" in run_phases:
+        verify_record = phase0_verify(base_dir, n_contexts, smoke)
+        logger.info("Phase 0 done: sha256_ok=%s", verify_record["sha256_ok"])
+
+    # Phase 0.5: vLLM Qwen regeneration (GPU)
+    if "0.5" in run_phases:
+        phase05_vllm_regen(base_dir, n_contexts, smoke)
+
+    # Phase 1: Sonnet generation (skip if output files already exist — resume path)
+    if "1" in run_phases:
+        if _phase1_outputs_exist(base_dir):
+            logger.info(
+                "Phase 1 output files already exist at %s — skipping (resume path)",
+                base_dir / "raw_completions" / "phase1",
+            )
+        else:
+            asyncio.run(phase1_sonnet_gen(base_dir, n_contexts, smoke))
+
+    # Phase 2: Derangement
+    if "2" in run_phases:
+        phase2_derangement(base_dir, n_contexts, smoke)
+
+    # Phase 3: TF extraction (GPU)
+    if "3" in run_phases:
+        phase3_tf_extract(base_dir, n_contexts, smoke)
+
+    # Phase 4: Ridge refitting
+    if "4" in run_phases:
+        phase4_ridge_refit(base_dir, n_contexts, smoke)
+
+    # Phase 5: Validity diagnostics
+    if "5" in run_phases:
+        phase5_validity_diag(base_dir, n_contexts, smoke)
+
+    # Upload raw completions and eval results to HF
+    if not skip_upload and ("3" in run_phases or "5" in run_phases):
+        log_phase("p_upload")
+        upload_raw_completions(base_dir)
+
+    # Write final sentinel (only when running full or GPU pipeline on pod)
+    if not skip_upload and "3" in run_phases:
+        write_final_sentinel(base_dir, smoke)
 
 
 def main() -> None:
@@ -2001,6 +2345,20 @@ def main() -> None:
         base_dir,
     )
 
+    # ── Crash-recovery harvest path ──────────────────────────────────────────
+    # When --harvest-batch-ids is given, reconstruct Phase 1 output files from
+    # the already-submitted Anthropic batches, upload to HF, then exit.
+    if args.harvest_batch_ids:
+        batch_ids_file = pathlib.Path(args.harvest_batch_ids)
+        assert batch_ids_file.exists(), f"--harvest-batch-ids file not found: {batch_ids_file}"
+        harvest_phase1_batches(base_dir, batch_ids_file, n_contexts)
+        if not args.skip_upload:
+            log_phase("p1_harvest_upload")
+            _upload_phase1_to_hf(base_dir)
+        log_phase("done")
+        logger.info("Phase 1 harvest complete.  Exiting.")
+        return
+
     # Determine which phases to run
     run_phases: set[str] = set()
     if args.phase == "all":
@@ -2013,44 +2371,7 @@ def main() -> None:
         run_phases = {args.phase}
 
     try:
-        # Phase 0: substrate verify + prompt recon
-        if "0" in run_phases:
-            verify_record = phase0_verify(base_dir, n_contexts, args.smoke)
-            logger.info("Phase 0 done: sha256_ok=%s", verify_record["sha256_ok"])
-
-        # Phase 0.5: vLLM Qwen regeneration (GPU)
-        if "0.5" in run_phases:
-            phase05_vllm_regen(base_dir, n_contexts, args.smoke)
-
-        # Phase 1: Sonnet generation
-        if "1" in run_phases:
-            asyncio.run(phase1_sonnet_gen(base_dir, n_contexts, args.smoke))
-
-        # Phase 2: Derangement
-        if "2" in run_phases:
-            phase2_derangement(base_dir, n_contexts, args.smoke)
-
-        # Phase 3: TF extraction (GPU)
-        if "3" in run_phases:
-            phase3_tf_extract(base_dir, n_contexts, args.smoke)
-
-        # Phase 4: Ridge refitting
-        if "4" in run_phases:
-            phase4_ridge_refit(base_dir, n_contexts, args.smoke)
-
-        # Phase 5: Validity diagnostics
-        if "5" in run_phases:
-            phase5_validity_diag(base_dir, n_contexts, args.smoke)
-
-        # Upload raw completions and eval results to HF
-        if not args.skip_upload and ("3" in run_phases or "5" in run_phases):
-            log_phase("p_upload")
-            upload_raw_completions(base_dir)
-
-        # Write final sentinel (only when running full or GPU pipeline on pod)
-        if not args.skip_upload and "3" in run_phases:
-            write_final_sentinel(base_dir, args.smoke)
-
+        _run_phases(run_phases, base_dir, n_contexts, args.smoke, args.skip_upload)
     except Exception:
         logger.exception("Dispatcher failed")
         raise
