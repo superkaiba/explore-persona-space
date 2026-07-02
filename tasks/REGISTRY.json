@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 829,
+  "highest_id": 830,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5361,6 +5361,13 @@
       "path": "tasks/completed/83",
       "status": "completed",
       "title": "[Proposed] Marker-transfer via EM: sarcastic/bad-boy source persona"
+    },
+    "830": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/830",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 TrainerCallback subclass + real-trainer-path smoke"
     },
     "84": {
       "has_clean_result": false,
