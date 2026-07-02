@@ -3311,3 +3311,278 @@ def test_oversize_append_completes_across_short_writes(fake_repo, tmp_path, monk
     assert len(line.encode("utf-8")) > tw._PIPE_BUF
     tw._append_jsonl_line(target, payload)
     assert target.read_text() == line  # full buffer completed
+
+
+# ─── index.lock retry + crash-safe set_status (#898) ────────────────────────
+#
+# Incident #825: a concurrent session held .git/index.lock while set_status
+# ran; the `git add` crash left the folder moved with REGISTRY pointing at
+# the old path — the task was unfindable until a manual `audit --repair`.
+# The fix set: (1) _run_git retries ONCE on the git lock-contention stderr
+# signature; (2) set_status completes ALL durable state (FS move + verify,
+# REGISTRY save, event append) BEFORE any git op; (3) find_task_path scans
+# the tasks/ tree when the registry entry is stale; (4) the ghost-deletion
+# sweep (_task_status_dir_pathspecs) reconciles a crashed transition's
+# leftover old-status dir on the task's NEXT transition; (5) the
+# same-transition early return re-syncs a stale registry entry in place.
+
+
+def _make_index_lock(repo: Path) -> Path:
+    """Create a real .git/index.lock so the repo's own git binary emits the
+    REAL lock-contention error (pins the retry regex against reality)."""
+    lock = repo / ".git" / "index.lock"
+    lock.write_text("")
+    return lock
+
+
+def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
+    """A held index.lock that clears during the backoff sleep resolves via
+    exactly ONE retry, with the jittered delay drawn from the constant range
+    (asserted against tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    lock = _make_index_lock(repo)
+
+    sleeps: list[float] = []
+
+    def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        lock.unlink()  # the concurrent committer finishes during the backoff
+
+    monkeypatch.setattr(tw.time, "sleep", fake_sleep)
+    result = tw._run_git(["add", "--", "somefile.txt"])
+
+    assert result.returncode == 0
+    assert len(sleeps) == 1  # exactly one retry sleep
+    lo, hi = tw._GIT_LOCK_RETRY_SLEEP_RANGE_S
+    assert lo <= sleeps[0] <= hi
+
+
+def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypatch, caplog):
+    """A lock that does NOT clear fails after exactly one retry (never two)
+    with subprocess.CalledProcessError and the stale-lock remedy logged."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    _make_index_lock(repo)  # never removed — retry hits the lock again
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(tw.time, "sleep", lambda d: sleeps.append(d))
+
+    with (
+        caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"),
+        pytest.raises(subprocess.CalledProcessError),
+    ):
+        tw._run_git(["add", "--", "somefile.txt"])
+
+    assert len(sleeps) == 1  # one retry sleep, never a second
+    assert any("index.lock" in r.getMessage() for r in caplog.records)
+
+
+def test_run_git_does_not_retry_non_lock_errors(fake_repo, monkeypatch):
+    """A non-lock git failure (unmatched pathspec) raises immediately with
+    ZERO sleeps — the retry keys on the lock signature only."""
+    _, tw = fake_repo
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep on non-lock error"))
+    with pytest.raises(subprocess.CalledProcessError):
+        tw._run_git(["add", "--", "does-not-exist.txt"], check=True)
+
+
+def test_run_git_check_false_rc_signal_not_retried(fake_repo, monkeypatch):
+    """`diff --cached --quiet` uses rc=1 as a SIGNAL (staged changes exist),
+    with empty stderr — it must pass through un-retried and un-raised."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    subprocess.run(["git", "add", "somefile.txt"], cwd=repo, check=True)
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep on rc-as-signal"))
+
+    result = tw._run_git(["diff", "--cached", "--quiet"], check=False)
+
+    assert result.returncode == 1  # the rc signal survives, no raise
+
+
+def test_run_git_happy_path_no_sleep(fake_repo, monkeypatch):
+    """A SUCCESSFUL _run_git call takes zero sleeps (AC5: zero added
+    happy-path latency)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("sleep on a successful call"))
+    result = tw._run_git(["add", "--", "somefile.txt"])
+    assert result.returncode == 0
+
+
+def _lock_stderr() -> str:
+    return "fatal: Unable to create '/x/.git/index.lock': File exists.\n"
+
+
+def _install_git_add_all_crash(tw, mp: pytest.MonkeyPatch) -> None:
+    """Monkeypatch tw._run_git to crash ONLY on the set_status step-6
+    standalone staging call (`add` + `--all`) — not _git_commit's internal
+    `add` (no `--all`), so the pin cannot drift to the wrong crash point."""
+    real_run_git = tw._run_git
+
+    def crashing_run_git(args, *, check=True):
+        if args and args[0] == "add" and "--all" in args:
+            raise subprocess.CalledProcessError(
+                128, ["git", *args], output="", stderr=_lock_stderr()
+            )
+        return real_run_git(args, check=check)
+
+    mp.setattr(tw, "_run_git", crashing_run_git)
+
+
+def test_set_status_git_add_crash_leaves_registry_consistent_with_disk(fake_repo):
+    """THE #825 regression pin (red on the pre-#898 order): a crash at the
+    step-6 `git add --all` staging must leave disk, REGISTRY, and
+    events.jsonl all consistent with the transition APPLIED, and
+    find_task_path resolving."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # Install the crash injection AFTER task creation (create_task itself
+    # drives _git_commit -> _run_git(["add", ...])).
+    with pytest.MonkeyPatch.context() as mp:
+        _install_git_add_all_crash(tw, mp)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    assert new.is_dir()  # disk: moved
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"  # registry consistent
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(
+        e["kind"] == "epm:status-changed" and e.get("to") == "running" for e in events
+    )  # event appended
+    assert tw.find_task_path(new_id) == new  # still resolvable
+
+
+def test_set_status_git_commit_crash_leaves_registry_consistent_with_disk(fake_repo):
+    """REORDER-SURVIVAL pin (green on the pre-#898 order too, since the
+    registry was already saved before _git_commit under the old order; test
+    above is the sole #825 detector): a _git_commit crash must leave the
+    same consistent disk + REGISTRY + events state."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    def crashing_commit(paths, message):
+        raise subprocess.CalledProcessError(
+            128, ["git", "commit"], output="", stderr=_lock_stderr()
+        )
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(tw, "_git_commit", crashing_commit)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    assert new.is_dir()
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(e["kind"] == "epm:status-changed" and e.get("to") == "running" for e in events)
+    assert tw.find_task_path(new_id) == new
+
+
+def test_find_task_path_stale_registry_entry_falls_back_to_scan(fake_repo, caplog):
+    """A stale registry entry (dir moved on disk, registry not updated — the
+    hard-kill residue shape) resolves via the on-disk scan with a logged
+    drift warning naming REGISTRY + the audit remedy."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    dest = repo / "tasks" / "interpreting" / str(new_id)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(dest))  # registry left pointing at proposed
+
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        path = tw.find_task_path(new_id)
+
+    assert path == dest
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("REGISTRY" in m and "audit" in m for m in messages)
+
+
+def test_find_task_path_ambiguous_duplicate_dirs_raises(fake_repo):
+    """A stale registry entry with the task dir present under TWO statuses is
+    real corruption: raise StaleTaskPathError naming both paths (never guess
+    one silently)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    d1 = repo / "tasks" / "running" / str(new_id)
+    d2 = repo / "tasks" / "verifying" / str(new_id)
+    d1.parent.mkdir(parents=True, exist_ok=True)
+    d2.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(old, d1)
+    shutil.copytree(old, d2)
+    shutil.rmtree(old)  # registry still points at proposed (missing)
+
+    with pytest.raises(tw.StaleTaskPathError) as exc_info:
+        tw.find_task_path(new_id)
+    msg = str(exc_info.value)
+    assert f"tasks/running/{new_id}" in msg
+    assert f"tasks/verifying/{new_id}" in msg
+
+
+def test_set_status_ghost_deletion_swept_by_next_transition(fake_repo):
+    """The BINDING v2 Must-Fix pin (red without the §4.4 sweep): after a
+    git-crash residue on transition A→B, the NEXT transition B→C must sweep
+    the ghost old-status dir out of HEAD — no committed duplicate of the
+    task, no permanent unstaged deletions under tasks/."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # Transition A→B crashes at the step-6 staging: nothing staged/committed;
+    # HEAD still tracks tasks/proposed/<id> (the ghost) while disk has moved on.
+    with pytest.MonkeyPatch.context() as mp:
+        _install_git_add_all_crash(tw, mp)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    # Injection removed — transition B→C must reconcile the residue.
+    tw.set_status(new_id, "verifying")
+
+    def ls_tree(pathspec: str) -> str:
+        return subprocess.run(
+            ["git", "ls-tree", "-r", "HEAD", "--", pathspec],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+    assert ls_tree(f"tasks/proposed/{new_id}") == ""  # ghost swept
+    assert ls_tree(f"tasks/running/{new_id}") == ""  # intermediate swept
+    assert ls_tree(f"tasks/verifying/{new_id}") != ""  # current status committed
+    porcelain = subprocess.run(
+        ["git", "status", "--porcelain", "--", "tasks/"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    dirty = [line for line in porcelain.splitlines() if f"/{new_id}/" in line]
+    assert dirty == [], f"leftover unstaged/uncommitted task paths: {dirty}"
+
+
+def test_set_status_same_transition_retry_resyncs_stale_registry(fake_repo, caplog):
+    """§4.5 pin (red without the early-return re-sync): retrying the SAME
+    transition against a stale registry entry (dir already at the
+    destination, registry pointing at the old path — the hard-kill shape)
+    must re-sync the registry before the idempotent early return."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    dest = repo / "tasks" / "running" / str(new_id)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(dest))  # hard-kill shape: moved, registry stale
+
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        returned = tw.set_status(new_id, "running")  # the SAME transition
+
+    assert returned == dest  # early return fired with the on-disk path
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"  # re-synced
+    assert any("re-synced stale REGISTRY entry" in r.getMessage() for r in caplog.records)
