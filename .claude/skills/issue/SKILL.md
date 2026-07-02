@@ -4181,7 +4181,7 @@ entry guard convention):
    upload-verification PASS. See the two hard joins below.
    **Paper-mode branch (`paper: true` frontmatter).** When the task
    carries `paper: true`, the analyzer runs its PAPER-TASK MODE
-   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   (`.claude/rules/analyzer-paper-mode.md` § PAPER-TASK MODE): the analysis Steps
    1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
    `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
    assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
@@ -4855,7 +4855,7 @@ paper-task's reader-facing prose lives in the `.tex`
 interpretation / Discussion), not a markdown `body.md` to extract — and
 the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
 copula avoidance, classical academic terms) on those paper surfaces
-INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/rules/analyzer-paper-mode.md`
 § PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
 paper-task (analyzer ran inline /humanize academic on the .tex)` so the
 audit log records it, and proceed straight to 9a-ter.
@@ -5029,7 +5029,7 @@ explicit eval-data path):
    true`?** The re-spawned analyzer re-authors the `.tex` in place —
    re-writing the Abstract + the affected Results subsection, re-running
    `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
-   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   `.claude/rules/analyzer-paper-mode.md` § "Same-issue follow-up rounds
    (paper-task)"; the mechanical gate is `verify_paper.py`, not
    `verify_task_body.py`. The same applies to the Step 9b cheap-band /
    same-issue follow-up loop folds.)
