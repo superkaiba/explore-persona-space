@@ -114,11 +114,7 @@ def r_per_layer(
         raise ValueError(f"direction {direction_per_layer.shape} != (L,D)=({L},{D})")
     if target.shape != (n,):
         raise ValueError(f"target {target.shape} != (n,)=({n},)")
-    out = np.empty(L, dtype=np.float64)
-    for layer in range(L):
-        proj = project(activations[:, layer, :], direction_per_layer[layer])
-        out[layer] = _pearson(proj, target)
-    return out
+    return _batched_r_overall(activations, direction_per_layer[None], target)[:, 0]
 
 
 def max_abs_over_layers(r_layers: np.ndarray) -> float:
@@ -135,6 +131,149 @@ def argmax_abs_layer(r_layers: np.ndarray) -> int:
     absr = np.abs(np.asarray(r_layers, dtype=np.float64))
     absr = np.where(np.isnan(absr), -np.inf, absr)
     return int(np.argmax(absr))
+
+
+# ── Batched primitives (issue #834 vectorization) ───────────────────────────────
+#
+# The draw/layer Python loops below were the #722-class overhead-bound hotspot
+# (2+ h at 1000 draws). These helpers batch the ARITHMETIC only; every random
+# quantity is still generated in the exact original loop order (bit-identical
+# rng streams), so seed semantics are frozen (plan v2 §3.1).
+
+_MAX_BATCH_BYTES = 2 * 1024**3  # cap on NEW per-chunk batch buffers (plan v2 §3.4)
+
+
+def _k_chunks(n_draws: int, bytes_per_draw: int):
+    """Yield contiguous ``(start, stop)`` slices of the draw axis.
+
+    Chunk size is set so the projected NEW-buffer footprint stays under
+    ``_MAX_BATCH_BYTES``. Chunking touches arithmetic only — rng generation
+    always runs over the FULL draw range first, so chunk boundaries cannot
+    perturb the stream.
+    """
+    if n_draws <= 0:
+        return
+    per = max(1, int(_MAX_BATCH_BYTES // max(1, bytes_per_draw)))
+    for start in range(0, n_draws, per):
+        yield start, min(start + per, n_draws)
+
+
+def _batched_project(activations: np.ndarray, directions: np.ndarray) -> np.ndarray:
+    """Batched ``project``: ``(n, L, D)`` x ``(K, L, D)`` -> ``(n, L, K)``.
+
+    proj[i, l, k] = (activations[i, l] @ directions[k, l]) / ‖directions[k, l]‖,
+    with proj[:, l, k] = 0 where the norm is 0 (matches ``project``).
+    Per-layer GEMM (L BLAS-3 calls) rather than bare einsum (plan v2 §3.2).
+    """
+    activations = np.asarray(activations, dtype=np.float64)
+    directions = np.asarray(directions, dtype=np.float64)
+    if activations.ndim != 3 or directions.ndim != 3:
+        raise ValueError(f"shapes: activations {activations.shape}, directions {directions.shape}")
+    n, L, D = activations.shape
+    K = directions.shape[0]
+    if directions.shape != (K, L, D):
+        raise ValueError(f"directions {directions.shape} != (K,L,D)=({K},{L},{D})")
+    norms = np.linalg.norm(directions, axis=2)  # (K, L)
+    proj = np.empty((n, L, K), dtype=np.float64)
+    for layer in range(L):
+        proj[:, layer, :] = activations[:, layer, :] @ directions[:, layer, :].T
+    safe = np.where(norms == 0, 1.0, norms)  # (K, L)
+    proj /= safe.T[None, :, :]
+    zero_lk = (norms == 0).T  # (L, K)
+    if zero_lk.any():
+        proj[:, zero_lk] = 0.0
+    return proj
+
+
+def _batched_pearson(proj: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """Batched ``_pearson``: ``(n, L, K)`` x ``(n,)`` -> r ``(L, K)``.
+
+    Same algebra as ``_pearson`` (centered sums of products over n); NaN where
+    n < 3 or either operand's centered sum-of-squares is 0. The reductions run
+    over the LAST (contiguous) axis of a ``(L, K, n)`` transpose so numpy uses
+    the same pairwise summation as the scalar 1-D path — a constant column
+    centers to EXACTLY zero (denom == 0 -> NaN), never to ~1e-18 residue (a
+    strided axis-0 mean falls back to sequential summation and misses the NaN
+    branch).
+    """
+    proj = np.asarray(proj, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    if proj.ndim != 3:
+        raise ValueError(f"proj {proj.shape} is not (n, L, K)")
+    n, L, K = proj.shape
+    if target.shape != (n,):
+        raise ValueError(f"target {target.shape} != (n,)=({n},)")
+    if n < 3:
+        return np.full((L, K), np.nan, dtype=np.float64)
+    tc = target - target.mean()
+    t_ss = float((tc * tc).sum())
+    pt = np.ascontiguousarray(np.moveaxis(proj, 0, -1))  # (L, K, n)
+    pc = pt - pt.mean(axis=-1, keepdims=True)
+    p_ss = (pc * pc).sum(axis=-1)  # (L, K)
+    cov = (pc * tc).sum(axis=-1)  # (L, K); tc broadcasts along n
+    denom = np.sqrt(p_ss * t_ss)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(denom == 0, np.nan, cov / denom)
+
+
+def _batched_r_overall(
+    activations: np.ndarray,
+    directions: np.ndarray,
+    target: np.ndarray,
+) -> np.ndarray:
+    """Batched overall r: ``(n, L, D)`` x ``(K, L, D)`` x ``(n,)`` -> r ``(L, K)``.
+
+    Projects REFERENCE-CENTERED activations (``acts - acts[0]``): Pearson r is
+    exactly shift-invariant, and centering makes identical activation rows
+    EXACT zero rows, so a constant-projection layer yields denom == 0 -> NaN
+    under ANY BLAS kernel (GEMM row-blocking otherwise leaves ~1e-17 residue
+    on identical rows, silently missing the loop path's NaN branch).
+    """
+    activations = np.asarray(activations, dtype=np.float64)
+    proj = _batched_project(activations - activations[0], directions)  # (n, L, K)
+    return _batched_pearson(proj, target)
+
+
+def _batched_within_r(
+    activations: np.ndarray,
+    directions: np.ndarray,
+    target: np.ndarray,
+    condition_ids: np.ndarray,
+) -> np.ndarray:
+    """Batched ``within_condition_r_per_layer``: -> r ``(L, K)``.
+
+    Per-(l, k)-ELEMENT NaN-masked Fisher-z weighting: the loop's
+    ``if np.isnan(r): continue`` drops a NaN group from that (layer[, draw])
+    cell's z_sum AND w_sum while the group still contributes at every other
+    cell — so weights are accumulated with a per-element finite mask, never a
+    wholesale per-group drop (plan v2 §3.2, ensemble Must-Fix). Each group's
+    activations are centered on the group's own first row before projecting
+    (same exact-NaN rationale as ``_batched_r_overall``, at group scope).
+    """
+    activations = np.asarray(activations, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    condition_ids = np.asarray(condition_ids)
+    n, L, _D = activations.shape
+    K = directions.shape[0]
+    if condition_ids.shape != (n,):
+        raise ValueError(f"condition_ids {condition_ids.shape} != (n,)=({n},)")
+    z_sum = np.zeros((L, K), dtype=np.float64)
+    w_sum = np.zeros((L, K), dtype=np.float64)
+    for c in np.unique(condition_ids):
+        mask = condition_ids == c
+        n_c = int(mask.sum())
+        if n_c < 4:
+            continue
+        acts_g = activations[mask]
+        proj_g = _batched_project(acts_g - acts_g[0], directions)  # (n_c, L, K)
+        r_c = _batched_pearson(proj_g, target[mask])  # (L, K); NaN where undefined
+        finite = np.isfinite(r_c)
+        z = np.arctanh(np.clip(r_c, -0.999999, 0.999999))
+        w = float(n_c - 3)  # Fisher-z variance weighting
+        z_sum += np.where(finite, w * z, 0.0)
+        w_sum += np.where(finite, w, 0.0)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(w_sum > 0, np.tanh(z_sum / w_sum), np.nan)
 
 
 # ── Within-condition r (monitoring only) ────────────────────────────────────────
@@ -161,32 +300,34 @@ def within_condition_r_per_layer(
     direction_per_layer = np.asarray(direction_per_layer, dtype=np.float64)
     target = np.asarray(target, dtype=np.float64)
     condition_ids = np.asarray(condition_ids)
-    n, L, _ = activations.shape
+    n = activations.shape[0]
     if condition_ids.shape != (n,):
         raise ValueError(f"condition_ids {condition_ids.shape} != (n,)=({n},)")
-    uniq = np.unique(condition_ids)
-    out = np.empty(L, dtype=np.float64)
-    for layer in range(L):
-        proj = project(activations[:, layer, :], direction_per_layer[layer])
-        z_sum = 0.0
-        w_sum = 0.0
-        for c in uniq:
-            mask = condition_ids == c
-            if mask.sum() < 4:
-                continue
-            r = _pearson(proj[mask], target[mask])
-            if np.isnan(r):
-                continue
-            r = float(np.clip(r, -0.999999, 0.999999))
-            z = np.arctanh(r)
-            w = mask.sum() - 3  # Fisher-z variance weighting
-            z_sum += w * z
-            w_sum += w
-        out[layer] = np.tanh(z_sum / w_sum) if w_sum > 0 else float("nan")
-    return out
+    return _batched_within_r(activations, direction_per_layer[None], target, condition_ids)[:, 0]
 
 
 # ── Null 1: shuffled-label permutation (gold standard) ─────────────────────────
+
+
+def _perm_directions(pool: np.ndarray, perms: np.ndarray, n_pos: int) -> np.ndarray:
+    """Diff-of-means directions for K label shuffles as ONE GEMM.
+
+    ``pool (n_total, L, D)``, ``perms (K, n_total)`` int -> dirs ``(K, L, D)``.
+    Builds W ``(K, n_total)`` with W[k, perms[k, :n_pos]] = 1/n_pos and
+    W[k, perms[k, n_pos:]] = -1/n_neg, so ``W @ pool.reshape(n_total, L*D)``
+    is ``fake_pos.mean(0) - fake_neg.mean(0)`` for every shuffle at once.
+    """
+    pool = np.asarray(pool, dtype=np.float64)
+    n_total, L, D = pool.shape
+    K = perms.shape[0]
+    n_neg = n_total - n_pos
+    # Degenerate empty side -> NaN directions (mirrors the loop's empty-mean NaN).
+    pos_w = 1.0 / n_pos if n_pos > 0 else np.nan
+    neg_w = -1.0 / n_neg if n_neg > 0 else np.nan
+    W = np.zeros((K, n_total), dtype=np.float64)
+    np.put_along_axis(W, perms[:, :n_pos], pos_w, axis=1)
+    np.put_along_axis(W, perms[:, n_pos:], neg_w, axis=1)
+    return (W @ pool.reshape(n_total, L * D)).reshape(K, L, D)
 
 
 def perm_null_draws(
@@ -220,24 +361,28 @@ def perm_null_draws(
     """
     pos_acts = np.asarray(pos_acts, dtype=np.float64)
     neg_acts = np.asarray(neg_acts, dtype=np.float64)
-    n_pos, L, _D = pos_acts.shape
-    n_neg = neg_acts.shape[0]
+    predictor_acts = np.asarray(predictor_acts, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    n_pos, L, D = pos_acts.shape
     pool = np.concatenate([pos_acts, neg_acts], axis=0)  # (n_pos+n_neg, L, D)
-    n_total = n_pos + n_neg
+    n_total = pool.shape[0]
     rng = np.random.default_rng(seed)
+    # RNG in the EXACT original loop order over the FULL draw range (plan v2
+    # §3.1): one rng.permutation(n_total) per draw, before any chunked
+    # arithmetic — bit-identical stream to the loop version.
+    if n_draws == 0:
+        return np.empty((0, L), dtype=np.float64)
+    perms = np.stack([rng.permutation(n_total) for _ in range(n_draws)])  # (K, n_total)
     out = np.empty((n_draws, L), dtype=np.float64)
-    for d in range(n_draws):
-        perm = rng.permutation(n_total)
-        fake_pos = pool[perm[:n_pos]]
-        fake_neg = pool[perm[n_pos:]]
-        direction = fake_pos.mean(axis=0) - fake_neg.mean(axis=0)  # (L, D)
+    n_pred = predictor_acts.shape[0]
+    bytes_per_draw = L * D * 8 + 4 * n_pred * L * 8  # dirs + proj + pearson temps (§3.4)
+    for start, stop in _k_chunks(n_draws, bytes_per_draw):
+        dirs = _perm_directions(pool, perms[start:stop], n_pos)  # (k, L, D)
         if within:
-            r_layers = within_condition_r_per_layer(
-                predictor_acts, direction, target, condition_ids
-            )
+            r = _batched_within_r(predictor_acts, dirs, target, condition_ids)  # (L, k)
         else:
-            r_layers = r_per_layer(predictor_acts, direction, target)
-        out[d] = np.abs(r_layers)
+            r = _batched_r_overall(predictor_acts, dirs, target)  # (L, k)
+        out[start:stop] = np.abs(r).T
     return out
 
 
@@ -289,31 +434,43 @@ def randnorm_null_draws(
     Returns:
         ``(n_draws, L)`` |r| matrix.
     """
+    predictor_acts = np.asarray(predictor_acts, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    rb_norm_per_layer = np.asarray(rb_norm_per_layer, dtype=np.float64)
     L = predictor_acts.shape[1]
     rng = np.random.default_rng(seed)
-    # Precompute Cholesky per layer (expensive; do once).
+    # Precompute Cholesky per layer (expensive; do once — rng-free, so the
+    # stream position at the first draw is unchanged).
     chols: dict[int, np.ndarray] = {}
     for layer in range(L):
         chols[layer] = _shrunk_cholesky(pool_acts_per_layer[layer], lam)
-    out = np.empty((n_draws, L), dtype=np.float64)
     D = predictor_acts.shape[2]
+    if n_draws == 0:
+        return np.empty((0, L), dtype=np.float64)
+    # RNG in the EXACT original loop order over the FULL draw range (plan v2
+    # §3.1): one rng.standard_normal(D) per (draw, layer), draw-major /
+    # layer-minor — bit-identical stream to the loop version.
+    z_stack = np.empty((n_draws, L, D), dtype=np.float64)
     for d in range(n_draws):
-        direction = np.empty((L, D), dtype=np.float64)
         for layer in range(L):
-            z = rng.standard_normal(D)
-            v = chols[layer] @ z
-            vn = np.linalg.norm(v)
-            if vn == 0:
-                direction[layer] = v
-            else:
-                direction[layer] = v / vn * rb_norm_per_layer[layer]
+            z_stack[d, layer] = rng.standard_normal(D)
+    out = np.empty((n_draws, L), dtype=np.float64)
+    n_pred = predictor_acts.shape[0]
+    bytes_per_draw = 2 * L * D * 8 + 4 * n_pred * L * 8  # Z + dirs + proj + pearson temps (§3.4)
+    for start, stop in _k_chunks(n_draws, bytes_per_draw):
+        k = stop - start
+        dirs = np.empty((k, L, D), dtype=np.float64)
+        for layer in range(L):
+            v = z_stack[start:stop, layer, :] @ chols[layer].T  # rows == chols[layer] @ z
+            vn = np.linalg.norm(v, axis=1)  # (k,)
+            # vn == 0 rows keep v unscaled (v is the zero vector) — matches the loop.
+            scale = np.where(vn == 0, 1.0, rb_norm_per_layer[layer] / np.where(vn == 0, 1.0, vn))
+            dirs[:, layer, :] = v * scale[:, None]
         if within:
-            r_layers = within_condition_r_per_layer(
-                predictor_acts, direction, target, condition_ids
-            )
+            r = _batched_within_r(predictor_acts, dirs, target, condition_ids)  # (L, k)
         else:
-            r_layers = r_per_layer(predictor_acts, direction, target)
-        out[d] = np.abs(r_layers)
+            r = _batched_r_overall(predictor_acts, dirs, target)  # (L, k)
+        out[start:stop] = np.abs(r).T
     return out
 
 
@@ -432,10 +589,21 @@ def bootstrap_ci_matched_r(
     n = predictor_acts.shape[0]
     proj = project(predictor_acts[:, selected_layer, :], rb_per_layer[selected_layer])
     rng = np.random.default_rng(seed)
-    boots = np.empty(n_boot, dtype=np.float64)
-    for b in range(n_boot):
-        idx = rng.integers(0, n, size=n)
-        boots[b] = _pearson(proj[idx], target[idx])
+    if n_boot <= 0:
+        return (float("nan"), float("nan"))
+    # RNG in the EXACT original loop order over the FULL draw range (plan v2
+    # §3.1): one rng.integers(0, n, size=n) per bootstrap draw.
+    idx = np.stack([rng.integers(0, n, size=n) for _ in range(n_boot)])  # (n_boot, n)
+    if n < 3:
+        boots = np.full(n_boot, np.nan, dtype=np.float64)
+    else:
+        x = proj[idx]  # (n_boot, n)
+        y = target[idx]  # (n_boot, n)
+        xc = x - x.mean(axis=1, keepdims=True)
+        yc = y - y.mean(axis=1, keepdims=True)
+        denom = np.sqrt((xc * xc).sum(axis=1) * (yc * yc).sum(axis=1))
+        with np.errstate(invalid="ignore", divide="ignore"):
+            boots = np.where(denom == 0, np.nan, (xc * yc).sum(axis=1) / denom)
     valid = boots[~np.isnan(boots)]
     if valid.size == 0:
         return (float("nan"), float("nan"))
