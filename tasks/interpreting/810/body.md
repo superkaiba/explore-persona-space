@@ -1,6 +1,7 @@
 ---
-title: Which answer-side position/summary gives the strongest base context->answer
-  map (mean vs last vs turn-boundary vs per-position)
+title: Max-pooling — not the turn-boundary token — is the strongest late-layer answer-side
+  summary for the base context→answer map, and no summary rescues behavior read-out
+  (MODERATE confidence)
 kind: experiment
 tags:
 - answer-summary-sweep
