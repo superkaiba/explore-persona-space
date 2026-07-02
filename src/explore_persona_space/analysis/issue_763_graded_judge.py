@@ -167,9 +167,10 @@ def load_rubric_v2_exemplars(path: str | None = None) -> dict[str, dict]:
 
     Fail-loud when the config is missing: the v2 rubric is UNDEFINED without its
     observed exemplars (run ``scripts/issue763_select_reanchor_exemplars.py``
-    first). Each entry carries ``excerpt`` (the verbatim ≤120-word text the
-    rubric embeds) + provenance ``{context_id, probe_sha256, parent_graded,
-    parent_e0, truncated}``.
+    first). Each entry carries ``excerpt`` (verbatim text — a completion of
+    ≤160 words is kept whole; a longer one is a head+tail cut of the first 100
+    + an elision marker + the last 60 words, ~163 words total) + provenance
+    ``{context_id, probe_sha256, parent_graded, parent_e0, truncated}``.
     """
     p = Path(path) if path is not None else RUBRIC_V2_EXEMPLARS_PATH
     if not p.exists():

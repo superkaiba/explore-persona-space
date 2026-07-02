@@ -558,9 +558,12 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
             # The parent fit's realized binary precision weight (_e0_vectors
             # prefers n_graded): frozen alongside the copied verdicts so the §4
             # binary_repro_check reproduces the parent fit exactly by construction.
-            out[ctx_id]["binary_weight_n"] = base_e0_per_ctx[ctx_id].get(
-                "n_graded"
-            ) or base_e0_per_ctx[ctx_id].get("n_judged")
+            # `is None` (not falsy-or): a literal 0 n_graded must not silently
+            # fall through to n_judged (code-review round-1 minor).
+            _parent_ng = base_e0_per_ctx[ctx_id].get("n_graded")
+            out[ctx_id]["binary_weight_n"] = (
+                _parent_ng if _parent_ng is not None else base_e0_per_ctx[ctx_id].get("n_judged")
+            )
         if graded_mean is not None and rate is not None:
             ctx_graded_means.append(graded_mean)
             ctx_binary_rates.append(rate)

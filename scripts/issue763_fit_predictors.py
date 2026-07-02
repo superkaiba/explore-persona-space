@@ -1004,6 +1004,19 @@ def _assemble_results(ckpt_dir: Path, fresh: dict[str, dict]) -> dict[str, dict]
     return results
 
 
+def _binary_control_ref_record(ref: dict, behavior: str) -> dict:
+    """Extract the per-behavior parent record from a ``--binary-control-ref`` blob.
+
+    Accepts either a bare ``fit_by_behavior/<b>.json`` record (returned as-is —
+    a fit record has no behavior-named keys) or a full
+    ``matched_predictor_results.json`` (unwrapped via ``by_behavior`` →
+    ``behavior``). Shared by the fresh-fit and checkpoint-resume control sites
+    so both validate against the identical reference record.
+    """
+    rec = ref.get("by_behavior", ref)
+    return rec.get(behavior, rec) if isinstance(rec, dict) else rec
+
+
 def _assert_binary_control(rec: dict, ref_rec: dict, behavior: str, tol: float) -> None:
     """§4 ``binary_repro_check``: the refit's binary companion reproduces the parent.
 
@@ -1215,7 +1228,13 @@ def main() -> int:
     # per-behavior JSON already exists — the final matched_predictor_results.json is
     # assembled from results{} (checkpoint-loaded + freshly fit). Smoke runs use
     # reduced perms/boot, so they neither read nor write checkpoints (a smoke
-    # checkpoint must never satisfy a production resume).
+    # checkpoint must never satisfy a production resume). BLOCKER
+    # binary-control-checkpoint-resume-skip (reanchor review round 1): whenever
+    # --binary-control-ref is provided, the §4 binary_repro_check positive control
+    # binds on checkpoint-LOADED records too (resume never bypasses it), and a
+    # fresh record is checkpointed only AFTER the control passes (a record that
+    # fails the registered acceptance control must never land on disk where a
+    # crash→rerun resume or _assemble_results would ship it at rc=0).
     ckpt_dir = out_dir / "fit_by_behavior"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1227,7 +1246,21 @@ def main() -> int:
     for behavior in args.behaviors:
         ckpt_path = ckpt_dir / f"{behavior}.json"
         if not args.smoke and ckpt_path.exists():
-            results[behavior] = load_json(ckpt_path)
+            rec = load_json(ckpt_path)
+            # §4 binary_repro_check on RESUME (blocker fix, leg 1): a loaded
+            # checkpoint carries rho_binary_GLM/rho_binary_ridge, so it is
+            # validated against the parent exactly like a fresh fit — this
+            # covers the checkpoint an earlier invocation wrote WITHOUT the
+            # flag (the plan-§3d-command sequence) as well as any stale/bad
+            # round checkpoint. Fail-loud RuntimeError, never a skip-log.
+            if binary_control_ref is not None:
+                _assert_binary_control(
+                    rec,
+                    _binary_control_ref_record(binary_control_ref, behavior),
+                    behavior,
+                    args.binary_control_tol,
+                )
+            results[behavior] = rec
             logger.info("[fit] %s: per-behavior checkpoint exists — skipping refit", behavior)
             continue
         v0, ctx_ids = _load_v0(behavior)
@@ -1244,6 +1277,17 @@ def main() -> int:
             behavior, v0, ctx_ids, e0, rb_blob, n_perms=n_perms, n_boot=n_boot, pool_m=pool_m
         )
         results[behavior] = rec
+        # §4 binary_repro_check positive control (reanchor round): the refit's
+        # binary companion must reproduce the parent record within tolerance.
+        # Runs BEFORE the checkpoint persist (blocker fix, leg 2): a failing
+        # record never lands on disk, so a crash→rerun resume cannot ship it.
+        if binary_control_ref is not None:
+            _assert_binary_control(
+                rec,
+                _binary_control_ref_record(binary_control_ref, behavior),
+                behavior,
+                args.binary_control_tol,
+            )
         if not args.smoke:
             dump_json(rec, ckpt_path)
         logger.info(
@@ -1258,12 +1302,6 @@ def main() -> int:
             rec.get("rho_binary_GLM"),
             rec.get("triage_verdict_binary"),
         )
-        # §4 binary_repro_check positive control (reanchor round): the refit's
-        # binary companion must reproduce the parent record within tolerance.
-        if binary_control_ref is not None:
-            ref_rec = binary_control_ref.get("by_behavior", binary_control_ref)
-            ref_rec = ref_rec.get(behavior, ref_rec) if isinstance(ref_rec, dict) else ref_rec
-            _assert_binary_control(rec, ref_rec, behavior, args.binary_control_tol)
         # smoke schema asserts (plan §10 smoke): the PRIMARY is graded-ridge.
         if args.smoke and rec.get("rho_graded_ridge") is not None:
             assert np.isfinite(rec["rho_graded_ridge"]), "rho_graded_ridge not finite"
