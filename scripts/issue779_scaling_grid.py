@@ -34,8 +34,17 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
+import time
 from pathlib import Path
+
+# Shared-VM BLAS thread caps (the #847 pattern): this worktree's orchestrate.env
+# predates the setdefault, and OpenBLAS/MKL freeze their pools at IMPORT — so cap
+# BEFORE numpy/torch are imported. An explicit launch-time env still wins
+# (setdefault). The 13:48/13:58 stopped runs held 78 uncapped threads (v79).
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_v, "8")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -45,6 +54,8 @@ import issue779_common as C  # noqa: E402
 import issue779_stage1 as S  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
+
+torch.set_num_threads(int(os.environ["OMP_NUM_THREADS"]))
 
 from explore_persona_space.experiments.issue_779 import scaling_grid as SG  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
@@ -212,6 +223,7 @@ def load_corpus_source(
     *,
     max_lmsys: int | None = None,
     behavior_agg: str = BEHAVIOR_AGG_HEADLINE,
+    cb: dict | None = None,
 ) -> SG.TrainSource:
     """Build a TrainSource at one read-out layer from cached + generated tensors.
 
@@ -228,6 +240,11 @@ def load_corpus_source(
     ``max_lmsys`` caps the LMSYS rows loaded (the first-N contexts, keeping the
     deterministic pass_b order + label alignment) — used ONLY in --smoke to keep
     the full-N ridge SVD tractable; None (default) loads all 5000.
+
+    ``cb``: a PRE-LOADED corpus bundle (v79 fix 7 — the multi-GB
+    ``{trait}_corpus.pt`` is ``torch.load``ed ONCE per trait by the caller and
+    passed here; run_layer_matrix alone used to re-load it 28x per trait,
+    ~300 GB of redundant disk reads). None -> load from disk (back-compat).
     """
     layers = list(lmsys_bundle["layers"])
     li = layers.index(layer_idx)
@@ -250,7 +267,8 @@ def load_corpus_source(
     # Behavior corpus (aggregated to one row per context by behavior_agg).
     bundle_path = corpus_dir / f"{trait}_corpus.pt"
     scores_path = corpus_dir / f"{trait}_judge_scores.json"
-    cb = torch.load(bundle_path, weights_only=False)
+    if cb is None:
+        cb = torch.load(bundle_path, weights_only=False)
     clayers = list(cb["layers"])
     cli = clayers.index(layer_idx)
     with open(scores_path) as f:
@@ -358,7 +376,8 @@ def run_arm_comparison(
     for arm, (nL, nB, up) in arms.items():
         ct = SG.assemble_cell_train(src, nL, nB, rng, upsample_1to1=up)
         h = SG.fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l)
-        g, g_n_dropped = SG.fit_g_cell(ct["X"], ct["y"], eval_mat)
+        # g shares h's decomposition when no NaN label is dropped (v79 fix 3).
+        g, g_n_dropped = SG.fit_g_cell(ct["X"], ct["y"], eval_mat, h_fit=h["fit"])
         # ONE compact SVD of W per arm (O(H r^2) via the low-rank factors P/Q),
         # shared by both pv_pinv reads AND the persisted fit state (the SVD is the
         # dominant pv_pinv cost; the dense H x H SVD is ~thousands of times slower).
@@ -416,6 +435,7 @@ def run_layer_matrix(
     n_shuffle: int,
     seed: int,
     max_lmsys: int | None = None,
+    cb: dict | None = None,
 ) -> dict:
     """The arm-B-minus-arm-A within-condition-r headline read at EVERY layer.
 
@@ -436,13 +456,14 @@ def run_layer_matrix(
         rb_l = r_b_full[layer_idx]
         eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
         src = load_corpus_source(
-            corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx, max_lmsys=max_lmsys
+            corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx, max_lmsys=max_lmsys, cb=cb
         )
         subrng = np.random.default_rng(seed + layer_idx)
         ct_a = SG.assemble_cell_train(src, src.n_lmsys(), 0, subrng)
         ct_b = SG.assemble_cell_train(src, 0, src.n_beh(), subrng)
-        ha = SG.fit_h_cell(ct_a["X"], ct_a["Y"], eval_mat, rb_l)
-        hb = SG.fit_h_cell(ct_b["X"], ct_b["Y"], eval_mat, rb_l)
+        # need_W=False: the layer matrix consumes only the dot readouts.
+        ha = SG.fit_h_cell(ct_a["X"], ct_a["Y"], eval_mat, rb_l, need_W=False)
+        hb = SG.fit_h_cell(ct_b["X"], ct_b["Y"], eval_mat, rb_l, need_W=False)
         ra = _readout_r(ha["dot"], eval_mat, n_boot=1, seed=seed)
         rb = _readout_r(hb["dot"], eval_mat, n_boot=1, seed=seed)
         for m in MODES:
@@ -472,6 +493,18 @@ def _safe(v) -> float:
     return float(v) if v is not None and np.isfinite(v) else float("nan")
 
 
+def _rss_gb() -> float:
+    """Current process resident set size in GB (observability; /proc read)."""
+    try:
+        with open("/proc/self/status") as f:
+            for ln in f:
+                if ln.startswith("VmRSS:"):
+                    return int(ln.split()[1]) / 1e6
+    except OSError:
+        pass
+    return float("nan")
+
+
 def _shuffle_within_condition(
     y: np.ndarray, cond: np.ndarray, rng: np.random.Generator
 ) -> np.ndarray:
@@ -486,7 +519,7 @@ def _shuffle_within_condition(
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component gating reads clearest inline
     ap = argparse.ArgumentParser(description="Issue #779 2D scaling grid + arm comparison.")
     ap.add_argument("--traits", nargs="+", default=list(C.TRAITS))
     ap.add_argument(
@@ -550,7 +583,37 @@ def main() -> int:
     ap.add_argument(
         "--verify-vectorized",
         action="store_true",
-        help="run the vectorized_mlp_skill serial-reference equivalence check first",
+        help=(
+            "run the equivalence gates first: the LIVE eigh ridge path vs the "
+            "numpy-SVD serial reference (verify_live_ridge, v79 fix 6) + the "
+            "vectorized_mlp_skill serial-reference check"
+        ),
+    )
+    ap.add_argument(
+        "--components",
+        nargs="+",
+        default=["arm_comparison", "grid", "layer_matrix", "g_holdout"],
+        choices=["arm_comparison", "grid", "layer_matrix", "g_holdout"],
+        help=(
+            "which deliverables to compute (v81 interior-only relaunch: "
+            "--components grid --skip-edges). Skipped components' JSONs are NOT "
+            "written (never clobbered with empty skeletons)."
+        ),
+    )
+    ap.add_argument(
+        "--skip-edges",
+        action="store_true",
+        help="grid: drop the nL==0 / nB==0 edge cells (edges computed main-side; v81)",
+    )
+    ap.add_argument(
+        "--grid-variants",
+        nargs="+",
+        default=["natural", "1to1", "secondary"],
+        choices=["natural", "1to1", "secondary"],
+        help=(
+            "which scaling-grid variants to compute "
+            "(headline natural / 1:1-upsample / secondary 10-rollout)"
+        ),
     )
     ap.add_argument("--smoke", action="store_true", help="tiny grid + reduced boot (wiring smoke)")
     args = ap.parse_args()
@@ -558,6 +621,8 @@ def main() -> int:
     if args.verify_vectorized:
         from explore_persona_space.analysis.vectorized_mlp_skill import assert_matches_reference
 
+        res_live = SG.verify_live_ridge()
+        logger.info("live-ridge (eigh vs numpy-SVD reference) equivalence: %s", res_live)
         res = assert_matches_reference()
         logger.info("vectorized_mlp_skill serial-reference check: %s", res)
 
@@ -619,15 +684,45 @@ def main() -> int:
         "meta": C.reproducibility_metadata({"script": "issue779_scaling_grid"}),
     }
 
+    components = set(args.components)
+    grid_variants = set(args.grid_variants)
+
+    def _grid(src_v, eval_mat, rb_l, **kw):
+        return SG.run_scaling_grid(
+            src_v,
+            eval_mat,
+            rb_l,
+            n_lmsys_grid=n_lmsys_grid,
+            n_behavior_grid=n_behavior_grid,
+            k_subsamples=k_sub,
+            n_boot=n_boot,
+            base_seed=args.seed,
+            skip_edges=args.skip_edges,
+            **kw,
+        )
+
     for trait in args.traits:
+        t0 = time.time()
         r_b_full = S._load_rb(rb_dir, trait, args.n_layers, args.hidden)  # (L, H)
         cells = S.load_eval_cells(pass_a_dir, trait)
         # per-mode frozen layer; use SYSTEM-mode layer for the primary read + record both.
         fl = frozen.get(trait, {"system": args.n_layers // 2, "many_shot": args.n_layers // 2})
-        # Read at each mode's own frozen layer, aggregating into one comparison.
-        arm_comparison["traits"][trait] = {}
-        scaling["traits"][trait] = {}
-        g_holdout["traits"][trait] = {}
+        # v79 fix 7: torch.load the multi-GB corpus bundle ONCE per trait and
+        # thread it through every consumer (headline + secondary sources x 2
+        # modes + the 28-layer matrix used to re-load it 84x per trait). ONE
+        # bundle resident at a time (freed before the next trait's load).
+        need_src = bool({"arm_comparison", "grid"} & components)
+        need_bundle = need_src or ("layer_matrix" in components)
+        corpus_bundle = None
+        if need_bundle:
+            corpus_bundle = torch.load(args.corpus_dir / f"{trait}_corpus.pt", weights_only=False)
+            logger.info("[%s] corpus bundle loaded once (RSS %.1f GB)", trait, _rss_gb())
+        if "arm_comparison" in components:
+            arm_comparison["traits"][trait] = {}
+        if "grid" in components:
+            scaling["traits"][trait] = {}
+        if "g_holdout" in components:
+            g_holdout["traits"][trait] = {}
         for mode in MODES:
             layer_idx = fl[mode]
             rb_l = r_b_full[layer_idx]
@@ -635,134 +730,139 @@ def main() -> int:
             # HEADLINE (PRIMARY) behavior source: 1 rollout/context, fixed seed —
             # matched to Arm A's 1 sample/context, so N_behavior counts CONTEXTS
             # (answer-multiplicity equalization, plan v6 §6.1).
-            src = load_corpus_source(
-                args.corpus_dir,
-                lmsys_bundle,
-                lmsys_g_labels,
-                trait,
-                layer_idx,
-                max_lmsys=max_lmsys,
-                behavior_agg=BEHAVIOR_AGG_HEADLINE,
-            )
-            logger.info(
-                "[%s/%s @L%d] eval rows=%d, LMSYS=%d, behavior(contexts)=%d",
-                trait,
-                mode,
-                layer_idx,
-                eval_mat["c_last"].shape[0],
-                src.n_lmsys(),
-                src.n_beh(),
-            )
-            ac = run_arm_comparison(
-                src, eval_mat, rb_l, n_boot=n_boot, seed=args.seed, pinv_rank=args.pinv_rank
-            )
-            grid = SG.run_scaling_grid(
-                src,
-                eval_mat,
-                rb_l,
-                n_lmsys_grid=n_lmsys_grid,
-                n_behavior_grid=n_behavior_grid,
-                k_subsamples=k_sub,
-                n_boot=n_boot,
-                base_seed=args.seed,
-            )
-            grid_1to1 = SG.run_scaling_grid(
-                src,
-                eval_mat,
-                rb_l,
-                n_lmsys_grid=n_lmsys_grid,
-                n_behavior_grid=n_behavior_grid,
-                k_subsamples=k_sub,
-                n_boot=n_boot,
-                base_seed=args.seed,
-                upsample_1to1=True,
-            )
+            src = None
+            if need_src:
+                src = load_corpus_source(
+                    args.corpus_dir,
+                    lmsys_bundle,
+                    lmsys_g_labels,
+                    trait,
+                    layer_idx,
+                    max_lmsys=max_lmsys,
+                    behavior_agg=BEHAVIOR_AGG_HEADLINE,
+                    cb=corpus_bundle,
+                )
+                logger.info(
+                    "[%s/%s @L%d] eval rows=%d, LMSYS=%d, behavior(contexts)=%d",
+                    trait,
+                    mode,
+                    layer_idx,
+                    eval_mat["c_last"].shape[0],
+                    src.n_lmsys(),
+                    src.n_beh(),
+                )
             # SECONDARY behavior source: 10-rollout-mean v(x)/label per context.
             # Kept as a separately-keyed secondary read so the answer-multiplicity
             # confound is bounded, not baked into the headline (plan v6 §6.1).
-            src_sec = load_corpus_source(
+            need_sec = ("arm_comparison" in components) or (
+                "grid" in components and "secondary" in grid_variants
+            )
+            src_sec = None
+            if need_sec:
+                src_sec = load_corpus_source(
+                    args.corpus_dir,
+                    lmsys_bundle,
+                    lmsys_g_labels,
+                    trait,
+                    layer_idx,
+                    max_lmsys=max_lmsys,
+                    behavior_agg=BEHAVIOR_AGG_SECONDARY,
+                    cb=corpus_bundle,
+                )
+            if "arm_comparison" in components:
+                ac = run_arm_comparison(
+                    src, eval_mat, rb_l, n_boot=n_boot, seed=args.seed, pinv_rank=args.pinv_rank
+                )
+                ac_sec = run_arm_comparison(
+                    src_sec,
+                    eval_mat,
+                    rb_l,
+                    n_boot=n_boot,
+                    seed=args.seed,
+                    pinv_rank=args.pinv_rank,
+                )
+                arm_comparison["traits"][trait][mode] = {
+                    "frozen_layer": layer_idx,
+                    "behavior_agg": BEHAVIOR_AGG_HEADLINE,
+                    **ac,
+                    "secondary_10rollout": {"behavior_agg": BEHAVIOR_AGG_SECONDARY, **ac_sec},
+                }
+            if "grid" in components:
+                entry = {"frozen_layer": layer_idx, "behavior_agg": BEHAVIOR_AGG_HEADLINE}
+                if "natural" in grid_variants:
+                    entry["natural"] = _grid(src, eval_mat, rb_l)
+                if "1to1" in grid_variants:
+                    entry["upsample_1to1"] = _grid(src, eval_mat, rb_l, upsample_1to1=True)
+                if "secondary" in grid_variants:
+                    entry["secondary_10rollout"] = {
+                        "behavior_agg": BEHAVIOR_AGG_SECONDARY,
+                        "natural": _grid(src_sec, eval_mat, rb_l),
+                    }
+                scaling["traits"][trait][mode] = entry
+            if "g_holdout" in components:
+                # g_holdout_question keyed per (trait, mode, arm, fold) (MINOR 8). The
+                # leakage-free direct predictor is fit on the EVAL contexts' c_last ->
+                # trait (K-fold over the 20 eval questions), so it is ARM-INVARIANT by
+                # construction (it never touches an arm's training source — that IS the
+                # leakage-free property, plan §4.6). We therefore key the SAME eval-fold
+                # g result under every arm so the JSON matches the primary-deliverable
+                # (trait, mode, arm, fold) contract; the arm_invariant flag records why.
+                gho = SG.run_g_holdout_question(
+                    eval_mat, k_folds=args.k_folds, n_boot=n_boot, base_seed=args.seed
+                )
+                g_holdout["traits"][trait][mode] = {
+                    "frozen_layer": layer_idx,
+                    "arm_invariant": True,
+                    "arm_invariant_note": (
+                        "held-out-question g is fit on EVAL-context c_last->trait "
+                        "(K-fold over the 20 eval questions), never on an arm's "
+                        "training source; it is identical across arms by construction "
+                        "(the leakage-free property). Keyed per arm to match the "
+                        "primary-deliverable (trait, mode, arm, fold) contract."
+                    ),
+                    "arms": {arm: gho for arm in ARM_KEYS},
+                }
+            # checkpoint per (trait, mode) — ONLY the components that ran (a
+            # skipped component's JSON is never clobbered with an empty skeleton)
+            if "arm_comparison" in components:
+                C.write_json_atomic(args.out_dir / "arm_comparison.json", arm_comparison)
+            if "grid" in components:
+                C.write_json_atomic(args.out_dir / "scaling_grid.json", scaling)
+            if "g_holdout" in components:
+                C.write_json_atomic(args.out_dir / "g_holdout_question.json", g_holdout)
+            logger.info(
+                "[%s/%s] block done in %.1fs (RSS %.1f GB)",
+                trait,
+                mode,
+                time.time() - t0,
+                _rss_gb(),
+            )
+
+        if "layer_matrix" in components:
+            # per-layer selection-symmetric matrix (all 28 layers in a real run;
+            # the per-trait frozen layers only under --smoke for tractability).
+            lm_layers = sorted(set(fl.values())) if args.smoke else layers_all
+            layer_matrix["traits"][trait] = run_layer_matrix(
                 args.corpus_dir,
                 lmsys_bundle,
                 lmsys_g_labels,
+                cells,
+                r_b_full,
                 trait,
-                layer_idx,
-                max_lmsys=max_lmsys,
-                behavior_agg=BEHAVIOR_AGG_SECONDARY,
-            )
-            ac_sec = run_arm_comparison(
-                src_sec, eval_mat, rb_l, n_boot=n_boot, seed=args.seed, pinv_rank=args.pinv_rank
-            )
-            grid_sec = SG.run_scaling_grid(
-                src_sec,
-                eval_mat,
-                rb_l,
-                n_lmsys_grid=n_lmsys_grid,
-                n_behavior_grid=n_behavior_grid,
-                k_subsamples=k_sub,
+                layers=lm_layers,
                 n_boot=n_boot,
-                base_seed=args.seed,
+                n_shuffle=n_shuffle,
+                seed=args.seed,
+                max_lmsys=max_lmsys,
+                cb=corpus_bundle,
             )
-            arm_comparison["traits"][trait][mode] = {
-                "frozen_layer": layer_idx,
-                "behavior_agg": BEHAVIOR_AGG_HEADLINE,
-                **ac,
-                "secondary_10rollout": {"behavior_agg": BEHAVIOR_AGG_SECONDARY, **ac_sec},
-            }
-            scaling["traits"][trait][mode] = {
-                "frozen_layer": layer_idx,
-                "behavior_agg": BEHAVIOR_AGG_HEADLINE,
-                "natural": grid,
-                "upsample_1to1": grid_1to1,
-                "secondary_10rollout": {
-                    "behavior_agg": BEHAVIOR_AGG_SECONDARY,
-                    "natural": grid_sec,
-                },
-            }
-            # g_holdout_question keyed per (trait, mode, arm, fold) (MINOR 8). The
-            # leakage-free direct predictor is fit on the EVAL contexts' c_last ->
-            # trait (K-fold over the 20 eval questions), so it is ARM-INVARIANT by
-            # construction (it never touches an arm's training source — that IS the
-            # leakage-free property, plan §4.6). We therefore key the SAME eval-fold
-            # g result under every arm so the JSON matches the primary-deliverable
-            # (trait, mode, arm, fold) contract; the arm_invariant flag records why.
-            gho = SG.run_g_holdout_question(
-                eval_mat, k_folds=args.k_folds, n_boot=n_boot, base_seed=args.seed
-            )
-            g_holdout["traits"][trait][mode] = {
-                "frozen_layer": layer_idx,
-                "arm_invariant": True,
-                "arm_invariant_note": (
-                    "held-out-question g is fit on EVAL-context c_last->trait "
-                    "(K-fold over the 20 eval questions), never on an arm's "
-                    "training source; it is identical across arms by construction "
-                    "(the leakage-free property). Keyed per arm to match the "
-                    "primary-deliverable (trait, mode, arm, fold) contract."
-                ),
-                "arms": {arm: gho for arm in ARM_KEYS},
-            }
-            # checkpoint per (trait, mode)
-            C.write_json_atomic(args.out_dir / "arm_comparison.json", arm_comparison)
-            C.write_json_atomic(args.out_dir / "scaling_grid.json", scaling)
-            C.write_json_atomic(args.out_dir / "g_holdout_question.json", g_holdout)
-
-        # per-layer selection-symmetric matrix (all 28 layers in a real run;
-        # the per-trait frozen layers only under --smoke for tractability).
-        lm_layers = sorted(set(fl.values())) if args.smoke else layers_all
-        layer_matrix["traits"][trait] = run_layer_matrix(
-            args.corpus_dir,
-            lmsys_bundle,
-            lmsys_g_labels,
-            cells,
-            r_b_full,
-            trait,
-            layers=lm_layers,
-            n_boot=n_boot,
-            n_shuffle=n_shuffle,
-            seed=args.seed,
-            max_lmsys=max_lmsys,
+            C.write_json_atomic(args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix)
+        # single-bundle-resident invariant: free this trait's multi-GB bundle
+        # BEFORE the next trait's torch.load.
+        del corpus_bundle
+        logger.info(
+            "[%s] all reads checkpointed in %.1fs (RSS %.1f GB)", trait, time.time() - t0, _rss_gb()
         )
-        C.write_json_atomic(args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix)
-        logger.info("[%s] all reads checkpointed", trait)
 
     logger.info(
         "Wrote arm_comparison / scaling_grid / scaling_grid_layer_matrix / g_holdout_question"

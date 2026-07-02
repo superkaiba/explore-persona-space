@@ -40,6 +40,165 @@ logger = logging.getLogger("issue779.fit_h")
 # ── ridge (closed-form, GCV lambda) ───────────────────────────────────────────
 
 
+class RidgeFitCore:
+    """Eigh-based closed-form GCV ridge fit (standardize-X / center-Y), reusable.
+
+    Ports the equivalence-verified torch-eigh recipe of
+    ``scripts/issue779_percontext_recon.py::_ridge_fit_predict_fast`` (v79 fix 4:
+    identical predictions + identical selected lambda vs the numpy-SVD path) and
+    extends it with:
+
+      (a) a PRIMAL (H x H Gram) form for N > H, so the eigh is never larger than
+          min(N, H) — the numpy ``gesdd`` SVD ran at ~11 GFLOPS effective on this
+          VM vs ~165 GFLOPS for the Gram GEMMs (16:12Z audit);
+      (b) low-rank W factors ``P (H, r)`` / ``Q (r, D)`` with ``W = P @ Q`` for
+          the pv_pinv compact SVD (``scaling_grid.pv_pinv_svd``);
+      (c) ``predict_scalar`` so a cell's direct predictor g shares the SAME
+          decomposition as its h fit (v79 fix 3 — no second SVD on the same X).
+
+    GCV RSS uses the exact identity (v79 fix 2 — no per-lambda (N, D) Yhat
+    materialization, which was ~78% of the old fit FLOPs):
+
+        rss(lam) = ||Y_c||_F^2 - sum_k (2 f_k - f_k^2) * e_k,
+        f_k = w_k / (w_k + lam),  e_k = per-eigendirection target energy
+        (= ||U^T Y_c||_k^2 in SVD terms; w_k = s_k^2).
+
+    Standardization matches the numpy path exactly (POPULATION std,
+    ``correction=0`` — torch's default sample std would rescale lambda by
+    n/(n-1) at small n). Deterministic; float64 throughout. Numerical agreement
+    with the SVD reference is gated by ``scaling_grid.verify_live_ridge`` (v79
+    fix 6) and pinned in ``tests/test_issue779_scaling_grid.py``.
+
+    Attributes: ``n, h, form ('dual'|'primal'), gram_n, lam, xmu, xsd, ymu
+    (numpy), P, Q (numpy)``.
+    """
+
+    def __init__(
+        self, X_train: np.ndarray, Y_train: np.ndarray, *, lambdas: np.ndarray | None = None
+    ):
+        if lambdas is None:
+            lambdas = np.logspace(-2, 4, 13)
+        Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64)
+        Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64)
+        if Ytr.ndim == 1:
+            Ytr = Ytr[:, None]
+        n, h = Xtr.shape
+        self.n, self.h = int(n), int(h)
+        xmu = Xtr.mean(0)
+        xsd = Xtr.std(0, correction=0) + 1e-9  # POPULATION std == numpy .std (exactness)
+        Xn = (Xtr - xmu) / xsd
+        ymu = Ytr.mean(0)
+        Yc = Ytr - ymu
+        self._Xn = Xn
+        self._lambdas = np.asarray(lambdas, dtype=np.float64)
+
+        if n <= h:
+            # DUAL form: eigh of the (N, N) Gram X X^T; eigenvalues w == s^2.
+            self.form = "dual"
+            G = Xn @ Xn.T
+            w, V = torch.linalg.eigh(G)
+            w = torch.clamp(w, min=0.0)
+            self.gram_n = int(n)
+            VtY = V.T @ Yc  # (n, D) == U^T Y_c in SVD terms
+            e = (VtY**2).sum(1)
+            lam = self._gcv_select(w, e, float((Yc**2).sum()))
+            inv = 1.0 / (w + lam)
+            # W = Xn^T (G + lam I)^{-1} Yc = P @ Q, rank <= n.
+            P_t = Xn.T @ V  # (h, n)
+            Q_t = inv[:, None] * VtY  # (n, D)
+        else:
+            # PRIMAL form: eigh of the (H, H) Gram X^T X; eigenvalues w == s^2.
+            self.form = "primal"
+            G = Xn.T @ Xn
+            w, V = torch.linalg.eigh(G)
+            w = torch.clamp(w, min=0.0)
+            self.gram_n = int(h)
+            A = Xn.T @ Yc  # (h, D)
+            B = V.T @ A  # (h, D); B_k = s_k * (U^T Y_c)_k
+            e = self._primal_energies(w, B)
+            lam = self._gcv_select(w, e, float((Yc**2).sum()))
+            inv = 1.0 / (w + lam)
+            # W = V diag(1/(w+lam)) V^T A = P @ Q.
+            P_t = V  # (h, h)
+            Q_t = inv[:, None] * B  # (h, D)
+        self.lam = float(lam)
+        self._w, self._V = w, V
+        self._P_t, self._Q_t = P_t, Q_t
+        self.xmu = xmu.numpy()
+        self.xsd = xsd.numpy()
+        self.ymu = ymu.numpy().squeeze() if ymu.numel() > 1 else float(ymu)
+        self.P = P_t.numpy()
+        self.Q = Q_t.numpy()
+        self._W_cache: np.ndarray | None = None
+
+    @staticmethod
+    def _primal_energies(w: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        """e_k = ||B_k||^2 / w_k with a zero-eigenvalue guard (B_k -> 0 as w_k -> 0,
+        matching the SVD path where a zero singular value contributes nothing)."""
+        sq = (B**2).sum(1)
+        w_max = float(w.max()) if w.numel() else 0.0
+        if w_max <= 0.0:
+            return torch.zeros_like(sq)
+        safe = torch.where(w > w_max * 1e-12, w, torch.inf)
+        return sq / safe
+
+    def _gcv_select(self, w: torch.Tensor, e: torch.Tensor, tot: float) -> float:
+        """First-strictly-smaller GCV lambda over the grid (matches the SVD loop)."""
+        n = self.n
+        best_lam = float(self._lambdas[0])
+        best_gcv = float("inf")
+        for lam in self._lambdas:
+            filt = w / (w + float(lam))
+            rss = tot - float(((2.0 * filt - filt**2) * e).sum())
+            dof = float(filt.sum())
+            denom = (n - dof) ** 2
+            gcv = rss / denom if denom > 1e-12 else float("inf")
+            if gcv < best_gcv:
+                best_gcv = gcv
+                best_lam = float(lam)
+        return best_lam
+
+    def W(self) -> np.ndarray:
+        """The (H, D) standardized-input weight matrix, formed lazily (P @ Q).
+
+        Grid cells never call this (v79 fix — they read predictions via the
+        factors); only ``run_arm_comparison`` needs W for the pv_pinv reads."""
+        if self._W_cache is None:
+            self._W_cache = (self._P_t @ self._Q_t).numpy()
+        return self._W_cache
+
+    def predict(self, X_eval: np.ndarray) -> np.ndarray:
+        """Ridge predictions on X_eval via the low-rank factors (never forms W)."""
+        Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64)
+        Xev_n = (Xev - torch.as_tensor(self.xmu)) / torch.as_tensor(self.xsd)
+        pred = (Xev_n @ self._P_t) @ self._Q_t + torch.as_tensor(np.atleast_1d(self.ymu))
+        return pred.numpy()
+
+    def predict_scalar(self, y_train: np.ndarray, X_eval: np.ndarray) -> np.ndarray:
+        """Scalar-target ridge (the direct predictor g) SHARING this fit's
+        decomposition — mathematically identical to ``ridge_fit_predict`` on the
+        SAME rows (same standardization, same GCV grid, own selected lambda).
+        Requires ``len(y_train) == self.n`` (the h fit's rows)."""
+        y = torch.as_tensor(np.asarray(y_train), dtype=torch.float64)
+        assert y.shape == (self.n,), (y.shape, self.n)
+        ymu_s = y.mean()
+        yc = y - ymu_s
+        Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64)
+        Xev_n = (Xev - torch.as_tensor(self.xmu)) / torch.as_tensor(self.xsd)
+        if self.form == "dual":
+            Vty = self._V.T @ yc  # (n,)
+            e = Vty**2
+            lam = self._gcv_select(self._w, e, float((yc**2).sum()))
+            w_vec = self._P_t @ (Vty / (self._w + lam))  # (h,)
+        else:
+            a = self._Xn.T @ yc  # (h,)
+            b = self._V.T @ a
+            e = self._primal_energies(self._w, b[:, None])
+            lam = self._gcv_select(self._w, e, float((yc**2).sum()))
+            w_vec = self._V @ (b / (self._w + lam))
+        return (Xev_n @ w_vec + ymu_s).numpy()
+
+
 def ridge_fit_predict(
     X_train: np.ndarray,
     Y_train: np.ndarray,
@@ -73,17 +232,24 @@ def ridge_fit_predict(
     Ytr_c = Ytr - ymu
 
     # GCV: pick lambda minimizing mean GCV over output dims via the hat-matrix
-    # trace on the train Gram. Use the SVD of Xtr_n for efficiency.
+    # trace on the train Gram. Use the SVD of Xtr_n for efficiency. RSS per
+    # lambda uses the exact identity
+    #   rss(lam) = ||Y_c||_F^2 - sum_j (2 f_j - f_j^2) ||UtY_j||^2,
+    # f_j = s_j^2/(s_j^2+lam) — algebraically equal to the materialized
+    # ||Y_c - U diag(f) UtY||_F^2 (residual = U (I-f) UtY + Y_perp, Y_perp
+    # orthogonal to col(U)), WITHOUT the per-lambda (N, D) Yhat GEMM that was
+    # ~78% of the fit FLOPs (v79 fix 2; pinned by
+    # test_ridge_fit_predict_gcv_identity_matches_materialized_reference).
     U, s, _Vt = np.linalg.svd(Xtr_n, full_matrices=False)
     s2 = s**2
     UtY = U.T @ Ytr_c  # (r, D_out)
+    e = np.sum(UtY**2, axis=1)  # (r,) per-direction target energy
+    tot = float(np.sum(Ytr_c**2))
     best_lam = lambdas[0]
     best_gcv = np.inf
     for lam in lambdas:
         filt = s2 / (s2 + lam)  # (r,)
-        # fitted train values: U @ diag(filt) @ UtY
-        Yhat_tr = U @ (filt[:, None] * UtY)
-        rss = float(np.sum((Ytr_c - Yhat_tr) ** 2))
+        rss = tot - float(np.sum((2.0 * filt - filt**2) * e))
         dof = float(np.sum(filt))
         denom = (n - dof) ** 2
         gcv = rss / denom if denom > 1e-12 else np.inf

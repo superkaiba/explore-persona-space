@@ -13,6 +13,21 @@ from __future__ import annotations
 import numpy as np
 
 
+def _condition_r(x: np.ndarray, y: np.ndarray, *, min_y_std: float = 1.0, min_n: int = 3) -> float:
+    """One condition's Pearson r; NaN when the condition is EXCLUDED (PV rule:
+    y-std < min_y_std, < min_n points, degenerate x) or r is non-finite.
+
+    The single source of truth for the per-condition kernel — used by
+    ``within_condition_pearson`` AND precomputed once by the bootstrap (the
+    per-condition r + exclusion set are replicate-invariant, v79 fix 5)."""
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    if len(y) < min_n or float(np.std(y)) < min_y_std or float(np.std(x)) == 0.0:
+        return float("nan")
+    r = float(np.corrcoef(x, y)[0, 1])
+    return r if np.isfinite(r) else float("nan")
+
+
 def within_condition_pearson(
     cond_x: list[np.ndarray], cond_y: list[np.ndarray], *, min_y_std: float = 1.0, min_n: int = 3
 ) -> dict:
@@ -25,11 +40,7 @@ def within_condition_pearson(
     """
     per = []
     for x, y in zip(cond_x, cond_y, strict=True):
-        x = np.asarray(x, dtype=np.float64)
-        y = np.asarray(y, dtype=np.float64)
-        if len(y) < min_n or float(np.std(y)) < min_y_std or float(np.std(x)) == 0.0:
-            continue
-        r = float(np.corrcoef(x, y)[0, 1])
+        r = _condition_r(x, y, min_y_std=min_y_std, min_n=min_n)
         if np.isfinite(r):
             per.append(r)
     return {
@@ -64,6 +75,13 @@ def bootstrap_within_condition_ci(
     Resamples the CONDITIONS (not points) with replacement — the correct unit for
     a within-condition mean, matching PV's condition-averaged statistic. Returns
     {"point": r, "lo": .., "hi": .., "n_conditions": .., "n_boot_valid": ..}.
+
+    Vectorized (v79 fix 5): the per-condition r values + the exclusion set are
+    REPLICATE-INVARIANT, so they are precomputed ONCE (``_condition_r``) and each
+    replicate is a gather + mean — the RNG draw sequence (one ``rng.choice`` per
+    replicate) and the resulting floats are IDENTICAL to the old
+    recompute-per-replicate loop (same values, same order, same ``np.mean``;
+    pinned by ``test_bootstrap_vectorized_matches_serial_reference``).
     """
     rng = np.random.default_rng(seed)
     base = within_condition_pearson(cond_x, cond_y, min_y_std=min_y_std, min_n=min_n)
@@ -76,15 +94,22 @@ def bootstrap_within_condition_ci(
             "n_conditions": base["n_conditions"],
             "n_boot_valid": 0,
         }
+    per_r = np.array(
+        [
+            _condition_r(x, y, min_y_std=min_y_std, min_n=min_n)
+            for x, y in zip(cond_x, cond_y, strict=True)
+        ]
+    )
     boot_rs = []
     idx_all = np.arange(n_cond)
     for _ in range(n_boot):
         samp = rng.choice(idx_all, size=n_cond, replace=True)
-        bx = [cond_x[i] for i in samp]
-        by = [cond_y[i] for i in samp]
-        r = within_condition_pearson(bx, by, min_y_std=min_y_std, min_n=min_n)["r"]
-        if np.isfinite(r):
-            boot_rs.append(r)
+        rs = per_r[samp]
+        rs = rs[np.isfinite(rs)]
+        if rs.size:
+            r = float(np.mean(rs))
+            if np.isfinite(r):
+                boot_rs.append(r)
     if not boot_rs:
         return {
             "point": base["r"],

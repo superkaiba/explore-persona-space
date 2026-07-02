@@ -439,7 +439,7 @@ def test_minor9_layer_matrix_uses_absolute_rb_layer_index(tmp_path, monkeypatch)
         Y = np.random.default_rng(1).standard_normal((3, h))
         return SG.TrainSource(X, Y, None, X, Y, None)
 
-    def fake_fit_h_cell(X_tr, Y_tr, eval_mat, rb_l):
+    def fake_fit_h_cell(X_tr, Y_tr, eval_mat, rb_l, **kw):
         captured_rb[tuple(np.round(rb_l, 3))] = True
         n = eval_mat["c_last"].shape[0]
         return {"dot": np.zeros(n), "cos": np.zeros(n), "W": None, "xmu": None, "xsd": None}
@@ -585,6 +585,295 @@ def test_r4_rb_loader_hf_fallback_materializes_into_rb_dir(monkeypatch, tmp_path
     # Second resolve: local hit — the HF fallback must NOT fire again.
     got2 = G._resolve_rb_path("evil", rb_dir, out_base)
     assert got2 == got and len(calls) == 1, "local hit must not re-download"
+
+
+# ── round-9 (v79 grid fixes) regression tests ─────────────────────────────────
+# Round 9 corrected the failure-v5 OOM mis-diagnosis (the exit-137s were
+# deliberate PM stops; no batched-draw HxH materialization ever existed) and
+# applied the v79 perf/coverage fixes. These tests pin EXACT equivalence of the
+# fast paths against serial references + the new B1 recon outputs.
+
+
+def _reference_ridge_fit_predict_materialized(X_train, Y_train, X_eval, lambdas=None):
+    """The PRE-v79 ridge_fit_predict, verbatim (materialized per-lambda Yhat GCV)
+    — the independent reference the GCV-identity fix is pinned against."""
+    if lambdas is None:
+        lambdas = np.logspace(-2, 4, 13)
+    Xtr = np.asarray(X_train, dtype=np.float64)
+    Ytr = np.asarray(Y_train, dtype=np.float64)
+    Xev = np.asarray(X_eval, dtype=np.float64)
+    squeeze = Ytr.ndim == 1
+    if squeeze:
+        Ytr = Ytr[:, None]
+    n = Xtr.shape[0]
+    xmu = Xtr.mean(0)
+    xsd = Xtr.std(0) + 1e-9
+    Xtr_n = (Xtr - xmu) / xsd
+    Xev_n = (Xev - xmu) / xsd
+    ymu = Ytr.mean(0)
+    Ytr_c = Ytr - ymu
+    U, s, Vt = np.linalg.svd(Xtr_n, full_matrices=False)
+    s2 = s**2
+    UtY = U.T @ Ytr_c
+    best_lam, best_gcv = lambdas[0], np.inf
+    for lam in lambdas:
+        filt = s2 / (s2 + lam)
+        Yhat = U @ (filt[:, None] * UtY)
+        rss = float(np.sum((Ytr_c - Yhat) ** 2))
+        dof = float(np.sum(filt))
+        denom = (n - dof) ** 2
+        gcv = rss / denom if denom > 1e-12 else np.inf
+        if gcv < best_gcv:
+            best_gcv, best_lam = gcv, lam
+    filt = s / (s2 + best_lam)
+    W = (Vt.T * filt) @ UtY
+    preds = Xev_n @ W + ymu
+    return (preds[:, 0] if squeeze else preds), float(best_lam)
+
+
+def test_r9_ridge_fit_predict_gcv_identity_matches_materialized_reference():
+    """v79 fix 2: the GCV-RSS SVD identity must reproduce the OLD materialized
+    per-lambda Yhat loop — same selected lambda, same predictions — for both a
+    scalar and a multi-output target, N<H and N>H."""
+    from explore_persona_space.experiments.issue_779 import fit_h as F
+
+    rng = np.random.default_rng(0)
+    for n, h in ((20, 32), (48, 16)):
+        X = rng.standard_normal((n, h))
+        Y = X @ rng.standard_normal((h, h)) + 0.2 * rng.standard_normal((n, h))
+        Xev = rng.standard_normal((9, h))
+        got = F.ridge_fit_predict(X, Y, Xev)
+        want, _lam = _reference_ridge_fit_predict_materialized(X, Y, Xev)
+        assert np.allclose(got, want, atol=1e-10), f"multi-output identity broke at ({n},{h})"
+        y = X @ rng.standard_normal(h) + 0.2 * rng.standard_normal(n)
+        got_s = F.ridge_fit_predict(X, y, Xev)
+        want_s, _lam = _reference_ridge_fit_predict_materialized(X, y, Xev)
+        assert np.allclose(got_s, want_s, atol=1e-10), f"scalar identity broke at ({n},{h})"
+
+
+def test_r9_verify_live_ridge_gate_passes():
+    """v79 fixes 4+6: the eigh fast core reproduces the numpy-SVD serial
+    reference on BOTH forms (identical lambda; pred/W ~1e-14 measured) — the
+    LIVE-path gate the CLI runs under --verify-vectorized."""
+    res = SG.verify_live_ridge()
+    for form in ("dual", "primal"):
+        assert res[form]["d_pred"] < 1e-7 and res[form]["d_w"] < 1e-7 and res[form]["d_g"] < 1e-7
+
+
+def test_r9_fast_core_form_bounds_gram_memory_shape():
+    """Memory-shape invariant: the eigh Gram is never larger than min(N, H)^2 —
+    dual (N x N) for N<=H, primal (H x H) for N>H — so a big-N cell never
+    materializes an N x N Gram (the round's memory-bounding scope)."""
+    from explore_persona_space.experiments.issue_779 import fit_h as F
+
+    rng = np.random.default_rng(1)
+    core_d = F.RidgeFitCore(rng.standard_normal((10, 24)), rng.standard_normal((10, 24)))
+    assert core_d.form == "dual" and core_d.gram_n == 10
+    core_p = F.RidgeFitCore(rng.standard_normal((50, 8)), rng.standard_normal((50, 8)))
+    assert core_p.form == "primal" and core_p.gram_n == 8
+    for core in (core_d, core_p):
+        assert core.gram_n == min(core.n, core.h)
+
+
+def test_r9_fit_g_cell_shared_decomposition_matches_independent_fit():
+    """v79 fix 3: with ALL labels finite, g sharing the h fit's decomposition
+    equals the independent ridge_fit_predict on the same rows; ANY NaN label
+    still routes through the finite-subset refit (drop-never-coerce unchanged)."""
+    from explore_persona_space.experiments.issue_779 import fit_h as F
+
+    rng = np.random.default_rng(2)
+    n, h = 30, 12
+    X = rng.standard_normal((n, h))
+    Y = rng.standard_normal((n, h))
+    y = X @ rng.standard_normal(h) + 0.1 * rng.standard_normal(n)
+    Xev = rng.standard_normal((7, h))
+    eval_mat = {"c_last": Xev}
+    h_fit = F.RidgeFitCore(X, Y)
+    g_shared, dropped = SG.fit_g_cell(X, y, eval_mat, h_fit=h_fit)
+    assert dropped == 0
+    ref = F.ridge_fit_predict(X, y, Xev)
+    assert np.allclose(g_shared, ref, atol=1e-8), "shared-decomposition g must equal the refit"
+    # a NaN label forces the finite-subset path (rows differ from the h fit)
+    y_nan = y.copy()
+    y_nan[3] = np.nan
+    g_sub, dropped = SG.fit_g_cell(X, y_nan, eval_mat, h_fit=h_fit)
+    assert dropped == 1
+    fin = np.isfinite(y_nan)
+    assert np.allclose(g_sub, F.ridge_fit_predict(X[fin], y_nan[fin], Xev), atol=1e-10)
+
+
+def _reference_bootstrap_serial(cond_x, cond_y, *, n_boot, seed, min_y_std=1.0, min_n=3, ci=0.95):
+    """The PRE-v79 bootstrap loop, verbatim (recompute within_condition_pearson
+    per replicate) — the reference the vectorized gather is pinned against."""
+    from explore_persona_space.experiments.issue_779 import metrics as M
+
+    rng = np.random.default_rng(seed)
+    base = M.within_condition_pearson(cond_x, cond_y, min_y_std=min_y_std, min_n=min_n)
+    n_cond = len(cond_x)
+    if n_cond == 0 or base["n_conditions"] == 0:
+        return {
+            "point": base["r"],
+            "lo": float("nan"),
+            "hi": float("nan"),
+            "n_conditions": base["n_conditions"],
+            "n_boot_valid": 0,
+        }
+    boot_rs = []
+    idx_all = np.arange(n_cond)
+    for _ in range(n_boot):
+        samp = rng.choice(idx_all, size=n_cond, replace=True)
+        bx = [cond_x[i] for i in samp]
+        by = [cond_y[i] for i in samp]
+        r = M.within_condition_pearson(bx, by, min_y_std=min_y_std, min_n=min_n)["r"]
+        if np.isfinite(r):
+            boot_rs.append(r)
+    if not boot_rs:
+        return {
+            "point": base["r"],
+            "lo": float("nan"),
+            "hi": float("nan"),
+            "n_conditions": base["n_conditions"],
+            "n_boot_valid": 0,
+        }
+    alpha = (1.0 - ci) / 2.0
+    return {
+        "point": base["r"],
+        "lo": float(np.quantile(boot_rs, alpha)),
+        "hi": float(np.quantile(boot_rs, 1.0 - alpha)),
+        "n_conditions": base["n_conditions"],
+        "n_boot_valid": len(boot_rs),
+    }
+
+
+def test_r9_bootstrap_vectorized_matches_serial_reference():
+    """v79 fix 5: the precompute+gather bootstrap must be BIT-IDENTICAL to the
+    old recompute-per-replicate loop (same rng.choice sequence, same means, same
+    quantiles) — including excluded conditions (low y-std, too few points,
+    degenerate x) that exercise the replicate-invariant validity mask."""
+    from explore_persona_space.experiments.issue_779 import metrics as M
+
+    rng = np.random.default_rng(3)
+    cond_x, cond_y = [], []
+    for i in range(9):
+        n = 8
+        x = rng.standard_normal(n)
+        y = 3.0 * x + rng.standard_normal(n) * 2.0 + 50.0
+        if i == 2:
+            y = np.full(n, 50.0)  # y-std < 1 -> excluded
+        if i == 5:
+            x = np.zeros(n)  # degenerate x -> excluded
+        if i == 7:
+            x, y = x[:2], y[:2]  # < min_n -> excluded
+        cond_x.append(x)
+        cond_y.append(y)
+    for seed in (0, 7):
+        got = M.bootstrap_within_condition_ci(cond_x, cond_y, n_boot=64, seed=seed)
+        want = _reference_bootstrap_serial(cond_x, cond_y, n_boot=64, seed=seed)
+        assert got == want, (
+            f"vectorized bootstrap diverged from the serial reference: {got} vs {want}"
+        )
+
+
+def _tiny_source(seed=0, n_l=12, n_b=6, h=5):
+    rng = np.random.default_rng(seed)
+    X_l = rng.standard_normal((n_l, h))
+    Y_l = rng.standard_normal((n_l, h))
+    y_l = rng.uniform(0, 100, n_l)
+    X_b = rng.standard_normal((n_b, h))
+    Y_b = rng.standard_normal((n_b, h))
+    y_b = rng.uniform(0, 100, n_b)
+    return SG.TrainSource(X_l, Y_l, y_l, X_b, Y_b, y_b)
+
+
+def _tiny_eval_mat(seed=1, n=12, h=5):
+    rng = np.random.default_rng(seed)
+    return {
+        "c_last": rng.standard_normal((n, h)),
+        "y": rng.uniform(0, 100, n),
+        "cond": np.array([0] * 6 + [1] * 6),
+        "mode": np.array(["system"] * 6 + ["many_shot"] * 6, dtype=object),
+    }
+
+
+def test_r9_grid_cells_carry_heldout_recon():
+    """B1 (plan v6 §4.4 drift fix): every grid cell carries recon_heldout with
+    per-source held-out R2/cosine — computed on the COMPLEMENT of the drawn
+    rows (n_heldout == n_avail - n_drawn), NaN with n_heldout=0 for a source the
+    cell used in full."""
+    src = _tiny_source()
+    em = _tiny_eval_mat()
+    rb = np.random.default_rng(4).standard_normal(5)
+    out = SG.run_scaling_grid(
+        src, em, rb, n_lmsys_grid=(0, 8, 12), n_behavior_grid=(0, 4), k_subsamples=2, n_boot=5
+    )
+    assert out["recon_heldout_cap"] == SG.RECON_HELDOUT_CAP
+    for cell in out["cells"]:
+        rec = cell["recon_heldout"]
+        assert set(rec) == {"lmsys", "behavior"}
+        for tag, n_avail, n_used in (
+            ("lmsys", src.n_lmsys(), cell["n_lmsys_used"]),
+            ("behavior", src.n_beh(), cell["n_behavior_used"]),
+        ):
+            want_held = min(n_avail - n_used, SG.RECON_HELDOUT_CAP)
+            assert rec[tag]["n_heldout"] == want_held, (tag, cell)
+            if want_held == 0:
+                assert np.isnan(rec[tag]["r2"]) and np.isnan(rec[tag]["mean_cosine"])
+            else:
+                assert np.isfinite(rec[tag]["r2"]) and np.isfinite(rec[tag]["mean_cosine"])
+                assert rec[tag]["r2"] <= 1.0 + 1e-9
+
+
+def test_r9_grid_skip_edges_drops_edge_cells():
+    """--skip-edges (v81 interior-only relaunch): only mixed nL>0 & nB>0 cells."""
+    src = _tiny_source()
+    em = _tiny_eval_mat()
+    rb = np.random.default_rng(5).standard_normal(5)
+    out = SG.run_scaling_grid(
+        src,
+        em,
+        rb,
+        n_lmsys_grid=(0, 8),
+        n_behavior_grid=(0, 4),
+        k_subsamples=1,
+        n_boot=5,
+        skip_edges=True,
+    )
+    assert out["skip_edges"] is True
+    assert [(c["n_lmsys"], c["n_behavior"]) for c in out["cells"]] == [(8, 4)]
+    assert all(c["arm"] == "arm_c" for c in out["cells"])
+
+
+def test_r9_full_row_cell_dedupes_fit_across_k(monkeypatch):
+    """Audit fix iii: a FULL-ROW cell (every source drawn full-or-zero — the K
+    subsamples are permutations of the same set) fits ONCE and reuses across k;
+    a genuinely-subsampled cell still fits per k. Readout values are unchanged
+    (ridge is permutation-invariant) and per-k bootstrap seeds still differ."""
+    from explore_persona_space.experiments.issue_779 import fit_h as F
+
+    calls = []
+    real_core = F.RidgeFitCore
+
+    class SpyCore(real_core):
+        def __init__(self, X, Y, **kw):
+            calls.append(X.shape)
+            super().__init__(X, Y, **kw)
+
+    monkeypatch.setattr(F, "RidgeFitCore", SpyCore)
+    src = _tiny_source()
+    em = _tiny_eval_mat()
+    rb = np.random.default_rng(6).standard_normal(5)
+    # (12, 0) draws ALL 12 LMSYS rows -> full-row cell -> 1 fit for k=3.
+    out = SG.run_scaling_grid(
+        src, em, rb, n_lmsys_grid=(12,), n_behavior_grid=(0,), k_subsamples=3, n_boot=5
+    )
+    assert len(out["cells"]) == 3
+    assert len(calls) == 1, f"full-row cell must fit once across k, got {len(calls)} fits"
+    # subsampled cell (8 of 12): one fit PER k.
+    calls.clear()
+    SG.run_scaling_grid(
+        src, em, rb, n_lmsys_grid=(8,), n_behavior_grid=(0,), k_subsamples=3, n_boot=5
+    )
+    assert len(calls) == 3, f"subsampled cell must fit per k, got {len(calls)} fits"
 
 
 def test_r4_rb_loader_fails_loud_when_hf_fetch_also_fails(monkeypatch, tmp_path):

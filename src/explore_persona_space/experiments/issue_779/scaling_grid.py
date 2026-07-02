@@ -154,6 +154,8 @@ def assemble_cell_train(
             "n_lmsys_used": 0,
             "n_behavior_used": 0,
             "has_labels": False,
+            "li": np.empty(0, dtype=int),
+            "bi": np.empty(0, dtype=int),
         }
     X = np.concatenate(parts_X, axis=0)
     Y = np.concatenate(parts_Y, axis=0)
@@ -165,6 +167,10 @@ def assemble_cell_train(
         "n_lmsys_used": len(li),
         "n_behavior_used": len(bi),
         "has_labels": bool(y is not None),
+        # the drawn per-source indices — the per-cell held-out recon (plan v6
+        # §4.4, B1) reads the COMPLEMENT of these (rows the cell never trained on)
+        "li": li,
+        "bi": bi,
     }
 
 
@@ -226,54 +232,84 @@ def _within_condition_r(x: np.ndarray, eval_mat: dict, *, n_boot: int, seed: int
     return out
 
 
-def fit_h_cell(X_tr: np.ndarray, Y_tr: np.ndarray, eval_mat: dict, rb_l: np.ndarray) -> dict:
+def fit_h_cell(
+    X_tr: np.ndarray, Y_tr: np.ndarray, eval_mat: dict, rb_l: np.ndarray, *, need_W: bool = True
+) -> dict:
     """Fit ridge h on a cell's train rows, apply to eval c_last, return reads.
 
-    Returns {"dot", "cos", "W", "xmu", "xsd", "P", "Q"} where dot/cos are the
-    per-eval-context readouts <h(c),r_B> / cos(h(c),r_B); W is the (H, H)
+    Returns {"dot", "cos", "W", "xmu", "xsd", "P", "Q", "fit"} where dot/cos are
+    the per-eval-context readouts <h(c),r_B> / cos(h(c),r_B); W is the (H, H)
     STANDARDIZED-INPUT ridge weight matrix (the operator M for the pv_pinv M⁺
     read); xmu/xsd are the TRAIN standardization stats (needed to read the pv_pinv
     preimage in the SAME standardized coordinate system W was fit in — see
     ``pv_pinv_read``); P/Q are the LOW-RANK factors ``W = P @ Q`` (so pv_pinv can
-    use the O(H r^2) compact SVD instead of the O(H^3) dense one). A cell with < 2
-    train rows returns NaN reads / None. Computes ONE SVD (via ``_ridge_fit``) and
-    derives BOTH the eval prediction and W/P/Q from it, so the map read and the
-    pv_pinv preimage come from the SAME fit (never two independent SVDs).
+    use the O(H r^2) compact SVD instead of the O(H^3) dense one); ``fit`` is the
+    underlying ``fit_h.RidgeFitCore`` (shared with the cell's g fit + the per-cell
+    held-out recon read). A cell with < 2 train rows returns NaN reads / None.
+    ONE decomposition (via ``RidgeFitCore``) derives the eval prediction, W/P/Q,
+    the g fit, and the recon predictions (never independent SVDs).
+
+    ``need_W=False`` (grid cells, v79 fix): skips forming the (H, H) W — grid
+    cells consume only the dot/cos readouts + recon, so predictions go through
+    the low-rank factors; W/P/Q return None. ``run_arm_comparison`` keeps
+    ``need_W=True`` for the pv_pinv reads.
     """
     Xev = eval_mat["c_last"]
     if X_tr.shape[0] < 2:
         nan = np.full(Xev.shape[0], np.nan)
-        return {"dot": nan, "cos": nan, "W": None, "xmu": None, "xsd": None, "P": None, "Q": None}
-    W, xmu, xsd, ymu, P, Q = _ridge_fit(X_tr, Y_tr)  # (H,H) map + stats + low-rank factors
-    pred = ((np.asarray(Xev, dtype=np.float64) - xmu) / xsd) @ W + ymu  # (N_ev, H)
-    return {
+        return {
+            "dot": nan,
+            "cos": nan,
+            "W": None,
+            "xmu": None,
+            "xsd": None,
+            "P": None,
+            "Q": None,
+            "fit": None,
+        }
+    core = F.RidgeFitCore(X_tr, Y_tr)
+    pred = core.predict(Xev)  # (N_ev, H)
+    out = {
         "dot": F.dot_readout(pred, rb_l),
         "cos": F.cosine_readout(pred, rb_l),
-        "W": W,
-        "xmu": xmu,
-        "xsd": xsd,
-        "P": P,
-        "Q": Q,
+        "xmu": core.xmu,
+        "xsd": core.xsd,
+        "fit": core,
     }
+    if need_W:
+        out["W"], out["P"], out["Q"] = core.W(), core.P, core.Q
+    else:
+        out["W"] = out["P"] = out["Q"] = None
+    return out
 
 
 def _ridge_fit(
     X_train: np.ndarray, Y_train: np.ndarray, *, lambdas: np.ndarray | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """GCV-ridge fit -> (W, xmu, xsd, ymu, P, Q): the standardized-input weight
-    matrix + train stats + the LOW-RANK factors of W, from ONE SVD.
+    matrix + train stats + the LOW-RANK factors of W, from ONE decomposition.
 
-    Reproduces ``fit_h.ridge_fit_predict``'s GCV lambda + standardization exactly
-    (same SVD, same GCV loop), returning the pieces the caller needs to derive
-    BOTH the eval prediction (``(Xev - xmu)/xsd @ W + ymu``) AND the pv_pinv
-    preimage (``W`` is the map operator M; intercepts/means cancel in the
-    correlation). W is (H_in, H_out); xmu/xsd/ymu are (H,).
+    Thin compat wrapper over ``fit_h.RidgeFitCore`` (the eigh fast path, v79
+    fixes 2+4) — same standardization / GCV grid / selected lambda as
+    ``fit_h.ridge_fit_predict``; equivalence vs the numpy-SVD serial reference
+    (``_ridge_fit_svd_reference``) is gated by ``verify_live_ridge``. W is
+    (H_in, H_out); xmu/xsd/ymu are (H,); ``W = P @ Q`` with rank <= min(n, H)
+    (so ``pv_pinv_svd`` can use the compact O(H r^2) SVD). Deterministic.
+    """
+    core = F.RidgeFitCore(X_train, Y_train, lambdas=lambdas)
+    return core.W(), core.xmu, core.xsd, core.ymu, core.P, core.Q
 
-    ALSO returns the low-rank factors ``P (H, r)`` and ``Q (r, H)`` with
-    ``W = P @ Q`` and ``r = rank(Xtr_n) <= n_train`` — because W is derived from
-    an r-dimensional train subspace it has rank <= r, so its compact SVD (and
-    hence the pv_pinv) can be computed in O(H r^2) from these factors instead of
-    the O(H^3) dense H x H SVD (see ``pv_pinv_svd``). Deterministic.
+
+def _ridge_fit_svd_reference(
+    X_train: np.ndarray, Y_train: np.ndarray, *, lambdas: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]:
+    """SERIAL REFERENCE for the live-ridge equivalence gate (numpy SVD + the
+    ORIGINAL materialized-Yhat GCV loop — the pre-v79 implementation, verbatim).
+
+    Kept ONLY as the independent reference ``verify_live_ridge`` + the
+    regression tests compare ``RidgeFitCore`` against (the
+    ``vectorized_mlp_skill.assert_matches_reference`` pattern) — never called on
+    the production path. Returns the ``_ridge_fit`` tuple + the selected lambda.
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
@@ -304,7 +340,39 @@ def _ridge_fit(
     P = Vt.T * filt  # (H_in, r)
     Q = UtY  # (r, H_out)
     W = P @ Q  # (H_in, H_out) standardized-input map, rank <= r
-    return W, xmu, xsd, ymu, P, Q
+    return W, xmu, xsd, ymu, P, Q, float(best_lam)
+
+
+def verify_live_ridge(*, seed: int = 0, tol: float = 1e-7) -> dict:
+    """LIVE-path equivalence gate (v79 fix 6): the eigh ``RidgeFitCore`` must
+    reproduce the numpy-SVD serial reference on BOTH forms (dual N<=H, primal
+    N>H) — identical selected lambda, predictions/W within ``tol`` — and the
+    shared scalar-g path must reproduce ``fit_h.ridge_fit_predict``. Raises
+    AssertionError on any mismatch; returns the measured deltas. Called by the
+    grid CLI under ``--verify-vectorized`` (this gates the LIVE ridge path; the
+    old check gated only the unused MLP helper).
+    """
+    rng = np.random.default_rng(seed)
+    out = {}
+    for name, (n, h) in {"dual": (24, 40), "primal": (80, 24)}.items():
+        X = rng.standard_normal((n, h))
+        W_true = rng.standard_normal((h, h))
+        Y = X @ W_true + 0.1 * rng.standard_normal((n, h))
+        Xev = rng.standard_normal((13, h))
+        core = F.RidgeFitCore(X, Y)
+        W_ref, xmu, xsd, ymu, _P, _Q, lam_ref = _ridge_fit_svd_reference(X, Y)
+        pred_ref = ((Xev - xmu) / xsd) @ W_ref + ymu
+        d_pred = float(np.max(np.abs(core.predict(Xev) - pred_ref)))
+        d_w = float(np.max(np.abs(core.W() - W_ref)))
+        assert core.form == name, (core.form, name)
+        assert core.lam == lam_ref, f"{name}: lambda diverged ({core.lam} vs {lam_ref})"
+        assert d_pred < tol and d_w < tol, f"{name}: d_pred={d_pred} d_w={d_w} (tol {tol})"
+        y = X @ rng.standard_normal(h) + 0.1 * rng.standard_normal(n)
+        d_g = float(np.max(np.abs(core.predict_scalar(y, Xev) - F.ridge_fit_predict(X, y, Xev))))
+        assert d_g < tol, f"{name}: scalar-g path d_g={d_g} (tol {tol})"
+        out[name] = {"d_pred": d_pred, "d_w": d_w, "d_g": d_g, "lam": core.lam}
+    logger.info("[grid-fast] live-ridge equivalence gate PASS: %s", out)
+    return out
 
 
 def pv_pinv_read(
@@ -428,7 +496,13 @@ def pv_pinv_reads(
     return frozen, full
 
 
-def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> tuple[np.ndarray, int]:
+def fit_g_cell(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray | None,
+    eval_mat: dict,
+    *,
+    h_fit: F.RidgeFitCore | None = None,
+) -> tuple[np.ndarray, int]:
     """Fit ridge g (c_last -> trait label) on a cell's train rows; read on eval.
 
     DROP-NEVER-COERCE (llm-judging.md rule 9): a malformed / missing judge label
@@ -436,6 +510,13 @@ def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> tup
     rows). Those NaN rows are DROPPED from the g fit — never fed into ridge (a
     single NaN poisons the closed-form SVD, turning g into all-NaN). The h path is
     UNCHANGED: h uses every row (v(x) has no missing-label problem).
+
+    ``h_fit`` (v79 fix 3): the cell's h ``RidgeFitCore`` on the SAME X rows —
+    when EVERY label is finite (no rows dropped) g shares its decomposition
+    (``predict_scalar``, mathematically identical to ``ridge_fit_predict`` on the
+    same rows) instead of re-decomposing the same X. Any dropped row changes the
+    fit rows, so the shared path is skipped and the finite-subset refit runs
+    exactly as before.
 
     Returns ``(g_pred, n_dropped)`` — the per-eval-context g score (all-NaN if the
     cell has no finite-label rows, the Arm A label-floor case) and the count of
@@ -450,10 +531,45 @@ def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> tup
     X_fit, y_fit = X_tr[finite], y_arr[finite]
     if X_fit.shape[0] < 2 or float(np.std(y_fit)) < 1e-9:
         return np.full(Xev.shape[0], np.nan), n_dropped
+    if h_fit is not None and n_dropped == 0 and h_fit.n == X_tr.shape[0]:
+        return h_fit.predict_scalar(y_arr, Xev), 0
     return F.ridge_fit_predict(X_fit, y_fit, Xev), n_dropped
 
 
 # ── the 2D grid driver ────────────────────────────────────────────────────────
+
+# Per-source cap on the held-out rows scored for the per-cell recon read (B1) —
+# recon on 500 held-out rows is a stable estimate at ~0.1 s/cell; the complement
+# slice is deterministic (sorted setdiff1d prefix), so no extra RNG draws.
+RECON_HELDOUT_CAP = 500
+
+
+def _heldout_recon(fit, src: TrainSource, ct: dict) -> dict:
+    """Per-cell HELD-OUT reconstruction R2 / mean-cosine (plan v6 §4.4, B1).
+
+    For each source, score the fitted h on rows the cell did NOT train on (the
+    complement of the drawn indices, capped at ``RECON_HELDOUT_CAP``). For a
+    source the cell used in FULL the complement is empty -> NaN with
+    ``n_heldout: 0``; for a source the cell used NOT AT ALL (e.g. the behavior
+    side of an Arm A cell) the read is an out-of-arm TRANSFER recon — labeled by
+    the source key, the analyzer disambiguates via the cell's arm.
+    """
+    out = {}
+    for tag, X_all, Y_all, used in (
+        ("lmsys", src.X_lmsys, src.Y_lmsys, ct["li"]),
+        ("behavior", src.X_beh, src.Y_beh, ct["bi"]),
+    ):
+        held = np.setdiff1d(np.arange(X_all.shape[0]), used)[:RECON_HELDOUT_CAP]
+        if fit is None or held.size == 0:
+            out[tag] = {
+                "r2": float("nan"),
+                "mean_cosine": float("nan"),
+                "n_heldout": int(held.size),
+            }
+            continue
+        m = F.reconstruction_metrics(fit.predict(X_all[held]), Y_all[held])
+        out[tag] = {"r2": m["r2"], "mean_cosine": m["mean_cosine"], "n_heldout": int(held.size)}
+    return out
 
 
 def run_scaling_grid(
@@ -467,6 +583,7 @@ def run_scaling_grid(
     n_boot: int = 1000,
     base_seed: int = 0,
     upsample_1to1: bool = False,
+    skip_edges: bool = False,
 ) -> dict:
     """The 7x7xK grid of within-condition r for h (dot/cos) + g, per cell.
 
@@ -475,19 +592,46 @@ def run_scaling_grid(
     are genuinely different training matrices, not a fused-output-dim loop, so
     the ridge closed form IS the batched primitive (no serial AdamW). Returns
     {"cells": [...], "grid_shape": (nL, nB, K)}.
+
+    v79 additions: (1) each cell carries ``recon_heldout`` — held-out
+    reconstruction R2/cosine per source (plan v6 §4.4, the B1 drift fix);
+    (2) FULL-ROW cells (every source drawn full-or-zero, so the K subsamples are
+    permutations of the SAME training set — ridge is permutation-invariant) fit
+    ONCE and reuse the fit across k (per-k bootstrap seeds are UNCHANGED, so the
+    K cells still differ in their CI draws exactly as before); (3) the cell's g
+    shares the h decomposition when no NaN label is dropped; (4)
+    ``skip_edges=True`` drops the nL==0 / nB==0 edge cells (the v81 interior-only
+    relaunch — edges computed main-side).
     """
     cells = []
+    n_fits = 0
+    n_reused = 0
     for il, nL in enumerate(n_lmsys_grid):
         for ib, nB in enumerate(n_behavior_grid):
             if nL == 0 and nB == 0:
                 continue  # the empty cell is undefined
+            if skip_edges and (nL == 0 or nB == 0):
+                continue  # v81 interior-only relaunch: edges computed main-side
             arm = "arm_a_lmsys" if nB == 0 else ("arm_b_behavior" if nL == 0 else "arm_c")
+            # A cell whose every source is drawn FULL (or not at all) trains on
+            # the same SET for every k — the k draws only permute row order and
+            # ridge is permutation-invariant, so fit once and reuse (audit iii).
+            full_row_cell = (nL == 0 or nL >= src.n_lmsys()) and (nB == 0 or nB >= src.n_beh())
+            cached: tuple | None = None
             for k in range(k_subsamples):
                 rng = np.random.default_rng(base_seed + 1000 * il + 100 * ib + k)
                 ct = assemble_cell_train(src, nL, nB, rng, upsample_1to1=upsample_1to1)
                 _assert_cell_train_composition(ct, arm, nL, nB)
-                h = fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l)
-                g, g_n_dropped = fit_g_cell(ct["X"], ct["y"], eval_mat)
+                if full_row_cell and cached is not None:
+                    h, g, g_n_dropped, recon = cached
+                    n_reused += 1
+                else:
+                    h = fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l, need_W=False)
+                    g, g_n_dropped = fit_g_cell(ct["X"], ct["y"], eval_mat, h_fit=h["fit"])
+                    recon = _heldout_recon(h["fit"], src, ct)
+                    n_fits += 1
+                    if full_row_cell:
+                        cached = (h, g, g_n_dropped, recon)
                 seed = base_seed + k
                 r_dot = _within_condition_r(h["dot"], eval_mat, n_boot=n_boot, seed=seed)
                 r_g = _within_condition_r(g, eval_mat, n_boot=n_boot, seed=seed)
@@ -504,13 +648,23 @@ def run_scaling_grid(
                         "g_ridge_r": {m: r_g[m] for m in MODES},
                         "g_labels_dropped_nan": g_n_dropped,
                         "has_labels": ct["has_labels"],
+                        "recon_heldout": recon,
                     }
                 )
+    logger.info(
+        "[grid-fast] run_scaling_grid: %d cells (%d fits, %d full-row reuses, skip_edges=%s)",
+        len(cells),
+        n_fits,
+        n_reused,
+        skip_edges,
+    )
     return {
         "cells": cells,
         "grid_shape": [len(n_lmsys_grid), len(n_behavior_grid), k_subsamples],
         "n_lmsys_grid": list(n_lmsys_grid),
         "n_behavior_grid": list(n_behavior_grid),
+        "skip_edges": bool(skip_edges),
+        "recon_heldout_cap": RECON_HELDOUT_CAP,
     }
 
 
