@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 881,
+  "highest_id": 882,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5748,6 +5748,13 @@
       "path": "tasks/planning/881",
       "status": "planning",
       "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
+    },
+    "882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/882",
+      "status": "proposed",
+      "title": "workflow-fix: judge caches must key on rubric+question+completion (llm-judging.md)"
     },
     "89": {
       "has_clean_result": true,
