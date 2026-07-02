@@ -241,7 +241,10 @@ PY
 - **`PAPER=false` (markdown body — default):** compose the FIFTEEN-lens
   markdown prompt (Step 2 + Step 3 as written below). Unchanged.
 - **`PAPER=true` (LaTeX paper):** compose the SEVEN-paper-lens prompt instead.
-  Inline the Claude critic's **## Paper-task review (`paper: true`)** section
+  Inline the relocated paper-review rule — read
+  `$REPO_ROOT/.claude/rules/clean-result-paper-review.md` (the canonical-main
+  copy, via Step 1b's worktree-proof `$REPO_ROOT`; relocated verbatim from
+  clean-result-critic.md, #829) — and copy its full content
   (P1-P7 — incl. P7 verbatim examples + judge prompts — + the
   `verify_paper.py` preamble + the read-these-before-scoring
   artifact list + the Paper-lens output template) INSTEAD of the fifteen
@@ -343,8 +346,9 @@ with v4 section names; for a v3 body substitute the v3 names
 ### Step 3: The Codex prompt body (markdown branch — `PAPER=false`)
 
 > **Paper branch (`PAPER=true`):** do NOT use the markdown prompt body
-> below. Compose the Codex prompt from the Claude critic's **## Paper-task
-> review (`paper: true`)** section per Step 1c — point Codex at
+> below. Compose the Codex prompt from
+> `$REPO_ROOT/.claude/rules/clean-result-paper-review.md` (the relocated
+> Paper-task review rule, #829) per Step 1c — point Codex at
 > `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, have it run
 > `cd {{repo_root}} && uv run python scripts/verify_paper.py --issue
 > {{task_number}}` as the mechanical preamble, inline the seven P1-P7 lens
