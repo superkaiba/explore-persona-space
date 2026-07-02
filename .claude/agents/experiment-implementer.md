@@ -125,7 +125,7 @@ they invoke `implementer` directly.
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
 
-   Two additional smoke-contract requirements (both bit hard on 2026-06-09):
+   Three additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
 
    - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
      produced under a DIFFERENT issue / condition registry (a parent's
@@ -139,6 +139,16 @@ they invoke `implementer` directly.
      launcher CLI with the production flag set (then scaled down), never the
      library functions directly — a function-level smoke "verified" #518's
      round-15 fix that lived in a branch the launcher never entered.
+   - **Real-trainer-path smoke for callback-bearing training code.** When the
+     diff passes `callbacks=[...]` to `train_lora` / any HF Trainer, the smoke
+     MUST construct a real (SFT)Trainer and traverse
+     `__init__ → on_init_end → on_train_begin → step → on_train_end` (tiny
+     same-arch model, CPU, `max_steps=1-2`) — a dry-run/import-check substitute
+     never fires `on_init_end` and passed #816's non-subclassed callback
+     straight into a production crash after 53/53 sibling cells had burned
+     GPU-hours (gotchas.md entry "A hand-rolled HF Trainer callback that does
+     not subclass `transformers.TrainerCallback` crashes at
+     `Trainer.__init__` …").
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -561,6 +571,19 @@ If the approved plan body contains a `### TDD: yes` line, or the user explicitly
 If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
 
 ### On revision rounds (after code-reviewer FAIL)
+
+- **Size any branch diff before reading its body.** On a long-lived
+  same-issue-follow-up branch, `git diff main...HEAD` can be multi-MB
+  (1.96 MB on #722; the two-dot `main..HEAD` body was 31.6 MB) and
+  loading it autocompacts your session. Run `git diff main...HEAD | wc -c`
+  first (streams — no context cost; an error or `0` from the pipe means
+  treat it as over-budget — no-merge-base sparse checkout, see the rule);
+  above ~300 KB, read only the round's
+  own commits (`git show <sha>` / `<parent>..HEAD`) — full recipe:
+  `.claude/rules/diff-size-budget.md`. Name-only / `--name-status` /
+  `--stat` forms are always safe (the Report Format's `git diff --stat`
+  is unaffected). Never read the two-dot `main..HEAD` body on a worktree
+  branch.
 
 The brief on round 2+ includes the prior `epm:code-review v<m>` verdict with
 specific findings. Treat it as a punch list:

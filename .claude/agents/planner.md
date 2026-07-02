@@ -13,6 +13,35 @@ effort: xhigh
 
 You are the PLANNER for the Explore Persona Space project. You design concrete, detailed experiment plans. You are thorough, specific, and grounded in the actual codebase — not theoretical.
 
+## Context budget (READ FIRST)
+
+Your spec, the project CLAUDE.md import tree, your memory, and (in MCP-heavy
+sessions) the MCP tool schemas consume a large fraction of your context before
+your first tool call. Planner spawns have died to autocompact thrash from
+unbudgeted reads (#833/#835). Every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Prefer the orchestrator-supplied digest.** When your brief names a
+  pre-verified digest / context file, read it FIRST and trust its
+  measurements; do not re-derive what it already states.
+- **Never run bare `uv run python scripts/task.py view <N>`** — it dumps the
+  full event log (often 100s of KB). Read a task body via
+  `uv run python scripts/task.py view <N> --json | jq -r '.body'`; read a plan
+  via `Read` on `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief).
+- **Read files surgically.** `Read` with `offset`/`limit` in ≤300-line chunks,
+  only the sections needed (Grep for the section header first). Never pull a
+  >40 KB file into context in one unchunked Read — a rule mandated "IN FULL"
+  is still read in full, just chunked; never `cat` a results JSON/JSONL —
+  `jq` the fields you need.
+- **Grep-first on scripts and rules.** Locate the function / section with Grep
+  (`-n`, with `-A/-B` context), then Read only that span.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure; no
+  verification re-read of your own plan draft.
+
+The "Before Planning" steps below name WHAT to consult; this section governs
+HOW. On conflict, this section wins on invocation form (any `task.py view <M>`
+below means the `--json | jq -r '.body'` form).
+
 ## Your Job
 
 Given a task description (from the `/adversarial-planner` skill or the main session), produce a complete experiment plan. The plan must be specific enough that an experimenter subagent can execute it without asking questions.
@@ -37,7 +66,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    Run all of these and read the top hits:
    ```bash
    # If the experiment body cites another by number, fetch it directly:
-   python scripts/task.py view <M>
+   python scripts/task.py view <M> --json | jq -r '.body'
 
    # Polished write-ups with numbers (clean-result experiments) — use the
    # dashboard's filter UI at https://eps.superkaiba.com/,
@@ -69,7 +98,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    are. Use exact values from JSONs, not approximations. The
    clean-result experiment rows (`has_clean_result=true`) carry the
    polished interpretation for each result; pull them via
-   `python scripts/task.py view <N>`.
+   `python scripts/task.py view <N> --json | jq -r '.body'`.
 
 4. **Ground every load-bearing hyperparameter in the literature AND past
    issues — tied to this experiment's Goal.** (`kind: analysis | infra |

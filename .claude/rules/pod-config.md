@@ -130,3 +130,19 @@ own copy of `scripts/pods.conf` (the seed) via the old
 `_main_repo_scripts_dir` path — that's the seed file, which is now
 "drifty by design" (visible in `git diff`, never a live-file wipe).
 Post-#821 workers on both sides see the same LIVE state.
+
+## cmd_sync serialization + atomic downstream writes (task #831)
+
+`cmd_sync` now takes NO argument: it acquires `locked_pods_conf` and
+RE-READS pods.conf under the (reentrant) lock, so the `--sync` CLI path is
+no longer a stale-snapshot vector (incident #813: a concurrent sync
+regenerated `~/.ssh/config` from a stale pods view and dropped `Host
+pod-813` twice). `~/.ssh/config` + `~/.claude/mcp.json` writes are atomic
+(same-dir tmp + `os.replace` via `_atomic_write_text`; existing mode
+preserved, 0600 on create). Each sync appends one audit line to
+`<git-common-dir>/eps/sync_audit.log` (`ts= pid= cwd= argv= rows=`) for
+writer identification on recurrence — best-effort, never breaks the sync.
+Residuals (documented, accepted): pre-#821 stale-worktree code syncing from
+its worktree-local seed pods.conf; the read-only-filesystem fallback where
+`_resolve_live_pods_conf` returns the seed (a locked re-read then reads the
+seed).
