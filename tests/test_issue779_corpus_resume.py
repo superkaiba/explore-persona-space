@@ -327,3 +327,28 @@ def test_lmsys_rollout_text_persisted_before_judge_crash(tmp_path, monkeypatch):
     staging = tmp_path / "staging"
     G._stage_sanitized_corpus(tmp_path, staging)
     assert not (staging / G.LMSYS_G_SUBDIR / "lmsys_g_rollouts.json").exists()
+
+
+def test_stage_sanitized_corpus_skips_directories(tmp_path):
+    """Regression: att-20260702 upload crash — `.judge_dispatch/` (the batch-judge
+    state DIR inside behavior_corpus/) hit `p.read_bytes()` in the staging loop and
+    raised IsADirectoryError AFTER all traits + g labels completed. Dirs never stage."""
+    corpus = tmp_path / G.CORPUS_SUBDIR
+    corpus.mkdir(parents=True)
+    (corpus / "evil_corpus.pt").write_bytes(b"tensor-bundle")
+    (corpus / "evil_judge_scores.json").write_text("{}")
+    dispatch_dir = corpus / ".judge_dispatch" / "dispatch_abc"
+    dispatch_dir.mkdir(parents=True)
+    (dispatch_dir / "state.json").write_text("{}")
+    g_dir = tmp_path / G.LMSYS_G_SUBDIR
+    g_dir.mkdir(parents=True)
+    (g_dir / "lmsys_g_labels.json").write_text("{}")
+
+    staging = tmp_path / "staging"
+    wrote_tensor, wrote_g = G._stage_sanitized_corpus(tmp_path, staging)
+
+    assert wrote_tensor and wrote_g
+    assert (staging / G.CORPUS_SUBDIR / "evil_corpus.pt").exists()
+    assert (staging / G.CORPUS_SUBDIR / "evil_judge_scores.json").exists()
+    assert not (staging / G.CORPUS_SUBDIR / ".judge_dispatch").exists()
+    assert (staging / G.LMSYS_G_SUBDIR / "lmsys_g_labels.json").exists()

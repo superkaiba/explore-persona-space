@@ -505,6 +505,8 @@ def _stage_sanitized_corpus(out_dir: Path, staging: Path) -> tuple[bool, bool]:
     (staging / CORPUS_SUBDIR).mkdir(parents=True, exist_ok=True)
     wrote_tensor = False
     for p in sorted((out_dir / CORPUS_SUBDIR).glob("*")):
+        if not p.is_file():
+            continue  # e.g. .judge_dispatch/ batch-state dir (att-20260702 upload crash)
         if p.name.endswith("_rollouts.json"):
             continue  # raw text -> raw-completions prefix only
         if p.name.startswith("judge_raw_"):
@@ -516,6 +518,8 @@ def _stage_sanitized_corpus(out_dir: Path, staging: Path) -> tuple[bool, bool]:
     if g_src.is_dir():
         (staging / LMSYS_G_SUBDIR).mkdir(parents=True, exist_ok=True)
         for p in sorted(g_src.glob("*.json")):
+            if not p.is_file():
+                continue  # dirs never stage (same guard as the corpus loop)
             if p.name.startswith("judge_raw_"):
                 continue
             if p.name.endswith("_rollouts.json"):
