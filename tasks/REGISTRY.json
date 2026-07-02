@@ -5584,8 +5584,8 @@
     "859": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/859",
-      "status": "proposed",
+      "path": "tasks/planning/859",
+      "status": "planning",
       "title": "workflow-fix: select_step9c_tests must include touched tests/*.py in subset"
     },
     "860": {
