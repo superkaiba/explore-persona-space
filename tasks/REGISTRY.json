@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 897,
+  "highest_id": 898,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5867,6 +5867,13 @@
       "path": "tasks/proposed/897",
       "status": "proposed",
       "title": "workflow-fix: guard repo-root working-tree reverts (restore/checkout ./clean -f)"
+    },
+    "898": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/898",
+      "status": "proposed",
+      "title": "workflow-fix: index.lock-resilient _run_git + crash-safe set_status registry move"
     },
     "9": {
       "has_clean_result": false,
