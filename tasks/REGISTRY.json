@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 868,
+  "highest_id": 869,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5451,8 +5451,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation map can be learned and how much trait-relevant signal predicted activations retain: fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779 LMSYS corpus, then on #779's exact monitoring rig project rolled-forward predicted activations onto the persona directions at the trait read-out layers and benchmark the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim) against #779's measured rows \u2014 raw projection at the source layer (the matched-information comparison), raw projection at the target layer (the transport ceiling), a direct-hop ridge map, and the learned map h / direct predictor g reference rows \u2014 reporting the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction horizon, and the Delta-R2-vs-retention divergence per (layer, function class).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/841",
-      "status": "plan_pending",
+      "path": "tasks/running/841",
+      "status": "running",
       "title": "Layer-to-layer activation dynamics on real chat contexts: per-layer predictability atlas of the residual-stream update + does a dynamics-pretrained predictor beat #779's direct context->trait predictor"
     },
     "842": {
@@ -5479,8 +5479,8 @@
     "845": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/845",
-      "status": "running",
+      "path": "tasks/completed/845",
+      "status": "completed",
       "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
     },
     "846": {
@@ -5507,8 +5507,8 @@
     "849": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/849",
-      "status": "running",
+      "path": "tasks/reviewing/849",
+      "status": "reviewing",
       "title": "workflow-fix: watcher CPU/memory-pressure escalation arm for the shared VM"
     },
     "85": {
@@ -5549,15 +5549,15 @@
     "854": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/854",
-      "status": "planning",
+      "path": "tasks/running/854",
+      "status": "running",
       "title": "workflow-fix: GCP EXIT-trap poweroff races crash-diagnostics upload"
     },
     "855": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/855",
-      "status": "proposed",
+      "path": "tasks/running/855",
+      "status": "running",
       "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
     },
     "856": {
@@ -5650,6 +5650,13 @@
       "path": "tasks/proposed/868",
       "status": "proposed",
       "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
+    },
+    "869": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/869",
+      "status": "proposed",
+      "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
     },
     "88": {
       "has_clean_result": true,

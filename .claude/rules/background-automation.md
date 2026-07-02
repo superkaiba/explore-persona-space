@@ -151,9 +151,73 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, the program-orchestrator recovery pass, and three session
-reapers — the session-vs-status reconcile pass, the zombie-wrapper pass, and
-the idle-unmapped pass.
+the gate-push pass, the program-orchestrator recovery pass, the
+stale-registration pass, and three session reapers — the session-vs-status
+reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+
+**Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
+The stalled detector + the two respawn arms carry five hardening mechanisms:
+
+- *(a-i) Marker-heartbeat window.* Signal 2 (the newest non-watcher marker)
+  has its OWN 2h freshness window (`EPM_STALLED_MARKER_HEARTBEAT_MIN`,
+  default 120 min = 2× the 60-min self-report window) — a session that
+  posted ANY non-watcher marker within 2h is never declared stalled
+  (incidents #761/#763: legitimate 60–120-min marker gaps corroborated
+  false stalls). Deliberate trade: third-party markers (PM notes, pod-side
+  relays) can shield a wedged session for up to 2h; the (e) wedge fast lane
+  is the mitigation.
+- *(a-ii) Stop-verify respawn fence* (`decide_respawn_fence`): the stalled
+  respawn arm NEVER spawns in the same tick it stops a session — stop →
+  verify the sid is absent from the daemon's live set on the NEXT tick →
+  spawn (the daemon's stop ACK is not a kill — the same contract the
+  zombie/idle reapers enforce; incident #763: a same-tick stop+spawn left
+  two drivers overlapped ~4h). One stop retry, then a one-time loud
+  stop-failed marker + push (`[...:session-stop-failed]`), never a spawn
+  next to a live sid. A pending fence whose sid no longer matches the
+  registry entry CLEARS itself (a concurrent respawn owns the issue; the
+  fresh sid is never stopped), and the stalled arm skips entirely within
+  `RESPAWN_SPAWN_GRACE_S` of a fresh registration (the crash arm runs
+  first each tick and can legitimately respawn inside the stop→verify
+  gap). A #843 lease-"suppressed" spawn books nothing AND ends the fence
+  episode. Even a genuinely-dead wrapper waits one tick between stop and
+  spawn — that +10 min is deliberate.
+- *(b) Bounded worktree-activity hold* (`decide_worktree_hold`): BOTH
+  respawn arms (stalled + crash-recovery) defer while any file under
+  `.claude/worktrees/issue-<N>*` (excluding `data/`) has an mtime within
+  15 min (`EPM_STALLED_WT_ACTIVITY_MIN`) — direct evidence an implementer
+  is mid-edit (incident #812: killed 57s after an edit) — bounded at 6
+  consecutive held ticks (~1h; a bound, not a latch) with `missed` pinned
+  at the threshold so the arm re-fires the moment activity quiets. The
+  probe early-exits on the first fresh hit under a 2s wall-clock deadline.
+- *(c) Daemon retry + blocked-recovery escalation.* The per-tick daemon
+  probe retries (3 attempts, 5s/10s backoff; `EPM_DAEMON_PROBE_ATTEMPTS`)
+  before declaring an outage, and a respawn-worthy stall deferred by
+  daemon-unreachable for ≥2 consecutive ticks (~20 min) fires ONE Telegram
+  push per episode (`decide_daemon_blocked_escalation`; incident #811: a
+  silently-deferred respawn idled a GPU for hours). The existing
+  alerted→eligible escalation still respawns on the first daemon-up tick.
+- *(e) Prompt-wedge fast lane* (`decide_prompt_wedge`): a LAZY
+  transcript-tail probe (happy-log-only resolution, last 64 KB) escalates
+  straight to the respawn arm on ≥3 (`EPM_TICK_WEDGE_MIN_DEQUEUED`)
+  consecutive trailing wedge-evidence rows with no assistant turn —
+  verified `{"type": "queue-operation", "operation": "dequeue"}` records
+  (co-primary) and/or promptless prompt-type user rows (secondary)
+  (incident #779: 5 prompts enqueued+dequeued with no turn for ~90 min).
+  Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
+  window — direct evidence beats proxies — but NOT the park exemptions
+  (provision-in-flight / followups / spend-approval — re-probed once
+  against the escalated action when the fresh-marker keep path lazily
+  skipped them; a firing exemption vetoes the wedge), the worktree hold,
+  or the fence; a wedge respawn resets `live_consecutive`. Unresolvable
+  transcripts fail toward no-wedge.
+
+Per-episode state for all five rides `stalled-<N>.json`
+(`stop_pending_sid`/`stop_pending_ts`/`stop_retried`/`stop_failed_alerted`,
+`wt_hold_count`, `daemon_blocked_ticks`/`daemon_blocked_pushed`,
+`wedge_hits`), cleared on self-report advancement; pre-#845 files load with
+safe defaults. While a fence episode is pending, the #759 K corroboration is
+skipped (its debounce already served — re-downgrading the verify ticks would
+stall the fence).
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
@@ -379,6 +443,32 @@ delete instant) + the running-pod + live-follow-up guards in
 reap: the *reconcile* pass cannot see this class (it is already unmapped by
 the time reconcile runs), so the idle-unmapped short window owns it (#720;
 #795 verified — no reconcile-pass change).
+
+**Stale-registration pass (#845 d).** The fourth registration hygiene arm —
+UNREGISTERS a LIVE-but-abandoned session registration (`issue-<N>.json` OR
+`manual-issue-<N>.json`) whose resolved Claude transcript has been idle ≥12h
+(`EPM_STALE_REGISTRATION_IDLE_H`; default == the idle-unmapped reap window)
+AND whose self-report is equally stale (a MISSING self-report — manual
+sessions never write one — does not rescue). Incident #665: a
+16h-transcript-idle registered session held the `/issue` Step 0
+single-orchestrator guard and blocked every re-drive. The crash-recovery
+pass can't help (the sid IS live), the idle-unmapped reaper excludes MAPPED
+sessions, and session-reconcile fires only on parked/terminal statuses —
+this pass closes that square. UNREGISTER-ONLY: the session itself is NEVER
+stopped (a manual session may hold a user TTY; the SKILL Step 0 stale-wake
+ownership re-check guards a later wake). Deleting the registration releases
+the Step 0 guard; for an ACTIVE task the registration-independent orphan
+sweep re-drives it on its next tick (a PARK/terminal-status task is
+deliberately NOT re-driven — the one-time marker,
+`[autonomous_session_watch:stale-registration-unregister]`, logs the task's
+status). Guards, all failing toward keep: dead sid (the crash-recovery
+pass's property), unresolvable transcript, in-flight provision, fresh
+worktree activity, fresh self-report. Runs AFTER `gate_push_pass` (the
+gate-push-before-reaper ordering is a runaway-force-stop invariant),
+adjacent to the two session reapers, consuming their shared daemon
+session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unregistering
+deletes the entry, which is self-deduping; a fresh re-registration restarts
+the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON

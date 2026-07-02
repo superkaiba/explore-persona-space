@@ -34,6 +34,7 @@ if str(SCRIPTS) not in sys.path:
 import spawn_session  # noqa: E402
 from autonomous_session_watch import (  # noqa: E402
     MAX_ENTRY_AGE_S,
+    STALLED_MARKER_WINDOW_S_DEFAULT,
     STALLED_STATE_PREFIX,
     STALLED_WINDOW_S,
     TERMINAL_FOR_GC,
@@ -81,7 +82,7 @@ def test_fresh_marker_keeps_even_if_self_report_stale():
 def test_all_signals_stale_first_miss_increments():
     # First stale check only increments; alert fires on SECOND consecutive miss
     # (default threshold 2) — guards a flaky markers-fetch.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -93,7 +94,7 @@ def test_all_signals_stale_first_miss_increments():
 
 
 def test_all_signals_stale_second_miss_alerts():
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -111,7 +112,7 @@ def test_already_alerted_stays_quiet_when_respawn_not_eligible():
     # Escalation to a respawn from alerted is covered by
     # `test_alerted_escalates_to_respawn_when_eligible` below; this case
     # only pins the dedup-of-repeat-alerts behavior.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -134,7 +135,7 @@ def test_alerted_escalates_to_respawn_when_eligible():
     # becomes eligible — the alert flag dedups REPEAT ALERTS only, never
     # the stronger respawn action. The alert already required >= threshold
     # consecutive stale checks, so escalation needn't re-accumulate.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -153,7 +154,7 @@ def test_alerted_at_cap_stays_quiet_no_phantom_respawn():
     # the new escalation path must NOT resurrect a respawn. Stay quiet —
     # the caller's `exhausted` flag handles the exhausted-marker dedup
     # separately; here we just refuse to spawn past the cap.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -172,7 +173,7 @@ def test_alerted_above_cap_stays_quiet_no_phantom_respawn():
     # branch. Mirrors the non-alerted defensive test
     # `test_session_stalled_respawn_above_cap_returns_exhausted` in
     # test_autonomous_session_watch.py.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -191,7 +192,7 @@ def test_alerted_eligibility_false_stays_quiet():
     # — the prior alert already deduped, and a respawn would crash on the
     # missing prerequisite. The next tick that flips eligibility back on
     # is where the escalation fires.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -207,7 +208,7 @@ def test_alerted_eligibility_false_stays_quiet():
 def test_stale_self_no_marker_at_all_is_stale():
     # No marker means marker_age=None, which the decision treats as stale —
     # a pod-active autonomous session that's never posted progress IS a signal.
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=None,
@@ -222,7 +223,7 @@ def test_no_pod_still_triggers_if_both_other_signals_stale():
     # has_pod=False does NOT save a session from alerting — signals 1+2 alone
     # are sufficient. Some autonomous sessions are not pod-driving (interp /
     # review phases reading from WandB/HF).
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -234,7 +235,7 @@ def test_no_pod_still_triggers_if_both_other_signals_stale():
 
 
 def test_threshold_one_alerts_immediately():
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -246,7 +247,7 @@ def test_threshold_one_alerts_immediately():
 
 
 def test_higher_threshold_delays_alert():
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     assert decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -266,18 +267,19 @@ def test_higher_threshold_delays_alert():
 
 
 def test_window_boundary_exact():
-    # At exactly window_s the self-report is treated as stale (>= window).
-    # Just under is treated as fresh.
+    # At exactly its window each signal is treated as stale (>= window);
+    # just under is fresh. The self-report uses window_s (60 min); the
+    # marker uses its own marker_window_s (2h default) — #845 (a-i).
     assert decide_session_stalled(
         self_report_age_s=STALLED_WINDOW_S - 1,
-        marker_progress_age_s=STALLED_WINDOW_S + 60,
+        marker_progress_age_s=STALLED_MARKER_WINDOW_S_DEFAULT + 60,
         has_pod=False,
         missed=1,
         alerted=False,
     ) == ("keep", 0)
     assert decide_session_stalled(
         self_report_age_s=STALLED_WINDOW_S,
-        marker_progress_age_s=STALLED_WINDOW_S,
+        marker_progress_age_s=STALLED_MARKER_WINDOW_S_DEFAULT,
         has_pod=False,
         missed=1,
         alerted=False,
@@ -624,6 +626,9 @@ def test_stalled_pass_alerts_when_newest_nonwatcher_marker_truly_old(
     _write_autonomous_entry(isolated_registry, 661, "sess-661")
 
     stale_age = STALLED_WINDOW_S + 600
+    # The MARKER must be older than the #845 2h marker window (not just the
+    # 60-min self-report window) for the detector to corroborate the stall.
+    stale_marker_age = STALLED_MARKER_WINDOW_S_DEFAULT + 600
     monkeypatch.setattr(
         asw,
         "_self_report_age_seconds",
@@ -633,7 +638,7 @@ def test_stalled_pass_alerts_when_newest_nonwatcher_marker_truly_old(
     # (a respawn would also be a valid "flag", but stub the status so the
     # asserted recovery action does not depend on task 661's real host status).
     monkeypatch.setattr(asw, "_task_status", lambda issue: None)
-    old_ts = _iso_from_epoch(now - stale_age)
+    old_ts = _iso_from_epoch(now - stale_marker_age)
     recent_watcher_ts = _iso_from_epoch(now - 60)
     monkeypatch.setattr(
         asw,
@@ -1040,13 +1045,18 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     calls: list[str] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
-    # main() fetches the shared reaper-pass /list snapshot directly; patch it
-    # so the wiring test never RPCs the real daemon.
+    # main() fetches the shared reaper-pass /list snapshot + the #845 wedge
+    # pid map directly; patch both so the wiring test never RPCs the real
+    # daemon.
     monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
+    monkeypatch.setattr(
+        asw, "stale_registration_pass", lambda *a, **kw: calls.append("stale_registration")
+    )
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: calls.append("zombie_wrapper"))
     monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: calls.append("idle_unmapped"))
     monkeypatch.setattr(asw, "gc_pass", lambda *a, **kw: calls.append("gc"))
@@ -1058,6 +1068,7 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
         "pod_safety",
         "stalled",
         "orphan_sweep",
+        "stale_registration",
         "zombie_wrapper",
         "idle_unmapped",
         "gc",
@@ -1083,3 +1094,365 @@ def test_gc_only_short_circuits_other_passes(isolated_registry, monkeypatch):
     rc = asw.main(["--gc-only"])
     assert rc == 0
     assert calls == ["gc"]
+
+
+# ─── #845 stall-detection hardening — pure predicates ─────────────────────────
+
+
+def test_marker_window_2h_blocks_stall_declaration():
+    # #845 (a-i) — the #761/#763 false-positive class: self-report 90 min
+    # stale AND newest non-watcher marker 90 min old. Under the pre-#845
+    # single 60-min window this corroborated a stall (alert on the 2nd miss);
+    # under the dedicated 2h marker window the still-fresh-enough marker
+    # blocks the declaration outright.
+    ninety_min = 90 * 60
+    assert decide_session_stalled(
+        self_report_age_s=ninety_min,
+        marker_progress_age_s=ninety_min,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        threshold=2,
+    ) == ("keep", 0)
+
+
+def test_marker_window_env_override(monkeypatch):
+    # EPM_STALLED_MARKER_HEARTBEAT_MIN parses minutes; malformed falls back.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALLED_MARKER_HEARTBEAT_MIN", raising=False)
+    assert asw._stalled_marker_window_s() == float(asw.STALLED_MARKER_WINDOW_S_DEFAULT)
+
+    monkeypatch.setenv("EPM_STALLED_MARKER_HEARTBEAT_MIN", "45")
+    assert asw._stalled_marker_window_s() == 45 * 60.0
+
+    monkeypatch.setenv("EPM_STALLED_MARKER_HEARTBEAT_MIN", "garbled")
+    assert asw._stalled_marker_window_s() == float(asw.STALLED_MARKER_WINDOW_S_DEFAULT)
+
+
+def test_decide_respawn_fence_matrix():
+    # #845 (a-ii): the stop-verify fence's full decision table.
+    import autonomous_session_watch as asw
+
+    f = asw.decide_respawn_fence
+    # First tick of an episode: no pending stop -> stop only, never spawn.
+    assert f(stop_pending_sid=None, current_sid="a", sid_alive=True, stop_retried=False) == "stop"
+    assert f(stop_pending_sid=None, current_sid="a", sid_alive=False, stop_retried=False) == "stop"
+    # Later tick, pending sid verified dead -> safe to spawn.
+    assert f(stop_pending_sid="a", current_sid="a", sid_alive=False, stop_retried=False) == "spawn"
+    # Still alive on the verify tick, retry unused -> exactly one retry.
+    assert (
+        f(stop_pending_sid="a", current_sid="a", sid_alive=True, stop_retried=False) == "retry-stop"
+    )
+    # Still alive after the retry -> loud one-time alert, never spawn.
+    assert (
+        f(stop_pending_sid="a", current_sid="a", sid_alive=True, stop_retried=True) == "stop-failed"
+    )
+    # Pending sid no longer matches the registry entry (a concurrent respawn
+    # replaced the session) -> clear the fence, never stop the fresh sid.
+    assert (
+        f(stop_pending_sid="a", current_sid="b", sid_alive=True, stop_retried=False) == "clear-keep"
+    )
+    assert (
+        f(stop_pending_sid="a", current_sid=None, sid_alive=False, stop_retried=True)
+        == "clear-keep"
+    )
+
+
+def test_decide_worktree_hold_bounds():
+    # #845 (b): hold iff activity is fresh AND under the tick cap — a bound,
+    # not a latch.
+    import autonomous_session_watch as asw
+
+    assert asw.decide_worktree_hold(True, 0) is True
+    assert asw.decide_worktree_hold(True, asw.WT_HOLD_MAX_TICKS - 1) is True
+    assert asw.decide_worktree_hold(True, asw.WT_HOLD_MAX_TICKS) is False
+    assert asw.decide_worktree_hold(False, 0) is False
+    assert asw.decide_worktree_hold(True, 1, max_holds=1) is False
+
+
+def test_decide_daemon_blocked_escalation_matrix():
+    # #845 (c): increments on daemon-blocked alerted ACTIVE stale ticks,
+    # fires ONCE at the 2-tick threshold, resets on a reachable tick.
+    import autonomous_session_watch as asw
+
+    f = asw.decide_daemon_blocked_escalation
+    base = dict(in_active=True, manual=False, alerted=True, stale=True, daemon_reachable=False)
+    # Tick 1 blocked: count 1, below threshold -> no push.
+    assert f(**base, blocked_ticks=0, already_pushed=False) == (1, False)
+    # Tick 2 blocked: threshold met -> fire exactly once.
+    assert f(**base, blocked_ticks=1, already_pushed=False) == (2, True)
+    # Tick 3 blocked, already pushed -> keep counting, no repeat push.
+    assert f(**base, blocked_ticks=2, already_pushed=True) == (3, False)
+    # Daemon reachable -> full reset (the alerted->eligible escalation
+    # respawns on this same tick).
+    assert f(**{**base, "daemon_reachable": True}, blocked_ticks=5, already_pushed=True) == (
+        0,
+        False,
+    )
+    # Manual / non-ACTIVE / not-alerted / not-stale episodes freeze (no
+    # count-up, no push) — the deferral is not a respawn-worthy stall.
+    assert f(**{**base, "manual": True}, blocked_ticks=1, already_pushed=False) == (1, False)
+    assert f(**{**base, "in_active": False}, blocked_ticks=1, already_pushed=False) == (1, False)
+    assert f(**{**base, "alerted": False}, blocked_ticks=1, already_pushed=False) == (1, False)
+    assert f(**{**base, "stale": False}, blocked_ticks=1, already_pushed=False) == (1, False)
+
+
+# ── #845 (e) prompt-wedge row fixtures — shapes match live transcripts ───────
+
+
+def _wedge_prompt_row():
+    return {"type": "user", "message": {"role": "user", "content": "/issue 779 tick"}}
+
+
+def _wedge_dequeue_row():
+    # VERBATIM real row shape captured from a live session transcript
+    # (2026-07-02; plan §6 verification): dequeue rows carry NO content field.
+    return {
+        "type": "queue-operation",
+        "operation": "dequeue",
+        "timestamp": "2026-07-01T18:57:16.499Z",
+        "sessionId": "d63ed59b-d534-497c-95ae-e30de63a3112",
+    }
+
+
+def _wedge_enqueue_row(content="/issue 813"):
+    # VERBATIM real enqueue shape (carries content; classified 'other').
+    return {
+        "type": "queue-operation",
+        "operation": "enqueue",
+        "timestamp": "2026-07-01T18:57:16.498Z",
+        "sessionId": "d63ed59b-d534-497c-95ae-e30de63a3112",
+        "content": content,
+    }
+
+
+def _wedge_assistant_row():
+    return {
+        "type": "assistant",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "on it"}]},
+    }
+
+
+def _wedge_tool_result_row():
+    return {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": "toolu_1", "content": "ok"}],
+        },
+    }
+
+
+def test_decide_prompt_wedge_three_promptless_rows():
+    import autonomous_session_watch as asw
+
+    tail = [_wedge_assistant_row(), _wedge_prompt_row(), _wedge_prompt_row(), _wedge_prompt_row()]
+    assert asw.decide_prompt_wedge(tail, 3) is True
+    # Two trailing prompts are under the N=3 floor.
+    assert asw.decide_prompt_wedge(tail[:-1], 3) is False
+
+
+def test_decide_prompt_wedge_assistant_resets():
+    # An assistant row means the session took a turn — the run resets, so a
+    # busy-but-responding session never trips the wedge.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_prompt_row(),
+        _wedge_prompt_row(),
+        _wedge_prompt_row(),
+        _wedge_assistant_row(),
+        _wedge_prompt_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3) is False
+
+
+def test_decide_prompt_wedge_tool_result_rows_skipped():
+    # tool_result user rows are 'other': skipped WITHOUT resetting the run
+    # (a wedged session's queue keeps interleaving bg-task results).
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_assistant_row(),
+        _wedge_prompt_row(),
+        _wedge_tool_result_row(),
+        _wedge_prompt_row(),
+        _wedge_tool_result_row(),
+        _wedge_prompt_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3) is True
+
+
+def test_decide_prompt_wedge_malformed_rows_other():
+    # Malformed rows (non-dict, missing/unknown fields) classify 'other' —
+    # never a crash, never a reset.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_prompt_row(),
+        "garbage-line",
+        None,
+        {"type": 42},
+        {"no-type": True},
+        _wedge_prompt_row(),
+        _wedge_prompt_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3) is True
+    assert asw._classify_wedge_row("garbage-line") == "other"
+    assert asw._classify_wedge_row({"type": "queue-operation", "operation": "enqueue"}) == "other"
+
+
+def test_decide_prompt_wedge_counts_dequeue_ops():
+    # CO-PRIMARY evidence: verified queue-operation dequeue records count
+    # toward the trailing run — alone AND mixed with promptless user rows.
+    import autonomous_session_watch as asw
+
+    alone = [_wedge_assistant_row()] + [_wedge_dequeue_row()] * 3
+    assert asw.decide_prompt_wedge(alone, 3) is True
+    mixed = [
+        _wedge_assistant_row(),
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_dequeue_row(),
+    ]
+    assert asw.decide_prompt_wedge(mixed, 3) is True
+
+
+def test_decide_prompt_wedge_779_replay_queue_operation_rows():
+    # #779 replay: a tail built from the VERBATIM live enqueue/dequeue row
+    # shapes — repeated tick prompts enqueued AND dequeued with no assistant
+    # turn after the first. The enqueue rows are 'other' (skipped); the 3
+    # dequeue records trip the wedge.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_assistant_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+        _wedge_enqueue_row("/issue-tick 779"),
+        _wedge_dequeue_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3) is True
+    # The same tail with a trailing assistant turn is NOT wedged.
+    assert asw.decide_prompt_wedge([*tail, _wedge_assistant_row()], 3) is False
+
+
+def test_tick_wedge_min_dequeued_env_override(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_MIN_DEQUEUED", raising=False)
+    assert asw._tick_wedge_min_dequeued() == asw.TICK_WEDGE_MIN_DEQUEUED
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_DEQUEUED", "5")
+    assert asw._tick_wedge_min_dequeued() == 5
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_DEQUEUED", "0")
+    assert asw._tick_wedge_min_dequeued() == asw.TICK_WEDGE_MIN_DEQUEUED
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_DEQUEUED", "garbled")
+    assert asw._tick_wedge_min_dequeued() == asw.TICK_WEDGE_MIN_DEQUEUED
+
+
+def test_decide_stale_registration_matrix():
+    # #845 (d): the per-entry decision table (the #665 replay + every
+    # fail-toward-keep guard).
+    import autonomous_session_watch as asw
+
+    f = asw.decide_stale_registration
+    t = 12 * 3600
+    sixteen_h = 16 * 3600
+    # #665 replay: live sid, 16h transcript idle, self-report equally stale.
+    assert (
+        f(
+            sid_alive=True,
+            transcript_idle_s=sixteen_h,
+            self_report_age_s=sixteen_h,
+            idle_threshold_s=t,
+        )
+        == "unregister"
+    )
+    # A MISSING self-report (manual session — never self-reports) does not
+    # rescue: the transcript idle IS the direct signal.
+    assert (
+        f(sid_alive=True, transcript_idle_s=sixteen_h, self_report_age_s=None, idle_threshold_s=t)
+        == "unregister"
+    )
+    # Dead sid: the crash-recovery pass's property -> keep registered.
+    assert (
+        f(
+            sid_alive=False,
+            transcript_idle_s=sixteen_h,
+            self_report_age_s=sixteen_h,
+            idle_threshold_s=t,
+        )
+        == "keep"
+    )
+    # Unresolvable transcript -> keep (fail toward keep).
+    assert (
+        f(sid_alive=True, transcript_idle_s=None, self_report_age_s=sixteen_h, idle_threshold_s=t)
+        == "keep"
+    )
+    # Fresh transcript OR fresh self-report -> keep.
+    assert (
+        f(sid_alive=True, transcript_idle_s=60.0, self_report_age_s=sixteen_h, idle_threshold_s=t)
+        == "keep"
+    )
+    assert (
+        f(sid_alive=True, transcript_idle_s=sixteen_h, self_report_age_s=60.0, idle_threshold_s=t)
+        == "keep"
+    )
+
+
+def test_stale_registration_idle_env_override(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALE_REGISTRATION_IDLE_H", raising=False)
+    assert asw._stale_registration_idle_s() == float(asw.STALE_REGISTRATION_IDLE_S)
+    monkeypatch.setenv("EPM_STALE_REGISTRATION_IDLE_H", "6")
+    assert asw._stale_registration_idle_s() == 6 * 3600.0
+    monkeypatch.setenv("EPM_STALE_REGISTRATION_IDLE_H", "-1")
+    assert asw._stale_registration_idle_s() == float(asw.STALE_REGISTRATION_IDLE_S)
+    monkeypatch.setenv("EPM_STALE_REGISTRATION_IDLE_H", "garbled")
+    assert asw._stale_registration_idle_s() == float(asw.STALE_REGISTRATION_IDLE_S)
+
+
+def test_watcher_note_sentinels_contains_845_sentinels():
+    # Drift-prevention pin: the #845 stop-failed + stale-registration marker
+    # notes must never reset the staleness clocks they inform.
+    import autonomous_session_watch as asw
+
+    assert asw._STALLED_STOP_FAILED_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._STALE_REGISTRATION_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_stalled_hardening_fields_legacy_defaults_and_advancement_clear():
+    # Backward compat: a pre-#845 on-disk file (no hardening keys) loads the
+    # defaults; a fully-populated file carries forward; self-report
+    # advancement clears EVERYTHING (episode over).
+    import autonomous_session_watch as asw
+
+    legacy = {"missed": 2, "alerted": True}
+    assert asw._stalled_hardening_fields(legacy, advanced=False) == dict(
+        asw._STALLED_HARDENING_DEFAULTS
+    )
+    populated = {
+        "stop_pending_sid": "sid-a",
+        "stop_pending_ts": 5.0,
+        "stop_retried": True,
+        "stop_failed_alerted": True,
+        "wt_hold_count": 3,
+        "daemon_blocked_ticks": 2,
+        "daemon_blocked_pushed": True,
+        "wedge_hits": 1,
+    }
+    carried = asw._stalled_hardening_fields(populated, advanced=False)
+    assert carried == populated
+    assert asw._stalled_hardening_fields(populated, advanced=True) == dict(
+        asw._STALLED_HARDENING_DEFAULTS
+    )
+    # Garbled field types fall back to the defaults (never a crash).
+    garbled = {"stop_pending_sid": 42, "wt_hold_count": "three", "stop_retried": "yes"}
+    fields = asw._stalled_hardening_fields(garbled, advanced=False)
+    assert fields["stop_pending_sid"] is None
+    assert fields["wt_hold_count"] == 0
+    assert fields["stop_retried"] is True  # truthy string -> bool() semantics
