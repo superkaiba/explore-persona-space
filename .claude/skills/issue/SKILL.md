@@ -5076,6 +5076,31 @@ within the same task; the second free-analysis follow-up surfaces in
 the body as a regular bullet for a future human pass. Across tasks the
 mechanism stays fresh (each task gets its own one round).
 
+**Compute-character pre-launch statement (REQUIRED — one paragraph, not a
+planner round, not a gate).** "0 GPU-h" does not mean "0 compute review":
+this step, the Step 9b same-issue follow-up loop, and the CLAUDE.md
+§ Routing "User-chat inline free analysis" carve-out are the workflow's
+PLANNERLESS paths — they skip the planner+critic stack, where all
+compute-character review lives (incidents #667/#722/#778: reused serial
+parent code burned hours on "0 GPU-h" work, caught only by ad-hoc human
+watches). Before dispatching any stage that launches a fit, sweep, or
+statistical battery (permutation/bootstrap/null-draw batteries,
+per-cell/per-fold fits, per-row model calls), the dispatcher STATES, in
+the stage-dispatch `epm:progress` breadcrumb note (or an
+immediately-adjacent `epm:progress` marker): (1) the ops arithmetic —
+cells × folds × draws × epochs and the projected wall-time it implies;
+(2) the NAMED batched helper implementing the inner loop (e.g.
+`analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
+`analysis/null_battery.py`), or why the work is genuinely not batchable;
+(3) for reused parent code, that its inner loop + device routing were
+INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
+wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
+realized implementation later adds a fit/battery the dispatch statement
+did not cover — or materially changes its arithmetic — an updated
+statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+Routing, auto-continue behavior, and the marker schema are unchanged.
+
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
 the analyzer flagged `headline_affecting: yes` — still a useful priority
@@ -5087,6 +5112,9 @@ explicit eval-data path):
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
+   When the follow-up runs any fit/battery, this breadcrumb (or an
+   immediately-following `epm:progress` note) carries the
+   § Compute-character pre-launch statement above.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -6284,6 +6312,19 @@ orchestrators driving one round is the #778 root cause.
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
+   - **Compute-character pre-launch statement** (canonical block: Step
+     9a-ter § Compute-character pre-launch statement — same three
+     elements, same > ~1h stop-and-vectorize rule): REQUIRED in the
+     `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
+     `epm:progress` note) before dispatching ANY stage of the round that
+     launches a fit, sweep, or statistical battery — INCLUDING
+     planner-exempt re-runs (step 2), which skip the amendment plan and
+     its §9 sizing entirely, and analysis / re-fold stages reusing parent
+     code. An amendment plan's §9 sizing does NOT substitute for it: the
+     plan schedules the battery, the executor states the implementation's
+     compute shape — #778's round re-ran the parent's serial 1000-draw
+     null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
+     plan that never said "serial".
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
