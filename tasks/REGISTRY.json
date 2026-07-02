@@ -5372,8 +5372,8 @@
     "831": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/831",
-      "status": "approved",
+      "path": "tasks/running/831",
+      "status": "running",
       "title": "workflow-fix: flock + additive-merge pod.py config --sync (SSH-config drop race)"
     },
     "832": {
