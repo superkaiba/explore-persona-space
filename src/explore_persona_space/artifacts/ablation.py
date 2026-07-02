@@ -95,7 +95,12 @@ def ablation_hooks(model, directions: Mapping[int, torch.Tensor]) -> list:
 
     Raises ``ValueError`` on a non-standard decoder (no ``model.model.layers``) —
     hook-based ablation has no full-tuple fallback; fail loud rather than
-    silently not ablating.
+    silently not ablating — and on any block index outside ``[0, n_blocks)``
+    (checked BEFORE any hook registers; negative indices other than
+    ``EMBED_LAYER`` are rejected rather than Python-aliasing from the end).
+    If registration still fails partway (e.g. a malformed direction on a later
+    entry), every already-registered hook is removed before the exception
+    re-raises, so a caught crash never leaves the model silently ablated.
     """
     blocks = getattr(getattr(model, "model", None), "layers", None)
     embed = getattr(getattr(model, "model", None), "embed_tokens", None)
@@ -104,17 +109,30 @@ def ablation_hooks(model, directions: Mapping[int, torch.Tensor]) -> list:
             "ablation_hooks requires a standard Llama/Qwen-style decoder exposing "
             "model.model.layers; refusing to silently skip ablation"
         )
-    handles = []
-    for layer, direction in directions.items():
-        hook = _make_projection_hook(_normalize(direction))
+    n_blocks = len(blocks)
+    for layer in directions:
         if layer == EMBED_LAYER:
             if embed is None:
                 raise ValueError(
                     "EMBED_LAYER ablation requires model.model.embed_tokens on this model"
                 )
-            handles.append(embed.register_forward_hook(hook))
-        else:
-            handles.append(blocks[layer].register_forward_hook(hook))
+        elif not 0 <= layer < n_blocks:
+            raise ValueError(
+                f"block index {layer} out of range for a {n_blocks}-layer decoder "
+                f"(valid: 0..{n_blocks - 1}, or EMBED_LAYER={EMBED_LAYER})"
+            )
+    handles = []
+    try:
+        for layer, direction in directions.items():
+            hook = _make_projection_hook(_normalize(direction))
+            if layer == EMBED_LAYER:
+                handles.append(embed.register_forward_hook(hook))
+            else:
+                handles.append(blocks[layer].register_forward_hook(hook))
+    except Exception:
+        for h in handles:  # roll back partial registration — never leave the model ablated
+            h.remove()
+        raise
     return handles
 
 
