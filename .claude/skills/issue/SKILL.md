@@ -4026,7 +4026,7 @@ When this skill is re-invoked in `running`:
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
-   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds: failure-lesson
    block" and `experimenter.md` § "Failure-lesson block on
    relaunch-with-fix") to end their report with a structured lesson
    block. A THIRD shape arrives outside this step: an experimenter that
