@@ -5500,8 +5500,8 @@
     "848": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/848",
-      "status": "reviewing",
+      "path": "tasks/completed/848",
+      "status": "completed",
       "title": "workflow-fix: kill-before-relaunch + timeout for smoke retry loops"
     },
     "849": {
