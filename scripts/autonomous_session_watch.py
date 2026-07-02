@@ -7155,11 +7155,13 @@ def _apply_prompt_wedge_override(
     Applied AFTER :func:`_apply_stalled_live_corroboration` — direct
     evidence beats the K-downgrade proxy — and bypasses the 2-miss guard
     and the 2h marker window, but the forced respawn is STILL subject to
-    ``respawn_eligible`` (checked here: ACTIVE + daemon + not manual) and,
-    inside :func:`_handle_stalled_respawn`, to the spawn-grace skip, the
-    (b) worktree hold and the (a) stop-verify fence. A wedge-forced respawn
-    RESETS ``live_consecutive`` (consistent with the escalation-fired =>
-    reset semantics of the K corroboration).
+    ``respawn_eligible`` (checked here: ACTIVE + daemon + not manual), to
+    the park exemptions (re-probed against the escalated action by the
+    caller, :func:`_apply_wedge_override_with_exemption_probe` — #845 r2)
+    and, inside :func:`_handle_stalled_respawn`, to the spawn-grace skip,
+    the (b) worktree hold and the (a) stop-verify fence. A wedge-forced
+    respawn RESETS ``live_consecutive`` (consistent with the
+    escalation-fired => reset semantics of the K corroboration).
 
     Probed ONLY when signal 1 is already stale (the lazy gate: the healthy
     hot path never pays the transcript read) and the slow path would
@@ -7188,7 +7190,8 @@ def _apply_prompt_wedge_override(
         f"  issue #{issue}: PROMPT-WEDGE — {note} while the self-report is "
         f"stale; escalating straight to the respawn arm (bypasses the miss "
         f"debounce, the K-downgrade and the marker window; still subject to "
-        f"the spawn-grace skip, the worktree hold and the stop-verify fence)."
+        f"the park exemptions, the spawn-grace skip, the worktree hold and "
+        f"the stop-verify fence)."
     )
     return "respawn", 0, wedge_hits + 1, note
 
@@ -7255,7 +7258,11 @@ def _apply_stalled_park_exemptions(
     rewrites ``(action, new_missed, followups_child_alerted)`` and returns
     a 4th element ``exempted`` (True iff any exemption rewrote the action;
     the #845 (e) prompt-wedge fast lane must never override an exemption —
-    a legitimately-parked / provisioning session is not wedged). Factored
+    a legitimately-parked / provisioning session is not wedged). On the
+    fresh-marker keep(0) path BOTH probes below are lazily skipped, so
+    ``exempted=False`` means unprobed, not clear — a wedge escalation
+    re-invokes this function once against the escalated action
+    (:func:`_apply_wedge_override_with_exemption_probe`, #845 r2). Factored
     out of :func:`_process_stalled_session` to keep it under the C901 cap.
 
     1. In-flight-provision (refs #573) / long-phase-heartbeat (#761),
@@ -7299,6 +7306,77 @@ def _apply_stalled_park_exemptions(
     if (action, new_missed) != pre_followups:
         exempted = True
     return action, new_missed, followups_child_alerted, exempted
+
+
+def _apply_wedge_override_with_exemption_probe(
+    *,
+    issue: int,
+    entry: dict,
+    status: str | None,
+    has_pod: bool,
+    events: list[dict],
+    action: str,
+    new_missed: int,
+    followups_child_alerted: bool,
+    self_report_age: float | None,
+    respawn_eligible: bool,
+    pids_by_sid: dict[str, int] | None,
+    live_consecutive: int,
+    wedge_hits: int,
+    now: float,
+    dry_run: bool,
+) -> tuple[str, int, bool, int, int, str | None]:
+    """Prompt-wedge fast lane + the park-exemption re-probe on escalation
+    (#845 r2, concern ``wedge-bypasses-unprobed-park-exemptions``).
+
+    Both lazy exemption probes gate on ``action != "keep" or new_missed > 0``,
+    so on the fresh-marker keep(0) hot path (``decide_session_stalled``
+    returned ``("keep", 0)``) they never RAN and the caller's ``exempted`` is
+    vacuously False — unprobed, not probed-and-clear. A wedge that then flips
+    keep->respawn would bypass the provision-in-flight / long-phase /
+    spend-approval / round-complete / awaiting-child checks entirely. So:
+    when (and only when) the wedge fires, re-run
+    :func:`_apply_stalled_park_exemptions` ONCE against the escalated action;
+    if any exemption fires, the wedge does NOT force the respawn — the
+    exemption's ``("keep", 0)`` rewrite stands and the wedge's counter side
+    effects are undone (no wedge hit recorded, the K counter keeps its
+    pre-wedge value, no ``wedge_note`` reaches the respawn arm). The wedge
+    thus bypasses the miss debounce, the K-downgrade and the marker window,
+    but NEVER the park exemptions, the worktree hold or the stop-verify
+    fence — exactly the documented invariant
+    (``.claude/rules/background-automation.md``). Factored out of
+    :func:`_process_stalled_session` to keep it under the C901 cap (15).
+    """
+    pre_wedge = (live_consecutive, wedge_hits)
+    action, live_consecutive, wedge_hits, wedge_note = _apply_prompt_wedge_override(
+        issue=issue,
+        entry=entry,
+        action=action,
+        self_report_age=self_report_age,
+        respawn_eligible=respawn_eligible,
+        pids_by_sid=pids_by_sid,
+        live_consecutive=live_consecutive,
+        wedge_hits=wedge_hits,
+    )
+    if wedge_note is None:
+        return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, None
+    action, new_missed, followups_child_alerted, wedge_exempted = _apply_stalled_park_exemptions(
+        issue=issue,
+        status=status,
+        has_pod=has_pod,
+        events=events,
+        action=action,
+        new_missed=new_missed,
+        followups_child_alerted=followups_child_alerted,
+        now=now,
+        dry_run=dry_run,
+    )
+    if wedge_exempted:
+        # A park exemption vetoed the wedge: the session is legitimately
+        # parked / provisioning, not wedged.
+        live_consecutive, wedge_hits = pre_wedge
+        wedge_note = None
+    return action, new_missed, followups_child_alerted, live_consecutive, wedge_hits, wedge_note
 
 
 def _process_stalled_session(
@@ -7542,18 +7620,36 @@ def _process_stalled_session(
     # Prompt-wedge fast lane (#845 e) — applied AFTER the K corroboration
     # (direct transcript evidence beats the live-id proxy) and NEVER over an
     # exemption rewrite (a legitimately-parked / provisioning session is not
-    # wedged). See _apply_prompt_wedge_override for the lazy-probe gates.
+    # wedged). On the fresh-marker keep(0) hot path the lazy exemptions above
+    # were never PROBED (`exempted` is vacuously False), so a wedge-forced
+    # respawn re-probes them ONCE against the escalated action (#845 r2,
+    # concern wedge-bypasses-unprobed-park-exemptions). See
+    # _apply_wedge_override_with_exemption_probe for the gates + the veto.
     wedge_note: str | None = None
     if not exempted:
-        action, live_consecutive, hard["wedge_hits"], wedge_note = _apply_prompt_wedge_override(
+        (
+            action,
+            new_missed,
+            followups_child_alerted,
+            live_consecutive,
+            hard["wedge_hits"],
+            wedge_note,
+        ) = _apply_wedge_override_with_exemption_probe(
             issue=issue,
             entry=entry,
+            status=task_status,
+            has_pod=has_pod,
+            events=events,
             action=action,
+            new_missed=new_missed,
+            followups_child_alerted=followups_child_alerted,
             self_report_age=self_report_age,
             respawn_eligible=respawn_eligible,
             pids_by_sid=pids_by_sid,
             live_consecutive=live_consecutive,
             wedge_hits=hard["wedge_hits"],
+            now=now,
+            dry_run=dry_run,
         )
 
     # Daemon-blocked escalation (#845 c): count consecutive ticks a
