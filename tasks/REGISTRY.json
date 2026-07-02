@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 833,
+  "highest_id": 834,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5390,6 +5390,13 @@
       "path": "tasks/planning/833",
       "status": "planning",
       "title": "Does #722's function-change verdict hold with on-policy answers from the fine-tuned model"
+    },
+    "834": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/834",
+      "status": "proposed",
+      "title": "Vectorize null_battery draws\u00d7layers loops (batched einsum Pearson; 50-100x)"
     },
     "84": {
       "has_clean_result": false,
