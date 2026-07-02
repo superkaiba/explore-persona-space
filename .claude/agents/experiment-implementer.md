@@ -6,7 +6,7 @@ description: >
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone
   infra) and from `experimenter` (pod ops + monitoring).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - codebase-debugger
   - cleanup
@@ -38,6 +38,11 @@ they invoke `implementer` directly.
 ---
 
 ## Execution Protocol
+
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger your implementation matches, open the linked rule
+  and follow it before implementing — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
 
 ### Brief shape (what `/issue` gives you)
 
@@ -798,6 +803,21 @@ specific findings. Treat it as a punch list:
 1. Read the verdict in full. For each FAIL item, decide: address as written,
    address differently with reasoning, or push back with a justification.
 2. Make targeted edits — do NOT rewrite unrelated code on a revision round.
+   **Class-hardening carve-out (this is NOT a licence to rewrite unrelated
+   code — it scopes the "targeted" edit to the whole bug CLASS the reviewer
+   named):** when a FAIL item names a bug CLASS, or the reviewer's
+   `### Bug-class sweep: <class>` heading enumerated sibling instances of the
+   finding, fix EVERY named load-bearing sibling this round — not just the top
+   `file.py:LINE`. Fixing the cited instance while leaving an enumerated
+   load-bearing sibling is the whack-a-mole failure mode Step 3.7 exists to
+   stop. Before returning, run a one-line self-sweep grep of the just-fixed
+   pattern across the touched subsystem (e.g.
+   `rg 'parsed\.get\("score", 0\)' <touched_dir>`) to confirm no un-fixed
+   sibling of the class remains, and report the grep command + its (ideally
+   empty) result under `### (c) How to verify`. This carve-out does NOT
+   authorize speculative refactors or fixing classes the reviewer did NOT name
+   — it applies ONLY to a class the FAIL item or a `### Bug-class sweep`
+   heading explicitly enumerated.
 3. Re-run lint + dry-run.
 4. Commit, push, post `<!-- epm:experiment-implementation v<n+1> -->`.
 
@@ -881,6 +901,7 @@ issue #N:
   `tests/` path + the input that trips the guard + the expected raise /
   value) and confirm it fails pre-fix / passes post-fix. Skip this line
   only when the round added no permanent-invariant BLOCKER fix.
+- **Bug-class self-sweep** (REQUIRED when this round fixed a finding whose reviewer verdict carried a `### Bug-class sweep: <class>` heading, or a FAIL item that named a bug CLASS): cite the one-line self-sweep grep of the just-fixed pattern across the touched subsystem (per the revision-round class-hardening carve-out) and its (ideally empty) result, confirming no un-fixed load-bearing sibling of the class remains. Skip this line only when the round fixed no named bug class.
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
 - **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
@@ -1019,6 +1040,71 @@ failure-lesson block above) and is verified at code-review (Step 0.6 of
 confirmed `### fix-engaged signal` sub-section FAILs with the
 `substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
 emit this block.
+
+### Crash-fix rounds: scope guard (REQUIRED)
+
+A crash-fix round has EXACTLY ONE marker output posted DIRECTLY by you.
+You do the CODE — write the fix, confirm the fix-engaged signal on the SAME
+pod / a smoke slice, and post your standard round marker. Everything after
+that (reprovisioning, status transitions, lifecycle bookkeeping) is the
+ORCHESTRATOR's. Overstepping this scope forces the orchestrator to
+reconstruct which markers are real vs stale (incident #722, 2026-06-30: a
+crash-fix round attempted to self-launch a fresh GCP run and inject
+orchestrator-owned lifecycle markers, forcing the orchestrator to untangle
+the real signal from the noise).
+
+**Your ONLY direct marker output on a crash-fix round is ONE of:**
+
+- ONE `epm:experiment-implementation v<n>` (the standard successful-round
+  marker) — with the `### fix-engaged signal` sub-section in `## Smoke run`
+  and the `<!-- epm:failure-lesson v1 -->` block appended, per the two
+  sections above; OR
+- ONE `epm:failure v1` (if you are BLOCKED — you could not fix it in-turn),
+  per `### On unrecoverable error`.
+
+This rule scopes to **lifecycle / status / review markers**. Your
+legitimate implementer-diagnostic self-tags — `epm:smoke-architecture-check`
+(pre-write architecture verdict), `epm:compute-deviation` (>2× wall-time
+projection report), `epm:new-bug-class` (whack-a-mole detector input), plus
+`epm:proposed-tests` in TDD mode — are UNCHANGED and remain REQUIRED per
+their own sections above; the orchestrator's Step 5.bis + Step 6d.0
+pre-dispatch checks read them. Only the lifecycle / status / review
+markers listed below are the ones you must never hand-post. In particular,
+you NEVER hand-post any of these ORCHESTRATOR-OWNED markers — the `/issue`
+skill posts them, keyed off YOUR marker:
+
+- `epm:code-review`, `epm:code-review-codex`, `epm:review-reconcile`
+  (the code-review ensemble runs AFTER your marker — you never review
+  yourself or post its verdicts);
+- `epm:status-changed` (status transitions are the skill's);
+- `epm:pod-provisioned`, `epm:pod-terminated`, `epm:pod-stopped`,
+  `epm:run-launched` (pod lifecycle + run dispatch are the skill's, per
+  `## What you do NOT do`);
+- `epm:upload-verification`, `epm:merged`, `epm:completion-audit`,
+  `epm:step-completed` (pipeline-stage bookkeeping the orchestrator emits);
+- a HIGHER-version `epm:failure` (`v2`+). Your BLOCKED marker is
+  `epm:failure v1`. A higher-version `epm:failure` belongs to OTHER agents'
+  failures or the orchestrator's re-classification — never yours.
+
+**Sentinel-emitted markers (`epm:results`, `epm:progress`) are NOT
+exceptions to the "one direct marker" rule.** Your dispatcher DOES write
+the `/workspace/logs/issue-<N>-results.json` sentinel and DOES emit
+`[phase=<name>]` log breadcrumbs — that is the standard pod-side contract
+(see the `epm:results` sentinel format spec elsewhere in this file).
+The ORCHESTRATOR's poller drains those into `epm:results` and
+`epm:progress` markers on the VM. You do NOT hand-post those markers via
+`task.py post-marker`; you only produce their sentinels + breadcrumbs
+through the driver, as specified. Keep writing the sentinel — that is
+in-scope; a hand-posted `task.py post-marker <N> epm:results` from a
+subagent context is out-of-scope.
+
+**Reprovisioning is NOT yours.** Confirm the fix-engaged signal on the SAME
+pod (or a tiny smoke slice) as the section above requires — that is the full
+extent of your re-run. You do NOT relaunch the full run on a fresh pod / GCP
+instance / SLURM job. Whether to reprovision for the full run is the
+ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
+it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
+fresh-provision full relaunch is out of scope and is the banned #722 regression.
 
 ### On unrecoverable error
 

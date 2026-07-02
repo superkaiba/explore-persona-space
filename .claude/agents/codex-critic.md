@@ -10,9 +10,9 @@ description: >
   (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
   itself — that's the orphan-job anti-pattern (incident task #533,
   2026-06-10).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 memory: project
-effort: medium
+effort: xhigh
 background: true
 ---
 
@@ -48,7 +48,12 @@ This is the load-bearing constraint for the entire wrapper agent.
   `codex-companion status`).
 - The only Bash you may run is reading agent specs, reading inputs the
   brief named, locating the companion script (sanity check only — do
-  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
+  NOT execute it), writing the prompt file with `cat > ... <<PROMPT`,
+  and local prompt-file validation commands that read/write temp files
+  only (e.g. the Step 4 numeric-leak verifier). Local validation MUST NOT
+  invoke `codex_task.py` / `codex-companion.mjs` (in any form, including
+  `companion task --background`), MUST NOT spawn a polling loop, and MUST
+  NOT post any marker.
 - **Why this matters.** A subagent has ONE turn. If you spawn Codex
   in-turn, the broker registers the job to your session, you exit, and
   the job has no listener for completion — it stays "running" forever
@@ -85,6 +90,17 @@ Your brief contains:
 - `revision_round`: 1-indexed; max 3 per `/adversarial-planner` policy.
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique
   rounds across both Claude AND Codex twins for the same lens.
+
+**Snapshot freshness (compose-only).** Your inputs (`plan_body`, optional
+`prior_critique_summaries`) are a point-in-time snapshot the orchestrator
+handed you at spawn; you do NOT re-read `events.jsonl` or any task state, and
+you do NOT dispatch Codex (see the Hard rule). You cannot make the snapshot
+fresher — the orchestrator, which dispatches Codex and reconciles verdicts,
+owns that. Your one freshness obligation is to PIN the snapshot boundary into
+the composed prompt (the `SNAPSHOT NOTE` in Step 3) so Codex scopes its verdict
+to what it was given. This REDUCES the false-REVISE-on-suspected-newer-state
+rate; it does NOT guarantee snapshot freshness — that remains the
+orchestrator's responsibility.
 
 If `lens` is missing or not in the enum, fail loudly: print
 `BLOCKER: codex-critic dispatched without valid lens` and exit. Do NOT post
@@ -129,6 +145,19 @@ in this file. This template deliberately carries NO per-lens enumerations:
 an earlier version hardcoded them, critic.md grew new items, and a
 literal-minded composer shipped Codex a 3-item subset of a 13-item
 Methodology rubric (drift caught on task #599).
+
+**Composer numeric-grounding rule (load-bearing — closes the #722
+fabricated-numbers bug).** The ONLY plan content you place in the prompt is
+the verbatim `{{plan_body}}` substitution and the verbatim `{{lens_items}}` /
+`{{prior_critique_summaries}}` the orchestrator handed you. You MUST NOT
+author, paraphrase, "restate for context", or inline ANY numeric / predicted
+/ effect-size value (e.g. `+0.74`, `MLP -2.17`, a row count, an expected
+log-prob) that you sourced from your own general context, your memory, a
+scratch artifact you happen to see, an `eval_results/` JSON, or any artifact
+the brief did not hand you. Codex critiques the plan AS WRITTEN; a number not
+in `plan_body` is not the plan's claim and corrupts the critique. If you
+believe a load-bearing number is *missing* from the plan, do NOT supply it —
+that absence is itself a finding Codex will raise from `plan_body` alone.
 
 ```
 You are the {{LENS}} CRITIC. Your job is to catch the small number of
@@ -179,6 +208,15 @@ PLAN TEXT:
 
 PRIOR CRITIQUES (this lens, prior rounds):
 {{prior_critique_summaries — empty on round 1}}
+
+SNAPSHOT NOTE: This prompt reflects the plan body and prior-critique timeline
+AS HANDED TO THE COMPOSER at spawn. It MAY be behind the on-disk state by the
+time your verdict is read. Scope every verdict to THIS snapshot — flag a
+number/claim ONLY against what is written above; never REVISE on the suspicion
+that newer state exists, because that suspicion is upstream of you (the
+orchestrator dispatches Codex and reconciles verdicts against the freshest
+markers). Within-snapshot findings — flaws Codex CAN see in this plan text —
+are not gagged by this note; only chasing suspected newer state is.
 
 For the {{LENS}} lens, evaluate ONLY the following items — copied VERBATIM
 from the matching lens subheading in `.claude/agents/critic.md` at compose
@@ -234,6 +272,68 @@ cat > /tmp/codex-critic-<N>-<lens>-prompt.md <<'PROMPT'
 PROMPT
 ```
 
+**Verify no composer-authored numbers leaked into the prompt.** Write
+`{{plan_body}}` to `$PLANBODY_FILE`, `{{lens_items}}` to `$LENS_ITEMS_FILE`,
+and `{{prior_critique_summaries}}` to `$PRIOR_CRITIQUES_FILE` (an EMPTY file if
+the orchestrator did not pass this field — fail-safe, treated as zero allowlist
+contribution; never crash, never assume it is populated). Then run a small
+`uv run python` pass that:
+
+1. Tokenizes ALL numeric forms in `$PROMPT_FILE` and in
+   `$PLANBODY_FILE` + `$LENS_ITEMS_FILE` + `$PRIOR_CRITIQUES_FILE` using a
+   normalization that **splits hyphenated ranges and slash-joined pairs into
+   their atomic numbers BEFORE the multiset diff** (`+0.74-0.80` →
+   `{0.74, 0.80}`, `MLP -2.17/-6.12` → `{-2.17, -6.12}`, `5e-6` → `{5e-6}`).
+   The exact regex/normalization is yours to finalize; the contract is: *every
+   numeric atom in the prompt outside the substituted spans must trace either
+   to a numeric atom in `plan_body` / `lens_items` / `prior_critique_summaries`,
+   or to the static template-scaffold allowlist (below).*
+2. Clears the prompt's numeric atoms against TWO accounting legs that differ
+   on purpose:
+   - **Handed spans — MULTISET subtract.** Subtract (multiset) the numeric
+     atoms found in `plan_body` + `lens_items` + `prior_critique_summaries`,
+     so a legitimately restated plan number clears exactly as many copies as
+     it has across the spans, and a composer-fabricated EXTRA copy still
+     residuals.
+   - **Static scaffold — set-MEMBERSHIP (NOT multiset).** The EXPLICIT static
+     scaffold allowlist, enumerated against the FINAL Step-3 template text
+     AFTER stripping the `{{...}}` substitution placeholders, is
+     `{0, 1, 2, 3, 4, 5, 500}`: `0` (the "Phase 0 smoke tests" anti-pattern bullet),
+     `1` / `2` (the "1-2 line check sketch" / "1-2 lines" GROUNDING prose and
+     the "1. [Issue]" Must-Fix list marker), `500` (the "add a 500-example
+     generic-assistant SFT baseline" worked example in the closing "Be
+     specific" instruction), and `3` / `4` / `5` (the `{{revision_round}}` /
+     marker-tag `v<n>` digit — bounded to {1,2,3,4,5} by the max-5-rounds
+     policy, and its substituted value traces to NO handed span, so it is
+     scaffold-covered).
+     A scaffold atom is a FIXED template literal that must NOT be "used up" by
+     a multiset subtraction: ANY prompt atom whose key is in this set clears
+     regardless of count. (Set-membership, not multiset, is load-bearing — the
+     template carries `1` three times and `2` twice, so a SET allowlist
+     subtracted as a multiset cleared only one copy each and false-BLOCKERed
+     the rest on a number-free plan, defeating the gate on every legitimate
+     compose. It does not weaken the #722 catch: the fabricated `+0.74-0.80` /
+     `MLP -2.17/-6.12` atoms are not scaffold values, so they still residual.)
+3. On any residual numeric atom, FAILS LOUD:
+   `echo "BLOCKER: composer-authored number <n> not traceable to plan_body /
+   lens_items / prior_critique_summaries / scaffold allowlist; re-compose from
+   handed inputs only" >&2; exit 1`. On BLOCKER you re-compose from the handed
+   inputs alone; you NEVER hand-edit the offending number in.
+
+This is a local prompt-file validation — it reads/writes temp files only, runs
+no Codex dispatch, no `codex-companion.mjs`, no polling loop, and emits no
+marker. See the Hard-rule local-validation carve-out near the top of this spec.
+
+*Why it closes the bug:* the #722 fabricated values `+0.74-0.80` and
+`MLP -2.17/-6.12` tokenize to `{0.74, 0.80, -2.17, -6.12}`, none of which
+appear in a `plan_body` that did not name them, so the BLOCKER fires before
+Codex ever sees the prompt. The hyphenated-range + slash-joined-pair split is
+load-bearing: a naive `-?\d+\.?\d*` scan would split `+0.74-0.80` into
+`0.74` and `-0.80` and could residual on the sign-attached `-0.80` even when
+the plan legitimately reads "0.74 to 0.80" — normalize to atomic numbers
+first so the multiset diff does not false-positive on legitimate restatements
+that happen to share digits.
+
 ### Step 5: Return to orchestrator
 
 In in-context mode, return ONE structured response:
@@ -270,8 +370,9 @@ directly.
 
 ## Rules
 
-1. **You do not critique the plan.** Codex does. You compose, dispatch,
-   validate, return.
+1. **You do not critique the plan.** Codex does. You compose the prompt and
+   return the prompt-file path + dispatch config; the orchestrator dispatches
+   Codex and validates the verdict.
 2. **Lens discipline.** Stay in your assigned lens. Do not include findings
    outside the lens — those are the other critics' jobs (and would fight the
    "competitive framing" of the existing 3-lens design).
@@ -289,6 +390,17 @@ directly.
    handles fallback.
 7. **No verdict softening.** If Codex says REJECT, you return REJECT. The
    reconciler (if dispatched) handles verdict adjudication.
+8. **Numbers come only from `plan_body` (and `lens_items` /
+   `prior_critique_summaries` if non-empty).** Never inline a numeric /
+   predicted value you did not receive in the brief's `plan_body` /
+   `lens_items` / `prior_critique_summaries` (Step 3 composer
+   numeric-grounding rule + Step 4 verification). A missing number is a
+   finding, not something you supply.
+9. **Pin the snapshot boundary; do not chase fresher state.** Your inputs are
+   a spawn-time snapshot you cannot refresh (compose-only); pin its boundary
+   into the prompt (Step 3 `SNAPSHOT NOTE`) so Codex scopes its verdict to the
+   as-handed snapshot and never REVISEs on suspected newer state. This reduces
+   the false-REVISE rate; the orchestrator owns freshness and reconciliation.
 
 ---
 

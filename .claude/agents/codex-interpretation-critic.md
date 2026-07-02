@@ -11,9 +11,9 @@ description: >
   `companion task` runtime and posts an `epm:interp-critique-codex` task
   workflow event. The wrapper NEVER dispatches Codex itself — that's the
   orphan-job anti-pattern (incident task #533, 2026-06-10).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 memory: project
-effort: medium
+effort: xhigh
 background: true
 ---
 
@@ -82,7 +82,7 @@ Your brief contains:
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker
-  you post. Cap 3 per reviewer.
+  you post. Cap 5 per reviewer.
 - `eval_results_paths` — list of JSON paths the analyzer cited.
 - `figure_paths` — list of PNG paths referenced in the interpretation body
   (for lens 6 plot-prose match — Codex multimodal works, verified
@@ -207,6 +207,7 @@ EVAL RESULTS (JSONs): {{eval_results_paths}}
 FIGURES (PNGs): {{figure_paths}}
 RAW COMPLETIONS: {{raw_completions_path}}
 PRIOR CRITIQUE SUMMARIES (empty on round 1): {{prior_critique_summaries}}
+(Round {{revision_round}} note: for every claim that a round-1/2 fix "was applied" or is "still missing", quote the exact body line it rests on — an unquoted applied/absent claim is discarded.)
 
 You must independently:
 - Read the JSONs and verify claims against raw numbers.
@@ -225,7 +226,11 @@ permanent raw link verbatim) — ACCEPT them; do NOT flag missing verbatim
 samples. Run lens 7 on such rows via field-filtered jq slices (judge label,
 marker presence, row index, token counts); never print whole raw rows.
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash):** do NOT fall back to the body's own prose (or the diff summary) to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (overclaims / raw-text sample plausibility) is BLOCKED, the overall verdict must be `REVISE` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable. When the plan-reference block above carries a `---BEGIN APPROVED PLAN BODY---` envelope, the plan is inlined — a BLOCKED / REVISE on "plan unreachable" is invalid in that case; read the plan from the envelope. "plan unreachable" applies only when the prompt references the plan by path.
+**If a DENIED CAPABILITY stops you reading content you otherwise could (sandbox read-only refuses a local file, denied Read/Bash, a fetched figure PNG the sandbox won't open):** do NOT fall back to the body's own prose (or the diff summary) to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (overclaims / raw-text sample plausibility) is BLOCKED, the overall verdict must be `REVISE` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable. This is a real audit gap — the content exists and you were prevented from checking it.
+
+**If a NETWORK / DNS limitation of the sandbox stops you resolving an HF URL (DNS resolution of `huggingface.co` fails, a connection/HTTP timeout to `huggingface.co`, or `huggingface_hub.list_repo_files` raises `HfHubHTTPError` / a `requests` connection error from a NETWORKING cause):** this is a MECHANICAL sandbox limitation, NOT a content finding — the VM/orchestrator has the access your sandbox lacks and will verify inline. Mark the affected lens `sandbox-unverifiable — <path> (advisory)`, keep scoring the lens on the content you CAN read, and do NOT emit `REVISE` on this ground alone. Do NOT add a `data-access-blocked` note for this case; instead add a single line `Sandbox-unverifiable (advisory): <path> — <one-line reason>` to the verdict body (the orchestrator strips it). EXCEPTION 1 — a `RepositoryNotFoundError` / a resolving-but-missing path is a real content finding and stays `REVISE`. EXCEPTION 2 — if the DNS/network failure prevents scoring the ENTIRE lens (its whole audit target is DNS-fetched content, e.g. Lens 7 raw-text sample plausibility over raw completions), fall back to the denied-capability paragraph above: mark the lens `BLOCKED` and downgrade to `REVISE`. The advisory tag is for a lens whose HF-liveness sub-check fails while the rest is scoreable.
+
+When the plan-reference block above carries a `---BEGIN APPROVED PLAN BODY---` envelope, the plan is inlined — a BLOCKED / REVISE on "plan unreachable" is invalid in that case; read the plan from the envelope. "plan unreachable" applies only when the prompt references the plan by path.
 
 {{INLINED 7 LENSES VERBATIM FROM interpretation-critic.md}}
 
@@ -276,7 +281,13 @@ figure file, body heading) — ungrounded blockers are discarded as
 non-binding by the reconciler — and must carry `mechanizable: yes|no`
 (sketch the check in 1-2 lines when yes). Note verifier-worthy recurring
 checks in plain English in your verdict body (you never emit workflow-fix
-candidates — the orchestrator decides).
+candidates — the orchestrator decides). Any finding that asserts the body
+DOES or DOES NOT now contain a specific fix, phrase, or value (e.g. "the
+round-1 overclaim weakening was applied", "the caveat is still missing")
+MUST quote the exact body line — or a ≤1-line verbatim excerpt — the claim
+rests on; an "applied" / "still absent" assertion with no adjacent quoted
+body span is INVALID and discarded as non-binding (self-catches a
+hallucinated "applied" before the reconciler — #722/#665).
 ```
 
 ### Step 4: Write the prompt to a temp file

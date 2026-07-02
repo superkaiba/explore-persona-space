@@ -67,10 +67,18 @@ namespace.
 **Reap predicate** (two bounded fences, both in the reaper, applied to the
 reap-class instances — see the `audit_stale_gcp_vms` docstring):
 
-- **24h age backstop** (`--max-age-hours`, default 24): any project instance
-  older than the threshold, regardless of phase — the last-resort fence for a
-  VM whose `--max-run-duration` DELETE never fired (`reason="age"`; the
-  reap-vs-escalate split is then decided by classification).
+- **Per-instance-fence-aware age backstop** (#741): any project instance is
+  age-stale, regardless of phase, when EITHER it has a readable
+  `scheduling.maxRunDuration` (set natively by GCP when the create passed
+  `--max-run-duration`) and has exceeded that fence + a 1h grace
+  (`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO readable fence and has lived
+  past the fixed `--max-age-hours` fallback (default 192h = 8d, covering the 7d
+  `default_max_run_duration` + margin) — the last-resort fence for a VM whose
+  `--max-run-duration` DELETE never fired (`reason="age"`; the reap-vs-escalate
+  split is then decided by classification). Tracking each instance's OWN fence
+  (a 24h job reaps at ~25h, a 7d job at ~7d+1h) instead of a single fixed
+  wall-clock avoids re-creating #697 — a 7d job killed by the janitor's old
+  blanket 24h cap.
 - **10-min terminal-phase reap** (`--terminal-phase-max-age-min`, default 10):
   a RUNNING instance that published a terminal `eps/phase` (`done` / `failed`,
   probed via the `eps/phase` guest attribute) but never auto-deleted is a
@@ -343,7 +351,18 @@ controlling TTY (a live user terminal), and sessions whose transcript cannot
 be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
-task to carry a marker).
+task to carry a marker). **#720 short-window subclass:** an unmapped session
+whose LAST-mapped task was TERMINAL — the "zombie session on a completed task"
+ghost class (the respawn pass deletes `issue-<N>.json` at terminal → the
+session goes unmapped, and its repo-root cwd can't re-map it) — is reaped on
+the SHORT `LAST_MAPPED_TERMINAL_REAP_S` window (default 30 min, worst case
+30 min + 2×10-min ticks = ~50 min), NOT the 12h default, via the #720
+breadcrumb (`last-mapped-terminal-<sid>.json`, written at the respawn-pass
+delete instant) + the running-pod + live-follow-up guards in
+`_effective_idle_reap_s`. This is the home for the completed-task-session
+reap: the *reconcile* pass cannot see this class (it is already unmapped by
+the time reconcile runs), so the idle-unmapped short window owns it (#720;
+#795 verified — no reconcile-pass change).
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON

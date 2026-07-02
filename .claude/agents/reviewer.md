@@ -16,11 +16,11 @@ description: >
 deprecated: true
 deprecated_at: 2026-05-13
 absorbed_into: clean-result-critic
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - independent-reviewer
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 
