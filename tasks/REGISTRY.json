@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 895,
+  "highest_id": 896,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5853,6 +5853,13 @@
       "path": "tasks/planning/895",
       "status": "planning",
       "title": "workflow-fix: Step 9c selector misses glob-scanning tests for scripts/*.py diffs"
+    },
+    "896": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/896",
+      "status": "proposed",
+      "title": "Reconcile diverged shared repo-root main (~65 local / ~176 remote) + harden root sync against concurrent-rebase corruption"
     },
     "9": {
       "has_clean_result": false,
