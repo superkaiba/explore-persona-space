@@ -5098,7 +5098,21 @@ def _long_phase_heartbeat_reason(events: list[dict], now: float) -> str | None:
 # completion marker recording the round (a recorded round — run marker
 # newer than the scope — means the re-park already happened per the
 # designed step-3→step-4 ordering, so a later ``followups_running`` status
-# is the legacy children-in-flight shape, not this round stranded).
+# is the legacy children-in-flight shape, not this round stranded). That
+# condition is NECESSARY but — after #778 (2026-07-02), where the parent
+# pass's own post-9b tail parks (step 10 / 9a-bis) postdated a freshly
+# posted 9b scope and the watcher re-parked a MID-FLIGHT round twice — no
+# longer SUFFICIENT. Two purely event-based gates (#837) also bind:
+#   Gate 1 (round-start witness): at least one round-only event newer than
+#     the scope — a kind in ``_FOLLOWUP_ROUND_WITNESS_KINDS`` or an
+#     ``epm:progress`` note beginning
+#     ``_FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`` — must prove the round
+#     actually STARTED (closes the pre-activity race where the
+#     mis-attributed parent park is the newest event).
+#   Gate 2 (freshness): NO non-watcher event (``_WATCHER_NOTE_SENTINELS``
+#     note filter) may be strictly newer than the keyed round-end park —
+#     anything newer proves the round is still executing past it (or died
+#     mid-flight, which is crash-recovery's job, never the repark's).
 # Neither suppressing (freeze — what happened to #533 for ~26h) nor
 # respawning (each respawned session re-concluded "waiting on child",
 # posted another parked step-10 marker, and exited — 3 cycles in 2h) fixes
@@ -5110,7 +5124,13 @@ def _long_phase_heartbeat_reason(events: list[dict], now: float) -> str | None:
 # plus a sentinel-stamped progress marker. Probed BEFORE the awaiting-child
 # suppression in both passes; on a failed re-park the passes fall back to
 # the pre-existing handling so the fix is never worse than the old
-# behavior. A task with NO ``epm:followup-scope`` on record (the legacy
+# behavior — and whenever an UNRUN scope exists the awaiting-child
+# suppression itself STANDS DOWN (#837 §4d,
+# :func:`_followups_awaiting_child_reason`), so the gated-``None`` /
+# failed-re-park fall-through reaches RESPAWN (the designed recovery for a
+# pending or executing round; #778's 05:01Z replacement session
+# demonstrated it live) instead of latching alert-only on a task with open
+# children. A task with NO ``epm:followup-scope`` on record (the legacy
 # children-in-flight shape) never triggers the re-park.
 
 # Step + exit_kind that mark the "parked, awaiting child" state. Pinned as
@@ -5128,6 +5148,44 @@ _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND = "parked"
 # plan approval, which holds at ``followups_running`` in place) is NOT
 # round-end — re-parking there would abandon an unapproved round.
 _FOLLOWUP_ROUND_END_STEPS = frozenset({"9a-bis", "10"})
+
+# Event kinds that can ONLY be posted by an EXECUTING pipeline round (#837
+# round-start witness gate). Temporal-impossibility membership criterion: the
+# PARENT pass's post-9b tail (interp / clean-result critiques, methodology
+# export, status changes, step-completed parks, `epm:merged`, codex-task-*
+# bookkeeping) can legitimately postdate the round's ``epm:followup-scope``,
+# but planning / implementation / launch markers CANNOT — those steps are
+# long over for the parent by the time the 9b scope posts, so any of these
+# kinds NEWER than the scope proves the round actually STARTED. Add a kind
+# here only when a post-9b parent tail could never post it. The watcher
+# itself can never be a witness by construction: it posts none of these
+# kinds, and its ``epm:progress`` notes begin
+# ``[autonomous_session_watch:...]``, which fails the stage-dispatch
+# ``startswith`` check below.
+_FOLLOWUP_ROUND_WITNESS_KINDS = frozenset(
+    {
+        "epm:plan",
+        "epm:plan-approved",
+        "epm:plan-verify",
+        "epm:consistency",
+        "epm:smoke-architecture-check",
+        "epm:proposed-tests",
+        "epm:experiment-implementation",
+        "epm:code-review",
+        "epm:code-review-codex",
+        "epm:review-reconcile",
+        "epm:run-launched",
+        "epm:launch",
+    }
+)
+
+# The same-issue loop's dispatch breadcrumb (SKILL.md § Dispatch breadcrumb —
+# a NON-SKIPPABLE contract for every follow-up-loop stage dispatch): an
+# ``epm:progress`` note BEGINNING with this prefix marks a follow-up-round
+# stage dispatch. The ``followup-`` restriction excludes parent-tail
+# breadcrumbs (methodology spawn, Step 8/9 stages), which carry other
+# ``stage=`` values.
+_FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX = "stage-dispatch stage=followup-"
 
 # Statuses that count a child task as TERMINAL for the purpose of this check.
 # A child at `awaiting_promotion` is NOT terminal here — it is exactly the
@@ -5160,6 +5218,67 @@ def _latest_step_completed(events: list[dict]) -> dict | None:
             best_ts = ts
             best = ev
     return best
+
+
+def _latest_scope_and_run_ts(events: list[dict]) -> tuple[float | None, float | None]:
+    """Newest epoch ts of an ``epm:followup-scope`` and of an
+    ``epm:same-issue-followup-run`` in ``events`` (either slot ``None`` when
+    absent / unparseable). A scope with no STRICTLY newer run marker is an
+    UNRUN scope — a same-issue follow-up round is pending or executing.
+    Shared by :func:`_followup_round_complete_reason` (the repark predicate)
+    and :func:`_followups_awaiting_child_reason` (the #837 stand-down) so
+    the two scans cannot drift."""
+    scope_ts: float | None = None
+    run_ts: float | None = None
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:followup-scope", "epm:same-issue-followup-run"):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if kind == "epm:followup-scope":
+            if scope_ts is None or ts > scope_ts:
+                scope_ts = ts
+        elif run_ts is None or ts > run_ts:
+            run_ts = ts
+    return scope_ts, run_ts
+
+
+def _has_round_start_witness(events: list[dict], scope_ts: float) -> bool:
+    """True iff ``events`` carry a ROUND-START WITNESS strictly newer than
+    ``scope_ts``: a round-only kind (:data:`_FOLLOWUP_ROUND_WITNESS_KINDS`)
+    or a same-issue-loop stage-dispatch breadcrumb (an ``epm:progress`` note
+    beginning :data:`_FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`). Strict ``>``
+    (#837 §12.2): a witness sharing the scope's second fails toward blocking
+    → respawn, the safe direction."""
+    for ev in events:
+        ev_ts = _parse_event_ts(ev.get("ts"))
+        if ev_ts is None or ev_ts <= scope_ts:
+            continue
+        kind = ev.get("kind")
+        if kind in _FOLLOWUP_ROUND_WITNESS_KINDS:
+            return True
+        if kind == "epm:progress" and (ev.get("note") or "").startswith(
+            _FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX
+        ):
+            return True
+    return False
+
+
+def _has_nonwatcher_event_after(events: list[dict], ts: float) -> bool:
+    """True iff any NON-watcher event (note-substring filter
+    :data:`_WATCHER_NOTE_SENTINELS`, same as :func:`_latest_step_completed`)
+    in ``events`` is strictly newer than ``ts``."""
+    for ev in events:
+        ev_ts = _parse_event_ts(ev.get("ts"))
+        if ev_ts is None or ev_ts <= ts:
+            continue
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        return True
+    return False
 
 
 def _task_children(issue: int) -> list[dict]:
@@ -5198,6 +5317,16 @@ def _followups_awaiting_child_reason(
     four-condition predicate). Returns ``None`` when the exemption does not
     apply.
 
+    STANDS DOWN (returns ``None``) whenever an UNRUN ``epm:followup-scope``
+    exists — a scope with no strictly newer ``epm:same-issue-followup-run``
+    (#837): an unrun scope means a same-issue follow-up round is pending or
+    executing, and respawn is ALWAYS the correct recovery there (a respawned
+    session's Step 0 routes into the follow-up loop — demonstrated live by
+    #778's 05:01Z replacement session), so the children-wait suppression must
+    not latch alert-only on a mis-attributed parent-tail step-10 park. The
+    legacy children-in-flight shape has NO scope (or a RECORDED one), so its
+    suppression semantics are untouched.
+
     Probed LAZILY by the callers (the helper is only invoked when the stalled
     / orphan pass already wants to respawn) so a healthy session never pays
     the ``task.py list-children`` subprocess.
@@ -5205,6 +5334,16 @@ def _followups_awaiting_child_reason(
     if status != "followups_running":
         return None
     if has_pod:
+        return None
+    scope_ts, run_ts = _latest_scope_and_run_ts(events)
+    if scope_ts is not None and (run_ts is None or run_ts <= scope_ts):
+        # #837 stand-down: an UNRUN scope → the fall-through must reach
+        # RESPAWN, never the awaiting-child latch (the reconciler-verified
+        # freeze shape: the SAME mis-attributed step-10 park the repark
+        # predicate's witness gate vetoes would otherwise satisfy this
+        # suppression forever on a task with open children — #778 has #816).
+        # Checked BEFORE the children lookup so the stand-down stays pure
+        # (no subprocess).
         return None
     sc = _latest_step_completed(events)
     if sc is None:
@@ -5240,7 +5379,7 @@ def _followups_awaiting_child_reason(
     )
 
 
-def _followup_round_complete_reason(events: list[dict]) -> str | None:
+def _followup_round_complete_reason(events: list[dict], *, issue: int | None = None) -> str | None:
     """Reason string when ``events`` show a COMPLETED-but-UNRECORDED
     same-issue follow-up round whose designed re-park (``set-status <N>
     awaiting_promotion``) never ran: the latest non-watcher
@@ -5262,24 +5401,24 @@ def _followup_round_complete_reason(events: list[dict]) -> str | None:
       stranded — defer to the awaiting-child suppression. This also
       self-disarms the predicate after the watcher's own re-park, which
       posts the completion marker itself
-      (:func:`_repark_completed_followup_round`).
+      (:func:`_repark_completed_followup_round`);
+    - (#837 gate 1 — round-start witness) no round-only event newer than
+      the scope proves the round STARTED: the matched park is the parent
+      pass's own tail (#778: the 9a-bis park 14 min after the 9b scope) or
+      the round never started — either way the repark would falsely close
+      the scope; defer to crash-recovery / stalled handling;
+    - (#837 gate 2 — freshness) ANY non-watcher event is strictly newer
+      than the keyed round-end park: the park is stale / mis-attributed —
+      the round is still executing past it (#778: round activity HOURS
+      newer at both firings), or died mid-flight (crash-recovery's job,
+      never the repark's).
+
+    ``issue`` is used only for the log-and-skip diagnostics; ``None`` keeps
+    every existing caller/test signature working.
 
     Pure over the already-loaded ``events`` — no subprocess.
     """
-    scope_ts: float | None = None
-    run_marker_ts: float | None = None
-    for ev in events:
-        kind = ev.get("kind")
-        if kind not in ("epm:followup-scope", "epm:same-issue-followup-run"):
-            continue
-        ts = _parse_event_ts(ev.get("ts"))
-        if ts is None:
-            continue
-        if kind == "epm:followup-scope":
-            if scope_ts is None or ts > scope_ts:
-                scope_ts = ts
-        elif run_marker_ts is None or ts > run_marker_ts:
-            run_marker_ts = ts
+    scope_ts, run_marker_ts = _latest_scope_and_run_ts(events)
     if scope_ts is None:
         return None
     if run_marker_ts is not None and run_marker_ts > scope_ts:
@@ -5295,6 +5434,38 @@ def _followup_round_complete_reason(events: list[dict]) -> str | None:
         and sc_ts is not None
         and sc_ts > scope_ts
     ):
+        who = f"issue #{issue}" if issue is not None else "followup-round-repark probe"
+        # Gate 1 — round-start witness (#837): the round must have
+        # DEMONSTRABLY started (a round-only kind or a followup stage-
+        # dispatch breadcrumb newer than the scope). Closes the #778
+        # pre-activity race (scope → mis-attributed parent-tail park →
+        # nothing yet) deterministically, with no wall clock.
+        if not _has_round_start_witness(events, scope_ts):
+            print(
+                f"  {who}: round-end park matched but no round-start witness "
+                f"after the scope — the park is the parent pass's tail or the "
+                f"round never started; deferring to crash-recovery/stalled "
+                f"handling"
+            )
+            return None
+        # Gate 2 — freshness (#837): the keyed park must be the LATEST
+        # non-watcher signal. ANY non-watcher event strictly newer than
+        # sc_ts proves the park is stale or mis-attributed (round still
+        # executing, or advanced past it). Cost of a false block is one
+        # respawn cycle (§4b convergence-through-respawn: the respawned
+        # session posts a FRESH round-end park that becomes the newest
+        # signal). Repeated cross-posts — e.g. a chain of workflow-fix
+        # children applying `epm:workflow-fix-applied` on the parent — can
+        # block repeated respawn cycles until the respawn budget exhausts,
+        # ending in a LOUD exhausted alert: bounded and observable, vs the
+        # unbounded cost of a false fire (orphaning a live round).
+        if _has_nonwatcher_event_after(events, sc_ts):
+            print(
+                f"  {who}: round activity newer than the keyed round-end park "
+                f"— round still executing (or died mid-flight: crash-"
+                f"recovery's job, never the repark's); skipping"
+            )
+            return None
         return (
             f"same-issue follow-up round complete (round-end "
             f"epm:step-completed step={step} exit_kind=parked newer than the "
@@ -5388,7 +5559,14 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
 
 def _scope_note_field(events: list[dict], field: str) -> str | None:
     """Value of ``<field>: <value>`` from the latest ``epm:followup-scope``
-    event's note (line-prefix match, first hit wins), or ``None``."""
+    event's note (line-prefix match, first hit wins), or ``None``. Tolerates
+    the modern bold-markdown field format ``**<field>:** <value>`` alongside
+    the plain ``<field>: <value>`` form (#837 §4c — the verified cause of
+    #778's second premature repark: the 04:43 disarm run marker never posted
+    because the bold-format ``**followup_label:**`` line was unparseable).
+    Side effect: a bulleted ``* <field>: <value>`` line also parses now
+    (harmless); the legacy ``- <field>:`` dash-bullet form still misses
+    (pre-existing, fail-soft)."""
     latest: dict | None = None
     latest_ts: float | None = None
     for ev in events:
@@ -5404,8 +5582,9 @@ def _scope_note_field(events: list[dict], field: str) -> str | None:
         return None
     for line in (latest.get("note") or "").splitlines():
         stripped = line.strip()
-        if stripped.startswith(f"{field}:"):
-            value = stripped[len(field) + 1 :].strip().rstrip(",")
+        core = stripped.lstrip("*").lstrip()  # tolerate "**field:** value" (#837 §4c)
+        if core.startswith(f"{field}:"):
+            value = core[len(field) + 1 :].lstrip("*").strip().rstrip(",")
             return value or None
     return None
 
@@ -6079,7 +6258,7 @@ def _apply_stalled_followups_exemption(
     # of freezing. On re-park failure, fall through to the pre-existing
     # handling.
     if status == "followups_running" and not has_pod:
-        repark_reason = _followup_round_complete_reason(events)
+        repark_reason = _followup_round_complete_reason(events, issue=issue)
         if repark_reason is not None:
             print(
                 f"  issue #{issue}: ALIVE-BUT-STALLED round-complete re-park — "
@@ -7029,7 +7208,7 @@ def _check_orphan_followups_exemption(
     # :func:`_handle_orphan_followup_round_repark` (this helper stays
     # read-only, mirroring the awaiting-child probe).
     if status == "followups_running" and not has_pod:
-        repark_reason = _followup_round_complete_reason(events)
+        repark_reason = _followup_round_complete_reason(events, issue=issue)
         if repark_reason is not None:
             print(
                 f"  issue #{issue}: ORPHAN-RESPAWN round-complete re-park — "

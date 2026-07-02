@@ -4174,17 +4174,101 @@ def _make_followup_run_event(ts: str = "2026-06-11T10:55:00Z") -> dict:
     }
 
 
+def _make_progress_event(note: str, ts: str) -> dict:
+    """Minimal epm:progress row (stage-dispatch breadcrumbs, watcher-sentinel
+    alerts) for the #837 witness/freshness-gate fixtures."""
+    return {"ts": ts, "kind": "epm:progress", "version": 1, "note": note}
+
+
+def _make_generic_event(kind: str, ts: str, note: str = "") -> dict:
+    """Minimal event row of an arbitrary kind (witness-kind / parent-tail
+    fixtures for the #837 gates)."""
+    return {"ts": ts, "kind": kind, "version": 1, "note": note}
+
+
+def _issue_778_condensed_events() -> list[dict]:
+    """Condensed, time-faithful replay of the verified #778 incident record
+    (tasks/*/778/events.jsonl) up to the FIRST premature watcher repark
+    (2026-07-02T04:43:26Z): 9b scope v2 → the PARENT pass's own tail parks
+    (step 10, then 9a-bis — the mis-attributed round-end signal) → the round
+    demonstrably running (loop entry, stage-dispatch breadcrumbs,
+    run-launched, results, upload-verification PASS)."""
+    return [
+        _make_followup_scope_event("2026-07-01T21:35:20Z"),  # scope v2 (authoritative)
+        _make_step_completed_event(step="10", ts="2026-07-01T21:46:17Z"),  # parent tail
+        _make_generic_event("epm:merged", "2026-07-01T21:49:01Z", note="worktree merged"),
+        _make_step_completed_event(step="9a-bis", ts="2026-07-01T21:49:35Z"),  # parent tail
+        _make_generic_event(
+            "epm:status-changed",
+            "2026-07-01T21:50:27Z",
+            note="awaiting_promotion -> followups_running (follow-up loop entry)",
+        ),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt-778",
+            "2026-07-01T22:28:53Z",
+        ),
+        _make_generic_event("epm:run-launched", "2026-07-02T00:40:51Z", note="pod-778"),
+        _make_generic_event("epm:results", "2026-07-02T03:28:41Z", note="pod phases complete"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-null-battery round=1 "
+            "subagent=orchestrator-bg-poll worktree=/tmp/wt-778",
+            "2026-07-02T03:29:51Z",
+        ),
+        _make_generic_event("epm:upload-verification", "2026-07-02T03:36:37Z", note="PASS"),
+    ]
+
+
+def _issue_778_second_firing_extra_events() -> list[dict]:
+    """The rows between #778's first (04:43Z) and second (06:13Z) premature
+    reparks — including the 04:43 WATCHER rows themselves (the repark's
+    status-changed + its sentinel-noted progress marker), so the state-2
+    fixture exercises the watcher-marker handling exactly where it bit."""
+    import autonomous_session_watch as asw
+
+    return [
+        _make_generic_event(
+            "epm:status-changed",
+            "2026-07-02T04:43:26Z",
+            note="followups_running -> awaiting_promotion",
+        ),
+        _make_progress_event(
+            f"{asw._FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL} same-issue follow-up "
+            f"round complete (premature — the #837 incident's first firing)",
+            "2026-07-02T04:43:28Z",
+        ),
+        _make_generic_event(
+            "epm:status-changed",
+            "2026-07-02T05:01:45Z",
+            note="Replacement session (watcher-registered) resuming the round",
+        ),
+        _make_progress_event(
+            "stage-dispatch stage=followup-null-battery round=1 "
+            "subagent=orchestrator-bg-poll worktree=/tmp/wt-778 -- takeover",
+            "2026-07-02T05:01:48Z",
+        ),
+    ]
+
+
 def test_followup_round_complete_reason_fires_on_533_round_end_shape():
     # The #533 freeze shape: round started (followup-scope), round-end
     # step-completed (9a-bis, parked) NEWER than the scope — the designed
     # re-park never ran. The predicate MUST fire for 9a-bis AND for the
-    # step-10 parks the respawned sessions posted.
+    # step-10 parks the respawned sessions posted. Fixture carries a
+    # stage-dispatch breadcrumb between scope and park: the #837 round-start
+    # witness gate requires proof the round actually STARTED (a genuinely
+    # completed round always has one — SKILL.md's breadcrumb contract).
     import autonomous_session_watch as asw
 
     for step in ("9a-bis", "10"):
         reason = asw._followup_round_complete_reason(
             [
                 _make_followup_scope_event("2026-06-11T09:00:00Z"),
+                _make_progress_event(
+                    "stage-dispatch stage=followup-implementing round=1 "
+                    "subagent=experiment-implementer worktree=/tmp/wt",
+                    "2026-06-11T09:30:00Z",
+                ),
                 _make_step_completed_event(step=step, ts="2026-06-11T10:54:12Z"),
             ]
         )
@@ -4252,6 +4336,268 @@ def test_followup_round_complete_reason_inert_on_recorded_round():
         _make_step_completed_event(step="10", ts="2026-06-12T08:00:00Z"),
     ]
     assert asw._followup_round_complete_reason(events) is None
+
+
+# ─── #837: the two repark gates + awaiting-child stand-down (#778 incident) ──
+
+
+@pytest.mark.parametrize("state", ["first-firing-0443Z", "second-firing-0613Z"])
+def test_followup_round_complete_reason_inert_on_778_mid_round_shape(state):
+    # #837 acceptance 1: replaying the verified #778 event history, the
+    # predicate MUST return None at BOTH historical firing states — the
+    # matched 9a-bis park (21:49:35Z) is the PARENT pass's own tail, and
+    # round activity is HOURS newer than it (freshness gate). The second
+    # state includes the 04:43 watcher rows (the premature repark's
+    # status-changed + sentinel-noted progress marker).
+    import autonomous_session_watch as asw
+
+    events = _issue_778_condensed_events()
+    if state == "second-firing-0613Z":
+        events += _issue_778_second_firing_extra_events()
+    assert asw._followup_round_complete_reason(events, issue=778) is None
+
+
+def test_followup_round_complete_reason_inert_in_pre_activity_race_window():
+    # #837 acceptance 2 + 8 (gate 1, round-start witness): #778's
+    # 21:49:35Z -> 21:50:27Z window — the mis-attributed parent-tail park is
+    # the NEWEST event and no round marker exists yet. The fixture carries
+    # realistic PRE-SCOPE parent-history witness-KIND events (ts <= scope_ts):
+    # an implementation that checks kind membership WITHOUT the timestamp
+    # comparison must fail this test. A watcher-sentinel alert after the
+    # park changes nothing.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_generic_event("epm:plan-approved", "2026-07-01T08:00:00Z"),
+        _make_generic_event("epm:run-launched", "2026-07-01T10:00:00Z", note="parent run"),
+        _make_followup_scope_event("2026-07-01T21:35:20Z"),
+        _make_step_completed_event(step="9a-bis", ts="2026-07-01T21:49:35Z"),
+        _make_progress_event(
+            f"{asw._STALLED_ALERT_NOTE_SENTINEL} session stalled alert",
+            "2026-07-01T23:00:00Z",
+        ),
+    ]
+    assert asw._followup_round_complete_reason(events, issue=778) is None
+
+
+@pytest.mark.parametrize("witness_kind", ["epm:plan", "epm:run-launched", "epm:plan-verify"])
+def test_followup_round_complete_reason_fires_on_kind_only_witness(witness_kind):
+    # #837 acceptance 9: a round whose only round-start proof is a
+    # witness-KIND marker (NO stage-dispatch breadcrumb anywhere — the
+    # documented missed-breadcrumb limitation) must still repark. An emptied
+    # or typo'd _FOLLOWUP_ROUND_WITNESS_KINDS must fail this test.
+    # epm:plan-verify is the load-bearing member for the sparsest rounds
+    # (#537 class).
+    import autonomous_session_watch as asw
+
+    reason = asw._followup_round_complete_reason(
+        [
+            _make_followup_scope_event("2026-06-11T09:00:00Z"),
+            _make_generic_event(witness_kind, "2026-06-11T09:30:00Z"),
+            _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        ]
+    )
+    assert reason is not None, witness_kind
+    assert "designed re-park" in reason
+
+
+def test_followup_round_complete_reason_ignores_watcher_markers_in_freshness():
+    # #837 acceptance 3 (gate 2's watcher exclusion): watcher-sentinel-noted
+    # markers routinely post AFTER a genuine round-end park (stalled alerts,
+    # awaiting-child alerts) — they must NOT veto the repark.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        _make_progress_event(
+            f"{asw._STALLED_ALERT_NOTE_SENTINEL} session stalled alert",
+            "2026-06-11T12:00:00Z",
+        ),
+        _make_progress_event(
+            f"{asw._FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL} waiting on child",
+            "2026-06-11T13:00:00Z",
+        ),
+    ]
+    reason = asw._followup_round_complete_reason(events)
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
+def test_followup_round_complete_reason_converges_after_respawn_park():
+    # #837 acceptance 4 (the §4b convergence argument, pinned): a stray
+    # NON-watcher cross-post after a genuine round end blocks the repark
+    # this tick (freshness gate) — then the respawned session re-derives
+    # state and posts a FRESH round-end park; nothing is newer than it, the
+    # witness still exists, and the repark fires on the next tick.
+    import autonomous_session_watch as asw
+
+    base = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        _make_generic_event(
+            "epm:workflow-fix-applied", "2026-06-11T12:00:00Z", note="applied_task: #900"
+        ),
+    ]
+    assert asw._followup_round_complete_reason(base) is None
+    respawned = [*base, _make_step_completed_event(step="10", ts="2026-06-11T13:00:00Z")]
+    reason = asw._followup_round_complete_reason(respawned)
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
+def test_followup_round_complete_reason_inert_on_scope_repost_after_completion():
+    # OPTIONAL documentation fixture (plan §Test plan, Alt-Claude concern): a
+    # content-identical scope RE-POST after round completion resets scope_ts
+    # newer than every witness AND the round-end park -> the predicate stays
+    # inert (in-flight early return); recovery is respawn-convergence, which
+    # the §4d stand-down keeps reachable.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        _make_followup_scope_event("2026-06-11T11:00:00Z"),  # the re-post
+    ]
+    assert asw._followup_round_complete_reason(events) is None
+
+
+def test_followups_awaiting_child_reason_stands_down_on_unrun_scope(monkeypatch):
+    # #837 acceptance 10 (§4d): an UNRUN epm:followup-scope (no newer run
+    # marker) means a same-issue round is pending or executing — the
+    # children-wait suppression must stand down (return None) EVEN WITH an
+    # open child, so the never-started / blocked-repark shapes fall through
+    # to RESPAWN instead of latching alert-only (#778 has open child #816).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_children", lambda issue: [{"id": 816, "status": "running"}])
+    events = [
+        _make_followup_scope_event("2026-07-01T21:35:20Z"),
+        _make_step_completed_event(step="10", ts="2026-07-01T21:46:17Z"),
+    ]
+    reason = asw._followups_awaiting_child_reason(
+        778, status="followups_running", has_pod=False, events=events
+    )
+    assert reason is None
+
+
+def test_check_orphan_followups_exemption_respawns_on_unrun_scope_no_witness(monkeypatch):
+    # #837 acceptance 10 (orphan-pass action assertion): the no-witness
+    # unrun-scope shape — the witness gate vetoes the repark AND the §4d
+    # stand-down vetoes the awaiting-child latch — must keep action
+    # "respawn" (never "followups-awaiting-child", never a repark).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_children", lambda issue: [{"id": 816, "status": "running"}])
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=778,
+        status="followups_running",
+        has_pod=False,
+        events=[
+            _make_followup_scope_event("2026-07-01T21:35:20Z"),
+            _make_step_completed_event(step="10", ts="2026-07-01T21:46:17Z"),
+        ],
+        action="respawn",
+    )
+    assert action == "respawn"
+    assert reason is None
+
+
+def test_followups_awaiting_child_reason_fires_on_recorded_scope(monkeypatch):
+    # #837 §4d companion: a RECORDED scope (run marker strictly newer than
+    # the scope) keeps the legacy children-in-flight suppression semantics
+    # untouched — the exemption still fires.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_followup_run_event("2026-06-11T10:55:00Z"),
+        _make_step_completed_event(step="10", ts="2026-06-12T08:00:00Z"),
+    ]
+    reason = asw._followups_awaiting_child_reason(
+        533, status="followups_running", has_pod=False, events=events
+    )
+    assert reason is not None
+    assert "#546" in reason
+
+
+def test_scope_note_field_parses_bold_markdown_fields():
+    # #837 acceptance 5 (§4c): the modern scope note writes bold-markdown
+    # fields (`**followup_label:** …`) — the verified cause of #778's second
+    # premature firing (the 04:43 disarm run marker never posted: "no
+    # followup_label parseable"). Fixture = the VERBATIM #778 scope-v2 note
+    # (2026-07-01T21:35:20Z), extracted from the incident record.
+    import autonomous_session_watch as asw
+
+    note = (Path(__file__).resolve().parent / "fixtures" / "issue778_scope_v2_note.md").read_text()
+    # fixture-integrity guards: the verbatim note really carries the bold form
+    assert "**followup_label:** corrected-monitoring-8prompt-ladder" in note
+    assert "**source:** user-chat" in note
+    events = [
+        {"ts": "2026-07-01T21:35:20Z", "kind": "epm:followup-scope", "version": 2, "note": note}
+    ]
+    assert asw._scope_note_field(events, "followup_label") == "corrected-monitoring-8prompt-ladder"
+    assert asw._scope_note_field(events, "source") == "user-chat"
+
+
+def test_post_followup_run_marker_parses_bold_scope(monkeypatch):
+    # #837 §4c end-to-end: the disarm run marker posts with the label AND the
+    # real source parsed from a bold-markdown scope note (source no longer
+    # degrades to "unknown", so a proposer-9b-cheap round counts toward the
+    # 2-round cheap cap).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    bold_scope = {
+        "ts": "2026-07-01T21:35:20Z",
+        "kind": "epm:followup-scope",
+        "version": 2,
+        "note": (
+            "**source:** proposer-9b-cheap\n"
+            "**followup_label:** corrected-monitoring-8prompt-ladder\n"
+        ),
+    }
+    assert asw._post_followup_run_marker(778, [bold_scope], dry_run=False) is True
+    assert len(calls) == 1
+    note = calls[0][-1]
+    assert "followup_label: corrected-monitoring-8prompt-ladder" in note
+    assert "source: proposer-9b-cheap" in note
+
+
+def test_scope_note_field_plain_format_still_parses():
+    # #837 §4c regression companion: the plain `<field>: <value>` form the
+    # legacy fixtures use must keep parsing bit-identically.
+    import autonomous_session_watch as asw
+
+    events = [_make_followup_scope_event("2026-06-11T09:00:00Z")]
+    assert asw._scope_note_field(events, "followup_label") == "bare-word-install-step-grid"
+    assert asw._scope_note_field(events, "source") == "user-chat"
 
 
 def test_scope_note_field_parses_latest_scope():
@@ -4429,6 +4775,13 @@ def test_apply_stalled_followups_exemption_reparks_completed_round(monkeypatch):
     )
     events = [
         _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        # witness event between scope and park — required by the #837
+        # round-start witness gate (assertions unchanged).
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
         _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
     ]
     action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
@@ -4447,9 +4800,14 @@ def test_apply_stalled_followups_exemption_reparks_completed_round(monkeypatch):
 
 
 def test_apply_stalled_followups_exemption_falls_back_when_repark_fails(monkeypatch):
-    # A FAILED re-park must fall through to the pre-existing handling (here:
-    # the awaiting-child suppression, since an open child exists) — never
-    # worse than the old behavior.
+    # A FAILED re-park must fall through to the pre-existing handling.
+    # Pre-#837 that meant the awaiting-child suppression; post-#837 the
+    # repark only ever fires on an UNRUN scope, and the §4d stand-down makes
+    # the awaiting-child suppression decline exactly there (even with an
+    # open child), so the fall-through now reaches RESPAWN — the designed
+    # recovery for a pending/executing round (#778's 05:01Z replacement
+    # session demonstrated it live). Witness event added for the #837
+    # round-start witness gate so the repark probe still fires.
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(
@@ -4466,6 +4824,11 @@ def test_apply_stalled_followups_exemption_falls_back_when_repark_fails(monkeypa
     )
     events = [
         _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
         _make_step_completed_event(step="10", ts="2026-06-11T12:45:25Z"),
     ]
     action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
@@ -4478,9 +4841,10 @@ def test_apply_stalled_followups_exemption_falls_back_when_repark_fails(monkeypa
         followups_child_alerted=False,
         dry_run=False,
     )
-    assert (action, new_missed, child_alerted) == ("keep", 0, True)
-    assert len(posted) == 1  # the awaiting-child alert, not the repark marker
-    assert posted[0][2] == "followups-awaiting-child"
+    # Fall-through reaches RESPAWN (action passes through unchanged); the
+    # awaiting-child alert must NOT post (unrun scope → §4d stand-down).
+    assert (action, new_missed, child_alerted) == ("respawn", 2, False)
+    assert posted == []
 
 
 def test_check_orphan_followups_exemption_returns_repark_action(monkeypatch):
@@ -4499,6 +4863,13 @@ def test_check_orphan_followups_exemption_returns_repark_action(monkeypatch):
         has_pod=False,
         events=[
             _make_followup_scope_event("2026-06-11T09:00:00Z"),
+            # witness event between scope and park — required by the #837
+            # round-start witness gate (assertions unchanged).
+            _make_progress_event(
+                "stage-dispatch stage=followup-implementing round=1 "
+                "subagent=experiment-implementer worktree=/tmp/wt",
+                "2026-06-11T09:30:00Z",
+            ),
             _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
         ],
         action="respawn",

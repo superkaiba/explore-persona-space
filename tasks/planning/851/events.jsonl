@@ -1,3 +1,0 @@
-{"ts": "2026-07-02T08:11:50Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-07-02T08:14:57Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Context resolved: judge_graded source verified at scripts/issue778_lib.py:302; tf-margin implementation verified at scripts/issue722_tf_margin_extract.py (+ _analysis, _figure); eval/batch_judge.judge_completions_batch (line 481) + eval/judge_dispatch.py exist for dispatch reuse; no graded_judge.py / margin.py in eval/ yet (clean promotion targets). Proceeding to adversarial planning."}
-{"ts": "2026-07-02T08:15:01Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}

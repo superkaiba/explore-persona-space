@@ -221,26 +221,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       footprint exceeds the disk — the fix is placement, not cleanup. (2026-06-26: #658's Phase-1
       analysis materialized a 139 GB activation store on the VM worktree on the shared 188 GB disk;
       `/` hit 100% full and the whole fleet stalled.)
-    - **(iii) Gradient-descent fit silently placed on the VM CPU (compute character).** REVISE when
-      §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a
-      per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop
-      runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form
-      CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at
-      small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane:
-      `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that
-      fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether
-      its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized
-      explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane),
-      NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation
-      with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative
-      gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single
-      closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU
-      work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop
-      in aggregate), NOT any single fit: a many-cell loop of individually-fast gradient fits is
-      GPU-worthy if the loop runs longer than the floor, while a genuinely tiny one-off fit below
-      the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM
-      — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on
-      the VM CPU, a long per-cell loop that was GPU-starved.)
+    - **(iii) Gradient-descent fit silently placed on the VM CPU (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.)
     - **(iv) Narrow GPU phase holding the run's PEAK-width pod (GPU-width right-sizing).** REVISE
       when a multi-phase GPU run sizes ONE pod at its peak-phase width (e.g. 8× H100 for a
       finetuning fan-out) and holds it through a GPU phase that needs MATERIALLY FEWER GPUs — a ≤7B

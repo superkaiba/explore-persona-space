@@ -90,6 +90,7 @@
 ## Reuse / reproduction hygiene
 - [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — verify consumer read-path + strip/re-inject loop (#556)
 - [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — single-var swap + raw-reproduction gate; cos=-1 trap (#536)
+- [Exact-value test constants re-derive](feedback_exact_value_test_constants_rederive.md) — LSE hits both pools; uniform-logits pins no span selection (#851)
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)

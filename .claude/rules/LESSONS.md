@@ -1,13 +1,10 @@
 # LESSONS — always-on index of project rules
 
-Always-on (imported by `CLAUDE.md`) so every agent knows each lesson EXISTS
-and WHEN it applies at PLAN TIME. Full rule text stays on-demand; do NOT
-inline rule bodies here. Adding/removing a `.claude/rules/*.md` file requires
-updating this index — enforced by `scripts/workflow_lint.py
---check-lessons-index`.
+Always-on (imported by `CLAUDE.md`): each lesson's existence + plan-time
+trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
+`.claude/rules/*.md` file => update this index (lint: `--check-lessons-index`).
 
-**How to use:** when a "fires when" trigger matches your decision, OPEN and
-follow the linked rule.
+**How to use:** a matching "fires when" trigger => open + follow that rule.
 
 ## Rules
 
@@ -22,6 +19,7 @@ follow the linked rule.
 - **crash-fix-rounds** ([`.claude/rules/crash-fix-rounds.md`](crash-fix-rounds.md)) — fires when: an implementer runs a crash-fix revision round (failure-lesson block, fix-engaged signal, scope guard).
 - **critic-lens-reference** ([`.claude/rules/critic-lens-reference.md`](critic-lens-reference.md)) — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span; `paths:` self-glob, NOT auto-injected).
 - **data-realism** ([`.claude/rules/data-realism.md`](data-realism.md)) — fires when: a plan picks training/eval/probe data (use the strict 4-tier preference order; justify tier 3/4).
+- **diff-size-budget** ([`.claude/rules/diff-size-budget.md`](diff-size-budget.md)) — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - **gotchas** ([`.claude/rules/gotchas.md`](gotchas.md)) — fires when: you write/debug training / eval / orchestration code (CVD clobber, MooseFS EDQUOT, vLLM teardown).
 - **llm-judging** ([`.claude/rules/llm-judging.md`](llm-judging.md)) — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one cross-family Sonnet judge; drop-never-coerce; per-behavior reliability).
 - **marker-leakage-measurement** ([`.claude/rules/marker-leakage-measurement.md`](marker-leakage-measurement.md)) — fires when: a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
@@ -35,17 +33,17 @@ follow the linked rule.
 - **pod-side-reporting** ([`.claude/rules/pod-side-reporting.md`](pod-side-reporting.md)) — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code.
 - **replication-fidelity** ([`.claude/rules/replication-fidelity.md`](replication-fidelity.md)) — fires when: the Goal is to replicate a published finding (match the paper's data + recipe FIRST; change only the one tested variable).
 - **research-project-structure** ([`.claude/rules/research-project-structure.md`](research-project-structure.md)) — fires when: you write result artifacts / the results index / the experiment queue (one source of truth per layer).
-- **selection-symmetric-nulls** ([`.claude/rules/selection-symmetric-nulls.md`](selection-symmetric-nulls.md)) — fires when: a plan's headline max/argmax/best-of/top-k-mean over a free axis (layer/cell/k/neighbourhood/seed/extraction-point/threshold) is compared vs a null band (inherit selection per draw OR freeze axis on held-out split; persist per-draw × per-axis matrix; #778).
+- **selection-symmetric-nulls** ([`.claude/rules/selection-symmetric-nulls.md`](selection-symmetric-nulls.md)) — fires when: a headline max/argmax/best-of/top-k over a free axis (layer/cell/k/seed/threshold) is compared vs a null band (inherit selection per draw OR freeze axis held-out; #778).
 - **upload-policy** ([`.claude/rules/upload-policy.md`](upload-policy.md)) — fires when: you write training / Hub / sweep code (Hub-API verification gotcha, delete-after-eval persist, quota-403 recovery).
-- **vectorize-many-cell-fits** ([`.claude/rules/vectorize-many-cell-fits.md`](vectorize-many-cell-fits.md)) — fires when: a plan/code runs a many-cell gradient-descent fit (per-fold/per-cell MLP/AdamW LOCO sweep) — OVERHEAD-bound; VECTORIZE before GPU (#722).
+- **vectorize-many-cell-fits** ([`.claude/rules/vectorize-many-cell-fits.md`](vectorize-many-cell-fits.md)) — fires when: a plan/code runs a many-cell gradient-descent fit OR any non-trivial permutation/bootstrap/null-draw battery over a large fixed pool — OVERHEAD-bound; VECTORIZE before GPU (#722, #778).
 - **workflow-fix-on-bug** ([`.claude/rules/workflow-fix-on-bug.md`](workflow-fix-on-bug.md)) — fires when: any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`; also see the built-but-stranded lesson there).
 - **agents-vs-skills** ([`.claude/rules/agents-vs-skills.md`](agents-vs-skills.md)) — fires when: you create / restructure anything under `.claude/` (decide agent vs skill).
 
 ## Per-agent memory
 
-Each workflow agent keeps persistent anti-pattern + feedback memories under
-`.claude/agent-memory/<agent>/MEMORY.md` (always loaded via its
-`memory: project` frontmatter). Most likely to bite:
+Per-agent anti-pattern + feedback memories live at
+`.claude/agent-memory/<agent>/MEMORY.md` (always loaded via `memory: project`
+frontmatter). Most likely to bite:
 **planner** (axis-conflation, collinearity gates, route-(b) DV swaps),
 **critic** (methodology-lens alternatives, reuse-fitness completeness),
 **consistency-checker** (single-variable-change diffs), **experiment-implementer**
