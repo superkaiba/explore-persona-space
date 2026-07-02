@@ -5556,8 +5556,8 @@
     "855": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/855",
-      "status": "reviewing",
+      "path": "tasks/completed/855",
+      "status": "completed",
       "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
     },
     "856": {
