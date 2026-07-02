@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Issue #833 — pod/GCE-side driver: A0 parity gates -> R_base regen (C7 text
-# source) -> A generate -> B extract -> C upload -> finalize (results
-# sentinel). Plan v3 §4/§10.
+# Issue #833 — pod/GCE-side driver, plan v6 §4/§10: A0′ gates -> R_base′ regen
+# -> A2 generate -> B1 extract-rbase (same-era L1/L2) -> [extract-context iff
+# the A0′ summary flags reextract_context_vectors] -> B2 extract (R⁺ legs) ->
+# C upload (BOTH namespaces, 4,320 + 4,320 npz) -> finalize (results sentinel).
 #
 # Contract (pod-side reporting rule): short "[phase=...]" lines on stdout ending
 # in a single terminal "[phase=done]"; heavy output goes to per-phase log FILES
@@ -9,10 +10,14 @@
 # sentinels are JSON files under /workspace/logs/issue-833-*.json drained by the
 # VM poller. The pod NEVER calls scripts/task.py.
 #
-# A0 hard-fails BEFORE Phase A. rc=2 (backend-parity FAIL) triggers ONE re-run
-# with the PeftModel fallback backend (plan §8 R1); any other non-zero rc (incl.
-# rc=3 cross-era parity FAIL) aborts the run — the fleet-wide L1/L2
-# re-extraction fallback is an orchestrator decision, not an in-run continue.
+# A0′ hard-fails BEFORE Phase A: rc=2 K1 (vLLM-LoRA plumbing, case B), rc=3
+# smoke/join FAIL, rc=4 K1b (adapter/probe-surface invalid, case C), rc=5 K4
+# (in-process determinism). There is NO automatic peft-fallback A0 re-run — the
+# retired v4 token-identity gate was its trigger (plan v6 §4); --gen-backend
+# peft (EPM_I833_GEN_BACKEND=peft) stays a MANUAL option only. A c_C-parity
+# FAIL does not abort: it sets reextract_context_vectors in a0_summary.json and
+# this driver runs the extract-context contingency stage (plan §13
+# allowed-without-asking).
 
 set -euo pipefail
 
@@ -51,7 +56,7 @@ run_stage() { # stage extra-args...
   return $rc
 }
 
-# ── A0: parity gates (hard-fail before Phase A) ──────────────────────────────
+# ── A0′: gate set (hard-fail before Phase A; no automatic backend fallback) ──
 rc=0
 set +e
 uv run python scripts/issue833_extract_onpolicy.py --stage parity \
@@ -60,34 +65,30 @@ rc=$?
 set -e
 echo "[phase=a0] rc=$rc"
 phase_sentinel a0 "$rc"
-if [ "$rc" -eq 2 ]; then
-  echo "[phase=a0] backend parity FAIL -> PeftModel fallback re-run (plan §8 R1)"
-  GEN_BACKEND=peft
-  set +e
-  uv run python scripts/issue833_extract_onpolicy.py --stage parity \
-    "${COMMON_ARGS[@]}" --gen-backend "$GEN_BACKEND" >>"$LOG_DIR/issue-833-parity.log" 2>&1
-  rc=$?
-  set -e
-  phase_sentinel a0-peft-rerun "$rc"
-fi
 if [ "$rc" -ne 0 ]; then
-  echo "[phase=a0] A0 gates FAIL (rc=$rc) — ABORTING before Phase A"
+  echo "[phase=a0] A0′ gates FAIL (rc=$rc: 2=K1 plumbing, 3=smoke/join, 4=K1b probe-surface, 5=K4 determinism) — ABORTING before Phase A"
   tail -n 40 "$LOG_DIR/issue-833-parity.log" || true
   exit "$rc"
 fi
 
-# ── R_base: fleet-wide base-model regeneration (Phase-D C7 text source; the
-# #667 store persisted no R_base text — one base pass over the unique grid,
-# fanned out per (behavior, source); extract threads resp_sha256_base) ───────
+# ── A1 R_base′ regen -> A2 generate -> B1 extract-rbase (same-era L1/L2) ─────
 run_stage rbase
-
-# ── A: on-policy generation, B: 2-leg extraction, C: uploads (incl. rbase
-# bucket, verified in the upload counts) ─────────────────────────────────────
 run_stage generate
+run_stage extract-rbase
+
+# ── extract-context: ONLY when the A0′ c_C stack-parity probe flagged the
+# registered contingency (reextract_context_vectors: true in a0_summary.json) ─
+REEXTRACT_CTX=$(uv run python -c "import json, pathlib; p = pathlib.Path('$OUT_DIR/parity/a0_summary.json'); print(int(json.loads(p.read_text()).get('reextract_context_vectors', False)) if p.exists() else 0)")
+if [ "$REEXTRACT_CTX" = "1" ]; then
+  echo "[phase=extract-context] c_C parity flagged — running fleet context re-extraction"
+  run_stage extract-context
+fi
+
+# ── B2: R⁺ 2-leg extraction, C: uploads (both namespaces + both raw buckets) ─
 run_stage extract
 run_stage upload
 
-# ── finalize: results sentinel (counts + parity summaries + repro card) ─────
+# ── finalize: results sentinel (A0′ verdicts + namespace counts + repro card) ─
 GPU_HOURS=$(awk -v s=$((SECONDS - START_TS)) 'BEGIN { printf "%.2f", s / 3600 }')
 echo "[phase=finalize]"
 uv run python scripts/issue833_extract_onpolicy.py --stage finalize \

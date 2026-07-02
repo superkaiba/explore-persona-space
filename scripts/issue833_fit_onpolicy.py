@@ -7,17 +7,29 @@ Fits FOUR context→answer-profile maps per (behavior, layer) by IMPORTING the #
 harness (`issue722_fit_M` / `issue722_bootstrap` / `issue722_load_activations`;
 never re-implementing the fit math):
 
-- **M0**      (c_C        → v0(R_base))  — pre-FT function, #722's original;
-- **M⁺_off**  (c_C_postft → v⁺(R_base))  — post-FT on OFF-policy text (#722 re-run);
-- **M⁺_on**   (c_C_postft → v⁺(R⁺))      — post-FT on ON-policy text (the fix);
-- **M0_ctrl** (c_C        → v0(R⁺))      — matched-text control (C5: does the BASE
-  map "move" merely because the text moved?).
+- **M0**      (c_C        → v0(R_base′))  — pre-FT function, #722's original;
+- **M⁺_off**  (c_C_postft → v⁺(R_base′))  — post-FT on OFF-policy text (in-run
+  same-era reproduction);
+- **M⁺_on**   (c_C_postft → v⁺(R⁺))       — post-FT on ON-policy text (the fix);
+- **M0_ctrl** (c_C        → v0(R⁺))       — matched-text control (C5: does the
+  BASE map "move" merely because the text moved?).
 
-Old legs (L1/L2 + c_C/c_C_postft) stream from the PINNED #667 store revision; new
-legs (L3 `v_plus_onpolicy` / L4 `v0_onpolicy` + per-probe `resp_sha256`) stream
-from the #833 store written by ``issue833_extract_onpolicy.py``. Records join on
-(behavior, source_cid, target_cid, layer) with a 100% coverage assert (missing
-cells NAMED, fail loud).
+``--legs-mode reextracted`` (DEFAULT, plan v6 §4): the SAME-ERA L1/L2 legs
+(v0(R_base′) / v⁺(R_base′)) load from the ``analysis_tensors_rbase`` namespace
+written by ``issue833_extract_onpolicy.py --stage extract-rbase`` (NOT the
+revision-pinned old store — the #667 store's response legs are ABANDONED, plan
+v5 amendment i); the old store is read ONLY for c_C / c_C_postft (still
+revision-pinned), unless ``--context-source reextracted`` (the registered
+c_C-parity-FAIL contingency), in which case context vectors also come from the
+new namespace's ``__context__.npz`` and ZERO old-store reads remain.
+``--legs-mode store`` keeps the v4 behavior (old-store L1/L2) for forensic
+re-reads only. The R⁺ legs (L3 ``v_plus_onpolicy`` / L4 ``v0_onpolicy`` +
+per-probe ``resp_sha256``) stream from the ``analysis_tensors`` namespace in
+both modes. Records join on (behavior, source_cid, target_cid, layer) with a
+100% coverage assert in BOTH directions (missing cells NAMED, fail loud);
+``reextracted`` additionally requires the rbase namespace COMPLETE and the
+R⁺-npz-threaded ``resp_sha256_base`` consistent with the rbase legs'
+``resp_sha256`` (same rbase-JSON source ⇒ any mismatch is a stale artifact).
 
 Per behavior × layer it persists (plan v4 Must-Fix "Regime-local floors + raw
 deltas" — registration requirement):
@@ -93,6 +105,8 @@ HEADLINE_BEHAVIORS = ("em", "sycophancy", "fact")
 SWEEP_LAYERS = (7, 14, 21)
 HEADLINE_LAYER = 14  # pre-registered (plan §6); L7/L21 reported as grids, never winner-selected
 NEW_STORE_PREFIX = "issue833_onpolicy_map/analysis_tensors"
+RBASE_STORE_PREFIX = "issue833_onpolicy_map/analysis_tensors_rbase"  # same-era L1/L2 (plan v6)
+CONTEXT_NPZ_NAME = "__context__.npz"  # per-source context file (extract-context contingency)
 OLD_STORE_PREFIX = "issue667_gate_chain_preview/analysis_tensors"
 OLD_STORE_REVISION = "0031fc55a0e965c33be4261287cd5c86393ca161"  # pinned (plan §4/§10)
 RBASE_COMPLETIONS_PREFIX = "issue833_onpolicy_map/raw_completions/rbase"
@@ -100,8 +114,9 @@ ONPOLICY_COMPLETIONS_PREFIX = "issue833_onpolicy_map/raw_completions/generation"
 IDENTITY_RTOL = 1e-3  # plan C6 / kill K2
 N_SCALAR_BOOT = 1000
 
-# New-store npz required keys (written by issue833_extract_onpolicy.py, plan §4 Phase B).
+# New-store npz required keys (written by issue833_extract_onpolicy.py, plan §4 Phase B2/B1).
 _NEW_VEC_KEYS = ("v_plus_onpolicy", "v0_onpolicy")
+_RBASE_VEC_KEYS = ("v0_rbase", "v_plus_rbase")
 _NEW_META_KEYS = ("behavior", "source_cid", "target_cid", "layer")
 
 # Cell-JSON schema keys the resume-skip requires (mirrors fitM._CELL_SCHEMA_KEYS).
@@ -303,6 +318,240 @@ def load_onpolicy_legs(
                     legs[key] = leg
         logger.info("NEW store %s: %d legs", beh, sum(1 for k in legs if k[0] == beh))
     return legs
+
+
+# ── rbase-namespace (same-era L1/L2) legs — plan v6 §4, --legs-mode reextracted ─
+
+
+@dataclass
+class RbaseLeg:
+    """One (behavior, source_cid, target_cid, layer) SAME-ERA L1/L2 record.
+
+    From the ``analysis_tensors_rbase`` namespace written by
+    ``issue833_extract_onpolicy.py --stage extract-rbase``: v0(R_base′) /
+    v⁺(R_base′) teacher-forced on the CURRENT stack, replacing the abandoned
+    #667-store response legs.
+    """
+
+    behavior: str
+    source_cid: str
+    target_cid: str
+    layer: int
+    v0: np.ndarray  # v0(R_base′), (H,)
+    v_plus: np.ndarray  # v⁺(R_base′), (H,)
+    resp_sha256: list[str]  # per-probe sha256 of the SAME-ERA R_base′ text
+    probe_idx: list[int] | None  # ORIGINAL probe ids, index-aligned with resp_sha256
+
+
+def _rbase_blob_to_leg(blob: dict, rel: str, beh: str, li: int, hidden: int) -> RbaseLeg:
+    """Validate one rbase-namespace ``.npz`` blob and build its RbaseLeg (fail loud)."""
+    for k in (*_RBASE_VEC_KEYS, *_NEW_META_KEYS, "resp_sha256"):
+        if k not in blob:
+            raise KeyError(f"{rel} missing key {k!r}; keys={sorted(blob)}")
+    v0 = np.asarray(blob["v0_rbase"], dtype=np.float64)
+    v_plus = np.asarray(blob["v_plus_rbase"], dtype=np.float64)
+    for name, arr in (("v0_rbase", v0), ("v_plus_rbase", v_plus)):
+        assert arr.shape == (hidden,), f"{rel} {name} shape {arr.shape} != ({hidden},)"
+    file_layer = int(np.asarray(blob["layer"]).item())
+    assert file_layer == li, f"{rel} baked layer {file_layer} != requested {li}"
+    file_beh = str(np.asarray(blob["behavior"]).item())
+    assert file_beh == beh, f"{rel} behavior {file_beh} != dir {beh}"
+    resp_sha256 = _as_str_list(blob["resp_sha256"])
+    probe_idx: list[int] | None = None
+    if "probe_idx" in blob:
+        probe_idx = [int(v) for v in np.asarray(blob["probe_idx"]).reshape(-1).tolist()]
+        assert len(probe_idx) == len(resp_sha256), (
+            f"{rel} probe_idx len {len(probe_idx)} != resp_sha256 len {len(resp_sha256)}"
+        )
+    return RbaseLeg(
+        behavior=beh,
+        source_cid=str(np.asarray(blob["source_cid"]).item()),
+        target_cid=str(np.asarray(blob["target_cid"]).item()),
+        layer=li,
+        v0=v0,
+        v_plus=v_plus,
+        resp_sha256=resp_sha256,
+        probe_idx=probe_idx,
+    )
+
+
+def load_rbase_legs(
+    behaviors: tuple[str, ...],
+    layers: tuple[int, ...],
+    streamer,
+    layout: dict[str, dict[str, list[str]]],
+    hidden: int = loadact.HIDDEN,
+) -> dict[tuple[str, str, str, int], RbaseLeg]:
+    """Load every rbase-namespace leg for the requested behaviors × layers, keyed by cell.
+
+    ``streamer`` is any object with ``.load(rel) -> dict`` (the HF
+    ``_PinnedStreamer`` in production, a ``loadact._Streamer(local_root=...)``
+    in the A0′ smoke). ``__context__.npz`` files are ignored here (no
+    ``_L{li}.npz`` suffix — ``_parse_cell_files`` never selects them).
+    """
+    legs: dict[tuple[str, str, str, int], RbaseLeg] = {}
+    for beh in behaviors:
+        if beh not in layout:
+            raise KeyError(f"behavior {beh!r} not present in rbase store layout {sorted(layout)}")
+        for src_dir, files in sorted(layout[beh].items()):
+            by_target = loadact._parse_cell_files(src_dir, files, layers)
+            for _stem, layer_files in sorted(by_target.items()):
+                for li, rel_tail in sorted(layer_files.items()):
+                    rel = f"{beh}/{rel_tail}"
+                    leg = _rbase_blob_to_leg(streamer.load(rel), rel, beh, li, hidden)
+                    key = (leg.behavior, leg.source_cid, leg.target_cid, leg.layer)
+                    if key in legs:
+                        raise RuntimeError(f"duplicate rbase-store cell {key} at {rel}")
+                    legs[key] = leg
+        logger.info("RBASE store %s: %d legs", beh, sum(1 for k in legs if k[0] == beh))
+    return legs
+
+
+def build_cells_reextracted(
+    old_cells: list[loadact.CellRecord],
+    rlegs: dict[tuple[str, str, str, int], RbaseLeg],
+) -> list[loadact.CellRecord]:
+    """Substitute the SAME-ERA rbase legs for the old-store v0/v_plus (plan v6 §4).
+
+    The old CellRecords contribute ONLY c_C / c_C_postft (text-free, pinned-rev
+    licensed by the A0′ c_C-parity probe); their store-era response legs are
+    REPLACED. ``--legs-mode reextracted`` requires the rbase namespace COMPLETE
+    over the old-cell keys — a missing cell fails loud NAMING it.
+    """
+    keys = [(c.behavior, c.source_cid, c.target_cid, c.layer) for c in old_cells]
+    missing = [k for k in keys if k not in rlegs]
+    if missing:
+        raise RuntimeError(
+            f"--legs-mode reextracted: {len(missing)}/{len(keys)} cells have NO rbase-namespace "
+            f"leg — run issue833_extract_onpolicy.py --stage extract-rbase. "
+            f"Missing: {sorted(missing)}"
+        )
+    out: list[loadact.CellRecord] = []
+    for c, k in zip(old_cells, keys, strict=True):
+        rl = rlegs[k]
+        out.append(
+            loadact.CellRecord(
+                behavior=c.behavior,
+                source_cid=c.source_cid,
+                target_cid=c.target_cid,
+                layer=c.layer,
+                c0=c.c0,
+                cplus=c.cplus,
+                v0=rl.v0,
+                vplus=rl.v_plus,
+                family=c.family,
+            )
+        )
+    return out
+
+
+def assert_rbase_hash_consistency(
+    legs: dict[tuple[str, str, str, int], OnPolicyLeg],
+    rlegs: dict[tuple[str, str, str, int], RbaseLeg],
+) -> None:
+    """The two namespaces share ONE rbase-JSON text source — hashes must agree.
+
+    Compares the R⁺ npz-threaded ``resp_sha256_base`` against the rbase leg's
+    own ``resp_sha256`` at matching ``probe_idx`` (compaction may differ:
+    empty-R⁺ rows drop from the R⁺ npz, empty-R_base′ rows from the rbase npz —
+    only common probe ids are compared). A mismatch is a stale/mixed-era
+    artifact set (fail loud naming the cell) — never silently reconciled.
+    """
+    for key, leg in legs.items():
+        rl = rlegs.get(key)
+        if rl is None or leg.resp_sha256_base is None:
+            continue
+        if leg.probe_idx is None or rl.probe_idx is None:
+            continue  # pre-fix store without probe_idx: C7 already warns on this
+        on_map = dict(zip(leg.probe_idx, leg.resp_sha256_base, strict=True))
+        rb_map = dict(zip(rl.probe_idx, rl.resp_sha256, strict=True))
+        for qi in sorted(set(on_map) & set(rb_map)):
+            if on_map[qi] != rb_map[qi]:
+                raise RuntimeError(
+                    f"rbase hash mismatch at cell {key} probe {qi}: R⁺-npz resp_sha256_base "
+                    f"!= rbase-npz resp_sha256 — stale/mixed-era artifacts (regenerate B1/B2)"
+                )
+
+
+def load_reextracted_context(
+    streamer,
+    layout: dict[str, dict[str, list[str]]],
+    behaviors: tuple[str, ...],
+    layers: tuple[int, ...],
+) -> dict[tuple[str, str], dict[int, tuple[np.ndarray, np.ndarray]]]:
+    """Load per-source ``__context__.npz`` files (the extract-context contingency).
+
+    Returns ``{(behavior, src_dir): {layer: (c_C, c_C_postft)}}``. Fails loud on
+    a source dir without the context file or a missing requested layer.
+    """
+    out: dict[tuple[str, str], dict[int, tuple[np.ndarray, np.ndarray]]] = {}
+    for beh in behaviors:
+        for src_dir, files in sorted(layout.get(beh, {}).items()):
+            if CONTEXT_NPZ_NAME not in files:
+                raise FileNotFoundError(
+                    f"--context-source reextracted: {beh}/{src_dir}/{CONTEXT_NPZ_NAME} missing — "
+                    "run issue833_extract_onpolicy.py --stage extract-context"
+                )
+            blob = streamer.load(f"{beh}/{src_dir}/{CONTEXT_NPZ_NAME}")
+            file_layers = [int(v) for v in np.asarray(blob["layers"]).reshape(-1).tolist()]
+            per_layer: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+            for li in layers:
+                if li not in file_layers:
+                    raise KeyError(
+                        f"{beh}/{src_dir}/{CONTEXT_NPZ_NAME}: layer {li} not in {file_layers}"
+                    )
+                row = file_layers.index(li)
+                per_layer[li] = (
+                    np.asarray(blob["c_C"], dtype=np.float64)[row],
+                    np.asarray(blob["c_C_postft"], dtype=np.float64)[row],
+                )
+            out[(beh, src_dir)] = per_layer
+    return out
+
+
+def build_cells_from_reextracted_context(
+    rlegs: dict[tuple[str, str, str, int], RbaseLeg],
+    ctx: dict[tuple[str, str], dict[int, tuple[np.ndarray, np.ndarray]]],
+    behaviors: tuple[str, ...],
+    layers: tuple[int, ...],
+    seed: int,
+) -> dict[tuple[str, int], list[loadact.CellRecord]]:
+    """Build the per-(behavior, layer) cell lists with ZERO old-store reads.
+
+    Context vectors come from the contingency's ``__context__.npz`` (source-
+    keyed, exactly like the store's c_C/c_C_postft); response legs from the
+    rbase namespace. Cell order is sorted (source_cid, target_cid) — the same
+    deterministic order for every layer, so E/r_B joins stay aligned.
+    """
+    out: dict[tuple[str, int], list[loadact.CellRecord]] = {}
+    for beh in behaviors:
+        for li in layers:
+            cells: list[loadact.CellRecord] = []
+            for key in sorted(k for k in rlegs if k[0] == beh and k[3] == li):
+                rl = rlegs[key]
+                src_dir = f"{rl.source_cid}_seed{seed}"
+                if (beh, src_dir) not in ctx:
+                    raise KeyError(
+                        f"--context-source reextracted: no context npz for {beh}/{src_dir}"
+                    )
+                c0, cplus = ctx[(beh, src_dir)][li]
+                cells.append(
+                    loadact.CellRecord(
+                        behavior=beh,
+                        source_cid=rl.source_cid,
+                        target_cid=rl.target_cid,
+                        layer=li,
+                        c0=c0,
+                        cplus=cplus,
+                        v0=rl.v0,
+                        vplus=rl.v_plus,
+                        family=loadact._family_of(rl.target_cid),
+                    )
+                )
+            if not cells:
+                raise RuntimeError(f"no rbase legs for {beh} L{li} (namespace empty?)")
+            out[(beh, li)] = cells
+    return out
 
 
 # ── join old CellRecords × new legs ────────────────────────────────────────────
@@ -796,15 +1045,20 @@ def text_stats_for_behavior(
 ) -> dict:
     """C7: exact-match fraction (sha256) + word-level edit-distance + length dists.
 
-    Exact match compares the NEW store's per-probe ``resp_sha256`` (R⁺) against
-    sha256 of the stored R_base text — from the npz ``resp_sha256_base`` key when
-    the extractor threaded it, else hashed from the R_base rollout text at
-    ``rbase_prefix``. Edit distance + lengths need BOTH texts (npz ``resp_texts``
-    or the ``onpolicy_prefix`` rollout JSONs for R⁺). A missing text source fails
-    LOUD naming the paths tried (C7 is a planned manipulation check — no silent
-    skip). ``texts_override`` = {"rbase"|"onpolicy": {(src_dir, tcid, qi): text}}
-    is the smoke's in-memory source. Cell grain: legs are layer-replicated, so
-    stats run over the FIRST loaded layer's legs (text is layer-invariant).
+    SAME-ERA semantics (plan v6): both hash sides are CURRENT-STACK text —
+    ``resp_sha256`` (R⁺, adapter-loaded vLLM greedy) vs the R_base′ hashes from
+    the stage-rbase JSONs threaded into the R⁺ npz as ``resp_sha256_base`` (the
+    identical source the rbase-namespace npz carry as their ``resp_sha256``).
+    An exact match therefore means "the adapter left greedy text unchanged on
+    this probe" — the manipulation-bites read — NOT a cross-era reproduction
+    claim. Fallback when the extractor did not thread hashes: sha256 of the
+    R_base′ rollout text at ``rbase_prefix``. Edit distance + lengths need BOTH
+    texts (npz ``resp_texts`` or the ``onpolicy_prefix`` rollout JSONs for R⁺).
+    A missing text source fails LOUD naming the paths tried (C7 is a planned
+    manipulation check — no silent skip). ``texts_override`` =
+    {"rbase"|"onpolicy": {(src_dir, tcid, qi): text}} is the smoke's in-memory
+    source. Cell grain: legs are layer-replicated, so stats run over the FIRST
+    loaded layer's legs (text is layer-invariant).
     """
     joined = joined_by_layer[sorted(joined_by_layer)[0]]
     legs: list[OnPolicyLeg] = joined["legs"]
@@ -1062,8 +1316,11 @@ def fig_chain_rho(chain: dict, behaviors: list[str], layers: list[int], fig_dir:
                     continue
                 ci = b.get(f"ci_{arm}_ridge") or {}
                 pts.append(rho)
-                los.append(rho - ci.get("ci_lo", rho))
-                his.append(ci.get("ci_hi", rho) - rho)
+                # A skewed small-n clustered bootstrap can place the full-sample
+                # ρ OUTSIDE its own percentile CI; clip the whisker arm at 0
+                # rather than crash matplotlib (negative yerr is invalid).
+                los.append(max(rho - ci.get("ci_lo", rho), 0.0))
+                his.append(max(ci.get("ci_hi", rho) - rho, 0.0))
                 xs.append(xi + (ai - 1) * w)
             if pts:
                 ax.bar(
@@ -1169,21 +1426,31 @@ def fig_identity_residuals(decomp: dict, fig_dir: Path, paths):
 
 
 def build_smoke_data(
-    behaviors: tuple[str, ...], layers: tuple[int, ...], hidden: int = 64, seed: int = 42
+    behaviors: tuple[str, ...],
+    layers: tuple[int, ...],
+    hidden: int = 64,
+    seed: int = 42,
+    legs_mode: str = "reextracted",
 ):
-    """Synthetic 3-sources × 4-targets grid per behavior × layer + fake r_B / E / texts.
+    """Synthetic 3-sources × 4-targets two-namespace grid + fake r_B / E / texts.
 
-    Returns ``(joined_by, r_hat_by, E_by, texts_override_by)`` shaped exactly like
-    the production loaders' outputs so the SAME analysis code paths run end-to-end.
-    Half the probes keep R⁺ == R_base (exercising the exact-match path), half
-    diverge (exercising hashes + edit distance + non-trivial Δ_text). ``seed``
-    names the ``{src}_seed{seed}`` text-override dirs (matches --seed).
+    Returns ``(old_cells_by, rlegs, legs, r_hat_by, E_by, texts_override_by)``
+    shaped exactly like the production loaders' outputs so the SAME analysis
+    code paths (incl. ``build_cells_reextracted`` + ``join_cells``) run
+    end-to-end. Under ``legs_mode="reextracted"`` the old cells carry STALE
+    (store-era, drifted) v0/vplus while the rbase legs carry the TRUE same-era
+    values — so main()'s substitution-engaged assert has teeth. Half the probes
+    keep R⁺ == R_base′ (exercising the exact-match path), half diverge
+    (exercising hashes + edit distance + non-trivial Δ_text). ``seed`` names
+    the ``{src}_seed{seed}`` text-override dirs (matches --seed).
     """
     rng = np.random.default_rng(833)
     sources = [f"src{i}" for i in range(3)]
     targets = [f"tgt{j}" for j in range(4)]
     n_probes = 5
-    joined_by: dict[tuple[str, int], dict] = {}
+    old_cells_by: dict[tuple[str, int], list[loadact.CellRecord]] = {}
+    rlegs: dict[tuple[str, str, str, int], RbaseLeg] = {}
+    legs: dict[tuple[str, str, str, int], OnPolicyLeg] = {}
     r_hat_by: dict[tuple[str, int], np.ndarray] = {}
     E_by: dict[tuple[str, int], np.ndarray] = {}
     texts_override_by: dict[str, dict] = {}
@@ -1194,7 +1461,6 @@ def build_smoke_data(
             r = rng.normal(size=hidden)
             r_hat = r / np.linalg.norm(r)
             old_cells: list[loadact.CellRecord] = []
-            legs: dict[tuple[str, str, str, int], OnPolicyLeg] = {}
             E_vals = []
             for si, src in enumerate(sources):
                 c0 = rng.normal(size=hidden)
@@ -1205,6 +1471,12 @@ def build_smoke_data(
                     v0on = v0 + 0.1 * rng.normal(size=hidden)  # text shift
                     von = v0on + 0.35 * r_hat + 0.05 * rng.normal(size=hidden)  # + rep shift
                     fam = f"fam{tj % 2}"
+                    if legs_mode == "reextracted":
+                        # STALE store-era legs (must be substituted away).
+                        v0_old = v0 + 0.7 * rng.normal(size=hidden)
+                        vplus_old = vplus + 0.7 * rng.normal(size=hidden)
+                    else:
+                        v0_old, vplus_old = v0, vplus
                     old_cells.append(
                         loadact.CellRecord(
                             behavior=beh,
@@ -1213,8 +1485,8 @@ def build_smoke_data(
                             layer=li,
                             c0=c0,
                             cplus=cplus,
-                            v0=v0,
-                            vplus=vplus,
+                            v0=v0_old,
+                            vplus=vplus_old,
                             family=fam,
                         )
                     )
@@ -1241,15 +1513,24 @@ def build_smoke_data(
                         resp_texts=None,
                         probe_idx=list(range(n_probes)),
                     )
+                    rlegs[(beh, src, tgt, li)] = RbaseLeg(
+                        behavior=beh,
+                        source_cid=src,
+                        target_cid=tgt,
+                        layer=li,
+                        v0=v0,
+                        v_plus=vplus,
+                        resp_sha256=list(shas_base),
+                        probe_idx=list(range(n_probes)),
+                    )
                     E_vals.append(float(von @ r_hat) + 0.1 * rng.normal())
-            joined = join_cells(old_cells, legs)
-            joined_by[(beh, li)] = joined
+            old_cells_by[(beh, li)] = old_cells
             r_hat_by[(beh, li)] = r_hat
             E = np.asarray(E_vals, dtype=np.float64)
             E[0] = np.nan  # exercise the keep-mask
             E_by[(beh, li)] = E
         texts_override_by[beh] = {"rbase": base_texts, "onpolicy": on_texts}
-    return joined_by, r_hat_by, E_by, texts_override_by
+    return old_cells_by, rlegs, legs, r_hat_by, E_by, texts_override_by
 
 
 # ── driver ─────────────────────────────────────────────────────────────────────
@@ -1272,7 +1553,7 @@ def _write_json(path: Path, obj: dict) -> None:
     os.replace(tmp, path)
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source load routing + per-(behavior, layer) loop; flattening would inline the loaders
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     fit658.DEVICE = fit658._resolve_device("auto")  # ridge device (fit_M precedent)
     ap = argparse.ArgumentParser(description="Issue #833 Phase D — on-policy map fits")
@@ -1281,11 +1562,31 @@ def main() -> int:
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_833")
     ap.add_argument("--figures-dir", type=Path, default=PROJECT_ROOT / "figures/issue_833")
     ap.add_argument("--store-prefix", default=NEW_STORE_PREFIX, help="NEW #833 store prefix")
+    ap.add_argument(
+        "--rbase-store-prefix",
+        default=RBASE_STORE_PREFIX,
+        help="same-era L1/L2 namespace (--legs-mode reextracted; plan v6 §4 Phase B1)",
+    )
     ap.add_argument("--old-store-prefix", default=OLD_STORE_PREFIX, help="OLD #667 store prefix")
     ap.add_argument(
         "--old-store-revision",
         default=OLD_STORE_REVISION,
         help="PINNED revision for every OLD-store HF read (plan §4/§10)",
+    )
+    ap.add_argument(
+        "--legs-mode",
+        choices=["store", "reextracted"],
+        default="reextracted",
+        help="L1/L2 source: 'reextracted' (DEFAULT, plan v6 — same-era rbase namespace) or "
+        "'store' (the ABANDONED #667-store response legs; forensic re-reads only)",
+    )
+    ap.add_argument(
+        "--context-source",
+        choices=["store", "reextracted"],
+        default="store",
+        help="c_C/c_C_postft source: 'store' (pinned #667 revision — the default, licensed by "
+        "the A0' c_C-parity probe) or 'reextracted' (the extract-context contingency; zero "
+        "old-store reads remain)",
     )
     ap.add_argument("--rbase-completions-prefix", default=RBASE_COMPLETIONS_PREFIX)
     ap.add_argument("--onpolicy-completions-prefix", default=ONPOLICY_COMPLETIONS_PREFIX)
@@ -1338,9 +1639,25 @@ def main() -> int:
     # ---- load + join (production) or synthesize (smoke) ----
     texts_override_by: dict[str, dict] | None = None
     if args.smoke:
-        joined_by, r_hat_by, E_by, texts_override_by = build_smoke_data(
-            behaviors, layers, seed=args.seed
+        old_cells_by, rlegs, legs, r_hat_by, E_by, texts_override_by = build_smoke_data(
+            behaviors, layers, seed=args.seed, legs_mode=args.legs_mode
         )
+        joined_by = {}
+        for beh in behaviors:
+            for li in layers:
+                cells_li = old_cells_by[(beh, li)]
+                if args.legs_mode == "reextracted":
+                    cells_li = build_cells_reextracted(cells_li, rlegs)
+                    assert_rbase_hash_consistency(legs, rlegs)
+                joined_by[(beh, li)] = join_cells(cells_li, legs)
+        if args.legs_mode == "reextracted":
+            # The substitution must ENGAGE: joined V0/Vplus == the rbase legs
+            # (the smoke's old cells deliberately carry STALE store-era values).
+            for (_beh, _li), joined in joined_by.items():
+                for i, lg in enumerate(joined["legs"]):
+                    rl = rlegs[(lg.behavior, lg.source_cid, lg.target_cid, lg.layer)]
+                    assert np.allclose(joined["V0"][i], rl.v0), "stale L1 leg survived"
+                    assert np.allclose(joined["Vplus"][i], rl.v_plus), "stale L2 leg survived"
     else:
         g_meta = PROJECT_ROOT / "eval_results/issue_537/G_tensor/G_meta.json"
         if not g_meta.exists():
@@ -1355,27 +1672,58 @@ def main() -> int:
                 "fact requested but r_b_fact.pt unavailable/degenerate — fact carries the #833 "
                 "verdict under test (kill K3: never silently dropped)"
             )
-        old_streamer = _PinnedStreamer(
-            prefix=args.old_store_prefix, revision=args.old_store_revision
-        )
-        old_layout = _list_layout(args.old_store_prefix, behaviors, args.old_store_revision)
-        old_cells_by = loadact.load_cells(
-            behaviors=behaviors,
-            layers=layers,
-            streamer=old_streamer,
-            strict_counts=True,
-            layout=old_layout,
-        )
         new_streamer = _PinnedStreamer(prefix=args.store_prefix, revision=None)
         new_layout = _list_layout(args.store_prefix, behaviors, None)
         legs = load_onpolicy_legs(behaviors, layers, new_streamer, new_layout)
+
+        rlegs: dict = {}
+        rbase_layout: dict = {}
+        if args.legs_mode == "reextracted" or args.context_source == "reextracted":
+            rbase_streamer = _PinnedStreamer(prefix=args.rbase_store_prefix, revision=None)
+            rbase_layout = _list_layout(args.rbase_store_prefix, behaviors, None)
+            rlegs = load_rbase_legs(behaviors, layers, rbase_streamer, rbase_layout)
+
+        if args.context_source == "reextracted":
+            # The extract-context contingency fired: ZERO old-store reads remain.
+            if args.legs_mode != "reextracted":
+                raise ValueError(
+                    "--context-source reextracted requires --legs-mode reextracted "
+                    "(the old store is not read at all in this mode)"
+                )
+            ctx = load_reextracted_context(rbase_streamer, rbase_layout, behaviors, layers)
+            old_cells_by = build_cells_from_reextracted_context(
+                rlegs, ctx, behaviors, layers, args.seed
+            )
+        else:
+            old_streamer = _PinnedStreamer(
+                prefix=args.old_store_prefix, revision=args.old_store_revision
+            )
+            old_layout = _list_layout(args.old_store_prefix, behaviors, args.old_store_revision)
+            old_cells_by = loadact.load_cells(
+                behaviors=behaviors,
+                layers=layers,
+                streamer=old_streamer,
+                strict_counts=True,
+                layout=old_layout,
+            )
         joined_by, r_hat_by, E_by = {}, {}, {}
         for beh in behaviors:
             for li in layers:
-                joined = join_cells(old_cells_by[(beh, li)], legs)
+                cells_li = old_cells_by[(beh, li)]
+                if args.legs_mode == "reextracted" and args.context_source != "reextracted":
+                    # Substitute the same-era L1/L2 (context stays store-pinned).
+                    cells_li = build_cells_reextracted(cells_li, rlegs)
+                joined = join_cells(cells_li, legs)
                 joined_by[(beh, li)] = joined
                 r_hat_by[(beh, li)] = fitM._r_hat_for(beh, li, rb_main, rb_fact)
                 E_by[(beh, li)] = fitM._load_E(beh, joined["cell_keys"])
+        if args.legs_mode == "reextracted":
+            assert_rbase_hash_consistency(legs, rlegs)
+        logger.info(
+            "[phase=fit_onpolicy] legs_mode=%s context_source=%s",
+            args.legs_mode,
+            args.context_source,
+        )
 
     # ---- per-(behavior, layer): fits + floors, decomposition, chain-ρ ----
     cells_dir = args.out_dir / "cells"
@@ -1409,7 +1757,11 @@ def main() -> int:
             cells[key] = fit_cell_onpolicy(beh, li, joined, r_hat, n_refit_pairs=args.refit_pairs)
             cells[key]["metadata"] = {
                 "issue": 833,
-                "old_store_revision": args.old_store_revision,
+                "legs_mode": args.legs_mode,
+                "context_source": args.context_source,
+                "old_store_revision": (
+                    None if args.context_source == "reextracted" else args.old_store_revision
+                ),
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             _write_json(cell_path, cells[key])
@@ -1481,6 +1833,8 @@ def main() -> int:
 
     digest = {
         "smoke": bool(args.smoke),
+        "legs_mode": args.legs_mode,
+        "context_source": args.context_source,
         "behaviors": beh_list,
         "layers": layer_list,
         "headline_layer": hero_layer,
