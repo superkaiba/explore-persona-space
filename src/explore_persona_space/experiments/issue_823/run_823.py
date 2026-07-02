@@ -1360,7 +1360,7 @@ def _check_harness_reproduce_gate(r2_refit: dict, base_dir: pathlib.Path) -> Non
             raise RuntimeError(
                 f"Harness reproduce-gate: layer '{layer_key}' not found in "
                 f"ref['read1_heldout_recon']['heldout_r2_vs_layer'] at {ref_path}. "
-                f"Available layers: {list(ref_heldout.keys()[:10])}..."
+                f"Available layers: {list(ref_heldout.keys())[:10]}..."
             )
         ref_r2 = float(ref_heldout[layer_key]["mean"])
         delta = abs(arm_a_r2 - ref_r2)
@@ -1547,13 +1547,41 @@ def _compute_stats(
             ci_ap_c = {"lo": float("nan"), "hi": float("nan"), "method": "not_computed"}
             ci_b2_c = {"lo": float("nan"), "hi": float("nan"), "method": "not_computed"}
 
-        # H1/H2/H3 determination (point estimates drive verdicts)
-        h1 = delta_ap_b2 > 0.05 and r2_c.mean() < 0.05
+        # H1/H2/H3 determination (point estimates drive verdicts; plan §3 table)
+        # Comparison              H1        H2        H3
+        # R2_Ap - R2_B2         > 0.05   <= 0.03   <= 0.05
+        # R2_Ap - R2_C          > 0.10   <= 0.06   >  0.05
+        # R2_B2 - R2_C          (any)    <= 0.03   >  0.03
+        # R2_C absolute         < 0.05   >= 0.02   <  0.05
+        # H2 delta rows are two-sided (|delta| <=); H1/H3 delta rows are signed.
+        r2_c_mean = float(r2_c.mean())
+        h1 = (
+            delta_ap_b2 > 0.05
+            and delta_ap_c > 0.10
+            # (any) for R2_B2 - R2_C in H1
+            and r2_c_mean < 0.05
+        )
         # H2: per-comparison thresholds from plan §3 (NOT uniform 0.03)
-        h2 = abs(delta_ap_b2) <= 0.05 and abs(delta_ap_c) <= 0.06 and abs(delta_b2_c) <= 0.05
-        h3 = (r2_ap.mean() >= r2_b2.mean() > r2_c.mean()) and delta_b2_c > 0.03
+        h2 = (
+            abs(delta_ap_b2) <= 0.03
+            and abs(delta_ap_c) <= 0.06
+            and abs(delta_b2_c) <= 0.03
+            and r2_c_mean >= 0.02
+        )
+        h3 = delta_ap_b2 <= 0.05 and delta_ap_c > 0.05 and delta_b2_c > 0.03 and r2_c_mean < 0.05
+        # Falsifier: R²_C > R²_B2 → artifact (Qwen-text TF effect, not science signal)
+        falsifier = delta_b2_c < 0  # i.e. r2_c > r2_b2
 
-        verdict = "H1" if h1 else ("H2" if h2 else ("H3" if h3 else "AMBIGUOUS"))
+        if falsifier:
+            verdict = "ARTIFACT_R2C_GT_R2B2"
+        elif h1:
+            verdict = "H1"
+        elif h2:
+            verdict = "H2"
+        elif h3:
+            verdict = "H3"
+        else:
+            verdict = "AMBIGUOUS"
 
         result[trait] = {
             "read_out_layer": ro,
@@ -1581,6 +1609,7 @@ def _compute_stats(
             "h1_thresholds_met": h1,
             "h2_thresholds_met": h2,
             "h3_thresholds_met": h3,
+            "falsifier_artifact": falsifier,
             "bonferroni_alpha": BONFERRONI_ALPHA,
             "t_crit_df4": T_CRIT_DF4,
         }
