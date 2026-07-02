@@ -338,7 +338,7 @@ def equivalence_gate(model, tokenizer, layers: list[int]) -> dict:
     ser = [
         capture_summaries_batched(model, tokenizer, [it], layers, batch_size=1)[0] for it in items
     ]
-    max_abs, cos_min = 0.0, 1.0
+    max_rel, cos_min = 0.0, 1.0
     for s, b in zip(ser, bat, strict=True):
         assert torch.equal(s["valid"], b["valid"])
         for k in range(4):
@@ -346,13 +346,19 @@ def equivalence_gate(model, tokenizer, layers: list[int]) -> dict:
                 continue
             a = s["summ"][k].double().flatten()
             c = b["summ"][k].double().flatten()
-            max_abs = max(max_abs, float((a - c).abs().max()))
+            scale = float(a.abs().max()) + 1e-12
+            max_rel = max(max_rel, float((a - c).abs().max()) / scale)
             cos_min = min(cos_min, float(torch.dot(a, c) / (a.norm() * c.norm() + 1e-12)))
-    assert cos_min >= 0.999 and max_abs < 0.1, (cos_min, max_abs)
+    # Same bar as the worktree assert_batched_capture_equivalence precedent
+    # (cos >= 0.999 only): bf16 padded-batch kernels differ in reduction order,
+    # so an ABSOLUTE tolerance is meaningless on Qwen's large-magnitude dims
+    # (GPU bf16 measured max_abs ~4 on |x|~1e3 dims = ~0.4% relative). Keep a
+    # RELATIVE max-abs sanity bound instead.
+    assert cos_min >= 0.999 and max_rel < 0.02, (cos_min, max_rel)
     logger.info(
-        "[gate] batched-vs-serial equivalence PASS (cos_min=%.6f max_abs=%.4f)", cos_min, max_abs
+        "[gate] batched-vs-serial equivalence PASS (cos_min=%.6f max_rel=%.4f)", cos_min, max_rel
     )
-    return {"cos_min": cos_min, "max_abs": max_abs}
+    return {"cos_min": cos_min, "max_rel": max_rel}
 
 
 # ── shard loop + upload ───────────────────────────────────────────────────────
