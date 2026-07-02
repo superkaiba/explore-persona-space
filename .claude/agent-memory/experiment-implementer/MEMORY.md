@@ -65,3 +65,4 @@
 - [Memory cap: calibrate from measured real-shape peak](feedback_memory_cap_calibrate_measured_peak.md) — explicit-temporary counting under-estimates autograd+optimizer peak ~6×; measure at real shape, log resolved cap + free (#811 r8 re-OOM at c=218)
 - [HF-fetch fallback for every pod-side data/ input](feedback_hf_fallback_pod_side_data_inputs.md) — git-clone lanes stage no data/; local-first → HF-fetch → fail-loud per input + pre-model-load whole-set preflight (#779 r4-r5)
 - [Upload pipeline-INPUT artifacts before teardown](feedback_upload_pipeline_input_artifacts_before_teardown.md) — tiny pod-generated inputs upload before teardown; judge-dispatch items/results = verbatim recovery + rubric re-validation lever (#779 r5)
+- [device_map auto silent CPU offload — pin + assert; block-wise store flush](feedback_device_map_auto_silent_cpu_offload.md) — #825 rc=137: held GPU -> auto offloads 7B to 16GB host; write-at-end perpos store ~16GB
