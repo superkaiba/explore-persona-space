@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 840,
+  "highest_id": 841,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5446,6 +5446,13 @@
       "path": "tasks/proposed/840",
       "status": "proposed",
       "title": "workflow-fix: restricted tools allowlists on agents (MCP schema bloat)"
+    },
+    "841": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/841",
+      "status": "proposed",
+      "title": "Layer-to-layer activation dynamics on real chat contexts: per-layer predictability atlas of the residual-stream update + does a dynamics-pretrained predictor beat #779's direct context->trait predictor"
     },
     "85": {
       "has_clean_result": false,
