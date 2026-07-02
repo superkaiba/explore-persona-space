@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 840,
+  "highest_id": 846,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5379,8 +5379,8 @@
     "832": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/832",
-      "status": "running",
+      "path": "tasks/reviewing/832",
+      "status": "reviewing",
       "title": "workflow-fix: code-reviewer diff-size budget on long-lived branches"
     },
     "833": {
@@ -5408,8 +5408,8 @@
     "836": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/836",
-      "status": "planning",
+      "path": "tasks/running/836",
+      "status": "running",
       "title": "workflow-fix: vectorize rule covers permutation/bootstrap draw loops"
     },
     "837": {
@@ -5446,6 +5446,49 @@
       "path": "tasks/proposed/840",
       "status": "proposed",
       "title": "workflow-fix: restricted tools allowlists on agents (MCP schema bloat)"
+    },
+    "841": {
+      "goal": "On Qwen-2.5-7B-Instruct, (Q1) characterize the per-layer predictability of residual-stream depth dynamics on real chat contexts \u2014 fit per-layer maps f_l: h_l -> h_{l+1} at the last-prompt-token position (identity baseline, affine/ridge, MLP, and a sequence model over the depth axis) on the #779 LMSYS activation corpus and report held-out variance explained of the update Delta_l = h_{l+1} - h_l per layer relative to the identity and affine baselines \u2014 and (Q2) test whether dynamics-derived features or dynamics-pretraining add trait-expression-forecasting value over #779's matched-capacity direct context->trait predictor g on the identical monitoring rig (same traits, conditions, judge, within-condition Pearson r), with label-efficiency curves and held-out-behavior transfer as the pre-registered win conditions rather than absolute accuracy alone.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/841",
+      "status": "proposed",
+      "title": "Layer-to-layer activation dynamics on real chat contexts: per-layer predictability atlas of the residual-stream update + does a dynamics-pretrained predictor beat #779's direct context->trait predictor"
+    },
+    "842": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/842",
+      "status": "proposed",
+      "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
+    },
+    "843": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/843",
+      "status": "proposed",
+      "title": "daily-fix: per-issue dispatch lease (watcher sweep + filer self-dispatch double-spawn)"
+    },
+    "844": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/844",
+      "status": "proposed",
+      "title": "daily-fix: spawned sessions inherit an unrelated issue worktree as cwd"
+    },
+    "845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/845",
+      "status": "proposed",
+      "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
+    },
+    "846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/846",
+      "status": "proposed",
+      "title": "daily-fix: hermeticize HF-state-dependent audit-claim tests (red main)"
     },
     "85": {
       "has_clean_result": false,
