@@ -42,11 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import issue778_lib as lib
 import issue816_lib as ilib
 
-from explore_persona_space.experiments.issue816.preventative import (
-    PreventativeSteeringCallback,
-)
 from explore_persona_space.orchestrate.env import load_dotenv
-from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue816.preventative_cli")
@@ -197,6 +193,13 @@ def _train_cell(
     neutral_cov=None,
 ) -> Path:
     """Train ONE preventative-steered rs-LoRA adapter; return the adapter dir."""
+    # Deferred heavy imports: pulling torch/transformers/PEFT at module top would break
+    # build_parser() introspection (tests/test_issue816_dispatch_argv.py) on a CPU-only VM.
+    from explore_persona_space.experiments.issue816.preventative import (
+        PreventativeSteeringCallback,
+    )
+    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
+
     tag = _cell_tag(cell)
     family = cell["trait"]  # Exp-4 steers trait T on the dataset that INDUCES T.
     data_path = dataset_root / family / f"{EXP4_TRAIT_VERSION}.jsonl"

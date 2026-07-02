@@ -32,7 +32,7 @@ def main() -> None:
     parser.add_argument("--slug", default="persona_vectors")
     parser.add_argument("--upload-summary", default="{}")
     parser.add_argument("--logs-dir", default="/workspace/logs")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     args = parser.parse_args()
 
     try:

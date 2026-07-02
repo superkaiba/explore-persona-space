@@ -141,7 +141,7 @@ def _capture_dataset(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #816 Exp-5 activation capture.")
     parser.add_argument("--dataset-root", default="external/persona_vectors/dataset")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument(
         "--tensor-root",
         default="data/issue_816/store/screening",

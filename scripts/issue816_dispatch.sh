@@ -144,7 +144,7 @@ uv run python scripts/clean_experiment_downloads.py "$ISSUE" --incremental --app
 UPLOAD_SUMMARY="{}"
 if [ "${EPM_I816_SKIP_UPLOAD:-0}" != "1" ]; then
   log_phase upload "start"
-  UPLOAD_SUMMARY="$(uv run python scripts/issue816_upload.py --issue "$ISSUE" --slug "$SLUG")"
+  UPLOAD_SUMMARY="$(uv run python scripts/issue816_upload.py --issue "$ISSUE" --slug "$SLUG" --out-root eval_results/issue_816/v3)"
 else
   log_phase upload "SKIPPED (EPM_I816_SKIP_UPLOAD=1)"
 fi

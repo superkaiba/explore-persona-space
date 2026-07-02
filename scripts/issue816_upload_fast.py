@@ -78,7 +78,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #816 pod-side upload finisher.")
     parser.add_argument("--issue", type=int, default=816)
     parser.add_argument("--slug", default="persona_vectors")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument("--tensor-root", default="data/issue_816/store")
     args = parser.parse_args()
 
