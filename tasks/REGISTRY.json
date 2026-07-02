@@ -5458,8 +5458,8 @@
     "842": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/842",
-      "status": "running",
+      "path": "tasks/completed/842",
+      "status": "completed",
       "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
     },
     "843": {
@@ -5472,8 +5472,8 @@
     "844": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/844",
-      "status": "proposed",
+      "path": "tasks/planning/844",
+      "status": "planning",
       "title": "daily-fix: spawned sessions inherit an unrelated issue worktree as cwd"
     },
     "845": {
@@ -5591,8 +5591,8 @@
     "860": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/860",
-      "status": "running",
+      "path": "tasks/completed/860",
+      "status": "completed",
       "title": "workflow-fix: pre-existing HF audit-claim test failures on main"
     },
     "861": {
@@ -5605,8 +5605,8 @@
     "862": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/862",
-      "status": "running",
+      "path": "tasks/completed/862",
+      "status": "completed",
       "title": "artifacts: unified LoRA recipe + dose-to-target stopping (Phase 0e)"
     },
     "863": {
