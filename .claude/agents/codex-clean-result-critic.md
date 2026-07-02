@@ -42,7 +42,6 @@ description: >
   Codex itself — that's the orphan-job anti-pattern (incident task
   #533, 2026-06-10). Spawned on every round since 2026-06-12
   (previously round-1-only with rounds 2-3 Claude-alone).
-model: claude-fable-5
 effort: xhigh
 tools: Bash
 memory: project

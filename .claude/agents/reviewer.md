@@ -16,7 +16,6 @@ description: >
 deprecated: true
 deprecated_at: 2026-05-13
 absorbed_into: clean-result-critic
-model: claude-fable-5
 skills:
   - independent-reviewer
 memory: project
