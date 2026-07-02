@@ -25,6 +25,10 @@ Touched-file -> test mapping (per touched file ``f``):
     broad ``tests/test_*{stem}*.py`` glob. If NEITHER matches an existing test
     -> the file lands in ``untested_touched`` (a loud WARN the Step 9c marker
     surfaces; never a silent coverage hole).
+  * ANY touched path matching a ``GLOB_SCAN_TESTS`` scan glob ADDITIONALLY
+    selects that scanning test (tests that cover files via a directory scan
+    at test time are reachable from no stem — #895). A map hit never
+    suppresses the ``untested_touched`` WARN for the touched file itself.
 
 ``safe-by-direction``: the broad ``*{stem}*`` glob arm deliberately OVER-matches
 on short stems (e.g. stem ``gcp`` selects ``test_gcp_backend.py``) — running a
@@ -148,6 +152,41 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
     {".json", ".yaml", ".yml", ".md", ".txt", ".csv", ".toml", ".lock", ".png", ".svg", ".pdf"}
 )
 
+# --- Glob-scan invariant tests (#895). ---------------------------------------
+# Some tests cover source files via a DIRECTORY SCAN at test time
+# (``root.glob(...)``) rather than by importing the module under test, so no
+# touched-file stem can ever reach them: a diff adding scripts/issue900_foo.py
+# maps to no tests/test_*issue900_foo*.py, yet
+# tests/test_shared_vm_thread_caps.py asserts that very file's import order
+# (#877: the selector's printed command had to be hand-amended; 12 thread-caps
+# offenders accreted after the #847 freeze this way). Map each scanning test
+# to the VERBATIM scan globs its own source uses; a touched path matching any
+# glob ADDS the test. A pinned literal, NOT discovered — same curation rule as
+# WORKFLOW_INVARIANT (live-tree + verbatim-source drift pins live in
+# tests/test_select_step9c_tests.py). Additive only: a map hit does NOT mark
+# the touched file "tested" for the stem map (the scan asserts a cross-cutting
+# invariant ABOUT the file, not the file's own logic), so untested_touched
+# WARNs still fire.
+GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
+    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L477-479).
+    "tests/test_shared_vm_thread_caps.py": (
+        "scripts/issue*_*.py",
+        "src/explore_persona_space/experiments/**/run_*.py",
+    ),
+    # _DISPATCHER_GLOBS (its L80-90) — explicit-env subprocess spawn scanner.
+    "tests/test_subprocess_env_explicit.py": (
+        "scripts/dispatch_*.py",
+        "scripts/run_sweep*.py",
+        "scripts/run_pipeline*.py",
+        "scripts/run_experiment_*.py",
+        "scripts/run_dose_response_*.py",
+        "scripts/run_factor_screen_*.py",
+        "src/explore_persona_space/experiments/*/run_*.py",
+        "src/explore_persona_space/experiments/*/dispatch_*.py",
+        "src/explore_persona_space/experiments/*/__main__.py",
+    ),
+}
+
 
 def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
     """True if *path* matches any glob. ``**`` matches across directory separators."""
@@ -158,6 +197,12 @@ def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
         # pattern needs an explicit prefix check for the zero-segment case
         # (``docs/**`` should match ``docs/x.md``).
         if g.endswith("/**") and (path == g[:-3] or path.startswith(g[:-2])):
+            return True
+        # pathlib's ``**`` matches ZERO directories too; fnmatch's needs the
+        # literal ``/`` on both sides. Try the zero-segment collapse so
+        # verbatim Path.glob patterns keep their pathlib semantics here
+        # (over-match is the safe direction — module docstring).
+        if "/**/" in g and fnmatch.fnmatch(path, g.replace("/**/", "/")):
             return True
     return False
 
@@ -209,6 +254,10 @@ def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[s
     untested: list[str] = []
 
     for f in touched:
+        # Glob-scan invariant tests (#895): additive, never sets ``matched``.
+        for scan_test, scan_globs in GLOB_SCAN_TESTS.items():
+            if _matches_any(f, scan_globs) and (work_root / scan_test).exists():
+                selected.add(scan_test)
         # Workflow-surface files gate via the invariant set; not "untested".
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
