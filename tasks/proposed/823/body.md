@@ -37,6 +37,9 @@ goal: 'Determine whether #779''s per-example context→answer-profile map h: c_l
   processing of arbitrary answer text, by refitting the identical 5-fold ridge harness
   on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled
   answers teacher-forced through the frozen base model.'
+relates_to:
+- spec-context-as-vector
+- identity-contextual-vs-base
 ---
 # Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)
 
