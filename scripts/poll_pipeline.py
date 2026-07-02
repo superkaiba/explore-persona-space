@@ -786,6 +786,78 @@ _SENTINEL_REQUIRED_KEYS: tuple[str, ...] = (
     "version",
 )
 
+# The /issue SKILL.md Step 7 results-payload contract (all 10 required; the
+# "Sentinel format (JSON object with these keys, all required)" list). Used
+# by the #899 envelope-synthesis fallback below — keep in lockstep with
+# SKILL.md Step 7.
+_RESULTS_PAYLOAD_KEYS: tuple[str, ...] = (
+    "eval_numbers",
+    "eval_paths",
+    "reproducibility_card",
+    "wandb_url",
+    "hf_hub_url",
+    "worktree_path",
+    "final_commit_sha",
+    "gpu_hours_used",
+    "gpu_hours_budgeted",
+    "plan_deviations",
+)
+_RESULTS_SENTINEL_SUFFIX = "-results.json"
+
+
+def _maybe_synthesize_results_envelope(
+    remote_path: str, data: dict[str, Any], missing: list[str]
+) -> dict[str, Any] | None:
+    """#899 fallback: rescue a raw Step 7 results payload on a results filename.
+
+    Returns a synthesized enveloped dict, or None (caller keeps the skip path).
+    Fires ONLY for: basename endswith ``-results.json`` AND no envelope key
+    present AND all 10 Step 7 payload keys present (extras tolerated).
+
+    NOTE: the ``-results.json`` suffix is NOT unique to raw writers — several
+    canonical ENVELOPED writers use it too (``dispatch_neg_geometry_504.py``,
+    ``i488_phase3_train_sweep.py``, smoke ``issue-<N>-smoke-results.json``
+    files). Safety against rescuing the wrong sentinel rests on the
+    zero-envelope-keys leg + the 10-key conjunction (an enveloped sentinel
+    never reaches this helper's synthesis branch), NOT on filename
+    uniqueness. Do not widen this predicate on the filename leg alone.
+
+    Incident #825 run 7: the pod-side writer emitted the complete Step 7
+    payload as a raw JSON object (no ``sentinel_schema_version``/``kind``/
+    ``version`` envelope) at ``issue-825-results.json``; the drain skipped it
+    with a quiet warning right before the GCP VM self-deleted.
+    """
+    if not remote_path.rsplit("/", 1)[-1].endswith(_RESULTS_SENTINEL_SUFFIX):
+        return None
+    if any(k in data for k in _SENTINEL_REQUIRED_KEYS):
+        return None  # partial envelope: ambiguous/buggy writer — keep the strict skip
+    missing_payload = [k for k in _RESULTS_PAYLOAD_KEYS if k not in data]
+    if missing_payload:
+        log.error(
+            "sentinel %s sits on a results filename with no envelope AND is "
+            "missing results-payload keys %s; skipping (NOT rescued) — inspect "
+            "before the VM self-deletes (#899)",
+            remote_path,
+            missing_payload,
+        )
+        return None
+    log.error(
+        "sentinel %s carried a complete Step 7 results payload but no envelope "
+        "keys %s; synthesizing kind=epm:results version=1 and posting — "
+        "pod-side writer should emit the envelope (#899)",
+        remote_path,
+        missing,
+    )
+    note = dict(data)  # non-destructive copy — the original payload dict is untouched
+    note["envelope_synthesized"] = True  # provenance, rides the marker note
+    return {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION_SUPPORTED,
+        "kind": "epm:results",
+        "version": 1,
+        "note": note,
+        "by": "pod-sentinel-envelope-fallback",  # secondary provenance
+    }
+
 
 @dataclass(frozen=True)
 class PollResult:
@@ -1675,6 +1747,14 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     non-dict payload, missing required keys, unsupported schema version.
     The sentinel is left un-renamed in these cases so a future poller (or
     a human) can inspect it.
+
+    Exception (#899): a fully-envelope-less body on a ``-results.json``
+    basename that carries the complete Step 7 results-payload key set is
+    RESCUED via ``_maybe_synthesize_results_envelope`` (returns a
+    synthesized ``kind=epm:results version=1`` envelope + a loud
+    ``log.error``) instead of being skipped. Envelope-carrying sentinels
+    (including partial envelopes and unsupported schema versions) keep the
+    strict path unchanged.
     """
     if not body:
         log.warning("sentinel %s is empty; skipping", remote_path)
@@ -1689,6 +1769,9 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
         return None
     missing = [k for k in _SENTINEL_REQUIRED_KEYS if k not in data]
     if missing:
+        fallback = _maybe_synthesize_results_envelope(remote_path, data, missing)
+        if fallback is not None:
+            return fallback
         log.warning("sentinel %s missing required keys %s; skipping", remote_path, missing)
         return None
     schema_version = data.get("sentinel_schema_version")
