@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 836,
+  "highest_id": 837,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5411,6 +5411,13 @@
       "path": "tasks/proposed/836",
       "status": "proposed",
       "title": "workflow-fix: vectorize rule covers permutation/bootstrap draw loops"
+    },
+    "837": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/837",
+      "status": "proposed",
+      "title": "workflow-fix: followup-round-repark fires while the round is still executing"
     },
     "84": {
       "has_clean_result": false,
