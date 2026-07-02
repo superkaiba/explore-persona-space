@@ -5612,8 +5612,8 @@
     "863": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/863",
-      "status": "planning",
+      "path": "tasks/approved/863",
+      "status": "approved",
       "title": "artifacts: direction driver + directional ablation (Phase 0f)"
     },
     "864": {
