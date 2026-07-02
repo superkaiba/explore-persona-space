@@ -1068,6 +1068,19 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
         raise RuntimeError("no behaviors with graded E0 present — cannot fit (fail-loud)")
     _validate_behavior_coverage(behaviors, explicit_behaviors=explicit_behaviors)
 
+    # ── Preflight: exact context-ID-set enforcement BEFORE any graded[beh] consumer ──
+    # graded-e0-ctx-assert-after-reliability-preflight: the context-ID-set defense must
+    # fire before ANY consumer of a behavior's graded payload — the reliability preflight
+    # (``_reliability_for_behavior``) and the per-fit ``_graded_target`` both read
+    # ``graded[beh]``, so a same-count wrong-key payload would otherwise be silently
+    # consumed by the reliability computation before the fit-loop assert could catch it.
+    # Enforce over ALL behaviors here (same subset_active opt-out semantics), so no
+    # ``graded[beh]`` consumer runs on an unenforced payload.
+    for beh in behaviors:
+        _assert_graded_covers_ctx_set(
+            graded[beh], all_ctx, beh, subset_active=args.contexts is not None
+        )
+
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     fig_dir = Path(args.fig_dir)
@@ -1096,9 +1109,8 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     selection_matrices: dict[str, dict] = {}
 
     for beh in behaviors:
-        _assert_graded_covers_ctx_set(
-            graded[beh], all_ctx, beh, subset_active=args.contexts is not None
-        )
+        # ctx-ID-set enforcement already ran in the preflight loop above (before the
+        # reliability computation) — see graded-e0-ctx-assert-after-reliability-preflight.
         y_full, kept_ctx = _graded_target(graded[beh], all_ctx)
         if len(kept_ctx) < 4:
             logger.warning("[%s] only %d contexts with graded E0 — skipping", beh, len(kept_ctx))

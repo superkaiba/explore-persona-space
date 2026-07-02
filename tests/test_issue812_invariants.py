@@ -909,6 +909,49 @@ def test_fit_context_idset_smoke_subset_unaffected():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ROUND-9 FIX — the ctx-ID-set assert is HOISTED into a preflight loop that runs
+# BEFORE the reliability preflight (graded-e0-ctx-assert-after-reliability-preflight):
+# every consumer of a behavior's graded payload (``_reliability_for_behavior`` in the
+# reliability preflight, ``_graded_target`` in the fit loop) must run AFTER the exact
+# context-ID-set enforcement. This test replicates ``main()``'s enforce→reliability
+# ordering and proves NO reliability computation touches a wrong-key payload.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_fit_ctx_idset_enforced_before_reliability(monkeypatch):
+    """A same-count wrong-key payload trips the preflight ctx-ID-set assert BEFORE any
+    ``_reliability_for_behavior`` call — replicating ``main()``'s ordering, the RuntimeError
+    fires and the (call-recording) reliability helper is NEVER invoked for that behavior."""
+    behaviors = ["sycophancy"]
+    all_ctx = [f"ctx{c:03d}" for c in range(5)]  # authoritative key set (n=5)
+    graded = _full_e0_payload(behaviors, 5)
+    # Same-count wrong-key payload (canonical ctx002 → stray ctxZZZ): the count-only
+    # gate would pass, but the ID-set enforcement must catch it before reliability runs.
+    stray = graded["sycophancy"].pop("ctx002")
+    graded["sycophancy"]["ctxZZZ"] = {**stray, "context_id": "ctxZZZ"}
+    assert len(graded["sycophancy"]) == len(all_ctx)  # SAME count
+
+    rel_calls: list[str] = []
+
+    def _recording_reliability(graded_cell, behavior, *, seed, n_boot):
+        rel_calls.append(behavior)
+        return _null_reliability(n_ctx=len(all_ctx))
+
+    monkeypatch.setattr(fit, "_reliability_for_behavior", _recording_reliability)
+
+    # main()'s exact ordering: enforce the ctx-ID-set over ALL behaviors FIRST, then the
+    # reliability preflight loop. The enforce loop must raise before any reliability call.
+    with pytest.raises(RuntimeError, match="does not cover the authoritative context set"):
+        for beh in behaviors:
+            fit._assert_graded_covers_ctx_set(graded[beh], all_ctx, beh, subset_active=False)
+        for beh in behaviors:
+            fit._reliability_for_behavior(graded[beh], beh, seed=1, n_boot=100)
+
+    assert rel_calls == [], (
+        "reliability must NEVER be computed on a wrong-key payload — the ctx-ID-set "
+        f"enforcement must fire first (recorded reliability calls: {rel_calls})"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROUND-6 FIX 2 — Phase-2 idempotence guard: both graded-E0 outputs present with a
 # matching FULL recipe → SKIP the ~500K-call re-judge (restore-from-HF relaunch),
 # never re-bill; a partial / mismatched state falls through to the full run.
