@@ -6,7 +6,7 @@
 * A **base-model whitened context gate predicts that scalar gate at ρ = 0.46/0.59/0.56** (EM/sycophancy/fact) — as well as or better than an "oracle" gate built from the post-fine-tuning model's own vectors
 * The **base behavior read-out FAILS** (partial ρ −0.35/−0.03/−0.41), and re-extracting it on the fine-tuned model does NOT rescue it (−0.28/−0.01/−0.55) → geometry-vs-behavior mismatch, not a rotated instrument
 * The write **barely points at the training-data target** (cos ≈ +0.07/−0.19/+0.02), and contrastive negatives don't rotate it → a positive-only retrain wouldn't change this
-* The gate reaches **measured behavioral leakage only weakly** (ρ 0.13/0.16/0.40 vs the judged rate matrix G) — but a follow-up swapping the saturated binary rate for a continuous teacher-forced margin **~triples the EM correlation (0.13 → 0.35)**, suggesting much of the weakness is rate-censoring, not a broken mechanism (suggestive only: single seed, CI crosses 0)
+* The gate reaches **measured behavioral leakage only weakly** (ρ 0.13/0.16/0.40 vs the judged rate matrix G) — but a follow-up swapping the saturated binary rate for a continuous teacher-forced margin **~2.7×'s the EM correlation (0.13 → 0.35)**, suggesting much of the weakness is rate-censoring, not a broken mechanism (suggestive only: single seed, CI crosses 0)
 * All of this for ~8 GPU-h of forward passes (plus ~6 for the read-out re-extract round) by reusing #537's existing adapter fleet — a de-risk preview for the ~55–95 GPU-h #660 fleet retrain
 
 ## Motivation:
@@ -39,7 +39,7 @@
     * **base whitened gate** $g_0(C') = c_C^\top \Sigma_c^{-1} c_{C'} / c_C^\top \Sigma_c^{-1} c_C$ (Σc = model-level second-moment of last-token activations, ridge λ = 0.0116)
 * Behavioral benchmark: #537's judged leakage matrix G (Sonnet-4.5 judge, trained − base behavior rate per cell), reused verbatim — nothing re-judged here
 * Reuse: #537 adapters + G; #658's whitening matrix Σc + EM/sycophancy read-outs (fact read-out re-extracted fresh); #651's extraction pipeline + layer-14 read + saturation determination
-* Compute: ~7 GPU-h extraction on 1× H100 (ran serial ~12 h wall), ~3 min CPU analysis; the a36 re-extract round ~6 GPU-h on 1× A100-80 (L14-only after a 13×-over-plan wall-clock forced dropping layers 7/21)
+* Compute: extraction ran serial on 1× H100, ~12 h wall (the task body books it as ~7 GPU-h utilization; the two aren't fully reconcilable — treat ~7-12 GPU-h as the range), ~3 min CPU analysis; the a36 re-extract round ~6 GPU-h on 1× A100-80 (L14-only after a 13×-over-plan wall-clock forced dropping layers 7/21)
 
 ## Metrics:
 
@@ -58,11 +58,11 @@ First I checked whether the theory's central object is even well-defined: stack 
 ![A3.8 rank-one](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a38_rankone.png)
 **Takeaways:**
 
-* Median σ₁²/Σσ² = **0.81 (EM) / 0.84 (sycophancy) / 0.86 (fact)**, each tight across sources (0.78–0.87), ~24× chance — and the dominant direction is the write itself (cos(u₁, ŵ) 0.85–0.93)
+* Median σ₁²/Σσ² = **0.81 (EM) / 0.84 (sycophancy) / 0.86 (fact)**, each tight across sources (0.78–0.87), ~24× chance — and the dominant direction is the write itself (per-behavior median cos(u₁, ŵ) 0.86/0.89/0.93; per-source min 0.67)
 * It even holds for the content behaviors where a prior result (#637) expected rank-one structure to break
 * The single-scalar residual is moderate (median 0.47–0.62 of update norm) — the gate captures the bulk of each off-source update, not all of it, which ceilings everything downstream
 * Marker (median 0.82) is bimodal (0.67–0.91): its four weakest-gate sources (~0.11–0.21 median realized gate) are exactly where rank-one degrades — excluded from the tight-cluster claim
-* Format-instruction contexts (`fmt_json`, `fmt_code`) are consistently the messiest sources across behaviors; personas/rephrasings the cleanest
+* Format-instruction contexts (`fmt_json`, `fmt_code`) are consistently the messiest sources across behaviors (in the worst-4 rank-one residual for all four); the cleanest sources vary by behavior (ICL / word-count / default / persona all appear)
 
 ### _Result 2: A base-model whitened context gate predicts the realized gate (A3.9 holds), and whitening's edge over plain cosine is behavior-dependent_
 
@@ -72,7 +72,7 @@ Then I asked whether the scalar is predictable from base-model geometry alone.
 ![A3.9 per-cell scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/366937b70c08d412e37eeb37be9f8ff76250c42b/figures/issue_667/fig_a39_scatter.png)
 **Takeaways:**
 
-* Base whitened gate → realized gate: **ρ = 0.456 [0.248, 0.668] (EM), 0.593 [0.534, 0.649] (sycophancy), 0.564 [0.384, 0.720] (fact)**; shuffled-key null ≈ 0.09
+* Base whitened gate → realized gate: **ρ = 0.456 [0.248, 0.668] (EM), 0.593 [0.534, 0.649] (sycophancy), 0.564 [0.384, 0.720] (fact)**; permutation null ≈ 0.09 (y-shuffle)
 * It's geometry, not the behavioral prior: base-prior baseline ρ ≈ 0 (0.048/0.034/−0.008); shuffled-KEY kills it (−0.004/0.062/0.039) while shuffled-QUERY retains ~0.29–0.32 → the source context's own encoding is the load-bearing part
 * Whitening helps behavior-dependently: +0.10 (syco) / +0.11 (fact) over plain cosine, EM ties (+0.01). Most of the lift is cheap per-coordinate rescaling (identity → diagonal is the big jump: −0.03→0.32 EM, 0.19→0.59 syco, 0.29→0.49 fact); the full off-diagonal Σc⁻¹ adds a real increment mainly for EM (+0.14) and fact (+0.08)
 * Caveat: the per-cell cloud shows within-source banding — part of the ρ could be shared-activation-space autocorrelation the shuffled-key control bears on but can't fully rule out; the fleet retrain is the clean test
@@ -85,7 +85,7 @@ Then the trivial-prediction guard: maybe a pre-FT quantity predicts well only be
 * Base gate ≥ oracle: **0.456 vs 0.266 (EM), 0.593 vs 0.484 (sycophancy), 0.564 vs 0.460 (fact)** — a base-only quantity predicts the write's landing as well as or better than post-FT vectors
 * The no-motion explanation is ruled out: realized key/query drift ‖c⁺−c‖/‖c‖ = **0.68 / 0.53 / 0.77**, and base-vs-oracle gates correlate only 0.30–0.44 — the vectors moved a lot, and the *base* geometry still wins
 * Marker is the tautological control: drift 0.076 (nothing moves), so base ≈ oracle (0.625 vs 0.644, corr 0.96) — which is why marker's agreement is NOT evidence for the theory
-* EM's CIs overlap between base and oracle, so its ordering is point-estimate-only; sycophancy/fact are clean
+* The base-vs-oracle CIs overlap for ALL three behaviors (no paired-difference bootstrap was run), so the base ≥ oracle ordering is point-estimate-only throughout — consistent across all three, but not individually significant
 * Scope note: the oracle used the base Σc (no post-FT re-whitening) — metric drift was out of scope
 
 ### _Result 4: The base behavior read-out FAILS, and re-extracting it on the fine-tuned model does not rescue it (A3.6 fails — geometry mismatch, not rotation)_
@@ -124,12 +124,12 @@ The binding limit: the same base gate, scored against the actual judged leakage 
 ![combined predictor scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8f7803e9540da09001ea3b154ee94cdfd03ac801/figures/issue_667/fig_a39_leakage_vs_predictor.png)
 **Takeaways:**
 
-* Gate → judged G: **ρ = 0.130 (EM) / 0.165 (sycophancy) / 0.400 (fact)** vs 0.46–0.59 to the activation gate. The per-cell scatter shows why: EM/sycophancy G is FLOORED at ~0 for most off-source cells (fact piles at ~1) — a censored variable can't carry a correlation
+* Gate → judged G: **ρ = 0.130 (EM) / 0.165 (sycophancy) / 0.400 (fact)** vs 0.46–0.59 to the activation gate. The per-cell scatter shows why: EM/sycophancy G is FLOORED at ~0 for most off-source cells (fact is bimodal — heavy bands at both 0 and ~0.9–1) — a censored variable can't carry a correlation
 * **Follow-up (`tf-margin-gate-vs-behavior`, this round):** swap G for the continuous teacher-forced fixed ±pool completion margin (#722's validated DV; #661's fixed pools, 40/side; margin_leak = trained − base margin per cell). em+sycophancy extract completed (fact dropped by a build bug); analysis salvaged off-pod:
     * EM: gate → margin **ρ = 0.353 [−0.116, 0.565]** vs 0.130 to G — **~2.7×** the correlation, the de-censoring signature
     * Sycophancy: 0.185 [−0.108, 0.384] vs 0.165 — negligible change
     * The margin VALIDATES as a companion DV for both (ρ(margin, G) = 0.359 [0.135, 0.618] EM, 0.250 [0.112, 0.428] syco — CIs exclude 0); shuffled nulls ≈ 0.09
-    * Honest read: single seed, n=464, both headline CIs cross zero → **suggestive, not significant**. The g0-recompute correctness gate reproduced the committed base-G ρ exactly (0.130/0.165), so the pipeline is sound
+    * Honest read: single seed, n=464, both headline CIs cross zero → **suggestive, not significant**. The g0-recompute correctness gate reproduced the committed base-G ρ within its ±0.02 tolerance (refs 0.13/0.16), so the pipeline is sound
 * Confidence split: MODERATE for the activation-space gate relation (Results 1–3); LOW for the behavioral translation — that's what the dose-controlled fleet retrain must resolve
 
 ## Next steps:
