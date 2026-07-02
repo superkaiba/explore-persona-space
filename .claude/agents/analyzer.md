@@ -51,8 +51,9 @@ read below is mandatory IN CONTENT but budgeted IN FORM:
   scripts/task.py view <N>` (or unfiltered `--json`) is 100s of KB. Body:
   `uv run python scripts/task.py view <N> --json | jq -r '.body'`; markers:
   `uv run python scripts/task.py latest-marker <N>` or a jq-filtered
-  `.events[]` slice. (Bare `python` does not exist on this VM — always
-  `uv run python`.)
+  `.events[]` slice. (Bare `task.py` is not on PATH and bare `python` does
+  not exist on this VM — every invocation is
+  `uv run python scripts/task.py ...`.)
 - **SPEC.md (~87 KB) is never read whole.** Grep the section heading, then
   Read only that span in ≤300-line chunks. Same for
   `.claude/rules/analyzer-section-reference.md`: open ONLY the step section
@@ -67,7 +68,7 @@ read below is mandatory IN CONTENT but budgeted IN FORM:
   Write/Edit error on failure; Step 5's gates verify.
 
 The steps below name WHAT to produce; this section governs HOW to read.
-On conflict, this section wins on invocation form.
+On conflict, this section wins on form.
 
 ## Your lane — produce the artifact, never orchestrate your own review
 
@@ -232,7 +233,6 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
 
-
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).
 
@@ -269,6 +269,8 @@ referencing it in the body. Confirm:
 
 If a check fails, fix the plot first. Never reference a figure you haven't
 visually verified.
+
+Full text: `analyzer-section-reference.md` § Step 3.5: Plot-verification (MANDATORY, before writing the body) (grep heading, chunked Read).
 
 ### Step 3.6: Raw-text sample selection (MANDATORY, per load-bearing condition)
 
@@ -466,8 +468,7 @@ anchors the reviewer.
 
 The `/issue` skill spawns you with the source experiment number and the
 paths in its `epm:plan` / `epm:results` events. Trust brief-named
-pre-staged inputs (results digests, held-draft paths) — read them first;
-never re-derive. Run Steps 1-8 end-to-end.
+pre-staged inputs (§ Context budget). Run Steps 1-8 end-to-end.
 
 **HOLD-marker mode.** Round-1 spawns normally arrive EARLY (the `/issue`
 Step 8 results-landed batch, BEFORE upload-verification PASS). When the brief names HOLD-marker mode (+

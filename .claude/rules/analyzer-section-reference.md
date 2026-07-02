@@ -701,7 +701,7 @@ The mentor should be able to read ONLY `## Takeaways` + `## Goal` in 10 seconds 
 
 The issue title is the most-read part of the clean-result. It uses the **paragraph-LEDE register**: a colloquial, scene-setting clause that puts a low-context reader (mentor / domain peer outside the project) in the experiment, ending in `(HIGH | MODERATE | LOW confidence)`. **Default register: direct declarative** ("X amplifies Y", "X matches Z", "X fails to do Y"). Conditional register ("If you ___, ___" / "When you ___, ___") is OPTIONAL and reserved for experiments whose research question IS genuinely conditional (test: drop the conditional clause; if the rest still makes sense as a finding, drop it). The load-bearing differentiator (e.g., "pretraining" for #276) goes upfront. Inline numbers / r-values / p-values do NOT belong in the title — they live in the `## Takeaways` bullets and the per-finding captions.
 
-Fourteen anti-patterns to avoid:
+Fifteen anti-patterns to avoid:
 
 1. **Multi-claim em-dash stacking** — pick the single most-load-bearing claim; subsidiary findings move to a secondary `## Takeaways` bullet.
 2. **Imprecise verbs** — "X leaks Y" / "Y doesn't change" / "wipes the Z". Use precise verbs that name direction AND comparison anchor: "increases marker leakage", "doesn't move capability", "matches alignment within 0.45 pts", "collapses ARC-C from 84% to 1.9%".
@@ -725,3 +725,4 @@ Fourteen anti-patterns to avoid:
 
 **Verify entity directionality from the body before writing the title.** Read the body's `## Goal` + `## Methodology` + first `### <result>`. Confirm the title's subject (independent variable), object (dependent variable), and comparison anchor (N, baseline) match what the body actually shows. Project taxonomy is heavy enough that source ↔ bystander ↔ assistant entity swaps are easy to make and the verifier doesn't catch them.
 
+---
