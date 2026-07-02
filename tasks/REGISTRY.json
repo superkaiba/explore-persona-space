@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 850,
+  "highest_id": 851,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5524,6 +5524,13 @@
       "path": "tasks/proposed/850",
       "status": "proposed",
       "title": "workflow-fix: analyzer.md context-budget protocol (spawn thrash)"
+    },
+    "851": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/851",
+      "status": "proposed",
+      "title": "artifacts: promote judge_graded + tf-margin to eval/ library (Phase 0a)"
     },
     "88": {
       "has_clean_result": true,
