@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
-# Intentional Unicode (Δ, ρ, √) in scientific docstrings + comments.
+# ruff: noqa: RUF002, RUF003
+# Intentional Unicode (Δ, ρ, √, ×) in scientific docstrings + comments.
 """Issue #812 round-2 regression tests — the substantive BLOCKER/CONCERN fixes.
 
 Each test trips a PERMANENT invariant added in round 2 and would FAIL against the
@@ -784,20 +784,42 @@ def _null_reliability(between_ctx_sd=1.5, split_half_r=-0.3, n_ctx=50):
     }
 
 
-def test_preflight_raises_only_when_ALL_behaviors_null():
-    """When EVERY behavior has a null ceiling there is nothing to analyze — the caller's
-    ``len(excluded) == len(behaviors)`` check raises. Round-6 keeps THIS terminal case a
-    hard failure while exclude-and-recording the mixed case above.
-
-    The reliability entries are built directly (both null) so the terminal branch is
-    exercised deterministically; the estimator's stochastic null is covered by
-    ``test_preflight_excludes_null_ceiling_behavior_and_records_diagnostics``."""
+def test_preflight_raises_when_ALL_behaviors_null():
+    """When EVERY behavior has a null ceiling there is nothing to analyze — the preflight
+    helper RAISES. Round-6 keeps THIS terminal case a hard failure while
+    exclude-and-recording the mixed case above; round-7 extracts the raise into the
+    ``_reliability_preflight`` helper so the branch is exercised deterministically
+    (the round-6 test only asserted the exclusions map size, never tripping the raise)."""
     behaviors = ["deception", "harmful_compliance"]
     reliability = {b: _null_reliability() for b in behaviors}
-    excluded = fit._build_reliability_exclusions(reliability, behaviors)
-    # ALL behaviors excluded → the main() guard (len(excluded) == len(behaviors)) raises.
-    assert set(excluded) == set(behaviors)
-    assert len(excluded) == len(behaviors)
+    with pytest.raises(RuntimeError, match="ALL behaviors"):
+        fit._reliability_preflight(reliability, behaviors)
+
+
+def test_preflight_helper_returns_exclusions_on_mixed_null():
+    """The preflight helper does NOT raise when at least one behavior has a non-null
+    ceiling — it returns the exclusions map for the null-ceiling behaviors (mirror of the
+    all-null raise above)."""
+    reliability = {
+        "deception": _null_reliability(),
+        "refusal": {"sqrt_r_yy": 0.8, "between_ctx_sd": 20.0, "split_half_r": 0.6, "n_ctx": 50},
+    }
+    excluded = fit._reliability_preflight(reliability, ["deception", "refusal"])
+    assert set(excluded) == {"deception"}
+
+
+def test_preflight_via_all_null_reliability_monkeypatch(monkeypatch):
+    """Drive the raise through the estimator boundary: monkeypatch
+    ``_reliability_for_behavior`` to return an all-null entry for every behavior, then run
+    the preflight — proving the terminal RuntimeError fires when the REAL per-behavior
+    estimator (not a hand-built dict) yields all-null ceilings."""
+    behaviors = ["sycophancy", "refusal"]
+    monkeypatch.setattr(
+        fit, "_reliability_for_behavior", lambda *a, **k: _null_reliability(n_ctx=50)
+    )
+    reliability = {b: fit._reliability_for_behavior(None, b) for b in behaviors}
+    with pytest.raises(RuntimeError, match="ALL behaviors"):
+        fit._reliability_preflight(reliability, behaviors)
 
 
 def test_build_exclusions_empty_when_all_ceilings_present():
@@ -812,15 +834,91 @@ def test_build_exclusions_empty_when_all_ceilings_present():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ROUND-7 FIX — fit-side strict-subset defense (restored-e0-payload-coverage leg c):
+# with no explicit --behaviors subset, a graded E0 that covers a STRICT SUBSET of the
+# expected 8 behaviors (a partial regrade that slipped the idempotence gate) must FAIL
+# LOUD, never silently analyze the subset via ``behaviors = list(graded.keys())``.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_fit_strict_subset_fails_loud_without_explicit_behaviors():
+    """A subset of the 8 behaviors + no --behaviors → RuntimeError naming the missing set."""
+    subset = ["sycophancy", "refusal", "harmful_compliance"]  # high-m only; low-m dropped
+    with pytest.raises(RuntimeError, match="strict subset of the expected 8"):
+        fit._validate_behavior_coverage(subset, explicit_behaviors=False)
+
+
+def test_fit_full_8_behaviors_pass():
+    """The full 8 behaviors + no --behaviors → no raise (the genuine complete artifact)."""
+    full = fit.HIGH_M + fit.LOW_M
+    fit._validate_behavior_coverage(full, explicit_behaviors=True)  # explicit is a no-op
+    fit._validate_behavior_coverage(full, explicit_behaviors=False)  # no raise
+
+
+def test_fit_explicit_behaviors_subset_allowed():
+    """An EXPLICIT --behaviors subset opts out of the strict-subset guard (deliberate
+    smoke/debug slice) — no raise even for a single behavior."""
+    fit._validate_behavior_coverage(["sycophancy"], explicit_behaviors=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROUND-6 FIX 2 — Phase-2 idempotence guard: both graded-E0 outputs present with a
 # matching FULL recipe → SKIP the ~500K-call re-judge (restore-from-HF relaunch),
 # never re-bill; a partial / mismatched state falls through to the full run.
 # ─────────────────────────────────────────────────────────────────────────────
+_HIGHM_FIXTURE = ["sycophancy", "refusal", "harmful_compliance"]
+_LOWM_FIXTURE = ["deception", "fact_expression", "format_style", "self_report", "persona_drift"]
+
+
+def _full_cell(ctx: str, beh: str):
+    """One FULL per-context cell: graded_mean + MF1 probe/draw granularity.
+
+    Mirrors the production write shape (issue812_regrade_e0.py:690-700) closely enough
+    that ``_e0_payload_covers`` accepts it: a non-null ``graded_mean`` plus ``probe_scores``
+    whose entries carry ``draw_scores`` (the N=8 per-draw granularity the reliability
+    ceiling reads). Tiny (a few probes) — realistic shape, not 400 lines of literals."""
+    return {
+        "context_id": ctx,
+        "behavior": beh,
+        "graded_mean": 42.0,
+        "binary_rate": 0.5,
+        "n_judged": 2,
+        "n_dropped": 0,
+        "probe_scores": [
+            {"probe": f"{ctx}-p{i}", "probe_mean": 40.0 + i, "draw_scores": [38.0, 42.0]}
+            for i in range(2)
+        ],
+    }
+
+
+def _full_e0_payload(behaviors: list[str], n_contexts: int) -> dict:
+    """{behavior: {ctx: full-cell}} covering EVERY behavior × n_contexts contexts."""
+    return {
+        beh: {f"ctx{c:03d}": _full_cell(f"ctx{c:03d}", beh) for c in range(n_contexts)}
+        for beh in behaviors
+    }
+
+
 def _write_graded_output(
-    path: Path, *, n_draws=8, judge_model="claude-sonnet-4-5-20250929", n_contexts=50, issue=812
+    path: Path,
+    *,
+    n_draws=8,
+    judge_model="claude-sonnet-4-5-20250929",
+    n_contexts=50,
+    issue=812,
+    behaviors=None,
+    e0=None,
 ):
+    """Write a graded-E0 output with a FULL payload by default.
+
+    ``behaviors`` defaults to the file's expected bucket (highm/lowm inferred from the
+    basename); ``e0`` defaults to a full payload (every expected behavior × n_contexts
+    contexts, each cell with graded_mean + MF1 granularity). Pass an explicit ``e0`` /
+    ``behaviors`` to build a deliberately-incomplete payload (the negative tests)."""
     import json
 
+    if behaviors is None:
+        behaviors = _HIGHM_FIXTURE if path.name == "graded_e0_highm.json" else _LOWM_FIXTURE
+    if e0 is None:
+        e0 = _full_e0_payload(behaviors, n_contexts)
     meta = {
         "issue": issue,
         "git_commit": "abc123",
@@ -829,7 +927,7 @@ def _write_graded_output(
         "n_contexts": n_contexts,
         "schema": "graded_e0_v1_mf1",
     }
-    path.write_text(json.dumps({"meta": meta, "behaviors": ["x"], "e0": {}}))
+    path.write_text(json.dumps({"meta": meta, "behaviors": behaviors, "e0": e0}))
 
 
 def test_idempotence_guard_skips_when_both_present_and_matching(tmp_path):
@@ -935,6 +1033,138 @@ def test_main_reaches_normal_path_on_meta_mismatch(tmp_path, monkeypatch):
     with pytest.raises(_Reached):
         regrade.main()
     assert reached["list"] is True, "main() must proceed past the idempotence guard"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-7 FIX — restored-e0-payload-coverage: the idempotence gate + restore path
+# must validate ACTUAL e0 payload coverage (behaviors × contexts × graded_mean + MF1),
+# not just a matching ``meta`` (which is orthogonal to the per-behavior e0 bucket). A
+# meta-matching pair with an empty / partial payload must NOT skip Phase 2 / must RAISE
+# on restore — else the fit silently analyzes a behavior subset.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_payload_covers_accepts_full_payload():
+    """The shared validator ACCEPTS a full-payload output (its own key regression: it
+    must not over-reject the genuine complete artifact)."""
+    obj = {"e0": _full_e0_payload(_HIGHM_FIXTURE, 50)}
+    ok, reason = regrade._e0_payload_covers(obj, "graded_e0_highm.json", expected_n_contexts=50)
+    assert ok is True, reason
+    obj_low = {"e0": _full_e0_payload(_LOWM_FIXTURE, 50)}
+    ok, reason = regrade._e0_payload_covers(obj_low, "graded_e0_lowm.json", expected_n_contexts=50)
+    assert ok is True, reason
+
+
+def test_payload_covers_rejects_empty_e0():
+    """An empty ``e0`` payload (the round-6 test-fixture hole) is REJECTED."""
+    ok, reason = regrade._e0_payload_covers(
+        {"e0": {}}, "graded_e0_highm.json", expected_n_contexts=50
+    )
+    assert ok is False and "empty/missing 'e0'" in reason
+
+
+def test_payload_covers_rejects_missing_behavior():
+    """A payload missing one required behavior is REJECTED (names the missing behavior)."""
+    e0 = _full_e0_payload(_HIGHM_FIXTURE, 50)
+    del e0["harmful_compliance"]  # one required high-m behavior absent
+    ok, reason = regrade._e0_payload_covers(
+        {"e0": e0}, "graded_e0_highm.json", expected_n_contexts=50
+    )
+    assert ok is False and "harmful_compliance" in reason
+
+
+def test_payload_covers_rejects_missing_context():
+    """A payload where one behavior is short by one context cell is REJECTED."""
+    e0 = _full_e0_payload(_LOWM_FIXTURE, 50)
+    dropped = next(iter(e0["deception"]))
+    del e0["deception"][dropped]  # 49 of 50 contexts for deception
+    ok, reason = regrade._e0_payload_covers(
+        {"e0": e0}, "graded_e0_lowm.json", expected_n_contexts=50
+    )
+    assert ok is False and "49 context cells" in reason
+
+
+def test_payload_covers_rejects_missing_graded_mean():
+    """A cell with a null graded_mean is REJECTED (graded_mean is the fit target)."""
+    e0 = _full_e0_payload(_HIGHM_FIXTURE, 50)
+    a_ctx = next(iter(e0["refusal"]))
+    e0["refusal"][a_ctx]["graded_mean"] = None
+    ok, reason = regrade._e0_payload_covers(
+        {"e0": e0}, "graded_e0_highm.json", expected_n_contexts=50
+    )
+    assert ok is False and "no graded_mean" in reason
+
+
+def test_payload_covers_rejects_missing_mf1_granularity():
+    """A cell with only a graded_mean scalar (no probe/draw arrays) is REJECTED — the
+    reliability ceiling needs sub-context units."""
+    e0 = _full_e0_payload(_HIGHM_FIXTURE, 50)
+    a_ctx = next(iter(e0["sycophancy"]))
+    e0["sycophancy"][a_ctx]["probe_scores"] = []  # graded_mean present, MF1 units gone
+    ok, reason = regrade._e0_payload_covers(
+        {"e0": e0}, "graded_e0_highm.json", expected_n_contexts=50
+    )
+    assert ok is False and "MF1 probe/draw granularity" in reason
+
+
+def test_idempotence_guard_falls_through_on_empty_payload(tmp_path):
+    """Matching meta but empty ``e0`` payload → skip=False (the round-6 hole: meta-only
+    validation let an empty payload skip the ~$500 Phase 2)."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json", e0={})
+    _write_graded_output(tmp_path / "graded_e0_lowm.json", e0={})
+    skip, commit = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+    assert commit is None
+
+
+def test_idempotence_guard_falls_through_on_missing_behavior(tmp_path):
+    """Matching meta but ONE required behavior missing from the payload → skip=False."""
+    highm_e0 = _full_e0_payload(_HIGHM_FIXTURE, 50)
+    del highm_e0["harmful_compliance"]
+    _write_graded_output(tmp_path / "graded_e0_highm.json", e0=highm_e0)
+    _write_graded_output(tmp_path / "graded_e0_lowm.json")  # lowm full
+    skip, _ = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+
+
+def test_idempotence_guard_falls_through_on_missing_context(tmp_path):
+    """Matching meta but ONE behavior short a context cell → skip=False."""
+    lowm_e0 = _full_e0_payload(_LOWM_FIXTURE, 50)
+    dropped = next(iter(lowm_e0["deception"]))
+    del lowm_e0["deception"][dropped]
+    _write_graded_output(tmp_path / "graded_e0_highm.json")  # full
+    _write_graded_output(tmp_path / "graded_e0_lowm.json", e0=lowm_e0)
+    skip, _ = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+
+
+def test_idempotence_guard_skips_only_on_full_payload(tmp_path):
+    """The positive control paired with the negatives above: matching meta AND a FULL
+    payload (all behaviors × 50 contexts × graded_mean + MF1) → skip=True. Proves the
+    validator ACCEPTS the genuine complete artifact (does not over-reject)."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json")
+    _write_graded_output(tmp_path / "graded_e0_lowm.json")
+    skip, commit = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is True
+    assert commit == "abc123"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1044,3 +1274,26 @@ def test_restore_partial_fails_loud_on_empty_prefix(tmp_path):
     """An empty --restore-partial prefix RAISES rather than silently no-op'ing."""
     with pytest.raises(RuntimeError, match="empty HF prefix"):
         regrade._restore_partial_e0("superkaiba1/explore-persona-space-data", "", tmp_path / "out")
+
+
+def test_restore_partial_fails_loud_on_incomplete_payload(tmp_path, monkeypatch):
+    """A restored output with a matching meta but an INCOMPLETE ``e0`` payload (one
+    behavior missing) RAISES — round-7 restored-e0-payload-coverage: the restore path
+    validates actual payload coverage, not just the presence of a ``meta`` block, so a
+    truncated harvest can never be silently staged for the gate to skip on."""
+    import huggingface_hub
+
+    harvest = tmp_path / "hf_mirror"
+    harvest.mkdir()
+    highm_e0 = _full_e0_payload(_HIGHM_FIXTURE, 50)
+    del highm_e0["refusal"]  # matching meta, but one required behavior missing
+    _write_graded_output(harvest / "graded_e0_highm.json", e0=highm_e0)
+    _write_graded_output(harvest / "graded_e0_lowm.json")  # lowm complete
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _stub_hf_download_from_dir(harvest))
+
+    with pytest.raises(RuntimeError, match="incomplete e0 payload"):
+        regrade._restore_partial_e0(
+            "superkaiba1/explore-persona-space-data",
+            "issue812_partial/att-20260701-232740/eval_results_issue_812",
+            tmp_path / "out",
+        )

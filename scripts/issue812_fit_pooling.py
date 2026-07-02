@@ -581,6 +581,51 @@ def _build_reliability_exclusions(
     return excluded
 
 
+def _reliability_preflight(reliability: dict[str, dict], behaviors: list[str]) -> dict[str, dict]:
+    """Build the exclusions map, log it, and RAISE iff ALL behaviors are null-ceiling.
+
+    Wraps ``_build_reliability_exclusions`` + the terminal all-null hard failure into a
+    single testable helper (so the raise branch has a deterministic test — see
+    ``test_preflight_raises_when_ALL_behaviors_null``). MF2 gates INTERPRETING Delta-rho
+    against a non-null in-range ceiling per behavior; a null-ceiling behavior is
+    EXCLUDE-and-RECORDED (its per-cell fits are still honest data), and only the case
+    where EVERY behavior is null (nothing left to analyze) is a hard RuntimeError.
+    Returns the exclusions map (empty when every ceiling is non-null).
+    """
+    excluded = _build_reliability_exclusions(reliability, behaviors)
+    for beh, rec in excluded.items():
+        logger.warning(
+            "reliability ceiling null for %s — excluded from Delta-rho interpretation "
+            "(split_half_r=%s, between_ctx_sd=%s, n_ctx=%s); per-cell fits still computed",
+            beh,
+            rec["split_half_r"],
+            rec["between_ctx_sd"],
+            rec["n_ctx"],
+        )
+    if len(excluded) == len(behaviors):
+        raise RuntimeError(
+            "reliability preflight FAILED: sqrt(r_yy) is null for ALL behaviors "
+            f"{list(excluded)} — no behavior has an in-range ceiling to "
+            "interpret Delta-rho against, so there is nothing to analyze"
+        )
+    n_kept = len(behaviors) - len(excluded)
+    if excluded:
+        logger.warning(
+            "Reliability preflight: %d/%d behaviors have a non-null ceiling; "
+            "%d excluded from Delta-rho interpretation: %s",
+            n_kept,
+            len(behaviors),
+            len(excluded),
+            list(excluded),
+        )
+    else:
+        logger.info(
+            "Reliability preflight PASS: sqrt(r_yy) non-null for all %d behaviors",
+            len(behaviors),
+        )
+    return excluded
+
+
 # ── learning-curve contexts-needed extrapolation (per #742 Stage-2 / CONCERN 6) ─
 
 
@@ -657,6 +702,30 @@ def _load_graded_e0(highm_path: Path, lowm_path: Path) -> dict[str, dict]:
             for beh, per_ctx in blob.get("e0", {}).items():
                 merged[beh] = per_ctx
     return merged
+
+
+def _validate_behavior_coverage(behaviors: list[str], *, explicit_behaviors: bool) -> None:
+    """Fit-side strict-subset defense (restored-e0-payload-coverage leg c).
+
+    With NO explicit ``--behaviors`` subset the fit is supposed to analyze all 8 #812
+    behaviors (``HIGH_M + LOW_M``). If the loaded graded E0 carries a STRICT SUBSET of the
+    expected 8, a partial / truncated regrade slipped past the regrade idempotence gate,
+    and the default ``behaviors = list(graded.keys())`` would SILENTLY analyze a behavior
+    subset. RAISE loud instead. An explicit ``--behaviors`` subset opts out (a deliberate
+    smoke/debug slice). No-op when the full 8 are present."""
+    if explicit_behaviors:
+        return
+    expected = set(HIGH_M + LOW_M)
+    present = set(behaviors)
+    if present != expected:
+        missing = sorted(expected - present)
+        raise RuntimeError(
+            "graded E0 covers a strict subset of the expected 8 #812 behaviors "
+            f"(present={sorted(present)}, missing={missing}) with no explicit "
+            "--behaviors subset — a partial/truncated regrade slipped the idempotence "
+            "gate; refusing to silently analyze a behavior subset (pass --behaviors "
+            "explicitly to analyze a deliberate subset)"
+        )
 
 
 def _graded_target(per_ctx: dict, ctx_ids: list[str]) -> tuple[np.ndarray, list[str]]:
@@ -950,14 +1019,16 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     layers = [li for li in layers if li in layers_all]
 
     graded = _load_graded_e0(Path(args.graded_highm), Path(args.graded_lowm))
+    explicit_behaviors = bool(args.behaviors)
     behaviors = (
         [b for b in args.behaviors.split(",") if b.strip()]
-        if args.behaviors
+        if explicit_behaviors
         else list(graded.keys())
     )
     behaviors = [b for b in behaviors if b in graded]
     if not behaviors:
         raise RuntimeError("no behaviors with graded E0 present — cannot fit (fail-loud)")
+    _validate_behavior_coverage(behaviors, explicit_behaviors=explicit_behaviors)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -980,37 +1051,7 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     for beh in behaviors:
         rel = _reliability_for_behavior(graded[beh], beh, seed=args.seed, n_boot=args.n_bootstrap)
         reliability[beh] = rel
-    reliability_excluded = _build_reliability_exclusions(reliability, behaviors)
-    for beh, rec in reliability_excluded.items():
-        logger.warning(
-            "reliability ceiling null for %s — excluded from Delta-rho interpretation "
-            "(split_half_r=%s, between_ctx_sd=%s, n_ctx=%s); per-cell fits still computed",
-            beh,
-            rec["split_half_r"],
-            rec["between_ctx_sd"],
-            rec["n_ctx"],
-        )
-    if len(reliability_excluded) == len(behaviors):
-        raise RuntimeError(
-            "reliability preflight FAILED: sqrt(r_yy) is null for ALL behaviors "
-            f"{list(reliability_excluded)} — no behavior has an in-range ceiling to "
-            "interpret Delta-rho against, so there is nothing to analyze"
-        )
-    n_kept = len(behaviors) - len(reliability_excluded)
-    if reliability_excluded:
-        logger.warning(
-            "Reliability preflight: %d/%d behaviors have a non-null ceiling; "
-            "%d excluded from Delta-rho interpretation: %s",
-            n_kept,
-            len(behaviors),
-            len(reliability_excluded),
-            list(reliability_excluded),
-        )
-    else:
-        logger.info(
-            "Reliability preflight PASS: sqrt(r_yy) non-null for all %d behaviors",
-            len(behaviors),
-        )
+    reliability_excluded = _reliability_preflight(reliability, behaviors)
 
     all_ops = ["mean"] + [o for o in POOL_OPS if o != "mean"] + PCA_OPS + ["unpooled"]
     results: dict[str, dict] = {}

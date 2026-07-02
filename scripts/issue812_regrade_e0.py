@@ -701,6 +701,73 @@ def _judge_behavior(
     return result
 
 
+# Which graded-E0 file carries which behavior bucket (the payload-coverage contract).
+_GRADED_E0_EXPECTED_BEHAVIORS = {
+    "graded_e0_highm.json": HIGH_M,
+    "graded_e0_lowm.json": LOW_M,
+}
+
+
+def _e0_payload_covers(
+    obj: dict, fname: str, *, expected_n_contexts: int
+) -> tuple[bool, str | None]:
+    """Does a graded-E0 output's ``e0`` payload carry the FULL required coverage?
+
+    The idempotence gate + restore path must NOT skip / accept on a matching ``meta``
+    alone: ``meta`` (written once with ``n_contexts=len(ctx_ids)``, :1043) is orthogonal
+    to the per-behavior ``e0`` bucket (:1055), so a meta-matching pair with an empty /
+    partial ``e0`` would skip the ~$500 Phase 2, after which the fit's default
+    ``behaviors = list(graded.keys())`` silently analyzes a behavior subset. This
+    validator closes that hole: it fails toward re-judge on ANY missing coverage.
+
+    Returns ``(ok, reason)``. ``ok`` is True ONLY when:
+      * ``e0`` is a non-empty dict whose behavior keys are EXACTLY the file's expected
+        bucket (highm -> the 3 high-m behaviors; lowm -> the 5 low-m behaviors);
+      * EVERY behavior carries EXACTLY ``expected_n_contexts`` context cells;
+      * EVERY cell has a non-null ``graded_mean`` AND MF1 probe/draw granularity
+        (``_has_mf1_granularity`` — the sub-context units the reliability ceiling reads).
+    Any shortfall -> ``(False, <reason>)`` so the caller re-runs (never a silent reuse).
+    """
+    expected_behaviors = _GRADED_E0_EXPECTED_BEHAVIORS.get(fname)
+    if expected_behaviors is None:
+        return False, f"{fname} is not a recognized graded-E0 file"
+    e0 = obj.get("e0")
+    if not isinstance(e0, dict) or not e0:
+        return False, f"{fname} has an empty/missing 'e0' payload"
+    present = set(e0)
+    expected = set(expected_behaviors)
+    if present != expected:
+        missing = sorted(expected - present)
+        extra = sorted(present - expected)
+        return (
+            False,
+            f"{fname} e0 behaviors {sorted(present)} != expected {sorted(expected)} "
+            f"(missing={missing}, unexpected={extra})",
+        )
+    for beh in expected_behaviors:
+        per_ctx = e0.get(beh)
+        if not isinstance(per_ctx, dict):
+            return False, f"{fname} behavior {beh!r} has a non-dict per-context payload"
+        if len(per_ctx) != expected_n_contexts:
+            return (
+                False,
+                f"{fname} behavior {beh!r} has {len(per_ctx)} context cells, "
+                f"expected {expected_n_contexts}",
+            )
+        for ctx, cell in per_ctx.items():
+            if not isinstance(cell, dict):
+                return False, f"{fname} {beh!r}/{ctx} is not a dict cell"
+            if cell.get("graded_mean") is None:
+                return False, f"{fname} {beh!r}/{ctx} has no graded_mean"
+            if not _has_mf1_granularity(cell):
+                return (
+                    False,
+                    f"{fname} {beh!r}/{ctx} lacks MF1 probe/draw granularity "
+                    "(reliability ceiling needs sub-context units)",
+                )
+    return True, None
+
+
 def _meta_matches_recipe(
     meta: dict, *, expected_n_draws: int, expected_judge_model: str, expected_n_contexts: int
 ) -> bool:
@@ -727,30 +794,39 @@ def _e0_outputs_present_and_matching(
     expected_judge_model: str,
     expected_n_contexts: int,
 ) -> tuple[bool, str | None]:
-    """Idempotence gate: are BOTH graded-E0 outputs present with a matching FULL recipe?
+    """Idempotence gate: are BOTH graded-E0 outputs present with a matching FULL recipe
+    AND full behavior/context payload coverage?
 
     Returns ``(skip, git_commit)``. ``skip`` is True ONLY when BOTH
     ``graded_e0_highm.json`` AND ``graded_e0_lowm.json`` exist AND both metas match the
-    expected recipe (``_meta_matches_recipe``). If only one exists, either is
-    unreadable, or a meta mismatches → ``(False, None)`` (fall through to the full run;
-    fail-loud is preserved — a partial / mismatched state re-runs rather than silently
-    reusing a wrong grid). ``git_commit`` (from the highm meta) is returned for logging
-    the skip.
+    expected recipe (``_meta_matches_recipe``) AND both ``e0`` payloads cover their full
+    expected behavior bucket over ``expected_n_contexts`` contexts with graded_mean +
+    MF1 granularity (``_e0_payload_covers``). ``meta`` alone is NOT enough — it is written
+    once with ``n_contexts=len(ctx_ids)`` (orthogonal to the per-behavior ``e0`` bucket),
+    so a meta-matching pair with an empty / partial payload would skip the ~$500 Phase 2
+    and leave the fit silently analyzing a behavior subset. If only one file exists,
+    either is unreadable, a meta mismatches, OR a payload is incomplete → ``(False,
+    None)`` (fall through to the full run; fail-loud toward re-judge, never a silent
+    reuse of a wrong / partial grid). ``git_commit`` (from the highm meta) is returned
+    for logging the skip.
 
     This lets a relaunch that restored the crash-trap's ~500K-call Phase-2 outputs from
     HF (``issue812_partial/<attempt>/eval_results_issue_812/``) SKIP the re-judge and
-    re-bill ~$500 of batch judging (CLAUDE.md checkpoint-per-phase).
+    re-bill ~$500 of batch judging (CLAUDE.md checkpoint-per-phase) — but ONLY when the
+    restored artifact is genuinely complete.
     """
     highm = out_dir / "graded_e0_highm.json"
     lowm = out_dir / "graded_e0_lowm.json"
     if not (highm.exists() and lowm.exists()):
         return False, None
     try:
-        highm_meta = json.loads(highm.read_text()).get("meta", {})
-        lowm_meta = json.loads(lowm.read_text()).get("meta", {})
+        highm_obj = json.loads(highm.read_text())
+        lowm_obj = json.loads(lowm.read_text())
     except (OSError, json.JSONDecodeError):
         # An unreadable / malformed output is a mismatched state — re-run.
         return False, None
+    highm_meta = highm_obj.get("meta", {})
+    lowm_meta = lowm_obj.get("meta", {})
     match = _meta_matches_recipe(
         highm_meta,
         expected_n_draws=expected_n_draws,
@@ -764,6 +840,17 @@ def _e0_outputs_present_and_matching(
     )
     if not match:
         return False, None
+    # Meta match is necessary but NOT sufficient — validate ACTUAL payload coverage
+    # before skipping the ~$500 re-judge (restored-e0-payload-coverage BLOCKER).
+    for obj, fname in ((highm_obj, "graded_e0_highm.json"), (lowm_obj, "graded_e0_lowm.json")):
+        ok, reason = _e0_payload_covers(obj, fname, expected_n_contexts=expected_n_contexts)
+        if not ok:
+            logger.warning(
+                "graded-E0 idempotence gate: recipe meta matches but payload coverage "
+                "is incomplete (%s) — NOT skipping; falling through to re-judge",
+                reason,
+            )
+            return False, None
     return True, highm_meta.get("git_commit")
 
 
@@ -783,11 +870,15 @@ def _restore_partial_e0(repo: str, hf_prefix: str, out_dir: Path) -> list[str]:
 
     ``hf_prefix`` is the dataset-repo directory holding the two files, e.g.
     ``issue812_partial/att-20260701-232740/eval_results_issue_812``. Fail-loud: a
-    missing file, an unreadable JSON, or an output lacking a ``meta`` block RAISES
-    (a partial / corrupt restore must never be silently accepted — the gate would
-    then fall through to a full re-judge, re-billing ~$500). Returns the list of
-    local paths written (both files). This does NOT itself decide the skip — it only
-    stages the files; the idempotence gate re-validates the metas independently.
+    missing file, an unreadable JSON, an output lacking a ``meta`` block, OR an output
+    whose ``e0`` payload does not fully cover its expected behavior bucket over
+    ``meta['n_contexts']`` contexts (graded_mean + MF1 granularity) RAISES (a partial /
+    corrupt restore must never be silently accepted — the gate would then fall through
+    to a full re-judge, re-billing ~$500 — and validating payload coverage here catches
+    a truncated harvest at restore time rather than leaving it to the gate). Returns the
+    list of local paths written (both files). This does NOT itself decide the skip — it
+    only stages the files; the idempotence gate re-validates the metas AND payloads
+    independently via the SAME ``_e0_payload_covers`` validator.
     """
     from huggingface_hub import hf_hub_download
 
@@ -811,6 +902,19 @@ def _restore_partial_e0(repo: str, hf_prefix: str, out_dir: Path) -> list[str]:
             raise RuntimeError(
                 f"restored {path_in_repo} has no 'meta' block — cannot verify the recipe; "
                 "refusing a partial restore"
+            )
+        n_contexts = meta.get("n_contexts")
+        if not isinstance(n_contexts, int) or n_contexts <= 0:
+            raise RuntimeError(
+                f"restored {path_in_repo} meta has a non-positive/absent n_contexts "
+                f"({n_contexts!r}) — cannot verify payload coverage; refusing a partial restore"
+            )
+        ok, reason = _e0_payload_covers(obj, fname, expected_n_contexts=n_contexts)
+        if not ok:
+            raise RuntimeError(
+                f"restored {path_in_repo} has an incomplete e0 payload ({reason}) — "
+                "refusing a partial restore (the idempotence gate would then re-judge, "
+                "re-billing ~$500)"
             )
         dest = out_dir / fname
         dest.write_text(json.dumps(obj))
