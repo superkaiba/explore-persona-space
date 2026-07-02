@@ -7,7 +7,7 @@ tags:
 - activation-dynamics
 - context-geometry
 created_at: '2026-07-02T06:56:23Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: '# Motivation - We''ve found that there is a map from context vector
   to answer profile - Potentially there could be a map from each activation to the
