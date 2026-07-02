@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 827,
+  "highest_id": 828,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5340,6 +5340,13 @@
       "path": "tasks/proposed/827",
       "status": "proposed",
       "title": "workflow-fix: liveness-veto the #664 zombie-GPU stall flag (2-tick persistence)"
+    },
+    "828": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/828",
+      "status": "proposed",
+      "title": "workflow-fix: fable-5+xhigh agent pins autocompact-thrash subagent spawns"
     },
     "83": {
       "has_clean_result": false,
