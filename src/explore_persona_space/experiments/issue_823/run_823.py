@@ -1405,6 +1405,47 @@ def _load_common_valid_idx(base_dir: pathlib.Path, n_contexts: int) -> np.ndarra
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+def _ridge_equivalence_gate(
+    cx_last_full: np.ndarray, v_a_prime: np.ndarray, kf, *, device: str
+) -> None:
+    """Full-size slow-vs-fast ridge parity assert (#823 perf patch).
+
+    One fold of layer 14 on arm A' (n_train ~4000, H=3584): the canonical
+    numpy-SVD ``ridge_fit_predict`` vs the Gram-eigh ``ridge_fit_predict_fast``
+    on the requested device must agree to <= 1e-8 relative (the #779 gate
+    measured ~8e-13). Raises RuntimeError on divergence — never run phase 4 on
+    an unverified solver.
+    """
+    from explore_persona_space.experiments.issue_779.fit_h import (
+        ridge_fit_predict,
+        ridge_fit_predict_fast,
+    )
+
+    X = cx_last_full[:, 14, :]
+    Y = v_a_prime[:, 14, :]
+    train_idx, val_idx = next(iter(kf.split(X)))
+    t0 = time.time()
+    pred_slow = ridge_fit_predict(X[train_idx], Y[train_idx], X[val_idx])
+    t1 = time.time()
+    pred_fast = ridge_fit_predict_fast(X[train_idx], Y[train_idx], X[val_idx], device=device)
+    t2 = time.time()
+    scale = float(np.abs(pred_slow).max()) + 1e-12
+    max_rel = float(np.abs(pred_fast - pred_slow).max()) / scale
+    logger.info(
+        "[ridge-equivalence-gate] max|fast-slow|/max|slow| = %.3e "
+        "(slow %.1fs, fast %.1fs, device=%s)",
+        max_rel,
+        t1 - t0,
+        t2 - t1,
+        device,
+    )
+    if max_rel > 1e-8:
+        raise RuntimeError(
+            f"ridge_fit_predict_fast parity FAIL: max rel diff {max_rel:.3e} > 1e-8 "
+            f"(device={device}) — refusing to run phase 4 on an unverified solver"
+        )
+
+
 def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> None:
     """Per-arm refit (DV1) and cross-arm transfer (DV3)."""
     log_phase("p4_ridge_refit")
@@ -1412,7 +1453,7 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
 
     from sklearn.model_selection import KFold
 
-    from explore_persona_space.experiments.issue_779.fit_h import ridge_fit_predict
+    from explore_persona_space.experiments.issue_779.fit_h import ridge_fit_predict_fast
 
     # Load bundle
     bundle_path = pathlib.Path(
@@ -1475,6 +1516,24 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
 
     kf = KFold(n_splits=5, shuffle=True, random_state=0)
 
+    # ── #823 perf patch (user-directed, 2026-07-02): dedupe + fast solver ─────
+    # The original loops executed 3780 serial SVD-path ridge fits where only 700
+    # unique fits exist: (a) the per-trait loops repeated identical (arm, layer,
+    # fold) fits 3x — the fit does not depend on trait, only the per-context
+    # accumulation's read-out layer does; (b) Computation B re-fit (X, v_A') per
+    # (s_prime, trait, layer, fold), which is IDENTICAL to Computation A's A'
+    # fit under the same deterministic KFold(random_state=0) splits, so the
+    # transfer leg needs only RESCORING of the A' predictions. Solver:
+    # ridge_fit_predict_fast (the #779 Gram-eigh twin), parity-gated here at
+    # full size against the canonical SVD path before any fit is trusted.
+    _ridge_device = os.environ.get("EPS_RIDGE_DEVICE", "cpu")
+    _ridge_equivalence_gate(cx_last_full, v_a_prime, kf, device=_ridge_device)
+
+    # Fold splits depend only on n (KFold re-derives from random_state on every
+    # .split call), so materialize once and reuse everywhere.
+    folds = list(kf.split(cx_last_full[:, 0, :]))
+    ro_layers_needed = sorted({READ_OUT_LAYERS[t] for t in TRAITS})
+
     # ── Computation A: per-arm refit ──────────────────────────────────────────
     log_phase("p4_refit")
     logger.info("Phase 4 Computation A: per-arm refit (arms: A', B1, B2, C)...")
@@ -1485,63 +1544,87 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
     # This is the primary uncertainty estimate surface (context-level bootstrap CI).
     per_ctx_r2: dict[str, dict[str, np.ndarray]] = {}
 
+    # Transfer (Computation B) accumulator, filled during the A' refit pass:
+    # r2_transfer_vals[s_prime][layer_idx] = [5 fold R²s], scored from the SAME
+    # A' predictions the refit uses (fit_arm is always A' for transfer).
+    r2_transfer_vals: dict[str, list[list[float]]] = {
+        sp: [[] for _ in range(EXPECTED_LAYERS)] for sp in refit_targets
+    }
+
     for s, Y_target_s in refit_targets.items():
+        r2_folds_per_layer: list[list[float]] = []
+        # Accumulate per-context (ss_res, ss_tot) at EVERY needed read-out layer
+        # in one pass (the fit does not depend on trait).
+        ctx_sse = {ro: np.zeros(n_contexts) for ro in ro_layers_needed}
+        ctx_sst = {ro: np.zeros(n_contexts) for ro in ro_layers_needed}
+        for layer_idx in range(EXPECTED_LAYERS):
+            X = cx_last_full[:, layer_idx, :]  # (n, 3584)
+            Y = Y_target_s[:, layer_idx, :]  # (n, 3584)
+            r2_folds: list[float] = []
+            for train_idx, val_idx in folds:
+                Y_pred = ridge_fit_predict_fast(
+                    X[train_idx], Y[train_idx], X[val_idx], device=_ridge_device
+                )
+                ss_res = float(np.sum((Y[val_idx] - Y_pred) ** 2))
+                ss_tot = float(np.sum((Y[val_idx] - Y[val_idx].mean(0)) ** 2))
+                r2_folds.append(1.0 - ss_res / (ss_tot + 1e-12))
+                # Accumulate per-context at the read-out layers only (saves memory)
+                if layer_idx in ctx_sse:
+                    res_ctx = ((Y[val_idx] - Y_pred) ** 2).sum(axis=1)  # (val_n,)
+                    tot_ctx = ((Y[val_idx] - Y[val_idx].mean(0)) ** 2).sum(axis=1)  # (val_n,)
+                    ctx_sse[layer_idx][val_idx] += res_ctx
+                    ctx_sst[layer_idx][val_idx] += tot_ctx
+                if s == "A_prime":
+                    # Computation B (cross-arm transfer) rescoring: this Y_pred IS
+                    # the transfer prediction (fit on A', same folds) — score it
+                    # against every target arm here instead of re-fitting later.
+                    for sp, Y_sp_all in refit_targets.items():
+                        Y_sp = Y_sp_all[:, layer_idx, :]
+                        ss_res_t = float(np.sum((Y_sp[val_idx] - Y_pred) ** 2))
+                        ss_tot_t = float(np.sum((Y_sp[val_idx] - Y_sp[val_idx].mean(0)) ** 2))
+                        r2_transfer_vals[sp][layer_idx].append(1.0 - ss_res_t / (ss_tot_t + 1e-12))
+            r2_folds_per_layer.append(r2_folds)
         r2_refit[s] = {}
         per_ctx_r2[s] = {}
         for trait in TRAITS:
-            r2_folds_per_layer = []
             ro_layer = READ_OUT_LAYERS[trait]
-            # Accumulate per-context (ss_res, ss_tot) at the read-out layer across folds
-            ctx_sse = np.zeros(n_contexts)  # per-ctx sum-sq-residual at ro_layer
-            ctx_sst = np.zeros(n_contexts)  # per-ctx sum-sq-total at ro_layer
-            for layer_idx in range(EXPECTED_LAYERS):
-                X = cx_last_full[:, layer_idx, :]  # (n, 3584)
-                Y = Y_target_s[:, layer_idx, :]  # (n, 3584)
-                r2_folds: list[float] = []
-                for train_idx, val_idx in kf.split(X):
-                    Y_pred = ridge_fit_predict(X[train_idx], Y[train_idx], X[val_idx])
-                    ss_res = float(np.sum((Y[val_idx] - Y_pred) ** 2))
-                    ss_tot = float(np.sum((Y[val_idx] - Y[val_idx].mean(0)) ** 2))
-                    r2_folds.append(1.0 - ss_res / (ss_tot + 1e-12))
-                    # Accumulate per-context at read-out layer only (saves memory vs all layers)
-                    if layer_idx == ro_layer:
-                        res_ctx = ((Y[val_idx] - Y_pred) ** 2).sum(axis=1)  # (val_n,)
-                        tot_ctx = ((Y[val_idx] - Y[val_idx].mean(0)) ** 2).sum(axis=1)  # (val_n,)
-                        ctx_sse[val_idx] += res_ctx
-                        ctx_sst[val_idx] += tot_ctx
-                r2_folds_per_layer.append(r2_folds)
             r2_refit[s][trait] = {
-                "r2_by_layer": r2_folds_per_layer,  # list[28][5]
+                "r2_by_layer": r2_folds_per_layer,  # list[28][5]; identical across traits
                 "fit_arm": s,
                 "score_arm": s,  # mechanizable: refit rows have fit_arm == score_arm
             }
             # Per-context R² at read-out layer (from accumulated folds)
-            per_ctx_r2[s][trait] = 1.0 - ctx_sse / (ctx_sst + 1e-12)
+            per_ctx_r2[s][trait] = 1.0 - ctx_sse[ro_layer] / (ctx_sst[ro_layer] + 1e-12)
         logger.info("Arm %s refit complete (layers %d, folds 5)", s, EXPECTED_LAYERS)
 
     # Compute arm A (bundle) R² separately for the harness reproduce-gate.
     # Arm A is NOT in refit_targets (per plan §3 — A is the gate role only),
-    # so we run a dedicated 5-fold refit loop for the gate check.
+    # so we run a dedicated 5-fold refit loop for the gate check. The fit does
+    # not depend on trait, so compute the 28x5 grid ONCE and share it (#823
+    # perf patch — the original re-ran the identical grid once per trait).
     log_phase("p4_arm_a_gate_refit")
     logger.info("Phase 4: Computing arm A refit for harness gate...")
-    r2_arm_a: dict[str, dict] = {}
-    for trait in TRAITS:
-        r2_folds_per_layer_a = []
-        for layer_idx in range(EXPECTED_LAYERS):
-            X_a = cx_last_full[:, layer_idx, :]
-            Y_a = v_x_full[:, layer_idx, :]
-            r2_folds_a: list[float] = []
-            for train_idx_a, val_idx_a in kf.split(X_a):
-                Y_pred_a = ridge_fit_predict(X_a[train_idx_a], Y_a[train_idx_a], X_a[val_idx_a])
-                ss_res_a = float(np.sum((Y_a[val_idx_a] - Y_pred_a) ** 2))
-                ss_tot_a = float(np.sum((Y_a[val_idx_a] - Y_a[val_idx_a].mean(0)) ** 2))
-                r2_folds_a.append(1.0 - ss_res_a / (ss_tot_a + 1e-12))
-            r2_folds_per_layer_a.append(r2_folds_a)
-        r2_arm_a[trait] = {
+    r2_folds_per_layer_a: list[list[float]] = []
+    for layer_idx in range(EXPECTED_LAYERS):
+        X_a = cx_last_full[:, layer_idx, :]
+        Y_a = v_x_full[:, layer_idx, :]
+        r2_folds_a: list[float] = []
+        for train_idx_a, val_idx_a in folds:
+            Y_pred_a = ridge_fit_predict_fast(
+                X_a[train_idx_a], Y_a[train_idx_a], X_a[val_idx_a], device=_ridge_device
+            )
+            ss_res_a = float(np.sum((Y_a[val_idx_a] - Y_pred_a) ** 2))
+            ss_tot_a = float(np.sum((Y_a[val_idx_a] - Y_a[val_idx_a].mean(0)) ** 2))
+            r2_folds_a.append(1.0 - ss_res_a / (ss_tot_a + 1e-12))
+        r2_folds_per_layer_a.append(r2_folds_a)
+    r2_arm_a: dict[str, dict] = {
+        trait: {
             "r2_by_layer": r2_folds_per_layer_a,
             "fit_arm": "A",
             "score_arm": "A",
         }
+        for trait in TRAITS
+    }
     logger.info("Arm A gate refit complete.")
 
     # Build combined dict for gate and diagnostic (arm A separate from the DV refit dict).
@@ -1558,31 +1641,27 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
     a_vs_a_prime_diag = _compute_a_vs_a_prime_diag(v_x_full, v_a_prime, r2_refit_for_gate)
 
     # ── Computation B: cross-arm transfer ────────────────────────────────────
+    # Assembled from the A' predictions computed during Computation A (see the
+    # rescoring branch there): the transfer fit is ALWAYS (X, v_A') on the same
+    # deterministic folds, identical to the A' refit fit — zero additional fits
+    # (#823 perf patch). Fit ONLY on arm A' — never on v_B1, v_B2, or v_C.
     log_phase("p4_transfer")
     logger.info("Phase 4 Computation B: cross-arm transfer (fit on A')...")
     r2_transfer: dict[str, dict[str, dict]] = {}
 
-    for s_prime, Y_target_sp in refit_targets.items():
-        r2_transfer[s_prime] = {}
-        for trait in TRAITS:
-            r2_folds_per_layer = []
-            for layer_idx in range(EXPECTED_LAYERS):
-                X = cx_last_full[:, layer_idx, :]
-                Y_a_prime = v_a_prime[:, layer_idx, :]
-                Y_sp = Y_target_sp[:, layer_idx, :]
-                r2_folds = []
-                for train_idx, val_idx in kf.split(X):
-                    # Fit ONLY on arm A' — never on v_B1, v_B2, or v_C
-                    Y_pred = ridge_fit_predict(X[train_idx], Y_a_prime[train_idx], X[val_idx])
-                    ss_res = float(np.sum((Y_sp[val_idx] - Y_pred) ** 2))
-                    ss_tot = float(np.sum((Y_sp[val_idx] - Y_sp[val_idx].mean(0)) ** 2))
-                    r2_folds.append(1.0 - ss_res / (ss_tot + 1e-12))
-                r2_folds_per_layer.append(r2_folds)
-            r2_transfer[s_prime][trait] = {
-                "r2_by_layer": r2_folds_per_layer,
+    for s_prime in refit_targets:
+        assert all(len(f) == 5 for f in r2_transfer_vals[s_prime]), (
+            f"transfer rescoring incomplete for {s_prime}: "
+            f"{[len(f) for f in r2_transfer_vals[s_prime]]}"
+        )
+        r2_transfer[s_prime] = {
+            trait: {
+                "r2_by_layer": r2_transfer_vals[s_prime],
                 "fit_arm": "A_prime",  # always A' for transfer — fit_arm != score_arm → transfer
                 "score_arm": s_prime,
             }
+            for trait in TRAITS
+        }
         logger.info("Transfer arm %s complete (fit=A', score=%s)", s_prime, s_prime)
 
     # ── Statistical tests ─────────────────────────────────────────────────────
