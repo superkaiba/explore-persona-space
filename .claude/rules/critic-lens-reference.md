@@ -1,4 +1,6 @@
 ---
+paths:
+  - ".claude/rules/critic-lens-reference.md"
 description: >
   Full lens rubrics for critic.md — Methodology / Statistics & Measurement /
   Alternative Explanations — relocated from .claude/agents/critic.md (#838;
@@ -7,8 +9,6 @@ description: >
   — the self-matching `paths:` glob keeps this file out of every other agent
   context (a missing `paths:` key would auto-inject it always-on fleet-wide,
   recreating the #833/#834 spawn-weight bug this relocation fixes).
-paths:
-  - ".claude/rules/critic-lens-reference.md"
 ---
 
 # Critic lens reference (critic.md relocated lens rubrics)

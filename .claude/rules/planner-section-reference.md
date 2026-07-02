@@ -1,4 +1,6 @@
 ---
+paths:
+  - ".claude/rules/planner-section-reference.md"
 description: >
   Full templates + worked examples for the planner.md plan sections
   (§0.0 / §0 / §4 / §6 / §6.5 / §7 / §9 / §10 / §11), relocated verbatim from
@@ -6,8 +8,6 @@ description: >
   in planner.md — the self-matching `paths:` glob keeps this file out of every
   other agent context (a missing `paths:` key would auto-inject it always-on
   fleet-wide, recreating the #833/#834 spawn-weight bug this relocation fixes).
-paths:
-  - ".claude/rules/planner-section-reference.md"
 ---
 
 # Planner section reference (planner.md relocated section templates)
