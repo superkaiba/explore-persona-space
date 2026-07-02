@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 886,
+  "highest_id": 887,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5783,6 +5783,13 @@
       "path": "tasks/proposed/886",
       "status": "proposed",
       "title": "extraction.py: PEFT-wrapped models silently take the fallback path (post-norm L_max + full-tuple materialization) \u2014 fix detection"
+    },
+    "887": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/887",
+      "status": "proposed",
+      "title": "Audit #667-line last-layer (L27) activation reads for mixed pre-/post-final-norm convention contamination (bare base vs PeftModel trained)"
     },
     "89": {
       "has_clean_result": true,
