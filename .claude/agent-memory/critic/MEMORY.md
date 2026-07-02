@@ -97,6 +97,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
+- [Verifier-check-addition plans](feedback_verifier_check_addition_plans.md) — FAIL = bounded bounce (2-cap+override); escape-regex under-triggers fail UNSAFE (#879)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)
 - [Creation-helper reuse shortcut](feedback_creation_helper_reuse_shortcut_half_state.md) — failed-halfway retry exits 0, broken artifact (#596)
