@@ -2436,19 +2436,27 @@ If present:
    `projected_wall_h`, `ratio`, `basis`. Route on the component's
    marker CHAIN (re-posts reuse the planner-§9 row name verbatim in
    `component:` — the loop guard and this routing key on it):
-   - `action: auto_descope_to_<spec>` present → a prior tick already
-     accepted an auto-descope; log one line and advance to Step
-     5.bis(b).
+   - `action: auto_descope_to_<spec>` present AND the component's
+     chain also carries a lever-0 record (`action: vectorize_fix_round`
+     ran, or `signature_check: negative`) → a prior tick already
+     accepted an auto-descope with lever 0 resolved; log one line and
+     advance to Step 5.bis(b). An `auto_descope_to_<spec>` WITHOUT a
+     lever-0 record is a pre-resolution like any other — treat as
+     UNRESOLVED and proceed to step 2 (a descope never resolves
+     lever 0; legacy and implementer self-descope markers arrive
+     exactly this way).
    - `action: vectorize_fix_round` present (the fix round ran) and the
      post-fix ratio ≤ 2× → log one line and advance to Step 5.bis(b).
      Post-fix ratio still > 2× → SKIP step 2 (one mandatory fix round
      per component) and go to step 3 with the post-fix numbers plus
      the round's residual classification.
-   - Any OTHER pre-resolution (`action: continue_as_is`; a legacy,
-     poster-side, or crash-replay resolution) WITHOUT a lever-0 record
-     (`vectorize_fix_round` ran, or `signature_check: negative`) →
-     treat as UNRESOLVED and proceed to step 2; at ratio ≥ 5× without
-     a valid clause-0c finding the pre-resolution is VOID.
+   - ANY pre-resolution (`action: continue_as_is`,
+     `action: auto_descope_to_<spec>` per the bullet above, or any
+     other legacy, poster-side, or crash-replay resolution) WITHOUT a
+     lever-0 record (`vectorize_fix_round` ran, or
+     `signature_check: negative`) → treat as UNRESOLVED and proceed to
+     step 2; at ratio ≥ 5× without a valid clause-0c finding the
+     pre-resolution is VOID.
 2. **Vectorize-first signature check (pivot_criteria auto-action 0 +
    0b — REQUIRED before any descope).** From `basis:` + the round's
    implementer report, classify the deviation:
@@ -2528,7 +2536,8 @@ If present:
      ratio ≥ 5×, `continue_as_is` additionally requires the recorded
      quantified clause-0c finding (`flop_bound_finding:` on the marker,
      or a `signature_check: negative` record meeting the 0c bar); if it
-     is missing and no fix round ran, execute step 2 instead; if the
+     is missing and no fix round ran, execute step 2's vectorize fix
+     round instead; if the
      fix round ran but its re-post omitted the residual classification,
      obtain ONE corrective re-post (no second fix round), then resolve.
      State `Decision: <choice> because <reason>` AND EXECUTE the

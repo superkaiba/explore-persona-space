@@ -840,10 +840,12 @@ pivot_criteria:
       QUANTIFIED non-compute bottleneck — API rate caps, download
       bandwidth, GPU-capacity wait, contention on an ALREADY-vectorized
       job with the vectorized state cited). A marker arriving
-      PRE-RESOLVED (`action: continue_as_is` or any other resolution)
+      PRE-RESOLVED (`action: continue_as_is`,
+      `action: auto_descope_to_<spec>`, or any other resolution)
       WITHOUT a lever-0 record in the component's chain
       (`vectorize_fix_round` ran, or `signature_check: negative`) is
-      treated as UNRESOLVED and routed through this step; at ratio ≥ 5×
+      treated as UNRESOLVED and routed through this step — a descope
+      never resolves lever 0; at ratio ≥ 5×
       without a valid clause-0c finding the pre-resolution is VOID
       (covers legacy markers, poster-side pre-resolution, and
       crash-recovery replays — BOTH incident markers arrived
@@ -1696,22 +1698,23 @@ markers:
       ≥ 5×, per pivot_criteria clause 0c: roofline arithmetic |
       sequential dependency | quantified non-compute bottleneck).
       Re-posts reuse the planner-§9 row name verbatim in `component:`
-      (the once-per-component loop guard keys on it). When
-      `action: auto_descope_to_<spec>` is present, the orchestrator
-      continues with the descoped sweep.
+      (the once-per-component loop guard keys on it).
       When `action:` is absent — or the marker arrives PRE-RESOLVED
-      (`action: continue_as_is` or any other resolution) WITHOUT a
-      lever-0 record in the component's chain
-      (`action: vectorize_fix_round` ran, or
+      (`action: continue_as_is`, `action: auto_descope_to_<spec>`, or
+      any other resolution) WITHOUT a lever-0 record in the
+      component's chain (`action: vectorize_fix_round` ran, or
       `signature_check: negative`), which is treated as UNRESOLVED (a
-      ≥5× pre-resolution without a valid clause-0c finding is VOID) —
-      the orchestrator FIRST applies
+      ≥5× pre-resolution without a valid clause-0c finding is VOID; a
+      descope never resolves lever 0) — the orchestrator FIRST applies
       pivot_criteria.compute_deviation_over_2x auto-action 0
       (vectorize-first signature check; overhead-bound → one mandatory
       vectorize fix round, else a recorded negative finding), then
       auto-descope, and only then surfaces
       gates.conditional.compute_deviation_resolution (id=12) with the
-      2-option pivot prompt. Rationale: task #397 round 6 (2026-05-27) —
+      2-option pivot prompt. When `action: auto_descope_to_<spec>` is
+      present WITH a lever-0 record in the component's chain, the
+      orchestrator continues with the descoped sweep.
+      Rationale: task #397 round 6 (2026-05-27) —
       projection was 3-4× plan §12 but surfaced as "needs human
       eyeball" rather than as a structural pivot, costing ~17h before
       the user noticed. Per the 2026-05-22 workflow.yaml PHILOSOPHY
