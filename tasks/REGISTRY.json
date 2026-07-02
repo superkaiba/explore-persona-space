@@ -5710,8 +5710,8 @@
     "877": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/877",
-      "status": "proposed",
+      "path": "tasks/planning/877",
+      "status": "planning",
       "title": "Fix pre-existing thread-caps test failure: issue779_layer_sweep.py missing load_dotenv-before-torch"
     },
     "878": {
