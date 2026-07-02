@@ -5570,8 +5570,8 @@
     "857": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/857",
-      "status": "running",
+      "path": "tasks/reviewing/857",
+      "status": "reviewing",
       "title": "Fix: restore issue734_figures functions dropped by 4109e30f17 (pinned test failing on main)"
     },
     "858": {
