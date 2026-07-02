@@ -452,10 +452,8 @@ def _configure_map_change_compute(smoke_clamp: bool) -> None:
         fitM.N_REFIT_PAIRS = 8
         fitM.TARGET_DIM = 4
         logger.info("map-change: SMOKE clamps (mlp_epochs=20 refit_pairs=8 target_dim=4)")
-    # Resolve the compute device the reused ridge + MLP fitters read off
-    # fit658.DEVICE ("auto" -> cuda if available else cpu; issue722_fit_M.main sets
-    # this, which we bypass by calling fit_cell directly).
-    fitM.fit658.DEVICE = fitM.fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("map-change: fit device=%s", fitM.fit658.DEVICE)
     # Exactness gate (#658): a reduction-order regression fails at startup.
     fitM.fit658._assert_ridge_exactness()
