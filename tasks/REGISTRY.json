@@ -5344,8 +5344,8 @@
     "828": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/828",
-      "status": "planning",
+      "path": "tasks/approved/828",
+      "status": "approved",
       "title": "workflow-fix: fable-5+xhigh agent pins autocompact-thrash subagent spawns"
     },
     "829": {
