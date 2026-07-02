@@ -149,10 +149,11 @@ def test_good_plan_passes_all():
         "c10_marker_recipe": "SKIP",
         "c11_dryrun_test_coverage": "SKIP",
         "c12_battery_multiplier": "SKIP",
+        "c13_empirical_gate_attainability": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 13
+    assert len(results) == 14
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1099,6 +1100,208 @@ def test_c12_fenced_battery_does_not_trigger():
     assert _status(plan, "c12_battery_multiplier") == "SKIP"
 
 
+# ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
+
+# Near-verbatim #816 shapes: the synthetic fixtures ARE the incident text
+# (v5-shape = must-FAIL, v6-shape = must-PASS; the REAL v5/v6 files are
+# exercised by the §6.2 pre-commit calibration, not by this suite). NOTE:
+# the n_draws fixtures also trigger c12 (its `n_(draws|perms)\b` trigger) —
+# tests below assert the c13 status only, except where noted.
+C13_HEADING = "## 12. Success criteria (empirical-null gates)"
+C13_TABLE_SMALL = (
+    "| Family | Construction | n_draws | Source |\n"
+    "|---|---|---|---|\n"
+    "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+    "| Cross-trait | the other 2 traits' r_B | 2 | #778 v2 |\n"
+    "| PCA top-5 | top-5 PCs of diffs | 5 | #778 v1 |\n"
+)
+C13_TABLE_BIG = (
+    "| Family | Construction | n_draws | Source |\n"
+    "|---|---|---|---|\n"
+    "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+    "| Cross-trait | rotation draws | 200 | #778 v2 |\n"
+    "| PCA top-5 | top-5 PCs of diffs | 200 | #778 v1 |\n"
+)
+C13_TABLE_19 = "| Family | Construction | n_draws | Source |\n|---|---|---|---|\n| Isotropic | v ~ N(0, I) | 19 | norm-matching |\n"
+C13_GATE = (
+    "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+    "one-sided empirical p ≤ 0.05 surviving Benjamini-Hochberg across the 3 traits."
+)
+C13_GATE_SCOPED = (
+    "- SUCCESS: for every STOCHASTIC family (n_draws ≥ 50) one-sided empirical "
+    "p ≤ 0.05 surviving Benjamini-Hochberg; cross-trait (n=2) and PCA (n=5) are "
+    "descriptive max-comparators outside the BH set, p-floors 1/3 and 1/6 stated inline."
+)
+C13_GATE_FLOOR_FORM = (
+    "- SUCCESS: exceeds EVERY random draw's reduction. One-sided empirical "
+    "p ≤ 1/(15+1) ≈ 0.06 (the p-floor at 15 draws)."
+)
+
+
+def _c13_plan(*parts: str) -> str:
+    """GOOD_PLAN + a success-criteria section carrying ``parts`` in order."""
+    return GOOD_PLAN + "\n" + C13_HEADING + "\n\n" + "\n\n".join(parts) + "\n"
+
+
+def test_c13_unattainable_gate_816_v5_shape_fails():
+    ok, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "n_draws=2" in r.detail
+    assert "1/3" in r.detail
+    assert "p-floor" in r.detail
+    assert ok is False
+
+
+def test_c13_attainable_gate_passes():
+    assert _status(_c13_plan(C13_TABLE_BIG, C13_GATE), "c13_empirical_gate_attainability") == "PASS"
+
+
+def test_c13_self_consistent_floor_gate_skips():
+    # The verbatim #816 v5 Exp-4 floor-form sentence ("p ≤ 1/(15+1) ≈ 0.06")
+    # must NOT be read as a decimal-alpha gate — no gate hit, so c13 SKIPs.
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE_FLOOR_FORM))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no registered empirical-p gate" in r.detail
+
+
+def test_c13_scoped_gate_816_v6_shape_passes():
+    # The #816 v6 fix shape: same small-n table rows, but the gate line
+    # carries the draws-explicit scope qualifier `n_draws ≥ 50` — the n=2/5
+    # comparators are outside the gate's own declared scope.
+    assert (
+        _status(_c13_plan(C13_TABLE_SMALL, C13_GATE_SCOPED), "c13_empirical_gate_attainability")
+        == "PASS"
+    )
+
+
+def test_c13_not_triggered_skips():
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no registered empirical-p gate" in r.detail
+
+
+def test_c13_gate_without_ndraws_skips():
+    _, by_id = _run(_c13_plan(C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no per-family n_draws declarations" in r.detail
+
+
+def test_c13_na_escape_passes():
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE) + (
+        "\nN/A — no empirical-null gate (the p ≤ 0.05 mention quotes the sibling's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c13_kind_infra_skips():
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE)
+    assert _status(plan, "c13_empirical_gate_attainability", kind="infra") == "SKIP"
+
+
+def test_c13_kind_analysis_warns_not_fails():
+    # Same offenders as the FAIL case, but kind=analysis degrades to WARN and
+    # the overall verdict stays ok (c12 also degrades to WARN under analysis).
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE)
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id["c13_empirical_gate_attainability"].status == "WARN"
+    assert ok is True
+
+
+def test_c13_boundary_floor_equals_alpha_warns():
+    # Fraction(1, 20) == Fraction("0.05") exactly: floor == alpha under a
+    # non-strict `≤` comparator is the boundary WARN, not an offender.
+    _, by_id = _run(_c13_plan(C13_TABLE_19, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "exactly" in r.detail
+
+
+def test_c13_ambiguous_gate_without_family_vocab_warns():
+    gate = "- SUCCESS: the permutation read must reach one-sided empirical p ≤ 0.05."
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, gate))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "ambiguous tie" in r.detail
+
+
+def test_c13_prior_work_recap_not_a_gate():
+    # The same gate sentence under a Prior Work heading is a recap, not a
+    # registration — section scoping keeps it out (under-trigger fails safe).
+    plan = GOOD_PLAN + "\n## 2. Prior Work\n\n" + C13_TABLE_SMALL + "\n" + C13_GATE + "\n"
+    assert _status(plan, "c13_empirical_gate_attainability") == "SKIP"
+
+
+def test_c13_fenced_gate_does_not_trigger():
+    plan = (
+        GOOD_PLAN + "\n" + C13_HEADING + "\n\n" + C13_TABLE_SMALL + "\n```\n" + C13_GATE + "\n```\n"
+    )
+    assert _status(plan, "c13_empirical_gate_attainability") == "SKIP"
+
+
+def test_c13_kwarg_ndraws_form_harvested():
+    # No table: a FENCED kwarg declaration (`n_draws_isotropic=2`, the #816 v6
+    # config-block shape) still harvests — declarations are read from the RAW
+    # plan — and floors 1/3 > 0.05 under the unscoped family gate.
+    plan = (
+        GOOD_PLAN + "\n" + C13_HEADING + "\n\n```\nn_draws_isotropic=2\n```\n\n" + C13_GATE + "\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "n_draws_isotropic n_draws=2" in r.detail
+
+
+def test_c13_excluded_family_row_not_counted():
+    table = (
+        "| Family | Construction | n_draws | Source |\n"
+        "|---|---|---|---|\n"
+        "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+        "| Cross-trait | outside the BH test set — descriptive reference only | 2 | #778 |\n"
+        "| PCA top-5 | outside the BH test set — descriptive reference only | 5 | #778 |\n"
+    )
+    assert _status(_c13_plan(table, C13_GATE), "c13_empirical_gate_attainability") == "PASS"
+
+
+def test_c13_bare_n_qualifier_does_not_descope():
+    # A bare `n ≥ 20` sample-size clause on the gate line must NOT set the
+    # draws scope (the pre-fix scope regex silently false-PASSed this — the
+    # round-1 statistics-reconcile Must-Fix): the n=2/5 families stay in
+    # scope and the gate FAILs.
+    gate = (
+        "- SUCCESS: across all null families (n ≥ 20 prompts per probe) the read reaches "
+        "one-sided empirical p ≤ 0.05 surviving BH."
+    )
+    assert _status(_c13_plan(C13_TABLE_SMALL, gate), "c13_empirical_gate_attainability") == "FAIL"
+
+
+def test_c13_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief self-escape
+    # channel — the round-1 methodology-reconcile Must-Fix) is NOT a
+    # standalone declaration line and must not escape.
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE) + (
+        "\nThe verifier's remediation menu says to declare 'N/A — no empirical-null gate' "
+        "when the mention is incidental.\n"
+    )
+    assert _status(plan, "c13_empirical_gate_attainability") == "FAIL"
+
+
+def test_c13_strict_lt_at_floor_equal_alpha_is_offender():
+    # Under strict `<`, floor == alpha is unattainable (an offender), not the
+    # boundary WARN.
+    gate = (
+        "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+        "one-sided empirical p < 0.05 surviving Benjamini-Hochberg across the 3 traits."
+    )
+    assert _status(_c13_plan(C13_TABLE_19, gate), "c13_empirical_gate_attainability") == "FAIL"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1148,12 +1351,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 6
+    assert payload["n_skip"] == 7
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 13
-    assert len({c["id"] for c in payload["checks"]}) == 13
+    assert len(payload["checks"]) == 14
+    assert len({c["id"] for c in payload["checks"]}) == 14
 
 
 def test_cli_exit_one_on_fail(tmp_path):
