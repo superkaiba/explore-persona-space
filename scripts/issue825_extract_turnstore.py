@@ -90,6 +90,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--assert-causal", action="store_true", help="prefix-vs-full slot check")
     parser.add_argument("--smoke", action="store_true", help="first 8 convs; causal check ON")
     parser.add_argument(
+        "--shard-size",
+        type=int,
+        default=SHARD_SIZE,
+        help=(
+            "conversations per extraction block == per shard file; each block is "
+            "extracted then flushed to disk before the next starts, bounding host "
+            "RAM to ~one shard (run-4 rc=137: accumulating all 2000 records "
+            "~8 MB each OOM-killed the 16 GB host). Non-default is SMOKE ONLY "
+            "(exercises multi-shard flushing on a tiny slice)."
+        ),
+    )
+    parser.add_argument(
         "--tiny-model-dir",
         default=None,
         help=(
@@ -172,10 +184,20 @@ def load_model(model_key: str, tiny_model_dir: str | None = None):
 
     model_id = MODEL_INSTRUCT if model_key == "instruct" else MODEL_PRETRAINED
     tokenizer = AutoTokenizer.from_pretrained(model_id)
+    # device_map={"": 0} pins ALL weights to the GPU: if VRAM is unavailable
+    # (e.g. a lingering VLLM::EngineCore from the gen phases still holds it),
+    # this raises CUDA OOM at load time instead of device_map="auto" silently
+    # offloading ~15 GB of layers to the 16 GB host and getting the process
+    # kernel-OOM-killed minutes later (runs 3-4, rc=137).
     model = AutoModelForCausalLM.from_pretrained(
-        model_id, torch_dtype=torch.bfloat16, device_map="auto"
+        model_id, torch_dtype=torch.bfloat16, device_map={"": 0}
     )
     model.eval()
+    off_gpu = [n for n, p in model.named_parameters() if p.device.type != "cuda"]
+    assert not off_gpu, (
+        f"{model_id}: {len(off_gpu)} params not on CUDA (e.g. {off_gpu[:3]}) — "
+        "refusing to run with CPU-offloaded weights (host-RAM OOM risk)"
+    )
     cfg = model.config
     assert cfg.num_hidden_layers == EXPECTED_LAYERS, (
         f"{model_id}: num_hidden_layers={cfg.num_hidden_layers} != {EXPECTED_LAYERS}"
@@ -394,12 +416,25 @@ def run_extraction(
     return [results[j] for j in range(len(rendered))]
 
 
-def write_shards(records: list[dict], out_dir: Path, stem: str, sidecar_base: dict) -> list[Path]:
+def write_shards(
+    records: list[dict],
+    out_dir: Path,
+    stem: str,
+    sidecar_base: dict,
+    shard_offset: int = 0,
+    shard_size: int = SHARD_SIZE,
+) -> list[Path]:
+    """Write records as fp .pt shard(s) + JSON sidecars, starting at shard_offset.
+
+    Called once per extraction block (block == shard), so records never
+    accumulate across blocks in host RAM; asserts each call flushes at least
+    one file.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
-    for k in range(0, len(records), SHARD_SIZE):
-        shard = records[k : k + SHARD_SIZE]
-        shard_idx = k // SHARD_SIZE
+    for k in range(0, len(records), shard_size):
+        shard = records[k : k + shard_size]
+        shard_idx = shard_offset + k // shard_size
         payload = {
             "conv_ids": [r["conv_id"] for r in shard],
             "slots": [r["slots"] for r in shard],
@@ -464,7 +499,8 @@ def main() -> None:
         f"[run] model={args.model} ({model_id}) format={args.format} track={args.track} "
         f"n={len(rendered)} batch_size={bs} peak_layers={peak_layers}"
     )
-    records = run_extraction(model, rendered, peak_layers, pad_id, bs)
+    shard_size = int(args.shard_size)
+    assert shard_size >= 1, f"--shard-size must be >= 1, got {shard_size}"
     stem = f"{args.model}_{args.format}_{args.track}"
     sidecar_base = {
         "model": args.model,
@@ -475,14 +511,36 @@ def main() -> None:
         "positions_cap": POSITIONS_CAP,
         "expected_layers": EXPECTED_LAYERS,
         "expected_hidden": EXPECTED_HIDDEN,
-        "shard_size": SHARD_SIZE,
+        "shard_size": shard_size,
         "git_commit": _git_commit(),
         "args": {k: str(v) for k, v in vars(args).items()},
         "causal_check_max_abs_diff": causal_max_diff,
         "smoke": bool(args.smoke),
     }
-    paths = write_shards(records, args.out_dir, stem, sidecar_base)
-    print(f"[done] {len(records)} conversations -> {len(paths)} shard(s) in {args.out_dir}")
+    # Block-wise extract -> flush: one input-order block == one shard file,
+    # written the moment its block completes, so host RAM holds at most ~one
+    # shard of records (~4 GB at the production 500) instead of the full set
+    # (2000 x ~8 MB ~= 16 GB, which kernel-OOM-killed the 16 GB g2-standard-4
+    # in run 4 with zero shards flushed). Shard indices/naming/order are
+    # identical to the old write-at-end path; the fit_cells sorted-glob loader
+    # is unchanged.
+    paths: list[Path] = []
+    n_done = 0
+    for block_idx, block_start in enumerate(range(0, len(rendered), shard_size)):
+        block = rendered[block_start : block_start + shard_size]
+        records = run_extraction(model, block, peak_layers, pad_id, bs)
+        assert len(records) == len(block), (block_idx, len(records), len(block))
+        paths += write_shards(
+            records,
+            args.out_dir,
+            stem,
+            sidecar_base,
+            shard_offset=block_idx,
+            shard_size=shard_size,
+        )
+        n_done += len(records)
+        del records, block
+    print(f"[done] {n_done} conversations -> {len(paths)} shard(s) in {args.out_dir}")
 
 
 if __name__ == "__main__":

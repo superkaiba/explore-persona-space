@@ -60,6 +60,27 @@ fi
 
 if should_run extract; then
   echo "[phase=extract]"
+  # GPU-free guard: a lingering VLLM::EngineCore from the gen phases holds
+  # ~22 GB VRAM, which forced device_map to offload the 7B to the 16 GB host
+  # -> kernel OOM (run 3, rc=137). Reap by exact PID, then require an empty
+  # compute-app list. Skipped when nvidia-smi is absent (CPU smoke on the VM).
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    for pid in $(pgrep -f '^VLLM::EngineCore' || true); do
+      echo "[gpu-guard] killing lingering VLLM::EngineCore pid=$pid"
+      kill -KILL "$pid" 2>/dev/null || true
+    done
+    for i in $(seq 1 24); do
+      apps=$(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader 2>/dev/null || true)
+      if [[ -z "$apps" ]]; then break; fi
+      echo "[gpu-guard] waiting for GPU to free ($i/24): $apps"
+      sleep 5
+    done
+    apps=$(nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader 2>/dev/null || true)
+    if [[ -n "$apps" ]]; then
+      echo "FATAL: GPU still held before extract: $apps" >&2
+      exit 1
+    fi
+  fi
   for m in instruct pretrained; do
     for f in chat naturalistic; do
       uv run python scripts/issue825_extract_turnstore.py --model "$m" --format "$f" \
