@@ -506,11 +506,21 @@ def _remove_from_pods_conf(name: str) -> None:
     Locked the same way as :func:`_upsert_pods_conf`: a concurrent upsert
     must not be able to read a pre-remove snapshot, write its own row, and
     re-add the removed entry.
+
+    Task #821: this is THE legitimate remove path for ``pods.conf``.
+    ``write_pods_conf`` grew a never-drop-RUNNING guard that consults the
+    live RunPod API on any diff, so an unaudited drop of a RUNNING pod is
+    refused (see ``pod_config.write_pods_conf`` docstring). Because this
+    call is invoked exclusively when the caller has ALREADY decided the
+    pod should leave the registry (``pod.py terminate``, orchestrator
+    cleanup, or a stale-entry sweep), we pass ``allow_remove={name}`` to
+    bypass the guard AND the network call — a terminate flow must never
+    depend on the RunPod API being reachable.
     """
     with locked_pods_conf():
         rows = parse_pods_conf()
         rows = [p for p in rows if p.name != name]
-        write_pods_conf(rows)
+        write_pods_conf(rows, allow_remove=frozenset({name}))
         cmd_sync(rows)
 
 

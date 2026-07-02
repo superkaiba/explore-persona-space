@@ -441,3 +441,86 @@ def test_refresh_noop_when_already_in_sync(
     out = capsys.readouterr().out
     assert "already at 103.207.149.130:18166" in out
     assert "already match the live RunPod API" in out
+
+
+# ---------------------------------------------------------------------------
+# Task #821: re-add a wiped RUNNING row (single + bulk mode)
+# ---------------------------------------------------------------------------
+
+
+def test_refresh_re_adds_missing_running_pod(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods, capsys
+):
+    """The incident #821 headline: pods.conf lost pod-763 (destructive git
+    op wiped the row). The live RunPod API still reports pod-763 RUNNING
+    with a valid SSH endpoint. Single-mode ``--refresh-from-api pod-763``
+    must RE-ADD the row without human intervention. This is the self-heal
+    contract ``poll_pipeline.py`` depends on after 10 consecutive SSH
+    failures.
+    """
+    stubbed_pods_conf["rows"] = []  # pod-763 wiped from pods.conf
+    stub_list_team_pods.return_value = [
+        _info("pod-763", ssh_host="103.207.149.130", ssh_port=18166, gpu_count=8),
+    ]
+
+    # Pass an empty ``pods`` list — the incident signature is that the
+    # caller's parse of pods.conf returns nothing for pod-763.
+    pod_config.cmd_refresh_from_api([], "pod-763")
+
+    written = stubbed_pods_conf["written"]
+    assert written is not None
+    by_name = {p.name: (p.host, p.port) for p in written}
+    assert "pod-763" in by_name
+    assert by_name["pod-763"] == ("103.207.149.130", 18166)
+    assert stubbed_pods_conf["sync_called"] is True
+
+    out = capsys.readouterr().out
+    assert "re-adding missing RUNNING pod 'pod-763'" in out
+
+
+def test_refresh_bulk_mode_re_adds_missing_managed_pods(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods
+):
+    """Bulk-mode ``--refresh-from-api`` enumerates the live RunPod API and
+    re-adds every managed ``^pod-\\d+$`` pod absent from pods.conf.
+    Documents the ``poll_pipeline.py`` self-heal loop AFTER a
+    catastrophic wipe (multiple rows lost at once)."""
+    stubbed_pods_conf["rows"] = []  # everything wiped
+    stub_list_team_pods.return_value = [
+        _info("pod-500", ssh_host="1.1.1.1", ssh_port=11111, gpu_count=1),
+        _info("pod-763", ssh_host="2.2.2.2", ssh_port=22222, gpu_count=8),
+    ]
+
+    pod_config.cmd_refresh_from_api([], None)
+
+    written = stubbed_pods_conf["written"]
+    assert written is not None
+    by_name = {p.name: (p.host, p.port) for p in written}
+    assert by_name == {
+        "pod-500": ("1.1.1.1", 11111),
+        "pod-763": ("2.2.2.2", 22222),
+    }
+
+
+def test_refresh_does_not_fabricate_unmanaged_rows(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods
+):
+    """Bulk mode's live-API enumeration filters on the managed name pattern
+    ``^pod-\\d+$``. A random RunPod entry from the team account
+    (``manual-thing``, another user's pod, a permanent-fleet ``podN``)
+    must NOT be added to pods.conf — those don't belong to the ephemeral
+    lifecycle this file tracks.
+    """
+    stubbed_pods_conf["rows"] = []  # pods.conf empty
+    stub_list_team_pods.return_value = [
+        _info("pod-763", ssh_host="9.9.9.9", ssh_port=33333, gpu_count=8),
+        _info("manual-thing", ssh_host="8.8.8.8", ssh_port=44444),
+        _info("pod1", ssh_host="7.7.7.7", ssh_port=55555),  # permanent-fleet naming
+    ]
+
+    pod_config.cmd_refresh_from_api([], None)
+
+    written = stubbed_pods_conf["written"]
+    assert written is not None
+    by_name = {p.name for p in written}
+    assert by_name == {"pod-763"}, by_name

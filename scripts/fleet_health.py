@@ -25,7 +25,12 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PODS_CONF = SCRIPT_DIR / "pods.conf"
+# Task #821: resolve LIVE pods.conf via pod_config's lazy resolver so this
+# READ-only consumer targets ``<git-common-dir>/eps/pods.conf`` (LIVE)
+# instead of the tracked seed at ``scripts/pods.conf``. Called from
+# ``parse_pods_conf`` below.
+sys.path.insert(0, str(SCRIPT_DIR))
+
 PROJECT_DIR = SCRIPT_DIR.parent
 LOCAL_ENV = PROJECT_DIR / ".env"
 SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
@@ -189,8 +194,23 @@ class PodHealth:
 # ---------------------------------------------------------------------------
 
 
-def parse_pods_conf(path: Path = PODS_CONF) -> list[Pod]:
-    """Parse pods.conf file into Pod objects."""
+def parse_pods_conf(path: Path | None = None) -> list[Pod]:
+    """Parse pods.conf file into Pod objects.
+
+    ``path`` defaults to the LIVE pods.conf resolved lazily via
+    ``pod_config._resolve_live_pods_conf`` (post-#821 the LIVE file lives
+    at ``<git-common-dir>/eps/pods.conf``, not the tracked seed). Explicit
+    ``path=`` is honored — used by any tests that operate against a tmp
+    fixture.
+    """
+    if path is None:
+        # Local import so the PostToolUse ruff hook cannot strip a
+        # top-of-file import between the ``import`` edit and the ``use``
+        # edit (F401 auto-fix). ``pod_config`` is already resident once
+        # anything in scripts/ touches it, so re-import is a no-op.
+        from pod_config import _resolve_live_pods_conf
+
+        path = _resolve_live_pods_conf()
     pods = []
     if not path.exists():
         raise FileNotFoundError(f"pods.conf not found at {path}")

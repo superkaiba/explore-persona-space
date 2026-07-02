@@ -113,7 +113,185 @@ def _main_repo_scripts_dir() -> Path:
 
 _MAIN_SCRIPTS_DIR = _main_repo_scripts_dir()
 PROJECT_ROOT = _MAIN_SCRIPTS_DIR.parent
-PODS_CONF = _MAIN_SCRIPTS_DIR / "pods.conf"
+
+# --- Live pods.conf location ------------------------------------------------
+# The LIVE (mutable) pod registry lives OUTSIDE the git working tree — at
+# ``<git-common-dir>/eps/pods.conf`` (i.e. ``<main>/.git/eps/pods.conf``).
+# ``git reset --hard`` / ``git checkout -- .`` / ``git restore -- .`` /
+# ``git clean -fd`` / ``git clean -fdx`` operate on the working tree and do
+# NOT touch ``.git`` internals, so the file survives every destructive git
+# op that has historically wiped it. The tracked ``scripts/pods.conf`` copy
+# becomes a SEED (fresh-clone bootstrap only); once ``_resolve_live_pods_conf``
+# has migrated it, every reader + writer resolves to the live copy inside
+# ``.git/eps/``.
+#
+# Incident 2026-07-01: a ``reset: moving to origin/main`` reflog entry
+# rewound ``scripts/pods.conf`` to its month-old committed state and dropped
+# every RUNNING pod's row (task #821). #815 added a policy lint against
+# repo-root ``git reset --hard`` but does not stop ``git checkout .`` /
+# ``git restore .`` / autostash-pop conflicts / a future agent ignoring the
+# rule. The v3 relocation puts the live file OUT of git's blast radius
+# entirely.
+#
+# Resolution is LAZY (call-time), NOT eager: read-only contexts (``--list``,
+# ``--check``, external readers) that never mutate must not trigger the
+# seed→live migration on import. Writer signatures default ``path=None``
+# and resolve via ``_resolve_live_pods_conf`` inside the function body so a
+# ``monkeypatch.setattr(pod_config, "PODS_CONF", tmp)`` in a test is HONORED
+# on every call (module-level default arg captured at function-def time was
+# the previous footgun).
+
+_LIVE_PODS_CONF_DIRNAME = "eps"
+_LIVE_PODS_CONF_FILENAME = "pods.conf"
+
+
+def _git_common_dir() -> Path:
+    """Return the absolute path of the repo's git common dir.
+
+    ``git rev-parse --path-format=absolute --git-common-dir`` returns the
+    SHARED ``.git`` directory (the same one across every worktree of a
+    repo). The parent is the main-repo root. Fails loud on any resolution
+    error — the caller cannot proceed without knowing where ``.git`` is.
+    """
+    try:
+        proc = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(SCRIPT_DIR),
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(
+            f"pod_config: cannot resolve git common dir from {SCRIPT_DIR}: {exc}. "
+            f"pod_config must run inside an explore-persona-space checkout."
+        ) from exc
+    path = Path(proc.stdout.strip())
+    if not path.is_absolute():
+        # Older git falls back to a relative path; anchor it to SCRIPT_DIR.
+        path = (SCRIPT_DIR / path).resolve()
+    return path
+
+
+PODS_CONF_SEED = _MAIN_SCRIPTS_DIR / _LIVE_PODS_CONF_FILENAME
+# ``PODS_CONF`` retained as the public symbol every downstream import binds
+# to (tests monkeypatch it, external readers reference it). It now points at
+# the SEED path by default; the LIVE path is resolved lazily via
+# ``_resolve_live_pods_conf`` inside every read/write path.
+PODS_CONF = PODS_CONF_SEED
+
+
+def _resolve_live_pods_conf() -> Path:
+    """Resolve the live pods.conf path, migrating from the seed on first use.
+
+    Fast path (steady state): the live file at ``<git-common-dir>/eps/pods.conf``
+    exists → return it. Zero work.
+
+    Migration path (fresh clone / first invocation after the v3 relocation):
+    only the seed exists → copy seed → live atomically (write to
+    ``<live>.tmp`` then ``os.replace``), then return the live path. The
+    migration is guarded by ``locked_pods_conf`` so two concurrent processes
+    cannot double-migrate. First migrator prints a one-line stderr note so
+    the relocation is visible in logs.
+
+    Read-only-filesystem fallback: if the target directory is not writable
+    (rare — an operator running under a read-only mount), emit a loud WARN
+    and return the seed path so read-only paths keep working. Any subsequent
+    writer will FAIL on the seed path (git-tracked → next destructive git
+    op wipes it) — the WARN surfaces that state before the wipe.
+
+    Never called at module import time — call sites resolve at call time so
+    a ``monkeypatch.setattr(pod_config, "PODS_CONF", tmp)`` in a test is
+    honored by every reader + writer in the process.
+    """
+    # Honor a test's monkeypatched module-level ``PODS_CONF`` if it points
+    # somewhere OTHER than the seed. This keeps every existing test that
+    # sets ``pod_config.PODS_CONF = tmp / "pods.conf"`` working unchanged
+    # without a fixture rewrite.
+    if PODS_CONF != PODS_CONF_SEED:
+        return PODS_CONF
+
+    try:
+        common = _git_common_dir()
+    except RuntimeError:
+        # Cannot resolve git → fall back to the seed. Fresh checkouts
+        # without a .git dir (tarball extractions, etc.) hit this branch;
+        # keeps read paths working, writers will still see the seed.
+        return PODS_CONF_SEED
+
+    live_dir = common / _LIVE_PODS_CONF_DIRNAME
+    live = live_dir / _LIVE_PODS_CONF_FILENAME
+
+    if live.exists():
+        return live
+
+    # Migration required. Serialize under the pods.conf lock so a
+    # concurrent process cannot race and double-migrate.
+    with locked_pods_conf():
+        # Re-check under the lock — the concurrent winner may have already
+        # migrated between the pre-lock ``live.exists()`` and here.
+        if live.exists():
+            return live
+        try:
+            live_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            # Read-only filesystem, permissions issue, etc. Loud WARN,
+            # fall back to seed. Fresh writer will fail loud on the seed
+            # (the file is git-tracked) — the WARN is the operator signal.
+            print(
+                f"[pod_config] WARN: cannot create live pods.conf dir {live_dir}: "
+                f"{exc}. Falling back to seed at {PODS_CONF_SEED}. Any write "
+                f"here will be clobbered by the next destructive git op — fix "
+                f"the mount / permissions and re-run.",
+                file=sys.stderr,
+            )
+            return PODS_CONF_SEED
+
+        seed = PODS_CONF_SEED
+        if seed.exists():
+            seed_bytes = seed.read_bytes()
+        else:
+            # Neither the seed nor the live file exists yet — bootstrap a
+            # bare header so downstream ``parse_pods_conf`` succeeds. This
+            # is the "first pod ever" path.
+            seed_bytes = (
+                b"# Pod registry -- SINGLE SOURCE OF TRUTH for all pod configuration.\n"
+                b"# Live state lives at <git-common-dir>/eps/pods.conf (OUT of the working tree).\n"
+                b"# The tracked scripts/pods.conf is a SEED only.\n"
+                b"# Format: name  host  port  gpus  gpu_type  label\n"
+            )
+
+        tmp = live.with_suffix(live.suffix + ".tmp")
+        try:
+            tmp.write_bytes(seed_bytes)
+            os.replace(tmp, live)
+        except OSError as exc:
+            # Cleanup any leftover tmp; loud WARN + seed fallback.
+            with contextlib.suppress(FileNotFoundError):
+                tmp.unlink()
+            print(
+                f"[pod_config] WARN: could not migrate pods.conf → {live} "
+                f"({exc}); using seed at {seed}. Fix the mount / permissions "
+                f"and re-run.",
+                file=sys.stderr,
+            )
+            return PODS_CONF_SEED
+
+        print(
+            f"[pod_config] migrated {seed} → {live} "
+            f"(live pods.conf now lives OUT of git's blast radius; the tracked "
+            f"copy is now a seed only)",
+            file=sys.stderr,
+        )
+        return live
+
+
 # Sidecar JSON owned by pod_lifecycle.py — read here only to set/clear the
 # manual_override flag from ``cmd_update``. Format documented in
 # scripts/pod_lifecycle.py. We do not import pod_lifecycle.py because it
@@ -209,14 +387,21 @@ class Pod:
 # ---------------------------------------------------------------------------
 
 
-def parse_pods_conf(path: Path = PODS_CONF) -> list[Pod]:
+def parse_pods_conf(path: Path | None = None) -> list[Pod]:
     """Read pods.conf and return a list of Pod objects.
 
     Format (whitespace-separated, 6 fields per line):
         name  host  port  gpus  gpu_type  label
 
     Lines starting with '#' and blank lines are skipped.
+
+    ``path`` defaults to the LIVE pods.conf resolved lazily via
+    ``_resolve_live_pods_conf`` (which honors a test's monkeypatched
+    ``pod_config.PODS_CONF``). Explicit callers may still pass an absolute
+    ``path=`` — used by existing tests that operate against a tmp fixture.
     """
+    if path is None:
+        path = _resolve_live_pods_conf()
     if not path.exists():
         print(f"ERROR: pods.conf not found at {path}", file=sys.stderr)
         sys.exit(1)
@@ -247,9 +432,125 @@ def parse_pods_conf(path: Path = PODS_CONF) -> list[Pod]:
     return pods
 
 
-def write_pods_conf(pods: list[Pod], path: Path = PODS_CONF) -> None:
-    """Write the pod list back to pods.conf, preserving the header comments."""
-    # Keep existing header comment lines.
+def _guard_against_dropping_running(dropped: set[str], on_disk_rows: dict[str, Pod]) -> list[Pod]:
+    """Never-drop-RUNNING guard body — returns the ``readd`` list.
+
+    Extracted from ``write_pods_conf`` to bound cyclomatic complexity
+    (ruff C901). See ``write_pods_conf`` docstring for the full contract.
+    """
+    # Lazy import — ``runpod_api`` is heavy (loads RunPod GraphQL config
+    # from .env at import time).
+    try:
+        from runpod_api import RunPodError, list_team_pods
+    except ImportError:  # pragma: no cover - only if repo is malformed
+        print(
+            "[pod_config] WARN: cannot import runpod_api; failing SAFE "
+            f"by re-adding all {len(dropped)} dropped rows to pods.conf. "
+            f"Refused drops: {sorted(dropped)}.",
+            file=sys.stderr,
+        )
+        return [on_disk_rows[n] for n in sorted(dropped)]
+
+    try:
+        live_by_name = {p.name: p for p in list_team_pods()}
+    except RunPodError as exc:
+        print(
+            "[pod_config] WARN: could not verify live pod status "
+            f"({exc}); failing SAFE by re-adding all {len(dropped)} "
+            "dropped rows to pods.conf. If this was intentional, pass "
+            f"allow_remove={{{sorted(dropped)!r}}}. Refused drops: "
+            f"{sorted(dropped)}.",
+            file=sys.stderr,
+        )
+        return [on_disk_rows[n] for n in sorted(dropped)]
+
+    readd: list[Pod] = []
+    for name in sorted(dropped):
+        live = live_by_name.get(name)
+        if live is None:
+            # Absent from API — legit drop (already terminated or never
+            # provisioned team-side).
+            continue
+        if (live.desired_status or "").upper() != "RUNNING":
+            # EXITED / STOPPED / etc. — legit drop.
+            continue
+        # RUNNING → refuse the drop.
+        print(
+            f"[pod_config] WARN: refusing to drop RUNNING pod "
+            f"'{name}' from pods.conf (live API says RUNNING); "
+            f"re-added. If this was intentional, pass "
+            f"allow_remove={{'{name}'}}.",
+            file=sys.stderr,
+        )
+        readd.append(on_disk_rows[name])
+    return readd
+
+
+def write_pods_conf(
+    pods: list[Pod],
+    path: Path | None = None,
+    *,
+    allow_remove: frozenset[str] = frozenset(),
+) -> None:
+    """Write the pod list back to pods.conf, preserving the header comments.
+
+    Task #821: this writer is now atomic AND guards against silently
+    dropping a RUNNING pod's row.
+
+    ``path`` defaults to the LIVE pods.conf via ``_resolve_live_pods_conf``
+    (honors monkeypatched ``pod_config.PODS_CONF`` in tests).
+
+    ``allow_remove`` is the EXPLICIT opt-out set for the never-drop-RUNNING
+    guard. The one legitimate remove path (``_remove_from_pods_conf`` in
+    ``pod_lifecycle``) passes ``allow_remove={name}`` for the pod it is
+    terminating; every other writer (upsert, cmd_update, refresh-from-api)
+    calls the function unchanged and the guard is a no-op on any UPDATE
+    (name in both on_disk and new sets → dropped set empty).
+
+    Guard semantics (never-drop-RUNNING). Compute ``dropped = on_disk -
+    new - allow_remove``. If non-empty, consult the live RunPod API:
+
+      * ``desiredStatus == "RUNNING"`` → REFUSE the drop, re-add the row
+        with its previous host/port from ``on_disk_rows``, WARN loudly on
+        stderr naming the pod and the ``allow_remove`` opt-out for the
+        legitimate case.
+      * Absent from API OR ``desiredStatus != "RUNNING"`` → ALLOW the drop
+        (terminated / EXITED / never provisioned).
+      * ``RunPodError`` on the API call → FAIL TOWARD KEEPING. Re-add
+        every dropped row and WARN. An unreachable API cannot disprove
+        RUNNING; assuming NOT-RUNNING would violate the invariant exactly
+        when the network is flaky.
+
+    Atomic write. Write payload to ``<path>.tmp`` then ``os.replace(tmp,
+    path)`` — POSIX-guaranteed atomic rename on the same filesystem; no
+    partial-file reader ever observes torn content.
+    """
+    if path is None:
+        path = _resolve_live_pods_conf()
+
+    # ── Never-drop-RUNNING guard (fires BEFORE the write) ────────────────
+    on_disk_rows: dict[str, Pod] = {}
+    if path.exists():
+        # Read the current on-disk rows so we can (a) diff names and (b)
+        # re-add a refused-drop row byte-for-byte from what is already on
+        # disk (not from a stale caller-side snapshot).
+        for existing in parse_pods_conf(path=path):
+            on_disk_rows[existing.name] = existing
+
+    on_disk_names = set(on_disk_rows.keys())
+    new_names = {p.name for p in pods}
+    dropped = on_disk_names - new_names - allow_remove
+
+    if dropped:
+        readd = _guard_against_dropping_running(dropped, on_disk_rows)
+        if readd:
+            # De-dup by name against the incoming ``pods`` list — a caller
+            # that both wants to update a row AND happens to have dropped
+            # another one shouldn't get the survivor added twice.
+            existing_new = {p.name for p in pods}
+            pods = list(pods) + [p for p in readd if p.name not in existing_new]
+
+    # ── Preserve existing header comments (unchanged behavior) ───────────
     header_lines: list[str] = []
     if path.exists():
         for raw in path.read_text().splitlines():
@@ -275,7 +576,16 @@ def write_pods_conf(pods: list[Pod], path: Path = PODS_CONF) -> None:
         parts = [row[i].ljust(widths[i]) for i in range(6)]
         lines.append("  ".join(parts).rstrip())
 
-    path.write_text("\n".join(lines) + "\n")
+    payload = "\n".join(lines) + "\n"
+
+    # ── Atomic write via ``os.replace`` on same filesystem ───────────────
+    # A crash mid-write can leave the ``<path>.tmp`` behind; a subsequent
+    # writer overwrites it via the same tmp path. No corrupt ``pods.conf``
+    # ever surfaces to a reader.
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp.write_text(payload)
+    os.replace(tmp, path)
 
 
 # ---------------------------------------------------------------------------
@@ -822,6 +1132,7 @@ def _refresh_one_pod(
     *,
     is_single_mode: bool,
     manual_override: bool,
+    to_add: list[Pod] | None = None,
 ) -> tuple[bool, bool]:
     """Evaluate one pod for ``cmd_refresh_from_api``.
 
@@ -834,9 +1145,51 @@ def _refresh_one_pod(
     ``desiredStatus == RUNNING`` → ``ssh_host``/``ssh_port`` populated →
     ``manual_override`` not set → values actually differ. Any failure in
     bulk mode skips with a stderr WARN (sets ``warned=True``).
+
+    Task #821: RE-ADD branch. When ``row is None`` (the pod is absent from
+    ``pods.conf`` — the incident signature) and the live API says the pod is
+    RUNNING with a populated SSH endpoint, this function APPENDS a fresh
+    ``Pod(...)`` to the caller-supplied ``to_add`` list and returns
+    ``(changed=True, warned=False)``. The caller then merges ``to_add`` into
+    the rows it hands to ``write_pods_conf``, closing the incident #821
+    self-heal path (``poll_pipeline.py`` runs ``pod.py config
+    --refresh-from-api`` after 10 consecutive SSH failures — this branch
+    lets it heal a wiped row without human intervention).
+
+    ``to_add=None`` in the legacy path preserves the pre-#821 behavior of
+    treating a missing row as a stale skip (used by single-pod recovery
+    where the caller has already validated the pod is in pods.conf).
     """
     if row is None:
-        # Concurrent terminate between main's parse and ours.
+        # Task #821 re-add path. Attempt to re-add ONLY when the live API
+        # confirms the pod is RUNNING with a valid SSH endpoint AND the
+        # caller opted into the re-add pattern by passing ``to_add``.
+        if to_add is not None and live is not None:
+            ds = (live.desired_status or "").upper()
+            if ds == "RUNNING" and live.ssh_host and live.ssh_port:
+                # NOTE (fact-check A8): ``PodInfo.gpu_type_id`` (not
+                # ``gpu_type``) may be ``None``; fall back to "unknown" so
+                # the required ``Pod.gpu_type: str`` slot is populated.
+                # ``live.name`` is the human-readable RunPod label; if
+                # absent, synthesise a "restored:<pod-name>" label so the
+                # row is legible in ``--list`` output.
+                new_row = Pod(
+                    name=name,
+                    host=live.ssh_host,
+                    port=live.ssh_port,
+                    gpus=(live.gpu_count if live.gpu_count is not None else 1),
+                    gpu_type=(live.gpu_type_id or "unknown"),
+                    label=(live.name or f"restored:{name}"),
+                )
+                to_add.append(new_row)
+                print(
+                    f"  INFO: re-adding missing RUNNING pod '{name}' to "
+                    f"pods.conf from live API "
+                    f"(host={live.ssh_host}:{live.ssh_port}).",
+                )
+                return True, False
+        # Concurrent terminate between main's parse and ours, OR live API
+        # says NOT RUNNING for a missing row (nothing to restore).
         print(
             f"WARN: pod '{name}' no longer in pods.conf (removed by a "
             f"concurrent writer between read and refresh); skipping.",
@@ -954,21 +1307,6 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
     live_by_name = {p.name: p for p in live_pods}
     overrides = _read_manual_overrides()
 
-    targets: list[Pod]
-    if pod_name is None:
-        targets = list(pods)
-    else:
-        target = next((p for p in pods if p.name == pod_name), None)
-        if target is None:
-            print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
-            print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
-            sys.exit(1)
-        targets = [target]
-
-    if not targets:
-        print("No pods to refresh (pods.conf is empty).")
-        return
-
     is_single_mode = pod_name is not None
 
     with locked_pods_conf():
@@ -976,19 +1314,80 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
         fresh = parse_pods_conf()
         fresh_by_name = {p.name: p for p in fresh}
 
+        # Build the target set.
+        #
+        # Task #821: in BULK mode, enumerate LIVE-API managed pods (matching
+        # ``pod_lifecycle._MANAGED_PREFIXES`` naming — canonical ``pod-<N>``)
+        # that are absent from pods.conf so the re-add path in
+        # ``_refresh_one_pod`` can restore them. This is the piece that
+        # closes the incident #821 self-heal loop: ``poll_pipeline.py`` runs
+        # ``pod.py config --refresh-from-api`` after 10 consecutive SSH
+        # failures — after a wipe, the target row is not in pods.conf so
+        # the pre-#821 iteration missed it entirely. Now bulk mode reaches
+        # the wiped rows via the live API.
+        target_names: list[str] = []
+        seen: set[str] = set()
+        if pod_name is None:
+            # Bulk mode: (a) every row currently in pods.conf,
+            # (b) every managed live pod absent from pods.conf.
+            for p in pods:
+                if p.name not in seen:
+                    target_names.append(p.name)
+                    seen.add(p.name)
+            # ``^pod-\d+$`` mirrors ``pod_lifecycle._MANAGED_PREFIXES``: only
+            # ephemeral, project-managed pods. A random RunPod entry from
+            # the team account (permanent fleet, another user's pod) is
+            # NEVER auto-added to pods.conf — bulk mode is safe by default.
+            managed_re = re.compile(r"^pod-\d+$")
+            for live_name in sorted(live_by_name):
+                if live_name in seen:
+                    continue
+                if not managed_re.match(live_name):
+                    continue
+                target_names.append(live_name)
+                seen.add(live_name)
+        else:
+            # Single-pod mode: trust the caller's intent. The pod may be
+            # absent from pods.conf (re-add path) but MUST be present in
+            # the live API (or the classic "not in API" fail-loud message
+            # fires below in ``_refresh_one_pod``).
+            target_names = [pod_name]
+
+        if not target_names:
+            print("No pods to refresh (pods.conf is empty and live API has no managed pods).")
+            return
+
         any_changed = False
         any_warn = False
-        for original in targets:
-            name = original.name
+        to_add: list[Pod] = []
+        for name in target_names:
+            row = fresh_by_name.get(name)
+            live = live_by_name.get(name)
+            if row is None and live is None and is_single_mode:
+                # Single-pod mode + user typo: neither pods.conf nor the
+                # live API has the named pod. Fail loud like the original
+                # single-mode contract.
+                print(
+                    f"ERROR: pod '{name}' not found in pods.conf or the "
+                    f"live RunPod API. Check spelling; the pod name must "
+                    f"be a managed pod (e.g. 'pod-488').",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             changed, warned = _refresh_one_pod(
                 name,
-                fresh_by_name.get(name),
-                live_by_name.get(name),
+                row,
+                live,
                 is_single_mode=is_single_mode,
                 manual_override=overrides.get(name, False),
+                to_add=to_add,
             )
             any_changed = any_changed or changed
             any_warn = any_warn or warned
+
+        # Merge any re-added rows into ``fresh`` before writing.
+        if to_add:
+            fresh = list(fresh) + to_add
 
         if not any_changed:
             if not any_warn:
