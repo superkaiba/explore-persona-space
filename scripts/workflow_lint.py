@@ -4339,7 +4339,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "code-reviewer.md": 81_500,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
     "codex-code-reviewer.md": 47_500,  # measured 44,841 B
-    "experiment-implementer.md": 58_500,  # measured 55,812 B (re-based #869: vectorize-first item 7 + item-5 per-call re-derivation)
+    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
+    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
+    "experiment-implementer.md": 58_500,
     "experimenter.md": 65_500,  # measured 62,672 B
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B

@@ -283,10 +283,10 @@ parallelism over sequential execution (state the GPU spec, the parallelism
 axis, the wall-time delta vs the next-smaller spec). REQUIRED for
 `kind: experiment`: the per-component compute-projection table
 (planned_wall_h / planned_gpu_h / parallelism / basis) + the stratification
-spec + the serial-fit-loop / draw-battery sizing block (explicit multiplier
-arithmetic total_calls = draws × cells × folds × …; per-call cost measured at
-production shape or FLOP-derived, never asserted; body-named fast twins USED
-in §4 or the divergence stated). Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
+spec + the serial-fit-loop / draw-battery sizing block (explicit
+multiplier arithmetic total_calls = draws × cells × folds × …; per-call cost
+measured at production shape or FLOP-derived, never asserted; body-named fast
+twins USED in §4 or the divergence stated). Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
