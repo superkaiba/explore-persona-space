@@ -5330,8 +5330,8 @@
     "826": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/826",
-      "status": "running",
+      "path": "tasks/reviewing/826",
+      "status": "reviewing",
       "title": "workflow-fix: zombie-GPU probe namespace-aware (host-PID false positive)"
     },
     "827": {
