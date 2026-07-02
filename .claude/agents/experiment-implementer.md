@@ -11,6 +11,18 @@ skills:
   - cleanup
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - WebSearch
+  - WebFetch
+  - mcp__plugin_context7_context7
 ---
 
 # Experiment Implementer

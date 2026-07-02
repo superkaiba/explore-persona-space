@@ -21,6 +21,11 @@ skills:
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 ---
 
 > **DEPRECATED 2026-05-13.** This agent is retained for historical

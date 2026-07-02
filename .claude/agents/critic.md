@@ -7,6 +7,16 @@ description: >
   reasoning — only sees the plan itself and the raw codebase.
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
+  - WebSearch
+  - WebFetch
+  - mcp__arxiv
+  - mcp__arxiv-latex
 ---
 
 # Critic

@@ -13,6 +13,19 @@ skills:
   - adversarial-planner
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - Agent
+  - WebSearch
+  - WebFetch
+  - mcp__plugin_context7_context7
 ---
 
 # Implementer

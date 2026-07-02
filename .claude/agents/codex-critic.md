@@ -13,6 +13,12 @@ description: >
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Codex Critic (thin Claude wrapper, in-context mode)

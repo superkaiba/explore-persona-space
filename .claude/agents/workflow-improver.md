@@ -15,6 +15,11 @@ skills:
   - cleanup
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 ---
 
 > **DEPRECATED — do not spawn (retired 2026-06-27, #678).** The
