@@ -5443,8 +5443,8 @@
     "840": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/840",
-      "status": "reviewing",
+      "path": "tasks/completed/840",
+      "status": "completed",
       "title": "workflow-fix: restricted tools allowlists on agents (MCP schema bloat)"
     },
     "841": {
