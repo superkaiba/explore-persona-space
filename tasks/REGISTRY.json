@@ -5351,8 +5351,8 @@
     "829": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/829",
-      "status": "running",
+      "path": "tasks/reviewing/829",
+      "status": "reviewing",
       "title": "workflow-fix: trim heavyweight agent specs + size lint (subagent context headroom)"
     },
     "83": {
