@@ -15,6 +15,9 @@ goal: 'Test whether the per-example linear context-to-answer-profile map h: c_x 
   in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant
   and the user turn, under chat-template vs naturalistic formatting; secondary: per-position
   decay and cross-role prediction beyond a topic-persistence baseline.'
+relates_to:
+- identity-contextual-vs-base
+- identity-cb-duality
 ---
 # Is the per-example context→answer-profile map present in the pretrained base model, and does it hold for the user turn?
 
