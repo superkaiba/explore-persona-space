@@ -110,7 +110,7 @@ def _override_store_prefix(prefix: str) -> None:
     ``issue722_load_activations.list_store_layout`` reads the module-global
     ``STORE_PREFIX`` at call time, so setting the module attribute redirects its
     directory-tree walk to ``prefix`` WITHOUT editing the reused module (the same
-    runtime-override pattern issue722_fit_M uses for fit658.DEVICE). A ``_Streamer``
+    runtime-override pattern issue667_save_maps uses for fit658.DEVICE). A ``_Streamer``
     still defaults its prefix at def-time, so ``load_cells`` is always called with
     an explicit ``streamer=_Streamer(prefix=prefix)`` below. The Δc loader takes
     ``prefix`` as an argument directly (it is inlined here, not from deltac), so
@@ -399,8 +399,8 @@ class _fast_pca_injected:
     all resolve the PCA basis through the module attribute ``fitM._pca_basis_v0``,
     so swapping that one attribute redirects EVERY PCA in the ridge path to the
     fast subspace WITHOUT editing the reused module (the same runtime-override
-    pattern the map-change loader uses for ``loadact.STORE_PREFIX`` /
-    ``fit658.DEVICE``). Restored in ``finally`` so the correctness gate's
+    pattern the map-change loader uses for ``loadact.STORE_PREFIX``). Restored
+    in ``finally`` so the correctness gate's
     per-cell ``fit_cell`` (which must run the ORIGINAL np.svd PCA to be an
     independent reference) is unaffected.
     """
