@@ -56,6 +56,13 @@ logger = logging.getLogger("issue779_scaling_grid")
 
 OUT_SUBDIR = "training-source-ablation-hg"
 MODES = ("system", "many_shot")
+# The four arms carried in arm_comparison (and the per-arm g_holdout keying).
+ARM_KEYS = (
+    "arm_a_lmsys",
+    "arm_b_behavior",
+    "arm_c_combined_natural",
+    "arm_c_combined_1to1",
+)
 
 
 # ── frozen read-out layers (step0 best_by_mode; §4.5 pre-registered position) ─
@@ -123,6 +130,79 @@ def build_eval_matrix_with_q(cells: list[dict], layer_idx: int, r_b: np.ndarray)
 # ── load the Arm B corpus into a per-layer TrainSource ────────────────────────
 
 
+BEHAVIOR_AGG_HEADLINE = "headline_1rollout"
+BEHAVIOR_AGG_SECONDARY = "mean_10rollout"
+
+
+def _behavior_matrices(
+    cb: dict,
+    scores: dict,
+    cli: int,
+    hidden: int,
+    *,
+    agg: str,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    """Assemble the behavior-arm (X_beh, Y_beh, y_beh) at one layer, per ``agg``.
+
+    Answer-multiplicity equalization (plan v6 §6.1): the corpus generates up to
+    ``n_rollouts`` rollouts per context, but the matched HEADLINE must train BOTH
+    Arm A (1 sample/context) and the behavior arms on 1-rollout targets so
+    N_behavior counts CONTEXTS, not rollouts. Two modes:
+
+      - ``headline_1rollout`` (PRIMARY): one row PER CONTEXT — a single rollout
+        selected per context under a FIXED seed (deterministic). Y = that
+        rollout's v(x); y = that rollout's judge label. N_behavior = n_contexts.
+      - ``mean_10rollout`` (SECONDARY): one row PER CONTEXT — Y = MEAN v(x) over
+        the context's valid rollouts; y = MEAN judge label over the context's
+        finite-label rollouts. The 10-rollout-mean version kept as a secondary
+        comparison so the answer-multiplicity confound is bounded, not baked in.
+
+    c_last is a property of the context (identical across a context's rollouts),
+    so X_beh is the per-context c_last either way. Returns per-context arrays;
+    y_beh is None only if NO context has any label at all.
+    """
+    cx_last_ctx = cb["cx_last"][:, cli, :].to(torch.float32).numpy()  # (n_contexts, H)
+    v_x = cb["v_x"]  # (n_valid_rollouts, L, H)
+    vx_index = list(cb["vx_index"])  # [(context_idx, rollout_idx)]
+    # group valid-rollout ROW indices (into v_x) by context, preserving order.
+    by_ctx: dict[int, list[tuple[int, int]]] = {}
+    for row, (ci, ri) in enumerate(vx_index):
+        by_ctx.setdefault(int(ci), []).append((row, int(ri)))
+
+    X_beh, Y_beh, y_beh = [], [], []
+    any_label = False
+    for ci in sorted(by_ctx):
+        rows = by_ctx[ci]  # [(v_x_row, rollout_idx)] for this context, in gen order
+        vx_ctx = np.stack(
+            [v_x[row, cli, :].to(torch.float32).numpy() for row, _ in rows], axis=0
+        )  # (n_valid_this_ctx, H)
+        labs = [scores.get(str(ci), {}).get(str(ri)) for _, ri in rows]
+        labs_f = np.array([np.nan if s is None else float(s) for s in labs], dtype=np.float64)
+        if agg == BEHAVIOR_AGG_HEADLINE:
+            # deterministic single-rollout selection per context (fixed seed).
+            rng = np.random.default_rng(seed + ci)
+            pick = int(rng.integers(len(rows)))
+            y_val = labs_f[pick]
+            X_beh.append(cx_last_ctx[ci])
+            Y_beh.append(vx_ctx[pick])
+            y_beh.append(y_val)
+            any_label = any_label or np.isfinite(y_val)
+        elif agg == BEHAVIOR_AGG_SECONDARY:
+            X_beh.append(cx_last_ctx[ci])
+            Y_beh.append(vx_ctx.mean(axis=0))
+            fin = np.isfinite(labs_f)
+            y_val = float(labs_f[fin].mean()) if fin.any() else np.nan
+            y_beh.append(y_val)
+            any_label = any_label or np.isfinite(y_val)
+        else:
+            raise ValueError(f"unknown behavior agg {agg!r}")
+    X_arr = np.array(X_beh) if X_beh else np.empty((0, hidden))
+    Y_arr = np.array(Y_beh) if Y_beh else np.empty((0, hidden))
+    y_arr = np.array(y_beh) if (y_beh and any_label) else None
+    return X_arr, Y_arr, y_arr
+
+
 def load_corpus_source(
     corpus_dir: Path,
     lmsys_bundle: dict,
@@ -131,15 +211,19 @@ def load_corpus_source(
     layer_idx: int,
     *,
     max_lmsys: int | None = None,
+    behavior_agg: str = BEHAVIOR_AGG_HEADLINE,
 ) -> SG.TrainSource:
     """Build a TrainSource at one read-out layer from cached + generated tensors.
 
     LMSYS side (Arm A axis): pass_b cx_last / v_x at the layer + (optional) the
     regenerated g labels aligned by context index. Behavior side (Arm B axis):
-    the corpus bundle's cx_last (per context) + v_x (per valid rollout) + judge
-    scores. For h the behavior X/Y is per-ROLLOUT (v(x) is per rollout); c_last
-    is per-context, so each rollout's X is its context's c_last (broadcast via
-    vx_index). g's behavior label is the rollout's judge score.
+    the corpus bundle's PER-CONTEXT c_last + v(x) + judge scores, aggregated to
+    ONE ROW PER CONTEXT by ``behavior_agg`` (answer-multiplicity equalization,
+    plan v6 §6.1): ``headline_1rollout`` (PRIMARY — 1 rollout/context, fixed seed;
+    N_behavior counts contexts, matched to Arm A's 1/context) or ``mean_10rollout``
+    (SECONDARY — 10-rollout mean v(x)/label per context). Both sides are then
+    1-row-per-context, so the N_behavior axis and the matched headline are
+    context-level.
 
     ``max_lmsys`` caps the LMSYS rows loaded (the first-N contexts, keeping the
     deterministic pass_b order + label alignment) — used ONLY in --smoke to keep
@@ -157,38 +241,22 @@ def load_corpus_source(
         labs = lmsys_g_labels["labels_per_trait"][trait]["labels"]
         arr = np.array([np.nan if v is None else float(v) for v in labs], dtype=np.float64)
         n = min(len(arr), X_lmsys.shape[0])
-        # align by index; keep only rows with a valid label for g (h uses all)
+        # align by index; NaN labels are dropped only on the g fit (fit_g_cell),
+        # never here — h uses every LMSYS row.
         y_lmsys = arr[:n]
         X_lmsys = X_lmsys[:n]
         Y_lmsys = Y_lmsys[:n]
 
-    # Behavior corpus.
+    # Behavior corpus (aggregated to one row per context by behavior_agg).
     bundle_path = corpus_dir / f"{trait}_corpus.pt"
     scores_path = corpus_dir / f"{trait}_judge_scores.json"
     cb = torch.load(bundle_path, weights_only=False)
     clayers = list(cb["layers"])
     cli = clayers.index(layer_idx)
-    cx_last_ctx = cb["cx_last"][:, cli, :].to(torch.float32).numpy()  # (n_contexts, H)
-    v_x = cb["v_x"]  # (n_valid_rollouts, L, H)
-    vx_index = cb["vx_index"]  # [(context_idx, rollout_idx)]
     with open(scores_path) as f:
         scores = json.load(f)["scores"]
-
-    X_beh, Y_beh, y_beh = [], [], []
-    labels_all_present = True
-    for k, (ci, ri) in enumerate(vx_index):
-        X_beh.append(cx_last_ctx[ci])  # per-context c_last for this rollout
-        Y_beh.append(v_x[k, cli, :].to(torch.float32).numpy())  # v(x) at layer
-        s = scores.get(str(ci), {}).get(str(ri))
-        if s is None:
-            labels_all_present = False
-            y_beh.append(np.nan)
-        else:
-            y_beh.append(float(s))
-    X_beh = np.array(X_beh) if X_beh else np.empty((0, X_lmsys.shape[1]))
-    Y_beh = np.array(Y_beh) if Y_beh else np.empty((0, X_lmsys.shape[1]))
-    y_beh_arr = (
-        np.array(y_beh) if (y_beh and labels_all_present) else (np.array(y_beh) if y_beh else None)
+    X_beh, Y_beh, y_beh_arr = _behavior_matrices(
+        cb, scores, cli, X_lmsys.shape[1], agg=behavior_agg, seed=42
     )
     return SG.TrainSource(X_lmsys, Y_lmsys, y_lmsys, X_beh, Y_beh, y_beh_arr)
 
@@ -198,6 +266,62 @@ def load_corpus_source(
 
 def _readout_r(x, eval_mat, *, n_boot, seed):
     return SG._within_condition_r(x, eval_mat, n_boot=n_boot, seed=seed)
+
+
+def _pv_pinv_fit_state(
+    W: np.ndarray | None,
+    xmu: np.ndarray | None,
+    xsd: np.ndarray | None,
+    rb_l: np.ndarray,
+    *,
+    rank: int | None,
+    svd=None,
+) -> dict:
+    """Persistable fit state for post-hoc pv_pinv recompute (BLOCKER 2).
+
+    The round-1 report FALSELY claimed W is persisted — it never was. W is
+    O(H^2) (~12.8M floats/arm at H=3584), too large for the JSON. Instead we
+    persist exactly what recomputes the CORRECTED (standardized-space) pv_pinv
+    read WITHOUT a pod re-run:
+      - ``w_pinv`` (H,): the frozen-rank standardized-space preimage M⁺r_B. The
+        analyzer reads ``((c_last - xmu)/xsd) @ w_pinv`` for ANY eval c_last at
+        this frozen rank — a full, exact recompute, 0-GPU.
+      - ``xmu`` / ``xsd`` (H,): the TRAIN standardization stats (the coordinate
+        system w_pinv lives in).
+      - ``singular_values`` (min(H, n_rank)): W's spectrum, for post-hoc
+        rank-selection diagnostics.
+      - ``pinv_rank`` / ``full_rank``: the frozen rank + the full rank.
+    A DIFFERENT-rank recompute needs W's full SVD (not persisted — the O(H^2)
+    cost); the singular-value spectrum is persisted so the analyzer can judge
+    whether the frozen rank was a reasonable cut. Returns {} when W is None
+    (< 2 train rows) so the JSON stays clean.
+    """
+    if W is None or xmu is None or xsd is None:
+        return {}
+    # Reuse the shared arm SVD (from pv_pinv_svd) — the H x H SVD is the pv_pinv
+    # cost, so it is computed ONCE per arm and threaded here + into pv_pinv_reads.
+    U, s, Vt = (
+        svd
+        if svd is not None
+        else np.linalg.svd(np.asarray(W, dtype=np.float64), full_matrices=False)
+    )
+    r = len(s) if rank is None else min(rank, len(s))
+    Ur, sr, Vtr = U[:, :r], s[:r], Vt[:r]
+    s_inv = np.where(sr > 1e-12, 1.0 / sr, 0.0)
+    w_pinv = (Vtr.T * s_inv) @ (Ur.T @ np.asarray(rb_l, dtype=np.float64))
+    return {
+        "w_pinv": w_pinv.astype(np.float32).tolist(),
+        "xmu": np.asarray(xmu, dtype=np.float32).tolist(),
+        "xsd": np.asarray(xsd, dtype=np.float32).tolist(),
+        "singular_values": sr.astype(np.float32).tolist(),
+        "pinv_rank": int(r),
+        "full_rank": len(s),
+        "read_space": "standardized",
+        "recompute_note": (
+            "pv_pinv read = ((c_last - xmu)/xsd) @ w_pinv (frozen rank). A "
+            "different-rank recompute needs W's full SVD (not persisted; O(H^2))."
+        ),
+    }
 
 
 def run_arm_comparison(
@@ -232,20 +356,35 @@ def run_arm_comparison(
     for arm, (nL, nB, up) in arms.items():
         ct = SG.assemble_cell_train(src, nL, nB, rng, upsample_1to1=up)
         h = SG.fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l)
-        g = SG.fit_g_cell(ct["X"], ct["y"], eval_mat)
-        pinv_read, pinv_full = SG.pv_pinv_reads(h["W"], rb_l, eval_mat, rank=pinv_rank)
+        g, g_n_dropped = SG.fit_g_cell(ct["X"], ct["y"], eval_mat)
+        # ONE compact SVD of W per arm (O(H r^2) via the low-rank factors P/Q),
+        # shared by both pv_pinv reads AND the persisted fit state (the SVD is the
+        # dominant pv_pinv cost; the dense H x H SVD is ~thousands of times slower).
+        w_svd = SG.pv_pinv_svd(h["W"], P=h["P"], Q=h["Q"])
+        pinv_read, pinv_full = SG.pv_pinv_reads(
+            h["W"], rb_l, eval_mat, xmu=h["xmu"], xsd=h["xsd"], rank=pinv_rank, svd=w_svd
+        )
         out[arm] = {
             "n_lmsys_used": ct["n_lmsys_used"],
             "n_behavior_used": ct["n_behavior_used"],
             "h_ridge_dot": _readout_r(h["dot"], eval_mat, n_boot=n_boot, seed=seed),  # w=Mᵀr_B
             "h_ridge_cos": _readout_r(h["cos"], eval_mat, n_boot=n_boot, seed=seed),
             "g_ridge": _readout_r(g, eval_mat, n_boot=n_boot, seed=seed),
+            "g_labels_dropped_nan": g_n_dropped,
             "pv_pinv": _readout_r(
                 pinv_read, eval_mat, n_boot=n_boot, seed=seed
-            ),  # w=M⁺r_B (frozen rank)
+            ),  # w=M⁺r_B (frozen rank, standardized-space read)
             "pv_pinv_fullrank": _readout_r(
                 pinv_full, eval_mat, n_boot=n_boot, seed=seed
             ),  # diagnostic
+            # Persist enough fit state to recompute the pv_pinv read post-hoc at
+            # any rank WITHOUT re-running the pod pass (BLOCKER 2 fix): the frozen
+            # w_pinv vector + the eval-side standardized dot decomposition are
+            # summarized here; W itself is O(H^2)=12.8M floats/arm so we persist
+            # the pinv_rank + a checksum-able summary instead of the full matrix.
+            "pv_pinv_fit_state": _pv_pinv_fit_state(
+                h["W"], h["xmu"], h["xsd"], rb_l, rank=pinv_rank, svd=w_svd
+            ),
             "has_labels": ct["has_labels"],
         }
     out["pv_contrast_triple_note"] = (
@@ -285,7 +424,11 @@ def run_layer_matrix(
     rows = {"observed": {m: [] for m in MODES}, "null": {m: [] for m in MODES}}
     rng = np.random.default_rng(seed)
     for layer_idx in layers:
-        rb_l = r_b_full[layers.index(layer_idx)]
+        # r_b_full is (n_layers, H) indexed by ABSOLUTE layer; ``layers`` may be a
+        # SUBSET (e.g. only the frozen layers under --smoke), so index r_b_full by
+        # the absolute layer_idx, NOT layers.index(layer_idx) (the subset position,
+        # which would read the wrong layer's r_B for any nonzero frozen layer).
+        rb_l = r_b_full[layer_idx]
         eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
         src = load_corpus_source(
             corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx, max_lmsys=max_lmsys
@@ -379,6 +522,17 @@ def main() -> int:
     ap.add_argument("--n-lmsys-grid", type=int, nargs="+", default=list(SG.DEFAULT_N_LMSYS))
     ap.add_argument("--n-behavior-grid", type=int, nargs="+", default=list(SG.DEFAULT_N_BEHAVIOR))
     ap.add_argument(
+        "--max-lmsys",
+        type=int,
+        default=None,
+        help=(
+            "cap the LMSYS rows loaded for the ridge SVD (the arm_comparison / "
+            "layer-matrix full-N cost). Defaults to 500 under --smoke, all 5000 "
+            "otherwise; override to a smaller value to keep the SVD tractable "
+            "under heavy VM contention (smoke only)"
+        ),
+    )
+    ap.add_argument(
         "--verify-vectorized",
         action="store_true",
         help="run the vectorized_mlp_skill serial-reference equivalence check first",
@@ -430,7 +584,8 @@ def main() -> int:
     layers_all = list(range(args.n_layers))
     # --smoke caps the LMSYS rows loaded so the full-N (5000x3584) ridge SVD in
     # the arm_comparison / layer matrix stays fast; a real run uses all 5000.
-    max_lmsys = 500 if args.smoke else None
+    # --max-lmsys overrides (e.g. shrink further under heavy VM contention).
+    max_lmsys = args.max_lmsys if args.max_lmsys is not None else (500 if args.smoke else None)
 
     arm_comparison = {
         "traits": {},
@@ -462,6 +617,9 @@ def main() -> int:
             layer_idx = fl[mode]
             rb_l = r_b_full[layer_idx]
             eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
+            # HEADLINE (PRIMARY) behavior source: 1 rollout/context, fixed seed —
+            # matched to Arm A's 1 sample/context, so N_behavior counts CONTEXTS
+            # (answer-multiplicity equalization, plan v6 §6.1).
             src = load_corpus_source(
                 args.corpus_dir,
                 lmsys_bundle,
@@ -469,9 +627,10 @@ def main() -> int:
                 trait,
                 layer_idx,
                 max_lmsys=max_lmsys,
+                behavior_agg=BEHAVIOR_AGG_HEADLINE,
             )
             logger.info(
-                "[%s/%s @L%d] eval rows=%d, LMSYS=%d, behavior=%d",
+                "[%s/%s @L%d] eval rows=%d, LMSYS=%d, behavior(contexts)=%d",
                 trait,
                 mode,
                 layer_idx,
@@ -482,7 +641,6 @@ def main() -> int:
             ac = run_arm_comparison(
                 src, eval_mat, rb_l, n_boot=n_boot, seed=args.seed, pinv_rank=args.pinv_rank
             )
-            arm_comparison["traits"][trait][mode] = {"frozen_layer": layer_idx, **ac}
             grid = SG.run_scaling_grid(
                 src,
                 eval_mat,
@@ -504,15 +662,69 @@ def main() -> int:
                 base_seed=args.seed,
                 upsample_1to1=True,
             )
+            # SECONDARY behavior source: 10-rollout-mean v(x)/label per context.
+            # Kept as a separately-keyed secondary read so the answer-multiplicity
+            # confound is bounded, not baked into the headline (plan v6 §6.1).
+            src_sec = load_corpus_source(
+                args.corpus_dir,
+                lmsys_bundle,
+                lmsys_g_labels,
+                trait,
+                layer_idx,
+                max_lmsys=max_lmsys,
+                behavior_agg=BEHAVIOR_AGG_SECONDARY,
+            )
+            ac_sec = run_arm_comparison(
+                src_sec, eval_mat, rb_l, n_boot=n_boot, seed=args.seed, pinv_rank=args.pinv_rank
+            )
+            grid_sec = SG.run_scaling_grid(
+                src_sec,
+                eval_mat,
+                rb_l,
+                n_lmsys_grid=n_lmsys_grid,
+                n_behavior_grid=n_behavior_grid,
+                k_subsamples=k_sub,
+                n_boot=n_boot,
+                base_seed=args.seed,
+            )
+            arm_comparison["traits"][trait][mode] = {
+                "frozen_layer": layer_idx,
+                "behavior_agg": BEHAVIOR_AGG_HEADLINE,
+                **ac,
+                "secondary_10rollout": {"behavior_agg": BEHAVIOR_AGG_SECONDARY, **ac_sec},
+            }
             scaling["traits"][trait][mode] = {
                 "frozen_layer": layer_idx,
+                "behavior_agg": BEHAVIOR_AGG_HEADLINE,
                 "natural": grid,
                 "upsample_1to1": grid_1to1,
+                "secondary_10rollout": {
+                    "behavior_agg": BEHAVIOR_AGG_SECONDARY,
+                    "natural": grid_sec,
+                },
             }
+            # g_holdout_question keyed per (trait, mode, arm, fold) (MINOR 8). The
+            # leakage-free direct predictor is fit on the EVAL contexts' c_last ->
+            # trait (K-fold over the 20 eval questions), so it is ARM-INVARIANT by
+            # construction (it never touches an arm's training source — that IS the
+            # leakage-free property, plan §4.6). We therefore key the SAME eval-fold
+            # g result under every arm so the JSON matches the primary-deliverable
+            # (trait, mode, arm, fold) contract; the arm_invariant flag records why.
             gho = SG.run_g_holdout_question(
                 eval_mat, k_folds=args.k_folds, n_boot=n_boot, base_seed=args.seed
             )
-            g_holdout["traits"][trait][mode] = {"frozen_layer": layer_idx, **gho}
+            g_holdout["traits"][trait][mode] = {
+                "frozen_layer": layer_idx,
+                "arm_invariant": True,
+                "arm_invariant_note": (
+                    "held-out-question g is fit on EVAL-context c_last->trait "
+                    "(K-fold over the 20 eval questions), never on an arm's "
+                    "training source; it is identical across arms by construction "
+                    "(the leakage-free property). Keyed per arm to match the "
+                    "primary-deliverable (trait, mode, arm, fold) contract."
+                ),
+                "arms": {arm: gho for arm in ARM_KEYS},
+            }
             # checkpoint per (trait, mode)
             C.write_json_atomic(args.out_dir / "arm_comparison.json", arm_comparison)
             C.write_json_atomic(args.out_dir / "scaling_grid.json", scaling)

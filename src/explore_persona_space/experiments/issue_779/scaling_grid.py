@@ -229,37 +229,51 @@ def _within_condition_r(x: np.ndarray, eval_mat: dict, *, n_boot: int, seed: int
 def fit_h_cell(X_tr: np.ndarray, Y_tr: np.ndarray, eval_mat: dict, rb_l: np.ndarray) -> dict:
     """Fit ridge h on a cell's train rows, apply to eval c_last, return reads.
 
-    Returns {"dot", "cos", "W"} where dot/cos are the per-eval-context readouts
-    <h(c),r_B> / cos(h(c),r_B) and W is the (H, H) standardized-input ridge weight
-    matrix (for the pv_pinv M⁺ read). A cell with < 2 train rows returns NaN reads
-    / None W. Computes ONE SVD (via ``_ridge_fit`` -> W + standardization stats)
-    and derives BOTH the eval prediction and W from it, so the map read and the
+    Returns {"dot", "cos", "W", "xmu", "xsd", "P", "Q"} where dot/cos are the
+    per-eval-context readouts <h(c),r_B> / cos(h(c),r_B); W is the (H, H)
+    STANDARDIZED-INPUT ridge weight matrix (the operator M for the pv_pinv M⁺
+    read); xmu/xsd are the TRAIN standardization stats (needed to read the pv_pinv
+    preimage in the SAME standardized coordinate system W was fit in — see
+    ``pv_pinv_read``); P/Q are the LOW-RANK factors ``W = P @ Q`` (so pv_pinv can
+    use the O(H r^2) compact SVD instead of the O(H^3) dense one). A cell with < 2
+    train rows returns NaN reads / None. Computes ONE SVD (via ``_ridge_fit``) and
+    derives BOTH the eval prediction and W/P/Q from it, so the map read and the
     pv_pinv preimage come from the SAME fit (never two independent SVDs).
     """
     Xev = eval_mat["c_last"]
     if X_tr.shape[0] < 2:
         nan = np.full(Xev.shape[0], np.nan)
-        return {"dot": nan, "cos": nan, "W": None}
-    W, xmu, xsd, ymu = _ridge_fit(X_tr, Y_tr)  # (H,H) std-input map + stats, one SVD
+        return {"dot": nan, "cos": nan, "W": None, "xmu": None, "xsd": None, "P": None, "Q": None}
+    W, xmu, xsd, ymu, P, Q = _ridge_fit(X_tr, Y_tr)  # (H,H) map + stats + low-rank factors
     pred = ((np.asarray(Xev, dtype=np.float64) - xmu) / xsd) @ W + ymu  # (N_ev, H)
     return {
         "dot": F.dot_readout(pred, rb_l),
         "cos": F.cosine_readout(pred, rb_l),
         "W": W,
+        "xmu": xmu,
+        "xsd": xsd,
+        "P": P,
+        "Q": Q,
     }
 
 
 def _ridge_fit(
     X_train: np.ndarray, Y_train: np.ndarray, *, lambdas: np.ndarray | None = None
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """GCV-ridge fit -> (W, xmu, xsd, ymu): the standardized-input weight matrix
-    plus the train standardization stats, from ONE SVD.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """GCV-ridge fit -> (W, xmu, xsd, ymu, P, Q): the standardized-input weight
+    matrix + train stats + the LOW-RANK factors of W, from ONE SVD.
 
     Reproduces ``fit_h.ridge_fit_predict``'s GCV lambda + standardization exactly
     (same SVD, same GCV loop), returning the pieces the caller needs to derive
     BOTH the eval prediction (``(Xev - xmu)/xsd @ W + ymu``) AND the pv_pinv
     preimage (``W`` is the map operator M; intercepts/means cancel in the
-    correlation). W is (H_in, H_out); xmu/xsd/ymu are (H,). Deterministic.
+    correlation). W is (H_in, H_out); xmu/xsd/ymu are (H,).
+
+    ALSO returns the low-rank factors ``P (H, r)`` and ``Q (r, H)`` with
+    ``W = P @ Q`` and ``r = rank(Xtr_n) <= n_train`` — because W is derived from
+    an r-dimensional train subspace it has rank <= r, so its compact SVD (and
+    hence the pv_pinv) can be computed in O(H r^2) from these factors instead of
+    the O(H^3) dense H x H SVD (see ``pv_pinv_svd``). Deterministic.
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
@@ -287,25 +301,39 @@ def _ridge_fit(
         if gcv < best_gcv:
             best_gcv, best_lam = gcv, lam
     filt = s / (s2 + best_lam)
-    W = (Vt.T * filt) @ UtY  # (H_in, H_out) standardized-input map
-    return W, xmu, xsd, ymu
+    P = Vt.T * filt  # (H_in, r)
+    Q = UtY  # (r, H_out)
+    W = P @ Q  # (H_in, H_out) standardized-input map, rank <= r
+    return W, xmu, xsd, ymu, P, Q
 
 
 def pv_pinv_read(
-    W: np.ndarray, rb_l: np.ndarray, eval_mat: dict, *, rank: int | None = None
+    W: np.ndarray,
+    rb_l: np.ndarray,
+    eval_mat: dict,
+    *,
+    xmu: np.ndarray,
+    xsd: np.ndarray,
+    rank: int | None = None,
 ) -> np.ndarray:
-    """pv_pinv (mentor amendment): read <c_last, w_pinv> with w_pinv = M⁺ r_B.
+    """pv_pinv (mentor amendment): read <c_std, w_pinv> with w_pinv = M⁺ r_B.
 
-    M = W (the fitted linear ridge map, standardized-input operator). M⁺ is the
-    Moore-Penrose pseudoinverse via SVD; w_pinv = M⁺ r_B (the prompt-space vector
-    that produces r_B through the map). ``rank`` truncates the SVD (chosen on the
-    TRAIN split, frozen before this read -- the noise-amplification guard); None =
-    full-rank pinv (the diagnostic). Reads on the FIXED eval c_last.
+    M = W (the fitted linear ridge map). CRUCIAL: W was fit on the STANDARDIZED
+    input ``(X_tr - xmu)/xsd`` (``fit_h_cell``/``_ridge_fit``), so its preimage
+    ``w_pinv = M⁺ r_B`` lives in the SAME standardized coordinate system. The read
+    must therefore be taken against the STANDARDIZED eval c_last
+    ``c_std = (c_last - xmu)/xsd`` — NOT raw c_last. Reading raw c_last against a
+    standardized-space operator's preimage mixes two spaces and is ~orthogonal to
+    the intended M⁺r_B direction on heteroscedastic activations (the round-1
+    BLOCKER, corr ≈ -0.03 vs the correct read). This is the exact adjoint of the
+    transpose read <h(c),r_B>, which also standardizes c before applying W. ``rank``
+    truncates the SVD (chosen on the TRAIN split, frozen before this read -- the
+    noise-amplification guard); None = full-rank pinv (the diagnostic).
     """
     if W is None:
         return np.full(eval_mat["c_last"].shape[0], np.nan)
     U, s, Vt = np.linalg.svd(W, full_matrices=False)
-    return _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=rank)
+    return _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, xmu=xmu, xsd=xsd, rank=rank)
 
 
 def _pv_pinv_from_svd(
@@ -315,49 +343,107 @@ def _pv_pinv_from_svd(
     rb_l: np.ndarray,
     eval_mat: dict,
     *,
+    xmu: np.ndarray,
+    xsd: np.ndarray,
     rank: int | None = None,
 ) -> np.ndarray:
-    """<c_last, M⁺ r_B> from a PRE-COMPUTED SVD of W (so both the frozen-rank and
-    full-rank reads share one SVD — the H x H SVD is the pv_pinv cost)."""
+    """<c_std, M⁺ r_B> from a PRE-COMPUTED SVD of W (so both the frozen-rank and
+    full-rank reads share one SVD — the H x H SVD is the pv_pinv cost).
+
+    ``c_std = (c_last - xmu)/xsd`` — the eval c_last standardized on the fit's
+    TRAIN stats, so the read is in the SAME space W (and hence M⁺r_B) lives in.
+    """
     if rank is not None:
         rank = min(rank, len(s))
         U, s, Vt = U[:, :rank], s[:rank], Vt[:rank]
     s_inv = np.where(s > 1e-12, 1.0 / s, 0.0)
     # M⁺ = V diag(1/s) Uᵀ ; w_pinv = M⁺ r_B  (r_B lives in the OUTPUT/profile space)
     w_pinv = (Vt.T * s_inv) @ (U.T @ np.asarray(rb_l, dtype=np.float64))
-    return np.asarray(eval_mat["c_last"], dtype=np.float64) @ w_pinv
+    c_std = (np.asarray(eval_mat["c_last"], dtype=np.float64) - xmu) / xsd
+    return c_std @ w_pinv
+
+
+def pv_pinv_svd(W: np.ndarray | None, *, P: np.ndarray | None = None, Q: np.ndarray | None = None):
+    """The compact SVD (U, s, Vt) of W, shared by ALL pv_pinv consumers of one arm.
+
+    Returns (U, s, Vt) or None when W is None (< 2 train rows). Computing this
+    ONCE per arm and threading it into pv_pinv_reads + the persisted fit state
+    avoids the SVD being recomputed 3x per arm (the dominant pv_pinv cost).
+
+    When the LOW-RANK factors ``W = P @ Q`` (P (H, r), Q (r, H), r <= n_train) are
+    supplied, the compact SVD is computed in O(H r^2) instead of the O(H^3) dense
+    H x H SVD: QR the tall factor P = U_p R_p, SVD the small r x H matrix
+    M = R_p @ Q = U_m S V_m^T, then W = (U_p U_m) S V_m^T is W's compact SVD. This
+    is EXACT (rank(W) <= r), and ~thousands of times cheaper at r << H (r=40,
+    H=3584: 47s dense SVD -> milliseconds). Falls back to the dense SVD when the
+    factors are absent.
+    """
+    if W is None:
+        return None
+    if P is not None and Q is not None:
+        P = np.asarray(P, dtype=np.float64)
+        Q = np.asarray(Q, dtype=np.float64)
+        U_p, R_p = np.linalg.qr(P)  # U_p (H, r), R_p (r, r)
+        M = R_p @ Q  # (r, H)
+        U_m, s, Vt = np.linalg.svd(M, full_matrices=False)  # U_m (r, r), s (r,), Vt (r, H)
+        U = U_p @ U_m  # (H, r)
+        return U, s, Vt
+    return np.linalg.svd(np.asarray(W, dtype=np.float64), full_matrices=False)
 
 
 def pv_pinv_reads(
-    W: np.ndarray, rb_l: np.ndarray, eval_mat: dict, *, rank: int | None
+    W: np.ndarray,
+    rb_l: np.ndarray,
+    eval_mat: dict,
+    *,
+    xmu: np.ndarray,
+    xsd: np.ndarray,
+    rank: int | None,
+    svd=None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """(frozen-rank read, full-rank diagnostic read) from ONE SVD of W.
 
     The mentor amendment reports both the frozen-rank pv_pinv (headline) and the
     full-rank pinv (diagnostic); this computes the single H x H SVD once and
-    slices it for both ranks, instead of two independent SVDs. Returns
-    (pv_pinv[rank], pv_pinv[full]). NaN reads when W is None (< 2 train rows).
+    slices it for both ranks, instead of two independent SVDs. Both reads use the
+    STANDARDIZED eval c_last (see ``pv_pinv_read``). Pass a precomputed ``svd``
+    (from ``pv_pinv_svd``) to share the H x H SVD with the persisted fit state.
+    Returns (pv_pinv[rank], pv_pinv[full]). NaN reads when W is None (< 2 train
+    rows).
     """
     n_ev = eval_mat["c_last"].shape[0]
-    if W is None:
+    if W is None or xmu is None or xsd is None:
         nan = np.full(n_ev, np.nan)
         return nan, nan
-    U, s, Vt = np.linalg.svd(W, full_matrices=False)
-    frozen = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=rank)
-    full = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=None)
+    U, s, Vt = svd if svd is not None else np.linalg.svd(W, full_matrices=False)
+    frozen = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, xmu=xmu, xsd=xsd, rank=rank)
+    full = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, xmu=xmu, xsd=xsd, rank=None)
     return frozen, full
 
 
-def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> np.ndarray:
+def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> tuple[np.ndarray, int]:
     """Fit ridge g (c_last -> trait label) on a cell's train rows; read on eval.
 
-    Returns the per-eval-context g score, or all-NaN if the cell has no labels
-    (the Arm A label-floor case). Ridge closed-form (GCV) train->eval application.
+    DROP-NEVER-COERCE (llm-judging.md rule 9): a malformed / missing judge label
+    arrives here as NaN (assemble_cell_train propagates NaN for un-labeled LMSYS
+    rows). Those NaN rows are DROPPED from the g fit — never fed into ridge (a
+    single NaN poisons the closed-form SVD, turning g into all-NaN). The h path is
+    UNCHANGED: h uses every row (v(x) has no missing-label problem).
+
+    Returns ``(g_pred, n_dropped)`` — the per-eval-context g score (all-NaN if the
+    cell has no finite-label rows, the Arm A label-floor case) and the count of
+    NaN-label train rows dropped (reported per source in the output JSON).
     """
     Xev = eval_mat["c_last"]
-    if y_tr is None or X_tr.shape[0] < 2 or float(np.std(y_tr)) < 1e-9:
-        return np.full(Xev.shape[0], np.nan)
-    return F.ridge_fit_predict(X_tr, y_tr.astype(np.float64), Xev)
+    if y_tr is None:
+        return np.full(Xev.shape[0], np.nan), 0
+    y_arr = np.asarray(y_tr, dtype=np.float64)
+    finite = np.isfinite(y_arr)
+    n_dropped = int((~finite).sum())
+    X_fit, y_fit = X_tr[finite], y_arr[finite]
+    if X_fit.shape[0] < 2 or float(np.std(y_fit)) < 1e-9:
+        return np.full(Xev.shape[0], np.nan), n_dropped
+    return F.ridge_fit_predict(X_fit, y_fit, Xev), n_dropped
 
 
 # ── the 2D grid driver ────────────────────────────────────────────────────────
@@ -394,7 +480,7 @@ def run_scaling_grid(
                 ct = assemble_cell_train(src, nL, nB, rng, upsample_1to1=upsample_1to1)
                 _assert_cell_train_composition(ct, arm, nL, nB)
                 h = fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l)
-                g = fit_g_cell(ct["X"], ct["y"], eval_mat)
+                g, g_n_dropped = fit_g_cell(ct["X"], ct["y"], eval_mat)
                 seed = base_seed + k
                 r_dot = _within_condition_r(h["dot"], eval_mat, n_boot=n_boot, seed=seed)
                 r_g = _within_condition_r(g, eval_mat, n_boot=n_boot, seed=seed)
@@ -409,6 +495,7 @@ def run_scaling_grid(
                         "upsample_1to1": upsample_1to1,
                         "h_ridge_dot_r": {m: r_dot[m] for m in MODES},
                         "g_ridge_r": {m: r_g[m] for m in MODES},
+                        "g_labels_dropped_nan": g_n_dropped,
                         "has_labels": ct["has_labels"],
                     }
                 )
@@ -438,18 +525,25 @@ def run_g_holdout_question(
     """
     q = eval_mat_with_q["question"]
     X = eval_mat_with_q["c_last"]
-    y = eval_mat_with_q["y"]
+    y = np.asarray(eval_mat_with_q["y"], dtype=np.float64)
     uniq_q = np.unique(q)
     rng = np.random.default_rng(base_seed)
     perm = rng.permutation(uniq_q)
     folds = np.array_split(perm, min(k_folds, len(uniq_q)))
     per_mode = {m: [] for m in MODES}
+    total_dropped = 0
     for fi, test_q in enumerate(folds):
         test_mask = np.isin(q, test_q)
         fit_mask = ~test_mask
-        if fit_mask.sum() < 2 or float(np.std(y[fit_mask])) < 1e-9:
+        # DROP-NEVER-COERCE (llm-judging.md rule 9): a fit-fold row with a missing
+        # / malformed judge label (NaN y) is dropped from the g fit, never fed
+        # into ridge. The test fold keeps only finite-y rows too (a NaN test label
+        # carries no r information).
+        fit_fin = fit_mask & np.isfinite(y)
+        total_dropped += int((fit_mask & ~np.isfinite(y)).sum())
+        if fit_fin.sum() < 2 or float(np.std(y[fit_fin])) < 1e-9:
             continue
-        g_pred = F.ridge_fit_predict(X[fit_mask], y[fit_mask].astype(np.float64), X[test_mask])
+        g_pred = F.ridge_fit_predict(X[fit_fin], y[fit_fin], X[test_mask])
         # score within-condition r on the test fold
         test_mat = {
             "c_last": X[test_mask],
@@ -469,4 +563,4 @@ def run_g_holdout_question(
             "n_folds_valid": len(pts),
             "per_fold": per_mode[m],
         }
-    return {"k_folds": len(folds), "modes": out}
+    return {"k_folds": len(folds), "modes": out, "labels_dropped_nan": total_dropped}
