@@ -3435,6 +3435,32 @@ NEVER changes the status verdict and the poller NEVER stops the pod — it
 surfaces the leak loudly for action. This handling is additive to the
 `status=running` branch.
 
+**ETA-deviation / GPU-width advisory handling.** When a tick's JSON reports
+`eta_deviation_posted: true`, the poller has just posted an
+`epm:compute-deviation` marker (`source: poller`, `basis: elapsed-vs-plan`):
+elapsed wall-time for the current phase or the whole run exceeded
+`EPM_ETA_DEVIATION_MULT` (default 2.0) × the plan §9 `planned_wall_h` TOTAL —
+the #763 class (an ~80× overrun a human caught ~16h late). Surface it in the
+session text and weigh the run's remaining value: whether the plan's own
+compute-deviation machinery should engage — a mid-run `continue_as_is`
+acknowledgment, or a deliberate descope ONLY where the planner's §9
+stratification spec permits one. Elapsed-so-far is a lower bound on final
+wall, so `continue_as_is` is nearly always the right mid-run resolution; the
+poller variant carries no `action:` field and is never an auto-descope input.
+When a tick's JSON reports `gpu_width_advisory_posted: true`, the poller has
+posted a `[gpu-width-advisory]` `epm:progress` marker (plus a
+`gpu_width_advisory=True` extra): a STABLE strict subset of GPUs sat idle ≥
+`EPM_GPU_WIDTH_ADVISORY_MIN` (default 45) min on a multi-GPU pod while the run
+is healthy — the #813 idle-width / #664 spend-leak class. Apply the CLAUDE.md
+per-phase GPU-WIDTH right-sizing judgment (widen the parallelism to fill the
+pod, or release/downsize it) under the SAME three hard constraints as the
+idle advisory: (a) never kill un-checkpointable in-RAM work, (b) autonomous
+sessions never stop a pod to PARK, (c) this is NOT a mid-run cost gate — the
+trigger is the idle-width / elapsed-vs-plan fact, never "this is getting
+expensive". Both are advisory-only: neither changes the status verdict, and
+the poller stops nothing. This handling is additive to the `status=running`
+branch.
+
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
 exist ON THE POD (the experimenter's launcher writes it there at launch

@@ -1579,7 +1579,7 @@ markers:
       when unification is genuinely impossible (e.g., per-cell vLLM
       that can't reset in-process).
   - kind: "epm:compute-deviation"
-    posted_by: skill (via experiment-implementer)
+    posted_by: skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)
     when: "Step 4b (implementer report-time, before code-review)"
     fields: |
       Posted when the implementer's resolved per-cell parameters project
@@ -1598,6 +1598,31 @@ markers:
       eyeball" rather than as a structural pivot, costing ~17h before
       the user noticed. Per the 2026-05-22 workflow.yaml PHILOSOPHY
       directive, auto-pivot is the default; halt is the rare exception.
+
+      POLLER VARIANT (#873): scripts/poll_pipeline.py's phase-ETA
+      runtime tripwire ALSO posts this kind MID-RUN, with extras
+      `source: poller`, `basis: elapsed-vs-plan`. Its `component` is a
+      §9-TOTAL-based label ("run total" or "phase '<name>'" — elapsed
+      wall vs the SUMMED planned_wall_h over ALL §9 tables, never a
+      per-row match), so a SMALL phase inside a large-total plan fires
+      only past ETA_DEVIATION_MULT (default 2.0x, env
+      EPM_ETA_DEVIATION_MULT) times the WHOLE plan's estimate —
+      deliberate conservatism; no per-row precision is implied. Dedup:
+      one marker per (task, phase) + one run-level `__run_total__` key,
+      both RUN-SCOPED (a fresh epm:run-launched re-arms them). Poller
+      markers carry NO `action:` field and are NEVER an auto-descope
+      input — mid-run advisory evidence only (elapsed-so-far is a lower
+      bound on final wall, so `continue_as_is` is nearly always the
+      right mid-run resolution). LIVE consumer: the per-tick
+      PollResult/main() JSON fields `eta_deviation_posted` /
+      `gpu_width_advisory_posted` read by the polling orchestrator
+      session (SKILL.md Step 6d.2), plus the durable events.jsonl marker
+      for post-hoc / dashboard reads — the Step 5.bis(a) scan keys on
+      markers posted in the CURRENT implementer round and structurally
+      never sees a mid-run poller marker. Coordination (#870): its
+      § pivot_criteria rewrite shares this file; whichever lands second
+      re-checks this addendum's wording + re-runs
+      workflow_lint.py --emit-tables.
   - kind: "epm:new-bug-class"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b (implementer report-time, before code-review)"
