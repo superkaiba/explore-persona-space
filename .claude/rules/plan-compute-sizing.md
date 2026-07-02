@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the 15-30 min floor cross-check for long phases, and costing wall-time against the machine the router will ACTUALLY provision (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), and costing wall-time against the machine the router will ACTUALLY provision (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -73,17 +73,28 @@ docstring § "No sentinel drain on this lane"). State the choice in §9:
 either the pinned lane + why, or "no sentinel dependence — auto-safe."
 
 
-**Floor cross-check for long phases.** For any row with `planned_wall_h`
-above 12, state the arithmetic compute floor next to the estimate
+**Floor cross-check for long or many-call phases.** For any row with
+`planned_wall_h` above 4, OR any row whose component executes more than ~500
+serial calls of a non-trivial kernel (a fit / dense factorization
+(svd/eigh/lstsq/GCV-ridge) / model forward — the call count is the §9
+multiplier product `draws × cells × folds × …`), state the arithmetic compute
+floor next to the estimate
 (`n_forwards × 2 · params · tokens_per_forward / sustained GPU FLOPs`, or
 the analogous bound for the dominant kernel) and justify any >5-10×
 estimate-over-floor gap — or name the implementation fix that closes it
-(batched forwards, GPU-resident reductions; see `.claude/rules/code-style.md`
-§ Compute-throughput discipline). An estimate far above the floor usually
+(batched forwards, GPU-resident reductions, batched/Gram-space
+factorizations; see `.claude/rules/code-style.md`
+§ Compute-throughput discipline + `.claude/rules/vectorize-many-cell-fits.md`).
+An estimate far above the floor usually
 means the implementation is leaving throughput on the table, not that the
-workload is big — fix the implementation, don't book more pod-days
+workload is big — fix the implementation, don't book more pod-days. The
+call-count trigger exists because the wall-clock trigger keys on the row's
+OWN estimate — exactly the number that is wrong when the per-call basis is
+fabricated (#823: a ~3780-call full-SVD ridge phase planned at 0.35 h via an
+asserted ~2 s/fit sailed under the old 12 h trigger while the measured
+~125 s/call implied a ~131 h serial floor).
 (#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
-CPU wall-time blowup vs its §9 estimate).
+CPU wall-time blowup vs its §9 estimate.)
 
 
 **Cost wall-time against the machine the router will ACTUALLY provision —
