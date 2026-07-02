@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 841,
+  "highest_id": 842,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5454,6 +5454,13 @@
       "path": "tasks/proposed/841",
       "status": "proposed",
       "title": "Layer-to-layer activation dynamics on real chat contexts: per-layer predictability atlas of the residual-stream update + does a dynamics-pretrained predictor beat #779's direct context->trait predictor"
+    },
+    "842": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/842",
+      "status": "proposed",
+      "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
     },
     "85": {
       "has_clean_result": false,
