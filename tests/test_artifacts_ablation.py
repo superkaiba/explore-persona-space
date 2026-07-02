@@ -16,6 +16,7 @@ from explore_persona_space.artifacts.ablation import (
     _normalize,
     _project_out,
     ablated,
+    ablation_hooks,
     all_layer_directions,
     single_layer_directions,
 )
@@ -145,3 +146,46 @@ def test_all_layer_directions_shape_guard():
     """(2, 16) r_b with a 1-entry layer list must fail loud."""
     with pytest.raises((AssertionError, ValueError)):
         all_layer_directions(torch.zeros(N_LAYERS, HIDDEN), [0])
+
+
+def test_out_of_range_layer_leaves_model_clean(tiny_model):
+    """An out-of-range entry fails loud BEFORE any hook registers; model stays clean.
+
+    Regression test for the r1 `ablation-hook-registration-rollback` concern: the
+    valid layer-0 entry must not stay silently ablated when the 999 entry raises.
+    Negative indices other than EMBED_LAYER are rejected too (no Python aliasing).
+    """
+    torch.manual_seed(6)
+    direction = torch.randn(HIDDEN)
+    ids = _ids()
+    before = extract_layer_activations(tiny_model, ids, [0])[0]
+    with (
+        pytest.raises(ValueError, match="out of range"),
+        ablated(tiny_model, {0: direction, 999: direction}),
+    ):
+        pass  # pragma: no cover — registration must raise before the body runs
+    with pytest.raises(ValueError, match="out of range"):
+        ablation_hooks(tiny_model, {0: direction, -2: direction})
+    assert not tiny_model.model.layers[0]._forward_hooks
+    after = extract_layer_activations(tiny_model, ids, [0])[0]
+    assert torch.equal(before, after)
+
+
+def test_partial_registration_rolls_back(tiny_model):
+    """A malformed LATER entry (2-D direction) rolls back the already-registered hook.
+
+    Layers pre-validate, so this exercises the try/except rollback itself: the
+    layer-0 hook registers, then `_normalize` raises on the 2-D layer-1 direction —
+    all accumulated handles must be removed before the exception propagates.
+    """
+    torch.manual_seed(7)
+    good = torch.randn(HIDDEN)
+    bad = torch.randn(2, HIDDEN)  # _normalize asserts ndim == 1
+    ids = _ids()
+    before = extract_layer_activations(tiny_model, ids, [0])[0]
+    with pytest.raises(AssertionError):
+        ablation_hooks(tiny_model, {0: good, 1: bad})
+    assert not tiny_model.model.layers[0]._forward_hooks
+    assert not tiny_model.model.layers[1]._forward_hooks
+    after = extract_layer_activations(tiny_model, ids, [0])[0]
+    assert torch.equal(before, after)
