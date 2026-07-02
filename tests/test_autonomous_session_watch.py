@@ -45,6 +45,7 @@ from autonomous_session_watch import (  # noqa: E402
     PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
     RESPAWN_SPAWN_GRACE_S,
+    STALLED_MARKER_WINDOW_S_DEFAULT,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
@@ -1292,6 +1293,9 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     vm_disk_calls: list[tuple] = []
     orphan_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
+    # Bypass the #845 retry wrapper's real 5s/10s backoff sleeps — the
+    # single-probe stub above already encodes "daemon down" for this test.
+    monkeypatch.setattr(asw, "_daemon_reachable_with_retry", lambda *a, **kw: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
@@ -1319,6 +1323,7 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     snapshot = [{"happySessionId": "sid-shared", "pid": 12345}]
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
@@ -1443,7 +1448,7 @@ def test_session_stalled_requires_both_signals_stale():
     # Self-report stale but marker-progress FRESH -> keep (bg chain still posting).
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     fresh_marker = 60.0
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
@@ -1461,7 +1466,7 @@ def test_session_stalled_needs_two_misses_before_acting():
     # triggers the recovery action. Guards a transient self-report-write race.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     a1, m1 = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1490,7 +1495,7 @@ def test_session_stalled_respawn_eligible_returns_respawn():
     # respawn_eligible=True + count below cap -> respawn.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1512,7 +1517,7 @@ def test_session_stalled_respawn_just_below_cap_still_respawns():
     # silently cut the budget by 1.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1530,7 +1535,7 @@ def test_session_stalled_respawn_at_cap_returns_exhausted():
     # respawn_eligible=True but respawn_count == max -> exhausted (don't loop).
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1549,7 +1554,7 @@ def test_session_stalled_respawn_above_cap_returns_exhausted():
     # ticks), still classify as exhausted rather than respawning.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1568,7 +1573,7 @@ def test_session_stalled_not_eligible_returns_alert():
     # alert-only, regardless of how many respawns have happened.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1597,7 +1602,7 @@ def test_session_stalled_already_alerted_escalates_to_respawn_when_eligible():
     # below.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1619,7 +1624,7 @@ def test_session_stalled_already_alerted_eligibility_false_stays_keep():
     # incident-#506 regression test re-purposed that name.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1639,7 +1644,7 @@ def test_session_stalled_already_alerted_at_cap_stays_keep():
     # loud one-time exhausted marker separately.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=stale,
@@ -1658,7 +1663,7 @@ def test_session_stalled_marker_absent_treated_as_stale():
     # active autonomous session that's never posted progress is suspicious.
     from autonomous_session_watch import decide_session_stalled
 
-    stale = STALLED_WINDOW_S + 60
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
     action, _ = decide_session_stalled(
         self_report_age_s=stale,
         marker_progress_age_s=None,
@@ -1748,14 +1753,22 @@ def stalled_recorder(monkeypatch):
     # which is nondeterministic under the fake `now` these tests use.
     # Exemption-specific tests re-patch this explicitly.
     monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    # Neutralize the #845 host-state probes the same way: the worktree-
+    # activity hold walks the REAL .claude/worktrees/issue-<N> tree, and the
+    # stop-failed / daemon-blocked escalations enqueue a REAL phone push.
+    # Hold/wedge/push-specific tests re-patch these explicitly.
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: True)
     return stops, spawns, markers
 
 
 def test_stalled_active_status_auto_respawns_after_two_misses(
     isolated_registry, monkeypatch, stalled_recorder
 ):
-    # The fix this round is for: an ACTIVE-status stalled session auto-
-    # respawns (stop-then-spawn) instead of alerting only.
+    # An ACTIVE-status stalled session auto-respawns instead of alerting
+    # only. #845 (a-ii): the respawn is FENCED — the stop fires on the tick
+    # the action trips, and the spawn only on the NEXT tick, after the sid
+    # is verified absent from the live set (stop != kill; #763).
     import autonomous_session_watch as asw
 
     stops, spawns, markers = stalled_recorder
@@ -1767,9 +1780,15 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     assert stops == [] and spawns == [] and markers == []
 
-    # Tick 2: threshold met, ACTIVE + daemon_reachable -> respawn.
+    # Tick 2: threshold met, ACTIVE + daemon_reachable -> respawn action;
+    # the fence issues the STOP only (no spawn, no marker yet).
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     assert stops == ["sess-518"]
+    assert spawns == [] and markers == []
+
+    # Tick 3: pending sid verified dead (absent from the live set) -> spawn.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-518"]  # no second stop
     assert spawns == [(518, 24.0)]
     assert markers == [(518, "session-auto-respawn")]
 
@@ -1872,14 +1891,24 @@ def test_stalled_live_kth_episode_escalates_to_respawn(
 
     # Tick 3: alerted=True short-circuits the miss guard -> decide() returns
     # respawn -> the 2nd (== K) consecutive live-stall episode ESCALATES.
+    # #845 fence: the escalation tick issues the STOP only; the spawn waits
+    # for the next tick's verified-dead read.
     asw.stalled_session_pass(
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
     )
     assert stops == ["sess-739"]
-    assert spawns == [(739, 24.0)]
-    assert markers == [(739, "session-stalled-alert"), (739, "session-auto-respawn")]
+    assert spawns == []
+    assert markers == [(739, "session-stalled-alert")]
     # The escalation reset the counter (a fresh --auto session = a new episode).
     assert _read_live_consecutive(isolated_registry, 739) == 0
+
+    # Tick 4: the stop landed (sid gone from the live set) -> verified dead
+    # -> the fence spawns.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids=set()
+    )
+    assert spawns == [(739, 24.0)]
+    assert markers == [(739, "session-stalled-alert"), (739, "session-auto-respawn")]
 
     rows = _read_live_escalation_events(isolated_registry)
     assert [r["event"] for r in rows] == ["stalled-live-downgrade", "stalled-live-escalation"]
@@ -1917,13 +1946,20 @@ def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
     assert markers == [(739, "session-stalled-alert"), (739, "session-stalled-alert")]
     assert _read_live_consecutive(isolated_registry, 739) == 2
 
-    # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0.
+    # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0. #845
+    # fence: stop on this tick, spawn on the next verified-dead tick.
     asw.stalled_session_pass(
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
     )
     assert stops == ["sess-739"]
-    assert spawns == [(739, 24.0)]
+    assert spawns == []
     assert _read_live_consecutive(isolated_registry, 739) == 0
+
+    # Tick 5: the stop landed -> verified dead -> spawn.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids=set()
+    )
+    assert spawns == [(739, 24.0)]
     rows = _read_live_escalation_events(isolated_registry)
     assert [r["event"] for r in rows] == [
         "stalled-live-downgrade",
@@ -1955,7 +1991,14 @@ def test_stalled_dead_id_respawns_immediately_k_not_consulted(
     asw.stalled_session_pass(
         dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
     )
+    # #845 fence: even a genuinely-dead wrapper waits ONE tick between stop
+    # and spawn (the fence predicate is evaluated once per tick) — that
+    # +10 min is deliberate, it is what closes #763.
     assert stops == ["sess-740"]
+    assert spawns == []
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
+    )
     assert spawns == [(740, 24.0)]
     assert markers == [(740, "session-auto-respawn")]
     assert _read_live_consecutive(isolated_registry, 740) == 0
@@ -2036,7 +2079,9 @@ def test_stalled_window_50min_keeps_under_new_window():
     ) == ("keep", 0)
     # Control: under the OLD 45-min window this same input DOES open the window
     # (proving the input is genuinely between the two windows, not trivially
-    # under both).
+    # under both). marker_window_s is pinned alongside window_s here — the
+    # control is about the SELF-REPORT window, and the #845 2h marker default
+    # would otherwise mask it (a 50-min marker is fresh under 2h).
     assert asw.decide_session_stalled(
         self_report_age_s=age_50min,
         marker_progress_age_s=age_50min,
@@ -2045,6 +2090,7 @@ def test_stalled_window_50min_keeps_under_new_window():
         alerted=False,
         respawn_eligible=True,
         window_s=45 * 60,
+        marker_window_s=45 * 60,
     ) == ("respawn", 0)
 
 
@@ -2341,6 +2387,9 @@ def test_stalled_pass_failed_pod_snapshot_degrades_to_empty(
 
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    # #845 fence: tick 2 stops; tick 3 spawns after the verified-dead read.
+    assert stops == ["sess-518"] and spawns == []
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
 
     assert stops == ["sess-518"]
     assert spawns == [(518, 24.0)]
@@ -2418,15 +2467,18 @@ def test_stalled_crash_loop_cap_exhausts_after_max_respawns(
     _patch_stale_signals(monkeypatch, asw, status="running")
     now = 1_000_000.0
 
-    # Drive the episode forward: each "respawn" needs two stale ticks
-    # (1st increments to missed=1, 2nd fires the action). After each
-    # respawn the state is persisted with respawn_count++. The cap is
-    # hit when respawn_count reaches STALLED_MAX_RESPAWNS, then the
-    # next two-tick cycle posts the exhausted marker.
+    # Drive the episode forward: each "respawn" needs THREE stale ticks
+    # under the #845 fence (1st increments to missed=1, 2nd fires the
+    # action and issues the STOP, 3rd verifies the sid is dead and SPAWNS).
+    # After each spawn the state is persisted with respawn_count++. The cap
+    # is hit when respawn_count reaches STALLED_MAX_RESPAWNS, then the next
+    # cycle posts the exhausted marker.
     for _ in range(STALLED_MAX_RESPAWNS):
         # tick A: missed -> 1
         asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
-        # tick B: respawn fires; bumps respawn_count, resets missed
+        # tick B: respawn action fires; the fence issues the stop
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+        # tick C: pending sid verified dead; spawn fires, respawn_count++
         asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
 
     # Sanity: every respawn was issued.
@@ -2461,8 +2513,10 @@ def test_stalled_real_progress_resets_respawn_cap(isolated_registry, monkeypatch
     _write_autonomous_entry(isolated_registry, 950, "sess-950")
     now = 1_000_000.0
 
-    # Episode 1: drive one full respawn.
+    # Episode 1: drive one full respawn (3 ticks under the #845 fence:
+    # miss -> stop -> verified-dead spawn).
     _patch_stale_signals(monkeypatch, asw, status="running")
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     assert len(spawns) == 1
@@ -2481,6 +2535,7 @@ def test_stalled_real_progress_resets_respawn_cap(isolated_registry, monkeypatch
     )
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
 
     # Two episodes -> two respawns; cap was NOT reached.
     assert len(spawns) == 2
@@ -2488,30 +2543,60 @@ def test_stalled_real_progress_resets_respawn_cap(isolated_registry, monkeypatch
 
 
 def test_stalled_stop_failure_skips_spawn(isolated_registry, monkeypatch, stalled_recorder):
-    # If `_stop_session` returns False (stop RPC failed), we MUST NOT spawn
-    # a fresh session — that would leave two `--auto` sessions racing on
-    # the same issue. respawn_count must NOT be bumped (we never actually
-    # respawned), so the cap is unaffected.
+    # #845 (a-ii) fence, retry-then-stop-failed: a stop that does NOT
+    # actually kill the session (the sid stays in the daemon's live set
+    # across the verify ticks — the daemon ACK is not a kill) gets exactly
+    # ONE retry, then the one-time loud stop-failed alert (marker + push) —
+    # and NEVER a spawn next to the live session (two drivers racing on the
+    # same issue = the #763 4h overlap). respawn_count is never bumped
+    # (nothing spawned), so the cap is unaffected.
     import json
 
     import autonomous_session_watch as asw
 
-    _stops, spawns, markers = stalled_recorder
-    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: False)
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or False)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
     _write_autonomous_entry(isolated_registry, 960, "sess-960")
     _patch_stale_signals(monkeypatch, asw, status="running")
     now = 1_000_000.0
+    live = {"sess-960"}
 
-    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
-    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    def tick():
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids=live
+        )
 
-    assert spawns == []  # never spawned
-    # No respawn-success marker; no exhausted marker either.
-    assert all(label != "session-auto-respawn" for _i, label in markers)
+    # Ticks 1-2: misses accumulate; tick 2's respawn is K-downgraded to the
+    # one-time alert (live id, 1st live-stall episode; default K=2).
+    tick()
+    tick()
+    assert markers == [(960, "session-stalled-alert")]
+    # Tick 3: Kth live episode escalates -> the fence issues the stop.
+    tick()
+    assert stops == ["sess-960"] and spawns == []
+    # Tick 4: sid STILL live on the verify tick -> exactly one retry.
+    tick()
+    assert stops == ["sess-960", "sess-960"]
+    # Tick 5: STILL live after the retry -> one-time stop-failed alert +
+    # push; never a spawn.
+    tick()
+    # Tick 6: already alerted -> no repeat marker/push, still no spawn.
+    tick()
+
+    assert spawns == []  # never spawned next to a live session
+    labels = [label for _i, label in markers]
+    assert labels.count("session-stop-failed") == 1
+    assert "session-auto-respawn" not in labels
+    assert len(pushes) == 1
+    assert stops == ["sess-960", "sess-960"]  # one stop + one retry, no more
 
     state = json.loads((isolated_registry / "stalled-960.json").read_text())
     assert state["respawn_count"] == 0
     assert state["exhausted"] is False
+    assert state["stop_failed_alerted"] is True
+    assert state["stop_pending_sid"] == "sess-960"
 
 
 def test_stalled_missing_session_id_declines_respawn(
@@ -2571,6 +2656,8 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
 
     captured_kwargs: dict = {}
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
+    # Bypass the #845 retry wrapper's real backoff sleeps.
+    monkeypatch.setattr(asw, "_daemon_reachable_with_retry", lambda *a, **kw: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
 
@@ -2613,6 +2700,10 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # is the #759 bug-class-b.1 consecutive-live-stall counter; see
     # ``_process_stalled_session``'s live-session corroboration block.
     # Schema-shape coverage stays exhaustive.
+    # The stop_pending_* / stop_retried / stop_failed_alerted / wt_hold_count
+    # / daemon_blocked_* / wedge_hits fields are the #845 hardening state
+    # (stop-verify fence, worktree hold, daemon-blocked escalation,
+    # prompt-wedge observability); all default-absent-safe.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -2622,6 +2713,14 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "refresh_attempted": False,
         "followups_child_alerted": False,
         "live_consecutive": 0,
+        "stop_pending_sid": None,
+        "stop_pending_ts": None,
+        "stop_retried": False,
+        "stop_failed_alerted": False,
+        "wt_hold_count": 0,
+        "daemon_blocked_ticks": 0,
+        "daemon_blocked_pushed": False,
+        "wedge_hits": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -2974,8 +3073,14 @@ def test_stalled_manual_entry_skipped_when_autonomous_entry_exists(
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     assert stops == [] and spawns == [] and markers == []
 
-    # Tick 2: the autonomous respawn fires once; still no stalled-alert
-    # from the manual sibling.
+    # Tick 2: the autonomous respawn action fires once (fence: stop only);
+    # still no stalled-alert from the manual sibling.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-510"]
+    assert spawns == [] and markers == []
+
+    # Tick 3: verified dead -> the fence spawns; the manual sibling still
+    # contributes nothing.
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
     assert stops == ["sess-510"]
     assert spawns == [(510, 24.0)]
@@ -8516,6 +8621,7 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     for pass_name in (
         "vm_disk_pass",
         "campaign_pass",
@@ -10263,6 +10369,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
     monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     # Neutralize every other pass so main() runs cheaply and deterministically.
     for name in (
         "vm_disk_pass",
@@ -11486,22 +11593,34 @@ def test_respawn_suppressed_output_not_booked_as_respawned(isolated_registry, mo
 
 def test_stalled_handler_suppressed_books_nothing(isolated_registry, monkeypatch, capsys):
     # Test 21 (caller level, stalled respawn handler): a suppressed spawn ->
-    # no respawn marker, no respawn_count bump, NO state save (the on-disk
-    # miss/stall state is left untouched).
+    # no respawn marker, no respawn_count bump, NO full state save (the
+    # on-disk miss/stall state is left untouched). #845 addition: the
+    # fence's stop_pending_* IS cleared on disk (surgically — the lease
+    # collision proves a live driver owns the issue, so the fence episode
+    # is over), but every other on-disk field stays byte-identical.
+    import json
+
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
     monkeypatch.setattr(asw, "_stalled_cap_gpu_hours", lambda i: 24.0)
     monkeypatch.setattr(asw, "_respawn_stalled_session", lambda i, cap, dry: "suppressed")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
     markers: list[tuple] = []
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append((a, k)))
     saves: list[tuple] = []
     monkeypatch.setattr(asw, "_save_stalled_state", lambda *a, **k: saves.append((a, k)))
+    # On-disk state mid-fence-episode: the stop already fired on a prior
+    # tick (stop_pending_sid == the entry sid) and the sid is now absent
+    # from live_ids, so the fence reaches its verified-dead spawn branch.
+    (isolated_registry / "stalled-7.json").write_text(
+        json.dumps({"missed": 2, "alerted": True, "stop_pending_sid": "sid-old"})
+    )
     ctx = asw._StalledActionCtx(
         issue=7,
         happy_session_id="sid-old",
-        prev_state={"missed": 2},
-        alerted=False,
+        prev_state={"missed": 2, "alerted": True, "stop_pending_sid": "sid-old"},
+        alerted=True,
         respawn_count=1,
         exhausted=False,
         last_self_report_ts=None,
@@ -11512,10 +11631,16 @@ def test_stalled_handler_suppressed_books_nothing(isolated_registry, monkeypatch
         in_active=True,
         threshold=2,
         dry_run=False,
+        live_ids=set(),  # verified dead -> fence 'spawn' branch
+        stop_pending_sid="sid-old",
     )
     asw._handle_stalled_respawn(ctx)
     assert markers == []  # no respawn marker
-    assert saves == []  # no state reset — miss/stall state left untouched
+    assert saves == []  # no full state save — miss/stall state left untouched
+    on_disk = json.loads((isolated_registry / "stalled-7.json").read_text())
+    assert on_disk["stop_pending_sid"] is None  # fence episode over
+    assert on_disk["missed"] == 2  # ...but nothing else was booked
+    assert on_disk["alerted"] is True
 
 
 def test_capacity_retry_suppressed_consumes_no_budget(isolated_registry, monkeypatch, capsys):
@@ -11539,3 +11664,789 @@ def test_capacity_retry_suppressed_consumes_no_budget(isolated_registry, monkeyp
     asw._process_capacity_retry(7, now, "2027-01-15", False, backoff_s=3600.0, max_per_day=4)
     assert saves == []  # retry budget NOT consumed
     assert markers == []
+
+
+# ─── #845 stall-detection hardening — integration ─────────────────────────────
+
+
+def _iso_845(epoch: float) -> str:
+    """Canonical trailing-Z UTC ISO string (the shape _parse_event_ts parses)."""
+    from datetime import UTC, datetime
+
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _read_stalled_state_845(reg_dir, issue):
+    import json
+
+    path = reg_dir / f"stalled-{issue}.json"
+    return json.loads(path.read_text()) if path.is_file() else {}
+
+
+def test_fence_stop_only_first_tick(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (a-ii) plan test 3: the tick the respawn action trips issues the
+    # STOP only — no spawn — and persists the pending sid for the next
+    # tick's verification.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 971, "sess-971", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-971"]
+    assert spawns == [] and markers == []
+    state = _read_stalled_state_845(isolated_registry, 971)
+    assert state["stop_pending_sid"] == "sess-971"
+    assert state["stop_pending_ts"] == now
+    assert state["stop_retried"] is False
+    # Pinned at the threshold so the arm re-fires (and verifies) next tick.
+    assert state["missed"] == 2
+
+
+def test_fence_spawns_after_verified_dead(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (a-ii) plan test 4: with the pending sid absent from the live set
+    # on the following tick, the fence spawns, bumps respawn_count, and
+    # clears the pending state.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 972, "sess-972", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    for _ in range(3):  # miss -> stop -> verified-dead spawn
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids=set()
+        )
+    assert stops == ["sess-972"]
+    assert spawns == [(972, 24.0)]
+    assert markers == [(972, "session-auto-respawn")]
+    state = _read_stalled_state_845(isolated_registry, 972)
+    assert state["stop_pending_sid"] is None
+    assert state["respawn_count"] == 1
+    assert state["wt_hold_count"] == 0
+
+
+def test_fence_spawn_suppressed_clears_pending(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 plan test 4b: the verified-dead spawn returning the #843
+    # tri-state "suppressed" books NOTHING (no marker, no respawn_count
+    # bump) but DOES clear the fence's stop_pending_* (the lease collision
+    # proves a live driver owns the issue — episode over).
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 973, "sess-973", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-973"] and spawns == []
+
+    monkeypatch.setattr(asw, "_respawn_stalled_session", lambda i, cap, dry: "suppressed")
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert spawns == [] and markers == []
+    state = _read_stalled_state_845(isolated_registry, 973)
+    assert state["stop_pending_sid"] is None  # fence episode over
+    assert state["respawn_count"] == 0  # nothing booked
+    assert state["missed"] == 2  # miss/stall state left untouched
+
+
+def test_fence_state_clears_on_self_report_advance(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 plan test 6: a mid-fence self-report advancement (the session
+    # resumed) ends the episode — every hardening field clears.
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 974, "sess-974", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-974"]
+    assert _read_stalled_state_845(isolated_registry, 974)["stop_pending_sid"] == "sess-974"
+
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (30.0, "ts-z-advanced"))
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    state = _read_stalled_state_845(isolated_registry, 974)
+    assert state["stop_pending_sid"] is None
+    assert state["stop_retried"] is False
+    assert state["wt_hold_count"] == 0
+    assert state["daemon_blocked_ticks"] == 0
+
+
+def test_fence_clears_on_sid_change_never_stops_fresh_sid(isolated_registry, monkeypatch):
+    # #845 plan test 6b (the MF1 fence-race pin): a pending fence whose sid
+    # no longer matches the registry entry's sid means a CONCURRENT respawn
+    # (crash arm / #843-leased driver) replaced the session inside the
+    # stop->verify gap — the fence clears itself and the fresh sid is NEVER
+    # stopped.
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    spawns: list = []
+    monkeypatch.setattr(
+        asw, "_respawn_stalled_session", lambda i, c, d: spawns.append(i) or "spawned"
+    )
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    ctx = asw._StalledActionCtx(
+        issue=975,
+        happy_session_id="sid-fresh",
+        prev_state={"stop_pending_sid": "sid-old"},
+        alerted=True,
+        respawn_count=0,
+        exhausted=False,
+        last_self_report_ts="ts-1",
+        self_gap="90.0m",
+        marker_gap="none",
+        has_pod=False,
+        task_status="running",
+        in_active=True,
+        threshold=2,
+        dry_run=False,
+        now=1_000_000.0,
+        live_ids={"sid-fresh"},
+        stop_pending_sid="sid-old",
+    )
+    asw._handle_stalled_respawn(ctx)
+    assert stops == []  # the fresh sid was never stopped
+    assert spawns == []  # and nothing was spawned next to it
+    state = _read_stalled_state_845(isolated_registry, 975)
+    assert state["stop_pending_sid"] is None  # fence cleared
+
+
+def test_stalled_arm_skips_within_spawn_grace(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 plan test 6c: an entry (re)written within RESPAWN_SPAWN_GRACE_S
+    # of the pass clock means a concurrent respawn owns the issue — the
+    # stalled arm skips entirely (mirror of the crash arm's #759 grace).
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    now = 1_000_000.0
+    (isolated_registry / "issue-976.json").write_text(
+        json.dumps(
+            {
+                "issue": 976,
+                "happy_session_id": "sess-976",
+                "cwd": "/repo",
+                "auto_approve_gpu_hours": 24.0,
+                "spawned_at": now - 60,  # 1 min ago on the PASS clock
+                "missed": 0,
+            }
+        )
+    )
+    _patch_stale_signals(monkeypatch, asw, status="running")
+
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    assert _read_stalled_state_845(isolated_registry, 976).get("stop_pending_sid") is None
+
+
+def test_worktree_hold_defers_stalled_respawn(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (b) plan test 7: fresh worktree activity defers the stalled
+    # respawn arm (no stop, no spawn) and increments the bounded hold count.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 977, "sess-977", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == []
+    state = _read_stalled_state_845(isolated_registry, 977)
+    assert state["wt_hold_count"] == 1
+    assert state["missed"] == 2  # stays armed
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == []
+    assert _read_stalled_state_845(isolated_registry, 977)["wt_hold_count"] == 2
+
+
+def test_worktree_hold_bounded_six_ticks(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (b) plan test 7b: the hold is a BOUND, not a latch — at the cap
+    # the arm proceeds (stop phase) despite ongoing activity.
+    import json
+
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 978, "sess-978", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+    # Seed a mid-episode state at the hold cap.
+    (isolated_registry / "stalled-978.json").write_text(
+        json.dumps(
+            {
+                "happy_session_id": "sess-978",
+                "missed": 1,
+                "alerted": False,
+                "last_self_report_ts": "ts-old",
+                "wt_hold_count": asw.WT_HOLD_MAX_TICKS,
+            }
+        )
+    )
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-978"]  # the 7th tick respawns (stop phase) anyway
+
+
+def test_crash_pass_worktree_hold_preserves_missed_then_respawns(isolated_registry, monkeypatch):
+    # #845 (b) plan test 8: the crash-recovery arm defers a dead-session
+    # respawn while the worktree is active, pinning `missed` at the
+    # threshold; the first quiet tick respawns.
+    import json
+    import time as _t
+
+    import autonomous_session_watch as asw
+
+    respawns: list = []
+    monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry) or "spawned")
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    activity = {"fresh": True}
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: activity["fresh"])
+    path = isolated_registry / "issue-979.json"
+    path.write_text(
+        json.dumps(
+            {
+                "issue": 979,
+                "happy_session_id": "sess-979",
+                "spawned_at": _t.time() - 3600,  # outside the spawn grace
+                "missed": 1,
+            }
+        )
+    )
+    # Dead sid (not in live_ids) + threshold reached -> respawn action, but
+    # the fresh worktree holds it: missed pinned, hold count incremented.
+    asw._process_entry(path, live_ids=set(), dry_run=False, threshold=2)
+    assert respawns == []
+    entry = json.loads(path.read_text())
+    assert entry["missed"] == 2  # pinned at the threshold — stays armed
+    assert entry["wt_hold_count"] == 1
+
+    # Activity quiets -> the very next tick respawns.
+    activity["fresh"] = False
+    asw._process_entry(path, live_ids=set(), dry_run=False, threshold=2)
+    assert len(respawns) == 1
+
+
+def test_crash_pass_worktree_hold_bounded(isolated_registry, monkeypatch):
+    # #845 (b) plan test 8b: 7 consecutive fresh-activity ticks -> _respawn
+    # fires EXACTLY ONCE, on the 7th tick (the cap is a bound, not a latch).
+    import json
+    import time as _t
+
+    import autonomous_session_watch as asw
+
+    respawns: list = []
+
+    def fake_respawn(entry, dry_run):
+        respawns.append(dict(entry))
+        return "spawned"
+
+    monkeypatch.setattr(asw, "_respawn", fake_respawn)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    path = isolated_registry / "issue-980.json"
+    path.write_text(
+        json.dumps(
+            {
+                "issue": 980,
+                "happy_session_id": "sess-980",
+                "spawned_at": _t.time() - 3600,
+                "missed": 2,
+            }
+        )
+    )
+    for _ in range(7):
+        asw._process_entry(path, live_ids=set(), dry_run=False, threshold=2)
+    assert len(respawns) == 1
+    # The spawn happened on the 7th tick, after 6 held ticks.
+    assert respawns[0]["wt_hold_count"] == asw.WT_HOLD_MAX_TICKS
+
+
+def test_crash_pass_quiet_worktree_unchanged_timing(isolated_registry, monkeypatch):
+    # #845 (b) plan test 9 (regression pin): with NO worktree activity, a
+    # dead ACTIVE session respawns on exactly today's clock (2 misses).
+    import json
+    import time as _t
+
+    import autonomous_session_watch as asw
+
+    respawns: list = []
+    monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry) or "spawned")
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    path = isolated_registry / "issue-981.json"
+    path.write_text(
+        json.dumps(
+            {
+                "issue": 981,
+                "happy_session_id": "sess-981",
+                "spawned_at": _t.time() - 3600,
+                "missed": 0,
+            }
+        )
+    )
+    asw._process_entry(path, live_ids=set(), dry_run=False, threshold=2)
+    assert respawns == []  # miss 1
+    assert json.loads(path.read_text())["missed"] == 1
+    asw._process_entry(path, live_ids=set(), dry_run=False, threshold=2)
+    assert len(respawns) == 1  # miss 2 -> respawn, exactly as pre-#845
+
+
+def test_daemon_probe_retries_then_succeeds(monkeypatch):
+    # #845 (c) plan test 10: the retry wrapper survives two transient probe
+    # failures (backoff sleeps monkeypatched — no real sleep) and reports
+    # reachable on the third; all-fail reports unreachable.
+    import autonomous_session_watch as asw
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
+    seq = iter([False, False, True])
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: next(seq))
+    assert asw._daemon_reachable_with_retry(attempts=3) is True
+    assert sleeps == [5.0, 10.0]
+
+    sleeps.clear()
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
+    assert asw._daemon_reachable_with_retry(attempts=3) is False
+    assert sleeps == [5.0, 10.0]  # no sleep after the final attempt
+
+
+def test_daemon_probe_attempts_env_override(monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_DAEMON_PROBE_ATTEMPTS", raising=False)
+    assert asw._daemon_probe_attempts() == asw._DAEMON_PROBE_ATTEMPTS_DEFAULT
+    monkeypatch.setenv("EPM_DAEMON_PROBE_ATTEMPTS", "1")
+    assert asw._daemon_probe_attempts() == 1
+    monkeypatch.setenv("EPM_DAEMON_PROBE_ATTEMPTS", "0")
+    assert asw._daemon_probe_attempts() == asw._DAEMON_PROBE_ATTEMPTS_DEFAULT
+    monkeypatch.setenv("EPM_DAEMON_PROBE_ATTEMPTS", "garbled")
+    assert asw._daemon_probe_attempts() == asw._DAEMON_PROBE_ATTEMPTS_DEFAULT
+
+
+def test_daemon_blocked_two_ticks_one_push(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (c) plan test 11: a respawn-worthy stall deferred by an
+    # unreachable daemon for >= 2 consecutive ticks fires EXACTLY ONE push;
+    # a reachable tick resets the counter.
+    import autonomous_session_watch as asw
+
+    _stops, _spawns, markers = stalled_recorder
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushes.append(msg) or True)
+    _write_autonomous_entry(isolated_registry, 982, "sess-982", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: miss 1 (no alert yet, not counted — not yet respawn-worthy).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    assert pushes == []
+    # Tick 2: threshold met, daemon down -> ALERT arm; blocked tick 1.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    assert markers == [(982, "session-stalled-alert")]
+    assert pushes == []
+    assert _read_stalled_state_845(isolated_registry, 982)["daemon_blocked_ticks"] == 1
+    # Tick 3: still blocked -> 2 consecutive ticks -> ONE push.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    assert len(pushes) == 1
+    assert "982" in pushes[0]
+    # Tick 4: still blocked -> NO repeat push.
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    assert len(pushes) == 1
+    # Daemon back -> counter resets (and the escalation respawns via the
+    # fence, which is covered elsewhere).
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    state = _read_stalled_state_845(isolated_registry, 982)
+    assert state["daemon_blocked_ticks"] == 0
+    assert state["daemon_blocked_pushed"] is False
+
+
+def test_alerted_escalates_on_first_daemon_up_tick(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 (c) plan test 12 (regression pin, extends
+    # test_alerted_escalates_to_respawn_when_eligible): an episode alerted
+    # while the daemon was down escalates to the respawn action on the very
+    # FIRST daemon-up tick — the fence then issues the stop that same tick.
+    import autonomous_session_watch as asw
+
+    stops, _spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 983, "sess-983", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=False)
+    assert markers == [(983, "session-stalled-alert")]
+    assert stops == []
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-983"]  # queued escalation fired immediately
+
+
+def test_wedge_bypasses_debounce_but_not_fence(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (e) plan test 16: direct wedge evidence escalates to the respawn
+    # arm on the FIRST stale tick (bypassing the 2-miss debounce), but the
+    # stop-verify fence still applies (stop first, spawn next tick).
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 984, "sess-984", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    now = 1_000_000.0
+    pids = {"sess-984": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-984"]  # first tick: wedge -> respawn -> fence stop
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 984)
+    assert state["wedge_hits"] == 1
+    assert state["live_consecutive"] == 0  # wedge respawn resets the K counter
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(984, 24.0)]  # verified dead -> spawn
+    assert markers and markers[-1] == (984, "session-auto-respawn")
+
+
+def test_wedge_unresolvable_transcript_noop(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (e) plan test 16b: an unresolvable transcript fails toward
+    # NO-WEDGE — the slow debounce path is unchanged.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 985, "sess-985", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: None)
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-985": 4242},
+    )
+    assert stops == [] and spawns == []  # first miss only — no bypass
+
+
+def test_wedge_respects_worktree_hold(isolated_registry, monkeypatch, stalled_recorder):
+    # #845 (e) plan test MF3: a wedge-forced respawn is STILL held by fresh
+    # worktree activity (an in-flight implementer's edits win) — no stop.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 986, "sess-986", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-986": 4242},
+    )
+    assert stops == [] and spawns == []
+    state = _read_stalled_state_845(isolated_registry, 986)
+    assert state["wt_hold_count"] == 1
+    assert state["wedge_hits"] == 1
+
+
+def test_wedge_bypasses_marker_window_reaches_fence(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 (e) plan test MF3b: a fresh (< 2h) non-watcher marker would keep
+    # the slow path quiet, but direct wedge evidence bypasses the marker
+    # window and reaches the hold/fence path (stop issued).
+    import autonomous_session_watch as asw
+
+    stops, _spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 987, "sess-987", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    # Fresh lifecycle marker 5 min ago (parseable ts, non-watcher).
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [
+            {"kind": "epm:experiment-implementation", "ts": _iso_845(now - 300), "note": "impl"}
+        ],
+    )
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-987": 4242},
+    )
+    assert stops == ["sess-987"]  # wedge beat the fresh-marker keep
+
+
+def test_wedge_respects_park_exemptions_on_keep_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 r2 (concern wedge-bypasses-unprobed-park-exemptions): on the
+    # fresh-marker keep(0) hot path decide() returns ("keep", 0), so the
+    # LAZY park exemptions are never probed (`exempted` is vacuously
+    # False) — the wedge escalation must re-probe them ONCE against the
+    # escalated action. A firing provision-in-flight exemption VETOES the
+    # wedge: no stop, no spawn, and no wedge hit recorded.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 989, "sess-989", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    # Fresh (< 2h) lifecycle marker 5 min ago -> the slow path stays quiet
+    # (keep/0), exactly the shape where the exemptions go unprobed.
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [
+            {"kind": "epm:experiment-implementation", "ts": _iso_845(now - 300), "note": "impl"}
+        ],
+    )
+    # Wedge transcript signature (>= 3 promptless dequeue rows)...
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    # ...AND an in-flight provision — the escalation re-probe must fire it
+    # (re-patches the stalled_recorder / _patch_stale_signals None stub).
+    monkeypatch.setattr(
+        asw,
+        "_provision_in_flight_reason",
+        lambda issue, now: "provision in flight (pod.py provision pid 4321)",
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-989": 4242},
+    )
+    assert stops == [] and spawns == []  # exemption vetoed the wedge
+    state = _read_stalled_state_845(isolated_registry, 989)
+    assert state["wedge_hits"] == 0  # a vetoed wedge records no hit
+    assert state.get("stop_pending_sid") is None  # fence never armed
+
+
+def test_marker_window_blocks_stalled_pass_alert_90min_marker(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 (a-i) pass-level companion of the pure test: a 90-min-old REAL
+    # marker (stale under the old 60-min window, fresh under the 2h one)
+    # keeps the session quiet with a frozen self-report.
+    import autonomous_session_watch as asw
+
+    stops, _spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 988, "sess-988", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [{"kind": "epm:progress", "ts": _iso_845(now - 90 * 60), "note": "step"}],
+    )
+    for _ in range(3):
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and markers == []
+
+
+# ── #845 (d) stale-registration pass ─────────────────────────────────────────
+
+
+def _stale_reg_env(monkeypatch, asw, *, idle_s=16 * 3600, self_report_s=16 * 3600):
+    """Common monkeypatching for the stale-registration pass tests."""
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (idle_s, None))
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (self_report_s, "ts"))
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: False)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+
+
+def test_stale_registration_pass_unlinks_and_posts_marker(isolated_registry, monkeypatch):
+    # #845 (d) plan test 14: a live 16h-transcript-idle registration is
+    # unregistered (file unlinked) with a one-time marker naming the task
+    # status; a dead-sid sibling stays (crash-recovery property); manual
+    # registrations are in scope too.
+    import autonomous_session_watch as asw
+
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, note)),
+    )
+    _stale_reg_env(monkeypatch, asw)
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    _write_manual_entry(isolated_registry, 991, "sess-991-manual")
+    _write_autonomous_entry(isolated_registry, 992, "sess-992-dead")
+    children = [
+        {"happySessionId": "sess-990", "pid": 4242},
+        {"happySessionId": "sess-991-manual", "pid": 4243},
+        # sess-992-dead is NOT live.
+    ]
+    asw.stale_registration_pass(dry_run=False, children=children, now=1_000_000.0)
+
+    assert not (isolated_registry / "issue-990.json").exists()
+    assert not (isolated_registry / "manual-issue-991.json").exists()
+    assert (isolated_registry / "issue-992.json").exists()  # dead sid kept
+    labels = [(i, la) for i, la, _n in markers]
+    assert (990, "stale-registration-unregister") in labels
+    assert (991, "stale-registration-unregister") in labels
+    note_990 = next(n for i, _la, n in markers if i == 990)
+    assert "status=running" in note_990  # the marker logs the task status
+    assert "NOT stopped" in note_990
+    # Durable sidecar trace appended.
+    events = (isolated_registry / "stale-registration-events.jsonl").read_text().splitlines()
+    assert len(events) == 2
+
+
+def test_stale_registration_pass_daemon_down_noop(isolated_registry, monkeypatch):
+    # #845 (d) plan test 14b: children=None (daemon unreachable) => no-op.
+    import autonomous_session_watch as asw
+
+    _stale_reg_env(monkeypatch, asw)
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    asw.stale_registration_pass(dry_run=False, children=None, now=1_000_000.0)
+    assert (isolated_registry / "issue-990.json").exists()
+
+
+def test_stale_registration_pass_dry_run(isolated_registry, monkeypatch):
+    # #845 (d) plan test 14c: dry-run reports but never unlinks.
+    import autonomous_session_watch as asw
+
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label, dry_run)),
+    )
+    _stale_reg_env(monkeypatch, asw)
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    asw.stale_registration_pass(
+        dry_run=True, children=[{"happySessionId": "sess-990", "pid": 4242}], now=1_000_000.0
+    )
+    assert (isolated_registry / "issue-990.json").exists()  # never unlinked
+    assert markers == [(990, "stale-registration-unregister", True)]
+    assert not (isolated_registry / "stale-registration-events.jsonl").exists()
+
+
+def test_stale_registration_pass_provision_in_flight_keeps(isolated_registry, monkeypatch):
+    # #845 (d) plan test MF3c: a 16h-idle transcript with an in-flight
+    # provision is WORKING, not stale — keep.
+    import autonomous_session_watch as asw
+
+    _stale_reg_env(monkeypatch, asw)
+    monkeypatch.setattr(
+        asw, "_provision_in_flight_reason", lambda issue, now: "live provision pid 1"
+    )
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    asw.stale_registration_pass(
+        dry_run=False, children=[{"happySessionId": "sess-990", "pid": 4242}], now=1_000_000.0
+    )
+    assert (isolated_registry / "issue-990.json").exists()
+
+
+def test_stale_registration_pass_fresh_worktree_keeps(isolated_registry, monkeypatch):
+    # #845 (d) plan test MF3d: fresh worktree activity = not stale — keep.
+    import autonomous_session_watch as asw
+
+    _stale_reg_env(monkeypatch, asw)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    asw.stale_registration_pass(
+        dry_run=False, children=[{"happySessionId": "sess-990", "pid": 4242}], now=1_000_000.0
+    )
+    assert (isolated_registry / "issue-990.json").exists()
+
+
+def test_stale_registration_pass_unresolvable_transcript_keeps(isolated_registry, monkeypatch):
+    # #845 (d): unresolvable transcript fails toward keep.
+    import autonomous_session_watch as asw
+
+    _stale_reg_env(monkeypatch, asw)
+    monkeypatch.setattr(asw, "_transcript_idle_age_s", lambda pid, now: (None, "no happy log"))
+    _write_autonomous_entry(isolated_registry, 990, "sess-990")
+    asw.stale_registration_pass(
+        dry_run=False, children=[{"happySessionId": "sess-990", "pid": 4242}], now=1_000_000.0
+    )
+    assert (isolated_registry / "issue-990.json").exists()
+
+
+def test_main_order_stale_registration_after_gate_push(isolated_registry, monkeypatch):
+    # #845 (d) plan test 17: the stale-registration pass runs AFTER
+    # gate_push_pass (the gate-push-before-reaper ordering is a documented
+    # runaway-force-stop invariant), adjacent to the two reapers, and all
+    # THREE consumers share the ONE post-gate-push /list snapshot (the
+    # reaper_children computation is UNMOVED).
+    import autonomous_session_watch as asw
+
+    order: list[tuple[str, object]] = []
+    snapshot = [{"happySessionId": "sid-shared", "pid": 12345}]
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
+    for name in (
+        "vm_disk_pass",
+        "data_disk_pass",
+        "happy_patch_pass",
+        "program_orchestrator_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "proposed_infra_sweep_pass",
+        "capacity_retry_pass",
+        "session_reconcile_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "gate_push_pass", lambda *a, **kw: order.append(("gate_push", None)))
+    monkeypatch.setattr(
+        asw,
+        "stale_registration_pass",
+        lambda *a, **kw: order.append(("stale_registration", kw.get("children"))),
+    )
+    monkeypatch.setattr(
+        asw, "zombie_wrapper_pass", lambda *a, **kw: order.append(("zombie", kw.get("children")))
+    )
+    monkeypatch.setattr(
+        asw, "idle_unmapped_pass", lambda *a, **kw: order.append(("idle", kw.get("children")))
+    )
+
+    rc = asw.main([])
+    assert rc == 0
+    names = [n for n, _ in order]
+    assert names == ["gate_push", "stale_registration", "zombie", "idle"]
+    consumers = [c for n, c in order if n in ("stale_registration", "zombie", "idle")]
+    assert all(c is snapshot for c in consumers)

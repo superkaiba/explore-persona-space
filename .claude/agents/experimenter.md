@@ -820,6 +820,17 @@ authoritative recipe is agent memory
    - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
+   - **Kill-confirm-dead the prior workload FIRST (kill-before-relaunch,
+     `.claude/rules/crash-fix-rounds.md`).** Before ANY same-pod relaunch
+     after a timed-out / abandoned / crashed launch: resolve the prior
+     issue-owned process — the pod pidfile
+     (`/workspace/logs/issue-<N>.pid`), the latest `epm:run-launched`
+     `pid=`, and an exact issue-scoped `pgrep -af` of the launcher
+     invocation — kill by explicit PID (TERM → ~10 s → KILL), re-probe,
+     and relaunch ONLY when dead. Step 9's GPU-residency probe covers
+     vLLM orphans; THIS bullet covers the live CPU-phase / non-vLLM
+     prior the GPU probe cannot see. A PID surviving SIGKILL: report,
+     never relaunch over it.
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has

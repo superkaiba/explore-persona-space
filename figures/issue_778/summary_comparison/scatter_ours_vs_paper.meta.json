@@ -1,0 +1,77 @@
+{
+  "commit": "95592caf39",
+  "created": "2026-07-02T15:25:37Z",
+  "figsize": [
+    6.8,
+    6.2
+  ],
+  "points": [
+    {
+      "paper's reported Pearson r": 0.747,
+      "our reproduced Pearson |r|": 0.807488913181647,
+      "series": "System-prompt monitoring (pooled)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paper's reported Pearson r": 0.798,
+      "our reproduced Pearson |r|": 0.7959494589931628,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paper's reported Pearson r": 0.83,
+      "our reproduced Pearson |r|": 0.8373426445467381,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paper's reported Pearson r": 0.511,
+      "our reproduced Pearson |r|": 0.38741373543813296,
+      "series": "System-prompt monitoring (within prompt)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paper's reported Pearson r": 0.669,
+      "our reproduced Pearson |r|": 0.6826755946774208,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paper's reported Pearson r": 0.245,
+      "our reproduced Pearson |r|": 0.6468543563677224,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paper's reported Pearson r": 0.735,
+      "our reproduced Pearson |r|": 0.6869376214314127,
+      "series": "Many-shot ICL (within shot count)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paper's reported Pearson r": 0.813,
+      "our reproduced Pearson |r|": 0.8272980436465459,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paper's reported Pearson r": 0.2,
+      "our reproduced Pearson |r|": 0.2,
+      "series": "y = x  (our r = paper r)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "paper's reported Pearson r": 0.95,
+      "our reproduced Pearson |r|": 0.95,
+      "series": "y = x  (our r = paper r)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 10
+}

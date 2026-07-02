@@ -320,12 +320,9 @@ only when it is labeled at report time (the label is what lets you
 distinguish a documented carve-out from a silently-skipped smoke). A
 carve-out sub-section that is labeled but omits any of the three items
 or omits the constraint sentence is ALSO a FAIL — incomplete coverage
-re-introduces the bugs the gate exists to catch. Incident: task #514
-round 2 — Codex code-reviewer FAILed with `smoke-run-missing` because
-the implementer's terse "(signature smoke)" notation for GPU-bound
-training/eval phases lacked both the documented sub-heading and the
-three-item coverage; this carve-out formalizes the labeling that lets
-the reviewer distinguish a documented GPU-bound phase from a genuinely
+re-introduces the bugs the gate exists to catch. Incident #514 r2:
+unlabeled "(signature smoke)" notation FAILed `smoke-run-missing`; the
+label is what distinguishes a documented carve-out from a genuinely
 missing smoke.
 
 **Deferred `scripts.*` imports must be proven in SCRIPT MODE, not `-c` mode.**
@@ -514,27 +511,17 @@ the dispatcher file in the body), AND still read the diff and report
 substantive findings in the same pass (do not short-circuit — see
 Step 0.7):
 
-> `epm:experiment-implementation v<n>`'s dispatcher
-> `scripts/<dispatcher>.py` writes raw completions to
-> `eval_results/issue_<N>/...` but never calls
-> `upload_raw_completions_to_data_repo()` (or an explicit
-> `hub._upload(..., repo_type="dataset")` loop, or a batched
-> `HfApi.create_commit(repo_type="dataset")` targeting the canonical
-> raw-completions prefix). The CLAUDE.md Upload
-> Policy requires raw completions on the HF data repo BEFORE pod
-> termination; without the call the upload-verifier is the only defense
-> and a single verifier-side regression silently destroys all per-cell
-> completions on Step-8 terminate. Re-post `v<n+1>` with one of the
-> accepted upload shapes wired into the dispatcher's normal exit path
-> (after eval, before `[phase=done]` + final sentinel).
+> Dispatcher `scripts/<dispatcher>.py` writes raw completions to
+> `eval_results/issue_<N>/...` but wires none of the three accepted
+> upload shapes (`upload_raw_completions_to_data_repo()` / `hub._upload`
+> loop / batched `create_commit`). Re-post `v<n+1>` with one wired into
+> the normal exit path (after eval, before `[phase=done]` + sentinel).
 
 The mirror implementer rule is `experiment-implementer.md` § After
-implementation step 7 (raw-completions upload wiring). Incident:
-task #528 (2026-06-09) — the pod-side dispatcher `run_experiment_528.py`
-(on the `issue-528` branch only, not merged to `main`) wrote 160
-raw-completion JSONs and never invoked the helper; the verifier caught
-it manually, but the gap was indistinguishable from a silent loss had
-the verifier trusted the sentinel.
+implementation step 7. Incident #528 (2026-06-09): a pod-side dispatcher
+wrote 160 raw-completion JSONs and never invoked the helper — caught
+manually, indistinguishable from silent loss had the verifier trusted
+the sentinel.
 
 If the dispatcher writes NO raw completions (a pure metrics-only eval,
 an analysis-only dispatcher, a training-only entrypoint), this gate is

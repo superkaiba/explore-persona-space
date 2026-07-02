@@ -1,0 +1,392 @@
+{
+  "commit": "95592caf39",
+  "created": "2026-07-02T15:25:35Z",
+  "figsize": [
+    17.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Pearson |r|  (max over layers)": 0.9142682241137605,
+      "error": 0.08676300741288523,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.26,
+      "Pearson |r|  (max over layers)": 0.9544972389609414,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.74,
+      "Pearson |r|  (max over layers)": 0.8462502442109864,
+      "error": 0.10729211549813411,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Pearson |r|  (max over layers)": 0.9348690174547242,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.74,
+      "Pearson |r|  (max over layers)": 0.971412687398969,
+      "error": 0.017239817119318046,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.26,
+      "Pearson |r|  (max over layers)": 0.9736466533347131,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.1404,
+      "Pearson |r|  (max over layers)": 0.915984119028224,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.37960000000000005,
+      "Pearson |r|  (max over layers)": 0.915984119028224,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.1404,
+      "Pearson |r|  (max over layers)": 0.9492126124044112,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.37960000000000005,
+      "Pearson |r|  (max over layers)": 0.9492126124044112,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.26,
+      "y": 0.807488913181647,
+      "error": 0.044507699823011226,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "evil",
+      "y": 0.747,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.26,
+      "y": 0.8425542280058705,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "y": 0.7959494589931628,
+      "error": 0.061066415868659796,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "sycophancy",
+      "y": 0.798,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.26,
+      "y": 0.8474527248532033,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.74,
+      "y": 0.8373426445467381,
+      "error": 0.05252379161930798,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "hallucination",
+      "y": 0.83,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.26,
+      "y": 0.8365205076523892,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.1404,
+      "y": 0.7915349104132978,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.7915349104132978,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.1404,
+      "y": 0.8358008957178155,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.8358008957178155,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": -0.26,
+      "y": 0.38741373543813296,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "evil",
+      "y": 0.511,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.26,
+      "y": 0.4054854067567079,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 0.74,
+      "y": 0.6826755946774208,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "sycophancy",
+      "y": 0.669,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.26,
+      "y": 0.7247235928569485,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 1.74,
+      "y": 0.6468543563677224,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "hallucination",
+      "y": 0.245,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 2.26,
+      "y": 0.7046426946656925,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 0.1404,
+      "y": 0.2912857759035441,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.2912857759035441,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.1404,
+      "y": 0.3984243625605397,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.3984243625605397,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": -0.26,
+      "y": 0.6768753940490314,
+      "error": 0.09040055761786331,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 0.26,
+      "y": 0.7065232787756556,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.74,
+      "y": 0.8660510734411656,
+      "error": 0.042151558432554415,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 1.26,
+      "y": 0.8942877468384661,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 1.74,
+      "y": 0.7291724724322896,
+      "error": 0.09205933128159066,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.26,
+      "y": 0.7957298141390864,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 0.1404,
+      "y": 0.6231555383474309,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.6231555383474309,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.1404,
+      "y": 0.6919040952935026,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.6919040952935026,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": -0.26,
+      "y": 0.6869376214314127,
+      "error": 0.0873256159350258,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "category": "evil",
+      "y": 0.735,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 0.26,
+      "y": 0.6947909149525913,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 0.74,
+      "y": 0.8272980436465459,
+      "error": 0.038195344618575156,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "category": "sycophancy",
+      "y": 0.813,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 1.26,
+      "y": 0.8631768239898779,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 1.74,
+      "y": 0.6530514199451126,
+      "error": 0.09139694349153915,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 2.26,
+      "y": 0.7588449700260469,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 0.1404,
+      "y": 0.6176990697954008,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.6176990697954008,
+      "series": "norm-matched random (median)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.1404,
+      "y": 0.6894597550386967,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.37960000000000005,
+      "y": 0.6894597550386967,
+      "series": "permutation (97.5th pct cap)",
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 58
+}
