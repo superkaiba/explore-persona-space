@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 845,
+  "highest_id": 846,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5482,6 +5482,13 @@
       "path": "tasks/proposed/845",
       "status": "proposed",
       "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
+    },
+    "846": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/846",
+      "status": "proposed",
+      "title": "daily-fix: hermeticize HF-state-dependent audit-claim tests (red main)"
     },
     "85": {
       "has_clean_result": false,
