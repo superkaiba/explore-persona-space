@@ -5535,8 +5535,8 @@
     "852": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/852",
-      "status": "running",
+      "path": "tasks/reviewing/852",
+      "status": "reviewing",
       "title": "artifacts: Behavior + Context specs, registries, render_chat shim (Phase 0b)"
     },
     "853": {
