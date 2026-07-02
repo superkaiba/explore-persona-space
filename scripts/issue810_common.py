@@ -243,3 +243,43 @@ def context_ids_from_manifest(manifest: dict) -> list[str]:
     if not ids or len(set(ids)) != len(ids):
         raise RuntimeError(f"store_manifest context_ids missing/duplicated: {ids!r}")
     return list(ids)
+
+
+def upload_out_dir(out_dir: Path | str, path_in_repo: str) -> str:
+    """Bulk-commit an out-dir's ``*.json`` to the HF data repo, then fail-loud verify.
+
+    Shared by the ephemeral-lane fit scripts (``issue810_fit_reconstruction.py`` /
+    ``issue810_fit_readout.py``): a GCP spot instance is DELETED on exit, so its
+    result JSONs must land on ``HF_DATA_REPO`` (``repo_type="dataset"``) before
+    teardown. Mirrors ``issue810_extract_positions._upload_store`` — ONE
+    ``upload_folder`` commit (never a per-file loop — the #664 504-storm), then
+    verifies EVERY produced JSON is present on a FRESH ``list_repo_files`` listing
+    and raises ``RuntimeError`` on any miss (never a silent partial upload).
+
+    Returns the ``path_in_repo`` the JSONs landed under.
+    """
+    from huggingface_hub import HfApi, list_repo_files
+
+    out_dir = Path(out_dir)
+    local_jsons = sorted(p.name for p in out_dir.glob("*.json"))
+    if not local_jsons:
+        raise RuntimeError(f"upload_out_dir: no *.json in {out_dir} to upload")
+    api = HfApi()
+    api.upload_folder(
+        folder_path=str(out_dir),
+        path_in_repo=path_in_repo,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=["*.json"],
+        commit_message=f"issue #810: fit results ({len(local_jsons)} JSONs) -> {path_in_repo}",
+    )
+    remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
+    expected = {f"{path_in_repo}/{name}" for name in local_jsons}
+    missing = expected - remote
+    if missing:
+        raise RuntimeError(
+            f"fit-result upload verification FAILED: {len(missing)} JSON file(s) missing "
+            f"on the Hub under {path_in_repo}/ (e.g. {sorted(missing)[:3]}) — refusing to "
+            f"treat a partial upload as success (an ephemeral lane would lose them on teardown)"
+        )
+    return path_in_repo

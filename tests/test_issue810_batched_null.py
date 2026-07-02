@@ -183,5 +183,138 @@ def test_extract_asserts_newline_id_value():
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. round-3: --device threads verbatim to every batched-null / MLP call site
+# ─────────────────────────────────────────────────────────────────────────────
+def test_recon_fit_null_draws_threads_device(monkeypatch):
+    """``_fit_null_draws(device=X)`` passes X verbatim to batched_ridge_loco_null_skill.
+
+    Round-3 added a --device flag that must reach the batched-null (and MLP)
+    fitters — round-2 code called them with the implicit ``device="cpu"`` default,
+    so everything ran fp64 torch on CPU regardless of the lane. This captures the
+    kwarg the fit function actually forwards.
+    """
+    import issue810_fit_reconstruction as recon
+
+    captured = {}
+
+    def _fake(Xc, Y_pca, perm, device="cpu"):
+        captured["device"] = device
+        return [0.0] * perm.shape[0]
+
+    monkeypatch.setattr(recon, "batched_ridge_loco_null_skill", _fake)
+    n, hc, hy = 8, 6, 5
+    xc = np.random.default_rng(0).standard_normal((n, hc))
+    yv = np.random.default_rng(1).standard_normal((n, hy))
+    # cpu default flows through
+    recon._fit_null_draws(xc, yv, pca_dim=3, n_perms=5, seed=SHUFFLE_NULL_SEED)
+    assert captured["device"] == "cpu"
+    # an explicit (fake) device string flows through verbatim
+    recon._fit_null_draws(xc, yv, pca_dim=3, n_perms=5, seed=SHUFFLE_NULL_SEED, device="cuda:7")
+    assert captured["device"] == "cuda:7"
+
+
+def test_recon_batch_mlp_validity_threads_device(monkeypatch):
+    """``_batch_mlp_validity(device=X)`` passes X verbatim to fit_batched_loco_mlp."""
+    import issue810_fit_reconstruction as recon
+
+    captured = {}
+
+    class _Res:
+        def __init__(self, keys, y_by_key):
+            self.preds_by_key = {k: y_by_key[k] for k in keys}
+
+    def _fake(groups, seed=None, device="cpu"):
+        captured["device"] = device
+        return _Res([g.key for g in groups], {g.key: g.Y for g in groups})
+
+    monkeypatch.setattr(recon, "fit_batched_loco_mlp", _fake)
+    # skill_over_mean_r2 is called on the fake preds; supply real arrays so it runs.
+    n, d, p = 8, 6, 4
+    rng = np.random.default_rng(2)
+    xc = rng.standard_normal((n, d))
+    y_pca = rng.standard_normal((n, p))
+    jobs = [(("mean", 13), xc, y_pca)]
+    recon._batch_mlp_validity(jobs, device="cuda:3")
+    assert captured["device"] == "cuda:3"
+
+
+def test_readout_null_call_sites_thread_device():
+    """The read-out fit passes ``device=args.device`` to BOTH batched-null calls."""
+    src = (_SCRIPTS / "issue810_fit_readout.py").read_text()
+    assert "batched_projection_null_rho(pred, y, perm, device=args.device)" in src
+    assert "batched_ridge_loco_null_rho(Xp, y, perm, device=args.device)" in src
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. round-3: upload_out_dir is fail-loud on a missing file (never silent partial)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_upload_out_dir_fail_loud_on_missing(monkeypatch, tmp_path):
+    """A produced JSON absent from the fresh Hub listing raises RuntimeError.
+
+    An ephemeral GCP spot instance is DELETED on exit, so a silently-partial
+    upload would lose result JSONs forever. The fail-loud verify is the permanent
+    invariant: mocked so no real network is touched, the listing OMITS one of the
+    two produced JSONs → RuntimeError.
+    """
+    import issue810_common as common
+
+    (tmp_path / "a.json").write_text("{}")
+    (tmp_path / "b.json").write_text("{}")
+
+    class _FakeApi:
+        def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type, **kw):
+            _FakeApi.last = dict(
+                folder_path=folder_path,
+                path_in_repo=path_in_repo,
+                repo_id=repo_id,
+                repo_type=repo_type,
+            )
+
+    prefix = "issue810/phase_d_recon"
+
+    def _fake_list(repo_id, repo_type=None, revision=None):
+        # a.json present, b.json MISSING → the verify must raise.
+        return [f"{prefix}/a.json"]
+
+    monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
+    monkeypatch.setattr("huggingface_hub.list_repo_files", _fake_list)
+    with pytest.raises(RuntimeError, match="upload verification FAILED"):
+        common.upload_out_dir(tmp_path, prefix)
+    # the upload_folder call used the dataset repo + the given prefix (not a loop).
+    assert _FakeApi.last["repo_id"] == common.HF_DATA_REPO
+    assert _FakeApi.last["repo_type"] == "dataset"
+    assert _FakeApi.last["path_in_repo"] == prefix
+    assert _FakeApi.last["folder_path"] == str(tmp_path)
+
+
+def test_upload_out_dir_success_returns_prefix(monkeypatch, tmp_path):
+    """When every produced JSON is present on the fresh listing, returns the prefix."""
+    import issue810_common as common
+
+    (tmp_path / "a.json").write_text("{}")
+    (tmp_path / "b.json").write_text("{}")
+    prefix = "issue810/phase_d_readout"
+
+    class _FakeApi:
+        def upload_folder(self, **kw):
+            pass
+
+    monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
+    monkeypatch.setattr(
+        "huggingface_hub.list_repo_files",
+        lambda repo_id, repo_type=None, revision=None: [f"{prefix}/a.json", f"{prefix}/b.json"],
+    )
+    assert common.upload_out_dir(tmp_path, prefix) == prefix
+
+
+def test_upload_out_dir_raises_on_empty_dir(tmp_path):
+    """No *.json to upload is a fail-loud error (never a silent no-op upload)."""
+    import issue810_common as common
+
+    with pytest.raises(RuntimeError, match=r"no \*.json"):
+        common.upload_out_dir(tmp_path, "issue810/x")
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))

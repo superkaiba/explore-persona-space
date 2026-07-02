@@ -88,6 +88,7 @@ from issue810_common import (  # noqa: E402
     load_json,
     reproducibility_metadata,
     summary_names,
+    upload_out_dir,
 )
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
@@ -254,8 +255,25 @@ def main() -> int:
     ap.add_argument("--behaviors", nargs="*", default=None)
     ap.add_argument("--methods", nargs="*", default=["fixed_rb", "trained_ridge"])
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
+    ap.add_argument(
+        "--device",
+        default="cpu",
+        help="torch device for the batched trained-ridge + projection nulls ('cpu' default, "
+        "'cuda' to run on a GPU lane — CPU behavior is byte-identical to the default)",
+    )
+    ap.add_argument(
+        "--upload-prefix",
+        default=None,
+        help="HF data-repo path prefix (e.g. 'issue810/phase_d_readout') to bulk-upload the "
+        "out-dir *.json to after the fit; UNSET (default) = no upload (today's behavior). "
+        "Set on an ephemeral GCP lane so the results survive instance teardown.",
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
+
+    # Fail fast: --device cuda with no CUDA never silently falls back to CPU.
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("--device cuda requested but torch.cuda.is_available() is False")
 
     from huggingface_hub import hf_hub_download
 
@@ -333,7 +351,7 @@ def main() -> int:
                         pred = _fixed_rb_pred(X, r)
                         # correct null (batched, no re-fit): permute the (E0,
                         # summary) pairing, re-project the SAME pred → re-Spearman.
-                        draws = batched_projection_null_rho(pred, y, perm)
+                        draws = batched_projection_null_rho(pred, y, perm, device=args.device)
                     else:  # trained_ridge
                         pred = _trained_ridge_pred(X, y)
                         # null (batched): permute E0 rows, re-fit the LOCO ridge on
@@ -341,7 +359,7 @@ def main() -> int:
                         # all perms batched — the #722 vectorize mandate). Uses the
                         # IDENTICAL PCA basis as _trained_ridge_pred.
                         Xp = _pca_reduce_predictor(X)
-                        draws = batched_ridge_loco_null_rho(Xp, y, perm)
+                        draws = batched_ridge_loco_null_rho(Xp, y, perm, device=args.device)
                     rho = _rho(pred, y)
                     rho_rate = _rho(pred, y_rate) if np.isfinite(y_rate).all() else None
                     results.append(
@@ -408,6 +426,10 @@ def main() -> int:
         },
         out_dir / "null_matrix_readout.json",
     )
+    if args.upload_prefix:
+        logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
+        landed = upload_out_dir(out_dir, args.upload_prefix)
+        logger.info("[phase=upload] verified fit-result JSONs under %s/", landed)
     logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
     return 0
 

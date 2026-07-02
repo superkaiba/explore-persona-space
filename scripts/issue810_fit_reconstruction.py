@@ -76,6 +76,7 @@ from issue810_common import (  # noqa: E402
     load_json,
     reproducibility_metadata,
     summary_names,
+    upload_out_dir,
 )
 
 # On-main fit primitives (the self-contained base — plan §4.6). NO import of the
@@ -219,6 +220,7 @@ def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int) -> tuple[dict, n
 
 def _batch_mlp_validity(
     mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]],
+    device: str = "cpu",
 ) -> dict:
     """Batch the MLP validity arm across ALL cells (grouped by (n, d_in, p) shape).
 
@@ -236,7 +238,7 @@ def _batch_mlp_validity(
     mlp_skill_by_key: dict = {}
     for shape, groups in buckets.items():
         logger.info("[phase=mlp] batching %d cells at shape %s", len(groups), shape)
-        res = fit_batched_loco_mlp(groups, seed=SHUFFLE_NULL_SEED)
+        res = fit_batched_loco_mlp(groups, seed=SHUFFLE_NULL_SEED, device=device)
         for g in groups:
             mlp = skill_over_mean_r2(res.preds_by_key[g.key], y_by_key[g.key])
             mlp_skill_by_key[g.key] = mlp["skill"]
@@ -244,7 +246,7 @@ def _batch_mlp_validity(
 
 
 def _fit_null_draws(
-    Xc: np.ndarray, Yv: np.ndarray, pca_dim: int, n_perms: int, seed: int
+    Xc: np.ndarray, Yv: np.ndarray, pca_dim: int, n_perms: int, seed: int, device: str = "cpu"
 ) -> list[float]:
     """Label-shuffle null: permute the summary rows, re-fit ridge, per-draw skill.
 
@@ -267,7 +269,7 @@ def _fit_null_draws(
     Y_pca = (Yv - mu) @ comps.T
     rng = np.random.default_rng(seed)  # same per-cell seed as the serial reference
     perm = make_perm_matrix(n, n_perms, rng)  # (n_perms, n) — same draw order
-    return batched_ridge_loco_null_skill(Xc, Y_pca, perm)
+    return batched_ridge_loco_null_skill(Xc, Y_pca, perm, device=device)
 
 
 # ── diagnostics ───────────────────────────────────────────────────────────────
@@ -341,8 +343,25 @@ def main() -> int:
     ap.add_argument("--layers", nargs="*", type=int, default=None, help="subset of layer indices")
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
     ap.add_argument("--no-mlp", action="store_true", help="skip the MLP validity arm")
+    ap.add_argument(
+        "--device",
+        default="cpu",
+        help="torch device for the batched null + MLP validity fits ('cpu' default, "
+        "'cuda' to run on a GPU lane — CPU behavior is byte-identical to the default)",
+    )
+    ap.add_argument(
+        "--upload-prefix",
+        default=None,
+        help="HF data-repo path prefix (e.g. 'issue810/phase_d_recon') to bulk-upload the "
+        "out-dir *.json to after the fit; UNSET (default) = no upload (today's behavior). "
+        "Set on an ephemeral GCP lane so the results survive instance teardown.",
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
+
+    # Fail fast: --device cuda with no CUDA never silently falls back to CPU.
+    if args.device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("--device cuda requested but torch.cuda.is_available() is False")
 
     from huggingface_hub import hf_hub_download
 
@@ -421,7 +440,7 @@ def main() -> int:
                 mlp_jobs.append((key, Xc, y_pca))
                 cell_ref[key] = fit
             null_matrix[summary][str(capture_layers[li])] = _fit_null_draws(
-                Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED
+                Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, device=args.device
             )
         results[summary] = cells
         logger.info("[phase=fit] %s done (%d layers)", summary, len(cells))
@@ -430,7 +449,7 @@ def main() -> int:
     # attach mlp_skill back to each cell. Batching (not one-group-per-call) is the
     # #722 fix — the on-main fit_batched_loco_mlp batches (group × dim × fold).
     if mlp_jobs:
-        mlp_skill_by_key = _batch_mlp_validity(mlp_jobs)
+        mlp_skill_by_key = _batch_mlp_validity(mlp_jobs, device=args.device)
         for key, skill in mlp_skill_by_key.items():
             cell_ref[key]["mlp_skill"] = skill
 
@@ -469,6 +488,10 @@ def main() -> int:
         },
         out_dir / "null_matrix_reconstruction.json",
     )
+    if args.upload_prefix:
+        logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
+        landed = upload_out_dir(out_dir, args.upload_prefix)
+        logger.info("[phase=upload] verified fit-result JSONs under %s/", landed)
     logger.info("[phase=done] wrote reconstruction results + null matrix to %s", out_dir)
     return 0
 
