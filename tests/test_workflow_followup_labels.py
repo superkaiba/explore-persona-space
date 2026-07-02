@@ -493,10 +493,13 @@ def test_retro_close_evidence_exact_label_only():
     assert followup_retro_close_evidence([ev_prose], label) is None
     # No events at all → None.
     assert followup_retro_close_evidence([], label) is None
-    # Ambiguity direction: MULTIPLE evidence classes matching at once is NOT
-    # a stronger close — the predicate is exactly-one-class (park-on-
-    # ambiguity, per plan §3.1; a skipped label stays queued and visible).
-    assert followup_retro_close_evidence([ev_methodology, ev_free_exact], label) is None
+    # Multiple exact classes agreeing on the SAME label are CORROBORATION,
+    # not ambiguity — the canonical #658 ghost label carries both a
+    # 9a-quater extends= record AND a status-PASS round note, and must
+    # still close (first matching class wins, class order 1 → 2 → 3).
+    evidence = followup_retro_close_evidence([ev_methodology, ev_status], label)
+    assert evidence is not None
+    assert "methodology-doc-generated" in evidence
 
 
 # ─── 14. corpus replay over the real tasks/ tree ─────────────────────────────

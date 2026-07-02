@@ -1589,6 +1589,22 @@ def executing_followup_label(events: list[dict]) -> dict | None:
     3. ``None`` when no dispatchable unrun labels exist.
     """
     unrun = unrun_followup_labels(events)
+    crumb_label = _newest_followup_dispatch_crumb_label(events)
+    if crumb_label is not None:
+        for group in unrun:
+            if group["followup_label"] == crumb_label:
+                return group
+    for group in unrun:
+        if group["dispatchable"]:
+            return group
+    return None
+
+
+def _newest_followup_dispatch_crumb_label(events: list[dict]) -> str | None:
+    """``label=`` of the newest follow-up stage-dispatch breadcrumb strictly
+    newer than the newest ``epm:same-issue-followup-run`` ts, else ``None``
+    (no labeled crumb, or every labeled crumb predates the latest recorded
+    round). Helper for :func:`executing_followup_label`."""
     newest_run_ts: datetime | None = None
     for ev in events:
         if ev.get("kind") != FOLLOWUP_RUN_KIND:
@@ -1615,14 +1631,7 @@ def executing_followup_label(events: list[dict]) -> dict | None:
         if crumb_ts is None or ts > crumb_ts:
             crumb_ts = ts
             crumb_label = label
-    if crumb_label is not None:
-        for group in unrun:
-            if group["followup_label"] == crumb_label:
-                return group
-    for group in unrun:
-        if group["dispatchable"]:
-            return group
-    return None
+    return crumb_label
 
 
 def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
@@ -1644,12 +1653,14 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
        round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
        line.
 
-    Returns the one-line evidence string when EXACTLY ONE class matches;
-    ``None`` otherwise (no evidence, OR multiple classes — ambiguity NEVER
-    closes; the caller skips the label and surfaces it for manual
-    disposition).
+    Returns the one-line evidence string of the FIRST matching class (class
+    order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
+    corroboration, not ambiguity — the canonical #658 ghost label carries
+    both a 9a-quater ``extends=`` record and a status-PASS round note);
+    ``None`` when NO class matches — the caller then never closes (a
+    merely-prose / substring / prefix mention is not evidence; ambiguity
+    NEVER closes).
     """
-    matches: list[str] = []
     for ev in events:
         kind = ev.get("kind")
         note = ev.get("note") or ""
@@ -1658,19 +1669,17 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
             if extends != label:
                 extends = _breadcrumb_fields(note).get("extends")
             if extends == label:
-                matches.append(
+                return (
                     f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
                 )
-                break
     for ev in events:
         if ev.get("kind") != "epm:free-analysis-followup-run":
             continue
         ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
         if ref == label:
-            matches.append(
+            return (
                 f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
             )
-            break
     token = f"({label})"
     for ev in events:
         kind = ev.get("kind")
@@ -1678,16 +1687,10 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
             continue
         for line in (ev.get("note") or "").splitlines():
             if token in line and _ROUND_COMPLETION_WORD.search(line):
-                matches.append(
+                return (
                     f"{kind} at {ev.get('ts', '?')} carries the round token "
                     f"({label}) plus a round-completion word"
                 )
-                break
-        else:
-            continue
-        break
-    if len(matches) == 1:
-        return matches[0]
     return None
 
 
