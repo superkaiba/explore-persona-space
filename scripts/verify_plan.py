@@ -26,11 +26,13 @@ Check catalog (id — classification — kind scope)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
+  c12 battery multiplier +       FAIL (experiment) / WARN  experiment +
+      batched commitment         (analysis), conditional   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11) also SKIP when their content
-trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12) also SKIP when their
+content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -40,6 +42,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
+  - ``N/A — no draw battery`` (check 12)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1023,6 +1026,136 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 12 — battery multiplier + batched commitment (conditional) ──────
+
+# Trigger: the plan names a permutation/null-draw battery — battery/null-draw
+# framing, or an explicit >=100 count attached to draw vocabulary. Deliberate
+# NON-triggers: a bare "bootstrap CI" / "bootstrapped 95% CI" (cheap post-hoc
+# stat, ubiquitous in plans). Known accepted under-trigger: "bootstrap with
+# B=2000 over all cells" carries no bootstrap alternation here — an
+# under-trigger fails SAFE (the layered prose surfaces — planner §9 block,
+# critic 10(iii)/12, implementer re-derivation — still fire); deliberate, not
+# discovered (#869 plan §4.13).
+_BATTERY_TRIGGER_RE = re.compile(
+    r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
+    r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
+    r"|n_(draws|perms)\b"
+    r"|\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+)
+
+# Evidence (i): an explicit two-factor multiplier product where at least one
+# factor is draw-bearing ("1000 draws x 24 cells" satisfies; a grid-only
+# "34 x 50 x 28" or "layers x 3584" does NOT — the #810 false-PASS class where
+# the forgotten draw multiplier is exactly what is absent).
+_DRAW_FACTOR = (
+    r"(?:\d[\d,_]*\s*(?:null[- ])?(?:draws?|perms?|permutations|resamples)"
+    r"|n_(?:draws|perms|boot)\b|draws|perms|permutations|resamples|B\s*=\s*\d{3,})"
+)
+_GRID_FACTOR = (
+    r"(?:\d[\d,_]*|cells|folds|arms|layers|traits|seeds"
+    r"|behaviors|settings|conditions|statistics)"
+)
+# The multiplication token plans actually write: the real multiplication
+# sign plus the ASCII fallbacks.
+_MULT_TOKEN = r"[×x*]"  # noqa: RUF001 — the multiplication sign is real plan text
+_MULT_ARITH_RE = re.compile(
+    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_FACTOR}"
+    rf"|{_GRID_FACTOR}\s*{_MULT_TOKEN}\s*{_DRAW_FACTOR})\b"
+)
+
+# Evidence (ii): a named batched helper or an explicit vectorization
+# statement. A token whose only in-window occurrence sits inside a citation /
+# path of the rule file does NOT count — citing the rule is not an
+# implementation commitment (the filename itself contains "vectorize", so the
+# citation tokens are stripped from the window before this search).
+_BATCHED_COMMIT_RE = re.compile(
+    r"(?i)\b(batched|vectoriz(?:e|ed|es|ation)|subset-sum|GEMM|one\s+(?:masked\s+)?matmul"
+    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill)\b"
+)
+_C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
+
+# Evidence window: ± this many RAW lines around each trigger hit (arithmetic
+# legitimately lives in tables/fences adjacent to the battery row).
+_C12_WINDOW_LINES = 15
+
+
+def _battery_trigger_windows(plan: str) -> list[str]:
+    """RAW-text windows (± ``_C12_WINDOW_LINES`` lines) around each NON-fenced
+    line matching ``_BATTERY_TRIGGER_RE``. Trigger detection is fence-masked
+    (a fence-only example is not a battery plan — the line-preserving
+    equivalent of searching ``strip_fences(plan)``); each WINDOW is raw text,
+    so evidence inside adjacent tables/fences still counts."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    windows: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _BATTERY_TRIGGER_RE.search(line):
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        windows.append("\n".join(lines[lo:hi]))
+    return windows
+
+
+def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
+    """A plan naming a permutation/bootstrap/null-draw battery must carry,
+    NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
+    arithmetic with a draw-bearing factor and (ii) a batched-implementation
+    commitment. Window-scoped, never document-global — the document-global
+    draft demonstrably false-PASSed the motivating incident plan (#810 v1)
+    via an unrelated footprint product + helper boilerplate. FAIL
+    (experiment) / WARN (analysis) / SKIP otherwise; a SURFACE check per the
+    module's scope discipline — semantic adequacy of the arithmetic stays
+    with the Phase 2 critics."""
+    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
+    windows = _battery_trigger_windows(plan)
+    if not windows:
+        return _skip(cid, name, "no permutation/null-draw battery named")
+    if re.search(NA_RE + r"no draw battery", plan):
+        return _pass(cid, name, "explicit N/A declared (no draw battery)")
+    any_arith = False
+    any_commit = False
+    for window in windows:
+        has_arith = bool(_MULT_ARITH_RE.search(window))
+        has_commit = bool(_BATCHED_COMMIT_RE.search(_C12_RULE_CITATION_RE.sub("", window)))
+        any_arith = any_arith or has_arith
+        any_commit = any_commit or has_commit
+        if has_arith and has_commit:
+            return _pass(
+                cid,
+                name,
+                "a battery window carries both the multiplier arithmetic and a "
+                "batched-implementation commitment",
+            )
+    missing: list[str] = []
+    if not any_arith:
+        missing.append(
+            "the multiplier arithmetic with a draw-bearing factor "
+            "(draws x cells x folds x per-call cost = projected wall)"
+        )
+    if not any_commit:
+        missing.append(
+            "a batched-implementation commitment (a named batched helper or an explicit "
+            "vectorization statement)"
+        )
+    if not missing:
+        missing.append(
+            "co-location: the multiplier arithmetic and the batched-implementation "
+            "commitment each appear somewhere, but never together near any battery mention"
+        )
+    detail = (
+        f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
+        " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
+        " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
+        " 'N/A — no draw battery' if the mention is incidental"
+    )
+    if kind == "analysis":
+        return _warn(cid, name, detail)
+    return _fail(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1037,6 +1170,7 @@ CHECKS = [
     check_conditions_seeds,
     check_marker_recipe,
     check_dryrun_test_coverage,
+    check_battery_multiplier,
 ]
 
 
