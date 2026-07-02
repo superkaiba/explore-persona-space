@@ -16,6 +16,7 @@
 - [Crossed-panel axis-power asymmetry](feedback_crossed_panel_axis_power_asymmetry.md) — widest-axis success + ALL-axes falsify is OK (#560)
 - [Seed-conditioned cluster bootstrap](feedback_seed_conditioned_cluster_bootstrap.md) — 2-seed cluster CIs understate run noise ~5x (#571)
 - [Best-of-group selection asymmetry](feedback_bestofgroup_selection_asymmetry.md) — biased when K differs 10-30x; report K (#545)
+- [Diagnostic-gated null-family selection](feedback_diagnostic_gated_null_family_selection.md) — OK iff DV-independent gate + between-regimes threshold + neutral-family conjunction (#778 v7)
 
 ## Threshold / calibration provenance
 - [Subset-mismatched threshold calibration](feedback_subset_mismatched_threshold_calibration.md) — recompute same-subset per-prompt (#558)
@@ -98,6 +99,7 @@
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
 - [Verifier-check-addition plans](feedback_verifier_check_addition_plans.md) — FAIL = bounded bounce (2-cap+override); escape-regex under-triggers fail UNSAFE (#879)
+- [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, TOCTOU, doc-regex vacuous PASS, grep-count-vs-wrapped-sketch (#564-#884)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)
 - [Creation-helper reuse shortcut](feedback_creation_helper_reuse_shortcut_half_state.md) — failed-halfway retry exits 0, broken artifact (#596)

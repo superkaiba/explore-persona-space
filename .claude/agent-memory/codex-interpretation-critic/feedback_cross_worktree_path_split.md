@@ -30,6 +30,23 @@ GitHub raw URL; convert to the absolute local path that exists for the
 multimodal lens-6 load. (Surfaced on #613 single-space-falsifier round,
 2026-06-15.)
 
+**Task-STATUS folder split — another reason the plan path is unreliable
+cross-tree (#841, round 1, 2026-07-02).** Even when the brief hands an
+ABSOLUTE repo-root plan path, the worktree can hold the task folder at a
+DIFFERENT status than the repo-root — e.g. worktree
+`tasks/approved/841/plans/plan.md` vs repo-root
+`tasks/interpreting/841/plans/plan.md` (the status advanced on main while
+the worktree branch lagged). Codex's worktree-rooted sandbox then can't
+resolve the repo-root `interpreting/...` path, and a worktree-relative
+`interpreting/...` path doesn't exist there either → false "plan
+unreachable" BLOCKED. This reinforces the same action: ALWAYS inline the
+plan (`cat` the repo-root plan into the Step 2-b `---BEGIN/END APPROVED
+PLAN BODY---` envelope via a NON-interpolating write — plan bodies carry
+`$`/backticks; here v6.md was 27 KB), and tell Codex a "plan unreachable"
+BLOCKED is invalid. Don't reference the plan by path even when the
+repo-root path `ls`-resolves for YOU — your cwd is not Codex's sandbox
+root.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
