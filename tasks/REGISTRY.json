@@ -5507,8 +5507,8 @@
     "849": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/849",
-      "status": "proposed",
+      "path": "tasks/planning/849",
+      "status": "planning",
       "title": "workflow-fix: watcher CPU/memory-pressure escalation arm for the shared VM"
     },
     "85": {
