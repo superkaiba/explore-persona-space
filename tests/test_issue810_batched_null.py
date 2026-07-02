@@ -215,7 +215,9 @@ def test_recon_fit_null_draws_threads_device(monkeypatch):
 
 
 def test_recon_batch_mlp_validity_threads_device(monkeypatch):
-    """``_batch_mlp_validity(device=X)`` passes X verbatim to fit_batched_loco_mlp."""
+    """``_batch_mlp_validity`` passes device AND a bounded chunk_size verbatim to
+    ``fit_batched_loco_mlp_multihead`` (the r5 OOM guard: the library default
+    chunk_size=4096 would allocate ~30 GB W1 chunks at d_in=3584)."""
     import issue810_fit_reconstruction as recon
 
     captured = {}
@@ -224,19 +226,24 @@ def test_recon_batch_mlp_validity_threads_device(monkeypatch):
         def __init__(self, keys, y_by_key):
             self.preds_by_key = {k: y_by_key[k] for k in keys}
 
-    def _fake(groups, seed=None, device="cpu"):
+    def _fake(groups, seed=None, device="cpu", chunk_size=4096):
         captured["device"] = device
+        captured["chunk_size"] = chunk_size
         return _Res([g.key for g in groups], {g.key: g.Y for g in groups})
 
-    monkeypatch.setattr(recon, "fit_batched_loco_mlp", _fake)
+    monkeypatch.setattr(recon, "fit_batched_loco_mlp_multihead", _fake)
     # skill_over_mean_r2 is called on the fake preds; supply real arrays so it runs.
     n, d, p = 8, 6, 4
     rng = np.random.default_rng(2)
     xc = rng.standard_normal((n, d))
     y_pca = rng.standard_normal((n, p))
     jobs = [(("mean", 13), xc, y_pca)]
-    recon._batch_mlp_validity(jobs, device="cuda:3")
+    recon._batch_mlp_validity(jobs, device="cuda:3", chunk_size=64)
     assert captured["device"] == "cuda:3"
+    assert captured["chunk_size"] == 64
+    # The default must stay memory-bounded (never the library's 4096).
+    recon._batch_mlp_validity(jobs, device="cpu")
+    assert captured["chunk_size"] == 256
 
 
 def test_readout_null_call_sites_thread_device():

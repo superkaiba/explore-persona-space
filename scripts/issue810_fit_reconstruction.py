@@ -12,7 +12,7 @@ answer-side summary set: which summary's per-layer skill-over-mean R² beats the
 SELF-CONTAINED against on-main primitives (plan §4.6). The per-position
 ``ridge_skill``-equivalent is RE-IMPLEMENTED inline over
 ``vectorized_mlp_skill.{robust_pca_basis, ridge_predict_loco_centered,
-skill_over_mean_r2, loco_train_means, fit_batched_loco_mlp}`` — it does NOT
+skill_over_mean_r2, loco_train_means, fit_batched_loco_mlp_multihead}`` — it does NOT
 import ``scripts/issue722_per_position_vC_skill.py`` (stranded on branch
 ``fig-per-position``, ABSENT from main — a git-clone lane would ImportError,
 built-but-stranded protection).
@@ -194,10 +194,10 @@ def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int) -> tuple[dict, n
     Reduce Yv to its top-``pca_dim`` PCA basis (robust_pca_basis), fit LOCO ridge
     on the PCA target (ridge_predict_loco_centered), skill_over_mean_r2 on the
     PCA target. The MLP validity arm is NO LONGER fit here — it is batched ACROSS
-    cells in ``main`` (one ``fit_batched_loco_mlp`` call per (n, d_in, p) shape
-    group, the #722 vectorize-many-cell-fits mandate; the old per-cell one-group
-    call defeated the batching). Returns ``(out, Y_pca)`` so the caller can batch
-    the MLP arm over the same PCA target.
+    cells in ``main`` (one ``fit_batched_loco_mlp_multihead`` call per (n, d_in, p)
+    shape group, the #722 vectorize-many-cell-fits mandate; the old per-cell
+    one-group call defeated the batching). Returns ``(out, Y_pca)`` so the caller
+    can batch the MLP arm over the same PCA target.
 
     This is the ``ridge_skill``-equivalent from the stranded fig-per-position
     script, re-implemented against the on-main primitives — target dim
@@ -221,6 +221,7 @@ def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int) -> tuple[dict, n
 def _batch_mlp_validity(
     mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]],
     device: str = "cpu",
+    chunk_size: int = 256,
 ) -> dict:
     """Batch the MLP validity arm across ALL cells (grouped by (n, d_in, p) shape).
 
@@ -236,6 +237,13 @@ def _batch_mlp_validity(
     not a bit-for-bit reproduction target. Groups in one call must share
     (n, d_in, p), so cells are bucketed by shape, one batched call per bucket
     (#722 mandate). Returns ``{cell_key: mlp_skill}``.
+
+    ``chunk_size`` bounds members-per-optimizer-chunk and is REQUIRED here: the
+    fitter's library default (4096) allocates a W1 chunk of
+    (4096, hidden=512, d_in=3584) fp32 ≈ 30 GB — >100 GB with grads + the two
+    AdamW moments — an OOM on both the A100-40 GPU lane and the 32 GB CPU
+    instance. At 256 members the same footprint is ≈ 1.9 GB × 4 ≈ 7.5 GB
+    (per-member W1 = 512×3584×4 B ≈ 7.34 MB; ×4 for param+grad+2 moments).
     """
     buckets: dict[tuple, list[MLPGroup]] = {}
     for key, Xc, Y_pca in mlp_jobs:
@@ -246,12 +254,15 @@ def _batch_mlp_validity(
     for shape, groups in buckets.items():
         n, _d_in, _p = shape
         logger.info(
-            "[phase=mlp] batching %d cells at shape %s (multihead: %d members)",
+            "[phase=mlp] batching %d cells at shape %s (multihead: %d members, chunk_size=%d)",
             len(groups),
             shape,
             len(groups) * n,
+            chunk_size,
         )
-        res = fit_batched_loco_mlp_multihead(groups, seed=SHUFFLE_NULL_SEED, device=device)
+        res = fit_batched_loco_mlp_multihead(
+            groups, seed=SHUFFLE_NULL_SEED, device=device, chunk_size=chunk_size
+        )
         for g in groups:
             mlp = skill_over_mean_r2(res.preds_by_key[g.key], y_by_key[g.key])
             mlp_skill_by_key[g.key] = mlp["skill"]
@@ -357,6 +368,14 @@ def main() -> int:
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
     ap.add_argument("--no-mlp", action="store_true", help="skip the MLP validity arm")
     ap.add_argument(
+        "--mlp-chunk-size",
+        type=int,
+        default=256,
+        help="members per optimizer chunk for the multihead MLP validity arm; bounds peak "
+        "memory (256 -> ~7.5 GB at d_in=3584/hidden=512 incl. grads+AdamW moments; the "
+        "library default 4096 would be ~120 GB and OOM the A100-40 / 32 GB CPU lanes)",
+    )
+    ap.add_argument(
         "--device",
         default="cpu",
         help="torch device for the batched null + MLP validity fits ('cpu' default, "
@@ -460,9 +479,12 @@ def main() -> int:
 
     # Batch the MLP validity arm across all cells (one call per shape group), then
     # attach mlp_skill back to each cell. Batching (not one-group-per-call) is the
-    # #722 fix — the on-main fit_batched_loco_mlp batches (group × dim × fold).
+    # #722 fix — the on-main fit_batched_loco_mlp_multihead batches (group × fold)
+    # with a joint p-output head.
     if mlp_jobs:
-        mlp_skill_by_key = _batch_mlp_validity(mlp_jobs, device=args.device)
+        mlp_skill_by_key = _batch_mlp_validity(
+            mlp_jobs, device=args.device, chunk_size=args.mlp_chunk_size
+        )
         for key, skill in mlp_skill_by_key.items():
             cell_ref[key]["mlp_skill"] = skill
 
