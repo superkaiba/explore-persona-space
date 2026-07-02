@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 825,
+  "highest_id": 826,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5326,6 +5326,13 @@
       "path": "tasks/planning/825",
       "status": "planning",
       "title": "Is the per-example context\u2192answer-profile map present in the pretrained base model, and does it hold for the user turn?"
+    },
+    "826": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/826",
+      "status": "proposed",
+      "title": "workflow-fix: zombie-GPU probe namespace-aware (host-PID false positive)"
     },
     "83": {
       "has_clean_result": false,
