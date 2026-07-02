@@ -230,7 +230,9 @@ def _batched_r_overall(
     on identical rows, silently missing the loop path's NaN branch).
     """
     activations = np.asarray(activations, dtype=np.float64)
-    proj = _batched_project(activations - activations[0], directions)  # (n, L, K)
+    if activations.shape[0]:  # n == 0 has no reference row; _batched_pearson NaNs n < 3
+        activations = activations - activations[0]
+    proj = _batched_project(activations, directions)  # (n, L, K)
     return _batched_pearson(proj, target)
 
 
@@ -321,12 +323,14 @@ def _perm_directions(pool: np.ndarray, perms: np.ndarray, n_pos: int) -> np.ndar
     n_total, L, D = pool.shape
     K = perms.shape[0]
     n_neg = n_total - n_pos
-    # Degenerate empty side -> NaN directions (mirrors the loop's empty-mean NaN).
-    pos_w = 1.0 / n_pos if n_pos > 0 else np.nan
-    neg_w = -1.0 / n_neg if n_neg > 0 else np.nan
+    if n_pos == 0 or n_neg == 0:
+        # Degenerate empty side -> NaN directions (the loop's mean() of an empty
+        # slice is NaN; a weight trick cannot express this — an empty side has
+        # no indices to scatter into, leaving a finite one-sided mean).
+        return np.full((K, L, D), np.nan, dtype=np.float64)
     W = np.zeros((K, n_total), dtype=np.float64)
-    np.put_along_axis(W, perms[:, :n_pos], pos_w, axis=1)
-    np.put_along_axis(W, perms[:, n_pos:], neg_w, axis=1)
+    np.put_along_axis(W, perms[:, :n_pos], 1.0 / n_pos, axis=1)
+    np.put_along_axis(W, perms[:, n_pos:], -1.0 / n_neg, axis=1)
     return (W @ pool.reshape(n_total, L * D)).reshape(K, L, D)
 
 
