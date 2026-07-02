@@ -1,0 +1,1 @@
+{"ts": "2026-07-02T23:24:01Z", "event": "raised", "concern_id": "elicitation-variant-count-below-plan", "severity": "CONCERN", "summary": "Plan v3 §3.3/§11 pin 8 exhibit / 4 not-exhibit elicitation variants; behavior.py ships 4/2 (undeclared in the report). Author to plan count or declare as a plan deviation in v2.", "raised_by": "code-reviewer", "raised_at_round": 1}
