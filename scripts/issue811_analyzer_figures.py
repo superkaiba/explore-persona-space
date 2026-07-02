@@ -130,7 +130,12 @@ def fig_hero_ratio() -> None:
 
 
 def fig_raw_delta_vs_floor() -> None:
-    """Raw Δ_med alongside its combined refit floor, rows = summary, cols = behavior."""
+    """Raw Δ_med alongside its combined refit floor, rows = summary, cols = behavior.
+
+    Sycophancy's turn-boundary bars (bottom row, middle panel) are hatched/open:
+    that summary FAILED the Phase-0 base-leg validity gate (KILL-1 read rule),
+    so both its Δ_med and floor derive from untrusted fits.
+    """
     fc = {s: _cells(s, "fc") for s in SUMMARIES}
     fig, axes = plt.subplots(2, 3, figsize=(9.5, 5.6), sharex=True)
     for row, s in enumerate(SUMMARIES):
@@ -139,28 +144,63 @@ def fig_raw_delta_vs_floor() -> None:
             x = np.arange(len(LAYERS))
             deltas = [fc[s][f"{beh}/L{li}"]["Delta_med"] for li in LAYERS]
             floors = [fc[s][f"{beh}/L{li}"]["floor_combined"] for li in LAYERS]
-            ax.bar(
-                x - 0.2,
-                deltas,
-                width=0.38,
-                color=C_TURN if s == "turn_nl" else C_MEAN,
-                label="function change Δ_med",
-            )
-            ax.bar(x + 0.2, floors, width=0.38, color=C_FLOOR, label="noise floor")
+            c_delta = C_TURN if s == "turn_nl" else C_MEAN
+            if s == "turn_nl" and beh == "sycophancy":
+                ax.bar(
+                    x - 0.2,
+                    deltas,
+                    width=0.38,
+                    facecolor="white",
+                    edgecolor=c_delta,
+                    linewidth=1.0,
+                    hatch="///",
+                    label="function change Δ_med",
+                )
+                ax.bar(
+                    x + 0.2,
+                    floors,
+                    width=0.38,
+                    facecolor="white",
+                    edgecolor=C_FLOOR,
+                    linewidth=1.0,
+                    hatch="///",
+                    label="noise floor",
+                )
+            else:
+                ax.bar(x - 0.2, deltas, width=0.38, color=c_delta, label="function change Δ_med")
+                ax.bar(x + 0.2, floors, width=0.38, color=C_FLOOR, label="noise floor")
             ax.set_xticks(x)
             ax.set_xticklabels([f"L{li}" for li in LAYERS])
             if row == 0:
                 ax.set_title(BEHAVIOR_LABEL[beh])
             if col == 0:
                 ax.set_ylabel(f"{SUMMARY_LABEL[s]}\nΔ_med (activation units)")
-    axes[0][0].legend(loc="upper left", fontsize=8)
-    axes[1][0].legend(loc="upper left", fontsize=8)
+    # Figure-level legend OUTSIDE the panels (hero/validity convention) — an
+    # in-axes 3-line legend collides with the tall EM L21 bars.
+    handles = [
+        Patch(facecolor=C_MEAN, label="Δ_med (answer mean)"),
+        Patch(facecolor=C_TURN, label="Δ_med (turn boundary)"),
+        Patch(facecolor=C_FLOOR, label="noise floor"),
+        Patch(
+            facecolor="white",
+            edgecolor=C_TURN,
+            linewidth=1.0,
+            hatch="///",
+            label="sycophancy turn boundary — untrusted (failed base-leg validity)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=2, fontsize=8)
     savefig_paper(fig, "issue_811/function_change_raw_delta_vs_floor", dir=FIG_DIR)
     plt.close(fig)
 
 
 def fig_chain_rho_forest() -> None:
-    """Chain-ρ under M0 vs M⁺, both summaries, 95% family-clustered CI whiskers."""
+    """Chain-ρ under M0 vs M⁺, both summaries, 95% family-clustered CI whiskers.
+
+    Sycophancy's turn-boundary rows render as OPEN markers: that summary FAILED
+    the Phase-0 base-leg validity gate (KILL-1 read rule), so those chain reads
+    are untrusted.
+    """
     rho = {s: _cells(s, "rho") for s in SUMMARIES}
     fig, axes = plt.subplots(1, 3, figsize=(10.5, 4.6), sharex=True)
     for ax, beh in zip(axes, BEHAVIORS, strict=True):
@@ -169,6 +209,7 @@ def fig_chain_rho_forest() -> None:
         for li in LAYERS:
             for s in SUMMARIES:
                 cell = rho[s][f"{beh}/L{li}"]
+                untrusted = beh == "sycophancy" and s == "turn_nl"
                 for key, color, dy in (
                     ("M0", C_MEAN, 0.16),
                     ("Mplus", C_TURN, -0.16),
@@ -176,6 +217,15 @@ def fig_chain_rho_forest() -> None:
                     ci = cell[f"ci_{key}_ridge"]
                     pt = ci["point"]
                     err = [[pt - ci["ci_lo"]], [ci["ci_hi"] - pt]]
+                    marker_style = (
+                        {
+                            "markerfacecolor": "white",
+                            "markeredgecolor": color,
+                            "markeredgewidth": 1.2,
+                        }
+                        if untrusted
+                        else {"markeredgewidth": 0.0}
+                    )
                     ax.errorbar(
                         pt,
                         y + dy,
@@ -185,7 +235,7 @@ def fig_chain_rho_forest() -> None:
                         color=color,
                         capsize=2,
                         lw=1.1,
-                        markeredgewidth=0.0,
+                        **marker_style,
                     )
                 yticks.append(y)
                 ylabels.append(f"L{li} · {SUMMARY_LABEL[s]}")
@@ -200,10 +250,21 @@ def fig_chain_rho_forest() -> None:
     handles = [
         plt.Line2D([0], [0], marker="o", ls="", color=C_MEAN, label="base map M0"),
         plt.Line2D([0], [0], marker="o", ls="", color=C_TURN, label="post-finetune map M⁺"),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            ls="",
+            color="none",
+            markerfacecolor="white",
+            markeredgecolor=C_TURN,
+            markeredgewidth=1.2,
+            label="open: sycophancy turn boundary — untrusted (failed base-leg validity)",
+        ),
     ]
     # Figure-level legend OUTSIDE the panels — the in-axes lower-right legend
     # overlapped the taught-fact L21 rows (interp-critique r1, both critics).
-    fig.legend(handles=handles, loc="outside lower center", ncol=2, fontsize=8)
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=8)
     savefig_paper(fig, "issue_811/chain_rho_forest_ci", dir=FIG_DIR)
     plt.close(fig)
 
