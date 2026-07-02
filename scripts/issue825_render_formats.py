@@ -43,6 +43,23 @@ from explore_persona_space.experiments.issue_825.common import (
 )
 
 TURN_KEYS = ("u1", "a1", "u2", "a2")
+
+
+def _present_turns(conv: dict) -> list[str]:
+    """Ordered turn keys present in the conversation (Track S: u1+a1 only).
+
+    Requires at least the (u1, a1) pair and CONTIGUOUS presence in TURN_KEYS
+    order (a conv with u2 but no a1 is malformed — fail loud).
+    """
+    present = [k for k in TURN_KEYS if conv.get(k)]
+    assert present[:2] == ["u1", "a1"], f"conv {conv.get('conv_id')!r} missing u1/a1"
+    expect = list(TURN_KEYS[: len(present)])
+    assert present == expect, (
+        f"conv {conv.get('conv_id')!r} has non-contiguous turns {present} (expected {expect})"
+    )
+    return present
+
+
 BPE_MISMATCH_MAX_RATE = 0.10
 MIN_OPENERS_POST_DEDUP = 2000
 N_TOKENIZER_IDENTITY_STRINGS = 50
@@ -91,6 +108,61 @@ def _tokenize_segments(
     return full_ids, ranges
 
 
+_LAST_TOK_KEY = "_seg_last_tok"
+
+
+def _tokenize_segments_offsets(
+    segments: list[str], tokenizer: Any
+) -> tuple[list[int], list[tuple[int, int]], dict]:
+    """Offsets-mapping segmentation for formats whose boundaries BPE-merge.
+
+    Tokenizes the FULL joined string once with ``return_offsets_mapping``;
+    each segment's token range covers tokens FULLY contained in its char
+    range. ``straddlers[str(i)]`` counts tokens crossing INTO segment i from
+    the previous one (the a4 BPE-boundary diagnostic); the reserved
+    ``_LAST_TOK_KEY`` entry holds, per segment, the index of the token
+    containing that segment's final character (slot lookup). Asserts every
+    segment maps to a non-degenerate range.
+    """
+    text = "".join(segments)
+    bounds: list[tuple[int, int]] = []
+    pos = 0
+    for seg in segments:
+        bounds.append((pos, pos + len(seg)))
+        pos += len(seg)
+    enc = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
+    ids = enc["input_ids"]
+    offs = enc["offset_mapping"]
+    assert len(ids) == len(offs), (len(ids), len(offs))
+    ranges: list[tuple[int, int]] = []
+    straddlers: dict = {}
+    seg_last_tok: list[int] = []
+    for i, (cs, ce) in enumerate(bounds):
+        contained = [t for t, (a, b) in enumerate(offs) if a >= cs and b <= ce and b > a]
+        if contained:
+            ranges.append((contained[0], contained[-1] + 1))
+        else:
+            # Segment fully swallowed by straddling tokens (short header +
+            # aggressive merge). Range is empty at the first overlapping token.
+            overlap = [t for t, (a, b) in enumerate(offs) if a < ce and b > cs]
+            anchor = overlap[0] if overlap else 0
+            ranges.append((anchor, anchor))
+        n_straddle = sum(1 for a, b in offs if a < cs < b)
+        if n_straddle:
+            straddlers[str(i)] = n_straddle
+        last = [t for t, (a, b) in enumerate(offs) if a <= ce - 1 < b]
+        assert last, f"no token contains the final char of segment {i}"
+        seg_last_tok.append(last[0])
+    straddlers[_LAST_TOK_KEY] = seg_last_tok
+    return ids, ranges, straddlers
+
+
+def _tok_at_char_end(ranges: list[tuple[int, int]], straddlers: dict, seg_idx: int) -> int:
+    """Index of the token containing segment ``seg_idx``'s final character."""
+    del ranges  # signature kept caller-side simple; lookup rides straddlers
+    return int(straddlers[_LAST_TOK_KEY][seg_idx])
+
+
 def render_chat(conv: dict[str, Any], tokenizer: Any) -> Rendered:
     """Render under the Qwen chat template with slot + content-span indices.
 
@@ -99,31 +171,26 @@ def render_chat(conv: dict[str, Any], tokenizer: Any) -> Rendered:
     ``<|im_start|>user\\n`` header opening u2. Spans = content tokens of each
     turn EXCLUDING role headers and ``<|im_end|>``.
     """
-    u1, a1, u2, a2 = (conv[k] for k in TURN_KEYS)
+    turns = _present_turns(conv)
     # Segments alternate header / content / terminator so each gets its own
     # token range. Qwen template: <|im_start|>{role}\n{content}<|im_end|>\n
-    segments = [
-        "<|im_start|>user\n",
-        u1,
-        "<|im_end|>\n",
-        "<|im_start|>assistant\n",
-        a1,
-        "<|im_end|>\n",
-        "<|im_start|>user\n",
-        u2,
-        "<|im_end|>\n",
-        "<|im_start|>assistant\n",
-        a2,
-        "<|im_end|>\n",
-    ]
+    segments: list[str] = []
+    content_seg: dict[str, int] = {}
+    header_seg: dict[str, int] = {}
+    for turn in turns:
+        role = "user" if turn.startswith("u") else "assistant"
+        header_seg[turn] = len(segments)
+        segments.append(f"<|im_start|>{role}\n")
+        content_seg[turn] = len(segments)
+        segments.append(conv[turn])
+        segments.append("<|im_end|>\n")
     input_ids, ranges = _tokenize_segments(segments, tokenizer)
-    # Segment indices: header/content/terminator triplets per turn, in order.
-    content_seg = {"u1": 1, "a1": 4, "u2": 7, "a2": 10}
     spans = {turn: ranges[i] for turn, i in content_seg.items()}
-    # Slot = final token of the header segment opening the target turn.
-    a1_header_end = ranges[3][1]
-    u2_header_end = ranges[6][1]
-    slot_idx = {"a1": a1_header_end - 1, "u2": u2_header_end - 1}
+    # Slot = final token of the header segment opening the target turn
+    # (assistant slot before a1 always; user slot before u2 when present).
+    slot_idx = {"a1": ranges[header_seg["a1"]][1] - 1}
+    if "u2" in header_seg:
+        slot_idx["u2"] = ranges[header_seg["u2"]][1] - 1
     return Rendered(
         input_ids=input_ids,
         slot_idx=slot_idx,
@@ -140,34 +207,44 @@ def render_naturalistic(conv: dict[str, Any], tokenizer: Any) -> Rendered:
     Slot = last token of the role header (the token containing ":"); spans =
     content tokens between the header and the ``\\n\\n`` delimiter.
     """
-    u1, a1, u2, a2 = (conv[k] for k in TURN_KEYS)
-    segments = [
-        "User: ",
-        u1,
-        "\n\n",
-        "Assistant: ",
-        a1,
-        "\n\n",
-        "User: ",
-        u2,
-        "\n\n",
-        "Assistant: ",
-        a2,
-        "\n\n",
-    ]
-    input_ids, ranges = _tokenize_segments(segments, tokenizer)
-    content_seg = {"u1": 1, "a1": 4, "u2": 7, "a2": 10}
+    turns = _present_turns(conv)
+    segments = []
+    content_seg = {}
+    header_seg = {}
+    for turn in turns:
+        role = "User" if turn.startswith("u") else "Assistant"
+        header_seg[turn] = len(segments)
+        segments.append(f"{role}: ")
+        content_seg[turn] = len(segments)
+        segments.append(conv[turn])
+        segments.append("\n\n")
+    # Naturalistic headers BPE-merge into content ("User: " + "What" can
+    # tokenize as ["User", ":", " What"]), so incremental prefix tokenization
+    # is NOT prefix-stable here (it is for chat, whose boundaries are special
+    # tokens). Use offsets-mapping segmentation instead: tokenize the FULL
+    # string once, assign each segment the tokens FULLY contained in its char
+    # range, and count boundary straddlers (the a4 BPE-mismatch-rate assert
+    # reads them; the plan's robustness re-fit excludes the first content
+    # token for exactly this reason).
+    input_ids, ranges, straddlers = _tokenize_segments_offsets(segments, tokenizer)
     spans = {turn: ranges[i] for turn, i in content_seg.items()}
-    a1_header_end = ranges[3][1]
-    u2_header_end = ranges[6][1]
-    slot_idx = {"a1": a1_header_end - 1, "u2": u2_header_end - 1}
+    # Slot = the token containing the header's final char (straddler-safe).
+    slot_idx = {"a1": _tok_at_char_end(ranges, straddlers, header_seg["a1"])}
+    if "u2" in header_seg:
+        slot_idx["u2"] = _tok_at_char_end(ranges, straddlers, header_seg["u2"])
     return Rendered(
         input_ids=input_ids,
         slot_idx=slot_idx,
         spans=spans,
         format="naturalistic",
         conv_id=str(conv.get("conv_id", "")),
-        meta={"n_tokens": len(input_ids)},
+        meta={
+            "n_tokens": len(input_ids),
+            "boundary_straddlers": straddlers,
+            "first_content_straddled": {
+                t: bool(straddlers.get(str(i))) for t, i in content_seg.items()
+            },
+        },
     )
 
 
@@ -250,34 +327,59 @@ def a3_causal_slot_equality(model: Any, rendered: Rendered, layers: tuple[int, .
 
 
 def a4_bpe_boundary(convs: list[dict[str, Any]], tokenizer: Any) -> dict[str, Any]:
-    """Cross-format first-content-token BPE mismatch rate over all convs.
+    """Cross-format content-token BPE divergence over all convs (gate + diagnostic).
 
-    For each conversation and turn, compare the FIRST content token id under
-    the chat rendering vs the naturalistic rendering. Report the mismatch
-    rate; fail loud if it exceeds BPE_MISMATCH_MAX_RATE.
+    The FIRST content token differs across formats BY CONSTRUCTION: the
+    naturalistic ``User: `` header ends with a space that Qwen BPE folds into
+    the next word token (`` What`` vs ``What``), so a first-token gate fires
+    at ~1.0 vacuously. The GATE therefore compares each turn's content span
+    EXCLUDING the first content token in both formats (the plan's robustness
+    re-fit excludes that token for exactly this reason); the first-token
+    mismatch rate is still measured and REPORTED as a diagnostic, not gated.
+    Fails loud when the rest-of-span mismatch rate exceeds
+    BPE_MISMATCH_MAX_RATE.
     """
     total = 0
-    mismatches = 0
+    rest_mismatches = 0
+    first_mismatches = 0
     for conv in convs:
         r_chat = render_chat(conv, tokenizer)
         r_nat = render_naturalistic(conv, tokenizer)
         for turn in TURN_KEYS:
-            cs, _ = r_chat.spans[turn]
-            ns, _ = r_nat.spans[turn]
+            cs, ce = r_chat.spans[turn]
+            ns, ne = r_nat.spans[turn]
             total += 1
             if r_chat.input_ids[cs] != r_nat.input_ids[ns]:
-                mismatches += 1
-    rate = mismatches / total if total else 0.0
+                first_mismatches += 1
+            # Core equality up to <=1 boundary-merged token per end: the
+            # naturalistic fully-contained span may drop a head token (merged
+            # with the header space) and/or a tail token (merged with the
+            # \n\n terminator). REAL divergence = the interior cores differ
+            # under every such alignment.
+            chat_core = r_chat.input_ids[cs + 1 : ce - 1]
+            nat_ids = r_nat.input_ids
+            candidates = [
+                nat_ids[ns:ne],
+                nat_ids[ns + 1 : ne],
+                nat_ids[ns : ne - 1],
+                nat_ids[ns + 1 : ne - 1],
+            ]
+            if chat_core not in candidates:
+                rest_mismatches += 1
+    rate = rest_mismatches / total if total else 0.0
+    first_rate = first_mismatches / total if total else 0.0
     if rate > BPE_MISMATCH_MAX_RATE:
         raise AssertionError(
-            f"a4 FAIL: cross-format first-content-token BPE mismatch rate "
-            f"{rate:.3f} > {BPE_MISMATCH_MAX_RATE} ({mismatches}/{total})."
+            f"a4 FAIL: cross-format content-span (first-token-excluded) BPE "
+            f"mismatch rate {rate:.3f} > {BPE_MISMATCH_MAX_RATE} "
+            f"({rest_mismatches}/{total})."
         )
     return {
         "assert": "a4_bpe_boundary",
         "status": "PASS",
-        "mismatch_rate": rate,
-        "mismatches": mismatches,
+        "rest_of_span_mismatch_rate": rate,
+        "first_token_mismatch_rate_diagnostic": first_rate,
+        "mismatches": rest_mismatches,
         "total": total,
     }
 

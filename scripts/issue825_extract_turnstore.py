@@ -89,6 +89,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--assert-causal", action="store_true", help="prefix-vs-full slot check")
     parser.add_argument("--smoke", action="store_true", help="first 8 convs; causal check ON")
+    parser.add_argument(
+        "--tiny-model-dir",
+        default=None,
+        help=(
+            "SMOKE ONLY: load the model from this local dir (a tiny random-init "
+            "Qwen2 with the real tokenizer) and derive the expected layer/hidden "
+            "dims from ITS config instead of the 7B constants. Plumbing/shape "
+            "validation on a GPU-less VM; production runs NEVER pass this."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -109,7 +119,15 @@ def _load_conversations(path: Path) -> list[dict]:
 
 
 def to_single_turn(conv: dict) -> dict:
-    """Track S: reduce a flat {u1..uK, a1..aK} conversation to its last complete pair."""
+    """Track S: reduce a row to a single (u1, a1) pair.
+
+    Accepts BOTH shapes: the gen script's Track-S rows
+    ``{prompt_idx, prompt, response}`` (mapped directly to u1/a1) and flat
+    ``{u1..uK, a1..aK}`` conversations (reduced to the last complete pair).
+    """
+    if "prompt" in conv and "response" in conv:
+        cid = conv.get("conv_id") or f"s{conv.get('prompt_idx', 'x')}"
+        return {"conv_id": str(cid), "u1": conv["prompt"], "a1": conv["response"]}
     pairs: dict[int, dict[str, str]] = {}
     for key, val in conv.items():
         m = _TURN_KEY_RE.match(key)
@@ -136,8 +154,21 @@ def render_conv(conv: dict, tokenizer, fmt: str) -> Rendered:
     raise ValueError(f"unknown format: {fmt!r}")
 
 
-def load_model(model_key: str):
+def load_model(model_key: str, tiny_model_dir: str | None = None):
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if tiny_model_dir is not None:
+        # SMOKE ONLY: tiny random-init Qwen2 with the real tokenizer. Expected
+        # dims are rebound to ITS config so the downstream shape asserts stay
+        # active (they validate internal consistency, not the 7B constants).
+        model_id = f"TINY::{tiny_model_dir}"
+        tokenizer = AutoTokenizer.from_pretrained(tiny_model_dir)
+        model = AutoModelForCausalLM.from_pretrained(tiny_model_dir, torch_dtype=torch.float32)
+        model.eval()
+        cfg = model.config
+        globals()["EXPECTED_LAYERS"] = int(cfg.num_hidden_layers)
+        globals()["EXPECTED_HIDDEN"] = int(cfg.hidden_size)
+        return model, tokenizer, model_id
 
     model_id = MODEL_INSTRUCT if model_key == "instruct" else MODEL_PRETRAINED
     tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -401,7 +432,7 @@ def main() -> None:
         print(f"[smoke] limiting to {len(convs)} conversations")
     if args.track == "s":
         convs = [to_single_turn(c) for c in convs]
-    model, tokenizer, model_id = load_model(args.model)
+    model, tokenizer, model_id = load_model(args.model, tiny_model_dir=args.tiny_model_dir)
     rendered = [render_conv(c, tokenizer, args.format) for c in convs]
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
     do_causal = args.assert_causal or args.smoke
