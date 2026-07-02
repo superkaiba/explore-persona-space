@@ -5843,8 +5843,8 @@
     "894": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/894",
-      "status": "planning",
+      "path": "tasks/approved/894",
+      "status": "approved",
       "title": "workflow-fix: same-issue dispatch misses queued distinct-label followup-scopes"
     },
     "895": {
