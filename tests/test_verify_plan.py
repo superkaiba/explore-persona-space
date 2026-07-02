@@ -658,6 +658,20 @@ def test_c6_fitness_with_four_letters_passes():
     assert "4/9" in r.detail
 
 
+def test_c6_fitness_counts_item_i_in_widened_class():
+    # Pins the [a-i] regex widening (#871): exactly four counted letters, one of
+    # them (i) — a regression to [a-h] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (i) throughput fitness — inner loop batched, device parametrized.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/9" in r.detail
+
+
 def test_c6_fitness_with_few_letters_warns():
     plan = (
         GOOD_PLAN
