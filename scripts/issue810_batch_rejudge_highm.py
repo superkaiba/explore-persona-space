@@ -203,6 +203,7 @@ def rejudge_behavior(
     n_draws: int,
     n_completions: int | None,
     force_batch: bool,
+    force_sync: bool = False,
 ) -> dict:
     """Graded re-judge one behavior across contexts; return per-context mean E0.
 
@@ -247,6 +248,7 @@ def rejudge_behavior(
         cache_dir=str(cache_dir),
         save_raw=str(save_raw),
         threshold_base=1 if force_batch else 2_000,
+        force_sync=force_sync,
     )
     # Reduce from save_raw's all_scores OURSELVES (never per_persona).
     raw = load_json(save_raw)
@@ -312,8 +314,18 @@ def main() -> int:
     ap.add_argument(
         "--force-batch", action="store_true", help="force the Batch API path (live smoke)"
     )
+    ap.add_argument(
+        "--force-sync",
+        action="store_true",
+        help=(
+            "force the SYNC Messages path regardless of N (user-directed recovery from a "
+            "stuck/canceled batch; mutually exclusive with --force-batch)"
+        ),
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
+    if args.force_batch and args.force_sync:
+        ap.error("--force-batch and --force-sync are mutually exclusive")
 
     from huggingface_hub import hf_hub_download
 
@@ -337,6 +349,7 @@ def main() -> int:
             args.n_draws,
             args.n_completions,
             args.force_batch,
+            force_sync=args.force_sync,
         )
 
     dump_json(
