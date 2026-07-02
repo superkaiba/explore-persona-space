@@ -32,6 +32,8 @@ goal: 'On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-a
   ridge map, and the learned map h / direct predictor g reference rows — reporting
   the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction
   horizon, and the Delta-R2-vs-retention divergence per (layer, function class).'
+relates_to:
+- spec-context-as-vector
 ---
 ## Overview / Motivation
 
