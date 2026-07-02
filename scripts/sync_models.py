@@ -37,7 +37,11 @@ from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO
 # ── Constants ────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PODS_CONF = SCRIPT_DIR / "pods.conf"
+# Task #821: resolve LIVE pods.conf via pod_config's lazy resolver so
+# post-relocation this READ-only consumer targets ``<git-common-dir>/eps/
+# pods.conf`` rather than the tracked seed at ``scripts/pods.conf``.
+sys.path.insert(0, str(SCRIPT_DIR))
+from pod_config import _resolve_live_pods_conf  # noqa: E402
 
 DEFAULT_REPO = DEFAULT_MODEL_REPO
 SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
@@ -50,14 +54,16 @@ SSH_TIMEOUT = 10
 def parse_pods_conf() -> dict[str, dict]:
     """Parse pods.conf into a dict of {name: {host, port, gpus, gpu_type, label}}.
 
-    Skips blank lines and comments (lines starting with #).
+    Skips blank lines and comments (lines starting with #). Resolves the
+    LIVE pods.conf path at call time via ``pod_config._resolve_live_pods_conf``.
     """
+    pods_conf = _resolve_live_pods_conf()
     pods = {}
-    if not PODS_CONF.exists():
-        print(f"Warning: {PODS_CONF} not found")
+    if not pods_conf.exists():
+        print(f"Warning: {pods_conf} not found")
         return pods
 
-    for line in PODS_CONF.read_text().splitlines():
+    for line in pods_conf.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue

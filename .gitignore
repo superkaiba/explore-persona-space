@@ -65,6 +65,13 @@ external/training-against-misalignment/vectors/
 *.pem
 credentials*
 
+# pods.conf flock lockfile (task #821) — belt-and-braces gitignore. The
+# lockfile lives at scripts/.pods.conf.lock alongside the tracked seed;
+# ``locked_pods_conf`` recreates it with O_CREAT on every acquire, so its
+# deletion by ``git clean -fdx`` is harmless — the ignore just spares
+# ``git status`` a noise line for a file no reader/writer ever tracks.
+scripts/.pods.conf.lock
+
 # Claude Code transient state — not part of project history
 .claude/cache/
 .claude/worktrees/
