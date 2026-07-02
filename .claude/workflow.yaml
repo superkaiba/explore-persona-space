@@ -2342,7 +2342,7 @@ markers:
       CLI with no frontmatter backing. Visibility only: the launch is
       never blocked, and the CLI also emits a LOUD stderr warning naming
       the legitimate residual gaps (70B intents / interactive SSH-MCP
-      orchestration / runs > GCP --max-run-duration default 24h / SLURM
+      orchestration / runs > GCP --max-run-duration default 7d / SLURM
       venv-extras mismatch).
 
       `override_conflicts_frontmatter: true` (optional) is stamped by

@@ -779,7 +779,7 @@ workload is big — fix the implementation, don't book more pod-days
 CPU wall-time blowup vs its §9 estimate).
 
 **Cost wall-time against the machine the router will ACTUALLY provision —
-then reconcile worst-case wall against the GCP 24h auto-delete fence.**
+then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
 GCP-FIRST `auto` default that is the GCP intent mapping
@@ -792,8 +792,10 @@ per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
 into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
-(`--instance-termination-action=DELETE` + `--max-run-duration`, default
-24h). If worst-case wall on the routed machine exceeds ~20h, the plan
+(`--instance-termination-action=DELETE` + `--max-run-duration`,
+default 7d — the FLEX_START ceiling, #741). If worst-case wall on the routed
+machine approaches the routed lane's fence (the GCP `--max-run-duration`
+default is 7d, but a plan may deliberately set a shorter fence), the plan
 MUST do one of: (a) declare a deliberate `spec.extra["max_run_duration"]`
 for the GCP dispatch; (b) pre-register a phase split across provisions —
 name which phases run on a second provision and what artifacts must be

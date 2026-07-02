@@ -2639,9 +2639,10 @@ the workload kind: `ft-7b`/`ft-70b` custom commands DO build `--extra
 gpu`; `lora-7b`/`eval`/`debug` custom commands build the base venv —
 `needs_gpu_extras`, slurm.py); (c) workloads
 needing interactive SSH-MCP-driven orchestration mid-run (the
-experimenter launch pattern); (d) **workloads longer than ~20h on
-GCP** — the lane pins `--instance-termination-action=DELETE` +
-`--max-run-duration` (default 24h), so a multi-day sweep is deleted
+experimenter launch pattern); (d) **multi-day workloads on GCP
+longer than the fence** — the lane pins `--instance-termination-action=DELETE` +
+`--max-run-duration` (default 7d — the FLEX_START ceiling, #741), so a
+sweep longer than the fence is deleted
 mid-run; thread the plan's declared fence via `--max-run-duration
 <dur>` on `dispatch_issue.py launch` (gcloud duration shape, e.g.
 `30h`; lands in `spec.extra["max_run_duration"]`, inert on non-GCP
@@ -4246,9 +4247,10 @@ analysis input changed), proceed with the held analyzer output as-is.
 
 **Re-entry idempotency.** The Step 9 entry guard's `stage-dispatch`
 breadcrumbs cover all three dispatches. On a backstop re-entry, apply
-the guard PER STAGE (see the parallel-stage note in the Step 9 entry
-guard): do not re-dispatch a stage whose own breadcrumb is within its
-freshness window, even when another stage's marker is the latest event.
+the guard PER STAGE (the step-2 per-stage backwards scan in the Step 9
+entry guard): do not re-dispatch a stage whose own breadcrumb is within
+its freshness window, even when another stage's marker is the latest
+event.
 
 Spawn the `upload-verifier` agent with:
 - Task number
@@ -4590,6 +4592,31 @@ tick can see the dispatch:
 uv run python scripts/task.py post-marker <N> epm:progress \
   --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name> worktree=<abs path or 'repo-root'>"
 ```
+
+**Pre-dispatch dedup (NON-SKIPPABLE, every dispatch site).** Immediately
+BEFORE posting a NEW `stage-dispatch` breadcrumb and spawning, run the
+mechanical check:
+
+```bash
+uv run python - <<'PY'
+from explore_persona_space.task_workflow import list_events, stage_dispatch_should_skip
+print(stage_dispatch_should_skip(list_events(<N>), "<stage>", <r>, window_minutes=<W>) or "DISPATCH")
+PY
+```
+
+If the output is anything other than `DISPATCH`, log that one line, post
+NO duplicate breadcrumb, do NOT spawn — the stage is already in flight
+(EXIT `parked` on a backstop tick, or continue with other work). `<W>`
+follows the stage-aware freshness windows below (15 default / 30
+Codex-ensembled). This applies to EVERY site that posts a
+`stage-dispatch` breadcrumb: the Step 8 results-landed batch, Step 9
+rounds, the Step 9a-ter free-analysis follow-up, the
+methodology-reference spawn, AND all same-issue follow-up-loop
+`stage=followup-<phase>` dispatches — the #778 double-dispatch
+(2026-07-01: two orchestrators each dispatched a `followup-implementing
+round=1` implementer 5m39s apart, two implementers concurrently editing
+one worktree) came through the follow-up loop.
+
 Each stage's result marker is its completion signal — the existing
 `epm:upload-verification` (verifying), `epm:interpretation v<r>` +
 `epm:interp-critique v<r>` (interpreting), and `epm:clean-result-critique
@@ -4610,11 +4637,22 @@ re-invocation).**
 1. Read the most recent events.jsonl marker via
    `task.py latest-marker <N>` (and `task.py view <N> --json` for the tail
    if needed).
-2. If the latest marker is a `stage-dispatch` breadcrumb (`epm:progress`
-   note beginning `stage-dispatch `) for the CURRENT stage+round AND there
-   is NO result marker for that same stage+round posted AFTER it (i.e. the
-   breadcrumb is genuinely the latest event), THEN compare its timestamp to
-   now against the **stage-aware freshness window**:
+2. Scan `events.jsonl` BACKWARDS for the CURRENT stage+round's most
+   recent `stage-dispatch` breadcrumb (an `epm:progress` note BEGINNING
+   `stage-dispatch ` — a note merely quoting the string mid-note never
+   counts), skipping ALL other kinds — intervening markers (codex-task
+   markers, progress notes, plan markers, other stages' breadcrumbs and
+   result markers) never hide a breadcrumb. If such a breadcrumb exists
+   AND no result marker for THAT stage (nor `epm:failure`) was posted
+   after it, compare its EFFECTIVE age to the **stage-aware freshness
+   window** — effective age is measured from the LATEST of the
+   breadcrumb and any subsequent liveness marker (`epm:codex-task-*`,
+   `epm:smoke-architecture-check`, `epm:proposed-tests`, or a
+   non-breadcrumb `epm:progress`): a healthy long-running round keeps
+   refreshing its window; a dead one goes silent and re-dispatches once
+   the window expires. The mechanical form of this rule is
+   `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
+   one-liner above — do not eyeball the scan).
    - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
      AND `clean-result` rounds 1-3 — every round spawns both the Claude
      critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
@@ -4622,27 +4660,27 @@ re-invocation).**
      rounds commonly exceed 15 min wall time).
    - Window = **15 min** for everything else (`verifying` and any other
      Step 8/9 stage).
-   - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
-     skill cleanly (`post_step_completed.py ... --exit-kind parked
-     --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
-     ago, window <W>m); backstop tick yielding"`). Do NOT re-dispatch —
-     let the live work finish; the next tick (or the live subagent's own
-     completion) advances the pipeline.
-   - **age > window** → the stage looks genuinely STALLED (a subagent that
-     never posted its result). Proceed to re-dispatch it normally (the
-     freshness window is what distinguishes "live" from "stalled").
-3. If the latest marker is a RESULT marker (or anything other than a
-   current-stage `stage-dispatch` breadcrumb), there is no in-flight work —
-   proceed with the normal Step 9 logic below.
+   - **effective age < window** → the subagent is presumed STILL
+     RUNNING. EXIT the skill cleanly (`post_step_completed.py ...
+     --exit-kind parked --notes "stage <stage> round <r> still in flight
+     (dispatched <Δ>m ago, window <W>m); backstop tick yielding"`). Do
+     NOT re-dispatch — let the live work finish; the next tick (or the
+     live subagent's own completion) advances the pipeline.
+   - **effective age >= window** → the stage looks genuinely STALLED (a
+     subagent that never posted its result). Proceed to re-dispatch it
+     normally (the freshness window is what distinguishes "live" from
+     "stalled").
+3. If the per-stage backwards scan finds NO open breadcrumb for the
+   current stage+round (none exists, or a result marker / `epm:failure`
+   postdates it), there is no in-flight work — proceed with the normal
+   Step 9 logic below.
 
 **Parallel-stage note (results-landed spawn).** Step 8's results-landed
 parallel spawn can put `verifying`, `interpreting` round 1, and
-`methodology-reference` breadcrumbs in flight at once. Apply the rule
-PER STAGE: scan `events.jsonl` backwards for the CURRENT stage's most
-recent `stage-dispatch` breadcrumb (skipping other stages' breadcrumbs
-and result markers) rather than inspecting only the single latest
-event. A stage is in flight when ITS breadcrumb has no matching result
-marker after it and is within the freshness window.
+`methodology-reference` breadcrumbs in flight at once. The per-stage
+backwards scan in step 2 above applies to each concurrent stage
+independently — a result marker for stage X never clears stage Y's
+in-flight state.
 
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
 verifier turn; the 30-min Codex-ensemble window covers a high-effort
@@ -6008,7 +6046,13 @@ backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
 Step 6d.2) before dispatching its first planner / implementer / stage
 subagent, and must post every stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
-`worktree=` field. Know what each mechanism covers: the cron handles
+`worktree=` field. These `stage=followup-<phase>` breadcrumbs are bound
+by the SAME Step 9 entry-guard predicate AND the same NON-SKIPPABLE
+pre-dispatch dedup check (§ Step 9 entry guard) — the status being held
+at `followups_running` does not exempt them (#778, 2026-07-01: the
+round-1 `followup-implementing` dispatch was duplicated by a concurrent
+orchestrator 5m39s after the first, two implementers concurrently
+editing one worktree). Know what each mechanism covers: the cron handles
 only the alive-but-stalled case — a `durable=False` cron dies with the
 session that armed it; `autonomous_session_watch.py`'s AUTO-RESPAWN
 passes read only the autonomous registry (`spawn-issue --auto`
@@ -6024,6 +6068,13 @@ session death. (Incident #505 round 2, 2026-06-10: an interactive chat
 session driving this loop was closed mid-implementer-dispatch with no
 cron armed, no registry entry, and no worktree breadcrumb; the task
 orphaned at `running` for 5+ hours.)
+
+**Loop-entry ownership re-check.** When entering this loop from a
+resume / re-invocation (including the Step 0 followup-scope dispatch),
+FIRST re-run the Step 0 single-orchestrator guard: if another live
+session is mapped to this issue, stop the stale session
+(`spawn_session.py stop`) before dispatching any loop work — two live
+orchestrators driving one round is the #778 root cause.
 
 1. **Scope marker.** Ensure an `epm:followup-scope v1` exists for this
    round (the Step 9b partition posts it at step 6 above; the chat /
