@@ -2932,6 +2932,33 @@ def test_smoke_architecture_review_lens_flags_codex_tokens(tmp_path) -> None:
     assert subjects and all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
 
 
+def test_smoke_architecture_review_lens_flags_marker_outside_codex_bullet(tmp_path) -> None:
+    """A codex copy-list bullet stripped of the marker FAILs even when the
+    marker survives elsewhere in the file (#822, round 2).
+
+    The bullet region runs from the heading token to the next line-start
+    '- "' bullet; a marker mention in a later '**Blocker tags:**' line must
+    NOT satisfy the check (the file-global drift case the round-1 check
+    missed).
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet with\n'
+        "  the marker name stripped from the bullet body.\n"
+        '- "Step 0.6: End-to-end smoke gate" next bullet.\n'
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+        "**Blocker tags:** `marker-shape` blockers name "
+        "`epm:smoke-architecture-check` here, outside the bullet.\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the marker-less Step 0.55 copy-list bullet"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+    assert any("copy-list bullet" in e for e in errors), errors
+
+
 def test_smoke_architecture_review_lens_flags_rubric_placeholder(tmp_path) -> None:
     """The '{{INLINED RUBRIC' placeholder line without '0.55' FAILs (#822)."""
     _write_smoke_arch_conforming_tree(tmp_path)
