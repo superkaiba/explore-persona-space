@@ -12208,6 +12208,54 @@ def test_wedge_bypasses_marker_window_reaches_fence(
     assert stops == ["sess-987"]  # wedge beat the fresh-marker keep
 
 
+def test_wedge_respects_park_exemptions_on_keep_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #845 r2 (concern wedge-bypasses-unprobed-park-exemptions): on the
+    # fresh-marker keep(0) hot path decide() returns ("keep", 0), so the
+    # LAZY park exemptions are never probed (`exempted` is vacuously
+    # False) — the wedge escalation must re-probe them ONCE against the
+    # escalated action. A firing provision-in-flight exemption VETOES the
+    # wedge: no stop, no spawn, and no wedge hit recorded.
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 989, "sess-989", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+    # Fresh (< 2h) lifecycle marker 5 min ago -> the slow path stays quiet
+    # (keep/0), exactly the shape where the exemptions go unprobed.
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda issue: [
+            {"kind": "epm:experiment-implementation", "ts": _iso_845(now - 300), "note": "impl"}
+        ],
+    )
+    # Wedge transcript signature (>= 3 promptless dequeue rows)...
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    monkeypatch.setattr(asw, "_transcript_tail_rows", lambda pid, **_k: [dequeue] * 3)
+    # ...AND an in-flight provision — the escalation re-probe must fire it
+    # (re-patches the stalled_recorder / _patch_stale_signals None stub).
+    monkeypatch.setattr(
+        asw,
+        "_provision_in_flight_reason",
+        lambda issue, now: "provision in flight (pod.py provision pid 4321)",
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-989": 4242},
+    )
+    assert stops == [] and spawns == []  # exemption vetoed the wedge
+    state = _read_stalled_state_845(isolated_registry, 989)
+    assert state["wedge_hits"] == 0  # a vetoed wedge records no hit
+    assert state.get("stop_pending_sid") is None  # fence never armed
+
+
 def test_marker_window_blocks_stalled_pass_alert_90min_marker(
     isolated_registry, monkeypatch, stalled_recorder
 ):

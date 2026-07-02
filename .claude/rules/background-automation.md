@@ -205,7 +205,9 @@ The stalled detector + the two respawn arms carry five hardening mechanisms:
   (incident #779: 5 prompts enqueued+dequeued with no turn for ~90 min).
   Bypasses the 2-miss debounce, the #759 K-downgrade and the 2h marker
   window — direct evidence beats proxies — but NOT the park exemptions
-  (provision-in-flight / followups / spend-approval), the worktree hold,
+  (provision-in-flight / followups / spend-approval — re-probed once
+  against the escalated action when the fresh-marker keep path lazily
+  skipped them; a firing exemption vetoes the wedge), the worktree hold,
   or the fence; a wedge respawn resets `live_consecutive`. Unresolvable
   transcripts fail toward no-wedge.
 
