@@ -14,8 +14,15 @@ Before ANY diff BODY read, size it:
     git diff main...HEAD | wc -c
 
 The pipe streams into `wc` — sizing is free of context cost (only the byte
-count enters agent context). If the byte count exceeds **300 KB**, do NOT read
-the whole-branch diff body. Scope every body read to the CURRENT round instead:
+count enters agent context). **Sizing must fail loud:** on a sparse/shallow
+checkout with no merge base the three-dot form errors to stderr and `wc -c`
+prints `0` — probe `git merge-base --all main HEAD` FIRST; if it is empty, or
+the sizing pipe errors, or it returns `0` on a branch that demonstrably has
+commits, treat the diff as OVER budget and round-scope (a no-merge-base
+checkout cannot materialize a three-dot body anyway; per the #613 precedent
+this is a checkout artifact — never block or FAIL on it). If the byte count
+exceeds **300 KB**, do NOT read the whole-branch diff body. Scope every body
+read to the CURRENT round instead:
 
 - `git show <sha>` for each commit named in the implementer's round
   marker/report, or the round range `<parent>..HEAD` from the implementer
@@ -30,6 +37,10 @@ the whole-branch diff body. Scope every body read to the CURRENT round instead:
   flags as touched across MULTIPLE rounds, a bounded per-file three-dot body
   read (`git diff main...HEAD -- <path>`) is permitted — it closes the
   cross-round-interaction gap without re-opening the whole-branch read.
+  Size it first the same way (`git diff main...HEAD -- <path> | wc -c`); a
+  per-file body over the same 300 KB budget falls back to round commits plus
+  name/status/stat context — "per-file" is a path bound, not a byte bound,
+  so the byte check still applies.
 
 Earlier rounds' changes on a long-lived same-issue-follow-up branch were
 already reviewed in their own rounds; re-reading them is redundant context by

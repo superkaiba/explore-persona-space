@@ -576,7 +576,9 @@ If you write the tests after the implementation (the default), make them general
   same-issue-follow-up branch, `git diff main...HEAD` can be multi-MB
   (1.96 MB on #722; the two-dot `main..HEAD` body was 31.6 MB) and
   loading it autocompacts your session. Run `git diff main...HEAD | wc -c`
-  first (streams — no context cost); above ~300 KB, read only the round's
+  first (streams — no context cost; an error or `0` from the pipe means
+  treat it as over-budget — no-merge-base sparse checkout, see the rule);
+  above ~300 KB, read only the round's
   own commits (`git show <sha>` / `<parent>..HEAD`) — full recipe:
   `.claude/rules/diff-size-budget.md`. Name-only / `--name-status` /
   `--stat` forms are always safe (the Report Format's `git diff --stat`
