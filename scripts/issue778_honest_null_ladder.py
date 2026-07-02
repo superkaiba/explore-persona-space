@@ -1177,7 +1177,7 @@ def build_fixed_figures(
     ]
     labels = labels or LADDER_LABELS
     json_dir = json_dir if json_dir is not None else eval_root / "honest_nulls"
-    palette = pp.paper_palette(len(order))
+    palette = pp.paper_palette(min(len(order), 8))  # paper_palette caps at 8; cycle below
     written = []
     import glob
 
@@ -1200,7 +1200,7 @@ def build_fixed_figures(
             ypos = list(range(len(fams)))
             for yi, fam in zip(ypos, fams, strict=True):
                 nr = pc["nulls"][fam]
-                color = palette[order.index(fam)]
+                color = palette[order.index(fam) % len(palette)]
                 if "values" in nr:  # fixed-direction families (crosstrait, pca_top5)
                     vals = [abs(v) for v in nr.get("values", [])]
                     ax.plot(vals, [yi] * len(vals), "o", color=color, ms=5)
@@ -1266,7 +1266,7 @@ def build_figures(
     ]
     labels = labels or LADDER_LABELS
     maxdraws_dir = maxdraws_dir if maxdraws_dir is not None else eval_root / "honest_nulls"
-    palette = pp.paper_palette(len(order))
+    palette = pp.paper_palette(min(len(order), 8))  # paper_palette caps at 8; cycle below
     for fkey, fd in files.items():
         if "status" in fd:  # K1-N/A trait stub — nothing to plot
             continue
@@ -1289,7 +1289,7 @@ def build_figures(
                         [nr.get("p2_5"), nr.get("p50"), nr.get("p97_5")], dtype=np.float64
                     )
                 vals = vals[~np.isnan(vals)]
-                color = palette[order.index(fam)]
+                color = palette[order.index(fam) % len(palette)]
                 if vals.size >= 20:
                     parts = ax.violinplot(
                         [vals], positions=[yi], vert=False, showextrema=False, widths=0.8
