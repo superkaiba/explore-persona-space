@@ -5220,8 +5220,8 @@
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/811",
-      "status": "verifying",
+      "path": "tasks/interpreting/811",
+      "status": "interpreting",
       "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
     },
     "812": {
