@@ -4107,6 +4107,107 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+# The #842 smoke output-path hygiene anchor phrase. Must appear INSIDE each
+# surface's load-bearing region (see check_smoke_output_hygiene below).
+SMOKE_OUTPUT_HYGIENE_ANCHOR = "Smoke outputs never overwrite committed artifacts"
+
+
+def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the smoke output-path hygiene rule (#842) is absent from any
+    of its three surfaces — REGION-AWARE and WHITESPACE-NORMALIZED.
+
+    Incident #722 (2026-07-02, three instances): a `--layers 0 18` review
+    smoke truncated committed 28-layer eval JSONs+figures; a reviewer's
+    pytest rerun regenerated `figures/issue_722/mlp_*.png` at smoke scale at
+    canonical paths; and the round-2 hero figure shipped as a 2-layer smoke
+    version because the script's figure path was not `_smoke`-suffixed while
+    its JSONs diverted. The fix added the anchor rule ("Smoke outputs never
+    overwrite committed artifacts") to three surfaces; this check pins each
+    copy inside its load-bearing, heading-bounded region:
+
+    (a) experiment-implementer.md — the smoke-contract checklist item
+        (``N. **End-to-end smoke run PER PHASE.`` up to the next
+        top-level numbered item);
+    (b) code-reviewer.md — the Step 0.6 region (``### Step 0.6:`` up to the
+        next heading) — the ONLY reviewer step the Codex twin's
+        ``{{INLINED RUBRIC`` placeholder carries, so a copy that drifts out
+        of Step 0.6 silently loses ensemble coverage;
+    (c) `.claude/skills/issue/SKILL.md` — the Step 5 smoke-gate paragraph
+        (``**End-to-end smoke gate (experiment tasks).`` up to the next
+        bold-start line / heading).
+
+    Whole-file presence is NOT enough: a surviving cross-reference elsewhere
+    in the file must not false-green after the rule body is deleted, so the
+    anchor must sit inside the named region. Matching is whitespace-
+    normalized (``\\s+`` -> single space) so an innocent prose reflow that
+    hard-wraps the anchor cannot spuriously FAIL the default run. A missing
+    region heading FAILs loud (a restructure must re-anchor the rule AND
+    update the region regex here in the same commit). ``repo_root`` is a
+    unit-test override hook; production callers pass None (canonical repo
+    root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s)
+
+    # End regexes are anchored on a literal ``\n`` (NOT a MULTILINE ``^``):
+    # the end search runs on the text slice AFTER the start match, and ``^``
+    # would also match at the very start of that slice (e.g. the closing
+    # ``**`` of the start line's bold token), truncating the region to zero.
+    surfaces: tuple[tuple[Path, str, str, str], ...] = (
+        (
+            root / ".claude" / "agents" / "experiment-implementer.md",
+            r"^\d+\. \*\*End-to-end smoke run PER PHASE\.",
+            r"\n\d+\. \*\*",
+            "implementer smoke-contract checklist item",
+        ),
+        (
+            root / ".claude" / "agents" / "code-reviewer.md",
+            r"^### Step 0\.6:",
+            r"\n#{1,6} ",
+            "code-reviewer Step 0.6 region",
+        ),
+        (
+            root / ".claude" / "skills" / "issue" / "SKILL.md",
+            r"^\*\*End-to-end smoke gate \(experiment tasks\)\.",
+            r"\n\*\*|\n#{1,6} ",
+            "SKILL.md Step 5 smoke-gate paragraph",
+        ),
+    )
+    errors: list[str] = []
+    for path, start_re, end_re, name in surfaces:
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — the #842 smoke output-path hygiene rule "
+                f"({SMOKE_OUTPUT_HYGIENE_ANCHOR!r}) must live here, in the "
+                f"{name}."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        start_m = re.search(start_re, text, flags=re.MULTILINE)
+        if start_m is None:
+            errors.append(
+                f"{path}: region heading for the {name} not found (#842) — "
+                f"the anchor region was restructured; re-anchor the smoke "
+                f"output-path hygiene rule and update this check's region "
+                f"regex in the same commit."
+            )
+            continue
+        end_m = re.search(end_re, text[start_m.end() :])
+        end = start_m.end() + end_m.start() if end_m is not None else len(text)
+        region = text[start_m.start() : end]
+        if _norm(SMOKE_OUTPUT_HYGIENE_ANCHOR) not in _norm(region):
+            errors.append(
+                f"{path}: anchor {SMOKE_OUTPUT_HYGIENE_ANCHOR!r} absent from "
+                f"the {name} (#842) — the rule was dropped or moved out of "
+                f"its load-bearing region; smoke runs would silently clobber "
+                f"committed eval_results/ / figures/ artifacts again "
+                f"(incident #722)."
+            )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -4720,6 +4821,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-smoke-output-hygiene",
+        action="store_true",
+        help="FAIL if the #842 smoke output-path hygiene rule ('Smoke outputs "
+        "never overwrite committed artifacts') is absent from the load-bearing "
+        "region of any of its three surfaces: the End-to-end-smoke-run "
+        "checklist item in experiment-implementer.md, the Step 0.6 region in "
+        "code-reviewer.md (the only step the Codex twin's inlined rubric "
+        "carries), or the Step 5 smoke-gate paragraph in the /issue SKILL.md. "
+        "Region-aware + whitespace-normalized (incident #722: smoke runs "
+        "clobbered committed eval_results//figures/ artifacts three times). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -4781,6 +4895,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_smoke_output_hygiene
         or args.check_judge_model_pins
         or args.check_agent_spec_size
     )
@@ -4855,6 +4970,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_compute_shape_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_smoke_output_hygiene or no_flags:
+        errors.extend(check_smoke_output_hygiene())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
 

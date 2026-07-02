@@ -23,6 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LINT = _REPO_ROOT / "scripts" / "workflow_lint.py"
 _SRC = _REPO_ROOT / "src"
@@ -51,6 +53,7 @@ from workflow_lint import (  # noqa: E402
     check_script_references,
     check_skill_references,
     check_smoke_architecture_review_lens,
+    check_smoke_output_hygiene,
     check_upload_as_file,
     check_wandb_required,
 )
@@ -2994,3 +2997,216 @@ def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
     assert errors, "expected a FAIL for the sub-recipe-less 5c-bis region"
     subjects = [e.split(": ", 1)[0] for e in errors]
     assert all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+
+# ---------------------------------------------------------------------------
+# ``check_smoke_output_hygiene`` (#842): the smoke output-path hygiene rule
+# ("Smoke outputs never overwrite committed artifacts") must sit INSIDE the
+# load-bearing region of each of its three surfaces — region-aware +
+# whitespace-normalized. Incident #722: smoke runs clobbered committed
+# eval_results//figures/ artifacts three times.
+# ---------------------------------------------------------------------------
+
+_SMOKE_HYGIENE_SURFACES = (
+    ".claude/agents/experiment-implementer.md",
+    ".claude/agents/code-reviewer.md",
+    ".claude/skills/issue/SKILL.md",
+)
+
+
+def _write_smoke_hygiene_conforming_tree(tmp_path) -> None:
+    """Write all three #842 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (absence errors from the untouched surfaces would otherwise pollute
+    counts).
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "experiment-implementer.md").write_text(
+        "# implementer\n"
+        "\n"
+        "3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint\n"
+        "   run a tiny slice and record the digest.\n"
+        "\n"
+        "   **Smoke outputs never overwrite committed artifacts.** Divert\n"
+        "   smoke output to a scratch dir, or restore-after-smoke and confirm\n"
+        "   `git status --porcelain -- eval_results/ figures/` is empty.\n"
+        "4. **Self-review against plan.** Walk the plan.\n"
+    )
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "\n"
+        "### Step 0.6: End-to-end smoke gate (`type:experiment` only)\n"
+        "\n"
+        "The smoke gate body.\n"
+        "\n"
+        '**Smoke output-path hygiene ("Smoke outputs never overwrite committed artifacts").**\n'
+        "Clobber is a Critical tagged `substantive`; reviewer-self runs\n"
+        "restore what their own commands touched.\n"
+        "\n"
+        "### Step 0.65: Raw-completions upload wiring gate\n"
+        "\n"
+        "next section\n"
+    )
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke on a tiny real slice.\n"
+        "Smoke outputs never overwrite committed artifacts — the disposition\n"
+        "is stated per the implementer contract.\n"
+        "\n"
+        "**5b. Read both markers.**\n"
+    )
+
+
+def test_smoke_output_hygiene_live_tree_passes() -> None:
+    """The real tree carries the #842 hygiene rule on all three surfaces."""
+    assert check_smoke_output_hygiene() == []
+
+
+def test_smoke_output_hygiene_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    assert check_smoke_output_hygiene(repo_root=tmp_path) == []
+
+
+_SMOKE_HYGIENE_ANCHORLESS = {
+    # Region heading present, anchor ABSENT from the region — but present
+    # elsewhere in the same file, so whole-file substring matching would
+    # false-green. Pins the region-awareness property.
+    ".claude/agents/experiment-implementer.md": (
+        "# implementer\n"
+        "\n"
+        "3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint\n"
+        "   run a tiny slice and record the digest.\n"
+        "4. **Self-review against plan.** Smoke outputs never overwrite\n"
+        "   committed artifacts is cross-referenced here, OUTSIDE item 3.\n"
+    ),
+    ".claude/agents/code-reviewer.md": (
+        "# reviewer\n"
+        "\n"
+        "### Step 0.6: End-to-end smoke gate (`type:experiment` only)\n"
+        "\n"
+        "The smoke gate body, hygiene rule dropped.\n"
+        "\n"
+        "### Step 4: Run / Verify Tests\n"
+        "\n"
+        "Smoke outputs never overwrite committed artifacts — mentioned\n"
+        "outside the Step 0.6 region the Codex twin inlines.\n"
+    ),
+    ".claude/skills/issue/SKILL.md": (
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke; hygiene sentence dropped.\n"
+        "\n"
+        "**5b. Read both markers.** Smoke outputs never overwrite committed\n"
+        "artifacts — mentioned after the smoke-gate paragraph ends.\n"
+    ),
+}
+
+
+@pytest.mark.parametrize("surface", _SMOKE_HYGIENE_SURFACES)
+def test_smoke_output_hygiene_fails_on_missing_anchor(tmp_path, surface) -> None:
+    """Dropping the anchor from any ONE surface's region FAILs, naming that
+    file (#842) — even when the anchor phrase survives ELSEWHERE in the same
+    file (region-awareness: a leftover cross-reference must not false-green,
+    and the code-reviewer copy specifically must stay inside Step 0.6, the
+    only step the Codex twin's inlined rubric carries)."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / surface).write_text(_SMOKE_HYGIENE_ANCHORLESS[surface])
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, f"expected a FAIL for {surface} missing the anchor"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    fname = surface.rsplit("/", 1)[-1]
+    assert all(s.endswith(f"/{fname}") for s in subjects), (surface, errors)
+    assert any("absent from" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("surface", _SMOKE_HYGIENE_SURFACES)
+def test_smoke_output_hygiene_fails_on_missing_file(tmp_path, surface) -> None:
+    """A surface file absent from the tree FAILs with the missing-file branch
+    naming that path (#842)."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / surface).unlink()
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, f"expected a FAIL for the absent {surface}"
+    fname = surface.rsplit("/", 1)[-1]
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith(f"/{fname}") for s in subjects), (surface, errors)
+    assert any("missing" in e for e in errors), errors
+
+
+def test_smoke_output_hygiene_fails_on_missing_region_heading(tmp_path) -> None:
+    """A surface whose region heading was restructured away FAILs LOUD (#842
+    property (c)) — never a vacuous pass, even if the anchor survives
+    somewhere in the file."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "\n"
+        "### Step 0.7: A renamed step\n"
+        "\n"
+        "Smoke outputs never overwrite committed artifacts — the anchor\n"
+        "survives but its Step 0.6 region heading is gone.\n"
+    )
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the missing Step 0.6 region heading"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), errors
+    assert any("region heading" in e for e in errors), errors
+
+
+def test_smoke_output_hygiene_hard_wrapped_anchor_passes(tmp_path) -> None:
+    """An anchor hard-wrapped across two lines INSIDE the correct region still
+    PASSes — pins the whitespace-normalized matching so an innocent prose
+    reflow cannot spuriously FAIL the fleet's default run (#842 property (a))."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke on a tiny real slice. Smoke outputs never\n"
+        "overwrite committed artifacts — the disposition is stated per the\n"
+        "implementer contract.\n"
+        "\n"
+        "**5b. Read both markers.**\n"
+    )
+    assert check_smoke_output_hygiene(repo_root=tmp_path) == []
+
+
+def test_smoke_output_hygiene_wired_into_default_run(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags CLI-path REGISTRATION test (#842): the default run must
+    exercise ``check_smoke_output_hygiene`` — a check that exists only behind
+    its ``--check-smoke-output-hygiene`` flag while never being bundled into
+    the ``no_flags`` dispatch would leave every other acceptance command
+    green (the same bundling gap the #712 §4f wiring test pinned).
+
+    Doctors a minimal tree missing the anchor on one surface, points the
+    lint module's ``_REPO_ROOT`` at it, and invokes ``main([])`` in-process:
+    the run must exit non-zero with the #842 diagnostic in stderr. Other
+    bundled checks contribute unrelated errors on the minimal tree (missing
+    LESSONS.md etc.) — the assertion keys on the #842 error string, so those
+    are harmless.
+    """
+    import workflow_lint as wl
+
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / ".claude/skills/issue/SKILL.md").write_text(
+        _SMOKE_HYGIENE_ANCHORLESS[".claude/skills/issue/SKILL.md"]
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an anchor-less tree:\n{err}"
+    assert "#842" in err, (
+        f"the #842 smoke-output-hygiene diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
