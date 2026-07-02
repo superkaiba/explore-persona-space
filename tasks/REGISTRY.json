@@ -5605,8 +5605,8 @@
     "862": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/862",
-      "status": "reviewing",
+      "path": "tasks/completed/862",
+      "status": "completed",
       "title": "artifacts: unified LoRA recipe + dose-to-target stopping (Phase 0e)"
     },
     "863": {
