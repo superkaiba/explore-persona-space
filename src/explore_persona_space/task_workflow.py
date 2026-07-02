@@ -227,13 +227,13 @@ def _sanitized_git_env() -> dict[str, str]:
     return env
 
 
-@functools.lru_cache(maxsize=1)
-def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
-    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
-    automatically. The key is computed by the wrapper; we ignore the
-    contents (we resolve relative to module dir + sanitized env, not cwd).
+def _resolve_primary_checkout(env: dict[str, str]) -> Path:
+    """Resolve + validate the PRIMARY checkout root (the git common dir's
+    parent). Verbatim extraction of ``_resolve_repo_root_cached`` steps
+    (a)+(b) — the rev-parse + layout validation, everything BEFORE the
+    branch guard (#844). Raises ``RuntimeError`` on any failure; never
+    falls back to a ``__file__``/cwd walk-up.
     """
-    env = _sanitized_git_env()
     # (a) Locate the common git dir.
     try:
         proc = subprocess.run(
@@ -275,6 +275,18 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"resolved repo root {parent!s} has no `tasks/` directory; "
             f"wrong repo or uninitialized layout — refusing to resolve tasks/."
         )
+    return parent
+
+
+@functools.lru_cache(maxsize=1)
+def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
+    automatically. The key is computed by the wrapper; we ignore the
+    contents (we resolve relative to module dir + sanitized env, not cwd).
+    """
+    env = _sanitized_git_env()
+    # (a)+(b) Locate the common git dir + validate its parent.
+    parent = _resolve_primary_checkout(env)
     # (c) Branch guard.
     sym = subprocess.run(
         ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
@@ -501,9 +513,31 @@ def repo_root() -> Path:
     return _resolve_repo_root_cached((os.getpid(), os.getcwd()))
 
 
+@functools.lru_cache(maxsize=1)
+def _primary_checkout_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target for :func:`primary_checkout_root`. Keyed on
+    (pid, cwd) exactly like ``_resolve_repo_root_cached`` so forks + chdirs
+    invalidate automatically.
+    """
+    return _resolve_primary_checkout(_sanitized_git_env())
+
+
+def primary_checkout_root() -> Path:
+    """Absolute path of the PRIMARY (main) checkout — the git common dir's
+    parent — with full layout validation but NO branch guard and NO off-main
+    routing to the managed ``_task-main-pin`` worktree. For consumers that
+    need the canonical checkout PATH (session-spawn cwd, #844), not a safe
+    tasks/ read-write root (those use :func:`repo_root`). Fails loud; never
+    falls back to a ``__file__``/cwd walk-up.
+    """
+    return _primary_checkout_cached((os.getpid(), os.getcwd()))
+
+
 def invalidate_cache() -> None:
-    """Drop the cached repo-root resolution. Next call re-probes git."""
+    """Drop the cached repo-root + primary-checkout resolutions. Next call
+    re-probes git."""
     _resolve_repo_root_cached.cache_clear()
+    _primary_checkout_cached.cache_clear()
 
 
 def tasks_dir() -> Path:
@@ -3621,6 +3655,7 @@ __all__ = [
     "list_events",
     "new_plan_version",
     "post_event",
+    "primary_checkout_root",
     "promote",
     "raise_concern",
     "reconcile_registry",
