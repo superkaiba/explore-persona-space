@@ -488,12 +488,13 @@ def extract_trait_v2(
     return meta
 
 
-def judge_and_build_v2(
+def judge_and_build_v2(  # noqa: C901
     trait: str,
     external_root: Path,
     out_root: Path,
     *,
     judge_dry_run: bool = False,
+    judge_stub: bool = False,
 ) -> dict:
     """v2 VM phase: judge trait+coherence, build the paired mask + r_B v2.
 
@@ -526,26 +527,47 @@ def judge_and_build_v2(
     judge_dir.mkdir(parents=True, exist_ok=True)
     items = [(r["rollout_id"], r["question"], r["response"]) for r in records]
 
-    # Two rubric dims, two SEPARATE judge calls (one behavior per call).
-    jr_trait = lib.judge_graded(
-        items,
-        td.eval_prompt,
-        n_draws=1,
-        cache_dir=judge_dir / f"{trait}_trait_cache",
-        save_raw=judge_dir / f"{trait}_judge_raw_trait.json",
-        temperature=lib.JUDGE_TEMPERATURE,
-        dry_run=judge_dry_run,
-    )
-    jr_coh = lib.judge_graded(
-        items,
-        coherence_prompt,
-        n_draws=1,
-        cache_dir=judge_dir / f"{trait}_coherence_cache",
-        save_raw=judge_dir / f"{trait}_judge_raw_coherence.json",
-        temperature=lib.JUDGE_TEMPERATURE,
-        dry_run=judge_dry_run,
-    )
-    if judge_dry_run:
+    if judge_stub:
+        # SMOKE ONLY: deterministic scores exercising the FULL mask + r_B build
+        # path with zero API calls (pos->trait 85, neg->trait 10, coherence 90;
+        # every 7th pair unevaluable to exercise the drop counting).
+        stub_t: dict[str, float | None] = {}
+        stub_c: dict[str, float | None] = {}
+        for j in range(n_half):
+            p_rec, n_rec = records[j], records[j + n_half]
+            if j % 7 == 6:
+                stub_t[p_rec["rollout_id"]] = None
+            else:
+                stub_t[p_rec["rollout_id"]] = 85.0
+            stub_t[n_rec["rollout_id"]] = 10.0
+            stub_c[p_rec["rollout_id"]] = 90.0
+            stub_c[n_rec["rollout_id"]] = 90.0
+        jr_trait = lib.JudgeResult(
+            scores=stub_t, n_total_draws=2 * n_half, n_dropped_draws=n_half // 7
+        )
+        jr_coh = lib.JudgeResult(scores=stub_c, n_total_draws=2 * n_half, n_dropped_draws=0)
+        lib.log_phase("judge_v2", f"trait={trait} JUDGE STUB (smoke) — no API calls")
+    else:
+        # Two rubric dims, two SEPARATE judge calls (one behavior per call).
+        jr_trait = lib.judge_graded(
+            items,
+            td.eval_prompt,
+            n_draws=1,
+            cache_dir=judge_dir / f"{trait}_trait_cache",
+            save_raw=judge_dir / f"{trait}_judge_raw_trait.json",
+            temperature=lib.JUDGE_TEMPERATURE,
+            dry_run=judge_dry_run,
+        )
+        jr_coh = lib.judge_graded(
+            items,
+            coherence_prompt,
+            n_draws=1,
+            cache_dir=judge_dir / f"{trait}_coherence_cache",
+            save_raw=judge_dir / f"{trait}_judge_raw_coherence.json",
+            temperature=lib.JUDGE_TEMPERATURE,
+            dry_run=judge_dry_run,
+        )
+    if judge_dry_run and not judge_stub:
         lib.log_phase("judge_v2", f"trait={trait} DRY RUN — requests built, no API calls")
         return {"trait": trait, "status": "judge_dry_run"}
 
@@ -747,6 +769,12 @@ def main() -> None:
         action="store_true",
         help="SMOKE: build judge Batch requests without any API call",
     )
+    parser.add_argument(
+        "--judge-stub",
+        action="store_true",
+        help="SMOKE ONLY: deterministic judge scores (no API) — exercises the full "
+        "mask + r_B v2 build path",
+    )
     args = parser.parse_args()
 
     external_root = Path(args.external_root)
@@ -763,7 +791,11 @@ def main() -> None:
         results = {}
         for trait in traits:
             results[trait] = judge_and_build_v2(
-                trait, external_root, out_root, judge_dry_run=args.judge_dry_run
+                trait,
+                external_root,
+                out_root,
+                judge_dry_run=args.judge_dry_run,
+                judge_stub=args.judge_stub,
             )
         lib.log_phase("judge_v2", f"all traits done ({len(results)})")
         print(json.dumps({"phase": "judge_v2", "results": results}, indent=2, default=str))
