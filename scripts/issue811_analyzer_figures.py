@@ -33,6 +33,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Patch
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -77,9 +78,15 @@ def _cells(summary: str, which: str) -> dict:
 
 
 def fig_hero_ratio() -> None:
-    """Δ_med ÷ floor_combined per behavior×layer, mean vs turn boundary."""
+    """Δ_med ÷ floor_combined per behavior×layer, mean vs turn boundary.
+
+    Sycophancy's turn-boundary bars are hatched/open: that summary FAILED the
+    Phase-0 base-leg validity gate (KILL-1 read rule), so those reads are
+    untrusted and must not be skimmed as the headline effect (the tallest bar
+    in the grid is sycophancy turn-boundary L7 at 3.52x).
+    """
     fc = {s: _cells(s, "fc") for s in SUMMARIES}
-    fig, axes = plt.subplots(1, 3, figsize=(9.5, 3.6), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(9.5, 3.8), sharey=True)
     for ax, beh in zip(axes, BEHAVIORS, strict=True):
         x = np.arange(len(LAYERS))
         for off, (s, color) in zip(
@@ -89,13 +96,35 @@ def fig_hero_ratio() -> None:
                 fc[s][f"{beh}/L{li}"]["Delta_med"] / fc[s][f"{beh}/L{li}"]["floor_combined"]
                 for li in LAYERS
             ]
-            ax.bar(x + off, vals, width=0.38, color=color, label=SUMMARY_LABEL[s])
+            if s == "turn_nl" and beh == "sycophancy":
+                ax.bar(
+                    x + off,
+                    vals,
+                    width=0.38,
+                    facecolor="white",
+                    edgecolor=color,
+                    linewidth=1.0,
+                    hatch="///",
+                )
+            else:
+                ax.bar(x + off, vals, width=0.38, color=color)
         ax.axhline(1.0, ls="--", lw=1.0, color="0.4")
         ax.set_xticks(x)
         ax.set_xticklabels([f"layer {li}" for li in LAYERS])
         ax.set_title(BEHAVIOR_LABEL[beh])
     axes[0].set_ylabel("function change ÷ noise floor")
-    axes[0].legend(loc="upper left")
+    handles = [
+        Patch(facecolor=C_MEAN, label="answer mean"),
+        Patch(facecolor=C_TURN, label="turn boundary"),
+        Patch(
+            facecolor="white",
+            edgecolor=C_TURN,
+            linewidth=1.0,
+            hatch="///",
+            label="turn boundary — untrusted (failed base-leg validity)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=8)
     savefig_paper(fig, "issue_811/hero_function_change_ratio", dir=FIG_DIR)
     plt.close(fig)
 
@@ -172,48 +201,106 @@ def fig_chain_rho_forest() -> None:
         plt.Line2D([0], [0], marker="o", ls="", color=C_MEAN, label="base map M0"),
         plt.Line2D([0], [0], marker="o", ls="", color=C_TURN, label="post-finetune map M⁺"),
     ]
-    axes[2].legend(handles=handles, loc="lower right", fontsize=8)
+    # Figure-level legend OUTSIDE the panels — the in-axes lower-right legend
+    # overlapped the taught-fact L21 rows (interp-critique r1, both critics).
+    fig.legend(handles=handles, loc="outside lower center", ncol=2, fontsize=8)
     savefig_paper(fig, "issue_811/chain_rho_forest_ci", dir=FIG_DIR)
     plt.close(fig)
 
 
 def fig_delta_scatter() -> None:
-    """Per-cell (behavior×layer) Δ_med under mean vs turn boundary, 45° line."""
+    """Per-cell (behavior×layer) Δ_med under mean vs turn boundary, 45° line.
+
+    Sycophancy cells render as OPEN markers: their turn-boundary coordinate is
+    an untrusted read (failed the Phase-0 base-leg validity gate).
+    """
     fc = {s: _cells(s, "fc") for s in SUMMARIES}
-    fig, ax = plt.subplots(figsize=(5.6, 5.2))
+    fig, ax = plt.subplots(figsize=(5.6, 5.4))
     lim = 0.45
     ax.plot([0, lim], [0, lim], ls="--", lw=1.0, color="0.4")
     for beh in BEHAVIORS:
         for li in LAYERS:
             xm = fc["mean"][f"{beh}/L{li}"]["Delta_med"]
             yt = fc["turn_nl"][f"{beh}/L{li}"]["Delta_med"]
-            ax.scatter(xm, yt, s=42, color=C_TURN, zorder=3)
+            if beh == "sycophancy":
+                ax.scatter(
+                    xm, yt, s=42, facecolors="white", edgecolors=C_TURN, linewidths=1.2, zorder=3
+                )
+            else:
+                ax.scatter(xm, yt, s=42, color=C_TURN, zorder=3)
             ax.text(xm + 0.006, yt + 0.006, f"{BEHAVIOR_LABEL[beh]} L{li}", fontsize=7.5)
     ax.set_xlim(0, lim)
     ax.set_ylim(0, lim)
     ax.set_xlabel("Δ_med under answer-mean summary (activation units)")
     ax.set_ylabel("Δ_med under turn-boundary summary (activation units)")
+    handles = [
+        plt.Line2D(
+            [0], [0], marker="o", ls="", color=C_TURN, label="harmful-compliance / taught fact"
+        ),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            ls="",
+            color="none",
+            markerfacecolor="white",
+            markeredgecolor=C_TURN,
+            markeredgewidth=1.2,
+            label="sycophancy — turn-boundary read untrusted (failed base-leg validity)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=1, fontsize=8)
     savefig_paper(fig, "issue_811/delta_scatter_pairs", dir=FIG_DIR)
     plt.close(fig)
 
 
 def fig_validity_gate() -> None:
-    """MLP-vs-shuffle gate margin per behavior×layer, both summaries."""
+    """Phase-2 per-cell MLP-vs-shuffle gate margin per behavior×layer, both summaries.
+
+    These are the PHASE-2 refit margins (computed inside the full paired fit) —
+    NOT the Phase-0 KILL-1 base-leg margins, which disagree systematically at
+    L14 (all six cells lower here, 5 of 6 sign-flipped). Sycophancy's
+    turn-boundary bars are hatched/open: that summary failed the Phase-0
+    base-leg validity gate, so its reads are untrusted regardless of the
+    per-cell margin shown here (sycophancy L7 turn sits slightly above zero).
+    """
     gate = {s: _cells(s, "gate") for s in SUMMARIES}
-    fig, axes = plt.subplots(1, 3, figsize=(9.5, 3.6), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(9.5, 3.8), sharey=True)
     for ax, beh in zip(axes, BEHAVIORS, strict=True):
         x = np.arange(len(LAYERS))
         for off, (s, color) in zip(
             (-0.2, 0.2), [("mean", C_MEAN), ("turn_nl", C_TURN)], strict=True
         ):
             vals = [gate[s][f"{beh}/L{li}"]["gate_margin"] for li in LAYERS]
-            ax.bar(x + off, vals, width=0.38, color=color, label=SUMMARY_LABEL[s])
+            if s == "turn_nl" and beh == "sycophancy":
+                ax.bar(
+                    x + off,
+                    vals,
+                    width=0.38,
+                    facecolor="white",
+                    edgecolor=color,
+                    linewidth=1.0,
+                    hatch="///",
+                )
+            else:
+                ax.bar(x + off, vals, width=0.38, color=color)
         ax.axhline(0.0, ls="--", lw=1.0, color="0.4")
         ax.set_xticks(x)
         ax.set_xticklabels([f"layer {li}" for li in LAYERS])
         ax.set_title(BEHAVIOR_LABEL[beh])
     axes[0].set_ylabel("gate margin (ρ real − ρ shuffled)")
-    axes[0].legend(loc="lower left", fontsize=8)
+    handles = [
+        Patch(facecolor=C_MEAN, label="answer mean"),
+        Patch(facecolor=C_TURN, label="turn boundary"),
+        Patch(
+            facecolor="white",
+            edgecolor=C_TURN,
+            linewidth=1.0,
+            hatch="///",
+            label="turn boundary — untrusted (failed base-leg validity)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=8)
     savefig_paper(fig, "issue_811/validity_gate_margins", dir=FIG_DIR)
     plt.close(fig)
 
