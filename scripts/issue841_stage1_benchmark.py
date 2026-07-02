@@ -115,7 +115,7 @@ def source_grid(target: int, smoke: bool) -> list[int]:
 # ── map fitting (raw space; identical to Stage-0's raw maps by seed) ──────────
 
 
-def build_one_step_maps(cx, split, transitions, device, chunk_size, num_threads):
+def build_one_step_maps(cx, split, transitions, device, chunk_size, num_threads, max_epochs=None):
     """Fit raw-space one-step ridge + MLP maps for the requested transitions.
 
     RAW target space (sigma=1.0) — Stage-1 transport is additive composition, so
@@ -144,7 +144,7 @@ def build_one_step_maps(cx, split, transitions, device, chunk_size, num_threads)
             )
         )
     _preds, params = MP.fit_split_mlps(
-        groups, device=device, chunk_size=chunk_size, num_threads=num_threads
+        groups, device=device, chunk_size=chunk_size, num_threads=num_threads, max_epochs=max_epochs
     )
     mlp_maps = {
         t: MP.MLPMap.from_params(params[("mlp", t)], sigma=1.0, device=device) for t in transitions
@@ -297,7 +297,7 @@ def reference_selfcheck(ref: dict, trait: str, my_ceiling_at_ref_layer: dict) ->
             and ref_pt is not None
             and np.isfinite(mine)
             and np.isfinite(ref_pt)
-            and abs(mine - ref_pt) <= C.__dict__.get("RIG_VALIDATION_BAND", 0.10)
+            and abs(mine - ref_pt) <= C.RIG_VALIDATION_BAND
         )
         within_ci = bool(
             mine is not None
@@ -424,12 +424,11 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
                 fidelity[scheme]["gru"][str(src)] = fid
                 proj_store[f"{scheme}__{src}__gru"] = x_gru
             # row 4 direct-hop ridge ℓ→ℓ*
+            fit_cx = cx[split["fit"]]  # (n_fit, 28, H)
             direct_map = MP.fit_direct_hop_ridge(
-                cx[split["fit"]][:, None, :][:, 0, :] * 0 + cx[split["fit"], src, :]
-                if False
-                else cx[split["fit"]][:, src, :],  # h_source_train
-                cx[split["fit"]][:, tgt, :],  # h_target_train
-                cx[split["fit"]][:1, src, :],  # dummy eval; we want the map
+                fit_cx[:, src, :],  # h_source_train
+                fit_cx[:, tgt, :],  # h_target_train
+                fit_cx[:1, src, :],  # dummy eval; we want the map, not eval preds
                 device=device,
             )
             h_hat_direct = traj_dev[:, src, :] + direct_map.apply(traj_dev[:, src, :])
@@ -486,6 +485,12 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
 
     # k=1 kill-criterion read at PRIMARY layers (ANALYSIS branch — does NOT gate).
     tr_out["kill_read_k1_primary"] = _kill_read(retention.get("primary", {}))
+    # Per-(condition,question) unit arrays behind every monitor — the y / cond /
+    # mode axes the per-unit scatter (issue841_plots.py) reads as <trait>__y etc.
+    # (mode stored as an int code so np.savez needs no allow_pickle).
+    proj_store["y"] = mat["y"]
+    proj_store["cond"] = mat["cond"]
+    proj_store["mode_is_manyshot"] = (mat["mode"] == "many_shot").astype(np.int64)
     del traj_dev, rb_dev
     return {
         "trait_result": tr_out,
@@ -560,6 +565,12 @@ def main() -> int:
     ap.add_argument("--num-threads", type=int, default=8)
     ap.add_argument("--gru-epochs", type=int, default=300)
     ap.add_argument("--gru-batch-size", type=int, default=512)
+    ap.add_argument(
+        "--mlp-epochs",
+        type=int,
+        default=0,
+        help="0 = production default (MLP_MAX_EPOCHS=300); a small value keeps the smoke fast",
+    )
     ap.add_argument("--no-gru", action="store_true")
     ap.add_argument(
         "--ref-json",
@@ -570,13 +581,14 @@ def main() -> int:
 
     device = _resolve_device(args.device)
     traits = ["evil"] if args.smoke else args.traits
+    mlp_epochs = args.mlp_epochs or None  # None => fit_split_mlps uses the production default
     logger.info("device=%s smoke=%s traits=%s", device, args.smoke, traits)
 
     pass_b = C.load_pass_b()
     cx = pass_b["cx_last"]
     n_total = cx.shape[0]
     if args.smoke:
-        cx = cx[: min(200, n_total)]
+        cx = cx[: min(args.n_contexts or 200, n_total)]  # --n-contexts shrinks the smoke slice
     elif args.n_contexts:
         cx = cx[: args.n_contexts]
     n_total = cx.shape[0]
@@ -598,7 +610,7 @@ def main() -> int:
     # needs bounds the ridge/MLP fitting.
     transitions = needed_transitions(traits, args.smoke)
     ridge_maps, mlp_maps = build_one_step_maps(
-        cx, split, transitions, device, args.mlp_chunk_size, args.num_threads
+        cx, split, transitions, device, args.mlp_chunk_size, args.num_threads, mlp_epochs
     )
     nc = MP.norm_curve(cx)
     sigma = np.asarray(nc["sigma_block_rms"], dtype=np.float32)

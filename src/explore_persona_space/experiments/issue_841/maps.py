@@ -162,21 +162,36 @@ class IdentityMap:
 
 @dataclass
 class RidgeMap:
-    """Affine one-step map Δ̂ = ((H−μ)/σ_std) @ w, scaled to raw by ``sigma``."""
+    """Affine one-step map Δ̂ = bias + ((H−μ)/σ_std) @ w, scaled to raw by ``sigma``.
+
+    ``bias`` (the fit-space Δ mean ``ymu``) is the intercept c_ℓ of the plan's
+    ``Δ̂ = A_ℓ h_ℓ + c_ℓ`` — Δ has a nonzero mean, so a no-intercept ridge
+    (bias-free, forced through the origin) systematically underfits it. The
+    weights are solved on the TRAIN-mean-centered target ``Y − ymu`` and the
+    intercept is added back at prediction time (standard center-then-ridge with
+    an unpenalized intercept; because ``(H−μ)/σ_std`` is zero-mean on train the
+    intercept is exactly ``ymu``).
+    """
 
     mu: torch.Tensor  # (d,)
     sd: torch.Tensor  # (d,) input standardization std
-    w: torch.Tensor  # (d, p) dual weights (fit-space)
+    w: torch.Tensor  # (d, p) dual weights (fit-space, on the CENTERED target)
+    bias: torch.Tensor  # (p,) fit-space Δ mean ymu (the affine intercept c_ℓ)
     best_lam: float
     sigma: float  # target-space scale (σ_m if norm-space, else 1.0) → raw Δ̂
 
     def apply(self, H: torch.Tensor) -> torch.Tensor:
         hn = (H - self.mu) / self.sd
-        return (hn @ self.w) * self.sigma
+        return (self.bias + hn @ self.w) * self.sigma
 
     def to(self, device: str) -> RidgeMap:
         return RidgeMap(
-            self.mu.to(device), self.sd.to(device), self.w.to(device), self.best_lam, self.sigma
+            self.mu.to(device),
+            self.sd.to(device),
+            self.w.to(device),
+            self.bias.to(device),
+            self.best_lam,
+            self.sigma,
         )
 
 
@@ -257,12 +272,17 @@ def fit_ridge_split(
 ) -> tuple[np.ndarray, RidgeMap]:
     """Closed-form ridge Δ-map on a FIXED train/eval split (ReSAE recipe).
 
-    Standardize on train (ddof=0, matching #658), select λ by PRESS/LOO over the
-    train design (train-internal GCV), dual-solve the weights, predict on the
-    eval slice. ``y_train_fit`` is the Δ target in the chosen fit space (raw or
-    RMS-normalized). Returns ``(eval_pred_fitspace (n_eval,p), RidgeMap)`` — the
-    eval preds feed the atlas R²; the RidgeMap is applied to eval-context
-    activations in Stage-1 transport (its ``apply`` un-scales by ``sigma`` to raw).
+    AFFINE with bias (plan §4.3 ``Δ̂ = A_ℓ h_ℓ + c_ℓ``; §11 rejects the no-bias
+    JTC "mat" variant): Δ has a nonzero mean, so the target is TRAIN-mean-centered
+    (``ymu``) before the ridge solve and the intercept ``ymu`` is added back at
+    prediction time. Standardize X on train (ddof=0, matching #658), select λ by
+    PRESS/LOO over the CENTERED train target (train-internal GCV — consistent with
+    the centered solve), dual-solve the weights on ``Y − ymu``, predict
+    ``ymu + Xn @ w`` on the eval slice. ``y_train_fit`` is the Δ target in the
+    chosen fit space (raw or RMS-normalized). Returns ``(eval_pred_fitspace
+    (n_eval,p), RidgeMap)`` — the eval preds feed the atlas R²; the RidgeMap is
+    applied to eval-context activations in Stage-1 transport (its ``apply`` adds
+    the bias then un-scales by ``sigma`` to raw).
     """
     _i658.DEVICE = device
     dev = torch.device(device)
@@ -271,16 +291,19 @@ def fit_ridge_split(
     mu = Xt.mean(0)
     sd = Xt.std(0, correction=0) + 1e-9  # #658 numpy ddof=0 convention
     Xtr_n = (Xt - mu) / sd
-    mse = _press_loo_mse_per_lambda(Xtr_n, Yt, lambdas)
+    ymu = Yt.mean(0)  # (p,) train-mean of Δ = the affine intercept c_ℓ
+    Ytr_c = Yt - ymu  # center the target so the ridge fits the residual, not the mean
+    mse = _press_loo_mse_per_lambda(Xtr_n, Ytr_c, lambdas)
     best_lam = lambdas[int(torch.argmin(mse).item())]
-    w = _ridge_dual_weights(Xtr_n, Yt, best_lam)  # (d, p) fp64
+    w = _ridge_dual_weights(Xtr_n, Ytr_c, best_lam)  # (d, p) fp64, on the centered target
     Xev = torch.from_numpy(np.ascontiguousarray(x_eval)).to(device=dev, dtype=torch.float64)
     Xev_n = (Xev - mu) / sd
-    eval_pred = (Xev_n @ w).detach().cpu().numpy()  # fit-space eval prediction
+    eval_pred = (ymu + Xev_n @ w).detach().cpu().numpy()  # fit-space eval prediction (WITH bias)
     rmap = RidgeMap(
         mu=mu.to(torch.float32),
         sd=sd.to(torch.float32),
         w=w.to(torch.float32),
+        bias=ymu.to(torch.float32),
         best_lam=float(best_lam),
         sigma=float(sigma),
     )
@@ -318,6 +341,7 @@ def fit_split_mlps(
     seed: int = 658,
     chunk_size: int = 8,
     num_threads: int | None = None,
+    max_epochs: int | None = None,
 ) -> tuple[dict, dict]:
     """Fit a batch of split-MLP Δ-maps; return (eval_preds_by_key, MLPMap params).
 
@@ -325,14 +349,18 @@ def fit_split_mlps(
     Returns ``(preds_by_key, params_by_key)`` — preds feed the atlas R², params
     are wrapped into ``MLPMap`` for transport. ``sigma`` is threaded per-map by
     the caller (via ``MLPMap.from_params``) since it depends on the group's
-    target space.
+    target space. ``max_epochs=None`` uses the production default
+    (``MLP_MAX_EPOCHS=300``); a smoke passes a small value to keep the wiring
+    exercise fast.
     """
+    kw = {} if max_epochs is None else {"max_epochs": max_epochs}
     res = fit_batched_split_mlp(
         groups,
         seed=seed,
         device=device,
         chunk_size=chunk_size,
         num_threads=num_threads,
+        **kw,
     )
     return res.preds_by_key, res.params_by_key
 

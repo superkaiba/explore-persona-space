@@ -123,7 +123,7 @@ def ridge_atlas(cx, split, transitions, sigma, device) -> dict:
     return out
 
 
-def mlp_atlas(cx, split, transitions, sigma, device, chunk_size, num_threads) -> dict:
+def mlp_atlas(cx, split, transitions, sigma, device, chunk_size, num_threads, max_epochs) -> dict:
     """MLP Δ-atlas over transitions × {raw, rmsnorm} — ONE batched split ensemble."""
     groups, meta = [], {}
     for space in SPACES:
@@ -144,7 +144,7 @@ def mlp_atlas(cx, split, transitions, sigma, device, chunk_size, num_threads) ->
             )
             meta[key] = (space, t)
     preds_by_key, _params = MP.fit_split_mlps(
-        groups, device=device, chunk_size=chunk_size, num_threads=num_threads
+        groups, device=device, chunk_size=chunk_size, num_threads=num_threads, max_epochs=max_epochs
     )
     out: dict = {s: {} for s in SPACES}
     for (space, t), pred_fit in preds_by_key.items():
@@ -159,44 +159,54 @@ def mlp_atlas(cx, split, transitions, sigma, device, chunk_size, num_threads) ->
 
 
 def gru_atlas(cx, split, transitions, sigma, device, max_epochs, batch_size) -> dict:
-    """Depth-GRU Δ-atlas (EXPLORATORY; RMS-normalized target, per-transition R²)."""
-    gru = MP.fit_depth_gru(
-        cx[split["fit"]],
-        cx[split["val"]],
-        sigma,
-        device=device,
-        max_epochs=max_epochs,
-        batch_size=batch_size,
-    )
+    """Depth-GRU Δ-atlas (EXPLORATORY) over BOTH {raw, rmsnorm} target spaces.
+
+    §6.5 requires the atlas per (transition, class, raw/RMS-norm), so two GRUs are
+    fit: the raw-target GRU (sigma≡1 → predicts raw Δ) and the RMS-normalized GRU
+    (sigma → predicts Δ/σ_m, the shared-depth-scale variant Stage-1 transport
+    also uses). One extra GRU fit; per-transition R² read per space.
+    """
     n_trans = cx.shape[1] - 1
-    sig_t = torch.from_numpy(sigma.astype(np.float32)).to(device)
-    with torch.no_grad():
-        test_in = torch.from_numpy(np.ascontiguousarray(cx[split["test"], :n_trans, :])).to(
-            device=device, dtype=torch.float32
+    out: dict = {s: {} for s in SPACES}
+    for space in SPACES:
+        # sigma passed to fit_depth_gru IS the per-transition target normalizer:
+        # ones ⇒ raw Δ target; the measured σ_m ⇒ RMS-normalized target.
+        fit_sigma = np.ones(n_trans, dtype=np.float64) if space == "raw" else sigma
+        gru = MP.fit_depth_gru(
+            cx[split["fit"]],
+            cx[split["val"]],
+            fit_sigma,
+            device=device,
+            max_epochs=max_epochs,
+            batch_size=batch_size,
         )
-        pred_norm = gru(test_in).cpu().numpy()  # (n_test, n_trans, d) normalized Δ̂
-        fit_in = torch.from_numpy(np.ascontiguousarray(cx[split["fit"], :n_trans, :])).to(
-            device=device, dtype=torch.float32
-        )
-        # train-mean baseline in normalized space (per-dim, per transition).
-    out: dict = {"rmsnorm": {}}
-    for t in transitions:
-        _h, delta = MP.deltas_at(cx, t)
-        delta_test_norm = delta[split["test"]] / sigma[t]
-        train_mean = (delta[split["fit"]] / sigma[t]).mean(axis=0)
-        pred_fit = pred_norm[:, t, :]
-        out["rmsnorm"][f"transition_{t}"] = _atlas_cell(
-            pred_fit, delta_test_norm, delta[split["test"]], train_mean, "rmsnorm", sigma[t]
-        )
-    _ = (sig_t, fit_in)  # (kept for parity with roll path; unused here)
-    logger.info("[gru] atlas done (%d transitions)", len(transitions))
+        with torch.no_grad():
+            test_in = torch.from_numpy(np.ascontiguousarray(cx[split["test"], :n_trans, :])).to(
+                device=device, dtype=torch.float32
+            )
+            pred_fit_all = gru(test_in).cpu().numpy()  # (n_test, n_trans, d) in fit space
+        for t in transitions:
+            _h, delta = MP.deltas_at(cx, t)
+            delta_test_fit = _target(delta[split["test"]], space, sigma[t])
+            train_mean = _target(delta[split["fit"]], space, sigma[t]).mean(axis=0)
+            out[space][f"transition_{t}"] = _atlas_cell(
+                pred_fit_all[:, t, :],
+                delta_test_fit,
+                delta[split["test"]],
+                train_mean,
+                space,
+                sigma[t],
+            )
+        logger.info("[gru] space=%s atlas done (%d transitions)", space, len(transitions))
     return out
 
 
 # ── §4.3 data-scaling curve (ridge + MLP, raw space) ──────────────────────────
 
 
-def scaling_curve(cx, split, transitions, sigma, device, ns, chunk_size, num_threads) -> dict:
+def scaling_curve(
+    cx, split, transitions, sigma, device, ns, chunk_size, num_threads, max_epochs
+) -> dict:
     """Held-out identity-relative R² vs n ∈ ns (nested subsamples of the fit split).
 
     Raw target space (the transport-relevant space). Ridge + MLP per (transition,
@@ -240,7 +250,11 @@ def scaling_curve(cx, split, transitions, sigma, device, ns, chunk_size, num_thr
                 )
             )
         preds, _ = MP.fit_split_mlps(
-            groups, device=device, chunk_size=chunk_size, num_threads=num_threads
+            groups,
+            device=device,
+            chunk_size=chunk_size,
+            num_threads=num_threads,
+            max_epochs=max_epochs,
         )
         for (_, t), pred in preds.items():
             _h, delta = MP.deltas_at(cx, t)
@@ -296,8 +310,15 @@ def main() -> int:
     ap.add_argument("--num-threads", type=int, default=8)
     ap.add_argument("--gru-epochs", type=int, default=300)
     ap.add_argument("--gru-batch-size", type=int, default=512)
+    ap.add_argument(
+        "--mlp-epochs",
+        type=int,
+        default=0,
+        help="0 = production default (MLP_MAX_EPOCHS=300); a small value keeps the smoke fast",
+    )
     ap.add_argument("--no-gru", action="store_true", help="skip the exploratory GRU class")
     args = ap.parse_args()
+    mlp_epochs = args.mlp_epochs or None  # None => fit_split_mlps uses the production default
 
     device = _resolve_device(args.device)
     logger.info("device=%s smoke=%s", device, args.smoke)
@@ -311,8 +332,9 @@ def main() -> int:
     cx = pass_b["cx_last"]
     n_total = cx.shape[0]
     if args.smoke:
-        cx = cx[: min(200, n_total)]
-        pass_b["cx_mean"] = pass_b["cx_mean"][: min(200, n_total)]
+        cap = min(args.n_contexts or 200, n_total)  # --n-contexts shrinks the smoke slice
+        cx = cx[:cap]
+        pass_b["cx_mean"] = pass_b["cx_mean"][:cap]
         n_total = cx.shape[0]
     elif args.n_contexts:
         cx = cx[: args.n_contexts]
@@ -362,7 +384,7 @@ def main() -> int:
     C.write_json_atomic(EVAL_DIR / "stage0_atlas.json", result)  # checkpoint per class
 
     result["atlas"]["mlp"] = mlp_atlas(
-        cx, split, transitions, sigma, device, args.mlp_chunk_size, args.num_threads
+        cx, split, transitions, sigma, device, args.mlp_chunk_size, args.num_threads, mlp_epochs
     )
     C.write_json_atomic(EVAL_DIR / "stage0_atlas.json", result)
 
@@ -386,6 +408,7 @@ def main() -> int:
         list(C.SCALING_NS),
         args.mlp_chunk_size,
         args.num_threads,
+        mlp_epochs,
     )
     C.write_json_atomic(EVAL_DIR / "stage0_atlas.json", result)
 

@@ -78,6 +78,10 @@ COMPANION_TARGET_LAYER = {"evil": 14, "sycophancy": 19, "hallucination": 24}
 # computed — the reference-row self-check runs here (plan assumption 15).
 REFERENCE_ROW_LAYER = {"evil": 14, "sycophancy": 26, "hallucination": 17}
 
+# Reference-row self-check tolerance: my reproduced raw-PV row must land within
+# this band of #779's pv_raw point (mirrors #779's own gate-1 rig-validation band).
+RIG_VALIDATION_BAND = 0.10
+
 # Split (plan §10): 4000 fit / 500 inner-val (MLP+GRU early stop) / 500 test.
 SPLIT_SEED = 42
 N_FIT = 4000
