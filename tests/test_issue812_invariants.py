@@ -35,17 +35,105 @@ import issue812_regrade_e0 as regrade  # noqa: E402
 # ─────────────────────────────────────────────────────────────────────────────
 def test_probes_from_cells_preserves_completions_per_probe():
     """A #658 sycophancy cell (10 completions/probe) yields ONE probe entry with all
-    10 completions grouped — NOT 10 flattened {probe, completion} rows (round-1 bug)."""
+    10 completions grouped — NOT 10 flattened {probe, completion} rows (round-1 bug).
+
+    Uses the REAL Lane-2 (#658 e0_gen) completion shape: each completion is a
+    ``{"text": str, "logp_norm": float}`` dict (round-5 test-realism fix — the old
+    bare-string fixture masked the dict-concatenation crash)."""
     blob = {
         "cells": [
-            {"probe": "q1", "completions": [f"c{i}" for i in range(10)]},
-            {"probe": "q2", "completions": [f"d{i}" for i in range(10)]},
+            {
+                "probe": "q1",
+                "completions": [{"text": f"c{i}", "logp_norm": -0.4 - i} for i in range(10)],
+            },
+            {
+                "probe": "q2",
+                "completions": [{"text": f"d{i}", "logp_norm": -0.5 - i} for i in range(10)],
+            },
         ]
     }
-    probes = regrade._probes_from_cells(blob)
+    probes = regrade._probes_from_cells(blob, behavior="sycophancy")
     assert len(probes) == 2, "must be 2 PROBE entries, not 20 flattened rows"
     assert probes[0]["probe"] == "q1"
     assert len(probes[0]["completions"]) == 10, "all 10 completions grouped under the probe"
+    # each completion is the UNWRAPPED text string, not the {"text": ...} dict
+    assert probes[0]["completions"] == [f"c{i}" for i in range(10)]
+    assert all(isinstance(c, str) for c in probes[0]["completions"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-5 BLOCKER — dict-shaped completions ({"text": ...}) are normalized to text
+# (round-4 kept the raw cell, so a {"text": ...} dict flowed into judge_dispatch's
+# _content_hash and crashed with "can only concatenate str (not dict) to str")
+# ─────────────────────────────────────────────────────────────────────────────
+def test_probes_from_cells_normalizes_lane2_i658_dict_completions():
+    """Lane-2 (#658 e0_gen) cells store completions as {"text": str, "logp_norm": float}
+    dicts. _probes_from_cells unwraps each to its text string (round-4 kept the dict →
+    the round-5 production crash at judge_dispatch._content_hash)."""
+    blob = {
+        "cells": [
+            {
+                "probe": "q1",
+                "completions": [
+                    {"text": "sure, you're right", "logp_norm": -0.41},
+                    {"text": "that seems correct", "logp_norm": -0.52},
+                ],
+            }
+        ]
+    }
+    probes = regrade._probes_from_cells(blob, behavior="sycophancy")
+    assert len(probes) == 1
+    assert probes[0]["completions"] == ["sure, you're right", "that seems correct"]
+    assert all(isinstance(c, str) for c in probes[0]["completions"])
+
+
+def test_probes_from_cells_normalizes_lane3_i763_dict_completions():
+    """Lane-3 (#763 gen/) cells store completions as {"text": str} dicts (no logp_norm).
+    _probes_from_cells unwraps each to its text string."""
+    blob = {
+        "cells": [
+            {"probe": "q1", "completions": [{"text": "I cannot help with that."}]},
+            {"probe": "q2", "completions": [{"text": "Here is how."}, {"text": "No."}]},
+        ]
+    }
+    probes = regrade._probes_from_cells(blob, behavior="refusal")
+    assert [p["completions"] for p in probes] == [
+        ["I cannot help with that."],
+        ["Here is how.", "No."],
+    ]
+
+
+def test_probes_from_cells_accepts_bare_string_completions_backcompat():
+    """A bare-string completion (any string-shaped source) is kept verbatim — the
+    back-compat branch of the normalizer."""
+    blob = {"cells": [{"probe": "q1", "completions": ["plain text answer"]}]}
+    probes = regrade._probes_from_cells(blob, behavior="deception")
+    assert probes[0]["completions"] == ["plain text answer"]
+
+
+def test_probes_from_cells_raises_on_unrecognized_completion_shape():
+    """An unrecognized completion shape (a dict WITHOUT a str 'text' key, or a scalar)
+    is a fail-loud ValueError naming the behavior/probe + the offending type — never
+    coerced or silently skipped (CLAUDE.md 'Fail fast — never hide failures')."""
+    # dict without a 'text' key
+    blob_no_text = {"cells": [{"probe": "q1", "completions": [{"body": "wrong key"}]}]}
+    with pytest.raises(ValueError) as ei_dict:
+        regrade._probes_from_cells(blob_no_text, behavior="sycophancy")
+    assert "sycophancy" in str(ei_dict.value)
+    assert "q1" in str(ei_dict.value)
+    assert "dict" in str(ei_dict.value)
+
+    # a scalar (int) completion
+    blob_scalar = {"cells": [{"probe": "q2", "completions": [42]}]}
+    with pytest.raises(ValueError) as ei_int:
+        regrade._probes_from_cells(blob_scalar, behavior="refusal")
+    assert "int" in str(ei_int.value)
+    assert "q2" in str(ei_int.value)
+
+    # a dict whose 'text' is not a str (e.g. nested) also fails loud
+    blob_nonstr_text = {"cells": [{"probe": "q3", "completions": [{"text": ["nested"]}]}]}
+    with pytest.raises(ValueError):
+        regrade._probes_from_cells(blob_nonstr_text, behavior="deception")
 
 
 def test_syco_subsample_selects_probe_cells_not_flattened_rows(tmp_path):
@@ -116,7 +204,8 @@ def test_lane3_partial_coverage_raises_before_judging(monkeypatch):
     ]
 
     def fake_hf_json(repo, path):
-        return {"cells": [{"probe": "q", "completions": ["a"]}]}
+        # real #763 gen/ shape: completions are {"text": str} dicts
+        return {"cells": [{"probe": "q", "completions": [{"text": "a"}]}]}
 
     monkeypatch.setattr(regrade, "_hf_json", fake_hf_json)
     with pytest.raises(regrade.LaneCoverageError) as ei:
@@ -137,7 +226,8 @@ def test_lane2_partial_coverage_raises(monkeypatch):
     def fake_hf_json(repo, path):
         if "ctx2" in path:
             raise FileNotFoundError(path)
-        return {"cells": [{"probe": "q", "completions": ["a"]}]}
+        # real #658 e0_gen shape: completions are {"text": str, "logp_norm": float} dicts
+        return {"cells": [{"probe": "q", "completions": [{"text": "a", "logp_norm": -0.3}]}]}
 
     monkeypatch.setattr(regrade, "_hf_json", fake_hf_json)
     with pytest.raises(regrade.LaneCoverageError) as ei:

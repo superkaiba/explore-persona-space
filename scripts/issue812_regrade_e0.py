@@ -388,20 +388,53 @@ def _has_mf1_granularity(cell: dict) -> bool:
     return ("completion_scores" in p0) or ("probe_mean" in p0) or ("draw_scores" in p0)
 
 
-def _probes_from_cells(blob: dict) -> list[dict]:
+def _completion_text(comp: object, *, behavior: str, probe: str) -> str:
+    """Normalize ONE raw completion cell to the completion TEXT string.
+
+    #658/#763 gen files carry completions as DICTS, not strings: Lane-2 (#658 e0_gen)
+    cells are ``{"text": str, "logp_norm": float}`` and Lane-3 (#763 gen/) cells are
+    ``{"text": str}``. The regrade only needs the text (the DV is the judge score),
+    so drop everything but ``text``. A bare-string completion is accepted verbatim for
+    back-compat with any string-shaped source. Any other shape is a fail-loud
+    ``ValueError`` naming the behavior/probe + the offending type — never coerce/skip
+    (CLAUDE.md "Fail fast — never hide failures").
+    """
+    if isinstance(comp, str):
+        return comp
+    if isinstance(comp, dict):
+        text = comp.get("text")
+        if isinstance(text, str):
+            return text
+    raise ValueError(
+        f"[{behavior}] probe {probe!r}: unrecognized completion shape "
+        f"{type(comp).__name__} ({comp!r:.120}); expected a str or a dict with a "
+        f"str-valued 'text' key (#658 e0_gen / #763 gen)."
+    )
+
+
+def _probes_from_cells(blob: dict, *, behavior: str = "?") -> list[dict]:
     """Group a #658/#763 gen file's cells into PROBES, preserving completions/probe.
 
-    Returns ``[{probe, completions: [comp, ...]}, ...]`` — ONE entry per probe cell,
-    with ALL that probe's completions kept together (BLOCKER 1 / MF1: the sycophancy
-    over-rollouts reliability split needs the 10 completions grouped under their
-    probe, not flattened to 10 individual "probe" rows). #658/#763 gen file:
+    Returns ``[{probe, completions: [text_str, ...]}, ...]`` — ONE entry per probe
+    cell, with ALL that probe's completions kept together (BLOCKER 1 / MF1: the
+    sycophancy over-rollouts reliability split needs the 10 completions grouped under
+    their probe, not flattened to 10 individual "probe" rows). #658/#763 gen file:
     ``{context_id, ..., cells=[{probe, completions:[...]}]}`` — each ``cell`` is one
     probe; a low-m / refusal / harmful behavior has exactly 1 completion/probe.
+
+    Each raw completion is NORMALIZED to its text string via ``_completion_text``:
+    #658/#763 store completions as ``{"text": str, ...}`` dicts, and the judge path
+    (``_content_hash``) concatenates the completion as a str — so the dicts MUST be
+    unwrapped to text HERE, at the single choke point both loaders route through, or
+    every downstream ``packed[persona] = {question: [completion]}`` carries a dict into
+    ``judge_completions_batch`` and crashes at fingerprinting (round-5 regression).
     """
     probes: list[dict] = []
     for cell in blob.get("cells", []):
         probe = cell.get("probe", "")
-        comps = list(cell.get("completions", []))
+        comps = [
+            _completion_text(c, behavior=behavior, probe=probe) for c in cell.get("completions", [])
+        ]
         if comps:  # skip a probe cell that produced no completion
             probes.append({"probe": probe, "completions": comps})
     return probes
@@ -420,7 +453,7 @@ def _load_completions_i658(repo: str, behavior: str, ctx_ids: list[str]) -> dict
     for ctx in ctx_ids:
         path = f"{I658_E0GEN_PREFIX}/{ctx}__{behavior}.json"
         try:
-            out[ctx] = _probes_from_cells(_hf_json(repo, path))
+            out[ctx] = _probes_from_cells(_hf_json(repo, path), behavior=behavior)
         except Exception as exc:
             logger.warning("[%s] Lane-2 #658 missing/unloadable ctx %s (%s)", behavior, ctx, exc)
             missing.append(ctx)
@@ -452,7 +485,7 @@ def _load_completions_i763(
             missing.append(ctx)
             continue
         try:
-            out[ctx] = _probes_from_cells(_hf_json(repo, path))
+            out[ctx] = _probes_from_cells(_hf_json(repo, path), behavior=behavior)
         except Exception as exc:
             logger.warning("[%s] Lane-3 #763 unloadable ctx %s (%s)", behavior, ctx, exc)
             missing.append(ctx)
