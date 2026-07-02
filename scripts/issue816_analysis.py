@@ -175,7 +175,7 @@ def run_exp2(args) -> dict:
             cm = c.get("coherence_mean")
             if c["arm"] in ("e2_real", "e2_coef0"):
                 real_by_coef[coef] = {"trait": tm, "coherence": cm}
-            elif c["arm"] == "e2_randnorm":
+            elif c["arm"] in ("e2_isotropic", "e2_neutral_cov"):
                 random_by_coef.setdefault(coef, []).append(tm if tm is not None else float("nan"))
         # Beat-count over the positive matched coefs (coherence-gated).
         beat = 0
@@ -240,7 +240,10 @@ def run_exp4(args) -> dict:
                 real_curve[coef] = {"trait": tm, "reduction": reduction, "coherence": cm}
                 if abs(coef - EXP4_ALPHA_STAR) < 1e-6:
                     real_at_star = {"trait": tm, "reduction": reduction, "coherence": cm}
-            elif c["arm"] == "e4_randnorm" and abs(coef - EXP4_ALPHA_STAR) < 1e-6:
+            elif (
+                c["arm"] in ("e4_isotropic", "e4_neutral_cov")
+                and abs(coef - EXP4_ALPHA_STAR) < 1e-6
+            ):
                 if (cm or 0) < COHERENCE_GATE_EXP4:
                     random_coherence_gated += 1
                 random_reductions.append(reduction)
@@ -249,7 +252,8 @@ def run_exp4(args) -> dict:
         beat_all = None
         if real_at_star is not None and n_rand > 0:
             arr = np.asarray(random_reductions, dtype=np.float64)
-            one_sided_p = float(np.mean(arr >= real_at_star["reduction"]))
+            # Conservative empirical p per plan §6: (r+1)/(n+1)
+            one_sided_p = float((np.sum(arr >= real_at_star["reduction"]) + 1) / (len(arr) + 1))
             beat_all = bool(real_at_star["reduction"] > arr.max())
         p_floor = (1.0 / (n_rand + 1)) if n_rand > 0 else None
         results[trait] = {
@@ -411,7 +415,7 @@ def main() -> None:
     parser.add_argument("--cache-dir", default="data/issue_816/hf_dl")
     parser.add_argument("--traits", nargs="+", default=list(ilib.TRAITS))
     parser.add_argument("--n-null-draws", type=int, default=null_battery.DEFAULT_N_DRAWS)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=42)  # plan §5 base_seed
     parser.add_argument(
         "--phases",
         nargs="+",

@@ -159,12 +159,16 @@ def norm_matched_random_dirs(
     lam: float = 0.1,
     base_seed: int = 0,
 ):
-    """``n_dirs`` covariance-realistic norm-matched random directions at ONE layer.
+    """CONTAMINATED-REFERENCE-ONLY: uses pos+neg pooled covariance whose top PC ~ r_B.
 
-    Each direction ~ N(0, Sigma_activations) with diagonal shrinkage ``lam``,
-    renormalized to ‖rb_layer_vec‖ (the #778 randnorm null; NOT isotropic). Draw
-    ``d`` is seeded DETERMINISTICALLY at ``base_seed + d`` so the analysis is
-    reproducible and the SAVED dirs regenerate exactly.
+    This function samples directions from the pooled pos+neg activation covariance,
+    which is contaminated (top PC cos~0.996 with r_B) and therefore INVALID as a null.
+    It is retained ONLY as the reference for Family 8 in screening.py (the contaminated
+    pool-based null, kept to show why it fails).
+
+    DO NOT use this in production cells for Exp-2 or Exp-4. Use the honest arms:
+      - ``e2_isotropic`` / ``e4_isotropic``: N(0, I·σ²) renormed
+      - ``e2_neutral_cov`` / ``e4_neutral_cov``: Cholesky from neutral_cov renormed
 
     Args:
         rb_layer_vec: ``(D,)`` r_B at the steering layer (only its NORM is used).

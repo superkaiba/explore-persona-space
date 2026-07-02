@@ -69,74 +69,119 @@ MAX_SEQ_LENGTH = 2048
 # Exp-4 grids (plan v2 §4 / §11).
 EXP4_REAL_COEFS = (0.5, 1.25, 3.0, 5.0)
 EXP4_ALPHA_STAR = 1.25  # PRE-FROZEN primary-read coefficient (both arms)
-EXP4_N_RANDOM_DIRS_DEFAULT = 10  # extend to 20 if wall-clock permits (--n-random-dirs)
+EXP4_N_ISOTROPIC_DIRS = 5  # N(0, I·σ²) renormed; seeds base+0..4
+EXP4_N_NEUTRAL_COV_DIRS = 10  # N(0, Σ_neutral) Cholesky-sampled renormed; seeds base+100..109
 EXP4_TRAIT_VERSION = "misaligned_2"  # the strongest-inducing II arm
 POST_FT_N_ROLLOUTS = 10
 VLLM_GREEDY_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
 
 def _cell_tag(cell: dict) -> str:
+    """Return a filesystem-safe tag for a cell dict."""
     coef_tag = f"coef{cell['coef']:g}".replace(".", "_")
-    if cell["arm"] == "e4_randnorm":
-        return f"e4_{cell['trait']}_randnorm_{coef_tag}_dir{cell['dir_idx']:02d}"
+    if cell["arm"] == "e4_isotropic":
+        return f"e4_{cell['trait']}_isotropic_{coef_tag}_dir{cell['dir_idx']:02d}"
+    if cell["arm"] == "e4_neutral_cov":
+        return f"e4_{cell['trait']}_neutral_cov_{coef_tag}_dir{cell['dir_idx']:02d}"
     return f"e4_{cell['trait']}_real_{coef_tag}"
 
 
-def _build_work(traits: list[str], n_random_dirs: int) -> list[dict]:
-    """(trait, arm, coef, dir_idx) work list. coef-0 is NOT here (reuses #778)."""
+def _build_work(traits: list[str]) -> list[dict]:
+    """(trait, arm, coef, dir_idx) work list. coef-0 is NOT here (reuses #778).
+
+    Null arm families per plan §5:
+      e4_isotropic    — N(0, I·σ²) renormed; 5 draws; seeds base+0..4
+      e4_neutral_cov  — N(0, Σ_neutral) Cholesky-sampled renormed; 10 draws; seeds base+100..109
+    """
     work: list[dict] = []
     for trait in traits:
         for coef in EXP4_REAL_COEFS:
             work.append({"trait": trait, "arm": "e4_real", "coef": coef, "dir_idx": None})
-        for dir_idx in range(n_random_dirs):
+        # e4_isotropic: 5 draws, arm_seed_offset = dir_idx (0..4)
+        for dir_idx in range(EXP4_N_ISOTROPIC_DIRS):
             work.append(
                 {
                     "trait": trait,
-                    "arm": "e4_randnorm",
+                    "arm": "e4_isotropic",
                     "coef": EXP4_ALPHA_STAR,
                     "dir_idx": dir_idx,
+                    "arm_seed_offset": dir_idx,
+                }
+            )
+        # e4_neutral_cov: 10 draws, arm_seed_offset = 100+dir_idx
+        for dir_idx in range(EXP4_N_NEUTRAL_COV_DIRS):
+            work.append(
+                {
+                    "trait": trait,
+                    "arm": "e4_neutral_cov",
+                    "coef": EXP4_ALPHA_STAR,
+                    "dir_idx": dir_idx,
+                    "arm_seed_offset": 100 + dir_idx,
                 }
             )
     return work
 
 
-def _steering_vector_for_cell(cell: dict, *, cache_dir: Path):
-    """RAW r_B[trait][19] (real) or a norm-matched random draw at layer 20."""
+def _steering_vector_for_cell(cell: dict, *, cache_dir: Path, neutral_cov=None):
+    """RAW r_B[trait][19] (real) or an honest null draw at layer 20.
+
+    For e4_isotropic: N(0, I·σ²) renormed to ‖r_B[layer20]‖.
+    For e4_neutral_cov: Cholesky sample from neutral_cov[layer20], renormed.
+    For e4_real: the raw r_B direction.
+    Returns (vec, rb_sha).
+    """
+    import numpy as np
     import torch
+
+    assert cell["arm"] not in ("e2_randnorm", "e4_randnorm"), (
+        f"Contaminated arm slug in production cell: {cell['arm']} — "
+        "use e4_isotropic or e4_neutral_cov"
+    )
 
     rb, rb_sha = ilib.fetch_rb(cell["trait"], cache_dir=cache_dir)
     layer_vec = rb[ilib.LAYER_20_IDX]
-    if cell["arm"] == "e4_randnorm":
-        pool = _load_extraction_pool(cell["trait"], ilib.LAYER_20_IDX, cache_dir)
-        dirs = ilib.norm_matched_random_dirs(
-            layer_vec.numpy(),
-            n_dirs=cell["dir_idx"] + 1,
-            pool_acts_layer=pool,
-            base_seed=7000,  # deterministic per (trait via draw idx) — see dir_idx
-        )
-        vec = torch.tensor(dirs[cell["dir_idx"]], dtype=torch.float32)
+
+    if cell["arm"] in ("e4_isotropic", "e4_neutral_cov"):
+        rng = np.random.default_rng(42 + cell.get("arm_seed_offset", cell["dir_idx"]))
+        target_norm = float(np.linalg.norm(layer_vec.numpy()))
+        layer_idx = ilib.LAYER_20_IDX
+
+        if cell["arm"] == "e4_neutral_cov":
+            assert neutral_cov is not None, "neutral_cov required for e4_neutral_cov arm"
+            cov_l = neutral_cov[layer_idx]
+            if cov_l.ndim == 1:
+                # Diagonal storage — fast path: scale isotropic by sqrt(diag)
+                std = cov_l.numpy().astype(np.float64) ** 0.5
+                raw = rng.standard_normal(std.shape[0]) * std
+            else:
+                # Full (D,D) matrix — Cholesky sample with isotropic fallback
+                cov_np = cov_l.numpy().astype(np.float64)
+                try:
+                    L = np.linalg.cholesky(cov_np)
+                    raw = L @ rng.standard_normal(L.shape[0])
+                except np.linalg.LinAlgError:
+                    # Fallback: isotropic using mean diagonal variance
+                    sigma = float(np.mean(np.diag(cov_np))) ** 0.5
+                    raw = rng.standard_normal(cov_np.shape[0]) * sigma
+        else:
+            # e4_isotropic: N(0, I·σ²), σ² = mean diag of neutral_cov at this layer
+            if neutral_cov is not None:
+                cov_l = neutral_cov[layer_idx]
+                diag = cov_l.numpy().astype(np.float64)
+                if diag.ndim == 2:
+                    diag = np.diag(diag)
+                sigma = float(np.mean(diag)) ** 0.5
+            else:
+                sigma = 1.0
+            raw = rng.standard_normal(layer_vec.shape[0]) * sigma
+
+        raw_norm = float(np.linalg.norm(raw))
+        if raw_norm > 0:
+            raw = raw * (target_norm / raw_norm)
+        vec = torch.tensor(raw, dtype=torch.float32)
         return vec, rb_sha
+
     return layer_vec.clone(), rb_sha
-
-
-def _load_extraction_pool(trait: str, layer_idx: int, cache_dir: Path):
-    """The #778 extraction pos+neg pool at ONE layer, from HF (plain trait slug)."""
-    import numpy as np
-    import torch
-    from huggingface_hub import hf_hub_download
-
-    parts = []
-    for side in ("pos", "neg"):
-        local = hf_hub_download(
-            repo_id=ilib.DATA_REPO,
-            repo_type="dataset",
-            filename=f"issue778_persona_vectors/analysis_tensors/activations/{trait}_{side}.pt",
-            revision="main",
-            local_dir=str(cache_dir),
-        )
-        arr = torch.load(local, map_location="cpu", weights_only=False)
-        parts.append(np.asarray(arr, dtype=np.float64))
-    return np.concatenate(parts, axis=0)[:, layer_idx, :]
 
 
 def _train_cell(
@@ -149,6 +194,7 @@ def _train_cell(
     model_name: str,
     max_steps: int | None,
     normalize: bool,
+    neutral_cov=None,
 ) -> Path:
     """Train ONE preventative-steered rs-LoRA adapter; return the adapter dir."""
     tag = _cell_tag(cell)
@@ -159,7 +205,7 @@ def _train_cell(
     out_dir = ckpt_root / tag
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    vec, rb_sha = _steering_vector_for_cell(cell, cache_dir=cache_dir)
+    vec, rb_sha = _steering_vector_for_cell(cell, cache_dir=cache_dir, neutral_cov=neutral_cov)
     callback = PreventativeSteeringCallback(
         vec, coef=cell["coef"], layer=ilib.LAYER_20_1IDX, normalize=normalize
     )
@@ -324,12 +370,18 @@ def _refusal_flag(text: str) -> bool:
 
 
 def _run_single_cell(args, cell: dict) -> dict:
+    """Run a single Exp-4 cell: train + optional post-ft eval."""
     dataset_root = Path(args.dataset_root)
     ckpt_root = Path(args.ckpt_root)
     external_root = Path(args.external_root)
     cache_dir = Path(args.cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     tag = _cell_tag(cell)
+
+    # Load neutral_cov for null arms; real arm passes None.
+    neutral_cov = None
+    if cell["arm"] in ("e4_isotropic", "e4_neutral_cov"):
+        neutral_cov, _ncov_sha = ilib.fetch_neutral_cov(cell["trait"], cache_dir=cache_dir)
 
     adapter = _train_cell(
         cell,
@@ -340,6 +392,7 @@ def _run_single_cell(args, cell: dict) -> dict:
         model_name=args.model,
         max_steps=args.max_steps,
         normalize=args.normalize,
+        neutral_cov=neutral_cov,
     )
 
     eval_rows: list[dict] = []
@@ -390,7 +443,6 @@ def main() -> None:
     )
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument("--cells", type=int, default=None, help="limit to first N cells (smoke)")
-    parser.add_argument("--n-random-dirs", type=int, default=EXP4_N_RANDOM_DIRS_DEFAULT)
     parser.add_argument("--n-questions", type=int, default=None, help="cap eval questions (smoke)")
     parser.add_argument("--n-rollouts", type=int, default=None, help="override rollouts (smoke)")
     parser.add_argument("--max-steps", type=int, default=None, help="cap training steps (smoke)")
@@ -409,7 +461,7 @@ def main() -> None:
         print(json.dumps(_run_single_cell(args, cell)))
         return
 
-    work = _build_work(args.traits, args.n_random_dirs)
+    work = _build_work(args.traits)
     if args.cells is not None:
         work = work[: args.cells]
     lib.log_phase("preventative", f"{len(work)} cells traits={args.traits}")
@@ -421,15 +473,31 @@ def main() -> None:
 
 
 def _parse_single_cell(spec: str) -> dict:
-    """Parse 'trait/arm/coef[/dir]' -> cell dict."""
+    """Parse 'trait/arm/coef[/dir]' -> cell dict.
+
+    Valid arm values: e4_real, e4_isotropic, e4_neutral_cov.
+    dir_idx is required for null arms (e4_isotropic, e4_neutral_cov).
+    """
     parts = spec.split("/")
     if len(parts) not in (3, 4):
         raise ValueError(f"--single-cell must be 'trait/arm/coef[/dir]', got {spec!r}")
     trait, arm, coef = parts[0], parts[1], float(parts[2])
     dir_idx = int(parts[3]) if len(parts) == 4 else None
-    if arm == "e4_randnorm" and dir_idx is None:
-        raise ValueError("e4_randnorm cell requires a dir index: trait/e4_randnorm/coef/dir")
-    return {"trait": trait, "arm": arm, "coef": coef, "dir_idx": dir_idx}
+    null_arms = ("e4_isotropic", "e4_neutral_cov")
+    if arm in null_arms and dir_idx is None:
+        raise ValueError(f"{arm} cell requires a dir index: trait/{arm}/coef/dir")
+    if arm in ("e2_randnorm", "e4_randnorm"):
+        raise ValueError(f"Contaminated arm slug {arm!r} — use e4_isotropic or e4_neutral_cov")
+    arm_seed_offset = (
+        dir_idx if arm == "e4_isotropic" else (100 + dir_idx if arm == "e4_neutral_cov" else None)
+    )
+    return {
+        "trait": trait,
+        "arm": arm,
+        "coef": coef,
+        "dir_idx": dir_idx,
+        "arm_seed_offset": arm_seed_offset,
+    }
 
 
 if __name__ == "__main__":

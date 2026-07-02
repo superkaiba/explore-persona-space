@@ -12,8 +12,16 @@ Two phases (``--phase``):
     is at/near the max trait-score-lift, then FREEZE. (The judge scoring of the
     probe runs off-pod; this writes the raw probe generations.)
   - ``steer`` (Exp-2): per (trait, arm) generation. Real arm sweeps coef
-    {-4,-2,-1,0,1,2,4,8} x 20 q x 5 rollouts; random arm sweeps coef {2,4,8} x
-    15 norm-matched dirs x 20 q x 5 rollouts. RAW (non-unit-normalized) r_B[19].
+    {-4,-2,-1,0,1,2,4,8} x 20 q x 5 rollouts; HONEST random null arms sweep
+    coef {2,4,8} x dirs x 20 q x 5 rollouts:
+      * ``e2_isotropic``   — 5 draws from N(0, I·σ²) renormed to ‖r_B[layer20]‖
+        (σ² = mean diagonal of neutral_cov at that layer). Seeds: base+0..4.
+      * ``e2_neutral_cov`` — 10 draws from N(0, Σ_neutral_l) Cholesky-sampled,
+        renormed. Seeds: base+100..109.
+    (The old ``e2_randnorm`` arm used the CONTAMINATED pooled pos+neg covariance
+    whose top PC ~ r_B cos~0.996 — that slug is retired; any cell carrying it
+    triggers a hard assert.)
+    RAW (non-unit-normalized) r_B[19].
 
 Steering vector = the raw ``r_B[trait][19]`` (layer 20). Random directions are
 norm-matched to ‖r_B[trait][19]‖ and seeded DETERMINISTICALLY per (trait, coef,
@@ -49,7 +57,9 @@ load_dotenv()
 # Exp-2 grids (plan v2 §4 / §11).
 EXP2_REAL_COEFS = (-4.0, -2.0, -1.0, 0.0, 1.0, 2.0, 4.0, 8.0)
 EXP2_RANDOM_COEFS = (2.0, 4.0, 8.0)
-EXP2_N_RANDOM_DIRS = 15
+# Honest null families (plan §5).  CONTAMINATED slug e2_randnorm is retired.
+EXP2_N_ISOTROPIC_DIRS = 5  # N(0, I·σ²) renormed; seeds base+0..4
+EXP2_N_NEUTRAL_COV_DIRS = 10  # N(0, Σ_neutral) Cholesky-sampled renormed; seeds base+100..109
 EXP2_N_ROLLOUTS = 5
 # Phase-0 probe grid (plan v2 §4 Phase 0).
 PROBE_LAYERS_1IDX = (14, 17, 20, 23)
@@ -133,13 +143,28 @@ def _build_work(phase: str, traits: list[str]) -> list[dict]:
                 }
             )
         for coef in EXP2_RANDOM_COEFS:
-            for dir_idx in range(EXP2_N_RANDOM_DIRS):
+            # e2_isotropic: N(0, I·σ²) renormed; seeds base+0..4
+            for dir_idx in range(EXP2_N_ISOTROPIC_DIRS):
                 work.append(
                     {
                         "trait": trait,
-                        "arm": "e2_randnorm",
+                        "arm": "e2_isotropic",
                         "coef": coef,
                         "dir_idx": dir_idx,
+                        "arm_seed_offset": dir_idx,  # seed = base_seed + dir_idx
+                        "layer": ilib.LAYER_20_1IDX,
+                        "n_rollouts": EXP2_N_ROLLOUTS,
+                    }
+                )
+            # e2_neutral_cov: Cholesky sample from neutral_cov; seeds base+100..109
+            for dir_idx in range(EXP2_N_NEUTRAL_COV_DIRS):
+                work.append(
+                    {
+                        "trait": trait,
+                        "arm": "e2_neutral_cov",
+                        "coef": coef,
+                        "dir_idx": dir_idx,
+                        "arm_seed_offset": 100 + dir_idx,  # seed = base_seed + 100 + dir_idx
                         "layer": ilib.LAYER_20_1IDX,
                         "n_rollouts": EXP2_N_ROLLOUTS,
                     }
@@ -154,8 +179,8 @@ def _run_cell(
     *,
     trait_rb,
     trait_rb_sha: str,
+    neutral_cov,
     conversations,
-    pool_acts_layer,
     max_new_tokens: int,
     seed_base: int,
 ) -> dict:
@@ -163,17 +188,47 @@ def _run_cell(
     import numpy as np
     import torch
 
+    # HARD ASSERT: contaminated slug must never appear in production cells.
+    assert cell["arm"] not in ("e2_randnorm", "e4_randnorm"), (
+        f"Contaminated arm slug in production cell: {cell['arm']} — "
+        "use e2_isotropic or e2_neutral_cov"
+    )
+
     layer_idx = cell["layer"] - 1
-    # Steering vector: real = raw r_B at this layer; random = norm-matched draw.
-    if cell["arm"] == "e2_randnorm":
-        dirs = ilib.norm_matched_random_dirs(
-            trait_rb[layer_idx].numpy(),
-            n_dirs=cell["dir_idx"] + 1,
-            pool_acts_layer=pool_acts_layer,
-            base_seed=seed_base + cell["layer"] * 1000,
-        )
-        vec = torch.tensor(dirs[cell["dir_idx"]], dtype=torch.float32)
-        vec_norm = float(np.linalg.norm(dirs[cell["dir_idx"]]))
+    # Steering vector: real = raw r_B at this layer; honest random = norm-matched draw.
+    if cell["arm"] in ("e2_isotropic", "e2_neutral_cov"):
+        rb_vec = trait_rb[layer_idx].numpy()
+        target_norm = float(np.linalg.norm(rb_vec))
+        dir_seed = seed_base + cell.get("arm_seed_offset", cell["dir_idx"])
+        rng = np.random.default_rng(dir_seed)
+        D = rb_vec.shape[0]
+        # neutral_cov is a torch.Tensor (N_LAYERS, D) or (N_LAYERS, D, D)
+        cov_l = neutral_cov[layer_idx].numpy().astype(np.float64)  # (D,) or (D,D)
+        if cell["arm"] == "e2_isotropic":
+            # σ² = mean diagonal of neutral_cov at this layer
+            diag_vals = np.diag(cov_l) if cov_l.ndim == 2 else cov_l
+            sigma2 = float(np.mean(diag_vals))
+            sigma = float(np.sqrt(max(sigma2, 1e-12)))
+            raw = rng.standard_normal(D) * sigma
+        else:
+            # e2_neutral_cov: Cholesky sample from neutral_cov at this layer
+            if cov_l.ndim == 1:
+                # Diagonal fast path
+                raw = rng.standard_normal(D) * np.sqrt(np.maximum(cov_l, 0.0))
+            else:
+                try:
+                    L = np.linalg.cholesky(cov_l + 1e-8 * np.eye(D))
+                    raw = L @ rng.standard_normal(D)
+                except np.linalg.LinAlgError:
+                    # Fallback to isotropic if Cholesky fails
+                    sigma = float(np.sqrt(max(float(np.mean(np.diag(cov_l))), 1e-12)))
+                    raw = rng.standard_normal(D) * sigma
+        # Renorm to ‖r_B[layer]‖
+        raw_norm = float(np.linalg.norm(raw))
+        if raw_norm > 1e-12:
+            raw = raw * (target_norm / raw_norm)
+        vec = torch.tensor(raw, dtype=torch.float32)
+        vec_norm = target_norm
     else:
         vec = trait_rb[layer_idx].clone()
         vec_norm = float(torch.linalg.norm(vec))
@@ -261,9 +316,9 @@ def main() -> None:
 
     model, tokenizer = _load_model_and_tokenizer(args.model, args.cpu_only)
 
-    # Per-trait: r_B + eval conversations + the layer-20 extraction pool (for
-    # norm-matched random dirs). Cache across cells of the same trait.
+    # Per-trait: r_B + neutral_cov + eval conversations. Cache across cells of the same trait.
     rb_cache: dict[str, tuple] = {}
+    neutral_cov_cache: dict[str, tuple] = {}
     conv_cache: dict[str, list] = {}
 
     def _trait_inputs(trait: str):
@@ -276,31 +331,28 @@ def main() -> None:
             conv_cache[trait] = convs
         return rb_cache[trait], conv_cache[trait]
 
-    # Norm-matched random dirs need a per-layer activation pool. Reuse the #778
-    # extraction pos+neg pool at the steering layer, fetched from HF alongside r_B.
-    # For arms/phases that never sample random dirs, the pool is unused.
-    pool_cache: dict[tuple[str, int], object] = {}
-
-    def _pool_for(trait: str, layer_1idx: int):
-        key = (trait, layer_1idx)
-        if key not in pool_cache:
-            pool_cache[key] = _load_extraction_pool(trait, layer_1idx - 1, cache_dir)
-        return pool_cache[key]
+    def _neutral_cov_for(trait: str):
+        """Fetch neutral_cov tensor for this trait (cached per trait)."""
+        if trait not in neutral_cov_cache:
+            neutral_cov_cache[trait] = ilib.fetch_neutral_cov(trait, cache_dir=cache_dir)
+        return neutral_cov_cache[trait]
 
     completed = 0
     for cell in work:
         (rb, rb_sha), convs = _trait_inputs(cell["trait"])
-        pool = None
-        if cell["arm"] == "e2_randnorm":
-            pool = _pool_for(cell["trait"], cell["layer"])
+        # Load neutral_cov only for arms that need it (isotropic uses its diagonal;
+        # neutral_cov uses the full tensor).  Probe/real arms don't need it.
+        neutral_cov = None
+        if cell["arm"] in ("e2_isotropic", "e2_neutral_cov"):
+            neutral_cov, _ncov_sha = _neutral_cov_for(cell["trait"])
         result = _run_cell(
             model,
             tokenizer,
             cell,
             trait_rb=rb,
             trait_rb_sha=rb_sha,
+            neutral_cov=neutral_cov,
             conversations=convs,
-            pool_acts_layer=pool,
             max_new_tokens=args.max_new_tokens,
             seed_base=args.seed,
         )

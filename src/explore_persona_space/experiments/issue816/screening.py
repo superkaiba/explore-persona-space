@@ -244,20 +244,44 @@ def run_null_battery_screening(  # noqa: C901
         iso_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
 
     # --- Family (2): neutral_cov N(0, Sigma_neutral_l) renormed ---
-    logger.info("[null] family 2: neutral_cov (n=%d)", n_draws_stochastic)
+    # Precompute ONE Cholesky factor per layer (28 total) to avoid re-factorizing
+    # inside the draw loop (~5,600 calls at n_draws=200). Diagonal fast path +
+    # isotropic fallback when Cholesky fails.
+    logger.info("[null] family 2: neutral_cov — precomputing %d Cholesky factors", n_layers)
+    chol_factors: list = []  # length n_layers; entry is L (D,D), diag-std (D,), or None
+    chol_types: list[str] = []  # "full", "diag", "iso_fallback"
+    for layer in range(n_layers):
+        cov_l = _neutral_cov_at(layer)
+        if cov_l.ndim == 1:
+            # Diagonal storage — fast path: treat as independent scales
+            chol_factors.append(np.sqrt(np.maximum(cov_l, 0.0)))
+            chol_types.append("diag")
+        else:
+            try:
+                L_chol = np.linalg.cholesky(cov_l + 1e-8 * np.eye(D))
+                chol_factors.append(L_chol)
+                chol_types.append("full")
+            except np.linalg.LinAlgError:
+                # Fallback: isotropic using mean diagonal variance
+                sigma = float(np.sqrt(_sigma2_iso(layer)))
+                chol_factors.append(np.full(D, sigma))
+                chol_types.append("iso_fallback")
+    logger.info(
+        "[null] family 2: Cholesky types — full=%d diag=%d iso_fallback=%d",
+        chol_types.count("full"),
+        chol_types.count("diag"),
+        chol_types.count("iso_fallback"),
+    )
+
+    logger.info("[null] family 2: neutral_cov draw loop (n=%d)", n_draws_stochastic)
     ncov_mat = np.zeros((n_draws_stochastic, n_layers), dtype=np.float64)
     for draw in range(n_draws_stochastic):
         dirs = np.zeros((n_layers, D), dtype=np.float64)
         for layer in range(n_layers):
-            cov_l = _neutral_cov_at(layer)
-            # Cholesky factor for sampling; add small nugget for numerical stability
-            try:
-                L_chol = np.linalg.cholesky(cov_l + 1e-8 * np.eye(D))
-                z = L_chol @ rng.standard_normal(D)
-            except np.linalg.LinAlgError:
-                # Fall back to isotropic if Cholesky fails
-                sigma = float(np.sqrt(_sigma2_iso(layer)))
-                z = rng.standard_normal(D) * sigma
+            factor = chol_factors[layer]
+            ftype = chol_types[layer]
+            z_unit = rng.standard_normal(D)
+            z = factor @ z_unit if ftype == "full" else factor * z_unit
             znorm = float(np.linalg.norm(z))
             target_norm = float(rb_norm_per_layer[layer])
             dirs[layer] = (z / znorm * target_norm) if znorm > 1e-12 else z
@@ -435,6 +459,10 @@ def run_null_battery_screening(  # noqa: C901
         if "bh_q" not in nulls[key]:
             nulls[key]["bh_q"] = None
 
+    # Emit bh_adjusted_stochastic as a top-level key for analysis_summary.json writer
+    # (analysis.py:139 reads res.get("bh_adjusted_stochastic"))
+    bh_adjusted_stochastic = {key: nulls[key].get("bh_q") for key in stochastic_keys}
+
     result = {
         "layer_idx_frozen": layer_idx,
         "layer_1indexed": layer_idx + 1,
@@ -444,6 +472,7 @@ def run_null_battery_screening(  # noqa: C901
         "seed": seed,
         "bh_correction_scope": "stochastic families (1-5) with n_draws>=50 only",
         "bh_keys_used": bh_keys_used,
+        "bh_adjusted_stochastic": bh_adjusted_stochastic,
         "nulls": nulls,
         "within_class_metadata": {
             "within_pos_cos_to_rb_at_frozen_layer": within_pos_cos_to_rb,
