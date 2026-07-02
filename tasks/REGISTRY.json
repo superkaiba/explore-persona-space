@@ -5745,8 +5745,8 @@
     "881": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/881",
-      "status": "running",
+      "path": "tasks/reviewing/881",
+      "status": "reviewing",
       "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
     },
     "882": {
