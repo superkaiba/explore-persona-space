@@ -5429,8 +5429,8 @@
     "839": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/839",
-      "status": "proposed",
+      "path": "tasks/archived/839",
+      "status": "archived",
       "title": "workflow-fix: followup-repark predicate must check same-issue-followup-run"
     },
     "84": {
