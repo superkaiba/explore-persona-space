@@ -230,3 +230,4 @@
 {"ts": "2026-07-02T21:04:18Z", "kind": "epm:progress", "version": 81, "by": "unknown", "note": "[poll-tick] 5th launch 14h05m. 5/8 cells done; ultrachat harmful_compliance in progress. Disk 80G free."}
 {"ts": "2026-07-02T21:55:15Z", "kind": "epm:progress", "version": 82, "by": "unknown", "note": "[poll-tick] 5th launch 14h55m. 5/8 cells done. Disk 78G free."}
 {"ts": "2026-07-02T22:46:20Z", "kind": "epm:progress", "version": 83, "by": "unknown", "note": "[poll-tick] 5th launch 15h45m. 5/8 cells done; ultrachat harmful_compliance grinding. Disk 52G free (fleet pressure)."}
+{"ts": "2026-07-02T23:48:36Z", "kind": "epm:progress", "version": 84, "by": "unknown", "note": "[poll-tick] 5th launch 16h35m. 5/8 cells done. Freed 9G disk (Codex-sandbox uv-cache dup); 40G free now; 58G held by live #779 mirror-dl (not mine to reap). Pipeline steady."}
