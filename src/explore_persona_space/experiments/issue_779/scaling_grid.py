@@ -305,6 +305,20 @@ def pv_pinv_read(
     if W is None:
         return np.full(eval_mat["c_last"].shape[0], np.nan)
     U, s, Vt = np.linalg.svd(W, full_matrices=False)
+    return _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=rank)
+
+
+def _pv_pinv_from_svd(
+    U: np.ndarray,
+    s: np.ndarray,
+    Vt: np.ndarray,
+    rb_l: np.ndarray,
+    eval_mat: dict,
+    *,
+    rank: int | None = None,
+) -> np.ndarray:
+    """<c_last, M⁺ r_B> from a PRE-COMPUTED SVD of W (so both the frozen-rank and
+    full-rank reads share one SVD — the H x H SVD is the pv_pinv cost)."""
     if rank is not None:
         rank = min(rank, len(s))
         U, s, Vt = U[:, :rank], s[:rank], Vt[:rank]
@@ -312,6 +326,26 @@ def pv_pinv_read(
     # M⁺ = V diag(1/s) Uᵀ ; w_pinv = M⁺ r_B  (r_B lives in the OUTPUT/profile space)
     w_pinv = (Vt.T * s_inv) @ (U.T @ np.asarray(rb_l, dtype=np.float64))
     return np.asarray(eval_mat["c_last"], dtype=np.float64) @ w_pinv
+
+
+def pv_pinv_reads(
+    W: np.ndarray, rb_l: np.ndarray, eval_mat: dict, *, rank: int | None
+) -> tuple[np.ndarray, np.ndarray]:
+    """(frozen-rank read, full-rank diagnostic read) from ONE SVD of W.
+
+    The mentor amendment reports both the frozen-rank pv_pinv (headline) and the
+    full-rank pinv (diagnostic); this computes the single H x H SVD once and
+    slices it for both ranks, instead of two independent SVDs. Returns
+    (pv_pinv[rank], pv_pinv[full]). NaN reads when W is None (< 2 train rows).
+    """
+    n_ev = eval_mat["c_last"].shape[0]
+    if W is None:
+        nan = np.full(n_ev, np.nan)
+        return nan, nan
+    U, s, Vt = np.linalg.svd(W, full_matrices=False)
+    frozen = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=rank)
+    full = _pv_pinv_from_svd(U, s, Vt, rb_l, eval_mat, rank=None)
+    return frozen, full
 
 
 def fit_g_cell(X_tr: np.ndarray, y_tr: np.ndarray | None, eval_mat: dict) -> np.ndarray:

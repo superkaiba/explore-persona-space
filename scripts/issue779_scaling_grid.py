@@ -233,8 +233,7 @@ def run_arm_comparison(
         ct = SG.assemble_cell_train(src, nL, nB, rng, upsample_1to1=up)
         h = SG.fit_h_cell(ct["X"], ct["Y"], eval_mat, rb_l)
         g = SG.fit_g_cell(ct["X"], ct["y"], eval_mat)
-        pinv_read = SG.pv_pinv_read(h["W"], rb_l, eval_mat, rank=pinv_rank)
-        pinv_full = SG.pv_pinv_read(h["W"], rb_l, eval_mat, rank=None)  # diagnostic
+        pinv_read, pinv_full = SG.pv_pinv_reads(h["W"], rb_l, eval_mat, rank=pinv_rank)
         out[arm] = {
             "n_lmsys_used": ct["n_lmsys_used"],
             "n_behavior_used": ct["n_behavior_used"],
