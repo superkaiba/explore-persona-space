@@ -131,6 +131,13 @@ def run_corpus_phase(
     corpus_dir.mkdir(parents=True, exist_ok=True)
     sp = SamplingParams(n=n_rollouts, temperature=1.0, top_p=0.95, max_tokens=1024, seed=42)
 
+    # Batched-rewrite equivalence gate (MAJOR 6): fail fast if the right-padded
+    # batched capture diverges from the batch-1 serial capture before the sweep
+    # corrupts all activations. Uses a handful of layers to keep the check cheap.
+    check_layers = layers if len(layers) <= 4 else [layers[0], layers[len(layers) // 2], layers[-1]]
+    eq = COL.assert_batched_capture_equivalence(model, tokenizer, check_layers)
+    logger.info("[corpus] batched-capture equivalence OK: %s", eq)
+
     produced: dict[str, dict] = {}
     for trait in traits:
         bundle_path = corpus_dir / f"{trait}_corpus.pt"
@@ -158,31 +165,34 @@ def run_corpus_phase(
             n_rollouts,
         )
 
-        # 1. Capture c_last per context.
-        prompt_texts = []
-        cx_last, cx_mean = [], []
-        for ctx in contexts:
-            cx = COL.capture_context_vector(model, tokenizer, ctx["messages"], layers)
-            cx_last.append(cx["last"])
-            cx_mean.append(cx["mean"])
-            prompt_texts.append(
-                tokenizer.apply_chat_template(
-                    ctx["messages"], tokenize=False, add_generation_prompt=True
-                )
+        # 1. Capture c_last per context (BATCHED — MAJOR 6; batch-1 forwards over
+        #    thousands of contexts are weight-bandwidth-bound).
+        messages_list = [ctx["messages"] for ctx in contexts]
+        cx_all = COL.capture_context_vectors_batched(model, tokenizer, messages_list, layers)
+        cx_last = [c["last"] for c in cx_all]
+        cx_mean = [c["mean"] for c in cx_all]
+        prompt_texts = [
+            tokenizer.apply_chat_template(
+                ctx["messages"], tokenize=False, add_generation_prompt=True
             )
+            for ctx in contexts
+        ]
 
         # 2. Generate n_rollouts per context (chunked vLLM / CPU shim).
         gen = COL._vllm_generate_chunked(llm, prompt_texts, sp)  # per-context list of n
 
         # 3. Per rollout: v(x) = mean-response activation (all layers), one
         #    teacher-force. KEEP both trait-high and trait-low (no filter).
+        #    BATCHED (MAJOR 6): build the full (context, rollout) item list, then
+        #    capture v(x) in right-padded batches. The vx_index preserves the
+        #    (context_idx, rollout_idx) alignment (empty completions -> None -> skip,
+        #    never coerced — same drop rule as the serial path).
         r_b = r_b_by_trait[trait].to(torch.float32)  # (L, H)
-        # v_x_stack: (n_contexts, n_valid_rollouts_per_ctx?) — variable per ctx;
-        # store per-rollout with an (context_idx, rollout_idx) index so alignment
-        # to the judge score is unambiguous.
         vx_records: list[torch.Tensor] = []  # each (L, H)
         vx_index: list[tuple[int, int]] = []  # (context_idx, rollout_idx)
         judge_completions: dict[str, dict[str, list[str]]] = {}
+        answer_items: list[tuple[list[dict], str]] = []
+        answer_keys: list[tuple[int, int]] = []  # (context_idx, rollout_idx) per item
         for ci, (ctx, comps) in enumerate(zip(contexts, gen, strict=True)):
             persona_key = f"p{ctx['persona_idx']:03d}"
             qkey = f"q{ctx['question_idx']:03d}"
@@ -191,19 +201,16 @@ def run_corpus_phase(
             # context-unique persona key so global-idx enumeration is 1:1 with ci.
             judge_completions.setdefault(f"{persona_key}_{qkey}", {})[ctx["question"]] = comps
             for ri, comp in enumerate(comps):
-                av = COL.capture_answer_vector(
-                    model,
-                    tokenizer,
-                    ctx["messages"],
-                    comp,
-                    layers,
-                    {trait: r_b},
-                    keep_per_token=False,
-                )
-                if av is None:  # empty completion — no v(x); skip (never coerce)
-                    continue
-                vx_records.append(av["v_x"])  # (L, H)
-                vx_index.append((ci, ri))
+                answer_items.append((ctx["messages"], comp))
+                answer_keys.append((ci, ri))
+        avs = COL.capture_answer_vectors_batched(
+            model, tokenizer, answer_items, layers, {trait: r_b}, keep_per_token=False
+        )
+        for (ci, ri), av in zip(answer_keys, avs, strict=True):
+            if av is None:  # empty completion — no v(x); skip (never coerce)
+                continue
+            vx_records.append(av["v_x"])  # (L, H)
+            vx_index.append((ci, ri))
 
         # 4. Judge every rollout (graded 0-100, N=5, DROP-NEVER-COERCE).
         save_raw = corpus_dir / f"judge_raw_{trait}.json"
@@ -476,9 +483,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Issue #779 Arm B/C behavior-corpus generation.")
     parser.add_argument(
         "--stage",
-        choices=["all", "corpus", "lmsys_g"],
+        choices=["all", "corpus", "lmsys_g", "upload_only"],
         default="all",
-        help="corpus = Arm B/C diverse corpus; lmsys_g = Arm A g labels (regen)",
+        help=(
+            "corpus = Arm B/C diverse corpus; lmsys_g = Arm A g labels (regen); "
+            "upload_only = upload an already-generated out_dir (no GPU/model load) "
+            "— used by the multi-GPU dispatcher's single post-join upload worker"
+        ),
     )
     parser.add_argument("--traits", nargs="+", default=list(C.TRAITS))
     parser.add_argument("--model", default=C.DEFAULT_MODEL)
@@ -510,6 +521,26 @@ def main() -> int:
 
     out_dir = Path(str(args.out_dir) + "_corpus_smoke") if args.smoke else args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # upload_only: no generation, no model/vLLM load — upload an already-generated
+    # out_dir once (the multi-GPU dispatcher's single post-join upload worker, so
+    # the trait-sharded --no-upload corpus workers do NOT race the shared HF
+    # prefix). Fail-loud if there is nothing to upload.
+    if args.stage == "upload_only":
+        C.phase("upload")
+        if args.no_upload:
+            raise ValueError("--stage upload_only is incompatible with --no-upload")
+        _upload_corpus(out_dir, smoke=args.smoke)
+        summary = {"traits": traits, "smoke": args.smoke, "stage": "upload_only"}
+        C.write_json_atomic(out_dir / "corpus_gen_summary.json", summary)
+        note = f"issue779 corpus-gen upload_only complete: {json.dumps(summary)[:2000]}"
+        C.write_sentinel(
+            "epm:smoke-result" if args.smoke else "epm:results",
+            note,
+            extra={"gpu_hours_used": None},
+        )
+        C.phase("done")
+        return 0
 
     C.phase("load_model")
     if args.device != "cpu":

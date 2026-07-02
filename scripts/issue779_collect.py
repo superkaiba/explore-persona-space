@@ -184,35 +184,208 @@ def capture_answer_vector(
     captured = extract_layer_activations(
         model, full_inputs["input_ids"], layers, attention_mask=full_inputs.get("attention_mask")
     )
-    n_layers = len(layers)
     # (n_resp, L, H) response-token activation stack.
     resp_stack = torch.stack(
         [captured[li][0, prompt_len:full_len, :].float().cpu() for li in layers], dim=1
     )  # (n_resp, L, H)
+    resp_ids = full_inputs["input_ids"][0, prompt_len:full_len].cpu()
+    # Shared reduction (serial + batched paths use the SAME code -> byte-identical
+    # outputs, asserted by assert_batched_capture_equivalence).
+    return _reduce_answer_capture(
+        resp_stack, resp_ids, tokenizer, layers, r_b_by_trait, keep_per_token=keep_per_token
+    )
+
+
+# ── batched capture (throughput; MAJOR 6) ────────────────────────────────────
+#
+# The per-context / per-rollout batch-1 forwards in run_corpus_phase are
+# weight-bandwidth-bound on a 7B bf16 model (~72k batch-1 forwards for the full
+# corpus). These helpers batch the forwards: pad a batch of variable-length
+# sequences, run ONE forward, and reduce per-row on the captured activations.
+#
+# RIGHT-PADDING (pad at the END) is used deliberately so that every REAL token
+# occupies positions 0..real_len-1: the model's default position_ids =
+# arange(T) is then correct per row with no explicit position_ids threading
+# (the left-pad position_ids trap, #502, is sidestepped entirely — under
+# left-pad RoPE would index the real tokens from the pad offset unless
+# position_ids = cumsum(mask)-1 is passed, which extract_layer_activations does
+# not accept). Causal attention + the attention_mask make the trailing pad
+# tokens never attend-to / be-attended-by any real token, so each row's
+# 0..real_len-1 activations are byte-identical to an unpadded batch-1 forward.
+# Equivalence is asserted by ``assert_batched_capture_equivalence``.
+
+CORPUS_CAPTURE_BATCH_SIZE = int(os.environ.get("EPM_CORPUS_CAPTURE_BATCH", "16"))
+
+
+def _right_pad_batch(
+    id_lists: list[list[int]], pad_id: int, device
+) -> tuple[torch.Tensor, torch.Tensor, list[int]]:
+    """Right-pad a list of token-id lists into (input_ids, attention_mask, lens).
+
+    Real tokens occupy positions 0..len-1 (pad at the end), so default
+    position_ids=arange(T) is correct per row. Returns (ids (B,T), mask (B,T),
+    per-row real lengths).
+    """
+    lens = [len(x) for x in id_lists]
+    max_len = max(lens)
+    b = len(id_lists)
+    ids = torch.full((b, max_len), pad_id, dtype=torch.long)
+    mask = torch.zeros((b, max_len), dtype=torch.long)
+    for i, x in enumerate(id_lists):
+        ids[i, : len(x)] = torch.tensor(x, dtype=torch.long)
+        mask[i, : len(x)] = 1
+    return ids.to(device), mask.to(device), lens
+
+
+def _pad_id_for(tokenizer) -> int:
+    pid = tokenizer.pad_token_id
+    if pid is None:
+        pid = tokenizer.eos_token_id
+    if pid is None:
+        raise ValueError("tokenizer has neither pad_token_id nor eos_token_id")
+    return int(pid)
+
+
+def capture_context_vectors_batched(
+    model, tokenizer, messages_list: list[list[dict]], layers: list[int]
+) -> list[dict]:
+    """Batched c_x = last-prompt-token AND mean-prompt-token activation, all layers.
+
+    Batched equivalent of ``capture_context_vector`` over a list of contexts.
+    Returns a list of {"last": (L,H), "mean": (L,H), "prompt_len": int} aligned to
+    ``messages_list``. Fail-loud position assert (assistant-header suffix) per row.
+    Right-padded (see module note): each row's last real token is at index
+    ``real_len-1`` and the mean is over ``0..real_len-1``.
+    """
+    out: list[dict] = [None] * len(messages_list)  # type: ignore[list-item]
+    pad_id = _pad_id_for(tokenizer)
+    for start in range(0, len(messages_list), CORPUS_CAPTURE_BATCH_SIZE):
+        batch = messages_list[start : start + CORPUS_CAPTURE_BATCH_SIZE]
+        id_lists = []
+        for messages in batch:
+            text = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            ids = tokenizer(text, return_tensors="pt", padding=False)["input_ids"][0]
+            suffix = tokenizer.decode(ids[-3:])
+            assert suffix == C.GENERATION_SUFFIX, (
+                f"c_x position assert failed: last-3 decode {suffix!r} != {C.GENERATION_SUFFIX!r}"
+            )
+            id_lists.append(ids.tolist())
+        ids_b, mask_b, lens = _right_pad_batch(id_lists, pad_id, model.device)
+        captured = extract_layer_activations(model, ids_b, layers, attention_mask=mask_b)
+        for bi in range(len(batch)):
+            rl = lens[bi]
+            last, mean = [], []
+            for li in layers:
+                hs = captured[li][bi]  # (T, H), right-padded
+                last.append(hs[rl - 1, :].float().cpu())
+                mean.append(hs[:rl, :].float().cpu().mean(dim=0))
+            out[start + bi] = {
+                "last": torch.stack(last),
+                "mean": torch.stack(mean),
+                "prompt_len": int(rl),
+            }
+    return out
+
+
+def capture_answer_vectors_batched(
+    model,
+    tokenizer,
+    items: list[tuple[list[dict], str]],
+    layers: list[int],
+    r_b_by_trait: dict[str, torch.Tensor],
+    *,
+    keep_per_token: bool = False,
+) -> list[dict | None]:
+    """Batched v(x) + R2 pooled projections over a list of (messages, response).
+
+    Batched equivalent of ``capture_answer_vector``. Returns a list aligned to
+    ``items``; an empty-response item yields None (same as the serial path). Each
+    row is reduced over its OWN response span (prompt_len..full_len-1) inside the
+    right-padded batch, so the reduction is byte-identical to the batch-1 forward.
+    """
+    out: list[dict | None] = [None] * len(items)
+    pad_id = _pad_id_for(tokenizer)
+    for start in range(0, len(items), CORPUS_CAPTURE_BATCH_SIZE):
+        batch = items[start : start + CORPUS_CAPTURE_BATCH_SIZE]
+        id_lists: list[list[int]] = []
+        spans: list[tuple[int, int] | None] = []  # (prompt_len, full_len) per row
+        for messages, response in batch:
+            prompt_text = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            prompt_len = tokenizer(prompt_text, return_tensors="pt", padding=False)[
+                "input_ids"
+            ].shape[1]
+            full_messages = [*messages, {"role": "assistant", "content": response}]
+            full_text = tokenizer.apply_chat_template(
+                full_messages, tokenize=False, add_generation_prompt=False
+            )
+            full_ids = tokenizer(full_text, return_tensors="pt", padding=False)["input_ids"][0]
+            full_len = full_ids.shape[0]
+            if full_len <= prompt_len:
+                id_lists.append(full_ids.tolist())
+                spans.append(None)  # empty response -> None row
+            else:
+                id_lists.append(full_ids.tolist())
+                spans.append((prompt_len, full_len))
+        ids_b, mask_b, _lens = _right_pad_batch(id_lists, pad_id, model.device)
+        captured = extract_layer_activations(model, ids_b, layers, attention_mask=mask_b)
+        for bi in range(len(batch)):
+            span = spans[bi]
+            if span is None:
+                out[start + bi] = None
+                continue
+            prompt_len, full_len = span
+            resp_stack = torch.stack(
+                [captured[li][bi, prompt_len:full_len, :].float().cpu() for li in layers], dim=1
+            )  # (n_resp, L, H)
+            out[start + bi] = _reduce_answer_capture(
+                resp_stack,
+                ids_b[bi, prompt_len:full_len].cpu(),
+                tokenizer,
+                layers,
+                r_b_by_trait,
+                keep_per_token=keep_per_token,
+            )
+    return out
+
+
+def _reduce_answer_capture(
+    resp_stack: torch.Tensor,
+    resp_ids: torch.Tensor,
+    tokenizer,
+    layers: list[int],
+    r_b_by_trait: dict[str, torch.Tensor],
+    *,
+    keep_per_token: bool,
+) -> dict:
+    """Reduce a (n_resp, L, H) response-token stack to v(x) + R2 pooled + peak.
+
+    Extracted from ``capture_answer_vector`` so the serial and batched paths share
+    ONE reduction (byte-identical outputs, asserted by the equivalence check).
+    """
+    n_layers = len(layers)
     n_resp = resp_stack.shape[0]
     v_x = resp_stack.mean(dim=0)  # (L, H)
-
-    resp_ids = full_inputs["input_ids"][0, prompt_len:full_len].cpu()
-
     pooled: dict[str, dict[str, list[float]]] = {}
     peak: dict[str, dict[str, dict]] = {}
     for trait, r_b in r_b_by_trait.items():
-        r_b = r_b.to(torch.float32)  # (L, H) block-index layers, aligned to `layers`
+        r_b = r_b.to(torch.float32)
         assert r_b.shape[0] == n_layers, (trait, r_b.shape, n_layers)
-        # proj[i, l] = <resp_stack[i, l], r_b[l]>  -> (n_resp, L)
         proj = torch.einsum("nlh,lh->nl", resp_stack, r_b)  # (n_resp, L)
-        mean_p = proj.mean(dim=0)  # (L,)
-        max_p, argmax_i = proj.max(dim=0)  # (L,), (L,)
-        last_p = proj[-1, :]  # (L,)
+        mean_p = proj.mean(dim=0)
+        max_p, argmax_i = proj.max(dim=0)
+        last_p = proj[-1, :]
         k = min(R2_TOPK, n_resp)
-        topk_p = proj.topk(k, dim=0).values.mean(dim=0)  # (L,)
+        topk_p = proj.topk(k, dim=0).values.mean(dim=0)
         pooled[trait] = {
             "mean": mean_p.tolist(),
             "max": max_p.tolist(),
             "topk": topk_p.tolist(),
             "last": last_p.tolist(),
         }
-        # H2b peak-token identity per layer (analyzer instrumentation).
         peak[trait] = {}
         for li_pos, layer_idx in enumerate(layers):
             ti = int(argmax_i[li_pos].item())
@@ -221,11 +394,79 @@ def capture_answer_vector(
                 "token_str": tokenizer.decode(resp_ids[ti : ti + 1]),
                 "proj": float(max_p[li_pos].item()),
             }
-
     out = {"v_x": v_x, "n_resp": n_resp, "pooled": pooled, "peak_token": peak}
     if keep_per_token:
-        out["per_token"] = resp_stack  # (n_resp, L, H) — R3 subset (subset of layers)
+        out["per_token"] = resp_stack
     return out
+
+
+def assert_batched_capture_equivalence(model, tokenizer, layers: list[int]) -> dict:
+    """Fail-fast batched-vs-serial equivalence check (batched-rewrite gate).
+
+    Runs BOTH the serial (batch-1) and batched (B>=2, right-padded) capture on a
+    tiny fixed set of variable-length contexts + responses, and asserts every
+    per-(layer) c_x last/mean and answer v(x)/pooled scalar matches within a tight
+    tolerance (cosine >= 0.999 AND max-abs diff small). Called before the corpus
+    sweep (and in the CPU smoke) so a padding/reduction bug fails fast rather than
+    silently corrupting all captured activations. Returns a small metrics dict.
+    """
+    import numpy as _np
+
+    # Variable-length contexts so padding actually fires (B>=2).
+    msgs = [
+        [{"role": "system", "content": "You are helpful."}, {"role": "user", "content": "Hi."}],
+        [
+            {"role": "system", "content": "You are a careful, verbose assistant."},
+            {"role": "user", "content": "Explain in detail why the sky appears blue at noon."},
+        ],
+        [{"role": "user", "content": "Count to three."}],
+    ]
+    # context equivalence
+    ser_ctx = [capture_context_vector(model, tokenizer, m, layers) for m in msgs]
+    bat_ctx = capture_context_vectors_batched(model, tokenizer, msgs, layers)
+
+    def _cos(a: torch.Tensor, b: torch.Tensor) -> float:
+        a = a.flatten().double()
+        b = b.flatten().double()
+        return float(torch.dot(a, b) / (a.norm() * b.norm() + 1e-12))
+
+    ctx_cos_min = 1.0
+    ctx_max_abs = 0.0
+    for s, b in zip(ser_ctx, bat_ctx, strict=True):
+        for key in ("last", "mean"):
+            ctx_cos_min = min(ctx_cos_min, _cos(s[key], b[key]))
+            ctx_max_abs = max(ctx_max_abs, float((s[key] - b[key]).abs().max()))
+
+    # answer equivalence (fixed responses so no generation needed).
+    r_b = {"probe": torch.randn(len(layers), model.config.hidden_size, dtype=torch.float32)}
+    responses = [
+        "Blue light scatters more.",
+        "Because Rayleigh scattering favors short wavelengths across the whole sky.",
+        "One two three.",
+    ]
+    items = list(zip([m for m in msgs], responses, strict=True))
+    ser_ans = [capture_answer_vector(model, tokenizer, m, r, layers, r_b) for m, r in items]
+    bat_ans = capture_answer_vectors_batched(model, tokenizer, items, layers, r_b)
+    ans_cos_min = 1.0
+    ans_max_abs = 0.0
+    for s, b in zip(ser_ans, bat_ans, strict=True):
+        assert (s is None) == (b is None), "batched/serial disagree on empty-response detection"
+        if s is None:
+            continue
+        ans_cos_min = min(ans_cos_min, _cos(s["v_x"], b["v_x"]))
+        ans_max_abs = max(ans_max_abs, float((s["v_x"] - b["v_x"]).abs().max()))
+        sp = _np.array(s["pooled"]["probe"]["mean"])
+        bp = _np.array(b["pooled"]["probe"]["mean"])
+        ans_max_abs = max(ans_max_abs, float(_np.abs(sp - bp).max()))
+    metrics = {
+        "ctx_cos_min": ctx_cos_min,
+        "ctx_max_abs": ctx_max_abs,
+        "ans_cos_min": ans_cos_min,
+        "ans_max_abs": ans_max_abs,
+    }
+    assert ctx_cos_min >= 0.999, f"context capture batched!=serial (cos {ctx_cos_min}): {metrics}"
+    assert ans_cos_min >= 0.999, f"answer capture batched!=serial (cos {ans_cos_min}): {metrics}"
+    return metrics
 
 
 # ── vLLM generation (chunked) ─────────────────────────────────────────────────
