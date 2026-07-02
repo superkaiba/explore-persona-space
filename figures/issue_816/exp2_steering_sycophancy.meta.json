@@ -1,0 +1,86 @@
+{
+  "commit": "95f363fdd9",
+  "created": "2026-07-02T16:01:14Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "steering coefficient": 2.0,
+      "graded trait score (0-100)": 60.419415807560135,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steering coefficient": 4.0,
+      "graded trait score (0-100)": 93.65174129353234,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steering coefficient": 8.0,
+      "graded trait score (0-100)": 0.2845528455284553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steering coefficient": -4.0,
+      "graded trait score (0-100)": 8.71969696969697,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": -2.0,
+      "graded trait score (0-100)": 12.416666666666671,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": -1.0,
+      "graded trait score (0-100)": 12.391666666666666,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 0.0,
+      "graded trait score (0-100)": 17.143333333333334,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 1.0,
+      "graded trait score (0-100)": 35.805218855218854,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 2.0,
+      "graded trait score (0-100)": 75.88195876288663,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 4.0,
+      "graded trait score (0-100)": 73.00444444444445,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "steering coefficient": 8.0,
+      "graded trait score (0-100)": 0.0,
+      "series": "real vector",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 11
+}
