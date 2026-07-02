@@ -138,6 +138,27 @@ def _upload_analysis_tensors() -> dict:
         ]
         uploaded[sub] = {"repo": repo_used, "path_in_repo": path_in_repo, "n_files": len(files)}
         logger.info("uploaded %d %s files -> %s/%s", len(files), sub, repo_used, path_in_repo)
+
+    # Top-level fit-input JSONs — E0 (the judged rates) + pv_rb (the PV summary).
+    # These are the fit's y source + PV baseline; the --from-phase fit resume
+    # stages them from this exact prefix on a fresh CPU VM
+    # (issue763_fit_predictors._stage_fit_inputs_from_hf). They are non-LFS text
+    # JSON, so they ride the quota-safe git-blob path (never LFS) — upload_file
+    # per file (single-file API; NOT upload_folder, which no-ops on a file path).
+    for name in ("E0_matched_by_behavior.json", "pv_rb_by_behavior.json"):
+        local = EVAL_RESULTS_DIR / name
+        if not local.is_file():
+            continue
+        dst = f"{HF_ANALYSIS_TENSORS_PREFIX}/{name}"
+        api.upload_file(
+            path_or_fileobj=str(local),
+            path_in_repo=dst,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            commit_message=f"issue763: fit input {name}",
+        )
+        uploaded[name] = {"repo": HF_DATA_REPO, "path_in_repo": dst, "n_files": 1}
+        logger.info("uploaded %s -> %s/%s", name, HF_DATA_REPO, dst)
     return uploaded
 
 

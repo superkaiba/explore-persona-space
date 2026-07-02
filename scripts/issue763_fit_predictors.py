@@ -33,10 +33,20 @@ b/fails, c/noise_limited) per plan §3.
 
 Writes ``eval_results/issue_763/matched_predictor_results.json``.
 
-VECTORIZED per ``.claude/rules/vectorize-many-cell-fits.md``: the ridge LOCO is
-closed-form PRESS (cheap); the GLM is IRLS over n≤50 cells (NOT many-epoch SGD,
-not the GD-fit class) — the layer/behavior axes are looped but each cell is
-seconds; the null layer-sweep is the cost, bounded by perms × layers.
+VECTORIZED per ``.claude/rules/vectorize-many-cell-fits.md`` (2026-07-01, the
+80×-compute-deviation reversal): the serial fit is OVERHEAD-bound — its hot loops
+are the shuffle/control NULLS (1000 perms × 28 layers × 50 folds × a statsmodels
+binomial-GLM IRLS OR a per-fold ``torch.linalg.eigh`` PRESS ridge), profiled at
+~70–79 s per 1-layer fixed-dim LOCO, projecting the serial null to ~1000 h PER
+BEHAVIOR. The fits are batched into ``analysis.issue_763_vectorized``: a batched
+IRLS binomial GLM (reproduces statsmodels to ~1e-10) + a batched PRESS ridge that
+REUSES the label-independent per-(layer, fold) eigendecomposition across all
+perms, + batched observed nested-CV reads (bit-identical / ≤1e-6). The statistical
+SEMANTICS are UNCHANGED (same nested-CV d, same PRESS-λ, same n_perms=1000 /
+n_bootstrap=2000 / reliability spec; only execution batched); a hard fail-loud
+exactness gate (``assert_matches_reference``, run at ``main()`` start) verifies
+the batched path against the serial oracles before any behavior is fit. Runs
+0-GPU on the ``cpu-mid`` lane (torch threads pinned via ``--num-threads``).
 
 ``--smoke`` runs the FULL chain on the smoke slice (1 behavior × 3 contexts ×
 5 probes) with reduced perms; asserts ρ_GLM/ρ_ridge/ρ_PV are finite + the JSON
@@ -52,6 +62,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import random
 import sys
 from pathlib import Path
@@ -82,17 +93,21 @@ from issue763_common import (  # noqa: E402
     reproducibility_metadata,
 )
 
-from explore_persona_space.analysis.issue_763_glm import (  # noqa: E402
-    glm_predict_loco,
-    glm_predict_loco_fixed_dim,
-)
 from explore_persona_space.analysis.issue_763_pca import (  # noqa: E402
+    PCA_DIM_GRID,
     _pca_fit,
     _pca_transform,
     nested_cv_pca_reduce,
     select_pca_dim,
 )
 from explore_persona_space.analysis.issue_763_reliability import compute_bracket  # noqa: E402
+from explore_persona_space.analysis.issue_763_vectorized import (  # noqa: E402
+    assert_matches_reference,
+    batched_binomial_glm_loco_fixed_dim,
+    batched_glm_predict_loco,
+    batched_ridge_predict_loco_pca,
+    batched_ridge_press_loco_fixed_dim,
+)
 
 
 def _ridge_predict_loco_pca(
@@ -274,6 +289,67 @@ def _load_v0(behavior: str) -> tuple[np.ndarray, list[str]]:
     return blob["tensor"].float().numpy(), blob["context_ids"]
 
 
+def _stage_fit_inputs_from_hf(behaviors: list[str]) -> None:
+    """Stage the NON-v0 fit inputs (E0 + pv_rb JSONs + pv_shards) from HF.
+
+    The ``--from-phase fit`` resume boots on a FRESH cpu-mid VM whose local
+    ``eval_results/issue_763/`` tree does not exist (the prior GPU pod that
+    produced E0 / pv_rb / pv_shards is stopped). ``_load_v0`` already stages the
+    v0 shards; this stages the remaining fit inputs the SAME way — PER-FILE
+    ``hf_hub_download`` by exact path (NOT ``snapshot_download(allow_patterns=)``,
+    the 94k-file siblings-truncation trap the whole #763 staging family avoids;
+    standing lesson feedback_snapshot_download_siblings_truncation.md). Each input
+    is fetched from the issue-owned ``<HF_ANALYSIS_TENSORS_PREFIX>/`` prefix into
+    the local path the fit reads.
+
+    FAIL-LOUD when an input is NEITHER local NOR on HF: E0 / pv_rb / pv_shards are
+    produced by the phase-2 ``judge`` + ``pv_extract_capture`` steps (uploaded by
+    ``issue763_upload.py``); if they are absent, the fit resume was dispatched
+    before those phases completed + uploaded, and the correct action is to
+    re-run them (never to silently fit on a stale / partial local slice). The
+    raise names exactly which artifact is missing.
+    """
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
+
+    prefix = HF_ANALYSIS_TENSORS_PREFIX
+
+    def _fetch(local: Path, filename: str, what: str) -> None:
+        if local.exists():
+            return
+        try:
+            src = hf_hub_download(repo_id=HF_DATA_REPO, repo_type="dataset", filename=filename)
+        except EntryNotFoundError as e:
+            raise FileNotFoundError(
+                f"{what} is neither local ({local}) nor on HF "
+                f"({HF_DATA_REPO}/{filename}) — the phase-2 judge / pv_extract_capture "
+                "step never produced/uploaded it. Re-run --from-phase pv_capture "
+                "(E0 judge + PV capture + upload) before the fit resume."
+            ) from e
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_bytes(Path(src).read_bytes())
+        logger.info("[fit_stage] staged %s <- %s/%s", what, HF_DATA_REPO, filename)
+
+    # E0 (the graded + binary judged rates) — the fit's y source.
+    _fetch(
+        EVAL_RESULTS_DIR / "E0_matched_by_behavior.json",
+        f"{prefix}/E0_matched_by_behavior.json",
+        "E0_matched_by_behavior.json",
+    )
+    # PV baseline: the per-behavior r_B summary JSON + per-behavior rb shards.
+    _fetch(
+        EVAL_RESULTS_DIR / "pv_rb_by_behavior.json",
+        f"{prefix}/pv_rb_by_behavior.json",
+        "pv_rb_by_behavior.json",
+    )
+    for b in behaviors:
+        _fetch(
+            EVAL_RESULTS_DIR / "pv_shards" / f"rb_{b}.pt",
+            f"{prefix}/pv_shards/rb_{b}.pt",
+            f"pv_shards/rb_{b}.pt",
+        )
+
+
 def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
     """Align E0 graded_mean + rate + n_judged + per_probe with the v0 context order.
 
@@ -353,17 +429,26 @@ def _layer_sweep_select(
         fd = fixed_dims[ell] if fixed_dims is not None else None
         if predictor == "glm":
             if fd is not None:
-                pred = glm_predict_loco_fixed_dim(x, y, n_judged, fd)
+                # VECTORIZED batched IRLS (1-perm batch here; the null's P-perm
+                # batching lives in _shuffle_null). Reproduces statsmodels
+                # glm_predict_loco_fixed_dim to ~1e-10 (assert_matches_reference).
+                pred = batched_binomial_glm_loco_fixed_dim(x, y[None, :], n_judged[None, :], fd)[0]
             else:
-                pred = glm_predict_loco(x, y, n_judged)["pred"]
+                # VECTORIZED observed nested-CV GLM LOCO (batched inner-LOO dim
+                # select). Same nested-CV protocol as the serial glm_predict_loco,
+                # verified ≤1e-6 by assert_matches_reference.
+                pred = batched_glm_predict_loco(x, y, n_judged, PCA_DIM_GRID)
         elif predictor == "ridge":
             # PCA-reduced ridge on the SAME per-fold reduction the GLM consumes
             # (#763 BLOCKER ridge-pca-comparator) — matched capacity so the
             # ρ_ridge − ρ_GLM optimism delta is apples-to-apples.
             if fd is not None:
-                pred = _ridge_predict_loco_fixed_dim(x, y, n_judged, RIDGE_LAMBDAS, fd)
+                pred = batched_ridge_press_loco_fixed_dim(x, y[None, :], RIDGE_LAMBDAS, fd)[0]
             else:
-                pred = _ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS)
+                # VECTORIZED observed nested-CV PCA-ridge LOCO (same shared dim
+                # selection the GLM uses); bit-identical to _ridge_predict_loco_pca
+                # (0.0 delta in assert_matches_reference).
+                pred = batched_ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS, PCA_DIM_GRID)
         elif predictor == "pv":
             assert rb is not None
             direction = rb[ell]  # (H,)
@@ -426,15 +511,55 @@ def _shuffle_null(v0, y, n_judged, predictor, *, rb, n_perms, seed) -> dict:
     obs_rho = obs["chosen_rho"]
     if obs_rho is None:
         return {"observed_rho": None, "p_value": None, "n_perms": 0, "null_rhos": []}
-    null_rhos: list[float] = []
-    idx = list(range(len(y)))
-    for _ in range(n_perms):
+
+    # Replay the IDENTICAL rng.shuffle(idx) stream to materialize all P perms up
+    # front (same seed → same permutations as the serial per-perm loop), then run
+    # the fixed-dim fit ONCE PER LAYER with all P perms BATCHED (the vectorization
+    # win — the per-(layer, fold) PCA basis / eigendecomposition is
+    # label-independent, so it is reused across perms). This is a pure execution
+    # refactor: the per-perm chosen-layer-ρ (max over layers) + the right-tail p +
+    # the null_p95 are computed exactly as the serial loop did.
+    n = len(y)
+    idx = list(range(n))
+    y_perms = np.empty((n_perms, n), dtype=np.float64)
+    nj_perms = np.empty((n_perms, n), dtype=np.float64)
+    for pth in range(n_perms):
         rng.shuffle(idx)
-        y_perm = y[idx]
-        nj_perm = n_judged[idx]
-        sel = _layer_sweep_select(v0, y_perm, nj_perm, predictor, rb=rb, fixed_dims=fixed_dims)
-        if sel["chosen_rho"] is not None:
-            null_rhos.append(sel["chosen_rho"])
+        y_perms[pth] = y[idx]
+        nj_perms[pth] = n_judged[idx]
+
+    _n_ctx, n_layers, _h = v0.shape
+    # per-layer (P, n) held-out predictions for every perm at once.
+    per_layer_perm_rho = np.full((n_layers, n_perms), np.nan, dtype=np.float64)
+    for ell in range(n_layers):
+        x = v0[:, ell, :]
+        if predictor == "glm":
+            preds = batched_binomial_glm_loco_fixed_dim(x, y_perms, nj_perms, fixed_dims[ell])
+        elif predictor == "ridge":
+            preds = batched_ridge_press_loco_fixed_dim(x, y_perms, RIDGE_LAMBDAS, fixed_dims[ell])
+        elif predictor == "pv":
+            assert rb is not None
+            # The projection is FIXED (only labels permute), so every perm reads
+            # the same predictor vector against its own permuted y — identical to
+            # the serial PV path (_rho(x @ direction, y_perm) per perm).
+            proj = x @ rb[ell]  # (n,)
+            preds = np.broadcast_to(proj, (n_perms, n))
+        else:
+            raise ValueError(predictor)
+        for pth in range(n_perms):
+            r = _rho(preds[pth], y_perms[pth])
+            if r is not None:
+                per_layer_perm_rho[ell, pth] = r
+
+    # per-perm chosen ρ = max over layers (NaN treated as -inf; a perm whose every
+    # layer is None/NaN is DROPPED, matching the serial "if sel['chosen_rho'] is
+    # not None: null_rhos.append(...)").
+    null_rhos: list[float] = []
+    for pth in range(n_perms):
+        col = per_layer_perm_rho[:, pth]
+        if np.all(np.isnan(col)):
+            continue
+        null_rhos.append(float(np.nanmax(col)))
     if not null_rhos:
         return {"observed_rho": obs_rho, "p_value": None, "n_perms": 0, "null_rhos": []}
     null_arr = np.asarray(null_rhos)
@@ -553,6 +678,25 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     keep_idx = [ctx_ids.index(c) for c in kept]
     v0_kept = v0[keep_idx]
     rb = rb_blob["r_b"].float().numpy() if rb_blob is not None else None
+
+    # Fail-loud PV/v0 geometry guard (concern pv-baseline-staged-is-05b-smoke-not-7b):
+    # the PV arm reads `direction = rb[ell]` (ell over v0's n_layers) then `x @ direction`
+    # (x is (n_ctx, H)), so rb MUST be (n_layers, H) matching v0. A rb captured on a
+    # DIFFERENT model (e.g. a Qwen2.5-0.5B mock PV, [24, 896], vs the production 7B
+    # [*, 28, 3584]) would otherwise crash deep inside _layer_sweep_select with a
+    # cryptic broadcast/IndexError — or, worse, silently mis-project. Assert the exact
+    # (n_layers, H) match up front with an actionable message naming both shapes.
+    if rb is not None:
+        _, n_layers_v0, h_v0 = v0_kept.shape
+        if rb.shape != (n_layers_v0, h_v0):
+            raise ValueError(
+                f"PV r_B geometry mismatch for {behavior}: rb.shape={tuple(rb.shape)} "
+                f"but v0 is (n_layers={n_layers_v0}, H={h_v0}). The PV baseline (r_B) was "
+                "captured on a DIFFERENT model than v0 (a [24, 896] r_B is a Qwen2.5-0.5B "
+                "MOCK/smoke capture; production is Qwen2.5-7B, 28 layers x 3584). Re-capture "
+                "the 7B PV baseline (issue763_extract_pv_rb.py on Qwen/Qwen2.5-7B-Instruct) or "
+                "re-point the fit-input staging at the 7B r_B before re-running the fit."
+            )
 
     # ── PRIMARY: the GRADED DV (y = graded_mean), headline predictor = RIDGE ──
     # Ridge + PV consume the RAW 0-100 graded mean (Spearman is rank-based, so the
@@ -729,10 +873,35 @@ def main() -> int:
     )
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--num-threads",
+        type=int,
+        default=int(os.environ.get("EPM_FIT_NUM_THREADS", "8")),
+        help="torch CPU thread count (cpu-mid = 8 vCPU; tiny batched ops thrash "
+        "at the default high count — vectorize-many-cell-fits.md item 3)",
+    )
     args = ap.parse_args()
+
+    # CPU-lane thread discipline: the batched fits are small tensors, so a sane
+    # thread count (default = cpu-mid's 8 vCPU) beats the default oversubscription.
+    torch.set_num_threads(max(1, args.num_threads))
+
+    # Exactness GATE (fail-loud): the vectorized batched fits MUST reproduce the
+    # serial statsmodels-GLM / #658-PRESS-ridge oracles before ANY behavior is fit
+    # — a batched-solve / seeding / standardization drift would silently corrupt
+    # the headline ρ. Aborts the whole run on any tolerance miss.
+    gate = assert_matches_reference()
+    logger.info("[fit] vectorized-exactness gate PASS: %s", gate)
 
     n_perms = 50 if args.smoke else N_SHUFFLE_PERMS
     n_boot = 200 if args.smoke else N_BOOTSTRAP
+
+    # --from-phase fit resume boots on a FRESH cpu-mid VM: stage E0 + pv_rb +
+    # pv_shards from HF (v0 is staged lazily by _load_v0). Fail-loud if an input
+    # is neither local nor on HF (see _stage_fit_inputs_from_hf). Skipped under
+    # --smoke, which runs fully offline on the local 1-behavior slice.
+    if not args.smoke:
+        _stage_fit_inputs_from_hf(args.behaviors)
 
     e0 = load_json(EVAL_RESULTS_DIR / "E0_matched_by_behavior.json")
     pv_path = EVAL_RESULTS_DIR / "pv_rb_by_behavior.json"

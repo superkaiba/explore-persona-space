@@ -229,7 +229,8 @@ def load_frozen_pool(behavior: str) -> dict:
         raise FileNotFoundError(
             f"frozen probe pool missing for {behavior}: {path} — run "
             "scripts/issue763_build_probe_pools.py first (and the GCP lane must "
-            "snapshot_download the HF inputs mirror; plan §9 / artifact-reuse (h))"
+            "per-file hf_hub_download the HF inputs mirror via "
+            "issue763_stage_pools.py; plan §9 / artifact-reuse (h))"
         )
     pool = load_json(path)
     probes = pool["probes"]

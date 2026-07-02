@@ -503,27 +503,42 @@ def _stage_gen_from_hf(behaviors: list[str]) -> None:
     file is resolved by exact path — no siblings listing, no truncation. Fail loud
     if any expected gen cell is missing on HF (the phase-1 upload never produced it).
     """
-    missing = [b for b in behaviors if not (GEN_DIR / b).is_dir()]
-    if not missing:
+    from issue594_common import load_battery
+
+    # The canonical expected ctx set = the committed battery (the SAME source the
+    # generator used), so completeness is expected-vs-actual, NOT dir-existence.
+    _, instances = load_battery()
+    ctx_ids = [inst["id"] for inst in instances]
+
+    # COMPLETENESS CHECK, not dir-existence (task #763 CONCERN
+    # gen-stage-partial-dir-treated-complete): a behavior whose GEN_DIR/<b>/
+    # exists but is MISSING some <ctx>.json files (a retry after a partial stage,
+    # or a mid-fetch crash) must be COMPLETED, not silently accepted. Skip a
+    # behavior only when EVERY expected ctx file is present.
+    def _missing_ctx(b: str) -> list[str]:
+        d = GEN_DIR / b
+        if not d.is_dir():
+            return list(ctx_ids)
+        return [c for c in ctx_ids if not (d / f"{c}.json").exists()]
+
+    to_fetch = {b: _missing_ctx(b) for b in behaviors}
+    to_fetch = {b: miss for b, miss in to_fetch.items() if miss}
+    if not to_fetch:
         return
     from huggingface_hub import hf_hub_download
     from huggingface_hub.utils import EntryNotFoundError
-    from issue594_common import load_battery
 
-    _, instances = load_battery()
-    ctx_ids = [inst["id"] for inst in instances]
     path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/gen"
     logger.info(
-        "[gen_stage] fetching %s (%d ctx each) from %s/%s",
-        missing,
-        len(ctx_ids),
+        "[gen_stage] fetching missing gen cells %s from %s/%s",
+        {b: len(miss) for b, miss in to_fetch.items()},
         HF_DATA_REPO,
         path_in_repo,
     )
-    for b in missing:
+    for b, miss in to_fetch.items():
         dst_dir = GEN_DIR / b
         dst_dir.mkdir(parents=True, exist_ok=True)
-        for ctx_id in ctx_ids:
+        for ctx_id in miss:
             try:
                 src = hf_hub_download(
                     repo_id=HF_DATA_REPO,
@@ -540,10 +555,33 @@ def _stage_gen_from_hf(behaviors: list[str]) -> None:
             (dst_dir / f"{ctx_id}.json").write_bytes(Path(src).read_bytes())
 
 
+def _gen_dir_complete(behavior: str) -> bool:
+    """True iff GEN_DIR/<behavior>/ holds every committed-battery ctx file.
+
+    The completeness predicate the loader gates on (task #763 CONCERN
+    gen-stage-partial-dir-treated-complete): an existing-but-partial dir is NOT
+    complete. Falls back to a lenient ``is_dir() and non-empty`` when the battery
+    cannot be loaded (e.g. the offline smoke, which writes a 3-ctx subset that is
+    not the full committed battery) so the smoke path is unaffected.
+    """
+    d = GEN_DIR / behavior
+    if not d.is_dir():
+        return False
+    try:
+        from issue594_common import load_battery
+
+        _, instances = load_battery()
+        ctx_ids = [inst["id"] for inst in instances]
+    except Exception:
+        return any(d.glob("*.json"))  # offline / subset smoke — lenient
+    return all((d / f"{c}.json").exists() for c in ctx_ids)
+
+
 def _load_gen_by_ctx(behavior: str) -> dict[str, dict]:
     gen_dir = GEN_DIR / behavior
-    if not gen_dir.is_dir():
-        # Try staging from HF (gate-split phase 2 on a fresh VM, hotfix 2026-06-30).
+    if not _gen_dir_complete(behavior):
+        # Stage/complete from HF (gate-split phase 2 on a fresh VM, or a partial
+        # prior stage — hotfix 2026-06-30 + #763 CONCERN partial-dir fix).
         _stage_gen_from_hf([behavior])
     if not gen_dir.is_dir():
         raise FileNotFoundError(f"no generated completions for {behavior}: {gen_dir}")

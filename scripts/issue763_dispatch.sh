@@ -36,7 +36,12 @@ fi
 cd "$REPO_ROOT"
 
 SMOKE=""
-FROM_PHASE=""  # "" = phase-1 (gate exit); "pv_capture" = resume after the off-pod judge
+# FROM_PHASE: "" = phase-1 (gate exit); "pv_capture" = GPU resume after the
+# off-pod PV judge; "fit" = CPU-ONLY resume (cpu-mid lane) — E0 + PV + fit are
+# DONE + on HF, so skip straight to the vectorized fit -> figures -> upload with
+# NO --device cuda anywhere (task #763 r6 USER OVERRIDE: vectorize the fit + run
+# it off-GPU; the prior serial fit idled a 1xH100 ~16h).
+FROM_PHASE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --smoke) SMOKE="--smoke" ;;
@@ -48,8 +53,8 @@ while [ $# -gt 0 ]; do
   esac
   shift || true
 done
-if [ -n "$FROM_PHASE" ] && [ "$FROM_PHASE" != "pv_capture" ]; then
-  echo "[issue763.dispatch] FATAL: unknown --from-phase '$FROM_PHASE' (only 'pv_capture')" >&2
+if [ -n "$FROM_PHASE" ] && [ "$FROM_PHASE" != "pv_capture" ] && [ "$FROM_PHASE" != "fit" ]; then
+  echo "[issue763.dispatch] FATAL: unknown --from-phase '$FROM_PHASE' (only 'pv_capture' | 'fit')" >&2
   exit 2
 fi
 
@@ -109,6 +114,30 @@ if [ -n "$SMOKE" ]; then
   echo "[phase=figures]"
   uv run python scripts/issue763_plot.py --smoke --behaviors "$BEH"
 
+  echo "[phase=done]"
+  exit 0
+fi
+
+# ── CPU-ONLY FIT RESUME (--from-phase fit; cpu-mid lane, NO GPU) ──────────────
+# task #763 r6 USER OVERRIDE: v0(C,B) + graded E0(C,B) + the PV baseline are DONE
+# and staged from HF; the vectorized fit + figures + upload are CPU-only. This
+# resume skips EVERY GPU phase (no --device cuda anywhere) and runs the
+# vectorized fit (analysis.issue_763_vectorized; ~1000h serial null -> minutes).
+# The fit stages E0 + pv_rb + pv_shards from HF (issue763_fit_predictors.
+# _stage_fit_inputs_from_hf, fail-loud if absent) and v0 lazily (_load_v0).
+if [ "$FROM_PHASE" = "fit" ]; then
+  echo "[issue763.dispatch] CPU-only fit resume (cpu-mid, no GPU); commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+  echo "[phase=fit]"
+  uv run python scripts/issue763_fit_predictors.py
+
+  echo "[phase=figures]"
+  uv run python scripts/issue763_plot.py
+
+  echo "[phase=upload]"
+  uv run python scripts/issue763_upload.py
+
+  echo "[phase=finalize]"
   echo "[phase=done]"
   exit 0
 fi
