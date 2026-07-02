@@ -356,7 +356,7 @@ names the closest demonstrable proxy — then it is at most CONCERNS.
 Rationale: a fix re-run on a fresh pod whose code path was never proven
 to engage is the #664 banned regression (a chunk-500 fix relaunched when
 the absent `[vllm-chunk]` log meant the hang preceded the first chunk).
-Mirror implementer rule: `experiment-implementer.md` § "Crash-fix rounds:
+Mirror implementer rule: `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds:
 declare the fix-engaged signal".
 
 **Deferred imports inside smoke-skipped branches are unverified code —

@@ -196,3 +196,92 @@ check) → `consistency-checker` (independent reuse-smuggled-variable diff vs
 the parent recipe) → `critic.md` Methodology lens item 9 (REVISE); the reuse
 provenance is then carried into the clean-result `## Reproducibility`
 (`analyzer.md`) and audited by `clean-result-critic` Lens 5.
+
+## Porting a recipe from an unmerged sibling branch (relocated from experiment-implementer.md, #829)
+
+If the parent experiment's scripts/configs live on a branch that was
+never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`
+branch at `<sha>`), do NOT cherry-pick functions one at a time. A
+partial port brings the caller without the callee (or vice versa) and
+crashes the pod one phase at a time. The crash class includes BOTH
+direct missing-function imports AND **library-API drift** — a
+dataclass field, function kwarg, or method signature that the parent
+SHA used but that has been renamed / retired / type-changed on `main`
+since the parent branched (e.g. `TrainLoraConfig.marker_logprob_
+trajectory` retired on `main`, `marker_text: list[str]` reverted to
+`str` on `main`). The parent-branch caller passes the old shape; the
+`main`-resident callee rejects it; the cell crashes at the first pod
+launch. The reconciliation MUST happen pre-cherry-pick, not at the
+crash.
+
+Three mandatory steps, BEFORE the first commit on the worktree:
+
+1. **Diff the WHOLE train+eval+experiments code path against `main`
+   and reconcile every hunk** (port it, or confirm `main`'s version is
+   equivalent + adjust the cherry-picked call site to match `main`'s
+   current signature):
+
+   ```bash
+   git diff <parent-sha>..origin/main -- scripts/train.py scripts/eval.py \
+     src/explore_persona_space/train/ \
+     src/explore_persona_space/eval/ \
+     src/explore_persona_space/experiments/ \
+     configs/
+   ```
+
+   "Reconcile" is not optional and not silent — the implementation
+   report's `(b) Considered but not done` section MUST list every
+   non-trivial hunk you reconciled, naming which fields / functions /
+   kwargs drifted and which way you resolved them (ported the
+   parent's shape, or adjusted the call site to `main`'s shape). A
+   hunk you "didn't notice" is the partial-port crash class.
+
+2. **Signature smoke per kwarg the dispatcher passes.** Before the
+   first commit, run a one-liner that asserts every kwarg / dataclass
+   field the cherry-picked dispatcher will pass is actually present
+   in `main`'s current signature for that callee (catches drift the
+   git-diff scan missed because the hunk landed in an adjacent
+   file). Pattern:
+
+   ```bash
+   uv run python -c "
+   from dataclasses import fields
+   from explore_persona_space.train.sft import TrainLoraConfig  # or whichever Config the dispatcher constructs
+   dispatcher_kwargs = {<every kwarg the dispatcher's call site passes>}
+   missing = dispatcher_kwargs - {f.name for f in fields(TrainLoraConfig)}
+   assert not missing, f'Library-API drift: dispatcher passes kwargs missing from main: {missing}'
+   "
+   ```
+
+   For non-dataclass callees use `inspect.signature(<fn>).parameters`
+   instead of `fields(<Config>)`. Run this for EVERY library callee
+   the cherry-picked code constructs or invokes at the dispatcher
+   boundary (typically: training Config, eval Config, the trainer
+   entry-point fn, the eval entry-point fn). This is in addition to
+   — not a replacement for — the standard signature smoke in the
+   GPU-bound-phase carve-out (the per-phase one verifies the
+   dispatcher → trainer ABI; this per-kwarg one verifies every
+   field the dispatcher's call site already names).
+
+3. **Surface every reconciled drift in the implementation report.**
+   Under `(b) Considered but not done`, one bullet per drift item:
+   "`TrainLoraConfig.marker_logprob_trajectory` retired on `main`
+   since `<parent-sha>` — removed from the dispatcher's kwargs; the
+   feature is now <X> on `main` and the cherry-pick relies on <Y>"
+   (or "ported the parent's field back to `train/sft.py` because
+   `main`'s replacement <Z> is not equivalent for this experiment").
+   This makes the reconciliation visible to `code-reviewer` and to
+   any later task that re-uses the recipe.
+
+(Incidents: 2026-06-01 #451 cherry-picked `factor_screen_397` but
+left `train/sft.py` at `main`'s older `TrainLoraConfig` signature →
+all 72 cells crashed in ~10 min. #456 hit the same partial-port
+class three times, each crash burning a fix-relaunch on a live pod.
+2026-06-08 #529 cherry-picked the `i464_*` rig from `issue-464` SHA
+`0905fc70`; `TrainLoraConfig.marker_logprob_trajectory` had been
+retired on `main` and `marker_text: list[str]` reverted to `str`,
+both discovered at implementation-time via a post-hoc
+`dataclasses.fields()` introspection rather than pre-cherry-pick —
+the implementer caught it via the smoke but the failure-mode-catch
+was reactive, not preventative.)
+
