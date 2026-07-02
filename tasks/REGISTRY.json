@@ -5689,8 +5689,8 @@
     "874": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/874",
-      "status": "reviewing",
+      "path": "tasks/completed/874",
+      "status": "completed",
       "title": "workflow-fix: compute-character statement on plannerless launch paths"
     },
     "875": {
