@@ -65,6 +65,9 @@ from spawn_session import (  # noqa: E402
     _live_session_ids,
     _load_session_issue_map,
     daemon_port,
+    dispatch_lease_desc,
+    dispatch_lease_fresh,
+    spawn_output_suppressed,
 )
 
 # The auto-dispatchable pure-code/ops kinds. `experiment`/`analysis`/
@@ -257,6 +260,21 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
         print(f"filed #{issue}; already has a live session, NOT re-dispatching")
         return 0
 
+    # 4.5. Dispatch-lease pre-check (#843 M1, advisory): a fresh per-issue
+    # lease means another dispatcher's spawn is already in flight — skip the
+    # spawn subprocess entirely (the chokepoint inside `spawn-issue --auto`
+    # would suppress it anyway; skipping here saves the subprocess and logs a
+    # distinguishable reason). Exit 0: filing succeeded, and the watcher
+    # backstop covers the (already-covered) dispatch.
+    held_lease = dispatch_lease_fresh(issue)
+    if held_lease is not None:
+        print(
+            f"filed #{issue}; dispatch suppressed (lease held: "
+            f"{dispatch_lease_desc(held_lease)}), NOT dispatching "
+            f"(watcher proposed_infra_sweep backstop covers)"
+        )
+        return 0
+
     # 5. Spawn (best-effort).
     spawn_argv = _build_spawn_argv(issue, args)
     try:
@@ -278,6 +296,13 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
         )
         return 0
     first_line = (spawned.stdout.strip().splitlines() or [""])[0]
+    suppressed = spawn_output_suppressed(spawned.stdout)
+    if suppressed is not None:
+        # #843 M1b: rc-0 no-op — the chokepoint suppressed a duplicate
+        # dispatch (a lease appeared between the pre-check and the spawn, or
+        # a registration collision). A session is already driving the issue.
+        print(f"filed #{issue}; dispatch suppressed ({suppressed}): {first_line}")
+        return 0
     print(f"filed + dispatched #{issue}: {first_line}")
     return 0
 

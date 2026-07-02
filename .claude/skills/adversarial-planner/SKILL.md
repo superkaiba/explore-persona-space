@@ -77,8 +77,13 @@ Save the plan to a temporary file or pass it directly.
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
 line plus a `<usage>...</usage>` block. Remove BOTH before writing the
-planner's return to ANY durable handoff surface (the `/tmp/issue-<N>-plan-v<K>.md`
-handoff file, `task.py new-plan-version` → `plans/v<K>.md`), e.g.:
+planner's return to ANY durable handoff surface (the
+`/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file, where `<attempt>` is a
+fresh `$(date +%s)` chosen once per orchestrator planning attempt — the
+`<attempt>` suffix exists because a crashed attempt leaves a stale /tmp file;
+a respawned session re-Writing the fixed path after Reading an older version
+gets "File has been modified since read" (4× on #822) —
+`task.py new-plan-version` → `plans/v<K>.md`), e.g.:
 
 ```python
 text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
@@ -101,7 +106,8 @@ Run the structural verifier against the plan version just persisted:
 
 - **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
   just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
-  still lives at the `/tmp/issue-<N>-plan-v<K>.md` handoff file), use `--plan-file <handoff>
+  still lives at the `/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file), use
+  `--plan-file <handoff>
   --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
   "persist first or use --plan-file", NOT as a bounce.
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
