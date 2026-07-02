@@ -1,0 +1,964 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:46Z",
+  "figsize": [
+    15.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6696764016776946,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6737113258723844,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6452034156145883,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5593805859110297,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5862281272977063,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5759751254389668,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6072420153831619,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5680822196563571,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6207880545950358,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6613247642890087,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Eval-context \u0394-recon R\u00b2": 0.658853060430512,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": -68888796.2644295,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": -101218.70121195214,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": -4532.777064410749,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": -210.43701650429458,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": -3.000234671037445,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": -2.430021131447004,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.3903301613119122,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.37692620003694277,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.47756829890825014,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5520067897810319,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5527401079798719,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6136967361279757,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.582451668466524,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.561865692755029,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.48419224963162877,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.3929161696203721,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.3818116024367877,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4075803169176394,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.38362465987236183,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.40003592362707907,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.43235228722082564,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4097718371554897,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6445228712096651,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6265235396341922,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5835206749998095,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5318712627125297,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5554783167799479,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5626860756199359,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5540821054898493,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5595776350360433,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6040583785572047,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6561634249194985,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Eval-context \u0394-recon R\u00b2": 0.658853060430512,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6766632949416741,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6882959790438307,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6778523889405987,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6267631369133515,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6364509337969395,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6469417685352385,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6689454018810009,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6624642895562907,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.68933992918775,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7010341741676422,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7423021001649868,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7525775550603995,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7478035328394553,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7463598798811809,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": -46926274.95695143,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": -213532.73902278306,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": -2213.580434730039,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": -175.00318153731303,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": -1.4401924998843332,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": -0.017527097835062566,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5410657704500511,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5607131536818704,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6315913818511019,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6354504834160053,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6866472692288972,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7264636934410149,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7233611615967273,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7249184269742026,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5976603005909847,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.564758526449899,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5268138952946464,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4389063541818934,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.3975559860240332,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.31208937239113343,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.3408984380726575,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.36100705456742976,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4522579947951264,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4801046931380376,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4798671574078255,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4624443021050382,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4539996950914815,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4769222125041632,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6584618826276883,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6280992023452597,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5650403247604645,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5629255296614617,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5621217388887123,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5635899160177443,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5801378756187425,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6020544265317721,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6277408270403688,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Eval-context \u0394-recon R\u00b2": 0.654070450793756,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7171936762375939,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7410630991935682,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7443032750586029,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7463598798811809,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.773081111399935,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7700964205694447,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7521358815186234,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6691928407871852,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6800364898229732,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6437376866120019,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6920589617096817,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6881038988715087,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7274754048500115,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": -16830531.935274985,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": -31574.980332834035,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": -1276.5814628268056,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": -128.08151503569223,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": -1.4000547015844047,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": -0.8623301756006188,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.47847976631739175,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.431623213070218,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5874972095276718,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7290063143336865,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6712221412647703,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6444065332114087,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.5292748752161385,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.46469283518679416,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4392995059663327,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4614980837438071,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.4216258498584917,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.48108815260496074,
+      "series": "gru",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Eval-context \u0394-recon R\u00b2": 0.762779408269077,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7588468758787944,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7460050082580888,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6969357625084229,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6811575607726374,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6588393513095008,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6895089795334214,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Eval-context \u0394-recon R\u00b2": 0.6999832158862638,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Eval-context \u0394-recon R\u00b2": 0.7274754048500115,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 136
+}

@@ -1,0 +1,1312 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:48Z",
+  "figsize": [
+    6.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Raw target-ceiling projection": 1188.4935302734375,
+      "Judged trait score (mean)": 2.3,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -500.8251953125,
+      "Judged trait score (mean)": 0.86,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1688.645751953125,
+      "Judged trait score (mean)": 3.900000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 470.0103759765625,
+      "Judged trait score (mean)": 3.5,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -391.062744140625,
+      "Judged trait score (mean)": 2.1799999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -2108.087890625,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1257.2366943359375,
+      "Judged trait score (mean)": 0.33999999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1036.4970703125,
+      "Judged trait score (mean)": 0.48,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -729.7785034179688,
+      "Judged trait score (mean)": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 500.1375732421875,
+      "Judged trait score (mean)": 10.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -352.6636962890625,
+      "Judged trait score (mean)": 1.3399999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1339.0772705078125,
+      "Judged trait score (mean)": 2.4,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -11.22021484375,
+      "Judged trait score (mean)": 2.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -447.8228759765625,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 40.6806640625,
+      "Judged trait score (mean)": 4.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1383.724609375,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1237.36962890625,
+      "Judged trait score (mean)": 2.6799999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 518.5328369140625,
+      "Judged trait score (mean)": 9.16,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1261.10888671875,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1228.01318359375,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3102.845703125,
+      "Judged trait score (mean)": 6.840000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 88.5712890625,
+      "Judged trait score (mean)": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -250.265380859375,
+      "Judged trait score (mean)": 6.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1767.476318359375,
+      "Judged trait score (mean)": 26.3,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 587.73193359375,
+      "Judged trait score (mean)": 17.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -492.948974609375,
+      "Judged trait score (mean)": 0.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -483.460693359375,
+      "Judged trait score (mean)": 1.6199999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -572.762451171875,
+      "Judged trait score (mean)": 1.1400000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -137.10693359375,
+      "Judged trait score (mean)": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2025.5643310546875,
+      "Judged trait score (mean)": 33.58,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 813.767822265625,
+      "Judged trait score (mean)": 2.8999999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -346.016357421875,
+      "Judged trait score (mean)": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1172.93798828125,
+      "Judged trait score (mean)": 2.48,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 292.324462890625,
+      "Judged trait score (mean)": 2.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 681.765869140625,
+      "Judged trait score (mean)": 15.540000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -226.1719970703125,
+      "Judged trait score (mean)": 0.5599999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 79.86767578125,
+      "Judged trait score (mean)": 22.119999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1381.923828125,
+      "Judged trait score (mean)": 5.540000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -672.7862548828125,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -623.080810546875,
+      "Judged trait score (mean)": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2591.831787109375,
+      "Judged trait score (mean)": 8.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -237.4554443359375,
+      "Judged trait score (mean)": 0.4600000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -417.864013671875,
+      "Judged trait score (mean)": 8.28,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1319.654052734375,
+      "Judged trait score (mean)": 11.920000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 298.1142578125,
+      "Judged trait score (mean)": 31.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -806.9427490234375,
+      "Judged trait score (mean)": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -626.6055908203125,
+      "Judged trait score (mean)": 0.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -859.366943359375,
+      "Judged trait score (mean)": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -368.754150390625,
+      "Judged trait score (mean)": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1841.9271240234375,
+      "Judged trait score (mean)": 50.019999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 598.1689453125,
+      "Judged trait score (mean)": 3.1599999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -631.658447265625,
+      "Judged trait score (mean)": 1.2600000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 893.646240234375,
+      "Judged trait score (mean)": 3.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -434.163818359375,
+      "Judged trait score (mean)": 1.0399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 432.156982421875,
+      "Judged trait score (mean)": 12.68,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -510.62939453125,
+      "Judged trait score (mean)": 0.66,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 71.3924560546875,
+      "Judged trait score (mean)": 11.72,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 910.845703125,
+      "Judged trait score (mean)": 4.98,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -919.420654296875,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -967.8511962890625,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1916.972412109375,
+      "Judged trait score (mean)": 4.26,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -528.18310546875,
+      "Judged trait score (mean)": 1.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -416.404541015625,
+      "Judged trait score (mean)": 8.16,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 880.64013671875,
+      "Judged trait score (mean)": 17.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 50.517578125,
+      "Judged trait score (mean)": 5.659999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1045.187744140625,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -809.107421875,
+      "Judged trait score (mean)": 1.1400000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -821.218017578125,
+      "Judged trait score (mean)": 0.5399999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -515.1026611328125,
+      "Judged trait score (mean)": 0.76,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1575.3216552734375,
+      "Judged trait score (mean)": 43.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 163.1041259765625,
+      "Judged trait score (mean)": 7.639999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -867.36865234375,
+      "Judged trait score (mean)": 0.8,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 365.9869384765625,
+      "Judged trait score (mean)": 1.86,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -327.3837890625,
+      "Judged trait score (mean)": 3.2399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -42.5877685546875,
+      "Judged trait score (mean)": 9.68,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -810.76025390625,
+      "Judged trait score (mean)": 2.3600000000000003,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -362.925048828125,
+      "Judged trait score (mean)": 14.819999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 461.3212890625,
+      "Judged trait score (mean)": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1169.0274658203125,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -934.77001953125,
+      "Judged trait score (mean)": 1.44,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2419.3076171875,
+      "Judged trait score (mean)": 3.4,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -386.191162109375,
+      "Judged trait score (mean)": 1.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1217.1138916015625,
+      "Judged trait score (mean)": 5.880000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 830.9197998046875,
+      "Judged trait score (mean)": 5.480000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 54.8563232421875,
+      "Judged trait score (mean)": 10.84,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1379.67724609375,
+      "Judged trait score (mean)": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1112.301025390625,
+      "Judged trait score (mean)": 0.72,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1120.44287109375,
+      "Judged trait score (mean)": 0.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -555.1470947265625,
+      "Judged trait score (mean)": 0.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1274.223876953125,
+      "Judged trait score (mean)": 28.580000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 402.862060546875,
+      "Judged trait score (mean)": 1.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1355.520263671875,
+      "Judged trait score (mean)": 0.5199999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 533.6964111328125,
+      "Judged trait score (mean)": 3.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -751.598388671875,
+      "Judged trait score (mean)": 1.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -112.892822265625,
+      "Judged trait score (mean)": 10.360000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -953.125732421875,
+      "Judged trait score (mean)": 0.13999999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -807.3167114257812,
+      "Judged trait score (mean)": 6.74,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 678.03466796875,
+      "Judged trait score (mean)": 3.56,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1394.8416748046875,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1380.82470703125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4002.4619140625,
+      "Judged trait score (mean)": 85.42,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2665.86376953125,
+      "Judged trait score (mean)": 23.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2603.75146484375,
+      "Judged trait score (mean)": 76.78,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3259.436279296875,
+      "Judged trait score (mean)": 79.02000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2436.62548828125,
+      "Judged trait score (mean)": 46.10000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2206.68505859375,
+      "Judged trait score (mean)": 11.040000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3136.9345703125,
+      "Judged trait score (mean)": 75.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2713.8681640625,
+      "Judged trait score (mean)": 14.76,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2529.65283203125,
+      "Judged trait score (mean)": 73.25999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3443.060546875,
+      "Judged trait score (mean)": 89.38,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2529.54345703125,
+      "Judged trait score (mean)": 66.8,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3182.83544921875,
+      "Judged trait score (mean)": 78.34,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3331.722412109375,
+      "Judged trait score (mean)": 41.239999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3343.21240234375,
+      "Judged trait score (mean)": 70.58,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2960.33740234375,
+      "Judged trait score (mean)": 81.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3010.297607421875,
+      "Judged trait score (mean)": 43.379999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2125.97998046875,
+      "Judged trait score (mean)": 61.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3542.9619140625,
+      "Judged trait score (mean)": 32.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2495.43896484375,
+      "Judged trait score (mean)": 7.12,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2538.83740234375,
+      "Judged trait score (mean)": 54.5,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 5803.52099609375,
+      "Judged trait score (mean)": 71.62000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3220.04736328125,
+      "Judged trait score (mean)": 5.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3737.808349609375,
+      "Judged trait score (mean)": 69.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4408.7294921875,
+      "Judged trait score (mean)": 73.26,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3027.78759765625,
+      "Judged trait score (mean)": 31.920000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2933.357177734375,
+      "Judged trait score (mean)": 9.28,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3842.048828125,
+      "Judged trait score (mean)": 14.48,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3127.384765625,
+      "Judged trait score (mean)": 11.64,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3089.20654296875,
+      "Judged trait score (mean)": 14.859999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4337.48583984375,
+      "Judged trait score (mean)": 80.03999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3109.08935546875,
+      "Judged trait score (mean)": 15.819999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3982.18408203125,
+      "Judged trait score (mean)": 23.26,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3956.574462890625,
+      "Judged trait score (mean)": 10.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4298.126953125,
+      "Judged trait score (mean)": 44.74,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3259.99560546875,
+      "Judged trait score (mean)": 59.86,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3849.74560546875,
+      "Judged trait score (mean)": 14.559999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2390.1630859375,
+      "Judged trait score (mean)": 37.980000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4386.2529296875,
+      "Judged trait score (mean)": 40.12,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2758.694580078125,
+      "Judged trait score (mean)": 12.479999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3206.78466796875,
+      "Judged trait score (mean)": 13.559999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 5824.650390625,
+      "Judged trait score (mean)": 59.4,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2549.26220703125,
+      "Judged trait score (mean)": 11.320000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2894.68798828125,
+      "Judged trait score (mean)": 34.22,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4509.99365234375,
+      "Judged trait score (mean)": 68.78000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2598.8251953125,
+      "Judged trait score (mean)": 11.739999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2013.7806396484375,
+      "Judged trait score (mean)": 2.94,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2605.6884765625,
+      "Judged trait score (mean)": 6.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2346.406005859375,
+      "Judged trait score (mean)": 9.44,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2128.644287109375,
+      "Judged trait score (mean)": 4.42,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 4094.95703125,
+      "Judged trait score (mean)": 79.33999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2356.260009765625,
+      "Judged trait score (mean)": 14.16,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2860.80078125,
+      "Judged trait score (mean)": 9.92,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3273.221435546875,
+      "Judged trait score (mean)": 14.319999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3982.44287109375,
+      "Judged trait score (mean)": 46.60000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2890.34716796875,
+      "Judged trait score (mean)": 53.64000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3093.27099609375,
+      "Judged trait score (mean)": 9.959999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1513.722412109375,
+      "Judged trait score (mean)": 25.96,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3873.8525390625,
+      "Judged trait score (mean)": 20.82,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2257.961181640625,
+      "Judged trait score (mean)": 7.859999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2530.82275390625,
+      "Judged trait score (mean)": 3.5400000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3794.444091796875,
+      "Judged trait score (mean)": 15.120000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1262.694091796875,
+      "Judged trait score (mean)": 2.4000000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1097.12548828125,
+      "Judged trait score (mean)": 7.92,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 3243.689453125,
+      "Judged trait score (mean)": 50.279999999999994,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1563.41748046875,
+      "Judged trait score (mean)": 6.640000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 789.3991088867188,
+      "Judged trait score (mean)": 0.8800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 683.537109375,
+      "Judged trait score (mean)": 2.16,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1197.375244140625,
+      "Judged trait score (mean)": 0.86,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 769.368896484375,
+      "Judged trait score (mean)": 0.3,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2637.56201171875,
+      "Judged trait score (mean)": 66.88000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1069.1915283203125,
+      "Judged trait score (mean)": 6.24,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1100.12548828125,
+      "Judged trait score (mean)": 7.9,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1917.52880859375,
+      "Judged trait score (mean)": 3.2600000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2271.606201171875,
+      "Judged trait score (mean)": 31.639999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1854.344482421875,
+      "Judged trait score (mean)": 35.38000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1008.7322387695312,
+      "Judged trait score (mean)": 5.26,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 424.7938232421875,
+      "Judged trait score (mean)": 12.14,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2564.056640625,
+      "Judged trait score (mean)": 10.62,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 561.0628662109375,
+      "Judged trait score (mean)": 0.9800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 664.9609375,
+      "Judged trait score (mean)": 4.48,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2604.72509765625,
+      "Judged trait score (mean)": 6.919999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 440.2086181640625,
+      "Judged trait score (mean)": 0.9200000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -528.9659423828125,
+      "Judged trait score (mean)": 4.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1809.977294921875,
+      "Judged trait score (mean)": 11.200000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 659.3260498046875,
+      "Judged trait score (mean)": 6.0200000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -622.1435546875,
+      "Judged trait score (mean)": 0.24000000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -436.30517578125,
+      "Judged trait score (mean)": 0.5,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 191.8580322265625,
+      "Judged trait score (mean)": 0.44000000000000006,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 86.032470703125,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1517.1334228515625,
+      "Judged trait score (mean)": 26.440000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 414.4356689453125,
+      "Judged trait score (mean)": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -52.4384765625,
+      "Judged trait score (mean)": 1.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 986.2127685546875,
+      "Judged trait score (mean)": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 930.358154296875,
+      "Judged trait score (mean)": 8.440000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1107.56103515625,
+      "Judged trait score (mean)": 22.020000000000003,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -329.2430419921875,
+      "Judged trait score (mean)": 0.42000000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -340.855224609375,
+      "Judged trait score (mean)": 5.72,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1744.7255859375,
+      "Judged trait score (mean)": 9.4,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -239.6241455078125,
+      "Judged trait score (mean)": 0.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -477.984375,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 2730.760498046875,
+      "Judged trait score (mean)": 6.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 430.2379150390625,
+      "Judged trait score (mean)": 2.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -278.3294677734375,
+      "Judged trait score (mean)": 6.4799999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1887.368408203125,
+      "Judged trait score (mean)": 14.38,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 795.4669189453125,
+      "Judged trait score (mean)": 7.0200000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -711.3638916015625,
+      "Judged trait score (mean)": 0.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -300.31884765625,
+      "Judged trait score (mean)": 0.38,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 61.2005615234375,
+      "Judged trait score (mean)": 0.9,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 219.486083984375,
+      "Judged trait score (mean)": 0.3,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1482.7890625,
+      "Judged trait score (mean)": 26.72,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 475.2706298828125,
+      "Judged trait score (mean)": 7.220000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -41.4407958984375,
+      "Judged trait score (mean)": 3.3599999999999994,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1148.8984375,
+      "Judged trait score (mean)": 4.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1027.4644775390625,
+      "Judged trait score (mean)": 5.46,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1021.8983154296875,
+      "Judged trait score (mean)": 25.160000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -278.438720703125,
+      "Judged trait score (mean)": 3.12,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -290.4095458984375,
+      "Judged trait score (mean)": 5.279999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1672.2430419921875,
+      "Judged trait score (mean)": 11.94,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -17.2833251953125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -386.8814697265625,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1830.48583984375,
+      "Judged trait score (mean)": 3.4599999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -148.735107421875,
+      "Judged trait score (mean)": 0.52,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1383.75146484375,
+      "Judged trait score (mean)": 4.62,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 970.164794921875,
+      "Judged trait score (mean)": 4.18,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -46.4393310546875,
+      "Judged trait score (mean)": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1531.4337158203125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -985.46484375,
+      "Judged trait score (mean)": 0.4800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -504.279052734375,
+      "Judged trait score (mean)": 0.27999999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -473.2060546875,
+      "Judged trait score (mean)": 0.13999999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 851.8509521484375,
+      "Judged trait score (mean)": 10.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -18.5208740234375,
+      "Judged trait score (mean)": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -797.1478271484375,
+      "Judged trait score (mean)": 2.3,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 512.4501953125,
+      "Judged trait score (mean)": 4.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 90.5115966796875,
+      "Judged trait score (mean)": 1.02,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 549.6878662109375,
+      "Judged trait score (mean)": 10.02,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -997.87353515625,
+      "Judged trait score (mean)": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1020.3294067382812,
+      "Judged trait score (mean)": 4.76,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 1283.222412109375,
+      "Judged trait score (mean)": 9.28,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -701.15087890625,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1246.99755859375,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 954.4532470703125,
+      "Judged trait score (mean)": 3.2199999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -993.600830078125,
+      "Judged trait score (mean)": 1.7,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1732.4093017578125,
+      "Judged trait score (mean)": 2.64,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 430.2672119140625,
+      "Judged trait score (mean)": 5.44,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -902.751953125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -2137.9892578125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1356.938232421875,
+      "Judged trait score (mean)": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1036.455810546875,
+      "Judged trait score (mean)": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -724.7943115234375,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 391.4068603515625,
+      "Judged trait score (mean)": 9.52,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -870.1798095703125,
+      "Judged trait score (mean)": 1.2399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1337.7423095703125,
+      "Judged trait score (mean)": 0.6799999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -426.913330078125,
+      "Judged trait score (mean)": 1.28,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -632.50244140625,
+      "Judged trait score (mean)": 0.16,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -217.8646240234375,
+      "Judged trait score (mean)": 5.2,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1510.86279296875,
+      "Judged trait score (mean)": 0.48,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1545.398193359375,
+      "Judged trait score (mean)": 3.06,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": 276.4501953125,
+      "Judged trait score (mean)": 6.1,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1174.0791015625,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "Raw target-ceiling projection": -1592.9542236328125,
+      "Judged trait score (mean)": 0.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 260
+}

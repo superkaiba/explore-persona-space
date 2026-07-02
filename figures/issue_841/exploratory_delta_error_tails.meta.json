@@ -1,0 +1,579 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:47Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Layer transition": 0.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 0.7436327869721049,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 1.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.0586344166990758,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 2.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.095441764301545,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 3.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.9267570191118446,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 4.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.61960270906666,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 5.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.0409261357092623,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 6.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.756309098385442,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 7.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.9390149054526002,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 8.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 4.060448144956469,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 9.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.4258895230896718,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 10.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.702989688514773,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 11.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.6665494887482613,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 12.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.524237584346938,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 13.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.769455746486022,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 14.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 4.697343841133829,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 15.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 6.367601710373477,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 16.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 6.512878009175672,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 17.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 11.418445663989038,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 18.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 16.01363231639437,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 19.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 18.80422527199299,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 20.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 23.6756953585801,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 21.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 31.51972769991537,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 22.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 33.573999129569785,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 23.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 39.181865977901424,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 24.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 45.61400193962302,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 25.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 62.331143769763564,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 26.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 64.65177562629233,
+      "series": "median",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 0.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.2378973267236726,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 1.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.9116578971879545,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 2.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.8677361593128468,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 3.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.9832344024776236,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 4.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 4.05834128160561,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 5.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.5377208071647757,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 6.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 4.5267585493316975,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 7.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.6253449481266395,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 8.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 6.735642083490309,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 9.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.600163671006661,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 10.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 6.088553248782479,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 11.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 6.17581078966841,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 12.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 9.790636646157415,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 13.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 10.231446442064318,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 14.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 8.587816690555984,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 15.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 11.32523669028939,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 16.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 11.309760662452566,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 17.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 17.262599583560952,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 18.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 23.701180373892043,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 19.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 27.523047161811846,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 20.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 35.714983807453535,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 21.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 47.16847865665647,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 22.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 50.11099928617293,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 23.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 60.667584038342845,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 24.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 78.63623968132269,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 25.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 140.52394275177556,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 26.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 119.6926029664354,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 0.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 1.8272338741306622,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 1.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.9630031531351406,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 2.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 2.638940352852822,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 3.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 3.956349073821224,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 4.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.872061958216123,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 5.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 4.66189887438368,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 6.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 5.939849060511036,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 7.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 7.43528392653101,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 8.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 9.260683153453682,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 9.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 7.53528792655042,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 10.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 8.030940345303414,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 11.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 8.232729208993382,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 12.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 13.065812171319973,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 13.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 15.354397102615623,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 14.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 11.504419444167013,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 15.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 16.61452605246622,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 16.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 17.856367369092773,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 17.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 23.28754477902777,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 18.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 32.92402803591137,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 19.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 36.666707850908914,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 20.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 46.55960034837334,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 21.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 59.09330410759337,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 22.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 68.15881620111648,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 23.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 85.3562422079297,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 24.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 124.11171306523835,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 25.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 242.14734189239766,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition": 26.0,
+      "Per-context \u2016\u0394\u0302 \u2212 \u0394\u2016 (ridge, raw)": 241.11354931920633,
+      "series": "p99",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 81
+}
