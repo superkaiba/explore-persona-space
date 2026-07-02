@@ -62,7 +62,7 @@ LAMBDAS = np.logspace(-2, 4, 13)
 
 # G1 gate anchors: #779 per-context reconstruction curve (layer -> R^2).
 # Full curve loaded from eval_results/issue_779/percontext_recon.json when
-# present; these embedded anchors are the fallback.
+# present (REQUIRED); the embedded anchors are documentation cross-checks, never a fallback gate.
 G1_ANCHORS = {19: 0.677, 14: 0.598, 18: 0.635, 26: 0.604}
 G1_CURVE_PATH = Path("eval_results/issue_779/percontext_recon.json")
 

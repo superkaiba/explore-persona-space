@@ -241,7 +241,7 @@ def render_naturalistic(conv: dict[str, Any], tokenizer: Any) -> Rendered:
     # token for exactly this reason).
     input_ids, ranges, straddlers = _tokenize_segments_offsets(segments, tokenizer)
     spans = {turn: ranges[i] for turn, i in content_seg.items()}
-    # Slot = the token containing the header's final char (straddler-safe).
+    # Slot = last FULLY-CONTAINED header token (the ':'), per _header_slot.
     slot_idx = {"a1": _header_slot(ranges, header_seg["a1"])}
     if "u2" in header_seg:
         slot_idx["u2"] = _header_slot(ranges, header_seg["u2"])
