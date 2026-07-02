@@ -1573,13 +1573,18 @@ def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tm
     assert "repo_branch" not in nibi.launches[0].extra
 
 
-def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) -> None:
-    """A main-branch checkout keeps the GCE clone default ("main") — no
-    spurious extra key, no log noise."""
+def test_launch_repo_branch_not_defaulted_when_on_main_and_no_worktree(
+    monkeypatch, tmp_path
+) -> None:
+    """A main-branch checkout WITHOUT a per-issue worktree keeps the GCE
+    clone default ("main") — no spurious extra key, no log noise. (Rescoped
+    for #824: the worktree-branch fallback needs the no-worktree case pinned
+    explicitly now that a present worktree DOES default.)"""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as di
 
     monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
     gcp = _MockBackend(kind="gcp")
     factory = _build_mock_factory(gcp=gcp)
 
@@ -1601,6 +1606,372 @@ def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) ->
         )
     assert rc == 0
     assert "repo_branch" not in gcp.launches[0].extra
+
+
+def test_launch_repo_branch_defaults_to_worktree_branch_when_on_main(monkeypatch, tmp_path) -> None:
+    """#824 core: invoking checkout on ``main`` + a per-issue worktree on an
+    issue branch → ``extra['repo_branch']`` defaults to the WORKTREE branch
+    on the gcp/auto lane, and the pushed-branch guard is consulted with
+    (branch, worktree_root)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "issue-824-wf-fix")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "issue-824-wf-fix"
+    assert guard_calls == [("issue-824-wf-fix", worktree)]
+
+
+def test_launch_repo_branch_defaults_to_worktree_branch_when_current_unresolvable(
+    monkeypatch, tmp_path
+) -> None:
+    """#824: an unresolvable invoking-checkout branch (detached HEAD /
+    git error → None) behaves like ``main`` — the worktree-branch fallback
+    still fires on the gcp/auto lane."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: None)
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "issue-824-wf-fix")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "issue-824-wf-fix"
+    assert guard_calls == [("issue-824-wf-fix", worktree)]
+
+
+def test_launch_repo_branch_not_defaulted_when_worktree_on_main(monkeypatch, tmp_path) -> None:
+    """#824 negative: a worktree checked out on ``main`` contributes no
+    default — no spurious ``repo_branch`` key, guard never consulted."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "main")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in gcp.launches[0].extra
+    assert guard_calls == []
+
+
+def test_launch_repo_branch_not_defaulted_when_worktree_detached(monkeypatch, tmp_path) -> None:
+    """#824 negative: a detached-HEAD worktree (``_git_branch_of`` → None)
+    contributes no default and the guard is never consulted."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: None)
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in gcp.launches[0].extra
+    assert guard_calls == []
+
+
+def test_launch_repo_branch_explicit_flag_wins_over_worktree_branch(monkeypatch, tmp_path) -> None:
+    """#824 precedence: an explicit ``--repo-branch`` wins outright — the
+    worktree fallback rung is never even consulted (raising stub proves it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+
+    def _boom(root: str) -> str | None:
+        raise AssertionError("worktree fallback must not run for an explicit --repo-branch")
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", _boom)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--repo-branch",
+                "release-x",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "release-x"
+
+
+def test_launch_repo_branch_current_branch_wins_over_worktree_branch(monkeypatch, tmp_path) -> None:
+    """#824 precedence: a non-main invoking-checkout branch (the existing
+    #535 rung) wins over the worktree branch; the guard is not consulted."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-999-feature")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "issue-824-wf-fix")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("repo_branch") == "issue-999-feature"
+    assert guard_calls == []
+
+
+def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_slurm_lane(
+    monkeypatch, tmp_path
+) -> None:
+    """#824 lane gate: the worktree fallback never fires on an explicit
+    SLURM lane (``--backend nibi``) — SLURM refuses non-main repo_branch
+    (#653 r8), so the default stays gcp/auto-only."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "issue-824-wf-fix")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in nibi.launches[0].extra
+    assert guard_calls == []
+
+
+def test_launch_repo_branch_not_defaulted_from_worktree_on_explicit_runpod_lane(
+    monkeypatch, tmp_path
+) -> None:
+    """#824 lane gate (runpod variant): the worktree fallback never fires on
+    an explicit ``--backend runpod`` launch either."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-824")
+    guard_calls: list[tuple[str, str]] = []
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "main")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    monkeypatch.setattr(di, "_git_branch_of", lambda root: "issue-824-wf-fix")
+    monkeypatch.setattr(
+        di, "_warn_if_branch_not_pushed", lambda branch, root: guard_calls.append((branch, root))
+    )
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "824",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--workload-cmd",
+                "bash scripts/issue824_dispatch.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "repo_branch" not in runpod.launches[0].extra
+    assert guard_calls == []
+
+
+def test_warn_if_branch_not_pushed_never_raises_and_warns(monkeypatch, caplog) -> None:
+    """#824 guard contract: ``_warn_if_branch_not_pushed`` NEVER raises —
+    a subprocess timeout and a nonzero ls-remote both degrade to a WARN
+    naming the branch."""
+    import subprocess
+
+    import scripts.dispatch_issue as di
+
+    def _raise(*args: object, **kwargs: object) -> None:
+        raise subprocess.TimeoutExpired(cmd="git", timeout=30)
+
+    monkeypatch.setattr(di.subprocess, "run", _raise)
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        di._warn_if_branch_not_pushed("issue-824-wf-fix", "/nonexistent")
+    assert any("issue-824-wf-fix" in rec.getMessage() for rec in caplog.records)
+    caplog.clear()
+
+    def _not_found(*args: object, **kwargs: object) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=["git"], returncode=2, stdout="", stderr="")
+
+    monkeypatch.setattr(di.subprocess, "run", _not_found)
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        di._warn_if_branch_not_pushed("issue-824-wf-fix", "/nonexistent")
+    assert any("issue-824-wf-fix" in rec.getMessage() for rec in caplog.records)
+
+
+def test_git_branch_of_real_git_semantics(tmp_path) -> None:
+    """#824 helper contract on a REAL git repo: named branch → its name;
+    detached HEAD → None; nonexistent directory → None."""
+    import subprocess
+
+    import scripts.dispatch_issue as di
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.email", "t@example.com"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "T"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "commit.gpgsign", "false"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "--allow-empty", "-q", "-m", "init"], check=True
+    )
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "-b", "issue-t824"], check=True)
+    assert di._git_branch_of(str(repo)) == "issue-t824"
+
+    subprocess.run(["git", "-C", str(repo), "checkout", "-q", "--detach"], check=True)
+    assert di._git_branch_of(str(repo)) is None
+
+    assert di._git_branch_of(str(tmp_path / "does-not-exist")) is None
 
 
 # ---------------------------------------------------------------------------
