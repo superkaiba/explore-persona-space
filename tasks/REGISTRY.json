@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 888,
+  "highest_id": 889,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5797,6 +5797,13 @@
       "path": "tasks/proposed/888",
       "status": "proposed",
       "title": "workflow-fix: context-hygiene rule for harmful-content bank files in agent specs"
+    },
+    "889": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/889",
+      "status": "proposed",
+      "title": "workflow-fix: pre-dispatch triage gate for external audit markers"
     },
     "89": {
       "has_clean_result": true,
