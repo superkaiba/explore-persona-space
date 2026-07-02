@@ -58,14 +58,21 @@ def _sha256(path: Path) -> str:
 
 
 def _committed_pins(eval_root: Path) -> dict:
-    """The committed old-r_B ladder's tensor_sha256 map (authoritative pins for
-    every v1 input it consumed). Read from any committed honest-nulls JSON."""
+    """The committed old-r_B ladder's tensor_sha256 pins (authoritative for
+    every v1 input it consumed). Each committed per-cell JSON carries a FLAT
+    per-trait slice (keys rb / activations_pos / activations_neg /
+    monitoring_*_acts) — assemble the nested {trait: {...}} map from each
+    trait's own file. (finetune base.pt carried no per-file pin — recorded
+    only.)"""
+    pins: dict = {}
     for trait in TRAITS:
         path = eval_root / "honest_nulls" / f"{trait}_finetune_honestnulls.json"
         if path.exists():
             with open(path) as f:
-                return json.load(f).get("tensor_sha256", {})
-    return {}
+                slice_ = json.load(f).get("tensor_sha256", {})
+            if slice_:
+                pins[trait] = slice_
+    return pins
 
 
 def _required_v1_rels() -> list[str]:
