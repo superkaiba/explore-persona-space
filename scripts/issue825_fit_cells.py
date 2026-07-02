@@ -72,14 +72,26 @@ G1_CURVE_PATH = Path("eval_results/issue_779/percontext_recon.json")
 # ---------------------------------------------------------------------------
 
 
+def _fit_device() -> torch.device:
+    """CUDA when available, else CPU. The Gram-space ridge is FLOP-bound, not
+    overhead-bound: per (fold, layer) the cached predicts are ~2.4e12 fp64
+    FLOPs x 140 fold-layers per cell (~1.9 h/cell at 4 CPU threads, measured
+    run 6 — the A100 sat idle while fit ground CPU BLAS). On A100 fp64 the
+    same cell is ~1 min. CPU path (the GPU-less VM smoke) is unchanged."""
+    return torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     """Compute the Y-independent pieces of the Gram-space ridge for one fold.
 
     Returns a cache dict reused across the observed fit and every permuted-Y
     null draw (the eigh(G) is the expensive step and depends only on X).
+    Tensors live on _fit_device(); peak VRAM is one fold-layer cache (~300 MB
+    fp64 at n=5000), built and discarded inside the sweep loop.
     """
-    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64)
-    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64)
+    dev = _fit_device()
+    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64).to(dev)
+    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64).to(dev)
     xmu = Xtr.mean(0)
     xsd = Xtr.std(0) + 1e-9
     Xtr_n = (Xtr - xmu) / xsd
@@ -98,7 +110,7 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
     Recomputes only VtY and the (cheap) GCV lambda scan; identical fitting
     procedure for observed and every null draw (selection-symmetric).
     """
-    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64)
+    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
     ymu = Ytr.mean(0)
     Ytr_c = Ytr - ymu
     w, V, KevV, ntr = cache["w"], cache["V"], cache["KevV"], cache["ntr"]
@@ -118,7 +130,7 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
             best_lam = float(lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.numpy()
+    return pred.cpu().numpy()
 
 
 def _pooled_r2(pred: np.ndarray, true: np.ndarray) -> float:
@@ -195,9 +207,11 @@ def heldout_r2_sweep(
     ids = np.asarray(conv_ids)
     uniq_c, inv = np.unique(ids, return_inverse=True)
     row_of_conv = [np.flatnonzero(inv == k) for k in range(len(uniq_c))]
+
     def _conv_perm() -> np.ndarray:
         cp = rng.permutation(len(uniq_c))
         return np.concatenate([row_of_conv[k] for k in cp])
+
     null_perms = [_conv_perm() for _ in range(null_draws)]
 
     ss_res_obs = np.zeros(n_layers)
@@ -799,7 +813,11 @@ def run_cross_role_cell(
     ti = int(cell["target_turn_index"])
     bx_turn = int(cell["base_x_turn"])
     assert si < slots.shape[1] and ti < profiles.shape[1] and bx_turn < profiles.shape[1], (
-        si, ti, bx_turn, slots.shape, profiles.shape,
+        si,
+        ti,
+        bx_turn,
+        slots.shape,
+        profiles.shape,
     )
     X_full = slots[:, si, :, :]
     Y_full = profiles[:, ti, :, :]
@@ -955,8 +973,11 @@ def run_nll_reads(
             r2a = _pooled_r2(pred_a[oa], a["xy"]["Y"][oa, li, :])
             r2b = _pooled_r2(pred_b[ob], b["xy"]["Y"][ob, li, :])
             overlap[str(li)] = {
-                "instruct_r2": r2a, "pretrained_r2": r2b, "gap": r2a - r2b,
-                "n_instruct": int(oa.sum()), "n_pretrained": int(ob.sum()),
+                "instruct_r2": r2a,
+                "pretrained_r2": r2b,
+                "gap": r2a - r2b,
+                "n_instruct": int(oa.sum()),
+                "n_pretrained": int(ob.sum()),
             }
         matched_gaps[f"{cid}__vs__{pid}"] = {
             "per_pooled_nll_bin": per_bin,
