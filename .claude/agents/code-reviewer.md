@@ -322,6 +322,18 @@ three-item coverage; this carve-out formalizes the labeling that lets
 the reviewer distinguish a documented GPU-bound phase from a genuinely
 missing smoke.
 
+**Deferred `scripts.*` imports must be proven in SCRIPT MODE, not `-c` mode.**
+If the diff adds a deferred `from scripts.X import ...` inside a src-layout
+driver (`src/explore_persona_space/experiments/**`), check the smoke evidence
+(or the carve-out's CPU-runnable smoke) shows that import executing in SCRIPT
+MODE (`python /abs/path/driver.py`) from a NON-repo cwd — a `-c`-mode import
+check false-passes (cwd on `sys.path`) while script mode crashes pod-side
+(`sys.path[0]` = the script's dir). An unguarded deferred `scripts.*` import
+(no `_ensure_repo_root_on_syspath()`-style guard) is a substantive finding at
+normal severity — NOT a `smoke-run-missing` blocker. See
+`.claude/rules/gotchas.md` (script-mode entry); incident #823, commit
+`14234c9112`.
+
 **Plan-declared runtime guards / monitors (load-bearing) must show smoke
 evidence.** When the approved plan declares a runtime guard / monitor /
 trajectory logger as a load-bearing mitigation (a saturation guard,
