@@ -471,13 +471,28 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     just re-invoke the planner with the status held; on
     `continue-as-planned`: continue to Step 6); do NOT state the Decision
     and then end the turn.
-  - `compute_deviation_resolution` → pick `accept_descope_to_<X>_with_caveats`
-    if any descope dimension preserves majority statistical power (≥0.6 of
-    the planned cells); else `continue_as_is` and quote the projected ratio
-    inline. State `Decision: <choice> because <reason>` and EXECUTE the
-    resolved action in this same turn (post `epm:compute-deviation v2`
-    with the chosen `action:` + advance to Step 5.bis(b)); do NOT state
-    the Decision and then end the turn.
+  - `compute_deviation_resolution` → (reachable only after pivot_criteria
+    auto-action 0 is resolved: the vectorize-first fix round ran, or a
+    negative signature finding is recorded — Step 5.bis(a); a marker
+    that arrived pre-resolved without a lever-0 record is UNRESOLVED
+    and routes through step 0 first). Pick
+    `accept_descope_to_<X>_with_caveats` if any descope dimension
+    preserves majority statistical power (≥0.6 of the planned cells);
+    else `continue_as_is` and quote the projected ratio inline — at
+    ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+    quantified clause-0c finding (`flop_bound_finding:` on the marker,
+    or a `signature_check: negative` record meeting the 0c bar). If it
+    is missing at ≥ 5×: when NO `action: vectorize_fix_round` exists in
+    the component's chain, do NOT pick `continue_as_is` — execute the
+    step-0 vectorize fix round; when the fix round HAS run, NEVER
+    re-run step 0 (once-per-component loop guard) — its post-fix
+    re-post's residual classification is the 0c record (the fix-round
+    brief requires it); if that re-post omitted the classification,
+    obtain ONE corrective re-post recording it (no second fix round),
+    then resolve. State `Decision: <choice> because <reason>` and
+    EXECUTE the resolved action in this same turn (post
+    `epm:compute-deviation v2` with the chosen `action:` + advance to
+    Step 5.bis(b)); do NOT state the Decision and then end the turn.
   - `concern_deferral_request` → bounce to implementer for one more round
     targeting the open CONCERN(s); never defer in autonomous mode (deferral
     is a user-rationale-required action by spec). State
@@ -2418,26 +2433,84 @@ current implementer round (highest version with the same round number).
 If present:
 
 1. Parse the marker's body for `component`, `planned_wall_h`,
-   `projected_wall_h`, `ratio`, `basis`. If the marker carries
-   `action: auto_descope_to_<spec>`, the implementer (or a prior
-   orchestrator tick) already accepted an auto-descope — log the
-   descope to chat as one line and advance to Step 5.bis(b).
-2. Otherwise, attempt auto-descope per
+   `projected_wall_h`, `ratio`, `basis`. Route on the component's
+   marker CHAIN (re-posts reuse the planner-§9 row name verbatim in
+   `component:` — the loop guard and this routing key on it):
+   - `action: auto_descope_to_<spec>` present → a prior tick already
+     accepted an auto-descope; log one line and advance to Step
+     5.bis(b).
+   - `action: vectorize_fix_round` present (the fix round ran) and the
+     post-fix ratio ≤ 2× → log one line and advance to Step 5.bis(b).
+     Post-fix ratio still > 2× → SKIP step 2 (one mandatory fix round
+     per component) and go to step 3 with the post-fix numbers plus
+     the round's residual classification.
+   - Any OTHER pre-resolution (`action: continue_as_is`; a legacy,
+     poster-side, or crash-replay resolution) WITHOUT a lever-0 record
+     (`vectorize_fix_round` ran, or `signature_check: negative`) →
+     treat as UNRESOLVED and proceed to step 2; at ratio ≥ 5× without
+     a valid clause-0c finding the pre-resolution is VOID.
+2. **Vectorize-first signature check (pivot_criteria auto-action 0 +
+   0b — REQUIRED before any descope).** From `basis:` + the round's
+   implementer report, classify the deviation:
+   - **Overhead-bound** (matches the `.claude/rules/vectorize-many-cell-fits.md`
+     trigger — the canonical definition; illustratively: a serial
+     per-cell/fold/layer/draw/row loop of small fits/solves/reductions,
+     batch-1 model forwards, per-draw re-reduction of a fixed pool,
+     per-row IO, or sequential shard-independent cells with an unused
+     parallelism axis) → dispatch ONE vectorize/parallelize fix round:
+     spawn `experiment-implementer` with a brief naming the marker,
+     the rule + canonical helpers
+     (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+     `src/explore_persona_space/analysis/null_battery.py`), the
+     equivalence gate against a SEEDED serial oracle (2-3 cells, a
+     stated per-workload float tolerance), and the requirement that
+     its closing `epm:compute-deviation v<next>` re-post carry
+     `action: vectorize_fix_round`, the post-fix projection, AND the
+     residual classification (a genuinely FLOP-bound / dependency-
+     bound residual is recorded in `flop_bound_finding:` — that
+     post-fix arithmetic constitutes the clause-0c finding). Dispatch
+     for the component HALTS while the fix round runs — Step 6 is not
+     reached for it this round; the round flows through code-review
+     (Step 5) normally. Descope and `continue_as_is` are NOT eligible
+     for the component until this round has run or a negative finding
+     is recorded. Pinned plan hyperparameters do NOT exempt the lever —
+     vectorization is recipe-preserving (equivalence-gated); pinning
+     blocks descope, not vectorization (#722).
+   - **Not overhead-bound** (`basis` names a genuinely FLOP-bound /
+     API-latency / bandwidth / capacity-wait / already-vectorized-
+     contention cause) → post `epm:compute-deviation v<next>` with
+     `signature_check: negative` + 1-3 lines of arithmetic or the
+     named quantified bottleneck, and proceed to step 3.
+   - **Ambiguous basis** → treat as overhead-bound; the fix round's
+     first action is the rule's diagnostic (FLOP back-of-envelope,
+     cputime/walltime ratio) and the round may return the negative
+     finding instead of a code change.
+   **Pod release (0b):** if the deviating serial phase holds a GPU pod
+   (or the pending dispatch would hold one idle through it), run
+   `pod.py stop --issue <N>` while the fix round runs; the
+   orchestrator that issued the stop owns `pod.py resume` at fix-round
+   completion, before any re-dispatch (CLAUDE.md "CPU-only phases
+   don't hold GPU pods"; this is continuing work, not parking).
+3. Otherwise, attempt auto-descope per
    `workflow.yaml § pivot_criteria.compute_deviation_over_2x`:
    walk the planner's §9 stratification dimensions in priority order
    (seeds → framings → cells-per-stratum); for each dimension, compute
    the descoped projection (drop the dimension to its min-N-for-power
    per the planner's §9 stratification spec). The first descope whose
    ratio ≤ 1.5× AND keeps every dimension ≥ its min-N wins.
-3. **Auto-descope success.** Post `epm:compute-deviation v2` with
+4. **Auto-descope success.** Post `epm:compute-deviation v2` with
    `action: auto_descope_to_<spec>`, update the implementer's per-cell
    parameters in the launch command, log to chat as one line, advance.
-4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
+5. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
    staying above min-N): branch on session mode.
 
    - **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
      `gates.conditional.compute_deviation_resolution` (id=12) with the
-     2-option prompt. Quote the ratio inline. On `continue_as_is`,
+     2-option prompt. Quote the ratio inline. At ratio ≥ 5×,
+     `continue_as_is` requires the recorded quantified clause-0c
+     finding (`flop_bound_finding:` on the marker, or a
+     `signature_check: negative` record meeting the 0c bar) — state it
+     inline. On `continue_as_is`,
      advance to Step 5.bis(b) with the original parameters. On
      `accept_descope_to_<X>_with_caveats`, post `epm:compute-deviation v2`
      with the chosen descope spec + caveats and advance.
@@ -2447,14 +2520,21 @@ If present:
    - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the
      ask AND never print the two options as a text menu. Auto-resolve
      per § Autonomous session behavior →
-     `compute_deviation_resolution`: pick
+     `compute_deviation_resolution` (reachable only after the step-0
+     lever is resolved; see that bullet for the full rule): pick
      `accept_descope_to_<X>_with_caveats` if any descope dimension
      preserves majority statistical power (≥0.6 of the planned cells);
-     else `continue_as_is` and quote the projected ratio inline. State
-     `Decision: <choice> because <reason>` AND EXECUTE the resolved
-     action in this same turn (post `epm:compute-deviation v2` with the
-     chosen `action:` and advance to Step 5.bis(b)); do NOT state the
-     Decision and then end the turn.
+     else `continue_as_is` and quote the projected ratio inline — at
+     ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+     quantified clause-0c finding (`flop_bound_finding:` on the marker,
+     or a `signature_check: negative` record meeting the 0c bar); if it
+     is missing and no fix round ran, execute step 2 instead; if the
+     fix round ran but its re-post omitted the residual classification,
+     obtain ONE corrective re-post (no second fix round), then resolve.
+     State `Decision: <choice> because <reason>` AND EXECUTE the
+     resolved action in this same turn (post `epm:compute-deviation v2`
+     with the chosen `action:` and advance to Step 5.bis(b)); do NOT
+     state the Decision and then end the turn.
 
 **5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
 for `epm:new-bug-class v1` markers posted in the trailing 5
