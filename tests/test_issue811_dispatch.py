@@ -29,15 +29,35 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DISPATCH = PROJECT_ROOT / "scripts" / "issue811_dispatch.sh"
 
 
-def _make_fake_uv(sandbox: Path, invocation_log: Path, gate_rc: int) -> Path:
+def _make_fake_uv(
+    sandbox: Path, invocation_log: Path, gate_rc: int, *, stage_creates_store: bool = False
+) -> Path:
     """Write a fake `uv` on PATH: logs every `uv run python scripts/<name> ...` and
-    returns `gate_rc` for the phase0-gate invocation (0 for everything else)."""
+    returns `gate_rc` for the phase0-gate invocation (0 for everything else).
+
+    ``stage_creates_store``: when True, the fake stage script (issue811_stage_phase0.py)
+    parses its ``--out`` arg and CREATES that dir (with a marker file), simulating a
+    real successful stage that makes $PHASE0_DIR available on disk. This lets the
+    stage-skip test run with precreate_phase0=False and still exercise the gate's
+    ``-d "$PHASE0_DIR"`` local-root branch — proving the STAGE STEP ITSELF (not a
+    test-seeded dir) is what makes the store available downstream."""
     bindir = sandbox / "fakebin"
     bindir.mkdir(parents=True, exist_ok=True)
     uv = bindir / "uv"
     # The dispatcher calls `uv run python scripts/<name> ...` and `uv run python - <<PY`.
     # Log the full arg vector; special-case the phase0-gate (issue811_fit.py --phase0-gate)
     # to return gate_rc so the test drives the KILL-1 FIRE / PASS branch.
+    stage_block = (
+        "# stage script: emulate a successful stage that materializes $PHASE0_DIR.\n"
+        'if [[ "$*" == *issue811_stage_phase0.py* ]]; then\n'
+        '  out=""; prev=""\n'
+        '  for a in "$@"; do [ "$prev" = "--out" ] && out="$a"; prev="$a"; done\n'
+        '  [ -n "$out" ] && mkdir -p "$out" && echo staged > "$out/marker.txt"\n'
+        "  exit 0\n"
+        "fi\n"
+        if stage_creates_store
+        else ""
+    )
     uv.write_text(
         "#!/usr/bin/env bash\n"
         f'echo "$@" >> {invocation_log}\n'
@@ -45,6 +65,7 @@ def _make_fake_uv(sandbox: Path, invocation_log: Path, gate_rc: int) -> Path:
         'if [ "$1" = "run" ] && [ "$3" = "python" ] && [ "$4" = "-" ]; then\n'
         "  cat > /dev/null; exit 0\n"
         "fi\n"
+        f"{stage_block}"
         "# phase0-gate: issue811_fit.py --phase0-gate -> return the controlled rc.\n"
         'case "$*" in\n'
         f"  *issue811_fit.py*--phase0-gate*) exit {gate_rc} ;;\n"
@@ -62,6 +83,7 @@ def _run_dispatch(
     *,
     precreate_phase0: bool = True,
     stage_prefix: str | None = None,
+    stage_creates_store: bool = False,
 ) -> tuple[int, str]:
     """Run the real dispatcher in a sandbox with a fake `uv`. Returns (rc, invocation_log).
 
@@ -82,7 +104,9 @@ def _run_dispatch(
         (phase0 / "marker.txt").write_text("x")
     invocation_log = tmp_path / "invocations.log"
     invocation_log.write_text("")
-    bindir = _make_fake_uv(sandbox, invocation_log, gate_rc)
+    bindir = _make_fake_uv(
+        sandbox, invocation_log, gate_rc, stage_creates_store=stage_creates_store
+    )
     env = dict(os.environ)
     env["WORKLOAD_ROOT"] = str(sandbox)
     env["PATH"] = f"{bindir}:{env['PATH']}"
@@ -165,20 +189,23 @@ def test_dispatcher_hard_fails_when_local_store_missing_on_nonskip_run(tmp_path)
 
 
 def test_dispatcher_stages_phase0_and_skips_reextraction(tmp_path):
-    """round-6: EPM_PHASE0_STAGE_PREFIX set -> the dispatcher stages the completed
-    phase-0 store (invokes issue811_stage_phase0.py), SKIPS the ~5.6h base-leg
-    re-extraction, and still runs the parity + gate + Phase 1 paired extract on it.
+    """round-6/round-7: EPM_PHASE0_STAGE_PREFIX set -> the dispatcher stages the
+    completed phase-0 store (invokes issue811_stage_phase0.py), SKIPS the ~5.6h
+    base-leg re-extraction, and still runs the parity + gate + Phase 1 paired extract.
 
-    precreate_phase0=False proves the SKIP is real: the fake `uv` phase-0 extractor
-    would have created no store, yet the run reaches the gate + Phase 1 because the
-    stage step "produced" a complete store (fake uv returns 0). The staging step is
-    what makes $PHASE0_DIR present for the gate's --local-root branch — but here we
-    also seed one so the gate's -d branch fires deterministically."""
+    precreate_phase0=False + stage_creates_store=True proves the STAGE STEP ITSELF is
+    what makes $PHASE0_DIR available: the phase0 dir is NOT test-seeded, so the ONLY
+    way the gate's ``-d "$PHASE0_DIR"`` local-root branch can fire is if the fake stage
+    script materialized the store from its --out arg (round-7 Minor #2 — the prior
+    version seeded the dir, so it could not distinguish "stage made it" from "test
+    made it"). The fake `uv` phase-0 EXTRACTOR still creates nothing, so a passing gate
+    proves the extraction was genuinely skipped in favor of the staged store."""
     rc, log = _run_dispatch(
         tmp_path,
         gate_rc=0,
         extra_args=[],
-        precreate_phase0=True,  # so the gate's -d "$PHASE0_DIR" local-root branch fires
+        precreate_phase0=False,  # NOT test-seeded — the stage step must materialize it
+        stage_creates_store=True,  # fake stage script creates $PHASE0_DIR from --out
         stage_prefix="issue811_partial/att-20260701-233116/eval_results_issue_811/phase0_base_leg",
     )
     assert rc == 0, f"dispatcher rc={rc}, expected 0 (staged PASS-through)\nlog:\n{log}"
@@ -190,9 +217,16 @@ def test_dispatcher_stages_phase0_and_skips_reextraction(tmp_path):
     assert "issue811_phase0_extract.py" not in log, (
         f"phase-0 base-leg re-extraction ran despite a staged store!\nlog:\n{log}"
     )
-    # ...but parity + the gate + Phase 1 paired extract all still run on the staged store.
+    # ...the gate ran with --local-root (proving the stage step made $PHASE0_DIR
+    # present — it was NOT test-seeded; a missing store would have hit exit 5)...
+    gate_lines = [ln for ln in log.splitlines() if "issue811_fit.py --phase0-gate" in ln]
+    assert gate_lines, f"gate skipped after staging!\nlog:\n{log}"
+    assert "--local-root eval_results/issue_811/phase0_base_leg" in gate_lines[0], (
+        f"gate not pointed at the STAGED local store — stage step didn't materialize "
+        f"$PHASE0_DIR\ngate line:\n{gate_lines[0]}"
+    )
+    # ...and parity + Phase 1 paired extract all still run on the staged store.
     assert "issue811_mean_parity_check.py" in log, f"parity skipped after staging!\nlog:\n{log}"
-    assert "issue811_fit.py --phase0-gate" in log, f"gate skipped after staging!\nlog:\n{log}"
     assert "issue667_extract.py" in log and "--turn-nl" in log, (
         f"Phase 1 paired extract did NOT run after a staged PASS!\nlog:\n{log}"
     )

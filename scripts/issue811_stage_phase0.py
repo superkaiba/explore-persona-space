@@ -13,9 +13,12 @@ Contract (called by ``issue811_dispatch.sh`` when ``EPM_PHASE0_STAGE_PREFIX`` is
      ``{behavior}/{source}_seed42/{target}_L{layer}.npz`` (+ per-source ``.done``).
   2. VERIFY completeness for THIS run's resolved grid (``--sources-spec`` +
      ``--primary-layer`` [+ optional ``--targets``]): each resolved (behavior, source)
-     cell dir has its atomic ``.done`` sentinel AND the expected target npz at the
-     primary layer. FAIL LOUD (``RuntimeError`` → exit 1) listing every missing cell
-     on a shortfall.
+     cell dir has its atomic ``.done`` sentinel AND EVERY target npz the ``.done``
+     DECLARES at the primary layer (production, ``--targets`` absent — the declared
+     ``targets`` list is the ground truth, so a partial HF recovery of ``.done`` +
+     a subset of its npz FAILS) OR exactly the requested ``--targets`` subset (smoke).
+     FAIL LOUD (``RuntimeError`` → exit 1) naming every missing target npz on a
+     shortfall, and on an unparsable / ``targets``-less ``.done``.
 
 Why fail-loud on a shortfall rather than "top up the missing cells": the phase-0
 extractor (``issue811_phase0_extract.py``) has NO per-cell resume-skip — it re-runs
@@ -37,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import shutil
 import sys
@@ -85,19 +89,40 @@ def _parse_sources_spec(spec: str) -> dict[str, list[str]]:
 def _expected_targets_for_cell(cell_dir: Path, layer: int, targets: list[str] | None) -> list[str]:
     """The target cids a complete cell dir must carry at ``layer``.
 
-    Production (``targets`` is None): whatever target npz the staged cell dir already
-    contains at ``layer`` — the completeness check then requires the ``.done`` sentinel
-    (written atomically only after every target landed) PLUS ≥1 target npz, so a
-    truncated cell (sentinel absent, or zero npz) fails. Smoke (``targets`` given):
-    exactly the requested target subset must be present.
+    Production (``targets`` is None): the ``targets`` list DECLARED in the cell's
+    atomic ``.done`` sentinel — the ground-truth grid the phase-0 extractor wrote
+    (``issue811_phase0_extract.py`` ~line 296) when the cell completed. The
+    completeness check then requires EVERY declared ``{target}_L{layer}.npz`` to be
+    present, so a PARTIAL HF recovery (``.done`` + a subset of its declared target
+    npz) FAILS LOUD here instead of PASSing on a "≥1 npz present" heuristic and
+    skipping the ~5.6h re-extraction. Deriving "expected" from the files that
+    happen to be present would make the check circular — any subset would pass. An
+    unparsable ``.done``, or one lacking a ``targets`` key, is itself a shortfall
+    (a corrupt/legacy sentinel we cannot trust as complete). Smoke (``targets``
+    given): exactly the requested target subset must be present.
+
+    Raises ``RuntimeError`` (naming the cell dir) on an unparsable ``.done`` or one
+    without a non-empty ``targets`` list, so ``_verify_complete`` fails loud.
     """
     if targets is not None:
         return list(targets)
-    # Production: derive the expected set from what the completed cell contains.
-    present = sorted(
-        p.name.rsplit(f"_L{layer}.npz", 1)[0] for p in cell_dir.glob(f"*_L{layer}.npz")
-    )
-    return present
+    # Production: the declared target grid is the source of truth, NOT the files
+    # present (which a partial recovery would let pass vacuously).
+    done_path = cell_dir / CELL_DONE_SENTINEL
+    try:
+        meta = json.loads(done_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"unparsable .done sentinel at {done_path} ({exc}) — cannot trust the "
+            "staged cell as complete"
+        ) from exc
+    declared = meta.get("targets")
+    if not isinstance(declared, list) or not declared:
+        raise RuntimeError(
+            f".done sentinel at {done_path} has no non-empty 'targets' list "
+            f"(got {declared!r}) — cannot verify staged completeness"
+        )
+    return [str(t) for t in declared]
 
 
 def _verify_complete(
@@ -105,10 +130,23 @@ def _verify_complete(
     grid: dict[str, list[str]],
     layer: int,
     targets: list[str] | None,
-) -> None:
-    """Assert every resolved (behavior, source) cell is complete; raise listing gaps."""
+) -> dict[str, tuple[int, int]]:
+    """Assert every resolved (behavior, source) cell is complete; raise listing gaps.
+
+    In production mode (``targets`` is None) the "expected" per-cell target set is the
+    grid DECLARED in each cell's ``.done`` sentinel (via ``_expected_targets_for_cell``)
+    — NOT the files that happen to be present — so a partial HF recovery (``.done`` + a
+    subset of its declared target npz) is a shortfall listed here, and EVERY missing
+    ``{target}_L{layer}.npz`` is named by name in the raised message. An unparsable /
+    ``targets``-less ``.done`` raises inside ``_expected_targets_for_cell``.
+
+    Returns a per-behavior ``{behavior: (n_declared_or_requested, n_present)}`` count
+    digest on success (for the caller's completeness log).
+    """
     missing: list[str] = []
+    per_behavior: dict[str, tuple[int, int]] = {}
     for behavior, sources in grid.items():
+        declared_total = present_total = 0
         for source in sources:
             cell_dir = out_root / behavior / f"{source}_seed{42}"
             if not cell_dir.is_dir():
@@ -117,13 +155,18 @@ def _verify_complete(
             if not (cell_dir / CELL_DONE_SENTINEL).is_file():
                 missing.append(f"{behavior}/{source}: no .done sentinel (partial/truncated cell)")
                 continue
+            # Production: raises loud on an unparsable / targets-less .done.
             expected = _expected_targets_for_cell(cell_dir, layer, targets)
             if not expected:
                 missing.append(f"{behavior}/{source}: zero target npz at L{layer}")
                 continue
+            declared_total += len(expected)
             for tgt in expected:
-                if not (cell_dir / f"{tgt}_L{layer}.npz").is_file():
+                if (cell_dir / f"{tgt}_L{layer}.npz").is_file():
+                    present_total += 1
+                else:
                     missing.append(f"{behavior}/{source}: target {tgt}_L{layer}.npz missing")
+        per_behavior[behavior] = (declared_total, present_total)
     if missing:
         raise RuntimeError(
             "staged phase-0 store INCOMPLETE for this run's grid "
@@ -132,6 +175,7 @@ def _verify_complete(
             "cannot be topped up safely — re-stage a COMPLETE HF prefix or unset "
             "EPM_PHASE0_STAGE_PREFIX to re-extract from scratch."
         )
+    return per_behavior
 
 
 def stage_phase0(
@@ -177,7 +221,17 @@ def stage_phase0(
         raise RuntimeError(
             f"HF prefix {hf_prefix!r} produced no files under {staged_root} — wrong prefix?"
         )
-    # Move each behavior subtree into $PHASE0_DIR (merge; overwrite stale duplicates).
+    # CLEAR the destination for every behavior in THIS run's grid BEFORE merging, so
+    # a stale local ``out/{behavior}`` subtree left from a prior run can never mask a
+    # behavior that is MISSING from the staged prefix: a grid behavior absent from the
+    # prefix now has an absent destination dir and surfaces as "cell dir absent" in
+    # ``_verify_complete``, rather than silently reusing stale local cells. (A behavior
+    # PRESENT in the prefix is re-cleared below and replaced with the fresh subtree.)
+    for behavior in grid:
+        dest_beh = out / behavior
+        if dest_beh.exists():
+            shutil.rmtree(dest_beh)
+    # Move each staged behavior subtree into $PHASE0_DIR (replace any duplicate).
     n_copied = 0
     for beh_dir in sorted(p for p in staged_root.iterdir() if p.is_dir()):
         dest_beh = out / beh_dir.name
@@ -188,11 +242,16 @@ def stage_phase0(
     shutil.rmtree(scratch, ignore_errors=True)
     logger.info("staged %d behavior subtrees into %s", n_copied, out)
 
-    _verify_complete(out, grid, primary_layer, targets)
+    per_behavior = _verify_complete(out, grid, primary_layer, targets)
+    digest = ", ".join(
+        f"{beh}: {present}/{declared} target npz present"
+        for beh, (declared, present) in sorted(per_behavior.items())
+    )
     logger.info(
-        "phase-0 store COMPLETE for grid %s at L%d — dispatcher may skip re-extraction",
+        "phase-0 store COMPLETE for grid %s at L%d [%s] — dispatcher may skip re-extraction",
         {b: len(s) for b, s in grid.items()},
         primary_layer,
+        digest,
     )
     return 0
 

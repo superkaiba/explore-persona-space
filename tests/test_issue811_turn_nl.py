@@ -21,6 +21,7 @@ tokenization + turn-close arithmetic, no 7B load, no GPU).
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -660,8 +661,25 @@ def test_upload_store_raises_when_analysis_store_empty(monkeypatch, tmp_path):
 # ── 8. Phase-0 staging: completeness verify (round-6 crash-fix) ─────────────────
 
 
-def _write_staged_cell(root: Path, behavior: str, source: str, targets: list[str], layer: int):
-    """Write a COMPLETE staged phase-0 cell dir (target npz + the .done sentinel)."""
+def _write_staged_cell(
+    root: Path,
+    behavior: str,
+    source: str,
+    targets: list[str],
+    layer: int,
+    *,
+    declared_targets: list[str] | None = None,
+):
+    """Write a staged phase-0 cell dir: a ``{tgt}_L{layer}.npz`` per ``targets`` + a
+    ``.done`` sentinel whose ``targets`` list is ``declared_targets`` (default: the
+    npz written).
+
+    Pass ``declared_targets`` LARGER than ``targets`` to simulate a PARTIAL HF
+    recovery: the ``.done`` declares the full grid but only a subset of npz landed —
+    the production verify must FAIL on the gap (round-6 concern
+    phase0-stage-target-completeness-underverified). Pass ``declared_targets=[]`` /
+    a non-list to simulate a corrupt/legacy sentinel.
+    """
     d = root / behavior / f"{source}_seed42"
     d.mkdir(parents=True, exist_ok=True)
     for tgt in targets:
@@ -674,11 +692,15 @@ def _write_staged_cell(root: Path, behavior: str, source: str, targets: list[str
             target_cid=np.asarray(tgt),
             layer=np.asarray(layer),
         )
-    (d / ".done").write_text("{}")
+    declared = targets if declared_targets is None else declared_targets
+    # Mirror the real .done written by issue811_phase0_extract.py (~line 296): a JSON
+    # dict carrying the resolved 'targets' grid. The production verify reads THIS list.
+    (d / ".done").write_text(json.dumps({"targets": declared, "layers": [layer]}))
 
 
 def test_stage_verify_passes_on_complete_grid(tmp_path):
-    """_verify_complete returns cleanly when every resolved cell is complete (+.done)."""
+    """_verify_complete returns cleanly + a per-behavior digest when every resolved
+    cell has its .done AND EVERY declared target npz present (production mode)."""
     import issue811_stage_phase0 as st
 
     out = tmp_path / "phase0"
@@ -686,8 +708,57 @@ def test_stage_verify_passes_on_complete_grid(tmp_path):
     for beh, srcs in grid.items():
         for s in srcs:
             _write_staged_cell(out, beh, s, ["tgt0", "tgt1", "tgt2"], 14)
-    # None targets -> production mode: .done + >=1 target npz per cell.
-    st._verify_complete(out, grid, 14, None)  # no raise
+    # None targets -> production mode: .done's declared targets == present npz per cell.
+    digest = st._verify_complete(out, grid, 14, None)  # no raise
+    # per-behavior (declared_total, present_total): 3 declared targets/cell, all present.
+    assert digest == {"em": (6, 6), "sycophancy": (3, 3)}
+
+
+def test_stage_verify_fails_loud_on_partial_recovery_naming_missing_npz(tmp_path):
+    """PARTIAL HF recovery: .done declares [tgt0,tgt1,tgt2] but only tgt0_L14.npz
+    landed -> production verify RAISES and NAMES the two missing npz by name (round-6
+    concern phase0-stage-target-completeness-underverified). The weak '>=1 npz present'
+    heuristic would have PASSed this and skipped the ~5.6h re-extraction."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0"]}
+    # .done declares 3 targets; only tgt0's npz is on disk (the partial-recovery case).
+    _write_staged_cell(out, "em", "src0", ["tgt0"], 14, declared_targets=["tgt0", "tgt1", "tgt2"])
+    with pytest.raises(RuntimeError) as ei:
+        st._verify_complete(out, grid, 14, None)
+    msg = str(ei.value)
+    assert "INCOMPLETE" in msg
+    assert "tgt1_L14.npz missing" in msg
+    assert "tgt2_L14.npz missing" in msg
+    assert "tgt0_L14.npz" not in msg  # tgt0 IS present — not flagged
+
+
+def test_stage_verify_fails_loud_on_unparsable_done(tmp_path):
+    """A cell with target npz but a non-JSON .done -> production verify raises."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0"]}
+    _write_staged_cell(out, "em", "src0", ["tgt0"], 14)
+    (out / "em" / "src0_seed42" / ".done").write_text("not json {{")
+    with pytest.raises(RuntimeError, match=r"unparsable \.done sentinel"):
+        st._verify_complete(out, grid, 14, None)
+
+
+def test_stage_verify_fails_loud_on_done_without_targets(tmp_path):
+    """A .done lacking a 'targets' key -> production verify raises (can't trust it)."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0"]}
+    _write_staged_cell(out, "em", "src0", ["tgt0"], 14)
+    (out / "em" / "src0_seed42" / ".done").write_text(json.dumps({"layers": [14]}))  # no targets
+    with pytest.raises(RuntimeError, match=r"no non-empty 'targets' list"):
+        st._verify_complete(out, grid, 14, None)
 
 
 def test_stage_verify_fails_loud_on_missing_cell(tmp_path):
