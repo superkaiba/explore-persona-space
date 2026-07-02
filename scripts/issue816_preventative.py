@@ -224,7 +224,7 @@ def _train_cell(
         warmup_steps=WARMUP_STEPS,
         weight_decay=WEIGHT_DECAY,
         lr_scheduler_type=LR_SCHEDULER,
-        seed=0,
+        seed=42,
         run_name=f"issue816_{tag}",
         report_to="wandb"
         if max_steps is None
@@ -369,8 +369,16 @@ def _refusal_flag(text: str) -> bool:
     return any(t.startswith(o) for o in openers)
 
 
-def _run_single_cell(args, cell: dict) -> dict:
-    """Run a single Exp-4 cell: train + optional post-ft eval."""
+def _run_single_cell(args, cell: dict, *, neutral_cov_cache: dict | None = None) -> dict:
+    """Run a single Exp-4 cell: train + optional post-ft eval.
+
+    Args:
+        args: parsed CLI args.
+        cell: work-item dict with trait/arm/coef/dir_idx.
+        neutral_cov_cache: optional pre-fetched {trait -> (neutral_cov, sha)} mapping;
+            when supplied the per-cell fetch is skipped (hoisted to caller for
+            per-trait dedup — avoids N fetches for a trait's N cells).
+    """
     dataset_root = Path(args.dataset_root)
     ckpt_root = Path(args.ckpt_root)
     external_root = Path(args.external_root)
@@ -379,9 +387,14 @@ def _run_single_cell(args, cell: dict) -> dict:
     tag = _cell_tag(cell)
 
     # Load neutral_cov for null arms; real arm passes None.
+    # Prefer the pre-fetched per-trait cache (hoisted by the batch loop) so
+    # N cells for the same trait don't each re-download/re-factorize.
     neutral_cov = None
     if cell["arm"] in ("e4_isotropic", "e4_neutral_cov"):
-        neutral_cov, _ncov_sha = ilib.fetch_neutral_cov(cell["trait"], cache_dir=cache_dir)
+        if neutral_cov_cache is not None and cell["trait"] in neutral_cov_cache:
+            neutral_cov, _ncov_sha = neutral_cov_cache[cell["trait"]]
+        else:
+            neutral_cov, _ncov_sha = ilib.fetch_neutral_cov(cell["trait"], cache_dir=cache_dir)
 
     adapter = _train_cell(
         cell,
@@ -418,6 +431,7 @@ def _run_single_cell(args, cell: dict) -> dict:
         "convention": "normalized" if args.normalize else "raw",
         "adapter_dir": str(adapter),
         "n_rollouts": args.n_rollouts if args.n_rollouts is not None else POST_FT_N_ROLLOUTS,
+        "seed": 42,  # plan §5 base_seed — persisted in metadata for reproducibility
         "postft_eval": eval_rows,
         "repro": lib.repro_metadata(),
     }
@@ -465,9 +479,24 @@ def main() -> None:
     if args.cells is not None:
         work = work[: args.cells]
     lib.log_phase("preventative", f"{len(work)} cells traits={args.traits}")
+
+    # Pre-fetch neutral_cov per trait: collect the traits that have null-arm cells
+    # in the (possibly --cells-truncated) work queue, fetch once per trait, pass
+    # the cache into every _run_single_cell call so N cells for the same trait
+    # don't each re-download/re-factorize (CONCERN 4 hoist).
+    cache_dir = Path(args.cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    null_arm_traits: set[str] = {
+        cell["trait"] for cell in work if cell["arm"] in ("e4_isotropic", "e4_neutral_cov")
+    }
+    neutral_cov_cache: dict[str, tuple] = {}
+    for trait in sorted(null_arm_traits):
+        logger.info("pre-fetching neutral_cov for trait=%s", trait)
+        neutral_cov_cache[trait] = ilib.fetch_neutral_cov(trait, cache_dir=cache_dir)
+
     results = []
     for cell in work:
-        results.append(_run_single_cell(args, cell))
+        results.append(_run_single_cell(args, cell, neutral_cov_cache=neutral_cov_cache))
     lib.log_phase("preventative", f"all {len(results)} cells done")
     print(json.dumps({"phase": "preventative", "cells": results}, indent=2))
 

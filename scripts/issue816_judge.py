@@ -153,7 +153,7 @@ def _score_cell(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #816 Phase-B off-pod graded judge.")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument("--external-root", default="external/persona_vectors")
     parser.add_argument(
         "--subs", nargs="+", default=["steering", "preventative"], help="raw-gen subdirs to score"

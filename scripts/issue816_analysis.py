@@ -406,8 +406,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #816 Phase-C off-pod analysis.")
     parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     # --scored-root: where the Phase-B judge wrote {steering,preventative}/*_scored.json.
-    # Defaults to the parent of --out-root (eval_results/issue_816), since judge
-    # outputs to eval_results/issue_816/ directly.
+    # Defaults to out-root itself (eval_results/issue_816/v3), since judge v3 also
+    # writes to that same v3/ namespace.  Pass --scored-root explicitly to override.
     parser.add_argument("--scored-root", default=None)
     parser.add_argument("--eval-778-root", default="eval_results/issue_778")
     parser.add_argument("--screening-tensor-root", default="data/issue_816/store/screening")
@@ -425,10 +425,29 @@ def main() -> None:
     args = parser.parse_args()
 
     # Resolve scored-root: directory where Phase-B judge output lives.
+    # Since judge v3 defaults --out-root to eval_results/issue_816/v3, scored-root
+    # defaults to out_root itself (not its parent).
     if args.scored_root is None:
-        # Default: parent of out-root (judge writes to eval_results/issue_816/,
-        # analysis writes to eval_results/issue_816/v3/).
-        args.scored_root = str(Path(args.out_root).parent)
+        args.scored_root = str(Path(args.out_root))
+
+    # Belt-and-suspenders guard (BLOCKER A): refuse to read scored files that are
+    # NOT under the v3 output namespace, preventing silent reuse of v2 outputs.
+    # The guard fires on the resolved path so an explicit --scored-root override
+    # that points outside v3 is also caught.
+    _out_root_resolved = Path(args.out_root).resolve()
+    _scored_root_resolved = Path(args.scored_root).resolve()
+    try:
+        _scored_root_resolved.relative_to(_out_root_resolved)
+    except ValueError:
+        # scored_root is NOT under out_root — verify it's at least under the v3 dir
+        # by checking the path component; allow an explicit sibling if the user
+        # knows what they're doing via a clear --scored-root flag.
+        if "v3" not in str(_scored_root_resolved):
+            raise RuntimeError(
+                f"BLOCKER A guard: --scored-root={args.scored_root!r} is not under "
+                f"the v3 output namespace ({args.out_root!r}). This would silently "
+                f"read v2 Phase-B outputs. Pass --scored-root explicitly if intentional."
+            ) from None
     out = {}
     if "exp5" in args.phases:
         out["exp5"] = run_exp5(args)

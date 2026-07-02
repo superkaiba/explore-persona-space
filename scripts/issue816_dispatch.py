@@ -124,8 +124,6 @@ def _preventative_cmds(args) -> list[dict]:
             *_py("issue816_preventative.py"),
             "--traits",
             trait,
-            "--n-random-dirs",
-            str(args.n_random_dirs),
             "--dataset-root",
             args.dataset_root,
             "--ckpt-root",

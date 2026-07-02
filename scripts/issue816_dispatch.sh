@@ -56,7 +56,7 @@ N_SAMPLES="${EPM_I816_N_SAMPLES:-500}"
 EXTRA=""
 if [ "${EPM_I816_SMOKE:-0}" = "1" ]; then
   TRAITS="${EPM_I816_TRAITS:-evil}"
-  EXTRA="--cells 1 --n-questions 2 --n-rollouts 1 --max-steps 2 --n-random-dirs 1 --n-samples 3"
+  EXTRA="--cells 1 --n-questions 2 --n-rollouts 1 --max-steps 2 --n-samples 3"
 fi
 
 log_phase() { printf '[phase=%s] %s\n' "$1" "${2:-}"; }
@@ -130,7 +130,7 @@ uv run python scripts/issue816_dispatch.py \
   --traits $TRAITS \
   --external-root "$EXTERNAL_ROOT" \
   --dataset-root "$EXTERNAL_ROOT/dataset" \
-  --out-root eval_results/issue_816 \
+  --out-root eval_results/issue_816/v3 \
   --ckpt-root checkpoints/issue_816 \
   --cache-dir data/issue_816/hf_dl \
   --n-random-dirs "$N_RANDOM_DIRS" \
