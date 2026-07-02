@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 863,
+  "highest_id": 864,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5615,6 +5615,13 @@
       "path": "tasks/planning/863",
       "status": "planning",
       "title": "artifacts: direction driver + directional ablation (Phase 0f)"
+    },
+    "864": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/864",
+      "status": "proposed",
+      "title": "workflow-fix: zombie-GPU override veto keys on cpu/proc liveness, not only log freshness"
     },
     "88": {
       "has_clean_result": true,
