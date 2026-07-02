@@ -541,6 +541,35 @@ def _finalize_worker(*, no_upload: bool, smoke: bool, summary: dict, stage: str)
     C.phase("done")
 
 
+def _preflight_artifacts(traits: list[str]) -> None:
+    """EARLY fail-loud artifacts preflight (seconds, BEFORE the ~90s model load).
+
+    BOTH generation phases read the PARENT extraction artifacts for the
+    generated traits (``data/issue_779/artifacts/<trait>.json``; evil is
+    verbatim in code) — the corpus phase via ``assert_corpus_disjoint`` ->
+    ``rb_pos_prompts``, and BOTH phases via ``judge_rollouts_n5`` ->
+    ``trait_judge_system_prompt`` (the judge rubric IS the artifact's
+    eval_prompt, evaluated even under ``--dry-run-judge``). Resolution is
+    LOCAL-FIRST with an HF FALLBACK (round 5, mirroring the r4
+    ``_resolve_rb_path`` shape): ``C.load_extraction_artifacts`` fetches
+    ``issue779_monitoring/artifacts/<trait>.json`` from the HF data repo when
+    the local cache is missing (the git-clone GCP/SLURM lanes stage no
+    ``data/``) and materializes it locally — so this preflight PASSES when the
+    artifact resolves EITHER locally OR via HF, and FAILS HERE
+    (FileNotFoundError naming both misses) rather than hours into
+    ``--stage all`` after the evil corpus completes. Do NOT auto-regenerate
+    via ``generate_extraction_artifacts``: fresh Sonnet artifacts would differ
+    from the ones the parent's r_B was actually extracted with, making the
+    disjointness check + judge rubric silently WRONG (vacuous ground truth)
+    rather than failed — reconstruction lives ONLY in
+    ``scripts/issue779_reconstruct_artifacts.py`` (rubric-validated,
+    Spearman-gated). Every non-upload_only stage loads the model, so gate them all.
+    """
+    for trait in traits:
+        C.load_extraction_artifacts(trait)  # local -> HF fallback -> FileNotFoundError
+    logger.info("[preflight] extraction artifacts resolved (local or HF) for traits %s", traits)
+
+
 def _resolve_rb_path(trait: str, rb_dir: Path, out_dir_base: Path) -> Path:
     """Resolve the r_B tensor path for a trait: local layout first, HF fetch fallback.
 
@@ -637,23 +666,7 @@ def main() -> int:
         _finalize_worker(no_upload=False, smoke=args.smoke, summary=summary, stage="upload_only")
         return 0
 
-    # EARLY fail-loud preflight (seconds, BEFORE the ~90s model load): BOTH
-    # generation phases read the PARENT extraction artifacts for the generated
-    # traits (data/issue_779/artifacts/<trait>.json; evil is verbatim in code) —
-    # the corpus phase via assert_corpus_disjoint -> rb_pos_prompts, and BOTH
-    # phases via judge_rollouts_n5 -> trait_judge_system_prompt (the judge
-    # rubric IS the artifact's eval_prompt, evaluated even under
-    # --dry-run-judge). The git-clone lanes (GCP/SLURM) stage no data/ and these
-    # artifacts are NOT on HF (verified via list_repo_files 2026-07-02), so a
-    # missing file must fail HERE — not hours into --stage all after the evil
-    # corpus completes. Do NOT auto-regenerate via
-    # generate_extraction_artifacts: fresh Sonnet artifacts would differ from the
-    # ones the parent's r_B was actually extracted with, making the disjointness
-    # check + judge rubric silently WRONG (vacuous ground truth) rather than
-    # failed. Every non-upload_only stage loads the model, so gate them all.
-    for trait in traits:
-        C.load_extraction_artifacts(trait)  # raises FileNotFoundError with the recipe
-    logger.info("[preflight] extraction artifacts present for traits %s", traits)
+    _preflight_artifacts(traits)
 
     C.phase("load_model")
     if args.device != "cpu":
