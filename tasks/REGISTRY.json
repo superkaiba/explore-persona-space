@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 880,
+  "highest_id": 881,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5741,6 +5741,13 @@
       "path": "tasks/proposed/880",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 manual launch of dispatcher-managed workers must replicate launcher CVD env pin"
+    },
+    "881": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/881",
+      "status": "proposed",
+      "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
     },
     "89": {
       "has_clean_result": true,
