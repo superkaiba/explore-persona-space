@@ -45,25 +45,44 @@ def test_resolve_chunk_cap_fires_on_the_crash_shape():
     """The exact #811 crash shape caps FAR below the requested 4096.
 
     n=480, d_in=3584, requested=4096, free=14.59 GiB (the crash's reported free).
-    per-member = 4 × 480 × 3584 × 4 = 27,525,120 B; cap = floor(14.59e9 × 0.8 /
-    per_member) ≈ 424 — well below 4096, and below the crashing c=4096.
+    With the calibrated default live_factor=26 (measured real-shape autograd peak),
+    per_member = 26 × 480 × 3584 × 4 = 178,913,280 B; cap = floor(14.59 × 2³⁰ × 0.8
+    / per_member) = 70 — well below 4096, and below the crashing c=4096.
     """
     free = int(14.59 * 2**30)
     cap = resolve_chunk_cap(4096, n_members=5760, n=480, d_in=3584, free_bytes=free)
     assert 1 < cap < 4096, cap
-    # matches the hand arithmetic in the brief (~420 at 14.59 GiB free)
-    assert 380 <= cap <= 460, cap
+    assert 50 <= cap <= 90, cap
 
 
-def test_resolve_chunk_cap_ample_memory_honors_requested():
-    """With ~77 GiB free (a fresh A100-80) the cap is ~2200 — below requested 4096.
+def test_resolve_chunk_cap_ample_memory_still_below_requested():
+    """With 77 GiB free (a fresh A100-80) the cap is 369 — still below requested 4096.
 
     Confirms the cap would have kept the crash from happening even on the full pod
     (c=4096 × 480 × 3584 × 4 = 26.25 GiB per intermediate, several live at once).
     """
     free = 77 * 2**30
     cap = resolve_chunk_cap(4096, n_members=5760, n=480, d_in=3584, free_bytes=free)
-    assert 1800 <= cap <= 2600, cap
+    assert 250 <= cap <= 450, cap
+
+
+def test_resolve_chunk_cap_covers_measured_autograd_peak():
+    """The DEFAULT live_factor bounds the MEASURED per-chunk real-shape peak.
+
+    Calibration (#811, CPU): at n=480, d_in=3584, c=64 the measured peak was
+    ~10.7 GiB ≈ 25.5 × a single (c, n, d_in) fp32 tensor. At the 7 GiB free the
+    re-OOM happened at, the DEFAULT cap must keep the chunk's MODELLED peak
+    (live_factor × c × n·d_in·4) under 0.8 × free, while the naive live_factor=4
+    would have picked a chunk whose REAL (×26) peak overflows — the c=218 re-OOM.
+    """
+    free = 7 * 2**30
+    n, d = 480, 3584
+    cap = resolve_chunk_cap(4096, n_members=480, n=n, d_in=d, free_bytes=free)
+    modelled_peak = 26 * cap * n * d * 4
+    assert modelled_peak <= 0.8 * free, (cap, modelled_peak / 2**30)
+    naive = resolve_chunk_cap(4096, n_members=480, n=n, d_in=d, free_bytes=free, live_factor=4)
+    real_peak_naive = 26 * naive * n * d * 4
+    assert real_peak_naive > free, (naive, real_peak_naive / 2**30)
 
 
 def test_resolve_chunk_cap_small_problem_returns_requested():

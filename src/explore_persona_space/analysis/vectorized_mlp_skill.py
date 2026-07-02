@@ -87,7 +87,7 @@ def resolve_chunk_cap(
     d_in: int,
     free_bytes: int,
     *,
-    live_factor: int = 4,
+    live_factor: int = 26,
     safety: float = 0.8,
 ) -> int:
     """Cap the per-chunk member count so the chunk's live ``(c, n, d_in)`` fp32
@@ -95,9 +95,16 @@ def resolve_chunk_cap(
 
     Each chunk of ``c`` members materializes several live ``(c, n, d_in)`` fp32
     tensors at once inside the fit loop — the advanced-index design copy ``Xc``, the
-    element-square temp ``Xc²``, the standardized ``Xn``, plus training-graph
-    headroom — so per-chunk peak scales as ``live_factor × c × n × d_in × 4 B``.
-    ``live_factor=4`` is that live-tensor count with slack for autograd. The cap is::
+    element-square temp ``Xc²``, the standardized ``Xn`` — and, dominating them, the
+    ``torch.bmm`` AUTOGRAD BACKWARD GRAPH over the ``(c, n, d_in)`` activations across
+    the training loop plus AdamW moment buffers and the CPU allocator's cached blocks.
+    ``live_factor`` is a per-chunk peak MULTIPLE of a single ``(c, n, d_in)`` fp32
+    tensor: ``live_factor=26`` is calibrated from a MEASURED real-shape peak — at
+    n=480, d_in=3584, p=64, c=64 the measured ``ru_maxrss`` delta was ~10.7 GiB ≈
+    25.5 × the 420 MiB single ``(c, n, d_in)`` tensor (#811 phase0 gate, CPU). A
+    naive count of the explicit temporaries (≈4) under-estimates by ~6× and re-OOMs
+    (a c=218 auto-cap needed ~36 GiB). Per-chunk peak scales as
+    ``live_factor × c × n × d_in × 4 B``. The cap is::
 
         max(1, min(requested, n_members,
                    floor(free_bytes × safety / (live_factor × n × d_in × 4))))
@@ -458,7 +465,8 @@ def fit_batched_loco_mlp_multihead(
     # #722's n≈50; #811's phase0 gate is n=480 × d_in=3584, where c=4096 alone is a
     # 26.25 GiB (c, n, d_in) fp32 intermediate → OOM.
     requested = chunk_size if (chunk_size and chunk_size > 0) else n_members
-    chunk = resolve_chunk_cap(requested, n_members, n, d_in, _free_bytes(dev))
+    free_bytes = _free_bytes(dev)  # probe ONCE; the log below must show the value the cap used
+    chunk = resolve_chunk_cap(requested, n_members, n, d_in, free_bytes)
     if chunk < requested:
         logger.info(
             "[vectorized_mlp] chunk capped %d -> %d (n=%d d_in=%d free=%.2f GiB) to bound "
@@ -467,7 +475,7 @@ def fit_batched_loco_mlp_multihead(
             chunk,
             n,
             d_in,
-            _free_bytes(dev) / 2**30,
+            free_bytes / 2**30,
         )
     for lo in range(0, n_members, chunk):
         hi = min(lo + chunk, n_members)
