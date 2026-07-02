@@ -5220,8 +5220,8 @@
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/811",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/811",
+      "status": "awaiting_promotion",
       "title": "The pre/post-finetuning function-change verdict is answer-summary-dependent: the taught-fact \u0394-over-floor call at the primary layer is specific to the mean-over-answer read (LOW confidence)"
     },
     "812": {
