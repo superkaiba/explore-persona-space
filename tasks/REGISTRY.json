@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 844,
+  "highest_id": 845,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5475,6 +5475,13 @@
       "path": "tasks/proposed/844",
       "status": "proposed",
       "title": "daily-fix: spawned sessions inherit an unrelated issue worktree as cwd"
+    },
+    "845": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/845",
+      "status": "proposed",
+      "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
     },
     "85": {
       "has_clean_result": false,
