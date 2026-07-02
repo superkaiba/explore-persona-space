@@ -20,17 +20,18 @@ goal: 'Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the
 relates_to:
 - leak-predictor
 ---
-# Base-model answer activations predict behavioral expression for 4 of 5 low-m behaviors once probes are matched and E0 is graded (LOCO ρ 0.62–0.86, two as reduced-power reads); deception is noise-limited (zero between-context reliability) (MODERATE confidence)
+# Base-model answer activations predict behavioral expression for 4 of 5 behaviors under matched probes and graded scoring (LOCO ρ 0.62–0.86, two as reduced-power reads); deception is noise-limited (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
 ## Takeaways
 
-- Matched probes + graded E0: LOCO **ρ = 0.71/0.62/0.74/0.86** (fact_expression/format_style/self_report/persona_drift; the last two are m=20 reduced-power reads), all **shuffle p ≤ 0.001**, control-task pass (format_style misses one registered CI criterion) — behaviors [#658](https://eps.superkaiba.com/tasks/658) scored unpredictable at m=8.
-- deception: between-context MEAN spread is only **2.9/100** (within-context probe spread reaches std **34.6**), ceiling **√r_yy = 0.00 [0, 0]** (a clipped-estimator floor); **ρ = 0.11 [−0.21, 0.41]** is indistinguishable from null given that noise — not a falsification. Binary companion retains signal (GLM **0.32 [0.03, 0.57]**, p = 0.009; ridge 0.41).
+- Matched probes + graded E0: LOCO **ρ = 0.71/0.62/0.74/0.86** (fact_expression/format_style/self_report/persona_drift; the last two are m=20 reduced-power reads), all **shuffle p ≤ 0.001**, control-task pass (format_style misses one of the two pass criteria) — behaviors previously scored unpredictable at m=8.
+- deception: between-context MEAN spread is only **2.9/100** (within-context probe spread reaches std **34.6**), ceiling **√r_yy = 0.00 (CI 0–0)** (a clipped-estimator floor); **ρ = 0.11 (CI −0.21 to 0.41)** is indistinguishable from null given that noise — not a falsification. Binary companion retains signal (GLM **0.32 (CI 0.03–0.57)**, p = 0.009; ridge 0.41).
 - Persona-vector baseline: within **0.07** of ridge on three behaviors (**0.78/0.76/0.84**) but **−0.08** on format_style (ridge **0.62**). Caveat: the PV arm is thinned by the judge filter for 3/5 behaviors (self_report kept **49/1000** negative rollouts).
 - No ridge−GLM disagreement in the as-built graded run: delta **−0.10 to +0.06**, vs the +0.05–0.11 ridge optimism at m=8 that motivated the GLM cross-check.
-- Realized yields violate the plan §10.1 acceptance assertions: self_report/persona_drift median n_judged **14–15** (< 16 floor; and the results JSON wrongly records m=60/reduced_power=false for them), deception median **47** (< 48 floor, 27/50 cells short); the fits weight by realized n_judged, so validity is unaffected but precision is reduced.
+- Realized yields violate the plan §10.1 acceptance assertions: self_report/persona_drift median n_judged **14–15** (< 16 floor; the results JSON also wrongly records m=60/reduced_power=false for them), deception median **47** (< 48 floor, 27/50 cells short).
+- The fits weight by realized n_judged, so the yield shortfalls reduce precision, not validity; the shuffle/control nulls score a fixed-dim observed statistic rather than the nested-CV headline ρ (open concern `headline-null-statistic-mismatch`, discussed under Results).
 
 ## Goal
 
@@ -39,7 +40,7 @@ relates_to:
 
 ## Methodology
 
-- **Design:** 5 behaviors × 50 contexts (8 context families: persona-hub, word-count, ICL, rephrase, format, default-template, house personas, behavior-adjacent), leave-one-context-out (LOCO) regression of graded E0(C,B) on v0(C,B). Single manipulated variable vs #658 per behavior: probe pool + m + DV grade (jointly the "measurement fix" arm; same contexts, same base model). No training — base-model-only.
+- **Design:** 5 behaviors × 50 contexts (8 context families: persona-hub, word-count, ICL, rephrase, format, default-template, house personas, behavior-adjacent), leave-one-context-out (LOCO) regression of graded E0(C,B) on v0(C,B). Single manipulated variable vs the parent m=8 measurement, per behavior: probe pool + m + DV grade (jointly the "measurement fix" arm; same contexts, same base model). No training — base-model-only.
 - **Training:** none (no adapters; base `Qwen/Qwen2.5-7B-Instruct`, 28 layers, hidden 3584). Complete hyperparameter table (generation / judging / fit):
 
 | Hyperparameter | Value | Source |
@@ -49,7 +50,7 @@ relates_to:
 | Generation | temp 0.0, n=1/probe; max_new_tokens 1024/256/512/512/512 (per behavior, as pooled) | Phase-1 as-generated, frozen (re-judged, not regenerated) |
 | v0 summary | answer-token mean residual, all 28 layers | #658/#761 recipe |
 | Graded judge | claude-sonnet-4-5-20250929, Anthropic Batch API, N=8 draws/completion, temp 1.0, anchored 0–100 rubric, reason-then-score, one-behavior-per-call; malformed/REFUSAL/out-of-range DROPPED | `.claude/rules/llm-judging.md` rules 4/6/9; #765 |
-| Binary judge (companion) | #658 rubric verbatim (`_RUBRIC_*` + `_verdict_truthy`), rate + n_judged | #658; replication fidelity |
+| Binary judge (companion) | per-completion yes/no behavior-expression verdict (`_RUBRIC_*` templates + `_verdict_truthy` parse, inherited unchanged from the parent measurement), rate + n_judged | #658; replication fidelity |
 | format_style DV | structural code-scored fraction (no LLM judge); graded ≡ binary ×100 | plan §4.3; #658 structural feature set |
 | Ridge (primary) | PCA-shared reduction d ∈ {2,4,6,8,10,15,20} nested-CV; λ ∈ {1e-2…1e3} exact PRESS; precision context weights | #761/#722 machinery; plan Must-Fix ridge-pca-comparator (capacity-matched to GLM) |
 | GLM (cross-check) | precision-weighted binomial, weight = n_judged, quasibinomial on overdispersion | plan §6; #742 |
@@ -63,7 +64,7 @@ relates_to:
 | Judge reliability r_jj | within-probe test-retest over the N=8 graded draws | `.claude/rules/llm-judging.md` rule 15 |
 | Yield floor | n_judged ≥ floor(0.8·m_B): 48 at m=60, 16 at m=20 | `.claude/rules/on-policy-completions.md` 80% floor; plan v3 Must-Fix #2 |
 
-- **Evaluation:** primary DV = per-context graded mean E0 (mean of surviving N=8 judge draws over judged probes, 0–100); companion DV = binary expressed-rate under the #658 rubric. Reported per behavior: LOCO Spearman ρ for ridge / GLM / PV on the graded DV, ρ with cluster-bootstrap 95% CI, shuffle-null p, control-task pass, √r_yy (m-conditioned bracket) with CI, r_jj, graded–binary tracking Spearman, ridge−GLM optimism delta.
+- **Evaluation:** primary DV = per-context graded mean E0 (mean of surviving N=8 judge draws over judged probes, 0–100); companion DV = binary expressed-rate — the judge answers a per-completion yes/no "does this completion express the target behavior" prompt (per-behavior `_RUBRIC_*` template, `_verdict_truthy` parse; [judge code @ 59482db8b3](https://github.com/superkaiba/explore-persona-space/blob/59482db8b3add2ddede88ada1165c72837f551f7/scripts/issue763_judge_e0.py)). Probe sets: behavior-specific eliciting pools (chosen because generic alignment probes lack dynamic range on these behaviors), frozen + hashed before judging; judged subsets per context disclosed in the yield rows above. Reported per behavior: LOCO Spearman ρ for ridge / GLM / PV on the graded DV, ρ with cluster-bootstrap 95% CI, shuffle-null p, control-task pass, √r_yy (m-conditioned bracket) with CI, r_jj, graded–binary tracking Spearman, ridge−GLM optimism delta.
 - **Data extraction:** Phase 1 (done before this leg, artifacts on HF): behavior-specific eliciting-probe pools authored/assembled and frozen (hashed); on-policy base-model completions per (context × probe); answer-side activations captured at all 28 layers → matched v0 tensors [50, 28, 3584]; PV rollouts + off-pod judge keep-flags. This leg: PV r_B capture (GPU), graded + binary judging (Batch API), fit, figures.
 - **Sample training/evaluation data + completions:** (one cherry-picked illustrative worked example — chosen for a readable fictional-entity probe, not at random — plus a per-behavior block of the 3 lowest + 3 highest graded per-probe rows, selected systematically by graded score; full artifacts: [probe pools](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/151c02aeb1bb79a69fe0310e08c2680ae3d8ba66/issue763_matched_v0/inputs/probe_pools), [gen cells](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/151c02aeb1bb79a69fe0310e08c2680ae3d8ba66/issue763_matched_v0/analysis_tensors/gen), [E0 judgments](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/151c02aeb1bb79a69fe0310e08c2680ae3d8ba66/issue763_matched_v0/analysis_tensors/E0_matched_by_behavior.json))
 
@@ -129,29 +130,29 @@ Selection disclosure: the block below is not cherry-picked and not a random samp
 
 ### Four of five behaviors clear the shuffle null with ρ 0.62–0.86; deception is noise-limited
 
-Rows = behaviors; columns = per-layer held-out LOCO ρ (graded DV; ridge/GLM/PV), the chosen-layer read, ρ vs the √r_yy ceiling (bars + CI whiskers), and the verdict block. n = 50 contexts per behavior.
+Rows = behaviors; columns: per-layer held-out LOCO ρ (graded DV; ridge/GLM/persona-vector), the chosen-layer read, ρ vs the reliability ceiling, and the verdict block (n = 50 contexts/behavior).
 
-![Per-behavior grid: per-layer held-out rho curves, chosen-layer read, rho vs reliability ceiling for ridge/GLM/PV, and verdicts, for the 5 behaviors](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3bd1a201230c9958c5b66d3fd7734cb0a9516f3/figures/issue_763/fig_763_matched_grid.png)
+![Per-behavior grid: per-layer held-out rho curves, chosen-layer read, rho vs reliability ceiling for ridge/GLM/PV, and verdicts, for the 5 behaviors](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c8001b8eea758e5c741c994bad8084dbc2ed12eb/figures/issue_763/fig_763_matched_grid.png)
 
 > **Figure.** *Headline reads per behavior.* Rows: deception, fact_expression, format_style, self_report, persona_drift. Columns: per-layer held-out ρ (graded DV), chosen-layer read, ρ vs √r_yy ceiling (bars: ridge / precision-weighted binomial GLM / persona-vector baseline), verdict. n = 50 contexts per behavior.
 
-fact_expression (**ρ 0.71 [0.48, 0.87]**), format_style (**0.62 [0.31, 0.87]**), self_report (**0.74 [0.55, 0.86]**) and persona_drift (**0.86 [0.69, 0.95]**) clear the shuffle null (p ≤ 0.001) with control-task pass. format_style misses one registered criterion (CI lower 0.31 < shuffle-null p95 0.35); the other three pass it. deception fails triage: √r_yy = 0.00 [0, 0] — a clipped-estimator floor from near-zero between-context MEAN spread (≈33–46; within-context spread is large) — so ρ 0.11 (p = 0.38, control fail) reads as "no reliable between-context signal", corroborated by negative per-layer LOCO ρ. The binary companion (GLM 0.32 [0.03, 0.57], p = 0.009; ridge 0.41) retains signal the graded rescoring flattens. persona_drift is layer-insensitive (per-layer 0.69–0.86; layer 0 = 0.859 vs chosen 0.861).
+fact_expression (**ρ 0.71, CI 0.48–0.87**), format_style (**0.62, CI 0.31–0.87**), self_report (**0.74, CI 0.55–0.86**) and persona_drift (**0.86, CI 0.69–0.95**) clear the shuffle null (p ≤ 0.001) with control-task pass; format_style misses one of the two pass criteria (CI lower 0.31 < null p95 0.35). deception fails triage: √r_yy = 0.00 (CI 0–0), a clipped-estimator floor from near-zero between-context MEAN spread (≈33–46), so ρ 0.11 (p = 0.38, control fail) reads as no reliable between-context signal (negative per-layer ρ is the matching artifact). The binary companion (GLM 0.32, CI 0.03–0.57, p = 0.009; ridge 0.41) keeps signal the graded rescoring flattens. persona_drift is layer-insensitive (0.69–0.86). Binding caveat `headline-null-statistic-mismatch`: the nulls score a per-layer fixed-dim observed statistic rather than the nested-CV headline pipeline — internally matched, observed-statistic identity unregistered. Per-context data: next result.
 
 ### Per-context LOCO predictions reproduce the aggregate ρ from 50 labeled points per behavior
 
-Each panel plots one point per context (n = 50; color = context family f1–f8): x = the LOCO held-out ridge prediction score at the behavior's chosen layer (linear predictor in the standardized PCA space, arbitrary scale — ρ is rank-based; recomputed with the run's own fit helpers), y = the measured graded E0 mean (0–100). Panel titles carry the recomputed vs reported ρ.
+Each panel plots one point per context (n = 50; colored by context family — 8 families, named in the legend): x = the LOCO held-out ridge prediction score at the behavior's chosen layer (linear predictor in the standardized PCA space, arbitrary scale — ρ is rank-based; recomputed with the run's own fit helpers), y = the measured graded E0 mean (0–100). Panel titles carry the recomputed vs reported ρ.
 
-![Per-context scatter of LOCO-predicted vs measured graded E0 for each behavior, colored by context family](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3bd1a201230c9958c5b66d3fd7734cb0a9516f3/figures/issue_763/fig_763_pred_vs_actual.png)
+![Per-context scatter of LOCO-predicted vs measured graded E0 for each behavior, colored by context family](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c8001b8eea758e5c741c994bad8084dbc2ed12eb/figures/issue_763/fig_763_pred_vs_actual.png)
 
 > **Figure.** *The per-unit data behind the headline ρ.* One point per context (50/behavior), color = context family. Recomputed chosen-layer LOCO predictions vs measured graded E0; recomputed ρ matches the reported value per panel.
 
-The spread is family-structured. A prediction-fixed leave-one-family-out check (Spearman on the persisted held-out predictions after dropping each family in turn) keeps all four "works" behaviors off the floor — worst-case ρ 0.60/0.52/0.47/0.78 (fact_expression/format_style: worst drop = rephrase; self_report/persona_drift: worst drop = the 14-context persona family) — while deception flips sign (−0.27 dropping the persona family). This is a remainder check, not held-out-family generalization: within single families the rank correlation can be weak or negative, so the prediction separates family bands more than it ranks within them. deception's compressed y-range (≈33–46) underlies its zero ceiling.
+The spread is family-structured. A prediction-fixed leave-one-family-out check (Spearman on the persisted predictions, dropping each family in turn) keeps all four "works" behaviors off the floor — worst-case ρ 0.60/0.52/0.47/0.78 (worst drop: rephrase for fact_expression/format_style, the 14-context persona family for self_report/persona_drift) — while deception flips sign (−0.27 dropping the persona family). It is a remainder check, not held-out-family generalization: within-family rank correlation can be weak or negative, so the prediction separates family bands more than it ranks within them. deception's compressed y-range (≈33–46) underlies its zero ceiling.
 
 ### Graded and binary DVs rank contexts consistently outside deception (Spearman 0.79–1.00; deception 0.61)
 
 One point per context in every panel: x = binary expressed-rate (#658 rubric), y = graded mean (0–100). format_style is structural (graded ≡ binary ×100), giving exact agreement by construction.
 
-![Per-context scatter of graded mean vs binary expressed rate for each behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3bd1a201230c9958c5b66d3fd7734cb0a9516f3/figures/issue_763/fig_763_graded_vs_binary.png)
+![Per-context scatter of graded mean vs binary expressed rate for each behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c8001b8eea758e5c741c994bad8084dbc2ed12eb/figures/issue_763/fig_763_graded_vs_binary.png)
 
 > **Figure.** *Dual-DV validation at the context level.* One point per context; graded–binary tracking Spearman per panel: 0.61 (deception), 0.79 (fact_expression), 1.00 (format_style, structural), 0.79 (self_report), 0.93 (persona_drift).
 
@@ -161,11 +162,11 @@ At the context level the graded DV tracks the validated binary rate (satisfying 
 
 The bar chart shows the ridge−GLM held-out ρ difference per behavior on the graded DV (the "optimism delta" whose +0.05–0.11 value at m=8 motivated phase 2's GLM cross-check).
 
-![Bar chart of ridge minus GLM held-out rho per behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3bd1a201230c9958c5b66d3fd7734cb0a9516f3/figures/issue_763/fig_763_optimism_delta.png)
+![Bar chart of ridge minus GLM held-out rho per behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c8001b8eea758e5c741c994bad8084dbc2ed12eb/figures/issue_763/fig_763_optimism_delta.png)
 
 > **Figure.** *Ridge−GLM optimism delta per behavior (graded DV).* Positive = ridge reads higher than the precision-weighted GLM.
 
-Deltas span −0.10 (fact_expression) to +0.06 (format_style): in this as-built graded run (m = 60 for three behaviors; sub-floor m = 20 reads for two), the ridge and the correctly-specified GLM agree — consistent with the m=8 ridge optimism having been a small-m artifact.
+Deltas span −0.10 (fact_expression) to +0.06 (format_style): in this as-built graded run (m = 60 for three behaviors; m = 20 reads below their yield floor for two), the ridge and the correctly-specified GLM agree — consistent with the m=8 ridge optimism having been a small-m artifact.
 
 ---
 **Repro:** ~16 GPU-h budget; realized: Phase-1 generation + capture legs (GCP A100 / RunPod), PV capture + GPU fit leg on pod-763 (1×H100, fit 05:25–07:17Z 2026-07-02 after an EPM_FIT_DEVICE=cuda cutover from a GCP e2-standard-8 CPU leg) · code [59482db8b3](https://github.com/superkaiba/explore-persona-space/tree/59482db8b3add2ddede88ada1165c72837f551f7) (fit-phase HEAD; gen-phase 0ecadbbc13) · eval JSONs + figures: git `issue-763` [61168f1bc1](https://github.com/superkaiba/explore-persona-space/commit/61168f1bc1) (`eval_results/issue_763/`, `figures/issue_763/`) · HF [issue763_matched_v0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/151c02aeb1bb79a69fe0310e08c2680ae3d8ba66/issue763_matched_v0): probe_pools, gen cells, raw_completions (250), v0_shards (5×[50,28,3584]), pv_rollouts + pv_judge keep-flags, pv_shards (r_B), E0_matched_by_behavior.json, pv_rb_by_behavior.json · plan v3 `tasks/…/763/plans/v3.md`
