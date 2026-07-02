@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 860,
+  "highest_id": 861,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5594,6 +5594,13 @@
       "path": "tasks/proposed/860",
       "status": "proposed",
       "title": "workflow-fix: pre-existing HF audit-claim test failures on main"
+    },
+    "861": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/861",
+      "status": "proposed",
+      "title": "artifacts: promote contrastive negatives to artifacts/negatives.py (Phase 0c)"
     },
     "88": {
       "has_clean_result": true,
