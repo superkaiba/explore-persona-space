@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 875,
+  "highest_id": 876,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5699,6 +5699,13 @@
       "path": "tasks/proposed/875",
       "status": "proposed",
       "title": "workflow-fix: work-conserving dispatcher + per-row IO review lens"
+    },
+    "876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/876",
+      "status": "proposed",
+      "title": "Parametrize DEVICE in issue658_fit_predictors.py (CPU pin hit #763/#812)"
     },
     "88": {
       "has_clean_result": true,
