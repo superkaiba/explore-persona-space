@@ -1,0 +1,489 @@
+{
+  "task": 778,
+  "description": "Honest-null-ladder comparison figures: paper vs our reproduction vs each random-direction null.",
+  "rendered_at_git_head": "a44a2f110f9e0ecc728e10a2486c232c78cd7600",
+  "honestnulls_source": "eval_results/issue_778/honest_nulls/{trait}_{setting}_honestnulls.json",
+  "honestnulls_git_commit": "97c70bf755 (committed by the honest-null-ladder run)",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "circularity_finding": "the two ORIGINAL #778 stochastic nulls (orig_randnorm pooled-cov, orig_perm shuffled-label) are circular: pooled-cov top PC vs r_B cos 0.996/0.985/0.736; the honest families (isotropic, within_class [primary], neg_arm_only, rb_projected_out) are trait-agnostic",
+  "regime_note": "bar observed |r| is FIXED-LAYER (the #778-selected or paper-steering layer), NOT the max-over-28-layers regime of summary_scatter_ours_vs_random.png; regimes are never mixed in one panel",
+  "paper_note": "paper appears only in the bar figure \u2014 we do not have the paper's raw datapoints",
+  "paper_reference_values": {
+    "finetune": {
+      "evil": null,
+      "sycophancy": null,
+      "hallucination": null
+    },
+    "corr_pooled": {
+      "evil": 0.747,
+      "sycophancy": 0.798,
+      "hallucination": 0.83
+    },
+    "corr_within": {
+      "evil": 0.511,
+      "sycophancy": 0.669,
+      "hallucination": 0.245
+    },
+    "many_pooled": {
+      "evil": 0.755,
+      "sycophancy": 0.817,
+      "hallucination": 0.634
+    },
+    "many_within": {
+      "evil": 0.735,
+      "sycophancy": 0.813,
+      "hallucination": 0.4
+    }
+  },
+  "bar_ladder_issue778_selected": {
+    "finetune": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.9143,
+        "paper_r": null,
+        "isotropic": 0.8131,
+        "within_class": 0.8724,
+        "neg_arm_only": 0.8192,
+        "rb_projected_out": 0.843,
+        "orig_randnorm": 0.9353,
+        "orig_perm": 0.942,
+        "crosstrait": 0.7244
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8463,
+        "paper_r": null,
+        "isotropic": 0.8157,
+        "within_class": 0.9015,
+        "neg_arm_only": 0.8104,
+        "rb_projected_out": 0.8517,
+        "orig_randnorm": 0.917,
+        "orig_perm": 0.9175,
+        "crosstrait": 0.7284
+      },
+      "hallucination": {
+        "layer": 25,
+        "our_fixed_r": 0.9714,
+        "paper_r": null,
+        "isotropic": 0.864,
+        "within_class": 0.9535,
+        "neg_arm_only": 0.9594,
+        "rb_projected_out": 0.8739,
+        "orig_randnorm": 0.9646,
+        "orig_perm": 0.9647,
+        "crosstrait": 0.4626
+      }
+    },
+    "corr_pooled": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.8075,
+        "paper_r": 0.747,
+        "isotropic": 0.607,
+        "within_class": 0.7131,
+        "neg_arm_only": 0.4335,
+        "rb_projected_out": 0.506,
+        "orig_randnorm": 0.8209,
+        "orig_perm": 0.8188,
+        "crosstrait": 0.7436
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.7959,
+        "paper_r": 0.798,
+        "isotropic": 0.755,
+        "within_class": 0.7849,
+        "neg_arm_only": 0.7051,
+        "rb_projected_out": 0.7136,
+        "orig_randnorm": 0.8369,
+        "orig_perm": 0.8335,
+        "crosstrait": 0.7075
+      },
+      "hallucination": {
+        "layer": 21,
+        "our_fixed_r": 0.8373,
+        "paper_r": 0.83,
+        "isotropic": 0.7009,
+        "within_class": 0.8094,
+        "neg_arm_only": 0.817,
+        "rb_projected_out": 0.6551,
+        "orig_randnorm": 0.8246,
+        "orig_perm": 0.8189,
+        "crosstrait": 0.4967
+      }
+    },
+    "corr_within": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.2913,
+        "paper_r": 0.511,
+        "isotropic": 0.3103,
+        "within_class": 0.2787,
+        "neg_arm_only": 0.2735,
+        "rb_projected_out": 0.2653,
+        "orig_randnorm": 0.3204,
+        "orig_perm": 0.324,
+        "crosstrait": 0.1699
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.6654,
+        "paper_r": 0.669,
+        "isotropic": 0.6336,
+        "within_class": 0.633,
+        "neg_arm_only": 0.4831,
+        "rb_projected_out": 0.5929,
+        "orig_randnorm": 0.6849,
+        "orig_perm": 0.6793,
+        "crosstrait": 0.1249
+      },
+      "hallucination": {
+        "layer": 21,
+        "our_fixed_r": 0.6469,
+        "paper_r": 0.245,
+        "isotropic": 0.5761,
+        "within_class": 0.6646,
+        "neg_arm_only": 0.6602,
+        "rb_projected_out": 0.568,
+        "orig_randnorm": 0.6659,
+        "orig_perm": 0.6727,
+        "crosstrait": 0.2019
+      }
+    },
+    "many_pooled": {
+      "evil": {
+        "layer": 20,
+        "our_fixed_r": 0.6769,
+        "paper_r": 0.755,
+        "isotropic": 0.5416,
+        "within_class": 0.5586,
+        "neg_arm_only": 0.5584,
+        "rb_projected_out": 0.4871,
+        "orig_randnorm": 0.6906,
+        "orig_perm": 0.6902,
+        "crosstrait": 0.2419
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8661,
+        "paper_r": 0.817,
+        "isotropic": 0.7768,
+        "within_class": 0.8285,
+        "neg_arm_only": 0.7643,
+        "rb_projected_out": 0.744,
+        "orig_randnorm": 0.8838,
+        "orig_perm": 0.8816,
+        "crosstrait": 0.62
+      },
+      "hallucination": {
+        "layer": 23,
+        "our_fixed_r": 0.7292,
+        "paper_r": 0.634,
+        "isotropic": 0.6143,
+        "within_class": 0.7091,
+        "neg_arm_only": 0.7195,
+        "rb_projected_out": 0.589,
+        "orig_randnorm": 0.7488,
+        "orig_perm": 0.7462,
+        "crosstrait": 0.2209
+      }
+    },
+    "many_within": {
+      "evil": {
+        "layer": 20,
+        "our_fixed_r": 0.6583,
+        "paper_r": 0.735,
+        "isotropic": 0.5438,
+        "within_class": 0.5866,
+        "neg_arm_only": 0.5688,
+        "rb_projected_out": 0.5141,
+        "orig_randnorm": 0.6746,
+        "orig_perm": 0.673,
+        "crosstrait": 0.349
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8193,
+        "paper_r": 0.813,
+        "isotropic": 0.7557,
+        "within_class": 0.7655,
+        "neg_arm_only": 0.6787,
+        "rb_projected_out": 0.7323,
+        "orig_randnorm": 0.8496,
+        "orig_perm": 0.845,
+        "crosstrait": 0.3791
+      },
+      "hallucination": {
+        "layer": 23,
+        "our_fixed_r": 0.648,
+        "paper_r": 0.4,
+        "isotropic": 0.5587,
+        "within_class": 0.6687,
+        "neg_arm_only": 0.6922,
+        "rb_projected_out": 0.5769,
+        "orig_randnorm": 0.6957,
+        "orig_perm": 0.6967,
+        "crosstrait": 0.1088
+      }
+    }
+  },
+  "raw_scatter_seed0_by_family": {
+    "finetune": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.9143,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.2176,
+            "seed0_abs_r_percentile": 27.3
+          },
+          "within_class": {
+            "seed0_r": 0.7625,
+            "seed0_abs_r_percentile": 88.0
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7788,
+            "seed0_abs_r_percentile": 94.1
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.6702,
+            "seed0_abs_r_percentile": 79.4
+          },
+          "orig_randnorm": {
+            "seed0_r": 0.1224,
+            "seed0_abs_r_percentile": 4.0
+          }
+        },
+        "n_points": 24
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8463,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.1704,
+            "seed0_abs_r_percentile": 22.6
+          },
+          "within_class": {
+            "seed0_r": -0.7801,
+            "seed0_abs_r_percentile": 80.5
+          },
+          "neg_arm_only": {
+            "seed0_r": 0.4378,
+            "seed0_abs_r_percentile": 54.8
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.7541,
+            "seed0_abs_r_percentile": 84.9
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4863,
+            "seed0_abs_r_percentile": 28.3
+          }
+        },
+        "n_points": 24
+      },
+      "hallucination": {
+        "selected_layer": 25,
+        "ours_r": 0.9714,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.7702,
+            "seed0_abs_r_percentile": 90.7
+          },
+          "within_class": {
+            "seed0_r": -0.3258,
+            "seed0_abs_r_percentile": 15.0
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7165,
+            "seed0_abs_r_percentile": 40.1
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.2814,
+            "seed0_abs_r_percentile": 25.3
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.9165,
+            "seed0_abs_r_percentile": 76.4
+          }
+        },
+        "n_points": 24
+      }
+    },
+    "corrected": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.8075,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.2516,
+            "seed0_abs_r_percentile": 50.4
+          },
+          "within_class": {
+            "seed0_r": -0.0099,
+            "seed0_abs_r_percentile": 1.9
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.1928,
+            "seed0_abs_r_percentile": 66.7
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.3097,
+            "seed0_abs_r_percentile": 77.6
+          },
+          "orig_randnorm": {
+            "seed0_r": 0.1389,
+            "seed0_abs_r_percentile": 10.0
+          }
+        },
+        "n_points": 160
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.7959,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.5548,
+            "seed0_abs_r_percentile": 77.4
+          },
+          "within_class": {
+            "seed0_r": -0.6331,
+            "seed0_abs_r_percentile": 73.2
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.4588,
+            "seed0_abs_r_percentile": 46.8
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.2075,
+            "seed0_abs_r_percentile": 35.3
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4725,
+            "seed0_abs_r_percentile": 17.1
+          }
+        },
+        "n_points": 160
+      },
+      "hallucination": {
+        "selected_layer": 21,
+        "ours_r": 0.8373,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.6222,
+            "seed0_abs_r_percentile": 93.1
+          },
+          "within_class": {
+            "seed0_r": -0.7489,
+            "seed0_abs_r_percentile": 86.6
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7476,
+            "seed0_abs_r_percentile": 85.2
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.0768,
+            "seed0_abs_r_percentile": 13.2
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.7136,
+            "seed0_abs_r_percentile": 71.8
+          }
+        },
+        "n_points": 152
+      }
+    },
+    "manyshot": {
+      "evil": {
+        "selected_layer": 20,
+        "ours_r": 0.6769,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.0512,
+            "seed0_abs_r_percentile": 13.8
+          },
+          "within_class": {
+            "seed0_r": 0.0955,
+            "seed0_abs_r_percentile": 17.9
+          },
+          "neg_arm_only": {
+            "seed0_r": 0.065,
+            "seed0_abs_r_percentile": 12.3
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.0201,
+            "seed0_abs_r_percentile": 3.4
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.5421,
+            "seed0_abs_r_percentile": 55.4
+          }
+        },
+        "n_points": 100
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8661,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.2784,
+            "seed0_abs_r_percentile": 37.6
+          },
+          "within_class": {
+            "seed0_r": -0.6234,
+            "seed0_abs_r_percentile": 72.9
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.2407,
+            "seed0_abs_r_percentile": 28.6
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.3984,
+            "seed0_abs_r_percentile": 60.8
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4324,
+            "seed0_abs_r_percentile": 23.8
+          }
+        },
+        "n_points": 100
+      },
+      "hallucination": {
+        "selected_layer": 23,
+        "ours_r": 0.7292,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.0139,
+            "seed0_abs_r_percentile": 3.2
+          },
+          "within_class": {
+            "seed0_r": 0.3245,
+            "seed0_abs_r_percentile": 44.4
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.2688,
+            "seed0_abs_r_percentile": 34.9
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.1847,
+            "seed0_abs_r_percentile": 31.2
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.3645,
+            "seed0_abs_r_percentile": 42.8
+          }
+        },
+        "n_points": 95
+      }
+    }
+  },
+  "figures": [
+    "bar_panels_with_honest_nulls.png",
+    "bar_panels_with_honest_nulls_paper_steering.png",
+    "raw_scatter_finetune_ladder.png",
+    "raw_scatter_corrected_ladder.png",
+    "raw_scatter_manyshot_ladder.png"
+  ]
+}
