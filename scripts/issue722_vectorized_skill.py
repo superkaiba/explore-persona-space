@@ -47,6 +47,7 @@ mutates task state.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import subprocess
@@ -109,6 +110,7 @@ from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     fit_batched_loco_mlp,
     fit_batched_loco_mlp_multihead,
     fit_batched_loco_mlp_multihead_trajectory,
+    input_transform_fold,
     krr_predict_loco,
     krr_predict_loco_rep,
     loco_train_means,
@@ -126,6 +128,14 @@ from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
 INPUT_REP_RIDGE_BAND = 0.05  # |Δridge R²| ≤ 0.05 vs the full-dim baseline
 INPUT_REP_GAP_BAND = 0.03  # |Δ(RBF−linear gap)| ≤ 0.03 AND sign preserved
 INPUT_REP_PASS_MIN_LAYERS = 26  # of 28
+
+# γ-sensitivity diagnostic (plan §4.4 exploratory band; CONCERN
+# krr-gap-collapse-gamma-regime-interpretation): re-run the pca48 KRR RBF arm at a
+# couple of representative ridge-plateau layers under γ = multiplier × the per-fold
+# median-heuristic γ₀, to distinguish a genuine RBF-buys-nothing collapse from a
+# bad-γ-regime artifact of the median heuristic at 48 standardized dims.
+GAMMA_SENS_LAYERS = (18, 21)  # ridge plateau; L18 = the §5a shuffle-control anchor
+GAMMA_SENS_MULTIPLIERS = (0.25, 0.5, 1.0, 2.0, 4.0)  # × the median-heuristic γ₀
 
 load_dotenv(str(REPO_ROOT / ".env"))
 
@@ -428,6 +438,38 @@ def _full_data_lambda(Xc: np.ndarray, Yv: np.ndarray) -> float:
     xmu = Xt.mean(0)
     xsd = Xt.std(0, correction=0) + 1e-9
     Xn = (Xt - xmu) / xsd
+    Yc = Yt - Yt.mean(0)
+    mse = i658._press_loo_mse_per_lambda(Xn, Yc, i658.RIDGE_LAMBDAS)
+    return float(i658.RIDGE_LAMBDAS[int(torch.argmin(mse).item())])
+
+
+def _full_data_lambda_rep(
+    Xc: np.ndarray, Yv: np.ndarray, input_rep: str, k: int, eps: float
+) -> float:
+    """Full-data PRESS-selected ridge λ for a layer UNDER one input representation.
+
+    The transformed-input analogue of ``_full_data_lambda`` (BLOCKER §4.4
+    ``lambda_chosen``): re-represent the FULL design once (``input_transform_fold``
+    with all rows as the "train" basis), then run the identical standardize →
+    center → PRESS LOO pick over ``RIDGE_LAMBDAS`` that ``_full_data_lambda`` uses.
+    A per-layer reproducibility diagnostic that mirrors the baseline skill JSON's
+    ``lambda_chosen`` field on the pca48/whiten48 arm — the per-fold LOCO picks are
+    near-identical at this n, so the full-data pick is the reported representative,
+    exactly as in the ``full`` baseline. ``input_rep="full"`` delegates to
+    ``_full_data_lambda`` (byte-identical). Runs on ``i658.DEVICE`` in fp64.
+    """
+    if input_rep == "full":
+        return _full_data_lambda(Xc, Yv)
+    device = torch.device(i658.DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(Xc)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Yv)).to(device=device, dtype=torch.float64)
+    # Full-data input transform: use the whole design as the basis, and reuse the
+    # SAME transform on itself for the "held-out" argument (immaterial here — we take
+    # only the transformed design Xin for the diagnostic λ pick).
+    Xin, _z_held, _fb = input_transform_fold(Xt, Xt[0], input_rep, k=k, eps=eps)
+    xmu = Xin.mean(0)
+    xsd = Xin.std(0, correction=0) + 1e-9
+    Xn = (Xin - xmu) / xsd
     Yc = Yt - Yt.mean(0)
     mse = i658._press_loo_mse_per_lambda(Xn, Yc, i658.RIDGE_LAMBDAS)
     return float(i658.RIDGE_LAMBDAS[int(torch.argmin(mse).item())])
@@ -742,6 +784,90 @@ def _git_sha() -> str:
         ).stdout.strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "unknown"
+
+
+def _sha256_file(path: Path) -> str | None:
+    """Streamed sha256 of a local file (content-identity pin), or None if absent."""
+    if not path.exists():
+        return None
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _resolve_substrate_provenance(betley: dict) -> dict:
+    """Resolve the §4.4 substrate HF paths + revisions + content sha256 for run_meta.
+
+    The two substrate stores this amendment reads:
+      - #658 v0 store — ``v0_summaries.pt`` + ``r_b.pt`` under the HF data repo
+        prefix ``issue658_theory_assumptions/store`` (loaded in ``_load_genre``).
+      - #594 c_C store — ``context_vectors_mean.pt`` under
+        ``issue594_context_geometry/analysis_tensors`` (``load_cc_last_store``).
+
+    For each file: the HF repo id + repo_type + path_in_repo (from
+    ``issue658_common``), the LOCAL content sha256 (the definitive content-identity
+    pin, survives any future commit), and the RESOLVED HF ``main`` revision +
+    server-side LFS sha256 (looked up live; fail-soft on no-network so a run still
+    produces run_meta — the local sha256 remains the authoritative pin either way).
+    """
+    from issue658_common import HF_DATA_REPO, I594_CC_LAST_FILE
+
+    store_dir = Path(betley["store_dir"])
+    files = {
+        "i658_v0_summaries": {
+            "repo_id": HF_DATA_REPO,
+            "repo_type": "dataset",
+            "path_in_repo": "issue658_theory_assumptions/store/v0_summaries.pt",
+            "local_path": str(store_dir / "v0_summaries.pt"),
+        },
+        "i658_r_b": {
+            "repo_id": HF_DATA_REPO,
+            "repo_type": "dataset",
+            "path_in_repo": "issue658_theory_assumptions/store/r_b.pt",
+            "local_path": str(store_dir / "r_b.pt"),
+        },
+        "i594_cc_last": {
+            "repo_id": HF_DATA_REPO,
+            "repo_type": "dataset",
+            "path_in_repo": I594_CC_LAST_FILE,
+            "local_path": None,  # streamed via hf_hub_download into the HF cache
+        },
+    }
+    for meta in files.values():
+        lp = meta["local_path"]
+        meta["local_sha256"] = _sha256_file(Path(lp)) if lp else None
+        meta["resolved_revision"] = None
+        meta["hf_lfs_sha256"] = None
+        try:
+            from huggingface_hub import get_hf_file_metadata, hf_hub_url
+
+            url = hf_hub_url(
+                meta["repo_id"], meta["path_in_repo"], repo_type=meta["repo_type"], revision="main"
+            )
+            md = get_hf_file_metadata(url)
+            meta["resolved_revision"] = md.commit_hash  # HF main resolved to a commit sha
+            meta["hf_lfs_sha256"] = md.etag  # server-side LFS sha256 for the blob
+        except Exception as exc:
+            logger.warning(
+                "[input-rep] could not resolve HF revision for %s (%s): %s",
+                meta["path_in_repo"],
+                type(exc).__name__,
+                exc,
+            )
+    return {"substrate_files": files, "cc_source": betley["cc_source"]}
+
+
+def _rng_state_hash(seed: int) -> str:
+    """Deterministic hash of the numpy default_rng bit-generator state for ``seed``.
+
+    Pins the exact RNG the KRR bootstrap draws from (``np.random.default_rng(seed)``)
+    — the §4.4 ``rng_state_hash`` provenance field. Seed-derived + deterministic, so
+    it round-trips across machines and re-runs (a fixed value for a fixed seed).
+    """
+    state = np.random.default_rng(seed).bit_generator.state
+    return hashlib.sha256(json.dumps(state, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def _write_fig_meta(fig_path: Path, issue: int, source_json: str) -> None:
@@ -1427,6 +1553,10 @@ def run_input_rep_robustness(
         ridge_skill = skill_over_mean_r2(ridge_pred, Yv)
         base_r = base_ridge.get(layer, float("nan"))
         d_ridge = ridge_skill["skill"] - base_r
+        # §4.4 lambda_chosen: the full-data PRESS λ pick UNDER this input rep — the
+        # transformed-input analogue of the baseline skill JSON's per-layer
+        # lambda_chosen diagnostic (BLOCKER input-rep-skill-schema-missing-lambda).
+        lambda_chosen = _full_data_lambda_rep(Xc, Yv, input_rep, k, eps)
         ridge_rows.append(
             {
                 "layer": layer,
@@ -1436,6 +1566,7 @@ def run_input_rep_robustness(
                 "predict_mean_abs_cos": _predict_mean_abs_cos(Yv),
                 "raw_recon_abs_cos": _recon_abs_cos(ridge_pred, Yv),
                 "ridge_median_per_dim_r2": ridge_skill["median_per_dim_r2"],
+                "lambda_chosen": lambda_chosen,
                 "n_folds_used_ridge": ridge_skill["n_folds_used"],
                 "gesvd_fallback": bool(ridge_fb),
             }
@@ -1523,6 +1654,117 @@ def run_input_rep_robustness(
     return skill_result, krr_result
 
 
+def run_gamma_sensitivity(
+    data: dict,
+    *,
+    input_rep: str,
+    layers_to_probe: tuple[int, ...] = GAMMA_SENS_LAYERS,
+    multipliers: tuple[float, ...] = GAMMA_SENS_MULTIPLIERS,
+    k: int = INPUT_REP_K,
+    eps: float = INPUT_REP_EPS,
+) -> dict:
+    """γ-sensitivity diagnostic for the KRR RBF collapse (CONCERN, plan §4.4 band).
+
+    At each probe layer, compute the linear-kernel LOCO R² ONCE (γ-independent), then
+    for each γ multiplier re-run ONLY the RBF arm forcing the per-fold γ grid to the
+    single point ``multiplier × γ₀_fold`` (``krr_predict_loco_rep(..., gamma_scale=m)``)
+    and report RBF R² + the RBF−linear gap. Everything else — the top-48-PC v0 target,
+    the LOCO fold structure, the λ grid, the per-fold train-only pca48 transform, the
+    seed, n=50 — is inherited verbatim from ``run_input_rep_robustness``; the ONLY
+    thing swept is γ. If NO multiplier lifts the gap toward ~0, the collapse is
+    γ-robust (a real "RBF buys nothing at 48 standardized dims"); if some multiplier
+    recovers the gap, the median heuristic sat in a bad regime at 48-d.
+
+    Returns a JSON-ready dict: ``{input_rep, multipliers, per_layer: [{layer,
+    skill_krr_linear, gamma0_median, by_multiplier: [{multiplier, chosen_gamma_median,
+    skill_krr_rbf, gap_rbf_minus_linear}, ...], best_gap, best_multiplier}, ...]}``.
+    """
+    if input_rep == "full":
+        raise ValueError("gamma-sensitivity is a transformed-input (pca48) diagnostic, not 'full'")
+    C, V = _stack_layers(data)
+    layers = data["layers"]
+    layer_to_li = {int(layers[li]): li for li in range(len(layers))}
+    per_layer = []
+    for layer in layers_to_probe:
+        if layer not in layer_to_li:
+            logger.warning("[gamma-sens] layer %d not in store — skipping", layer)
+            continue
+        li = layer_to_li[layer]
+        Xc = C[:, li, :]
+        Yv = V[:, li, :]
+        mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+        Y64 = (Yv - mu_t) @ comps.T
+        # linear arm ONCE (γ-independent): the gap denominator at this layer.
+        lin_pred, _lin_lam, _lin_gam, _lin_fb = krr_predict_loco_rep(
+            Xc, Y64, kernel="linear", input_rep=input_rep, k=k, eps=eps
+        )
+        lin_skill, _lin_ssres, _ = _skill_and_fold_terms(lin_pred, Y64)
+        by_mult = []
+        for m in multipliers:
+            rbf_pred, _rbf_lam, rbf_gam, _rbf_fb = krr_predict_loco_rep(
+                Xc, Y64, kernel="rbf", input_rep=input_rep, k=k, eps=eps, gamma_scale=m
+            )
+            rbf_skill, _rbf_ssres, _ = _skill_and_fold_terms(rbf_pred, Y64)
+            gap = rbf_skill - lin_skill
+            by_mult.append(
+                {
+                    "multiplier": float(m),
+                    "chosen_gamma_median": float(np.nanmedian(rbf_gam)),
+                    "skill_krr_rbf": rbf_skill,
+                    "gap_rbf_minus_linear": gap,
+                }
+            )
+            logger.info(
+                "[gamma-sens][%s][L%02d] m=%.2f γ=%.3g rbf=%+.4f gap=%+.4f",
+                input_rep,
+                layer,
+                m,
+                by_mult[-1]["chosen_gamma_median"],
+                rbf_skill,
+                gap,
+            )
+        # γ₀ median (the multiplier=1.0 heuristic point) for reference.
+        gamma0_median = next(
+            (r["chosen_gamma_median"] for r in by_mult if abs(r["multiplier"] - 1.0) < 1e-9),
+            float("nan"),
+        )
+        # "best" = the multiplier whose gap is CLOSEST to 0 from below (least negative)
+        # — i.e. the γ that most recovers RBF toward linear. If all gaps are negative
+        # the collapse is γ-robust across the sweep.
+        best = max(by_mult, key=lambda r: r["gap_rbf_minus_linear"])
+        per_layer.append(
+            {
+                "layer": layer,
+                "skill_krr_linear": lin_skill,
+                "gamma0_median": gamma0_median,
+                "by_multiplier": by_mult,
+                "best_gap": best["gap_rbf_minus_linear"],
+                "best_multiplier": best["multiplier"],
+            }
+        )
+    return {
+        "diagnostic": "gamma_sensitivity",
+        "concern_id": "krr-gap-collapse-gamma-regime-interpretation",
+        "input_rep": input_rep,
+        "layers_probed": [int(x) for x in layers_to_probe],
+        "multipliers": [float(m) for m in multipliers],
+        "pca_target_dim": MLP_PCA_DIM_722,
+        "input_rep_k": k,
+        "input_rep_eps": eps,
+        "seed": SEED_722,
+        "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R² on PCA-48 v0)",
+        "note": "gap = RBF R² − linear R² at γ = multiplier × per-fold median-heuristic γ₀. "
+        "All-negative best_gap across multipliers ⇒ collapse is γ-robust (RBF buys nothing "
+        "at 48 standardized dims); a near-zero/positive recovered gap ⇒ heuristic-γ regime "
+        "artifact.",
+        "store_provenance": {
+            "store_dir": data["store_dir"],
+            "cc_source": data["cc_source"],
+        },
+        "per_layer": per_layer,
+    }
+
+
 def _verdict_for_variant(skill_result: dict, krr_result: dict) -> dict:
     """Per-variant SUCCESS/KILL verdict against the §6 bands (≥26/28 layers).
 
@@ -1535,6 +1777,7 @@ def _verdict_for_variant(skill_result: dict, krr_result: dict) -> dict:
     n_ridge_pass = 0
     n_gap_pass = 0
     n_layers = 0
+    n_sign_exception = 0  # layers passing gap gate ONLY via the near-zero-band relaxation
     for kr in krr_result["per_layer"]:
         layer = kr["layer"]
         n_layers += 1
@@ -1546,18 +1789,31 @@ def _verdict_for_variant(skill_result: dict, krr_result: dict) -> dict:
         gap = kr["nonlinear_gap_rbf_minus_linear"]
         base_g = kr["nonlinear_gap_baseline_full"]
         d_gap = kr["delta_gap"]
-        # sign preserved: same sign OR both within the band of zero (≈0 at the plateau).
-        sign_ok = (np.sign(gap) == np.sign(base_g)) or (
-            abs(gap) <= INPUT_REP_GAP_BAND and abs(base_g) <= INPUT_REP_GAP_BAND
-        )
+        # Sign preservation: strict same-sign, OR the documented near-zero exception
+        # (BOTH the variant and baseline gap within ±gap_band of zero). At the ridge
+        # plateau the gap ≈ 0, so two noisy near-zero quantities can straddle zero
+        # with opposite signs while being statistically indistinguishable; demanding
+        # strict sign-match there would spuriously FAIL a robust cell. The exception
+        # is recorded explicitly (n_layers_sign_exception + sign_preservation_rule)
+        # so the relaxation is auditable, not silent (Codex round-2 Minor).
+        strict_sign = np.sign(gap) == np.sign(base_g)
+        near_zero_both = abs(gap) <= INPUT_REP_GAP_BAND and abs(base_g) <= INPUT_REP_GAP_BAND
+        sign_ok = strict_sign or near_zero_both
         gap_ok = np.isfinite(d_gap) and abs(d_gap) <= INPUT_REP_GAP_BAND and sign_ok
         if gap_ok:
             n_gap_pass += 1
+            if not strict_sign and near_zero_both:
+                n_sign_exception += 1
     success = n_ridge_pass >= INPUT_REP_PASS_MIN_LAYERS and n_gap_pass >= INPUT_REP_PASS_MIN_LAYERS
     return {
         "n_layers": n_layers,
         "n_layers_passing_R2_gate": n_ridge_pass,
         "n_layers_passing_gap_gate": n_gap_pass,
+        "n_layers_sign_exception": n_sign_exception,
+        "sign_preservation_rule": (
+            "strict same-sign OR both |gap| <= gap_band (near-zero-plateau exception); "
+            "n_layers_sign_exception counts gap-gate passes that used the exception"
+        ),
         "pass_min_layers": INPUT_REP_PASS_MIN_LAYERS,
         "ridge_band": INPUT_REP_RIDGE_BAND,
         "gap_band": INPUT_REP_GAP_BAND,
@@ -2072,6 +2328,7 @@ def _run_input_rep_phase(
             "baseline, not re-run). Run the canonical + --run-krr phases first, or restore "
             "the commit."
         )
+    t_phase0 = time.time()  # §4.4 wall-time for the whole input-rep phase
     out_dir = REPO_ROOT / "eval_results/issue_722" / args.input_rep_out_subdir
     if smoke_slice:
         out_dir = out_dir / "_smoke"  # tiny-N smoke artifacts kept apart from production
@@ -2117,6 +2374,15 @@ def _run_input_rep_phase(
     dump_json(comparison, comp_path)
     logger.info("wrote %s", comp_path)
 
+    # §4.4 n / d / n_layers — read off the first variant's result (all variants
+    # share the substrate, so n_contexts / hidden_dim / layer count are identical).
+    _first_skill = next(iter(results_by_variant.values()))[0]
+    _sp = _first_skill.get("store_provenance", {})
+    n_contexts = int(_sp.get("n_contexts", _first_skill.get("n_contexts")))
+    hidden_dim = int(_sp.get("hidden_dim", _first_skill.get("activation_dim")))
+    n_layers = len(_first_skill.get("layers", []))
+    wall_time_minutes = round((time.time() - t_phase0) / 60.0, 3)
+
     run_meta = {
         "script": "issue722_vectorized_skill",
         "phase": "input_rep_robustness",
@@ -2132,8 +2398,15 @@ def _run_input_rep_phase(
         "pass_min_layers": INPUT_REP_PASS_MIN_LAYERS,
         "n_bootstrap": krr_bootstrap,
         "seed": SEED_722,
+        # §4.4 required provenance fields (BLOCKER input-rep-run-meta-incomplete):
+        "rng_state_hash": _rng_state_hash(SEED_722),
+        "n_contexts": n_contexts,  # n = 50
+        "hidden_dim": hidden_dim,  # d = 3584
+        "n_layers": n_layers,  # 28
+        "wall_time_minutes": wall_time_minutes,
         "device": args.device,
         "layers": layer_subset if layer_subset is not None else "all",
+        "substrate_provenance": _resolve_substrate_provenance(betley),
         "store_provenance": {
             "store_dir": betley["store_dir"],
             "cc_source": betley["cc_source"],
@@ -2144,6 +2417,43 @@ def _run_input_rep_phase(
     meta_path = out_dir / "run_meta.json"
     dump_json(run_meta, meta_path)
     logger.info("wrote %s", meta_path)
+
+    # γ-sensitivity diagnostic (CONCERN krr-gap-collapse-gamma-regime-interpretation,
+    # plan §4.4 exploratory band): re-run the pca48 RBF arm at the ridge-plateau
+    # layers under γ = multiplier × per-fold γ₀, so the analyzer can tell a genuine
+    # RBF collapse from a bad median-γ regime at 48-d. Only when pca48 is a variant.
+    if "pca48" in results_by_variant:
+        # Under a --layers smoke slice, probe only the requested layers that overlap
+        # the default plateau probes (falls back to the smoke slice itself if none).
+        if layer_subset is not None:
+            probe_layers = tuple(x for x in GAMMA_SENS_LAYERS if x in layer_subset)
+            if not probe_layers:
+                probe_layers = tuple(layer_subset[:2])
+        else:
+            probe_layers = GAMMA_SENS_LAYERS
+        gamma_sens = run_gamma_sensitivity(
+            betley,
+            input_rep="pca48",
+            layers_to_probe=probe_layers,
+            k=args.input_rep_k,
+            eps=args.input_rep_eps,
+        )
+        gamma_sens["metadata"] = reproducibility_metadata(
+            {"script": "issue722_vectorized_skill", "phase": "gamma_sensitivity_pca48"}
+        )
+        gs_path = out_dir / "gamma_sensitivity__pca48.json"  # plan §4.4 diagnostic name
+        dump_json(gamma_sens, gs_path)
+        logger.info("wrote %s", gs_path)
+        print("\n==== γ-sensitivity (pca48 RBF vs linear, gap = RBF − linear) ====")
+        for pl in gamma_sens["per_layer"]:
+            gaps = " ".join(
+                f"{r['multiplier']:g}x:{r['gap_rbf_minus_linear']:+.3f}"
+                for r in pl["by_multiplier"]
+            )
+            print(
+                f"  L{pl['layer']:02d}: linear={pl['skill_krr_linear']:+.4f} "
+                f"best_gap={pl['best_gap']:+.4f}@{pl['best_multiplier']:g}x  [{gaps}]"
+            )
 
     # Plan v7 §6 Figure: two stacked panels (ridge R² + KRR(RBF)−linear gap) for the
     # full baseline + each re-represented variant, after both variants + the

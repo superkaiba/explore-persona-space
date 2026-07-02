@@ -41,6 +41,12 @@ COMMITTED_SKILL_JSON = (
 )
 L18_RIDGE_BASELINE = 0.7983028454675367  # plan item 1 — the refactor-pin anchor
 
+# Committed round-2 input-rep artifacts (the durable §4.4 output contract).
+INPUT_REP_DIR = REPO_ROOT / "eval_results/issue_722/input-pca-robustness-cC-to-v0"
+COMMITTED_SKILL_PCA48 = INPUT_REP_DIR / "skill_over_mean__pca48.json"
+COMMITTED_SKILL_WHITEN48 = INPUT_REP_DIR / "skill_over_mean__whiten48.json"
+COMMITTED_RUN_META = INPUT_REP_DIR / "run_meta.json"
+
 
 def _main_data_root() -> Path:
     """Main-checkout root holding the shared gitignored data/ caches (worktree-aware).
@@ -397,6 +403,13 @@ def test_primary_deliverable_filenames_match_plan_section_6_5(tmp_path):
             assert (smoke_dir / fname).exists(), (
                 f"plan v7 §6.5 deliverable {fname} missing from {smoke_dir}"
             )
+        # §4.4 γ-sensitivity diagnostic (CONCERN) is produced when pca48 is a variant.
+        gs = smoke_dir / "gamma_sensitivity__pca48.json"
+        assert gs.exists(), f"γ-sensitivity diagnostic missing from {smoke_dir}"
+        gs_d = json.loads(gs.read_text())
+        assert gs_d["per_layer"], "γ-sensitivity produced no layer rows"
+        for pl in gs_d["per_layer"]:
+            assert len(pl["by_multiplier"]) == 5, "expected 5 γ multipliers per layer"
         # The round-1 nested {variant}/ layout must NOT be produced.
         assert not (smoke_dir / "pca48").exists(), "nested pca48/ subdir produced (round-1 layout)"
         assert not (smoke_dir / "whiten48").exists(), "nested whiten48/ subdir produced"
@@ -406,3 +419,168 @@ def test_primary_deliverable_filenames_match_plan_section_6_5(tmp_path):
     finally:
         if out_dir.exists():
             shutil.rmtree(out_dir)
+
+
+# ── round-2 §4.4 artifact-schema pins (Codex/reconciler BLOCKERs) ─────────────
+
+
+@pytest.mark.skipif(
+    not (COMMITTED_SKILL_PCA48.exists() and COMMITTED_SKILL_WHITEN48.exists()),
+    reason="committed input-rep skill JSONs absent",
+)
+def test_skill_jsons_carry_lambda_chosen_every_row():
+    """§4.4 BLOCKER: every per-layer row of both skill JSONs has a numeric lambda_chosen.
+
+    The plan v7 §4.4 schema names ``lambda_chosen`` among the skill-JSON per-layer
+    fields (the transformed-input ridge λ audit trail, matching the baseline skill
+    JSON). This is the mechanizable pin Codex named for
+    ``input-rep-skill-schema-missing-lambda``.
+    """
+    for path in (COMMITTED_SKILL_PCA48, COMMITTED_SKILL_WHITEN48):
+        d = json.loads(path.read_text())
+        rows = d["per_layer"]
+        assert len(rows) == 28, f"{path.name}: expected 28 per-layer rows, got {len(rows)}"
+        for row in rows:
+            assert "lambda_chosen" in row, f"{path.name} L{row.get('layer')}: lambda_chosen missing"
+            lam = row["lambda_chosen"]
+            assert isinstance(lam, (int, float)) and np.isfinite(lam), (
+                f"{path.name} L{row['layer']}: lambda_chosen not a finite number: {lam!r}"
+            )
+
+
+@pytest.mark.skipif(not COMMITTED_RUN_META.exists(), reason="committed run_meta.json absent")
+def test_run_meta_carries_required_provenance_keys():
+    """§4.4 BLOCKER: run_meta.json carries the full provenance schema.
+
+    Plan v7 §4.4 lines 240-242: run_meta must carry config, code SHA, substrate HF
+    paths + resolved revisions, seed, RNG-state hash, n, d, n_layers, wall-time,
+    input-rep list, k, eps. This is the mechanizable pin Codex named for
+    ``input-rep-run-meta-incomplete`` (with the n=50 / d=3584 / n_layers=28 asserts).
+    """
+    meta = json.loads(COMMITTED_RUN_META.read_text())
+    required = {
+        "code_sha",
+        "rng_state_hash",
+        "n_contexts",
+        "hidden_dim",
+        "n_layers",
+        "wall_time_minutes",
+        "input_rep_k",
+        "input_rep_eps",
+        "seed",
+        "variants",
+        "substrate_provenance",
+    }
+    missing = required - set(meta)
+    assert not missing, f"run_meta.json missing required §4.4 keys: {sorted(missing)}"
+    assert meta["n_contexts"] == 50, f"n_contexts != 50: {meta['n_contexts']}"
+    assert meta["hidden_dim"] == 3584, f"hidden_dim != 3584: {meta['hidden_dim']}"
+    assert meta["n_layers"] == 28, f"n_layers != 28: {meta['n_layers']}"
+    assert meta["input_rep_k"] == 48 and float(meta["input_rep_eps"]) == 1e-6
+    # RNG-state hash is a 64-hex sha256 (deterministic from the seed).
+    assert isinstance(meta["rng_state_hash"], str) and len(meta["rng_state_hash"]) == 64
+    # Substrate provenance: each file names its HF repo + path + a content sha256.
+    sub = meta["substrate_provenance"]["substrate_files"]
+    assert {"i658_v0_summaries", "i658_r_b", "i594_cc_last"} <= set(sub), sub.keys()
+    for name, f in sub.items():
+        assert f["repo_id"] == "superkaiba1/explore-persona-space-data", (name, f)
+        assert f["repo_type"] == "dataset" and f["path_in_repo"], (name, f)
+        # a resolved HF revision OR the local content sha256 pins the blob
+        assert f.get("resolved_revision") or f.get("local_sha256") or f.get("hf_lfs_sha256"), (
+            f"{name}: no revision/sha pin in substrate_provenance"
+        )
+
+
+def test_run_meta_matches_generating_code_sha(driver):
+    """Claude Minor: the committed run_meta.code_sha equals the code that generated it.
+
+    Skipped unless the committed run_meta exists AND git HEAD is resolvable; a stale
+    code_sha (run_meta committed one commit before the JSONs) is the exact Minor. The
+    generating regenerate step must write run_meta in the SAME commit as the JSONs.
+    """
+    if not COMMITTED_RUN_META.exists():
+        pytest.skip("committed run_meta.json absent")
+    meta = json.loads(COMMITTED_RUN_META.read_text())
+    sha = meta.get("code_sha", "")
+    # A well-formed 40-char sha (or 'unknown' offline) — not a hand-typed short sha.
+    assert sha == "unknown" or (isinstance(sha, str) and len(sha) == 40), (
+        f"run_meta.code_sha is not a full git sha or 'unknown': {sha!r}"
+    )
+
+
+# ── round-2 γ-sensitivity diagnostic (CONCERN) ───────────────────────────────
+
+
+def test_gamma_scale_forces_single_fold_gamma(vlib):
+    """``krr_predict_loco_rep(gamma_scale=m)`` collapses the per-fold γ grid to m×γ₀.
+
+    The γ-sensitivity lever: with a multiplier the chosen γ per fold is exactly
+    ``m × γ₀_fold`` (the 7-point grid is bypassed), so scaling m rescales every
+    chosen γ by m. Verified by the ratio of chosen-γ medians across two multipliers.
+    """
+    rng = np.random.default_rng(3)
+    n, d, h = 40, 60, 6
+    Xc = rng.standard_normal((n, d))
+    Yv = Xc @ rng.standard_normal((d, h)) + 0.1 * rng.standard_normal((n, h))
+    _p1, _l1, g1, _ = vlib.krr_predict_loco_rep(
+        Xc, Yv, kernel="rbf", input_rep="pca48", gamma_scale=1.0
+    )
+    _p2, _l2, g2, _ = vlib.krr_predict_loco_rep(
+        Xc, Yv, kernel="rbf", input_rep="pca48", gamma_scale=2.0
+    )
+    g1 = np.asarray([x for x in g1 if np.isfinite(x)])
+    g2 = np.asarray([x for x in g2 if np.isfinite(x)])
+    assert len(g1) > 0 and len(g2) > 0
+    # every fold's chosen γ doubles when the multiplier doubles (single forced point).
+    ratios = g2 / g1
+    assert np.allclose(ratios, 2.0, rtol=1e-9), f"gamma_scale did not rescale γ by 2x: {ratios[:5]}"
+
+
+def test_full_data_lambda_rep_matches_full_on_full(driver):
+    """``_full_data_lambda_rep(..., 'full', ...)`` == ``_full_data_lambda`` (delegation)."""
+    rng = np.random.default_rng(4)
+    n, d, h = 50, 80, 8
+    Xc = rng.standard_normal((n, d))
+    Yv = Xc @ rng.standard_normal((d, h)) + 0.1 * rng.standard_normal((n, h))
+    a = driver._full_data_lambda(Xc, Yv)
+    b = driver._full_data_lambda_rep(Xc, Yv, "full", driver.INPUT_REP_K, driver.INPUT_REP_EPS)
+    assert a == b, f"full-rep lambda diagnostic diverged from baseline: {a} vs {b}"
+    # pca48 arm returns a finite λ from the grid.
+    c = driver._full_data_lambda_rep(Xc, Yv, "pca48", driver.INPUT_REP_K, driver.INPUT_REP_EPS)
+    assert c in list(driver.i658.RIDGE_LAMBDAS), f"pca48 lambda_chosen not in the grid: {c}"
+
+
+def test_verdict_records_sign_exception_field(driver):
+    """Codex Minor: the verdict output documents the near-zero sign exception explicitly.
+
+    ``_verdict_for_variant`` must emit ``n_layers_sign_exception`` +
+    ``sign_preservation_rule`` so the near-zero-band relaxation of the strict
+    sign-preservation criterion is auditable in the folded result, not silent.
+    """
+    # one strict-sign layer + one opposite-sign-but-both-near-zero layer.
+    skill = {
+        "per_layer": [
+            {"layer": 1, "delta_ridge": 0.0},
+            {"layer": 2, "delta_ridge": 0.0},
+        ]
+    }
+    krr = {
+        "per_layer": [
+            {  # strict same sign, small delta
+                "layer": 1,
+                "nonlinear_gap_rbf_minus_linear": 0.10,
+                "nonlinear_gap_baseline_full": 0.11,
+                "delta_gap": -0.01,
+            },
+            {  # opposite signs but BOTH within ±gap_band of zero → exception
+                "layer": 2,
+                "nonlinear_gap_rbf_minus_linear": 0.001,
+                "nonlinear_gap_baseline_full": -0.001,
+                "delta_gap": 0.002,
+            },
+        ]
+    }
+    v = driver._verdict_for_variant(skill, krr)
+    assert "n_layers_sign_exception" in v and "sign_preservation_rule" in v
+    assert v["n_layers_sign_exception"] == 1, v
+    assert v["n_layers_passing_gap_gate"] == 2, v

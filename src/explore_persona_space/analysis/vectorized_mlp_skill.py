@@ -1160,6 +1160,7 @@ def krr_predict_loco_rep(
     eps: float = INPUT_REP_EPS,
     lambdas: list | None = None,
     gammas: list | None = None,
+    gamma_scale: float | None = None,
 ) -> tuple[np.ndarray, list, list, bool]:
     """``krr_predict_loco`` with a per-fold INPUT representation.
 
@@ -1174,6 +1175,15 @@ def krr_predict_loco_rep(
     whitening can move the RBF gap (plan H2). The target ``Yv`` and the dual solve
     are unchanged. A truly-singular fold's basis is SKIPPED → held-out prediction
     is the train target mean (skill-neutral).
+
+    ``gamma_scale`` (γ-sensitivity diagnostic, plan §4.4 exploratory band): when
+    set and ``kernel="rbf"``, the per-fold RBF γ grid collapses to the SINGLE point
+    ``gamma_scale × γ₀_fold``, where ``γ₀_fold = 1/median(‖xᵢ−xⱼ‖²)`` is the
+    median-pairwise heuristic on that fold's standardized transformed train design
+    (the ``1.0``-multiplier centre of the default 7-point grid). It lets the caller
+    sweep γ around the heuristic to distinguish "RBF genuinely buys nothing at 48
+    standardized dims" from "the heuristic γ lands in a bad regime at 48-d". Ignored
+    for ``kernel="linear"`` and when an explicit ``gammas`` grid is passed.
 
     Returns ``(preds (n, P), chosen_lambda_per_fold, chosen_gamma_per_fold,
     any_gesvd_fallback)``.
@@ -1218,6 +1228,9 @@ def krr_predict_loco_rep(
             fold_gammas = [0.0]
         elif gammas is not None:
             fold_gammas = gammas
+        elif gamma_scale is not None:
+            # γ-sensitivity: single point = gamma_scale × the per-fold heuristic γ₀.
+            fold_gammas = [gamma_scale * _rbf_gamma0_from_standardized(Xtr_n)]
         else:
             fold_gammas = _rbf_gammas_from_standardized(Xtr_n)
 
@@ -1240,6 +1253,21 @@ def krr_predict_loco_rep(
     return preds, chosen_lam, chosen_gam, any_fallback
 
 
+def _rbf_gamma0_from_standardized(Xn: torch.Tensor) -> float:
+    """Median-pairwise heuristic ``γ₀ = 1/median(‖xᵢ−xⱼ‖²)`` on a standardized design.
+
+    The single centre point of ``_rbf_gammas_from_standardized``'s 7-point grid —
+    factored out so the γ-sensitivity diagnostic can scale it directly (it is the
+    ``1.0``-multiplier reference). Returns ``1.0`` for a degenerate all-zero design.
+    """
+    n = Xn.shape[0]
+    sq = (Xn * Xn).sum(1)[:, None] + (Xn * Xn).sum(1)[None, :] - 2.0 * (Xn @ Xn.T)
+    iu = torch.triu_indices(n, n, offset=1)
+    vals = sq[iu[0], iu[1]].clamp(min=0.0)
+    med = float(torch.median(vals).item())
+    return 1.0 / med if med > 0 else 1.0
+
+
 def _rbf_gammas_from_standardized(Xn: torch.Tensor) -> list:
     """RBF γ grid from an ALREADY-standardized (train) design tensor.
 
@@ -1249,10 +1277,5 @@ def _rbf_gammas_from_standardized(Xn: torch.Tensor) -> list:
     PCA/whiten-transformed design which we standardize once, then read γ off it). Same
     7-point grid spanning ~3 decades around ``γ₀ = 1/median(‖xᵢ−xⱼ‖²)``.
     """
-    n = Xn.shape[0]
-    sq = (Xn * Xn).sum(1)[:, None] + (Xn * Xn).sum(1)[None, :] - 2.0 * (Xn @ Xn.T)
-    iu = torch.triu_indices(n, n, offset=1)
-    vals = sq[iu[0], iu[1]].clamp(min=0.0)
-    med = float(torch.median(vals).item())
-    g0 = 1.0 / med if med > 0 else 1.0
+    g0 = _rbf_gamma0_from_standardized(Xn)
     return [g0 * f for f in (0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0)]
