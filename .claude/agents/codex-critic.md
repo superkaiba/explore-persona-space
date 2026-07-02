@@ -10,10 +10,15 @@ description: >
   (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
   itself — that's the orphan-job anti-pattern (incident task #533,
   2026-06-10).
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Codex Critic (thin Claude wrapper, in-context mode)
@@ -122,27 +127,31 @@ The orchestrator falls back to single-Claude-critic for this lens this round.
 
 ### Step 2: Read the Claude critic's lens spec
 
-Read `.claude/agents/critic.md` (the spec the Claude lens-critic uses) and
-extract:
+Read `.claude/rules/critic-lens-reference.md` (the on-demand lens reference
+the Claude lens-critic reads; the full lens rubrics moved there from
+critic.md, #838) and extract:
 
-- The "Critique Dimensions" subset matching the requested lens — copy the
-  items listed under that lens's own subheading in critic.md (`Methodology
-  lens`, `Statistics & Measurement lens`, or `Alternative Explanations
-  lens`). Use the lens's items verbatim and IN FULL — the lists grow over
-  time, so take all of the CURRENT items; do not borrow another lens's
-  items. These items fill the `{{lens_items}}` placeholder in Step 3's
-  template.
+- The lens section matching the requested lens — copy the items listed
+  under that lens's own subheading in critic-lens-reference.md
+  (`Methodology lens`, `Statistics & Measurement lens`, or `Alternative
+  Explanations lens`). Use the lens's items verbatim and IN FULL — the
+  lists grow over time, so take all of the CURRENT items; do not borrow
+  another lens's items. These items fill the `{{lens_items}}` placeholder
+  in Step 3's template.
 - The "Output Format" CRITIC REPORT schema (Rating: REJECT / REVISE /
-  APPROVE).
+  APPROVE) — this still lives in `.claude/agents/critic.md` § Output
+  Format; critic.md remains the source of the report schema ONLY (its
+  lens subheadings now hold capsules, not the item lists).
 
 ### Step 3: Compose the lens-specific prompt
 
 Substitute the lens label and the lens's dimension items into the prompt
 template below. The `{{lens_items}}` placeholder is filled with the
 requested lens's items copied VERBATIM from the CURRENT
-`.claude/agents/critic.md` you read in Step 2 — never from a list frozen
-in this file. This template deliberately carries NO per-lens enumerations:
-an earlier version hardcoded them, critic.md grew new items, and a
+`.claude/rules/critic-lens-reference.md` you read in Step 2 — never from a
+list frozen in this file. This template deliberately carries NO per-lens
+enumerations: an earlier version hardcoded them, the lens rubrics (then in
+critic.md, now in critic-lens-reference.md) grew new items, and a
 literal-minded composer shipped Codex a 3-item subset of a 13-item
 Methodology rubric (drift caught on task #599).
 
@@ -219,11 +228,12 @@ markers). Within-snapshot findings — flaws Codex CAN see in this plan text —
 are not gagged by this note; only chasing suspected newer state is.
 
 For the {{LENS}} lens, evaluate ONLY the following items — copied VERBATIM
-from the matching lens subheading in `.claude/agents/critic.md` at compose
-time. Do not paraphrase, renumber, subset, or borrow another lens's items:
+from the matching lens subheading in `.claude/rules/critic-lens-reference.md`
+at compose time. Do not paraphrase, renumber, subset, or borrow another
+lens's items:
 
-{{lens_items — the full, current item list for this lens from critic.md,
-inserted by the composer at Step 3}}
+{{lens_items — the full, current item list for this lens from
+critic-lens-reference.md, inserted by the composer at Step 3}}
 
 Output EXACTLY this format and nothing else (no preamble, no code fences):
 

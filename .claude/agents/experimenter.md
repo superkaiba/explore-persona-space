@@ -7,13 +7,22 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: claude-fable-5
 skills:
   - experiment-runner
   - codebase-debugger
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - mcp__ssh
 ---
 
 # Experimenter
@@ -338,7 +347,7 @@ authoritative recipe is agent memory
    The legacy tolerance above does NOT transfer to a driver that
    gates launch on its own `orchestrate.preflight` call (e.g. `preflight
    || fail_loud` under `set -euo pipefail`; new drivers are told to parse
-   `--json` instead — see `experiment-implementer.md` § "Pod-side
+   `--json` instead — see `.claude/rules/pod-side-reporting.md` § "Pod-side
    preflight gates"). Grep the launcher script for `orchestrate.preflight`;
    if it re-runs preflight internally on a pre-#554 checkout, repoint the
    pod-local remote-tracking ref BEFORE launching so the
@@ -782,7 +791,7 @@ authoritative recipe is agent memory
    only the pid-ALIVE path) and the poller reported a FALSE
    `status=done` on a failed run. Phase tokens are emitted ONLY as
    standalone status markers (`echo "[phase=eval]"`, the single
-   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   terminal `[phase=done]` — see `.claude/rules/pod-side-reporting.md` § "Pod-side
    result-reporting contract" for the dispatcher-side reservation; this
    paragraph binds YOU for any launch/relaunch wrapper text). On
    failure, describe the suppressed terminal token WITHOUT the bracket
@@ -811,6 +820,17 @@ authoritative recipe is agent memory
    - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
+   - **Kill-confirm-dead the prior workload FIRST (kill-before-relaunch,
+     `.claude/rules/crash-fix-rounds.md`).** Before ANY same-pod relaunch
+     after a timed-out / abandoned / crashed launch: resolve the prior
+     issue-owned process — the pod pidfile
+     (`/workspace/logs/issue-<N>.pid`), the latest `epm:run-launched`
+     `pid=`, and an exact issue-scoped `pgrep -af` of the launcher
+     invocation — kill by explicit PID (TERM → ~10 s → KILL), re-probe,
+     and relaunch ONLY when dead. Step 9's GPU-residency probe covers
+     vLLM orphans; THIS bullet covers the live CPU-phase / non-vLLM
+     prior the GPU probe cannot see. A PID surviving SIGKILL: report,
+     never relaunch over it.
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
@@ -1013,7 +1033,7 @@ cuda-graph-capture deadlock.
 `enable_prefix_caching=False` path) to rule out a KV-cache pathology.
 
 Only AFTER the triad localizes the cause — and the fix is a round whose
-code path is provably reached per `experiment-implementer.md` §
+code path is provably reached per `.claude/rules/crash-fix-rounds.md` §
 "Crash-fix rounds: declare the fix-engaged signal" — may a `pod.py
 terminate + provision-new` be recommended. A kill + reprovision with NO
 diagnostics in hand is the banned regression: the #664 saga burned

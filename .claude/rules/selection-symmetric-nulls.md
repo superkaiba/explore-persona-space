@@ -111,3 +111,8 @@ Task body #778 (the origin incident + n=24 asymmetry numbers);
 (the pre-existing agent memories on this pattern);
 `.claude/rules/contrastive-negatives.md` (#383 X-vs-(X−Y) sibling
 caveat).
+
+**Sibling rule:** `.claude/rules/vectorize-many-cell-fits.md` — the same #778
+null battery is that rule's many-draw compute incident (per-draw pool
+re-reduction → ~70× batched subset-sum GEMM); a permutation-battery plan
+typically fires both.

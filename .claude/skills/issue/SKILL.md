@@ -1399,10 +1399,14 @@ plans missing any):**
 
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
-then announce it with an `epm:plan` event:
+then announce it with an `epm:plan` event. The handoff file carries a
+per-attempt suffix — `<attempt>` = a fresh `$(date +%s)` chosen once per
+orchestrator planning attempt — because a crashed attempt leaves a stale
+/tmp file; a respawned session re-Writing the fixed path after Reading an
+older version gets "File has been modified since read" (4× on #822):
 
 ```bash
-uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan.md
+uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan-v<K>-<attempt>.md
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
 # Embed the machine-readable cost token (<X> = the plan's total GPU-hours) so
 # the Step 2c auto-approve gate can parse it from the note as well as the body.
@@ -2065,7 +2069,15 @@ orchestrator verifies the evidence is genuinely present, so cosmetic
 gripes about present evidence never bounce the implementer or consume a
 review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
-exempt from this smoke gate.
+exempt from this smoke gate. Smoke commands that write under
+`eval_results/` or `figures/` also carry the output-path hygiene
+disposition per experiment-implementer.md
+§ "Smoke outputs never overwrite committed artifacts" (scratch-dir
+redirect preferred; restore-after-smoke + an empty
+`git status --porcelain -- eval_results/ figures/` as the fallback);
+the reviewer treats visible clobber of a committed artifact as a
+substantive Critical (code-reviewer.md Step 0.6), never a strippable
+mechanical blocker.
 
 **5b. Read both markers from `events.jsonl`.**
 
@@ -2078,6 +2090,77 @@ codex_marker=$(echo "$events_json" | jq '... epm:code-review-codex v<n> ...')
 
 Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 `CONCERNS`, `FAIL`. PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+
+**Durable-verdict-first rule (fires at EVERY ensemble verdict collection:
+5b here, Step 9a, Step 9a-bis, Step 9b VC, and any reconciler read).**
+An Agent-tool completion result that reports an error for a reviewer /
+critic / reconciler subagent — autocompact thrash death, tool-use crash,
+or a garbage/empty return — is NOT, by itself, a no-show. These agents'
+deliverable is DURABLE state (a marker on events.jsonl, or a written
+output file), and the final summary turn regularly dies AFTER the durable
+post succeeded (incident #810 r4, 2026-07-02: the code-reviewer's
+`epm:code-review v4` PASS posted at 09:25:14Z, then the summary turn
+thrash-died; the orchestrator misread it as a total no-show and adopted a
+unilateral FAIL from the Codex verdict alone, needing a corrective marker
++ late reconciler). BEFORE invoking any no-show fallback or
+single-reviewer decision:
+
+1. Re-read canonical task state (`uv run python scripts/task.py view <N>
+   --json`) for the round's expected verdict marker at the CURRENT
+   version — `epm:code-review[-codex] v<n>`, `epm:interp-critique[-codex]
+   v<n>`, `epm:clean-result-critique[-codex] v<n>`,
+   `epm:followup-value-critique[-codex]`, or `epm:review-reconcile v<n>`.
+2. If no marker: check the role's durable output file — the EXACT
+   `--output-file` path this round's dispatch config named
+   (role+round-specific conventions:
+   `/tmp/codex-code-reviewer-<N>-r<round>-output.md`,
+   `/tmp/codex-interp-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-clean-result-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-followup-critic-<N>-output.md`; NEVER a guessed generic
+   path). The file counts as a durable verdict ONLY if BOTH: (i) it
+   carries the role's expected marker start/end tags at the CURRENT
+   round version, AND (ii) it is round-fresh — a current-round
+   `epm:codex-task-completed` marker exists for this dispatch, OR the
+   file mtime postdates this round's `stage-dispatch` breadcrumb /
+   `epm:codex-task-spawned`. A file failing either test is NOT a durable
+   verdict — a conforming-looking file from a PRIOR round is the trap
+   this clause exists to block.
+3. If a durable verdict exists and CONFORMS (expected marker kind +
+   current version + a parseable `**Verdict:**` line), the reviewer
+   RETURNED: use the durable verdict and apply the normal ensemble rule
+   — reconciler on disagreement, never a unilateral decision. A
+   truncated file (a FAIL-class `**Verdict:**` line with no blocker
+   body) is MALFORMED, not a verdict — route it to the role's
+   malformed-output handling, never adopt it. Precedence when signals
+   coexist: a current-round posted verdict MARKER wins over everything;
+   a current-round posted `epm:failure` from the wrapper wins over a
+   bare conforming FILE (the wrapper inspected its own output and
+   judged it malformed); a conforming round-fresh file wins over
+   nothing.
+4. Only when NO durable verdict exists does the role's no-show handling
+   fire. For a Codex twin: the Step 5d fallback (single-Claude
+   decision), exactly as if `epm:failure` had been posted. For a CLAUDE
+   reviewer/critic: there is NO fallback — first diagnose the death
+   (e.g. an over-budget diff per `.claude/rules/diff-size-budget.md`;
+   thin the brief accordingly), then re-spawn it ONCE per
+   role+round+version — the re-spawn posts at the SAME `v<n>` and does
+   NOT increment the per-reviewer round counter (a 429-kill is already
+   covered by the SubagentStop retry rule and consumes the same
+   allowance). If the re-spawn ALSO ends with no durable verdict, fail
+   LOUD: interactive — surface to the user; autonomous — post
+   `epm:failure v1` (`failure_class: infra`, reason:
+   reviewer no durable verdict after bounded re-spawn), set
+   `status:blocked`, PushNotification, CRON-TEARDOWN. NEVER adopt a
+   unilateral decision from the surviving reviewer.
+
+The existing marker-keyed no-show path — the Codex wrapper POSTING
+`epm:failure v<m>` (`failure_class: codex-output-malformed` or `infra`)
+— is itself durable state and is UNCHANGED: that marker IS a confirmed
+no-show. This rule governs only the Agent-tool-RESULT-keyed inference.
+(The dispatch-side sibling is the Step 9 pre-dispatch dedup /
+`stage_dispatch_should_skip`; the resume table is already
+durable-marker-keyed. This rule closes the live verdict-collection gap
+between them.)
 
 **5c. Apply ensemble decision rule.**
 
@@ -2095,8 +2178,8 @@ reconciler invocations.
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
-(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Steps
+0.5 / 0.55), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
 NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
@@ -2111,8 +2194,19 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
-  content AND `(c)` carries at least one fenced command.
+- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+  (a conforming Step 0.55 blocker names exactly ONE marker kind,
+  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
+  separate `epm:smoke-architecture-check` events row exists in canonical task
+  state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
+  canary_cell=<id>` | `FAIL_NO_CANARY` — present + parseable → STRIP (a
+  stale-worktree false absence); absent or verdict-less → leave the FAIL in
+  place (the gate is doing its job; do NOT check the implementation marker's
+  H3s for this sub-case — they can be conforming while the separate row is
+  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
+  carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
   the pipeline actually executes (typically data-gen, training, eval) has its
   own sub-section with a command, exit code `0`, and an artifact digest. A
@@ -2303,7 +2397,14 @@ the same logic.
 single-reviewer (Claude-only) decision-making for that round. Do NOT
 block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
-this round; using Claude reviewer only.`
+this round; using Claude reviewer only.` This fallback fires ONLY on the
+posted `epm:failure` marker, or after the Step 5b durable-verdict-first
+rule confirms NO durable verdict exists (no `epm:code-review-codex v<n>`
+marker AND no conforming, round-fresh output file). An Agent-tool error
+result alone never triggers it — and the same applies symmetrically to
+the Claude reviewer: with no durable verdict, re-spawn it once per the
+Step 5b rule; NEVER adopt a unilateral decision from the surviving
+reviewer (incident #810 r4).
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -4026,7 +4127,7 @@ When this skill is re-invoked in `running`:
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
-   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds: failure-lesson
    block" and `experimenter.md` § "Failure-lesson block on
    relaunch-with-fix") to end their report with a structured lesson
    block. A THIRD shape arrives outside this step: an experimenter that
@@ -4170,7 +4271,7 @@ entry guard convention):
    upload-verification PASS. See the two hard joins below.
    **Paper-mode branch (`paper: true` frontmatter).** When the task
    carries `paper: true`, the analyzer runs its PAPER-TASK MODE
-   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   (`.claude/rules/analyzer-paper-mode.md` § PAPER-TASK MODE): the analysis Steps
    1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
    `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
    assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
@@ -4767,7 +4868,14 @@ discarded by Step 8's gap-fill decision rule).
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
    | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
-   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+   | Codex no-show (`epm:failure` posted, or NO durable verdict per the Step 5b durable-verdict-first rule) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+
+   An Agent-tool error for EITHER critic first triggers the Step 5b
+   durable-verdict-first check (re-read events.jsonl for
+   `epm:interp-critique[-codex] v<n>`, then the round-fresh Codex output
+   file): a thrash-killed summary turn with a posted verdict is a RETURNED
+   reviewer; a Claude critic with no durable verdict is re-spawned once
+   per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
@@ -4844,7 +4952,7 @@ paper-task's reader-facing prose lives in the `.tex`
 interpretation / Discussion), not a markdown `body.md` to extract — and
 the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
 copula avoidance, classical academic terms) on those paper surfaces
-INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/rules/analyzer-paper-mode.md`
 § PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
 paper-task (analyzer ran inline /humanize academic on the .tex)` so the
 audit log records it, and proceed straight to 9a-ter.
@@ -5018,7 +5126,7 @@ explicit eval-data path):
    true`?** The re-spawned analyzer re-authors the `.tex` in place —
    re-writing the Abstract + the affected Results subsection, re-running
    `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
-   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   `.claude/rules/analyzer-paper-mode.md` § "Same-issue follow-up rounds
    (paper-task)"; the mechanical gate is `verify_paper.py`, not
    `verify_task_body.py`. The same applies to the Step 9b cheap-band /
    same-issue follow-up loop folds.)
@@ -5167,8 +5275,11 @@ dispatching this round's critics.
    root, never an issue-worktree cwd. Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
-   union, reconciler on disagreement), BUT first run the
-   procedural-only strip below.
+   union, reconciler on disagreement; on any Agent-tool error, the Step
+   5b durable-verdict-first rule applies — check
+   `epm:clean-result-critique[-codex] v<n>` + the round-fresh Codex
+   output file before any no-show fallback or re-spawn), BUT first run
+   the procedural-only strip below.
 
    **Procedural-only verdict strip (clean-result analogue of Step
    5c-bis).** Before applying the ensemble rule, parse each critic's
@@ -5719,7 +5830,10 @@ autonomous block step 2-bis, and Step 10b):
 >    `not-redundant | redundant`; it posts the canonical
 >    `epm:review-reconcile` marker). A Codex twin no-show falls back to
 >    the single-Claude `follow-up-critic` verdict (workflow.yaml §
->    ensemble_review). An UNCITED `redundant` verdict (no concrete
+>    ensemble_review; no-show confirmed per the Step 5b
+>    durable-verdict-first rule — check `epm:followup-value-critique-codex`
+>    + the round-fresh output file before declaring it). An UNCITED
+>    `redundant` verdict (no concrete
 >    duplicate named) is non-binding — treat it as `not-redundant` for
 >    that proposal (cite-or-drop, mirrors the reconciler's ungrounded-
 >    blocker rule).

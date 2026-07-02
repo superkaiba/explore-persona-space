@@ -1011,6 +1011,18 @@ subagent_halt_conditions:
 # orthogonal: `reviewer_pairs.pairs.*.markers` MUST exist in the
 # `markers` list, and `ensemble_review.doubled_steps[*].reconcile_marker`
 # (mode=marker) MUST also exist in the `markers` list.
+#
+# No-show definition (all doubled steps): a reviewer is a no-show ONLY
+# when NO durable verdict exists — no posted verdict marker at the
+# round's version AND no conforming, round-fresh output file at the
+# dispatch-config path — or when the Codex wrapper itself posted
+# `epm:failure` (codex-output-malformed | infra). An Agent-tool
+# error/thrash result alone NEVER constitutes a no-show: the durable
+# post regularly survives a thrash-killed summary turn (incident #810
+# r4). A Claude reviewer with no durable verdict is re-spawned once
+# (same round version, counter unchanged), never replaced by a
+# unilateral single-reviewer decision. Canonical procedure: /issue
+# SKILL.md Step 5b "Durable-verdict-first rule".
 # ──────────────────────────────────────────────────────────────────────
 ensemble_review:
   doubled_steps:

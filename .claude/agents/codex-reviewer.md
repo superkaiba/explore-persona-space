@@ -11,10 +11,14 @@ description: >
 deprecated: true
 deprecated_at: 2026-05-13
 absorbed_into: codex-clean-result-critic
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 ---
 
 > **DEPRECATED 2026-05-13.** Use `codex-clean-result-critic` instead. The
