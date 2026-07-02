@@ -5394,8 +5394,8 @@
     "834": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/834",
-      "status": "proposed",
+      "path": "tasks/planning/834",
+      "status": "planning",
       "title": "Vectorize null_battery draws\u00d7layers loops (batched einsum Pearson; 50-100x)"
     },
     "84": {
