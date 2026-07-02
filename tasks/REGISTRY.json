@@ -5521,8 +5521,8 @@
     "850": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/850",
-      "status": "proposed",
+      "path": "tasks/planning/850",
+      "status": "planning",
       "title": "workflow-fix: analyzer.md context-budget protocol (spawn thrash)"
     },
     "851": {
