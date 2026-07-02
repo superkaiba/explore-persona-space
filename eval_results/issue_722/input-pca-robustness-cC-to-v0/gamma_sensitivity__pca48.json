@@ -1,0 +1,115 @@
+{
+  "diagnostic": "gamma_sensitivity",
+  "concern_id": "krr-gap-collapse-gamma-regime-interpretation",
+  "input_rep": "pca48",
+  "layers_probed": [
+    18,
+    21
+  ],
+  "multipliers": [
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "pca_target_dim": 48,
+  "input_rep_k": 48,
+  "input_rep_eps": 1e-06,
+  "seed": 42,
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on PCA-48 v0)",
+  "note": "gap = RBF R\u00b2 \u2212 linear R\u00b2 at \u03b3 = multiplier \u00d7 per-fold median-heuristic \u03b3\u2080. All-negative best_gap across multipliers \u21d2 collapse is \u03b3-robust (RBF buys nothing at 48 standardized dims); a near-zero/positive recovered gap \u21d2 heuristic-\u03b3 regime artifact.",
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
+    "cc_source": "#594 HF store (load_cc_last_store)"
+  },
+  "per_layer": [
+    {
+      "layer": 18,
+      "skill_krr_linear": 0.8077956227199248,
+      "gamma0_median": 0.010204081652401446,
+      "by_multiplier": [
+        {
+          "multiplier": 0.25,
+          "chosen_gamma_median": 0.0025510204131003614,
+          "skill_krr_rbf": 0.0003433750156887072,
+          "gap_rbf_minus_linear": -0.8074522477042361
+        },
+        {
+          "multiplier": 0.5,
+          "chosen_gamma_median": 0.005102040826200723,
+          "skill_krr_rbf": 0.0005739328554608125,
+          "gap_rbf_minus_linear": -0.807221689864464
+        },
+        {
+          "multiplier": 1.0,
+          "chosen_gamma_median": 0.010204081652401446,
+          "skill_krr_rbf": 0.0008107425567792648,
+          "gap_rbf_minus_linear": -0.8069848801631455
+        },
+        {
+          "multiplier": 2.0,
+          "chosen_gamma_median": 0.02040816330480289,
+          "skill_krr_rbf": 0.0008423854194090641,
+          "gap_rbf_minus_linear": -0.8069532373005157
+        },
+        {
+          "multiplier": 4.0,
+          "chosen_gamma_median": 0.04081632660960578,
+          "skill_krr_rbf": 0.0005241556405480852,
+          "gap_rbf_minus_linear": -0.8072714670793767
+        }
+      ],
+      "best_gap": -0.8069532373005157,
+      "best_multiplier": 2.0
+    },
+    {
+      "layer": 21,
+      "skill_krr_linear": 0.7575894191729119,
+      "gamma0_median": 0.010204081646730527,
+      "by_multiplier": [
+        {
+          "multiplier": 0.25,
+          "chosen_gamma_median": 0.0025510204116826318,
+          "skill_krr_rbf": 0.00030875917887829285,
+          "gap_rbf_minus_linear": -0.7572806599940336
+        },
+        {
+          "multiplier": 0.5,
+          "chosen_gamma_median": 0.0051020408233652635,
+          "skill_krr_rbf": 0.0004891184822488626,
+          "gap_rbf_minus_linear": -0.757100300690663
+        },
+        {
+          "multiplier": 1.0,
+          "chosen_gamma_median": 0.010204081646730527,
+          "skill_krr_rbf": 0.0006542951587604762,
+          "gap_rbf_minus_linear": -0.7569351240141514
+        },
+        {
+          "multiplier": 2.0,
+          "chosen_gamma_median": 0.020408163293461054,
+          "skill_krr_rbf": 0.0006576419990811377,
+          "gap_rbf_minus_linear": -0.7569317771738308
+        },
+        {
+          "multiplier": 4.0,
+          "chosen_gamma_median": 0.04081632658692211,
+          "skill_krr_rbf": 0.00039904597187345736,
+          "gap_rbf_minus_linear": -0.7571903732010384
+        }
+      ],
+      "best_gap": -0.7569317771738308,
+      "best_multiplier": 2.0
+    }
+  ],
+  "metadata": {
+    "git_commit": "2cb0a3140499a1bb0de0e7f873d22a6439ca8c6c",
+    "timestamp_utc": "2026-07-02T04:18:13.691254Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_vectorized_skill",
+    "phase": "gamma_sensitivity_pca48"
+  }
+}

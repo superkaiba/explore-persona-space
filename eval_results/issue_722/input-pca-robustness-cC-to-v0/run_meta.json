@@ -1,8 +1,8 @@
 {
   "script": "issue722_vectorized_skill",
   "phase": "input_rep_robustness",
-  "code_sha": "b9170f42942607d4bd667ce80db475df1afa152d",
-  "generated_at": "2026-06-30T10:10:26Z",
+  "code_sha": "2cb0a3140499a1bb0de0e7f873d22a6439ca8c6c",
+  "generated_at": "2026-07-02T04:17:56Z",
   "variants": [
     "pca48",
     "whiten48"
@@ -16,8 +16,45 @@
   "pass_min_layers": 26,
   "n_bootstrap": 2000,
   "seed": 42,
+  "rng_state_hash": "d029b3718fc47c5f57023824404b9daf78aa4bc2df0ec1220672869d61c92299",
+  "n_contexts": 50,
+  "hidden_dim": 3584,
+  "n_layers": 28,
+  "wall_time_minutes": 149.263,
   "device": "cpu",
   "layers": "all",
+  "substrate_provenance": {
+    "substrate_files": {
+      "i658_v0_summaries": {
+        "repo_id": "superkaiba1/explore-persona-space-data",
+        "repo_type": "dataset",
+        "path_in_repo": "issue658_theory_assumptions/store/v0_summaries.pt",
+        "local_path": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store/v0_summaries.pt",
+        "local_sha256": "1b94e5ff7bf4fe2291a3b4c2839d97f7e4df820285d9d22fef8baea85acb38ac",
+        "resolved_revision": "1da5bba8e0d67ab6db606d67e161eb21eeb149f5",
+        "hf_lfs_sha256": "1b94e5ff7bf4fe2291a3b4c2839d97f7e4df820285d9d22fef8baea85acb38ac"
+      },
+      "i658_r_b": {
+        "repo_id": "superkaiba1/explore-persona-space-data",
+        "repo_type": "dataset",
+        "path_in_repo": "issue658_theory_assumptions/store/r_b.pt",
+        "local_path": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store/r_b.pt",
+        "local_sha256": "61b1146aa39906354e21293db2a744fdfb851ce2ef2e09f1077f3b873af3608b",
+        "resolved_revision": "1da5bba8e0d67ab6db606d67e161eb21eeb149f5",
+        "hf_lfs_sha256": "61b1146aa39906354e21293db2a744fdfb851ce2ef2e09f1077f3b873af3608b"
+      },
+      "i594_cc_last": {
+        "repo_id": "superkaiba1/explore-persona-space-data",
+        "repo_type": "dataset",
+        "path_in_repo": "issue594_context_geometry/analysis_tensors/context_vectors_mean.pt",
+        "local_path": null,
+        "local_sha256": null,
+        "resolved_revision": "1da5bba8e0d67ab6db606d67e161eb21eeb149f5",
+        "hf_lfs_sha256": "f71b00025de9e302c58125f6abbbc4781ae2d13052f7f5c72c9cb44f772e417e"
+      }
+    },
+    "cc_source": "#594 HF store (load_cc_last_store)"
+  },
   "store_provenance": {
     "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
     "cc_source": "#594 HF store (load_cc_last_store)"

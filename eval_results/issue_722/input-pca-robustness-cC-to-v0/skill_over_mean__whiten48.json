@@ -62,6 +62,7 @@
       "predict_mean_abs_cos": 0.9968373013494778,
       "raw_recon_abs_cos": 0.9965382722949506,
       "ridge_median_per_dim_r2": -0.10525189616594299,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -73,6 +74,7 @@
       "predict_mean_abs_cos": 0.9958637736443039,
       "raw_recon_abs_cos": 0.9966008771520386,
       "ridge_median_per_dim_r2": 0.014858617024819942,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -84,6 +86,7 @@
       "predict_mean_abs_cos": 0.9954406542943859,
       "raw_recon_abs_cos": 0.9969226212019884,
       "ridge_median_per_dim_r2": 0.15321531017277534,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -95,6 +98,7 @@
       "predict_mean_abs_cos": 0.9929641300796207,
       "raw_recon_abs_cos": 0.9957788934468316,
       "ridge_median_per_dim_r2": 0.12857655063545753,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -106,6 +110,7 @@
       "predict_mean_abs_cos": 0.9916874910525212,
       "raw_recon_abs_cos": 0.9956016232843816,
       "ridge_median_per_dim_r2": 0.20430929854817304,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -117,6 +122,7 @@
       "predict_mean_abs_cos": 0.9927050515398405,
       "raw_recon_abs_cos": 0.9961686806626215,
       "ridge_median_per_dim_r2": 0.18935167541001485,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -128,6 +134,7 @@
       "predict_mean_abs_cos": 0.9923472855287269,
       "raw_recon_abs_cos": 0.9967347073383367,
       "ridge_median_per_dim_r2": 0.2612381955385402,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -139,6 +146,7 @@
       "predict_mean_abs_cos": 0.9913378626554228,
       "raw_recon_abs_cos": 0.9963909321786217,
       "ridge_median_per_dim_r2": 0.2540901989528486,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -150,6 +158,7 @@
       "predict_mean_abs_cos": 0.9901695683349598,
       "raw_recon_abs_cos": 0.996555638681788,
       "ridge_median_per_dim_r2": 0.26798506194861066,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -161,6 +170,7 @@
       "predict_mean_abs_cos": 0.9922855994675706,
       "raw_recon_abs_cos": 0.9971339665351246,
       "ridge_median_per_dim_r2": 0.22695542765951437,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -172,6 +182,7 @@
       "predict_mean_abs_cos": 0.9911440807448002,
       "raw_recon_abs_cos": 0.9969209401696658,
       "ridge_median_per_dim_r2": 0.2659648532868127,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -183,6 +194,7 @@
       "predict_mean_abs_cos": 0.9904109169487803,
       "raw_recon_abs_cos": 0.9969446146956449,
       "ridge_median_per_dim_r2": 0.2966813210594261,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -194,6 +206,7 @@
       "predict_mean_abs_cos": 0.9895386740358713,
       "raw_recon_abs_cos": 0.9969294930954383,
       "ridge_median_per_dim_r2": 0.3694217448310393,
+      "lambda_chosen": 0.1,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -205,6 +218,7 @@
       "predict_mean_abs_cos": 0.9887066883866048,
       "raw_recon_abs_cos": 0.9969478399752131,
       "ridge_median_per_dim_r2": 0.4150638392034444,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -216,6 +230,7 @@
       "predict_mean_abs_cos": 0.9903102786531878,
       "raw_recon_abs_cos": 0.99755943164013,
       "ridge_median_per_dim_r2": 0.4416064156076533,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -227,6 +242,7 @@
       "predict_mean_abs_cos": 0.9883652590151749,
       "raw_recon_abs_cos": 0.9976267551043683,
       "ridge_median_per_dim_r2": 0.541949654835793,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -238,6 +254,7 @@
       "predict_mean_abs_cos": 0.9888220644978012,
       "raw_recon_abs_cos": 0.9976661857017746,
       "ridge_median_per_dim_r2": 0.5174643324879817,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -249,6 +266,7 @@
       "predict_mean_abs_cos": 0.9890168098622694,
       "raw_recon_abs_cos": 0.9976448198098968,
       "ridge_median_per_dim_r2": 0.49877971852197633,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -260,6 +278,7 @@
       "predict_mean_abs_cos": 0.9863980879073295,
       "raw_recon_abs_cos": 0.9973235543687522,
       "ridge_median_per_dim_r2": 0.5171408261760974,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -271,6 +290,7 @@
       "predict_mean_abs_cos": 0.9863348446668242,
       "raw_recon_abs_cos": 0.997016399512075,
       "ridge_median_per_dim_r2": 0.5512595974464891,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -282,6 +302,7 @@
       "predict_mean_abs_cos": 0.9861830385653405,
       "raw_recon_abs_cos": 0.996911092701772,
       "ridge_median_per_dim_r2": 0.5033237185871806,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -293,6 +314,7 @@
       "predict_mean_abs_cos": 0.9863568498583077,
       "raw_recon_abs_cos": 0.996399857010899,
       "ridge_median_per_dim_r2": 0.39598361141618965,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -304,6 +326,7 @@
       "predict_mean_abs_cos": 0.9887659340826461,
       "raw_recon_abs_cos": 0.9963528609829208,
       "ridge_median_per_dim_r2": 0.3129032589487756,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -315,6 +338,7 @@
       "predict_mean_abs_cos": 0.9918525978506245,
       "raw_recon_abs_cos": 0.9969719163562352,
       "ridge_median_per_dim_r2": 0.2916136042594391,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -326,6 +350,7 @@
       "predict_mean_abs_cos": 0.994593643330295,
       "raw_recon_abs_cos": 0.9977014810826859,
       "ridge_median_per_dim_r2": 0.27428086863948475,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -337,6 +362,7 @@
       "predict_mean_abs_cos": 0.9954810167390201,
       "raw_recon_abs_cos": 0.997854264381517,
       "ridge_median_per_dim_r2": 0.27375278093463473,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -348,6 +374,7 @@
       "predict_mean_abs_cos": 0.9959445525204866,
       "raw_recon_abs_cos": 0.9979916894061891,
       "ridge_median_per_dim_r2": 0.3485573471056232,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -359,13 +386,14 @@
       "predict_mean_abs_cos": 0.9462967916821852,
       "raw_recon_abs_cos": 0.9698629612093356,
       "ridge_median_per_dim_r2": 0.25770365108134224,
+      "lambda_chosen": 0.01,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     }
   ],
   "metadata": {
-    "git_commit": "b9170f42942607d4bd667ce80db475df1afa152d",
-    "timestamp_utc": "2026-06-30T10:10:26.336378Z",
+    "git_commit": "2cb0a3140499a1bb0de0e7f873d22a6439ca8c6c",
+    "timestamp_utc": "2026-07-02T04:17:56.677358Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",

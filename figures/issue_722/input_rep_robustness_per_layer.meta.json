@@ -1,7 +1,7 @@
 {
   "issue": 722,
   "figure": "input_rep_robustness_per_layer.png",
-  "code_sha": "b9170f42942607d4bd667ce80db475df1afa152d",
-  "generated_at": "2026-06-30T10:10:28Z",
+  "code_sha": "2cb0a3140499a1bb0de0e7f873d22a6439ca8c6c",
+  "generated_at": "2026-07-02T04:22:57Z",
   "source_json": "input_rep_comparison.json"
 }
