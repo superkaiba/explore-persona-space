@@ -5528,8 +5528,8 @@
     "851": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/851",
-      "status": "reviewing",
+      "path": "tasks/completed/851",
+      "status": "completed",
       "title": "artifacts: promote judge_graded + tf-margin to eval/ library (Phase 0a)"
     },
     "852": {
