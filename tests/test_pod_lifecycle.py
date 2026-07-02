@@ -584,8 +584,10 @@ def test_upsert_pods_conf_writes_correct_row(tmp_path, monkeypatch):
     def fake_write(rows):
         captured["rows"] = rows
 
-    def fake_sync(rows):
-        captured["sync_rows"] = rows
+    def fake_sync():
+        # Task #831: cmd_sync is no-arg (re-reads pods.conf under the lock);
+        # record only that the upsert triggered a downstream sync.
+        captured["sync_called"] = True
 
     monkeypatch.setattr(pod_lifecycle, "parse_pods_conf", fake_parse)
     monkeypatch.setattr(pod_lifecycle, "write_pods_conf", fake_write)
@@ -631,7 +633,7 @@ def test_upsert_pods_conf_updates_existing_row(monkeypatch):
         "write_pods_conf",
         lambda r: captured.setdefault("rows", r),
     )
-    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda r: None)
+    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda: None)
 
     pod = pod_lifecycle.EphemeralPod(
         metadata=_meta("pod-301", issue=301),

@@ -496,7 +496,7 @@ def _upsert_pods_conf(pod: EphemeralPod) -> None:
                 )
             )
         write_pods_conf(rows)
-        cmd_sync(rows)
+        cmd_sync()
 
 
 def _remove_from_pods_conf(name: str) -> None:
@@ -521,7 +521,7 @@ def _remove_from_pods_conf(name: str) -> None:
         rows = parse_pods_conf()
         rows = [p for p in rows if p.name != name]
         write_pods_conf(rows, allow_remove=frozenset({name}))
-        cmd_sync(rows)
+        cmd_sync()
 
 
 # ─── helpers ─────────────────────────────────────────────────────────────────

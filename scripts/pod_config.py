@@ -27,6 +27,7 @@ import sys
 import threading
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -673,6 +674,33 @@ def write_pods_conf(
         raise
 
 
+def _atomic_write_text(path: Path, payload: str, *, default_mode: int = 0o600) -> None:
+    """Atomically write ``payload`` to ``path`` via same-dir tmp + os.replace.
+
+    Mirrors write_pods_conf's tmp+replace+cleanup pattern (task #831). Mode
+    handling: if ``path`` exists, its current mode is copied onto the tmp
+    BEFORE the replace (a pre-existing 0644 ~/.ssh/config stays 0644); on
+    create, the tmp gets ``default_mode`` (0600 — ssh refuses group/other-
+    writable configs). The tmp is CREATED with the target mode via
+    ``os.open`` so there is no umask window where a group-readable tmp holds
+    the payload. No reader ever observes torn content; on a replace failure
+    the tmp is best-effort unlinked and the original error re-raised.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    mode = os.stat(path).st_mode & 0o7777 if path.exists() else default_mode
+    fd = os.open(tmp, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, mode)
+    try:
+        with os.fdopen(fd, "w") as fh:
+            fh.write(payload)
+        os.chmod(tmp, mode)  # ensure exact mode even under restrictive umask
+        os.replace(tmp, path)
+    except OSError:
+        with contextlib.suppress(FileNotFoundError, OSError):
+            tmp.unlink()
+        raise
+
+
 # ---------------------------------------------------------------------------
 # SSH config generation
 # ---------------------------------------------------------------------------
@@ -713,8 +741,7 @@ def update_ssh_config(pods: list[Pod]) -> list[str]:
     new_block = _generate_managed_block(pods)
 
     if not SSH_CONFIG.exists():
-        SSH_CONFIG.parent.mkdir(parents=True, exist_ok=True)
-        SSH_CONFIG.write_text(new_block + "\n")
+        _atomic_write_text(SSH_CONFIG, new_block + "\n")
         changes.append(f"~/.ssh/config: created with {len(pods)} pod entries")
         return changes
 
@@ -730,14 +757,16 @@ def update_ssh_config(pods: list[Pod]) -> list[str]:
         if new_content == content:
             changes.append("~/.ssh/config: already up to date")
         else:
-            SSH_CONFIG.write_text(new_content)
+            _atomic_write_text(SSH_CONFIG, new_content)
             changes.append("~/.ssh/config: updated managed pod block")
     else:
-        # No markers found -- append the managed block.
+        # No markers found -- append the managed block. Compose the FULL
+        # payload (existing content + managed block) and hand it to ONE
+        # atomic write — never an append-mode write (task #831).
         if not content.endswith("\n"):
             content += "\n"
         content += "\n" + new_block + "\n"
-        SSH_CONFIG.write_text(content)
+        _atomic_write_text(SSH_CONFIG, content)
         changes.append("~/.ssh/config: appended managed block (markers added)")
 
     return changes
@@ -873,7 +902,7 @@ def update_mcp_config(pods: list[Pod]) -> list[str]:
             changes.append(f"  mcp: ~ {key}: {old_val} -> {new_val}")
 
     servers["ssh"]["env"] = new_env
-    MCP_JSON.write_text(json.dumps(data, indent=2) + "\n")
+    _atomic_write_text(MCP_JSON, json.dumps(data, indent=2) + "\n")
     changes.insert(0, ".claude/mcp.json: updated SSH server env vars")
 
     return changes
@@ -1040,28 +1069,81 @@ def cmd_check(pods: list[Pod]) -> None:
     sys.exit(0 if (all_ok and patch_ok) else 1)
 
 
-def cmd_sync(pods: list[Pod]) -> None:
-    """Regenerate ~/.ssh/config and .claude/mcp.json from pods.conf."""
-    print("Syncing configs from pods.conf...")
-    print()
+def _sync_audit_log_path() -> Path:
+    """Return the sync audit-log path (same dir as the resolved live pods.conf).
 
-    ssh_changes = update_ssh_config(pods)
-    for c in ssh_changes:
-        print(f"  {c}")
+    Deriving from ``_resolve_live_pods_conf()`` keeps the audit log next to
+    the live state (``<git-common-dir>/eps/sync_audit.log`` in steady state)
+    AND honors a test's monkeypatched ``PODS_CONF`` — repointing the conf
+    into a tmp dir redirects the audit log there too (task #831).
+    """
+    return _resolve_live_pods_conf().parent / "sync_audit.log"
 
-    mcp_changes = update_mcp_config(pods)
-    for c in mcp_changes:
-        print(f"  {c}")
 
-    print()
-    any_changed = any(
-        "up to date" not in c for c in ssh_changes + mcp_changes if "skipped" not in c
-    )
-    if any_changed:
-        print("Done. If MCP config changed, restart the MCP server (/mcp).")
-    else:
-        print("Everything already in sync.")
-    print("Verify with: python scripts/pod_config.py --check")
+def _append_sync_audit_line(pods: list[Pod]) -> None:
+    """Best-effort append of ONE audit line per sync (task #831).
+
+    Format: ``ts=<iso8601> pid=<pid> cwd=<cwd> argv=<argv> rows=<names>``.
+    Purpose: if the #813 symptom (a live pod's Host entry dropped from
+    ``~/.ssh/config``) recurs, the log identifies the racing writer instead
+    of restarting the investigation from zero. BEST-EFFORT diagnostics
+    channel: any OSError is WARNed to stderr and never breaks the sync.
+    """
+    try:
+        line = (
+            f"ts={datetime.now(UTC).isoformat()} "
+            f"pid={os.getpid()} cwd={Path.cwd()} "
+            f"argv={' '.join(sys.argv)} "
+            f"rows={','.join(p.name for p in pods)}\n"
+        )
+        audit_path = _sync_audit_log_path()
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(audit_path, "a") as fh:
+            fh.write(line)
+    except OSError as exc:
+        print(
+            f"WARN: pod_config: could not append sync audit line: {exc}",
+            file=sys.stderr,
+        )
+
+
+def cmd_sync() -> None:
+    """Regenerate ~/.ssh/config and .claude/mcp.json from pods.conf.
+
+    Acquires ``locked_pods_conf`` and RE-READS pods.conf under the lock, so
+    the managed-block rewrite always operates on the canonical on-disk state
+    — a caller-supplied snapshot can never drop a concurrent session's row
+    (task #831; incident #813). Reentrant: callers already inside
+    ``locked_pods_conf`` (cmd_update, cmd_refresh_from_api, pod_lifecycle
+    upsert/remove) nest safely (depth counter, see ``locked_pods_conf``).
+    Bonus correctness: rows re-added by write_pods_conf's never-drop-RUNNING
+    guard are now picked up by the sync (previously the caller's pre-guard
+    list was used and a guard-re-added row was silently absent from
+    ~/.ssh/config until the next sync).
+    """
+    with locked_pods_conf():
+        pods = parse_pods_conf()
+        print("Syncing configs from pods.conf...")
+        print()
+
+        _append_sync_audit_line(pods)
+        ssh_changes = update_ssh_config(pods)
+        for c in ssh_changes:
+            print(f"  {c}")
+
+        mcp_changes = update_mcp_config(pods)
+        for c in mcp_changes:
+            print(f"  {c}")
+
+        print()
+        any_changed = any(
+            "up to date" not in c for c in ssh_changes + mcp_changes if "skipped" not in c
+        )
+        if any_changed:
+            print("Done. If MCP config changed, restart the MCP server (/mcp).")
+        else:
+            print("Everything already in sync.")
+        print("Verify with: python scripts/pod_config.py --check")
 
 
 def _set_manual_override(pod_name: str, *, value: bool) -> str | None:
@@ -1162,10 +1244,10 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
 
         print()
 
-        # Auto-sync downstream configs from the post-write rows (still
-        # inside the lock so a concurrent session cannot regenerate the SSH
-        # config from a stale view between our write and our sync).
-        cmd_sync(fresh)
+        # Auto-sync downstream configs (still inside the lock; cmd_sync
+        # re-reads pods.conf under the reentrant lock, so it sees exactly
+        # what write_pods_conf just wrote plus any guard re-adds).
+        cmd_sync()
 
 
 def cmd_clear_override(pod_name: str) -> None:
@@ -1487,7 +1569,7 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
         print()
         print("Updating pods.conf with live API host/port...")
         write_pods_conf(fresh)
-        cmd_sync(fresh)
+        cmd_sync()
 
 
 # ---------------------------------------------------------------------------
@@ -1559,7 +1641,7 @@ def main() -> None:
     elif args.check:
         cmd_check(pods)
     elif args.sync:
-        cmd_sync(pods)
+        cmd_sync()
     elif args.update:
         cmd_update(pods, args.update, args.host, args.port)
     elif args.clear_override:

@@ -122,7 +122,12 @@ def stubbed_pods_conf(monkeypatch):
     Returns a state dict the test can mutate (``state["rows"]`` for the
     fake on-disk pods.conf) and read (``state["written"]`` for what
     ``write_pods_conf`` was handed, ``state["sync_called"]`` for whether
-    ``cmd_sync`` was invoked, ``state["sync_rows"]`` for its argument).
+    ``cmd_sync`` was invoked, ``state["sync_rows"]`` for the rows the
+    no-arg re-reading sync observed at call time — task #831: the fake
+    ``write_pods_conf`` mutates the fake on-disk state (``state["rows"]``)
+    BEFORE the no-arg ``fake_sync`` re-reads it, mirroring the real
+    ``cmd_sync``'s re-read-under-lock, so "sync saw the fresh rows" stays
+    verifiable).
     """
     import contextlib
 
@@ -140,10 +145,15 @@ def stubbed_pods_conf(monkeypatch):
 
     def fake_write(rows: list[Pod]) -> None:
         state["written"] = _copy_rows(rows)
+        # Task #831: the fake write mutates the fake ON-DISK state, so a
+        # subsequent no-arg cmd_sync re-read sees exactly what was written.
+        state["rows"] = _copy_rows(rows)
 
-    def fake_sync(rows: list[Pod]) -> None:
+    def fake_sync() -> None:
         state["sync_called"] = True
-        state["sync_rows"] = _copy_rows(rows)
+        # Re-read the fake on-disk state at call time, mirroring the real
+        # no-arg cmd_sync's re-read-under-lock (task #831).
+        state["sync_rows"] = fake_parse()
 
     @contextlib.contextmanager
     def noop_lock():

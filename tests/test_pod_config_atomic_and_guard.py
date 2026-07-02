@@ -596,9 +596,27 @@ def test_remove_from_pods_conf_bypasses_guard(monkeypatch, tmp_path):
     _seed_conf(pods_conf, [_row("pod-A"), _row("pod-B")])
     monkeypatch.setattr(pod_config, "PODS_CONF", pods_conf)
     monkeypatch.setattr(pod_config, "PODS_CONF_LOCK", tmp_path / ".pods.conf.lock")
+    # Defense-in-depth: repoint the real-config targets into tmp_path so that
+    # even if a future refactor bypasses the cmd_sync stubs below, no write
+    # can reach the REAL ~/.ssh/config or ~/.claude/mcp.json (hard plan
+    # constraint: tests never touch real configs). With the stubs in place
+    # neither path is exercised — the repoint is pure insurance.
+    monkeypatch.setattr(pod_config, "SSH_CONFIG", tmp_path / "ssh_config")
+    monkeypatch.setattr(pod_config, "MCP_JSON", tmp_path / "mcp.json")
 
     # No-op cmd_sync — ~/.ssh/config regeneration is out of scope.
-    monkeypatch.setattr(pod_config, "cmd_sync", lambda rows: None)
+    # Import pod_lifecycle FIRST, then patch the CONSUMING namespace:
+    # pod_lifecycle binds cmd_sync BY VALUE at import time
+    # (``from pod_config import cmd_sync``), so when pod_lifecycle is
+    # already in sys.modules (any earlier test in the same pytest process
+    # imported it), a pod_config-namespace patch alone leaves the stale
+    # binding live and the REAL cmd_sync would rewrite the user's real
+    # SSH/MCP configs from the fixture rows. The pod_config patch is kept
+    # as belt-and-braces for a future ``pod_config.cmd_sync()``-style call.
+    import pod_lifecycle
+
+    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda: None)
+    monkeypatch.setattr(pod_config, "cmd_sync", lambda: None)
 
     import runpod_api
 
@@ -606,9 +624,6 @@ def test_remove_from_pods_conf_bypasses_guard(monkeypatch, tmp_path):
         raise AssertionError("guard called list_team_pods from _remove_from_pods_conf path")
 
     monkeypatch.setattr(runpod_api, "list_team_pods", _boom)
-
-    # Import lazily — ``pod_lifecycle`` is heavy (loads runpod_api's config).
-    import pod_lifecycle
 
     pod_lifecycle._remove_from_pods_conf("pod-A")
 
