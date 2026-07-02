@@ -5563,8 +5563,8 @@
     "856": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/856",
-      "status": "proposed",
+      "path": "tasks/planning/856",
+      "status": "planning",
       "title": "workflow-fix: durable-output check before reviewer no-show fallback"
     },
     "857": {
