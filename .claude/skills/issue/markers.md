@@ -228,7 +228,9 @@ To determine current state:
 2. `status` = the task's parent folder name. If the folder is missing
    or appears in multiple parents, abort.
 3. For each `kind` above, scan `events.jsonl` for the highest-version
-   row.
+   row (EXCEPTION: `epm:followup-scope` — distinct queued follow-ups
+   share the kind under different `followup_label`s; group by label per
+   `task_workflow.unrun_followup_labels`, #894).
 4. Build `marker_map: {kind: (version, note, metadata)}`.
 5. Choose next action from the state machine table in `SKILL.md`.
 
