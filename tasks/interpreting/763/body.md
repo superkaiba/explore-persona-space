@@ -26,16 +26,16 @@ relates_to:
 
 ## Takeaways
 
-- Matched probes + graded E0: LOCO **ρ = 0.71/0.62/0.74/0.86** (fact_expression/format_style/self_report/persona_drift; the last two are m=20 reduced-power reads), all **shuffle p ≤ 0.001**, control-task pass — behaviors [#658](https://eps.superkaiba.com/tasks/658) scored unpredictable at m=8.
+- Matched probes + graded E0: LOCO **ρ = 0.71/0.62/0.74/0.86** (fact_expression/format_style/self_report/persona_drift; the last two are m=20 reduced-power reads), all **shuffle p ≤ 0.001**, control-task pass (format_style misses one registered CI criterion) — behaviors [#658](https://eps.superkaiba.com/tasks/658) scored unpredictable at m=8.
 - deception: between-context MEAN spread is only **2.9/100** (within-context probe spread reaches std **34.6**), ceiling **√r_yy = 0.00 [0, 0]** (a clipped-estimator floor); **ρ = 0.11 [−0.21, 0.41]** is indistinguishable from null given that noise — not a falsification. Binary companion retains signal (GLM **0.32 [0.03, 0.57]**, p = 0.009; ridge 0.41).
-- Persona-vector baseline: within **0.07** of ridge on three behaviors (**0.78/0.76/0.84**) but **−0.08** on format_style (ridge **0.62**). Caveat: the PV arm is judge-thinned for 3/5 behaviors (self_report kept **49/1000** negative rollouts).
+- Persona-vector baseline: within **0.07** of ridge on three behaviors (**0.78/0.76/0.84**) but **−0.08** on format_style (ridge **0.62**). Caveat: the PV arm is thinned by the judge filter for 3/5 behaviors (self_report kept **49/1000** negative rollouts).
 - No ridge−GLM disagreement in the as-built graded run: delta **−0.10 to +0.06**, vs the +0.05–0.11 ridge optimism at m=8 that motivated the GLM cross-check.
-- Realized yields violate the plan §10.1 acceptance assertions: self_report/persona_drift median n_judged **14–15** (< 16 floor; and the results JSON wrongly records m=60/reduced_power=false for them), deception median **47** (< 48 floor, 27/50 cells short); fits unaffected, disclosures load-bearing.
+- Realized yields violate the plan §10.1 acceptance assertions: self_report/persona_drift median n_judged **14–15** (< 16 floor; and the results JSON wrongly records m=60/reduced_power=false for them), deception median **47** (< 48 floor, 27/50 cells short); the fits weight by realized n_judged, so validity is unaffected but precision is reduced.
 
 ## Goal
 
-- **This experiment in context:** [#658](https://eps.superkaiba.com/tasks/658) measured the base-model answer-activation → expression predictor at m=8 judgments/context with mismatched probes and a binary DV, and concluded the mean-activation summary predicts only 3/10 behaviors. [#761](https://eps.superkaiba.com/tasks/761) (phase 1) re-measured the 3 high-m behaviors and found the ridge read robust. This task is phase 2: the 5 remaining low-m behaviors (deception, fact_expression, format_style, self_report, persona_drift) re-measured with matched per-behavior eliciting-probe pools (m = 60/60/60/20/20), a graded multi-sampled 0–100 E0 as the primary regression DV (binary rate retained as the validated companion), ridge + precision-weighted binomial GLM, and a faithfully-extracted persona-vector baseline.
-- **Broader narrative:** whether pre-fine-tuning context geometry — here the base model's mean answer-side activation v0(C,B) — predicts where behavior B is expressed across contexts C (`q:leak-predictor`), the base-side propensity leg of the leakage-prediction program.
+- **This experiment in context:** [#658](https://eps.superkaiba.com/tasks/658) measured the base-model answer-activation → expression predictor at m=8 judgments/context with mismatched probes and a binary DV, and concluded the mean-activation summary predicts only 3/10 behaviors. [#761](https://eps.superkaiba.com/tasks/761) (phase 1) re-measured the 3 high-m behaviors and found the ridge and GLM reads agree within ±0.04. This task is phase 2: the 5 remaining low-m behaviors (deception, fact_expression, format_style, self_report, persona_drift) re-measured with matched per-behavior eliciting-probe pools (m = 60/60/60/20/20), a graded multi-sampled 0–100 E0 as the primary regression DV (binary rate retained as the validated companion), ridge + precision-weighted binomial GLM, and a faithfully-extracted persona-vector baseline.
+- **Broader narrative:** whether pre-fine-tuning context geometry (here the base model's mean answer-side activation v0(C,B)) predicts where behavior B is expressed across contexts C (`q:leak-predictor`), the base-side propensity leg of the leakage-prediction program.
 
 ## Methodology
 
@@ -147,15 +147,15 @@ Each panel plots one point per context (n = 50; color = context family f1–f8):
 
 The spread is family-structured. A prediction-fixed leave-one-family-out check (Spearman on the persisted held-out predictions after dropping each family in turn) keeps all four "works" behaviors off the floor — worst-case ρ 0.60/0.52/0.47/0.78 (fact_expression/format_style: worst drop = rephrase; self_report/persona_drift: worst drop = the 14-context persona family) — while deception flips sign (−0.27 dropping the persona family). This is a remainder check, not held-out-family generalization: within single families the rank correlation can be weak or negative, so the prediction separates family bands more than it ranks within them. deception's compressed y-range (≈33–46) underlies its zero ceiling.
 
-### Graded and binary DVs rank contexts consistently (Spearman 0.61–1.00); deception is the one divergence
+### Graded and binary DVs rank contexts consistently outside deception (Spearman 0.79–1.00; deception 0.61)
 
-Each panel plots one point per context: x = binary expressed-rate (#658 rubric), y = graded mean (0–100). format_style is structural (graded ≡ binary ×100), giving exact agreement by construction.
+One point per context in every panel: x = binary expressed-rate (#658 rubric), y = graded mean (0–100). format_style is structural (graded ≡ binary ×100), giving exact agreement by construction.
 
 ![Per-context scatter of graded mean vs binary expressed rate for each behavior](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c3bd1a201230c9958c5b66d3fd7734cb0a9516f3/figures/issue_763/fig_763_graded_vs_binary.png)
 
 > **Figure.** *Dual-DV validation at the context level.* One point per context; graded–binary tracking Spearman per panel: 0.61 (deception), 0.79 (fact_expression), 1.00 (format_style, structural), 0.79 (self_report), 0.93 (persona_drift).
 
-At the context level the graded DV tracks the validated binary rate (satisfying the dual-DV validation), and the graded−binary ρ delta is small (−0.03 to +0.08) except deception (−0.21: the graded judge compresses spread the binary rubric keeps) — the graded-primary upgrade is not uniformly a gain. Per-probe binary labels are incomplete (null verdicts: deception 646/3000, fact_expression 122/3000, self_report 254/1000, persona_drift 263/1000), so the tracking claim is context-level, not per-probe.
+At the context level the graded DV tracks the validated binary rate (satisfying the dual-DV validation), and the graded−binary ρ delta is small (−0.03 to +0.08) except deception (−0.21: the graded judge compresses spread the binary rubric keeps) — the graded-primary upgrade can also lose signal. Per-probe binary labels are incomplete (null verdicts: deception 646/3000, fact_expression 122/3000, self_report 254/1000, persona_drift 263/1000), so the tracking claim holds at the context level only; per-probe binary coverage is incomplete.
 
 ### No ridge−GLM disagreement in the as-built graded run
 
