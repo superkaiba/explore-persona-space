@@ -4312,9 +4312,6 @@ AGENT_SPEC_FAIL_BYTES = 40_000
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 112,251 B post-#829; every-invocation Analysis-Protocol core —
-    # SPEC.md-dedup trim is the #829 named follow-up
-    "analyzer.md": 115_000,
     # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
     # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
     "clean-result-critic.md": 107_000,
