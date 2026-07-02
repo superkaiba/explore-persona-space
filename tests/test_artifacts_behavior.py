@@ -205,7 +205,7 @@ def test_structural_invariants():
     with pytest.raises(ValueError, match="threshold"):
         _behavior(threshold=-1)
     with pytest.raises(ValueError, match="judge_model"):
-        _behavior(judge_model="claude-haiku-4-5")
+        _behavior(judge_model="claude-haiku-4-5")  # noqa: judge-model-pin
     # Programmatic behaviors carry no ExtractionSpec (organism-only carve-out).
     with pytest.raises(ValueError, match="ExtractionSpec"):
         _behavior(programmatic=True, method=None, extraction=_extraction())
