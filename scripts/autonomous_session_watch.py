@@ -1,10 +1,12 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Eleven passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
+Twelve passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
 right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
-pass 7, and the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
-and pass 6 (session-reconcile), all before the GC pass:
+pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
+and pass 6 (session-reconcile), and the CPU-GUARD pass (item 12) in the
+daemon-independent block right after pass 1's disk checks, all before the
+GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -255,6 +257,26 @@ and pass 6 (session-reconcile), all before the GC pass:
    :data:`_INFRA_DRAIN_NOTE_SENTINEL` so they never reset the
    orphan/stalled staleness clocks. ``--infra-drain-only`` runs just this
    pass (pair with ``--dry-run`` for a live smoke).
+12. **CPU/memory-pressure guard pass (task #849; daemon-independent, runs
+   in the daemon-independent block right after the disk / happy-patch
+   checks).** Escalate-only observability for the shared VM's compute
+   pressure (the 2026-07-02 load-226 incident class). Every tick it reads
+   ``/proc/loadavg`` + PSI (``/proc/pressure/{cpu,memory}``) +
+   ``/proc/meminfo`` MemAvailable and greps the earlyoom journal for kill
+   lines. Sustained overload (2 consecutive ticks of load5 > 1.5x nproc,
+   PSI-cpu ``some avg10`` > 50, or PSI-memory ``full avg10`` > 10) or a
+   SINGLE-TICK MemAvailable drop below 20% (the pre-kill attribution
+   window above earlyoom's 10% kill floor) writes ONE attributed
+   ``vm-cpu-pressure`` row (top-CPU/top-RSS processes, pid -> issue) to
+   ``.claude/cache/cpu-guard-events.jsonl`` + a deduped Telegram push
+   (re-alert on >25% load5 growth or a reason-set change; recovery resets
+   the episode). Every fire stores the top-process snapshot so subsequent
+   ``earlyoom-kill`` rows (surfaced every tick, threshold-independent,
+   journal-cursor + key deduped) carry ``attribution_status:
+   attributed | unattributed``. WARN-ONLY: never kills, never renices,
+   never signals any process. Kill switch ``EPM_DISABLE_CPU_GUARD_PASS=1``;
+   ``--cpu-guard-only`` runs just this pass (pair with ``--dry-run`` for a
+   live smoke).
 
 Why each pass exists
 --------------------
@@ -374,6 +396,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -2304,6 +2327,616 @@ def happy_patch_pass(dry_run: bool) -> None:
     )
     if not dry_run:
         _save_happy_patch_state({"alerted_state": st.state})
+
+
+# ─── CPU/memory-pressure guard pass (task #849) — escalate-only ──────────────
+#
+# WHY: 2026-07-02 incident — the shared 32-core VM sat at load 186-226 for
+# hours; earlyoom SIGTERM sweeps silently killed 4-7 GB analysis workers
+# (exit 143, no traceback, misattributed for hours); a checkpointed sweep's
+# 60 s layers stretched to 64 min. The watcher watched sessions/pods/disk but
+# not the box's compute pressure. This pass is the CPU/memory analogue of the
+# disk sub-floor sentinel above: detection + attribution + one deduped push.
+# WARN-ONLY: it NEVER kills, NEVER renices, NEVER signals any process.
+# (End-of-block sentinel for the never-kills grep test: the block ends at the
+#  `def _status_class` line — the test greps between this header line and
+#  that def for process-mutation tokens.)
+
+
+def _env_float(name: str, default: float, *, lo: float, hi: float) -> float:
+    """Float env knob with sanity bounds; a garbled or out-of-range value
+    falls back to the default (same fail-soft contract as
+    :func:`_env_gib_bytes` / :func:`_env_pct` — never crash the watcher at
+    import over a typo'd override)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default
+    return val if lo <= val <= hi else default
+
+
+# load5 fires above CPU_GUARD_LOAD_FACTOR * nproc: 50% sustained
+# oversubscription — healthy full utilization (load ~= nproc) never fires;
+# the 2026-07-02 incident ran at 5.8-7x nproc.
+CPU_GUARD_LOAD_FACTOR = _env_float("EPM_VM_CPU_GUARD_LOAD_FACTOR", 1.5, lo=0.1, hi=100.0)
+# PSI cpu `some avg10` (share of wall time >=1 runnable task stalled for CPU):
+# 50% sustained is unambiguous oversubscription (76% under the live incident).
+CPU_GUARD_PSI_CPU_SOME_PCT = _env_pct("EPM_VM_CPU_GUARD_PSI_CPU_PCT", 50.0)
+# PSI memory `full avg10` (all non-idle tasks stalled simultaneously) — direct
+# thrash indicator; the 10% default is ungrounded beyond kernel-doc semantics
+# (warn-only + env-overridable makes miscalibration cheap; plan §11).
+CPU_GUARD_PSI_MEM_FULL_PCT = _env_pct("EPM_VM_CPU_GUARD_PSI_MEM_PCT", 10.0)
+# MemAvailable floor: fires SINGLE-TICK (urgent) — the pre-kill attribution
+# window. 20% sits above earlyoom's 10% kill floor (its own journal config
+# line: "sending SIGTERM when mem <= 10.00%"), so this leg fires while the
+# culprit is still alive and capturable.
+CPU_GUARD_MEMAVAIL_PCT = _env_pct("EPM_VM_CPU_GUARD_MEMAVAIL_PCT", 20.0)
+# Consecutive hot ticks before the RATE signals (load/PSI) fire — 2 = ~20 min
+# at the 10-min cron (the main() --threshold precedent).
+CPU_GUARD_TICKS = int(_env_float("EPM_VM_CPU_GUARD_TICKS", 2, lo=1, hi=100))
+CPU_GUARD_TOP_N = 5  # union of top-CPU and top-RSS in the attribution snapshot
+CPU_GUARD_REALERT_GROWTH = 0.25  # re-alert on >25% load5 growth in-episode
+CPU_GUARD_SUBPROC_TIMEOUT_S = 15  # ps / journalctl hard bound
+CPU_GUARD_KILL_PUSH_MIN_INTERVAL_S = 3600  # kill-push rate limit (sidecar keeps all)
+CPU_GUARD_JOURNAL_OVERLAP_S = 60  # re-scan overlap; key-dedup kills the dups
+# Cap the journal re-scan window after a long watcher outage: bounds a
+# >50-kill backlog re-emission against the 50-key dedup cap.
+CPU_GUARD_JOURNAL_MAX_LOOKBACK_S = 86400
+
+# Reasons that fire on a SINGLE hot tick (no streak): memory can collapse
+# 15% -> 3% inside one 10-min interval, so waiting out a streak would fire
+# post-kill — the single-tick fire IS the pre-kill attribution record.
+CPU_GUARD_URGENT_REASONS = {"mem-avail"}
+
+# Real captured line (2026-06-28): `... earlyoom[2703914]: sending SIGTERM to
+# process 4087688 uid 1001 "pytest": badness 984, VmRSS 3390 MiB`.
+_EARLYOOM_KILL_RE = re.compile(
+    r'sending (SIGTERM|SIGKILL) to process (\d+) uid (\d+) "([^"]*)": '
+    r"badness (\d+), VmRSS (\d+) MiB"
+)
+_WORKTREE_ISSUE_RE = re.compile(r"\.claude/worktrees/issue-(\d+)")
+_CMDLINE_ISSUE_RE = re.compile(r"(?:--issue[ =](\d+)|\bissue[_-](\d+)\b)")
+
+
+def _cpu_guard_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_CPU_GUARD_PASS`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_infra_drain_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_CPU_GUARD_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _read_loadavg() -> tuple[float, float] | None:
+    """``(load1, load5)`` from ``/proc/loadavg``; ``None`` on a read/parse
+    failure (fail-soft — a missing signal degrades to unavailable, it never
+    fires and never masks the other signals)."""
+    try:
+        parts = Path("/proc/loadavg").read_text().split()
+        return (float(parts[0]), float(parts[1]))
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def parse_psi_avg10(text: str, kind: str) -> float | None:
+    """PURE: the ``avg10`` value from a ``/proc/pressure/{cpu,memory}`` body
+    for the given ``kind`` line (``"some"`` / ``"full"``); ``None`` when the
+    line or field is missing/garbled. Line shape (kernel PSI docs):
+    ``some avg10=76.08 avg60=61.25 avg300=52.44 total=...``."""
+    for line in text.splitlines():
+        parts = line.split()
+        if not parts or parts[0] != kind:
+            continue
+        for tok in parts[1:]:
+            if tok.startswith("avg10="):
+                try:
+                    return float(tok[len("avg10=") :])
+                except ValueError:
+                    return None
+    return None
+
+
+def _read_psi_avg10(path: str, kind: str) -> float | None:
+    """Fail-soft file wrapper over :func:`parse_psi_avg10` (a missing PSI
+    interface — e.g. CONFIG_PSI=n — degrades that one signal to ``None``)."""
+    try:
+        return parse_psi_avg10(Path(path).read_text(), kind)
+    except OSError:
+        return None
+
+
+def parse_meminfo_avail_pct(text: str) -> float | None:
+    """PURE: ``100 * MemAvailable / MemTotal`` from a ``/proc/meminfo`` body;
+    ``None`` when either field is missing/garbled or MemTotal is 0."""
+    total_kib: int | None = None
+    avail_kib: int | None = None
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        if parts[0] == "MemTotal:":
+            try:
+                total_kib = int(parts[1])
+            except ValueError:
+                return None
+        elif parts[0] == "MemAvailable:":
+            try:
+                avail_kib = int(parts[1])
+            except ValueError:
+                return None
+    if total_kib is None or avail_kib is None or total_kib <= 0:
+        return None
+    return 100.0 * avail_kib / total_kib
+
+
+def _read_mem_avail_pct() -> float | None:
+    """Fail-soft file wrapper over :func:`parse_meminfo_avail_pct`."""
+    try:
+        return parse_meminfo_avail_pct(Path("/proc/meminfo").read_text())
+    except OSError:
+        return None
+
+
+def cpu_tick_hot_reasons(
+    load5: float | None,
+    ncpu: int,
+    psi_cpu_some: float | None,
+    psi_mem_full: float | None,
+    mem_avail_pct: float | None,
+) -> list[str]:
+    """PURE: which pressure signals are hot THIS tick. ``None`` inputs are
+    skipped (fail-soft: a missing signal can never fire OR mask the others).
+    Tags: ``loadavg`` | ``psi-cpu`` | ``psi-memory`` | ``mem-avail``."""
+    reasons: list[str] = []
+    if load5 is not None and load5 > CPU_GUARD_LOAD_FACTOR * ncpu:
+        reasons.append("loadavg")
+    if psi_cpu_some is not None and psi_cpu_some > CPU_GUARD_PSI_CPU_SOME_PCT:
+        reasons.append("psi-cpu")
+    if psi_mem_full is not None and psi_mem_full > CPU_GUARD_PSI_MEM_FULL_PCT:
+        reasons.append("psi-memory")
+    if mem_avail_pct is not None and mem_avail_pct < CPU_GUARD_MEMAVAIL_PCT:
+        reasons.append("mem-avail")
+    return reasons
+
+
+def decide_cpu_guard_fire(
+    reasons: list[str],
+    prior_consecutive: int,
+    alerted: bool,
+    last_alert_load5: float | None,
+    last_alert_reasons: list[str] | None,
+    load5: float | None,
+) -> tuple[bool, int]:
+    """PURE: ``(fire?, new_consecutive)`` for the pressure arm.
+
+    Not hot this tick -> ``(False, 0)`` (the caller resets the episode).
+    Hot -> ``consecutive = prior + 1``. The tick FIRES when EITHER
+
+    - (a) ``consecutive >= CPU_GUARD_TICKS`` (streaked rate signals — load /
+      PSI need ~20 min persistence at the 10-min cron, so a healthy short
+      burst never alerts), OR
+    - (b) any reason is urgent (:data:`CPU_GUARD_URGENT_REASONS` —
+      single-tick, see that constant's rationale),
+
+    AND the in-episode dedup admits it: not yet alerted this episode, OR the
+    sorted reason set changed since the last alert, OR load5 grew by more
+    than :data:`CPU_GUARD_REALERT_GROWTH` vs the last alert."""
+    if not reasons:
+        return (False, 0)
+    consecutive = prior_consecutive + 1
+    streak_met = consecutive >= CPU_GUARD_TICKS
+    urgent = bool(set(reasons) & CPU_GUARD_URGENT_REASONS)
+    if not (streak_met or urgent):
+        return (False, consecutive)
+    if not alerted:
+        return (True, consecutive)
+    if last_alert_reasons is not None and sorted(reasons) != sorted(
+        str(x) for x in last_alert_reasons
+    ):
+        return (True, consecutive)
+    if (
+        load5 is not None
+        and isinstance(last_alert_load5, int | float)
+        and last_alert_load5 > 0
+        and (load5 - last_alert_load5) / last_alert_load5 > CPU_GUARD_REALERT_GROWTH
+    ):
+        return (True, consecutive)
+    return (False, consecutive)
+
+
+def attribute_issue(cwd: str | None, argv: str) -> int | None:
+    """PURE: best-effort pid -> issue attribution. A worktree cwd
+    (``.claude/worktrees/issue-<N>``) wins; else a cmdline hint
+    (``--issue <N>`` / ``issue_<N>`` / ``issue-<N>``); else ``None``."""
+    if cwd:
+        m = _WORKTREE_ISSUE_RE.search(cwd)
+        if m:
+            return int(m.group(1))
+    m = _CMDLINE_ISSUE_RE.search(argv or "")
+    if m:
+        return int(m.group(1) or m.group(2))
+    return None
+
+
+def _top_processes(top_n: int = CPU_GUARD_TOP_N, *, dry_run: bool = False) -> list[dict]:
+    """The union of the ``top_n`` top-CPU and ``top_n`` top-RSS processes,
+    each attributed to an issue where possible (``/proc/<pid>/cwd`` readlink
+    + cmdline hints via :func:`attribute_issue`).
+
+    ONE ``ps -eo pid,pcpu,rss,args`` call (hard 15 s timeout) — cheap enough
+    for a firing tick. NOTE: ``ps`` ``pcpu`` is LIFETIME %CPU (cpu-time /
+    elapsed), representative for the hours-long sustained incident class but
+    it can under-report a fresh spike (documented limitation, plan §8).
+
+    Under ``dry_run`` performs NO ``subprocess.run`` and returns ``[]``
+    immediately — the dry-run smoke contract forbids observational
+    side-effects (the #681 r3 convention). Fail-soft: any ps failure yields
+    ``[]`` (no attribution), never a crash."""
+    if dry_run:
+        return []
+    try:
+        rc = subprocess.run(
+            ["ps", "-eo", "pid,pcpu,rss,args", "--no-headers"],
+            capture_output=True,
+            text=True,
+            timeout=CPU_GUARD_SUBPROC_TIMEOUT_S,
+            check=False,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    if rc.returncode != 0:
+        return []
+    rows: list[dict] = []
+    for line in rc.stdout.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) < 4:
+            continue
+        try:
+            pid = int(parts[0])
+            pcpu = float(parts[1])
+            rss_kib = int(parts[2])
+        except ValueError:
+            continue
+        rows.append(
+            {"pid": pid, "pcpu": pcpu, "rss_mib": round(rss_kib / 1024, 1), "argv": parts[3][:200]}
+        )
+    by_cpu = sorted(rows, key=lambda r: r["pcpu"], reverse=True)[:top_n]
+    by_rss = sorted(rows, key=lambda r: r["rss_mib"], reverse=True)[:top_n]
+    union: dict[int, dict] = {}
+    for r in by_cpu + by_rss:
+        union[r["pid"]] = r
+    procs = list(union.values())
+    for r in procs:
+        try:
+            cwd: str | None = os.readlink(f"/proc/{r['pid']}/cwd")
+        except OSError:
+            cwd = None  # process gone / unreadable — cmdline hints still apply
+        r["issue"] = attribute_issue(cwd, r["argv"])
+    procs.sort(key=lambda r: r["pcpu"], reverse=True)
+    return procs
+
+
+def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
+    """PURE: ``(issue, attribution_status)`` for an earlyoom kill row.
+
+    Matches the killed pid against the rolling PRE-KILL snapshot stored on
+    the last pressure fire (an earlyoom-killed pid has no ``/proc/<pid>/cwd``
+    left — pid -> issue is capturable only pre-kill). A pid match wins; else
+    a UNIQUE comm match among the snapshot argv basenames. No snapshot / no
+    match -> ``(None, "unattributed")``. Never raises."""
+    try:
+        if not isinstance(snapshot, dict):
+            return (None, "unattributed")
+        procs = [p for p in snapshot.get("procs") or [] if isinstance(p, dict)]
+        pid = kill.get("pid")
+        for p in procs:
+            if p.get("pid") == pid:
+                issue = p.get("issue")
+                return (issue if isinstance(issue, int) else None, "attributed")
+        comm = kill.get("comm")
+        if isinstance(comm, str) and comm:
+            matches = []
+            for p in procs:
+                argv = p.get("argv")
+                if not isinstance(argv, str):
+                    continue
+                toks = argv.split()
+                if toks and os.path.basename(toks[0]) == comm:
+                    matches.append(p)
+            if len(matches) == 1:
+                issue = matches[0].get("issue")
+                return (issue if isinstance(issue, int) else None, "attributed")
+        return (None, "unattributed")
+    except Exception:  # pragma: no cover - absolute fail-soft backstop
+        return (None, "unattributed")
+
+
+def parse_earlyoom_kill_line(line: str) -> dict | None:
+    """PURE: parse one ``journalctl -u earlyoom -o short-iso`` line into a
+    kill dict, or ``None`` for non-kill lines (the ``mem avail:`` chatter and
+    the ``sending SIGTERM when mem <= ...`` config line). ``-o short-iso``
+    prepends the ISO timestamp as the first whitespace-separated token."""
+    m = _EARLYOOM_KILL_RE.search(line)
+    if not m:
+        return None
+    first = line.split(None, 1)
+    return {
+        "journal_ts": first[0] if first else "",
+        "signal": m.group(1),
+        "pid": int(m.group(2)),
+        "uid": int(m.group(3)),
+        "comm": m.group(4),
+        "badness": int(m.group(5)),
+        "vmrss_mib": int(m.group(6)),
+    }
+
+
+def _earlyoom_kills_since(since_epoch: float, *, dry_run: bool = False) -> list[dict] | None:
+    """Kill events from ``journalctl -u earlyoom --no-pager -o short-iso
+    --since @<int(epoch)>``, parsed through :func:`parse_earlyoom_kill_line`.
+
+    ``None`` on journalctl missing / non-zero rc / timeout (fail-soft — the
+    caller degrades the kill arm VISIBLY and does NOT advance the journal
+    cursor); ``[]`` on a clean scan with no kills. Under ``dry_run`` performs
+    NO ``subprocess.run`` and returns ``None`` (#681 r3 convention).
+
+    NOTE: the FIRST-run lookback is DELIBERATELY bounded (~30 min, set by the
+    caller) — the watcher is an ongoing monitor, not a backfill tool; and
+    after any outage the re-scan window is additionally capped at
+    :data:`CPU_GUARD_JOURNAL_MAX_LOOKBACK_S` (also caller-side)."""
+    if dry_run:
+        return None
+    cmd = [
+        "journalctl",
+        "-u",
+        "earlyoom",
+        "--no-pager",
+        "-o",
+        "short-iso",
+        "--since",
+        f"@{int(since_epoch)}",
+    ]
+    try:
+        rc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=CPU_GUARD_SUBPROC_TIMEOUT_S,
+            check=False,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if rc.returncode != 0:
+        return None
+    kills: list[dict] = []
+    for line in rc.stdout.splitlines():
+        k = parse_earlyoom_kill_line(line)
+        if k is not None:
+            kills.append(k)
+    return kills
+
+
+def _cpu_guard_state_path() -> Path:
+    """Singleton dedup + streak + journal-cursor state for the CPU guard,
+    under AUTONOMOUS_REGISTRY_DIR (the watcher-state convention; singletons
+    are never GC'd — :func:`_gc_target_paths` sweeps per-issue files only)."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-cpu-guard.json"
+
+
+def _load_cpu_guard_state() -> dict:
+    """``{}`` on missing/garbled state (mirrors :func:`_load_subfloor_state`).
+    Every field read back from this dict goes through ``isinstance``
+    type-guards at the call sites — a hand-edited or schema-drifted state
+    file degrades to defaults, never raises."""
+    path = _cpu_guard_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_cpu_guard_state(state: dict) -> None:
+    """Atomic temp+rename write of the CPU-guard state (fail-soft)."""
+    dest = _cpu_guard_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  cpu-guard: state save failed: {exc}", file=sys.stderr)
+
+
+def _cpu_guard_sidecar_path() -> Path:
+    """DEDICATED CPU-guard event stream (task-body requirement — domain-
+    separated from the shared disk-guard sidecar for clean grep)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "cpu-guard-events.jsonl"
+
+
+def _append_cpu_guard_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the CPU-guard sidecar (fail-soft). A ``ts`` is
+    stamped if absent. ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append cpu-guard sidecar row: {line[:160]}")
+        return
+    dest = _cpu_guard_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  cpu-guard: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def cpu_guard_pass(dry_run: bool) -> bool:
+    """Escalate-only CPU/memory-pressure + earlyoom-kill observability (#849).
+
+    Two arms, both WARN-ONLY (never kills / renices / signals a process):
+
+    - (a) **earlyoom kill surfacing** — every tick, threshold-independent:
+      grep the earlyoom journal since the persisted cursor and write one
+      ``kind=earlyoom-kill`` sidecar row per NEW kill (journal-ts+pid key
+      dedup), attributed from the rolling pre-kill snapshot with an explicit
+      ``attribution_status: attributed | unattributed``. Pushes are
+      rate-limited to one per :data:`CPU_GUARD_KILL_PUSH_MIN_INTERVAL_S`
+      (the sidecar keeps full fidelity).
+    - (b) **pressure detection** — streaked rate signals (load5 / PSI, 2
+      consecutive ticks) + the SINGLE-TICK MemAvailable floor (urgent — the
+      pre-kill attribution window). A fire writes one attributed
+      ``kind=vm-cpu-pressure`` row + a deduped push, and stores the
+      top-process snapshot in state for arm (a). Recovery (no hot reasons)
+      resets the episode so a later re-overload fires afresh.
+
+    Daemon-independent; fail-soft throughout (never-raise helpers +
+    ``isinstance`` state guards, per the sibling-pass convention). Returns
+    True when any sidecar row was written this tick."""
+    if not _cpu_guard_enabled():
+        print("  cpu-guard: disabled via EPM_DISABLE_CPU_GUARD_PASS; skipping")
+        return False
+    state = _load_cpu_guard_state()
+    now = time.time()
+    wrote = False
+    kill_arm_ok = True
+
+    # ── (a) earlyoom kill surfacing — EVERY tick, threshold-independent ─────
+    last_scan = state.get("last_journal_epoch")
+    if not isinstance(last_scan, int | float):
+        last_scan = now - 1800  # first-run lookback: DELIBERATE ~30 min bound
+    since = max(last_scan - CPU_GUARD_JOURNAL_OVERLAP_S, now - CPU_GUARD_JOURNAL_MAX_LOOKBACK_S)
+    kills = _earlyoom_kills_since(since, dry_run=dry_run)
+    if kills is None and not dry_run:
+        # VISIBLE degradation (never a silent protection illusion): stderr
+        # line here + a `kill_arm: unavailable` field on any pressure row
+        # fired this tick. Cursor NOT advanced — the next successful scan
+        # re-covers the gap (bounded by CPU_GUARD_JOURNAL_MAX_LOOKBACK_S).
+        kill_arm_ok = False
+        print(
+            "  cpu-guard: earlyoom kill arm unavailable (journalctl failed/missing); "
+            "kill surfacing degraded this tick",
+            file=sys.stderr,
+        )
+    elif kills is not None:
+        seen = {k for k in (state.get("recent_kill_keys") or []) if isinstance(k, str)}
+        raw_snap = state.get("last_top_snapshot")
+        snapshot = raw_snap if isinstance(raw_snap, dict) else None
+        new = [k for k in kills if f"{k['journal_ts']}:{k['pid']}" not in seen]
+        for k in new:
+            issue, status = attribute_kill(k, snapshot)
+            print(
+                f'vm-cpu EARLYOOM KILL: {k["signal"]} pid {k["pid"]} "{k["comm"]}" '
+                f"VmRSS {k['vmrss_mib']} MiB — issue "
+                f"{issue if issue is not None else '?'} ({status})",
+                file=sys.stderr,
+            )
+            _append_cpu_guard_sidecar(
+                {
+                    "kind": "earlyoom-kill",
+                    **k,
+                    "issue": issue,
+                    "attribution_status": status,
+                    "attribution_source": ("pre-kill-snapshot" if status == "attributed" else None),
+                },
+                dry_run,
+            )
+        if new:
+            wrote = True
+            last_push = state.get("last_kill_push_ts")
+            if not isinstance(last_push, int | float):
+                last_push = 0
+            if now - last_push > CPU_GUARD_KILL_PUSH_MIN_INTERVAL_S:
+                head = ", ".join(
+                    f"pid {k['pid']} {k['comm']} ({k['vmrss_mib']} MiB)" for k in new[:3]
+                )
+                _telegram_push(
+                    f"earlyoom killed {len(new)} process(es) (silent exit-143 SIGTERM): "
+                    f"{head} — see .claude/cache/cpu-guard-events.jsonl",
+                    dry_run,
+                )
+                state["last_kill_push_ts"] = now
+        new_keys = [f"{k['journal_ts']}:{k['pid']}" for k in kills]
+        state["recent_kill_keys"] = list(dict.fromkeys(new_keys + sorted(seen)))[:50]
+        state["last_journal_epoch"] = now
+
+    # ── (b) pressure detection: streaked rate signals + single-tick floor ───
+    la = _read_loadavg()
+    load1, load5 = la if la is not None else (None, None)
+    ncpu = os.cpu_count() or 1
+    psi_cpu = _read_psi_avg10("/proc/pressure/cpu", "some")
+    psi_mem = _read_psi_avg10("/proc/pressure/memory", "full")
+    mem_avail = _read_mem_avail_pct()
+    reasons = cpu_tick_hot_reasons(load5, ncpu, psi_cpu, psi_mem, mem_avail)
+    prior_consec = state.get("consecutive_hot")
+    if not isinstance(prior_consec, int):
+        prior_consec = 0
+    raw_last_load5 = state.get("last_alert_load5")
+    raw_last_reasons = state.get("last_alert_reasons")
+    fire, consec = decide_cpu_guard_fire(
+        reasons,
+        prior_consec,
+        bool(state.get("alerted")),
+        raw_last_load5 if isinstance(raw_last_load5, int | float) else None,
+        raw_last_reasons if isinstance(raw_last_reasons, list) else None,
+        load5,
+    )
+    if not reasons:
+        # Recovery -> episode reset (journal-cursor fields preserved) so a
+        # subsequent re-overload fires a SECOND row (test 7b).
+        state.update(
+            consecutive_hot=0, alerted=False, last_alert_load5=None, last_alert_reasons=None
+        )
+    else:
+        state["consecutive_hot"] = consec
+    if fire:
+        top = _top_processes(dry_run=dry_run)
+        # Rolling PRE-KILL snapshot: stored on EVERY fire (incl. mem-avail
+        # single-tick fires) so a subsequent earlyoom kill is attributable —
+        # a killed pid has no /proc/<pid>/cwd left to attribute post-hoc.
+        state["last_top_snapshot"] = {"ts": now, "procs": top}
+        top_txt = ", ".join(
+            f"pid {p['pid']}"
+            + (f" issue-{p['issue']}" if p.get("issue") is not None else "")
+            + f" cpu {p['pcpu']}% rss {p['rss_mib']}M"
+            for p in top[:CPU_GUARD_TOP_N]
+        )
+        print(
+            f"vm-cpu PRESSURE: reasons={','.join(reasons)} load5={load5} nproc={ncpu} "
+            f"psi_cpu_some={psi_cpu} psi_mem_full={psi_mem} mem_avail={mem_avail}% "
+            f"consecutive={consec} — top: {top_txt or 'none'} "
+            "(warn-only; see .claude/cache/cpu-guard-events.jsonl)",
+            file=sys.stderr,
+        )
+        _append_cpu_guard_sidecar(
+            {
+                "kind": "vm-cpu-pressure",
+                "band": "cpu-pressure",
+                "reasons": reasons,
+                "load1": load1,
+                "load5": load5,
+                "nproc": ncpu,
+                "psi_cpu_some_avg10": psi_cpu,
+                "psi_mem_full_avg10": psi_mem,
+                "mem_avail_pct": mem_avail,
+                "consecutive_hot": consec,
+                "top_processes": top,
+                **({} if kill_arm_ok else {"kill_arm": "unavailable"}),
+            },
+            dry_run,
+        )
+        _telegram_push(
+            f"VM CPU/mem pressure ({','.join(reasons)}): load5 {load5} on {ncpu} cores, "
+            f"mem avail {mem_avail}% — warn-only; top: {top_txt or 'n/a'}; "
+            "details in .claude/cache/cpu-guard-events.jsonl",
+            dry_run,
+        )
+        state.update(alerted=True, last_alert_load5=load5, last_alert_reasons=reasons)
+        wrote = True
+    if not dry_run:
+        _save_cpu_guard_state(state)  # streak persistence NEEDS per-tick saves
+    return wrote
 
 
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
@@ -14413,6 +15046,13 @@ def main(argv: list[str] | None = None) -> int:
         "reverted/drifted daemon patch, #726) and exit; skip every other pass. "
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
+    parser.add_argument(
+        "--cpu-guard-only",
+        action="store_true",
+        help="run ONLY the CPU/memory-pressure guard pass (#849) and exit; "
+        "skip every other pass. Daemon-independent; pair with --dry-run for "
+        "a live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -14456,6 +15096,13 @@ def main(argv: list[str] | None = None) -> int:
         happy_patch_pass(args.dry_run)
         return 0
 
+    # --cpu-guard-only mirrors the other --*-only flags: the pass is
+    # daemon-independent (reads /proc + the earlyoom journal only), so run
+    # it alone.
+    if args.cpu_guard_only:
+        cpu_guard_pass(args.dry_run)
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
@@ -14480,6 +15127,13 @@ def main(argv: list[str] | None = None) -> int:
     # data_disk_pass / program_orchestrator_pass), BEFORE the daemon-gated
     # session passes — it must run on a daemon outage too.
     happy_patch_pass(args.dry_run)
+
+    # CPU/memory-pressure guard (#849): escalate-only observability for the
+    # shared VM's compute pressure + silent earlyoom SIGTERM kills (the
+    # 2026-07-02 load-226 incident class). WARN-ONLY — never kills/renices;
+    # daemon-independent (reads /proc + the earlyoom journal only), so it
+    # runs on a daemon outage too.
+    cpu_guard_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy
