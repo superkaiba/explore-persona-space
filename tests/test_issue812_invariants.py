@@ -694,3 +694,353 @@ def test_lane1_validator_and_loader_agree_on_e0_shape(monkeypatch):
     loaded = regrade._parse_reuse_blob(regrade._hf_json("repo", reuse["deception"]), "deception")
     assert loaded == grid
     assert "behavior" not in loaded and "e0" not in loaded, "must be the grid, not the wrapper"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-6 FIX 1 — reliability preflight EXCLUDES a null-ceiling behavior + records
+# its diagnostics (does NOT raise on ANY null); raises ONLY when ALL are null.
+# Round-5 code raised on any null sqrt_r_yy (RuntimeError killed the whole run when
+# deception E0 on base Qwen carried ~no between-context signal → null ceiling).
+# ─────────────────────────────────────────────────────────────────────────────
+def _graded_cell_from_ctx_means(ctx_means, *, n_probes=6, within_sd=3.0, seed=0):
+    """Per-behavior graded cell whose BETWEEN-context signal is set by ``ctx_means``.
+
+    Each context's per-probe means cluster around its ``ctx_means[c]`` (± ``within_sd``
+    within-context noise). Wide, monotone ``ctx_means`` ⇒ a positive split-half
+    correlation ⇒ non-null sqrt(r_yy). Near-constant ``ctx_means`` (deception on base
+    Qwen: per-context sd ~3 on the 0-100 scale) ⇒ split-half r_yy ≤ 0 ⇒ null ceiling.
+    Carries the MF1 structure (probe_scores with completion_scores + draw arrays) AND
+    the ``graded_mean`` the between-context-SD diagnostic reads.
+    """
+    rng = np.random.default_rng(seed)
+    cell = {}
+    for c, mu in enumerate(ctx_means):
+        probes = []
+        for pi in range(n_probes):
+            draws = [float(np.clip(mu + rng.normal(0, within_sd), 0, 100)) for _ in range(8)]
+            cm = float(np.mean(draws))
+            probes.append(
+                {
+                    "probe_idx": pi,
+                    "completion_scores": [cm],
+                    "completions": [
+                        {"completion_idx": 0, "draw_scores": draws, "completion_mean": cm}
+                    ],
+                    "probe_mean": cm,
+                }
+            )
+        gm = float(np.mean([p["probe_mean"] for p in probes]))
+        cell[f"ctx{c}"] = {
+            "context_id": f"ctx{c}",
+            "behavior": "x",
+            "graded_mean": gm,
+            "probe_scores": probes,
+        }
+    return cell
+
+
+def test_preflight_excludes_null_ceiling_behavior_and_records_diagnostics():
+    """One behavior has a degenerate (null-ceiling) E0, another has real signal.
+
+    Round-6 fix: the null-ceiling behavior is RECORDED in reliability_excluded with its
+    measured diagnostics (sqrt_r_yy=None + reason + split_half_r + between_ctx_sd +
+    n_ctx), the signal behavior is NOT excluded, and NO exception is raised (round-5
+    raised on ANY null). This is the exact deception-vs-refusal shape from the crash.
+    """
+    signal = _graded_cell_from_ctx_means(list(np.linspace(10, 90, 20)), seed=1)
+    degen = _graded_cell_from_ctx_means([44.0 + 0.05 * (i % 3) for i in range(20)], seed=2)
+    behaviors = ["refusal", "deception"]
+    reliability = {
+        "refusal": fit._reliability_for_behavior(signal, "refusal", seed=1, n_boot=100),
+        "deception": fit._reliability_for_behavior(degen, "deception", seed=2, n_boot=100),
+    }
+    # sanity: the fixtures realize the intended null/non-null split
+    assert reliability["refusal"]["sqrt_r_yy"] is not None, "signal behavior must have a ceiling"
+    assert reliability["deception"]["sqrt_r_yy"] is None, "degenerate behavior must be null"
+
+    # No raise — exclude-and-record (round-5 would have raised on the deception null)
+    excluded = fit._build_reliability_exclusions(reliability, behaviors)
+
+    assert "deception" in excluded, "null-ceiling behavior must be RECORDED, not raised on"
+    assert "refusal" not in excluded, "the signal behavior's ceiling is unchanged"
+    rec = excluded["deception"]
+    assert rec["sqrt_r_yy"] is None
+    assert "between-context sd" in rec["reason"]
+    # diagnostics carry the actual measured values (why the ceiling is null)
+    assert rec["split_half_r"] is not None and rec["split_half_r"] <= 0.0
+    assert rec["between_ctx_sd"] is not None and rec["between_ctx_sd"] < 5.0
+    assert rec["n_ctx"] == 20
+
+
+def _null_reliability(between_ctx_sd=1.5, split_half_r=-0.3, n_ctx=50):
+    """A reliability entry with a null ceiling + the diagnostic fields the exclude path
+    reads. Built DIRECTLY (not routed through the stochastic split-half estimator) so
+    the all-null terminal branch is tested deterministically."""
+    return {
+        "sqrt_r_yy": None,
+        "between_ctx_sd": between_ctx_sd,
+        "split_half_r": split_half_r,
+        "n_ctx": n_ctx,
+    }
+
+
+def test_preflight_raises_only_when_ALL_behaviors_null():
+    """When EVERY behavior has a null ceiling there is nothing to analyze — the caller's
+    ``len(excluded) == len(behaviors)`` check raises. Round-6 keeps THIS terminal case a
+    hard failure while exclude-and-recording the mixed case above.
+
+    The reliability entries are built directly (both null) so the terminal branch is
+    exercised deterministically; the estimator's stochastic null is covered by
+    ``test_preflight_excludes_null_ceiling_behavior_and_records_diagnostics``."""
+    behaviors = ["deception", "harmful_compliance"]
+    reliability = {b: _null_reliability() for b in behaviors}
+    excluded = fit._build_reliability_exclusions(reliability, behaviors)
+    # ALL behaviors excluded → the main() guard (len(excluded) == len(behaviors)) raises.
+    assert set(excluded) == set(behaviors)
+    assert len(excluded) == len(behaviors)
+
+
+def test_build_exclusions_empty_when_all_ceilings_present():
+    """The mirror invariant: with every behavior carrying a non-null ceiling the
+    exclusions map is EMPTY (no behavior dropped from Delta-rho interpretation)."""
+    behaviors = ["refusal", "sycophancy"]
+    reliability = {
+        b: {"sqrt_r_yy": 0.8, "between_ctx_sd": 20.0, "split_half_r": 0.6, "n_ctx": 50}
+        for b in behaviors
+    }
+    assert fit._build_reliability_exclusions(reliability, behaviors) == {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-6 FIX 2 — Phase-2 idempotence guard: both graded-E0 outputs present with a
+# matching FULL recipe → SKIP the ~500K-call re-judge (restore-from-HF relaunch),
+# never re-bill; a partial / mismatched state falls through to the full run.
+# ─────────────────────────────────────────────────────────────────────────────
+def _write_graded_output(
+    path: Path, *, n_draws=8, judge_model="claude-sonnet-4-5-20250929", n_contexts=50, issue=812
+):
+    import json
+
+    meta = {
+        "issue": issue,
+        "git_commit": "abc123",
+        "n_draws": n_draws,
+        "judge_model": judge_model,
+        "n_contexts": n_contexts,
+        "schema": "graded_e0_v1_mf1",
+    }
+    path.write_text(json.dumps({"meta": meta, "behaviors": ["x"], "e0": {}}))
+
+
+def test_idempotence_guard_skips_when_both_present_and_matching(tmp_path):
+    """Both graded_e0_{highm,lowm}.json present with matching recipe (issue=812, n_draws=8,
+    sonnet judge, n_contexts=50) → the guard returns skip=True + the prior git_commit."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json")
+    _write_graded_output(tmp_path / "graded_e0_lowm.json")
+    skip, commit = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is True
+    assert commit == "abc123"
+
+
+def test_idempotence_guard_falls_through_on_meta_mismatch(tmp_path):
+    """A meta that mismatches the expected recipe (e.g. n_draws=4 smoke output) →
+    skip=False (fall through to the normal full run — never silently reuse a wrong
+    grid). Tested at the guard-function level."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json", n_draws=4)  # smoke recipe
+    _write_graded_output(tmp_path / "graded_e0_lowm.json", n_draws=4)
+    skip, commit = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,  # the FULL recipe expects 8
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+    assert commit is None
+
+
+def test_idempotence_guard_falls_through_when_only_one_present(tmp_path):
+    """Only one of the two graded-E0 outputs present (partial state) → skip=False."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json")  # lowm absent
+    skip, _commit = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+
+
+def test_idempotence_guard_falls_through_on_wrong_n_contexts(tmp_path):
+    """A full-recipe output written for n_contexts != 50 (e.g. a prior 12-context run)
+    must NOT satisfy the full-production idempotence gate."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json", n_contexts=12)
+    _write_graded_output(tmp_path / "graded_e0_lowm.json", n_contexts=12)
+    skip, _ = regrade._e0_outputs_present_and_matching(
+        tmp_path,
+        expected_n_draws=8,
+        expected_judge_model="claude-sonnet-4-5-20250929",
+        expected_n_contexts=50,
+    )
+    assert skip is False
+
+
+def test_main_skips_rejudge_without_calling_judge_when_outputs_present(tmp_path, monkeypatch):
+    """End-to-end: a FULL production relaunch (default args) with both graded-E0 outputs
+    already present returns 0 WITHOUT any judge call OR HF listing — the ~500K-call
+    Phase-2 re-judge is skipped. The judge + repo-listing are monkeypatched to raise, so
+    reaching either fails the test (round-5 had no guard → the full re-judge re-ran)."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json")
+    _write_graded_output(tmp_path / "graded_e0_lowm.json")
+
+    def _boom_judge(*a, **k):
+        raise AssertionError("judge_completions_batch called — idempotence guard failed to skip")
+
+    def _boom_list(*a, **k):
+        raise AssertionError("_list_repo called — idempotence guard should skip before HF listing")
+
+    monkeypatch.setattr(regrade, "judge_completions_batch", _boom_judge)
+    monkeypatch.setattr(regrade, "_list_repo", _boom_list)
+    monkeypatch.setattr(regrade, "load_dotenv", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["issue812_regrade_e0.py", "--out-dir", str(tmp_path)])
+    rc = regrade.main()
+    assert rc == 0
+
+
+def test_main_reaches_normal_path_on_meta_mismatch(tmp_path, monkeypatch):
+    """A smoke-recipe present state (n_draws=4) must NOT be short-circuited: main() must
+    proceed past the guard toward the normal run. We prove it reaches the guard's
+    fall-through by monkeypatching _list_repo to a sentinel that records it was called
+    (and then raising a controlled marker so we don't actually judge)."""
+    _write_graded_output(tmp_path / "graded_e0_highm.json", n_draws=4)
+    _write_graded_output(tmp_path / "graded_e0_lowm.json", n_draws=4)
+    reached = {"list": False}
+
+    class _Reached(RuntimeError):
+        pass
+
+    def _mark_list(*a, **k):
+        reached["list"] = True
+        raise _Reached("reached normal path")
+
+    monkeypatch.setattr(regrade, "_list_repo", _mark_list)
+    monkeypatch.setattr(regrade, "load_dotenv", lambda: None)
+    # FULL default recipe (n_draws default 8) but outputs were written at n_draws=4 →
+    # meta mismatch → guard falls through → _list_repo IS reached.
+    monkeypatch.setattr(sys, "argv", ["issue812_regrade_e0.py", "--out-dir", str(tmp_path)])
+    with pytest.raises(_Reached):
+        regrade.main()
+    assert reached["list"] is True, "main() must proceed past the idempotence guard"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-6 FIX 3 — --restore-partial stages the crash-trap's harvested
+# graded_e0_{highm,lowm}.json from HF into out_dir BEFORE the idempotence gate, so a
+# FRESH-instance relaunch reuses them and NEVER re-submits ~$500 of judge batches.
+# Fail-loud on a partial / corrupt restore (a silent re-judge is the ~$500 loss).
+# ─────────────────────────────────────────────────────────────────────────────
+def _stub_hf_download_from_dir(source_dir: Path):
+    """A ``hf_hub_download`` stub that serves files from a local ``source_dir`` keyed by
+    basename (the crash-trap's harvested-outputs mirror), raising on an absent file."""
+
+    def _dl(repo, path_in_repo, *, repo_type=None, **kw):
+        src = source_dir / Path(path_in_repo).name
+        if not src.exists():
+            raise FileNotFoundError(f"{path_in_repo} absent in stub HF mirror")
+        return str(src)
+
+    return _dl
+
+
+def test_restore_partial_stages_both_files_then_gate_skips(tmp_path, monkeypatch):
+    """A relaunch on a FRESH instance (empty out_dir) with --restore-partial <prefix>
+    downloads BOTH graded-E0 outputs from HF, and the idempotence gate then skips the
+    ~500K-call re-judge WITHOUT any judge call or HF listing (the ~$500 is never re-billed).
+    The judge + repo-listing are monkeypatched to raise so reaching either fails the test."""
+    import huggingface_hub
+
+    harvest = tmp_path / "hf_mirror"
+    harvest.mkdir()
+    _write_graded_output(harvest / "graded_e0_highm.json")
+    _write_graded_output(harvest / "graded_e0_lowm.json")
+    out_dir = tmp_path / "eval_results_issue_812"  # starts EMPTY (fresh instance)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _stub_hf_download_from_dir(harvest))
+
+    def _boom_judge(*a, **k):
+        raise AssertionError("judge_completions_batch called — restore+gate failed to skip")
+
+    def _boom_list(*a, **k):
+        raise AssertionError("_list_repo called — restore+gate should skip before HF listing")
+
+    monkeypatch.setattr(regrade, "judge_completions_batch", _boom_judge)
+    monkeypatch.setattr(regrade, "_list_repo", _boom_list)
+    monkeypatch.setattr(regrade, "load_dotenv", lambda: None)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue812_regrade_e0.py",
+            "--out-dir",
+            str(out_dir),
+            "--restore-partial",
+            "issue812_partial/att-20260701-232740/eval_results_issue_812",
+        ],
+    )
+    rc = regrade.main()
+    assert rc == 0
+    # both files landed locally so a subsequent run is also idempotent
+    assert (out_dir / "graded_e0_highm.json").exists()
+    assert (out_dir / "graded_e0_lowm.json").exists()
+
+
+def test_restore_partial_helper_stages_files_and_returns_paths(tmp_path, monkeypatch):
+    """The restore helper writes both files into out_dir and returns their local paths."""
+    import huggingface_hub
+
+    harvest = tmp_path / "hf_mirror"
+    harvest.mkdir()
+    _write_graded_output(harvest / "graded_e0_highm.json")
+    _write_graded_output(harvest / "graded_e0_lowm.json")
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _stub_hf_download_from_dir(harvest))
+
+    written = regrade._restore_partial_e0(
+        "superkaiba1/explore-persona-space-data",
+        "issue812_partial/att-20260701-232740/eval_results_issue_812",
+        out_dir,
+    )
+    assert len(written) == 2
+    assert (out_dir / "graded_e0_highm.json").exists()
+    assert (out_dir / "graded_e0_lowm.json").exists()
+
+
+def test_restore_partial_fails_loud_on_missing_meta(tmp_path, monkeypatch):
+    """A restored output lacking a 'meta' block RAISES — a partial/corrupt restore must
+    never be silently accepted (the idempotence gate would then re-judge, re-billing ~$500)."""
+    import json
+
+    import huggingface_hub
+
+    harvest = tmp_path / "hf_mirror"
+    harvest.mkdir()
+    (harvest / "graded_e0_highm.json").write_text(json.dumps({"behaviors": ["x"]}))  # no meta
+    (harvest / "graded_e0_lowm.json").write_text(json.dumps({"behaviors": ["x"]}))
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _stub_hf_download_from_dir(harvest))
+
+    with pytest.raises(RuntimeError, match="no 'meta' block"):
+        regrade._restore_partial_e0(
+            "superkaiba1/explore-persona-space-data",
+            "issue812_partial/att-20260701-232740/eval_results_issue_812",
+            tmp_path / "out",
+        )
+
+
+def test_restore_partial_fails_loud_on_empty_prefix(tmp_path):
+    """An empty --restore-partial prefix RAISES rather than silently no-op'ing."""
+    with pytest.raises(RuntimeError, match="empty HF prefix"):
+        regrade._restore_partial_e0("superkaiba1/explore-persona-space-data", "", tmp_path / "out")

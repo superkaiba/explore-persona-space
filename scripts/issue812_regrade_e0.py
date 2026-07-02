@@ -701,6 +701,133 @@ def _judge_behavior(
     return result
 
 
+def _meta_matches_recipe(
+    meta: dict, *, expected_n_draws: int, expected_judge_model: str, expected_n_contexts: int
+) -> bool:
+    """True iff a graded-E0 output's ``meta`` matches the FULL expected recipe.
+
+    Checks ``issue == 812``, ``n_draws``, ``judge_model``, and ``n_contexts`` (checkpoint-
+    per-phase idempotence: a partial / mismatched state must re-run, never silently
+    reuse). ``schema`` is not gated (a schema bump is caught by the fit script's own
+    reader); the four recipe keys are what determine whether the existing ~500K-call
+    judge outputs answer THIS invocation's question.
+    """
+    return bool(
+        meta.get("issue") == 812
+        and meta.get("n_draws") == expected_n_draws
+        and meta.get("judge_model") == expected_judge_model
+        and meta.get("n_contexts") == expected_n_contexts
+    )
+
+
+def _e0_outputs_present_and_matching(
+    out_dir: Path,
+    *,
+    expected_n_draws: int,
+    expected_judge_model: str,
+    expected_n_contexts: int,
+) -> tuple[bool, str | None]:
+    """Idempotence gate: are BOTH graded-E0 outputs present with a matching FULL recipe?
+
+    Returns ``(skip, git_commit)``. ``skip`` is True ONLY when BOTH
+    ``graded_e0_highm.json`` AND ``graded_e0_lowm.json`` exist AND both metas match the
+    expected recipe (``_meta_matches_recipe``). If only one exists, either is
+    unreadable, or a meta mismatches → ``(False, None)`` (fall through to the full run;
+    fail-loud is preserved — a partial / mismatched state re-runs rather than silently
+    reusing a wrong grid). ``git_commit`` (from the highm meta) is returned for logging
+    the skip.
+
+    This lets a relaunch that restored the crash-trap's ~500K-call Phase-2 outputs from
+    HF (``issue812_partial/<attempt>/eval_results_issue_812/``) SKIP the re-judge and
+    re-bill ~$500 of batch judging (CLAUDE.md checkpoint-per-phase).
+    """
+    highm = out_dir / "graded_e0_highm.json"
+    lowm = out_dir / "graded_e0_lowm.json"
+    if not (highm.exists() and lowm.exists()):
+        return False, None
+    try:
+        highm_meta = json.loads(highm.read_text()).get("meta", {})
+        lowm_meta = json.loads(lowm.read_text()).get("meta", {})
+    except (OSError, json.JSONDecodeError):
+        # An unreadable / malformed output is a mismatched state — re-run.
+        return False, None
+    match = _meta_matches_recipe(
+        highm_meta,
+        expected_n_draws=expected_n_draws,
+        expected_judge_model=expected_judge_model,
+        expected_n_contexts=expected_n_contexts,
+    ) and _meta_matches_recipe(
+        lowm_meta,
+        expected_n_draws=expected_n_draws,
+        expected_judge_model=expected_judge_model,
+        expected_n_contexts=expected_n_contexts,
+    )
+    if not match:
+        return False, None
+    return True, highm_meta.get("git_commit")
+
+
+# Names of the two graded-E0 outputs the idempotence gate + restore operate on.
+_GRADED_E0_FILES = ("graded_e0_highm.json", "graded_e0_lowm.json")
+
+
+def _restore_partial_e0(repo: str, hf_prefix: str, out_dir: Path) -> list[str]:
+    """Download the harvested graded-E0 outputs from an HF prefix into ``out_dir``.
+
+    A FULL production relaunch runs on a FRESH instance, so ``out_dir`` starts empty
+    and the idempotence gate below would NOT fire — Phase 2 would re-submit ~$500 of
+    judge batches. This restore path downloads ONLY ``graded_e0_{highm,lowm}.json``
+    from the crash-trap's Phase-2 harvest (``<hf_prefix>/<file>`` in the dataset repo)
+    into ``out_dir`` BEFORE the gate check, so the gate sees the matching recipe and
+    skips the re-judge.
+
+    ``hf_prefix`` is the dataset-repo directory holding the two files, e.g.
+    ``issue812_partial/att-20260701-232740/eval_results_issue_812``. Fail-loud: a
+    missing file, an unreadable JSON, or an output lacking a ``meta`` block RAISES
+    (a partial / corrupt restore must never be silently accepted — the gate would
+    then fall through to a full re-judge, re-billing ~$500). Returns the list of
+    local paths written (both files). This does NOT itself decide the skip — it only
+    stages the files; the idempotence gate re-validates the metas independently.
+    """
+    from huggingface_hub import hf_hub_download
+
+    prefix = hf_prefix.strip().rstrip("/")
+    if not prefix:
+        raise RuntimeError("--restore-partial given an empty HF prefix")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: list[str] = []
+    for fname in _GRADED_E0_FILES:
+        path_in_repo = f"{prefix}/{fname}"
+        local = hf_hub_download(repo, path_in_repo, repo_type="dataset")
+        try:
+            obj = json.loads(Path(local).read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"restored {path_in_repo} is unreadable ({exc}) — refusing a partial "
+                "restore (the idempotence gate would then re-judge, re-billing ~$500)"
+            ) from exc
+        meta = obj.get("meta")
+        if not isinstance(meta, dict) or not meta:
+            raise RuntimeError(
+                f"restored {path_in_repo} has no 'meta' block — cannot verify the recipe; "
+                "refusing a partial restore"
+            )
+        dest = out_dir / fname
+        dest.write_text(json.dumps(obj))
+        written.append(str(dest))
+        logger.info(
+            "restored %s -> %s (meta: issue=%s n_draws=%s judge=%s n_contexts=%s git_commit=%s)",
+            path_in_repo,
+            dest,
+            meta.get("issue"),
+            meta.get("n_draws"),
+            meta.get("judge_model"),
+            meta.get("n_contexts"),
+            meta.get("git_commit"),
+        )
+    return written
+
+
 def _resolve_ctx_ids(repo: str, files: list[str], out_dir: Path) -> list[str]:
     """Context ids in the CANONICAL answer_spans order, or a local hint (offline smoke).
 
@@ -768,6 +895,17 @@ def main() -> int:
         action="store_true",
         help="skip the opportunistic-reuse listing (offline smoke)",
     )
+    ap.add_argument(
+        "--restore-partial",
+        default="",
+        help=(
+            "HF dataset-repo prefix holding the crash-trap's harvested "
+            "graded_e0_{highm,lowm}.json (e.g. "
+            "issue812_partial/att-20260701-232740/eval_results_issue_812). When set, "
+            "download BOTH into --out-dir BEFORE the idempotence gate so a fresh-instance "
+            "relaunch reuses them and NEVER re-submits ~$500 of judge batches."
+        ),
+    )
     args = ap.parse_args()
 
     assert args.judge_model == JUDGE_MODEL, (
@@ -779,6 +917,51 @@ def main() -> int:
     )
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── Restore harvested Phase-2 outputs (fresh-instance relaunch) ─────────────
+    # A relaunch runs on a FRESH instance with an empty out_dir, so the idempotence
+    # gate below cannot fire on its own — Phase 2 would re-bill ~$500 of judge batches.
+    # --restore-partial stages the crash-trap's harvested graded_e0_{highm,lowm}.json
+    # from HF into out_dir FIRST; the gate then re-validates their metas and skips the
+    # re-judge. Fail-loud on a partial / corrupt restore (never a silent re-judge).
+    if args.restore_partial:
+        _restore_partial_e0(args.repo, args.restore_partial, out_dir)
+
+    # ── Idempotence gate (checkpoint-per-phase) ─────────────────────────────────
+    # A FULL production relaunch that restored the crash-trap's ~500K-call Phase-2
+    # graded-E0 outputs from HF must SKIP the re-judge (else ~$500 of batch judging is
+    # re-billed for identical output). Only short-circuit a FULL production invocation:
+    # default n_draws=8, default sonnet judge, all 8 behaviors, no --max-contexts limit,
+    # and not a dry-run. A smoke / subset / restricted invocation (a different recipe or
+    # a different N) MUST fall through to the normal run. The guard itself additionally
+    # requires BOTH output files present with metas matching (issue/n_draws/judge_model/
+    # n_contexts) — a partial / mismatched state re-runs, never silently reuses.
+    FULL_N_CONTEXTS = 50  # the production n=50 (plan §4.2); a smaller run is a smoke
+    is_full_invocation = (
+        not args.dry_run
+        and args.max_contexts is None
+        and not args.behaviors
+        and args.n_draws == N_DRAWS
+        and args.judge_model == JUDGE_MODEL
+    )
+    if is_full_invocation:
+        skip, prior_commit = _e0_outputs_present_and_matching(
+            out_dir,
+            expected_n_draws=args.n_draws,
+            expected_judge_model=args.judge_model,
+            expected_n_contexts=FULL_N_CONTEXTS,
+        )
+        if skip:
+            logger.info(
+                "graded E0 outputs already present (git_commit %s) — skipping re-judge "
+                "(idempotence gate: both graded_e0_{highm,lowm}.json present with matching "
+                "recipe issue=812 n_draws=%d judge=%s n_contexts=%d)",
+                prior_commit or "unknown",
+                args.n_draws,
+                args.judge_model,
+                FULL_N_CONTEXTS,
+            )
+            return 0
 
     files = [] if args.skip_lane1 else _list_repo(args.repo)
     reuse = {} if args.skip_lane1 else _lane1_reuse_map(args.repo, behaviors, files)

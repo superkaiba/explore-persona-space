@@ -325,7 +325,8 @@ def _split_half_ryy(
     seed: int,
     n_splits: int = 50,
     ctx_subset: list[str] | None = None,
-) -> float | None:
+    return_r_half: bool = False,
+) -> float | None | tuple[float | None, float | None]:
     """sqrt(r_yy): split-half over the SPLITTABLE UNIT within each context, corrected.
 
     per_ctx_units: {ctx: [ [unit_values...], ... ]} where each context has a LIST of
@@ -335,12 +336,17 @@ def _split_half_ryy(
     halvings, Spearman-Brown-correct, and return sqrt(reliability). None if no
     context has >=2 splittable units (undefined split). ``ctx_subset`` (for the
     bootstrap-CI resamples) restricts the correlation to a given multiset of contexts.
+
+    When ``return_r_half`` is True, returns ``(sqrt_r_yy_or_None, r_half_or_None)`` —
+    the second element is the mean uncorrected split-half Spearman across contexts,
+    the honest diagnostic for WHY a null ceiling arose (a degenerate target with ~no
+    between-context signal drives ``r_half`` <= 0 → Spearman-Brown r_yy <= 0 → null).
     """
     avail = [c for c, u in per_ctx_units.items() if len(u) >= 2]
     ctx_ids = ctx_subset if ctx_subset is not None else avail
     ctx_ids = [c for c in ctx_ids if c in per_ctx_units and len(per_ctx_units[c]) >= 2]
     if len(ctx_ids) < 4:
-        return None
+        return (None, None) if return_r_half else None
     rng = random.Random(seed)
     rs: list[float] = []
     for _ in range(n_splits):
@@ -363,12 +369,13 @@ def _split_half_ryy(
         if r is not None:
             rs.append(r)
     if not rs:
-        return None
+        return (None, None) if return_r_half else None
     r_half = float(np.mean(rs))
     r_yy = _spearman_brown(r_half)
     if r_yy is None or math.isnan(r_yy) or r_yy <= 0:
-        return None
-    return math.sqrt(min(r_yy, 1.0))
+        return (None, r_half) if return_r_half else None
+    ryy = math.sqrt(min(r_yy, 1.0))
+    return (ryy, r_half) if return_r_half else ryy
 
 
 def _bootstrap_ryy_ci(
@@ -488,7 +495,7 @@ def _reliability_for_behavior(graded_cell: dict, behavior: str, *, seed: int, n_
     """
     primary_units, draws_by_ctx, label = _units_for_behavior(graded_cell, behavior)
 
-    primary = _split_half_ryy(primary_units, seed=seed)
+    primary, split_half_r = _split_half_ryy(primary_units, seed=seed, return_r_half=True)
     over_draws = _split_half_ryy(draws_by_ctx, seed=seed + 1)
     ci = (
         _bootstrap_ryy_ci(primary_units, seed=seed + 2, n_boot=n_boot)
@@ -496,6 +503,20 @@ def _reliability_for_behavior(graded_cell: dict, behavior: str, *, seed: int, n_
         else None
     )
     binom_var = _binomial_variance_term(graded_cell)
+
+    # Between-context signal diagnostics (why a null ceiling arose): SD of the
+    # per-context graded_mean on the 0-100 scale + the context count. A degenerate
+    # target with ~no between-context variance (deception E0 on base Qwen, sd~3)
+    # cannot support a positive split-half correlation → null sqrt(r_yy).
+    ctx_means = [
+        float(cell["graded_mean"])
+        for cell in graded_cell.values()
+        if cell.get("graded_mean") is not None
+    ]
+    n_ctx = len(ctx_means)
+    between_ctx_sd = (
+        float(np.std(np.array(ctx_means, dtype=np.float64), ddof=1)) if n_ctx >= 2 else None
+    )
 
     # Reliability bracket [lo, hi]: the CI when available; else pair the point estimate
     # with the binomial-variance-attenuated ceiling as a coarse lower bracket. The
@@ -524,7 +545,40 @@ def _reliability_for_behavior(graded_cell: dict, behavior: str, *, seed: int, n_
         "bracket_hi": bracket_hi,
         "bracket_source": bracket_source,
         "sqrt_r_yy_over_judge_draws_crosscheck": over_draws,
+        "split_half_r": split_half_r,
+        "between_ctx_sd": between_ctx_sd,
+        "n_ctx": n_ctx,
     }
+
+
+def _build_reliability_exclusions(
+    reliability: dict[str, dict], behaviors: list[str]
+) -> dict[str, dict]:
+    """Preflight exclude-and-record: which behaviors have a null reliability ceiling.
+
+    MF2 gates INTERPRETING Delta-rho against a non-null in-range ceiling FOR A GIVEN
+    BEHAVIOR — it does NOT require every behavior to have one. A behavior with a null
+    ``sqrt_r_yy`` (a degenerate target with ~no between-context signal — deception E0 on
+    base Qwen) is EXCLUDED from any Delta-rho-vs-ceiling interpretation and RECORDED
+    here with its measured diagnostics (``split_half_r`` / ``between_ctx_sd`` / ``n_ctx``),
+    NOT raised on. The caller RAISES only when EVERY behavior is null (nothing to
+    analyze). Returns ``{behavior: {sqrt_r_yy: None, reason, split_half_r, between_ctx_sd,
+    n_ctx}}`` for the excluded behaviors (empty when all ceilings are non-null).
+    """
+    excluded: dict[str, dict] = {}
+    for beh in behaviors:
+        r = reliability[beh]
+        if r["sqrt_r_yy"] is None:
+            sd = r.get("between_ctx_sd")
+            sd_str = f"{sd:.3g}" if sd is not None else "undefined"
+            excluded[beh] = {
+                "sqrt_r_yy": None,
+                "reason": f"split-half r_yy <= 0 (between-context sd {sd_str})",
+                "split_half_r": r.get("split_half_r"),
+                "between_ctx_sd": sd,
+                "n_ctx": r.get("n_ctx"),
+            }
+    return excluded
 
 
 # ── learning-curve contexts-needed extrapolation (per #742 Stage-2 / CONCERN 6) ─
@@ -910,21 +964,53 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     fig_dir = Path(args.fig_dir)
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Preflight: sqrt(r_yy) non-null for ALL requested behaviors (MF2 gate) ──
+    # ── Preflight: sqrt(r_yy) reliability ceiling per behavior (MF2 gate) ──
+    # MF2 gates INTERPRETING Delta-rho against a non-null in-range ceiling FOR A GIVEN
+    # BEHAVIOR — it does NOT require every behavior to have one. A behavior whose graded
+    # E0 carries ~no between-context signal (deception on base Qwen: per-context sd~3 on
+    # the 0-100 scale, vs 8-27 for the others) has an undefined split-half correlation →
+    # Spearman-Brown r_yy <= 0 → null sqrt(r_yy). That is a REAL property of the target
+    # (analogous to the pre-registered broad_em floor exclusion, plan §4.2), not a run
+    # failure. So: EXCLUDE such a behavior from any Delta-rho-vs-ceiling interpretation,
+    # RECORD it (with its measured diagnostics) under ``reliability_excluded``, and keep
+    # its per-cell fits (the raw rho values are honest data — they are just never
+    # normalized against a null ceiling). RAISE only if ALL behaviors are null (nothing
+    # left to analyze).
     reliability: dict[str, dict] = {}
     for beh in behaviors:
         rel = _reliability_for_behavior(graded[beh], beh, seed=args.seed, n_boot=args.n_bootstrap)
         reliability[beh] = rel
-    null_ryy = [b for b, r in reliability.items() if r["sqrt_r_yy"] is None]
-    if null_ryy:
-        raise RuntimeError(
-            f"reliability preflight FAILED: sqrt(r_yy) is null for {null_ryy} "
-            "(MF2 requires a non-null in-range ceiling for every behavior before any "
-            "Delta-rho is interpreted against it)"
+    reliability_excluded = _build_reliability_exclusions(reliability, behaviors)
+    for beh, rec in reliability_excluded.items():
+        logger.warning(
+            "reliability ceiling null for %s — excluded from Delta-rho interpretation "
+            "(split_half_r=%s, between_ctx_sd=%s, n_ctx=%s); per-cell fits still computed",
+            beh,
+            rec["split_half_r"],
+            rec["between_ctx_sd"],
+            rec["n_ctx"],
         )
-    logger.info(
-        "Reliability preflight PASS: sqrt(r_yy) non-null for all %d behaviors", len(behaviors)
-    )
+    if len(reliability_excluded) == len(behaviors):
+        raise RuntimeError(
+            "reliability preflight FAILED: sqrt(r_yy) is null for ALL behaviors "
+            f"{list(reliability_excluded)} — no behavior has an in-range ceiling to "
+            "interpret Delta-rho against, so there is nothing to analyze"
+        )
+    n_kept = len(behaviors) - len(reliability_excluded)
+    if reliability_excluded:
+        logger.warning(
+            "Reliability preflight: %d/%d behaviors have a non-null ceiling; "
+            "%d excluded from Delta-rho interpretation: %s",
+            n_kept,
+            len(behaviors),
+            len(reliability_excluded),
+            list(reliability_excluded),
+        )
+    else:
+        logger.info(
+            "Reliability preflight PASS: sqrt(r_yy) non-null for all %d behaviors",
+            len(behaviors),
+        )
 
     all_ops = ["mean"] + [o for o in POOL_OPS if o != "mean"] + PCA_OPS + ["unpooled"]
     results: dict[str, dict] = {}
@@ -1021,13 +1107,22 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
             "shuffle_null_p97_5_vs_mean_pca": sel_unpooled_meanpca["null_max_over_layer_p97_5"],
         }
         # "worked" verdict per plan §6: unpooled helps iff Delta(unpooled - mean_pca)
-        # max-over-layer > shuffle p97.5 AND gap < sqrt(r_yy).
+        # max-over-layer > shuffle p97.5 AND gap < sqrt(r_yy). A behavior with a null
+        # reliability ceiling is EXCLUDED from this Delta-rho-vs-ceiling interpretation
+        # (there is no ceiling to compare the gap against) — its verdict is None
+        # (uninterpretable), NOT a vacuous True from ``d < ryy`` being trivially
+        # satisfied when ryy is None. The per-cell rho fits are still stored above.
         d = results[beh]["delta_rho_unpooled_vs_mean_pca_max"]
         p = results[beh]["shuffle_null_p97_5_vs_mean_pca"]
         ryy = reliability[beh]["sqrt_r_yy"]
-        results[beh]["unpooling_helps"] = bool(
-            math.isfinite(d) and math.isfinite(p) and d > p and (ryy is None or d < ryy)
-        )
+        if beh in reliability_excluded:
+            results[beh]["reliability_excluded"] = True
+            results[beh]["unpooling_helps"] = None
+        else:
+            results[beh]["reliability_excluded"] = False
+            results[beh]["unpooling_helps"] = bool(
+                math.isfinite(d) and math.isfinite(p) and d > p and d < ryy
+            )
 
         # BLOCKER 3(b): checkpoint pooling_fit_results.json after EACH behavior lands
         # (atomic .tmp + os.replace) so a crash on a later behavior/cell never loses
@@ -1050,6 +1145,7 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
                 },
                 "results": results,
                 "reliability": reliability,
+                "reliability_excluded": reliability_excluded,
                 "learning_curve": {},
                 "reconstruction": {},
             },
@@ -1202,6 +1298,7 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
         "meta": meta,
         "results": results,
         "reliability": reliability,
+        "reliability_excluded": reliability_excluded,
         "learning_curve": learning_curve,
         "reconstruction": reconstruction,
     }
@@ -1212,7 +1309,12 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     rel_path = out_dir / "reliability_and_learning_curve.json"
     _atomic_write_json(
         rel_path,
-        {"meta": meta, "reliability": reliability, "learning_curve": learning_curve},
+        {
+            "meta": meta,
+            "reliability": reliability,
+            "reliability_excluded": reliability_excluded,
+            "learning_curve": learning_curve,
+        },
     )
     logger.info("WROTE %s", rel_path)
 
