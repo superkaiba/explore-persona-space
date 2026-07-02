@@ -351,7 +351,23 @@ controlling TTY (a live user terminal), and sessions whose transcript cannot
 be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
-task to carry a marker). **#720 short-window subclass:** an unmapped session
+task to carry a marker). **#818 orphaned-tmux subclass:** a pane on an ORPHANED
+tmux server (the server's socket was deleted from `$TMUX_TMPDIR/tmux-<uid>` so
+NO new client can attach, AND the server holds zero `/dev/pts` attached-client
+fds) is NOT a live terminal — that pane is unreachable by construction, so
+`_is_live_user_tty` no longer counts it as live and the idle-≥12h wrapper on it
+is reaped on the same ≥2-consecutive-miss schedule as everything else. The
+mapping is process PARENTAGE (walk the wrapper's `ppid` chain for a
+`comm == "tmux: server"` ancestor — the pane leaders are its child processes),
+NOT the server's fd table. BOTH signals are required — a socketless-BUT-attached
+server (e.g. a systemd-tmpfiles atime sweep of `/tmp/tmux-<uid>/` under a live
+SSH session leaves the established connection intact) still holds ≥1 client fd
+and is KEPT. Every uncertain probe (tmux absent, unreadable
+`/proc/<pid>/stat` or `/proc/<pid>/comm`, unreadable socket dir, unreadable
+server fd dir, a ppid-walk cycle, depth exhaustion, no `tmux: server`
+ancestor) FAILS TOWARD KEEP. Gated by the
+default-ON `EPM_ORPHANED_TMUX_REAP` kill-switch (`=0` disables the widening,
+same shape as `EPM_UNMAPPED_IDLE_REAP`). **#720 short-window subclass:** an unmapped session
 whose LAST-mapped task was TERMINAL — the "zombie session on a completed task"
 ghost class (the respawn pass deletes `issue-<N>.json` at terminal → the
 session goes unmapped, and its repo-root cwd can't re-map it) — is reaped on

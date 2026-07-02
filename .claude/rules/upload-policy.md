@@ -54,6 +54,30 @@ permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
 Step 2.8 cross-references the plan's analysis / control sections and FAILs on
 any plan-named input without a permanent URL.
 
+**Persist by default; a discard needs a recorded justification (#779).** The
+always-on Upload Policy states the principle; the mechanics: **text/JSON
+uploads unconditionally** (rollout text, judge outputs, metrics, configs are
+non-LFS in the data repo — the #541 quota gate fires ONLY on LFS, so this path
+stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
+<9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
+>10 MB blob to LFS regardless of extension). **Large tensors upload when cheap;
+when too big for LFS at current headroom, persist the TEXT they were derived
+from** so the tensor is regenerable via one teacher-forced forward pass — this
+is the size-aware form of persist-by-default, and it composes with the #541
+overflow routing below (the LFS artifact routes to the private overflow repo
+when known-over-ceiling; its regenerating text stays on the public non-LFS
+path). A DELIBERATE discard — a candidate ONLY for a large intermediate TENSOR,
+never text/JSON — is declared in the plan §10 `discarded_artifacts:` slot
+(`{name, reason, regen_recipe}`); the upload-verifier FAILs a model-generation
+discard whether undeclared (`generation-discarded-undeclared`) or invalidly
+declared via a text-naming entry (`generation-discard-declared-invalid`) — its
+Step 3 generation-discard gate. Stream-reduce memory-safety (RunningMean /
+`_HfStreamSpanSource`) is UNCHANGED — it persists the rollout text it reduced;
+it does not re-materialize the whole activation grid (#666/#772). Driving
+incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
+rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
+not under `raw_completions/`), so a sibling arm had to regenerate.
+
 **Resume-critical pipeline INPUTS must upload before any deliberate
 `pod.py stop` that expects a later resume.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,
