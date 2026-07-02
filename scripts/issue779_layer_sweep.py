@@ -112,15 +112,19 @@ def _per_condition_r_by_layer(monitors_by_layer, mat_by_layer, meth, mode):
     Condition indices are consistent across layers (build_eval_matrix assigns
     cond ids deterministically in first-seen cell order, identical per layer).
 
-    Returns (r_matrix (n_layers, n_conditions), cond_ids (n_conditions,)).
+    Returns (r_matrix (n_built_layers, n_conditions), cond_ids (n_conditions,)).
+    The row order is ``sorted(monitors_by_layer)`` — the BUILT layer indices,
+    which may be a subset under --layers (a real run builds all 28).
     """
-    n_layers = len(monitors_by_layer)
-    # condition ids present in this mode (from layer 0's mat; identical across layers)
-    mat0 = mat_by_layer[0]
+    built = sorted(monitors_by_layer)
+    n_layers = len(built)
+    # condition ids present in this mode (from the first built layer's mat;
+    # identical across layers — build_eval_matrix assigns cond ids deterministically).
+    mat0 = mat_by_layer[built[0]]
     sel0 = np.array([m == mode for m in mat0["mode"]])
     cond_ids = np.unique(mat0["cond"][sel0])
     R = np.full((n_layers, len(cond_ids)), np.nan)
-    for li in range(n_layers):
+    for row, li in enumerate(built):
         mat = mat_by_layer[li]
         x = monitors_by_layer[li][meth]
         y = mat["y"]
@@ -134,8 +138,8 @@ def _per_condition_r_by_layer(monitors_by_layer, mat_by_layer, meth, mode):
                 continue
             rr = float(np.corrcoef(xi, yi)[0, 1])
             if np.isfinite(rr):
-                R[li, ci_pos] = rr
-    return R, cond_ids
+                R[row, ci_pos] = rr
+    return R, cond_ids, built
 
 
 def read_b_heldout(monitors_by_layer, mat_by_layer, *, n_boot, seed):
@@ -159,7 +163,9 @@ def read_b_heldout(monitors_by_layer, mat_by_layer, *, n_boot, seed):
     out = {m: {mode: {} for mode in MODES} for m in CURVE_METHODS}
     for meth in CURVE_METHODS:
         for mode in MODES:
-            R, cond_ids = _per_condition_r_by_layer(monitors_by_layer, mat_by_layer, meth, mode)
+            R, cond_ids, built = _per_condition_r_by_layer(
+                monitors_by_layer, mat_by_layer, meth, mode
+            )
             n_cond = len(cond_ids)
             held_r = []
             per_cond = []
@@ -169,15 +175,15 @@ def read_b_heldout(monitors_by_layer, mat_by_layer, *, n_boot, seed):
                 # other-condition r is disqualified.
                 sub = R[:, other]
                 with np.errstate(invalid="ignore"):
-                    layer_mean = np.nanmean(sub, axis=1)  # (n_layers,)
+                    layer_mean = np.nanmean(sub, axis=1)  # (n_built_layers,)
                 if np.all(np.isnan(layer_mean)):
                     continue
-                l_star = int(np.nanargmax(layer_mean))
-                r_held = R[l_star, ci_pos]
+                l_star_row = int(np.nanargmax(layer_mean))  # ROW into R (built layers)
+                r_held = R[l_star_row, ci_pos]
                 per_cond.append(
                     {
                         "cond": int(cond_ids[ci_pos]),
-                        "selected_layer": l_star,
+                        "selected_layer": int(built[l_star_row]),  # ABSOLUTE layer
                         "r": None if not np.isfinite(r_held) else float(r_held),
                     }
                 )
@@ -380,6 +386,18 @@ def main() -> int:
     ap.add_argument("--hidden", type=int, default=C.EXPECTED_HIDDEN)
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument(
+        "--layers",
+        type=int,
+        nargs="+",
+        default=None,
+        help=(
+            "subset of layer indices to sweep (default: all n_layers). Used ONLY "
+            "to keep the smoke tractable under heavy VM contention — a real run "
+            "sweeps every layer. read_a/read_b operate over whatever layers were "
+            "built, so a subset restricts the whole sweep coherently."
+        ),
+    )
     args = ap.parse_args()
 
     collect_dir = args.collect_dir
@@ -424,7 +442,8 @@ def main() -> int:
     # ~3x cheaper on the dominant cost.
     mat_by = {t: {} for t in traits}
     monitors_by = {t: {} for t in traits}
-    for li_pos in range(args.n_layers):
+    swept_layers = args.layers if args.layers is not None else list(range(args.n_layers))
+    for li_pos in swept_layers:
         li = train_layers.index(li_pos)
         Xtr = train_bundle["cx_last"][:, li, :].numpy()  # (N_tr, H) shared
         Ytr = train_bundle["v_x"][:, li, :].numpy()  # (N_tr, H) shared
@@ -452,9 +471,10 @@ def main() -> int:
         mat_by_layer = mat_by[trait]
         monitors_by_layer = monitors_by[trait]
 
-        # Read A: full per-layer within-condition r curve.
+        # Read A: full per-layer within-condition r curve (over the BUILT layers;
+        # a subset under --layers, all 28 in a real run).
         curve = {m: {mode: [] for mode in MODES} for m in CURVE_METHODS}
-        for li in range(args.n_layers):
+        for li in sorted(monitors_by_layer):
             for meth in CURVE_METHODS:
                 res = S.method_metrics(
                     monitors_by_layer[li][meth],
