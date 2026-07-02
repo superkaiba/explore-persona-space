@@ -5479,8 +5479,8 @@
     "845": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/845",
-      "status": "reviewing",
+      "path": "tasks/completed/845",
+      "status": "completed",
       "title": "daily-fix: watcher stall detection \u2014 marker-recency cross-check, fencing, registration hygiene"
     },
     "846": {
