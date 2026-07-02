@@ -302,14 +302,27 @@ def phase_prefetch(*, behaviors: list[str], cpu_only: bool, skip_parity: bool) -
 # the `min_write_ratio` argument below.
 PARITY_MIN_WRITE_RATIO = 0.01
 
-# Marker behavioral confirmation floor (Part 2, marker-only). The #537 marker
-# install is >1 nat by the committed source read (`.claude/rules/marker-
-# leakage-measurement.md`); a wrong-gauge / no-op adapter application reads ≈0.
-# A ≥1 nat teacher-forced Δ log P(※) trained−base on the source-context battery
-# confirms the marker install is behaviorally present, not just that the
-# residual moved (the numeric write-ratio gate above). 1 nat cleanly separates
-# a real install (>1) from a no-op (≈0).
-MARKER_BEHAVIORAL_MIN_DELTA_NATS = 1.0
+# Marker behavioral confirmation floor (Part 2, marker-only). GROUNDED ON #537's
+# committed DIAGONAL manipulation check: marker implants were band-stopped to a
+# 5–12 nat source log P(※) trained−base ON THE DIAGONAL (each adapter's OWN
+# training context — see #537 body "marker training stopped automatically at the
+# first evaluation inside the 5–12 nat band. This is the manipulation check" +
+# the `marker_diag_band` figure, 14/16 cells in-band). The read below MUST
+# therefore be on the DIAGONAL (source == the adapter's own training context,
+# `default` for #813), NOT on off-diagonal battery contexts — an off-diagonal read
+# is context-dependent (+1.3 nat worked-example/instruction rows to +3.85 nat
+# persona/chat rows, #537) and comparing it against a diagonal-grounded bar
+# false-HALTs a healthy adapter (round-4 read 0.8547 nat < the old 1.0 bar on
+# battery contexts; the adapter was correctly applied).
+#
+# Threshold 2.5 nat, grounded: #537's committed diagonal band is 5–12 nat (the
+# adapter was band-stopped INTO that range), so a correctly-applied diagonal read
+# lands ≥5 nat (≥2× margin above 2.5). A wrong-gauge application (α/√r-vs-α/r at
+# r=32 is a √32≈5.66× weight under-scale) reads a diagonal ≈1–2 nat, and a no-op
+# reads ≈0 — both ≤2 nat (≥1.25× margin below 2.5). 2.5 separates in-band (≥5)
+# from wrong-gauge (≤2) with a clear margin each way, without gating a correct
+# adapter that sits at the LOW end of the diagonal band.
+MARKER_BEHAVIORAL_MIN_DELTA_NATS = 2.5
 
 # ` ※` marker, Qwen-2.5-7B token id 83399 (leading space; NOT bare `※` id 63680,
 # NOT multi-token `[ZLT]`). CLAUDE.md marker bullet + marker-leakage-measurement.md.
@@ -326,21 +339,30 @@ def _marker_behavioral_confirmation(
     source: str,
     device,
     *,
-    n_contexts: int = 2,
-    n_questions: int = 2,
+    n_questions: int = 4,
     max_new_tokens: int = 256,
 ) -> float:
-    """Teacher-forced Δ log P(※) trained−base at the post-response slot (marker-only).
+    """DIAGONAL teacher-forced Δ log P(※) trained−base at the post-response slot.
 
-    Part 2 of the #813 apply-parity gate. Reproduces #537's committed default read
-    for the marker behavior: on ``n_contexts × n_questions`` source-context battery
-    probes, generate the base model's OWN greedy response ``R`` (on-policy,
-    marker-at-end recipe — `.claude/rules/marker-leakage-measurement.md`), then read
-    ``log P(※)`` at the slot immediately after ``R`` for BOTH the trained and base
-    models via :func:`compute_marker_slot_stats` (four-float storage contract), and
-    return the mean trained−base delta in nats. A wrong-gauge / no-op adapter reads
-    ≈0; a real #537 install reads >1 nat. Reuses the base/trained/tok already loaded
-    by :func:`_numeric_rslora_parity` (no extra 7B load); a couple of forward passes.
+    Part 2 of the #813 apply-parity gate. Reproduces #537's committed DIAGONAL
+    manipulation check for the marker behavior: measure ``log P(※)`` on the
+    adapter's OWN training context (``source`` — ``default`` for #813, the diagonal
+    C→C read #537 band-stopped into 5–12 nat), NOT on off-diagonal battery contexts.
+    The off-diagonal read is context-dependent (#537: +1.3 nat instruction rows to
+    +3.85 nat persona/chat rows) and comparing it against a diagonal-grounded bar
+    false-HALTs a healthy adapter (round-4 read 0.8547 nat on battery contexts).
+
+    On the first ``n_questions`` deterministic ``pool_marker_eval_32`` questions
+    (the SAME marker eval pool #537's diagonal eval scored, via
+    :func:`load_eval_probes`) rendered under the ``source`` (diagonal) context:
+    generate the base model's OWN greedy response ``R`` (on-policy, marker-at-end
+    recipe — `.claude/rules/marker-leakage-measurement.md`), then read ``log P(※)``
+    at the slot immediately after ``R`` for BOTH the trained and base models via
+    :func:`compute_marker_slot_stats` (four-float storage contract), and return the
+    mean trained−base delta in nats. A correctly-applied #537 diagonal install reads
+    ≥5 nat; a wrong-gauge (α/√r-vs-α/r ⇒ ~1–2 nat) or no-op (≈0) reads ≤2 nat.
+    Reuses the base/trained/tok already loaded by :func:`_numeric_rslora_parity`
+    (no extra 7B load); a couple of forward passes.
     """
     from issue667_extract import _greedy_response, build_messages_for, load_eval_probes
 
@@ -362,6 +384,10 @@ def _marker_behavioral_confirmation(
     if len(im_end_ids) == 1:
         eos_id = im_end_ids[0]
 
+    # DIAGONAL read: every probe is rendered under the SAME `source` context (the
+    # adapter's own training context — `default` for #813). This reproduces #537's
+    # committed C→C manipulation check; it is NOT a multi-context off-diagonal
+    # battery (which under-reads vs the 5–12 nat diagonal band the bar is grounded on).
     probes = load_eval_probes("marker")[:n_questions]
     contexts: list[str] = []
     for q in probes:
@@ -374,11 +400,9 @@ def _marker_behavioral_confirmation(
         # prefix — the SAME end-of-own-response slot the DV recipe reads.
         prefix = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) + r
         contexts.append(prefix)
-        if len(contexts) >= n_contexts:
-            break
     if not contexts:
         raise RuntimeError(
-            "marker behavioral confirmation: no source-context probe produced a "
+            "marker behavioral confirmation: no diagonal-context probe produced a "
             "non-empty base response — cannot read the marker slot"
         )
 
@@ -390,7 +414,18 @@ def _marker_behavioral_confirmation(
         base, tok, contexts, _MARKER_TEXT, eos_token_id=eos_id, batch_size=1, device=dev
     )
     deltas = [t["logp"] - b["logp"] for t, b in zip(trained_stats, base_stats, strict=True)]
-    return float(sum(deltas) / len(deltas))
+    delta = float(sum(deltas) / len(deltas))
+    # Fix-engaged signal — names the DIAGONAL context so the relaunch log proves the
+    # measurement is on the adapter's own training context, not off-diagonal battery.
+    logger.info(
+        "marker behavioral confirmation (DIAGONAL, context=%s): "
+        "Δ log P(※) trained-base = %.4f nat over %d probes (threshold %.1f)",
+        source,
+        delta,
+        len(contexts),
+        MARKER_BEHAVIORAL_MIN_DELTA_NATS,
+    )
+    return delta
 
 
 def _numeric_rslora_parity(
@@ -478,10 +513,14 @@ def _numeric_rslora_parity(
     # The numeric write-ratio gate proves the adapter MOVES the residual at the
     # committed gauge, but not that the move is the #537 marker install. For the
     # marker behavior — where the plan's apply-parity intent is "reproduce #537's
-    # committed default read" and that read is the cheap, unambiguous teacher-forced
-    # Δ log P(※) — additionally confirm the marker install is behaviorally present
-    # (a wrong-gauge / no-op application reads Δ≈0). Computed here while the
-    # base/trained models are STILL LOADED (no extra 7B load), before teardown.
+    # committed DIAGONAL manipulation check" (source log P(※) band-stopped to
+    # 5–12 nat on the adapter's OWN training context) — additionally confirm the
+    # marker install is behaviorally present ON THE DIAGONAL (a wrong-gauge
+    # application reads ~1–2 nat, a no-op ≈0). `source` is the diagonal training
+    # context (`default` for #813), so this read is C→C, matching #537's
+    # committed manipulation check — NOT an off-diagonal battery read (which
+    # under-reads and false-HALTs a healthy adapter, the round-4 0.8547-nat bug).
+    # Computed while base/trained are STILL LOADED (no extra 7B load), pre-teardown.
     marker_delta: float | None = None
     if behavior == "marker":
         marker_delta = _marker_behavioral_confirmation(
@@ -501,15 +540,18 @@ def _numeric_rslora_parity(
             "the adapter is applied under a DIFFERENT gauge than #537 committed (or is a "
             "no-op). HALT before the full sweep (plan §5(g)/§7)."
         )
-    # Marker behavioral HALT: the #537 marker install is >1 nat by the committed
-    # source read; a wrong-gauge / no-op application reads ≈0. HALT below 1 nat.
+    # Marker behavioral HALT: #537's committed DIAGONAL manipulation check band-stops
+    # the source into 5–12 nat; a correctly-applied diagonal read lands ≥5 nat, a
+    # wrong-gauge one ~1–2 nat, a no-op ≈0. HALT below the 2.5-nat separator.
     if marker_delta is not None and marker_delta < MARKER_BEHAVIORAL_MIN_DELTA_NATS:
         raise RuntimeError(
-            f"marker behavioral parity FAILED: teacher-forced Δ log P(※) trained-base "
-            f"= {marker_delta:.4f} nat < {MARKER_BEHAVIORAL_MIN_DELTA_NATS} for "
-            f"{behavior}/{source} — the marker install is NOT behaviorally present (a "
-            "wrong-gauge / no-op application reads ≈0). HALT before the full sweep "
-            "(plan §4.3/§7; belt-and-suspenders confirmation of the #537 default read)."
+            f"marker behavioral parity FAILED: DIAGONAL teacher-forced Δ log P(※) "
+            f"trained-base = {marker_delta:.4f} nat < {MARKER_BEHAVIORAL_MIN_DELTA_NATS} "
+            f"for {behavior}/{source} — the marker install is NOT behaviorally present "
+            "on its own training context (a wrong-gauge application reads ~1-2 nat, a "
+            "no-op ~0; #537 band-stopped the diagonal into 5-12 nat). HALT before the "
+            "full sweep (plan §4.3/§7; belt-and-suspenders confirmation of the #537 "
+            "diagonal manipulation check)."
         )
     result = {
         "behavior": behavior,
@@ -534,7 +576,8 @@ def _numeric_rslora_parity(
     if marker_delta is not None:
         result["marker_delta_logp_nats"] = marker_delta
         logger.info(
-            "marker behavioral parity PASS: %s/%s Δ log P(※) trained-base = %.4f nat >= %.1f",
+            "marker behavioral parity PASS: %s/%s DIAGONAL Δ log P(※) trained-base "
+            "= %.4f nat >= %.1f (#537 diagonal band 5-12 nat)",
             behavior,
             source,
             marker_delta,

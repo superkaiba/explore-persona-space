@@ -653,25 +653,44 @@ def test_wrong_gauge_write_still_halts_at_marker_floor(monkeypatch):
         d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
 
 
-def test_marker_behavioral_gate_halts_below_1_nat_and_passes_above(monkeypatch):
-    """Part 2 REGRESSION: marker Δ log P(※) < 1 nat HALTs; ≥ 1 nat PASSES.
+def test_marker_behavioral_gate_halts_below_2p5_nat_and_passes_above(monkeypatch):
+    """Part 2 REGRESSION: DIAGONAL marker Δ log P(※) < 2.5 nat HALTs; ≥ 2.5 nat PASSES.
 
     The write-ratio gate passes (ratio above floor), so ONLY the marker behavioral
-    confirmation decides the outcome: a wrong-gauge / no-op install reads Δ≈0 (< 1 nat)
-    → HALT; a real #537 install reads >1 nat → PASS. Fails pre-fix (no behavioral gate
-    existed), passes post-fix.
+    confirmation decides the outcome. The bar is grounded on #537's committed DIAGONAL
+    manipulation check (source band-stopped to 5-12 nat on its OWN training context):
+    a correctly-applied diagonal read lands >=5 nat -> PASS; a wrong-gauge (alpha/sqrt(r)
+    vs alpha/r => ~1-2 nat) or no-op (~0) diagonal read is <=2 nat -> HALT. 2.5 separates.
+
+    This ALSO pins the round-5 threshold fix: the round-4 read of 0.8547 nat was an
+    OFF-DIAGONAL battery read against a 1.0-nat bar (a healthy adapter false-HALT); the
+    fix reads on the diagonal (5-12 nat expected) and raises the bar to 2.5. A
+    diagonal-read of 6.0 nat PASSES; a wrong-gauge diagonal-read of 1.5 nat HALTs.
     """
     import issue667_dispatch as d
 
-    # Δ = 0.3 nat (< 1) with a HEALTHY write ratio → marker behavioral HALT.
-    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=0.3)
+    # Wrong-gauge DIAGONAL read = 1.5 nat (< 2.5) with a HEALTHY write ratio → HALT.
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=1.5)
     with pytest.raises(RuntimeError, match=r"marker behavioral parity FAILED"):
         d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
 
-    # Δ = 2.5 nat (≥ 1) → PASS.
-    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=2.5)
+    # A no-op read ≈0 also HALTs (well below 2.5).
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=0.0)
+    with pytest.raises(RuntimeError, match=r"marker behavioral parity FAILED"):
+        d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+
+    # Correctly-applied #537 DIAGONAL install = 6.0 nat (in the 5-12 nat band) -> PASS.
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=6.0)
     res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
-    assert res["marker_delta_logp_nats"] == 2.5
+    assert res["marker_delta_logp_nats"] == 6.0
+
+    # The round-4 OFF-DIAGONAL battery value 0.8547 is no longer the gate's input; if a
+    # (now-fixed) read ever regressed to it, the 2.5 bar would still HALT — pin that
+    # the OLD 1.0 bar would have PASSED it (documenting the false-HALT the fix removes).
+    assert d.MARKER_BEHAVIORAL_MIN_DELTA_NATS > 0.8547, (
+        "the round-4 battery read 0.8547 nat is below the diagonal-grounded 2.5 bar; "
+        "the FIX is measuring on the diagonal (5-12 nat), not lowering the bar to admit it"
+    )
 
 
 def test_non_marker_behavior_skips_the_behavioral_gate(monkeypatch):
@@ -714,3 +733,84 @@ def test_marker_confirmation_asserts_marker_token_id_83399(monkeypatch):
         d._marker_behavioral_confirmation(
             object(), object(), _WrongTok(), {}, [], "default", __import__("torch").device("cpu")
         )
+
+
+def test_marker_behavioral_threshold_is_diagonal_grounded():
+    """Round-5: the behavioral bar is 2.5 nat, grounded on #537's 5-12 nat DIAGONAL band.
+
+    Pins the round-5 threshold fix: the bar separates a correct diagonal install (≥5 nat)
+    from a wrong-gauge (~1-2 nat) / no-op (~0) one. The OLD 1.0 bar sat below the round-4
+    OFF-DIAGONAL battery read 0.8547 nat only because that read was measured on the wrong
+    geometry; the diagonal-grounded 2.5 bar is above both wrong-gauge reads (~2 nat max)
+    and comfortably below the 5-nat diagonal floor.
+    """
+    import issue667_dispatch as d
+
+    assert d.MARKER_BEHAVIORAL_MIN_DELTA_NATS == 2.5
+    # separates in-band (≥5) from wrong-gauge (≤2) with margin each way
+    assert d.MARKER_BEHAVIORAL_MIN_DELTA_NATS < 5.0  # below the #537 diagonal floor
+    assert d.MARKER_BEHAVIORAL_MIN_DELTA_NATS > 2.0  # above the wrong-gauge ceiling
+
+
+def test_marker_behavioral_confirmation_reads_the_diagonal_context_and_logs(monkeypatch, caplog):
+    """Round-5: the read is on the DIAGONAL (source) context and logs the fix-engaged signal.
+
+    Reproduces #537's committed diagonal manipulation check: every probe is rendered under
+    the SAME `source` context (the adapter's own training context), NOT an off-diagonal
+    battery. Stubs the model/tokenizer helpers so it runs on CPU with no GPU/network/7B
+    load; asserts (a) build_messages_for is called with `source` for EVERY probe (diagonal),
+    (b) compute_marker_slot_stats returns the mean trained-base delta, and (c) the
+    fix-engaged log line names the DIAGONAL context + the delta + the 2.5 threshold.
+    """
+    import logging
+
+    import issue667_dispatch as d
+    import issue667_extract as ex
+
+    # Record the context id each probe is rendered under (must be the diagonal `source`).
+    seen_cids: list[str] = []
+
+    def _build(registry, demos, cid, behavior, question):
+        seen_cids.append(cid)
+        return [{"role": "user", "content": question}]
+
+    class _Tok:
+        eos_token_id = 151645
+
+        def encode(self, text, add_special_tokens=False):
+            if text == d._MARKER_TEXT:
+                return [d._MARKER_TOKEN_ID]  # ` ※` id 83399
+            if text == "<|im_end|>":
+                return [151645]
+            return [1, 2, 3]
+
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+            return "PROMPT:" + msgs[0]["content"]
+
+    monkeypatch.setattr(ex, "load_eval_probes", lambda *a, **k: ["q1", "q2", "q3", "q4", "q5"])
+    monkeypatch.setattr(ex, "build_messages_for", _build)
+    monkeypatch.setattr(ex, "_greedy_response", lambda *a, **k: "a base response")
+
+    # trained slot logp 4.0 higher than base per context → mean Δ = 4.0 nat.
+    from explore_persona_space.eval import marker_logprob as ml
+
+    def _slot_stats(model, tok, contexts, marker_text, **kw):
+        base = model == "BASE"
+        return [{"logp": (0.0 if base else 4.0)} for _ in contexts]
+
+    monkeypatch.setattr(ml, "compute_marker_slot_stats", _slot_stats)
+
+    with caplog.at_level(logging.INFO, logger=d.logger.name):
+        delta = d._marker_behavioral_confirmation(
+            "BASE", "TRAINED", _Tok(), {}, [], "default", __import__("torch").device("cpu")
+        )
+
+    # (a) DIAGONAL: every rendered probe used the `source` context, and n_questions defaults
+    # to 4, so exactly 4 probes were read on the diagonal.
+    assert seen_cids == ["default", "default", "default", "default"], seen_cids
+    # (b) mean trained-base delta.
+    assert delta == pytest.approx(4.0)
+    # (c) fix-engaged log signal names the DIAGONAL context + delta + threshold.
+    msg = "\n".join(r.getMessage() for r in caplog.records)
+    assert "DIAGONAL" in msg and "context=default" in msg, msg
+    assert "4.0000 nat" in msg, msg
