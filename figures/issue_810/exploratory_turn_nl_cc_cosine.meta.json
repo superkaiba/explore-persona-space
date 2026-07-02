@@ -1,0 +1,712 @@
+{
+  "commit": "152c0d3e",
+  "created": "2026-07-02T16:27:44Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "cosine(turn_nl, c_C) across contexts": 0.9124718701839447,
+      "error": 0.01962105251837787,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8638036561012268,
+      "error": 0.01429152621985541,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8406107568740845,
+      "error": 0.016850098174873596,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7630783545970917,
+      "error": 0.025212314160643068,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7501717138290406,
+      "error": 0.02834686470946013,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7276725780963897,
+      "error": 0.017574176856521295,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7048205041885376,
+      "error": 0.01489404245849102,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6679486286640167,
+      "error": 0.01867463721462581,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6170418381690979,
+      "error": 0.01958832244203157,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6990436565876007,
+      "error": 0.016917594852373652,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6819087994098664,
+      "error": 0.017870482050336367,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6748560583591461,
+      "error": 0.02291841911031145,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6413076615333557,
+      "error": 0.02025954140990882,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6897090458869934,
+      "error": 0.0191168551089258,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6673308265209198,
+      "error": 0.017060495933713726,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6934481573104858,
+      "error": 0.01645411200463387,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6681202363967895,
+      "error": 0.016704388113258806,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6611746346950531,
+      "error": 0.016366294560364425,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6217406380176544,
+      "error": 0.03289470995724486,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "cosine(turn_nl, c_C) across contexts": 0.577406198978424,
+      "error": 0.01768326972412071,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5162349373102189,
+      "error": 0.019505613804730676,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4692292660474777,
+      "error": 0.02941076647089874,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3519835352897644,
+      "error": 0.028831730576712677,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3947303718328476,
+      "error": 0.032080283175511204,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4373296064138412,
+      "error": 0.043171041871746973,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4544372910261154,
+      "error": 0.04524257329064835,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4490701949596405,
+      "error": 0.03647631805460627,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "cosine(turn_nl, c_C) across contexts": 0.026181518747471273,
+      "error": 0.025833749748499737,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "cosine(turn_nl, c_C) across contexts": 0.9124718701839447,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8638036561012268,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8406107568740845,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7630783545970917,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7501717138290406,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7276725780963897,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7048205041885376,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6679486286640167,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6170418381690979,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6990436565876007,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6819087994098664,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6748560583591461,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6413076615333557,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6897090458869934,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6673308265209198,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6934481573104858,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6681202363967895,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6611746346950531,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6217406380176544,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "cosine(turn_nl, c_C) across contexts": 0.577406198978424,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5162349373102189,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4692292660474777,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3519835352897644,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3947303718328476,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4373296064138412,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4544372910261154,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4490701949596405,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "cosine(turn_nl, c_C) across contexts": 0.026181518747471273,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8928508176655668,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8495121298813714,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8237606586992109,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7378660404364487,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7218248491195804,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7100984012398684,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6899264617300466,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6492739914493909,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5974535157270663,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "cosine(turn_nl, c_C) across contexts": 0.682126061735227,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "cosine(turn_nl, c_C) across contexts": 0.66403831735953,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6519376392488346,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6210481201234469,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6705921907780676,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6502703305872061,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6769940453058519,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6514158482835307,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6448083401346887,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5888459280604096,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5597229292543033,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4967293235054882,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "cosine(turn_nl, c_C) across contexts": 0.439818499576579,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3231518047130517,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "cosine(turn_nl, c_C) across contexts": 0.3626500886573364,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "cosine(turn_nl, c_C) across contexts": 0.39415856454209425,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "cosine(turn_nl, c_C) across contexts": 0.40919471773546706,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "cosine(turn_nl, c_C) across contexts": 0.41259387690503424,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "cosine(turn_nl, c_C) across contexts": 0.00034776899897153574,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "cosine(turn_nl, c_C) across contexts": 0.9320929227023226,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8780951823210822,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "cosine(turn_nl, c_C) across contexts": 0.8574608550489581,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7882906687577348,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7785185785385007,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "cosine(turn_nl, c_C) across contexts": 0.745246754952911,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7197145466470286,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6866232658786425,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6366301606111294,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7159612514399744,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6997792814602027,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6977744774694575,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6615672029432645,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7088259009959192,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6843913224546335,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "cosine(turn_nl, c_C) across contexts": 0.7099022693151197,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6848246245100483,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6775409292554175,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "cosine(turn_nl, c_C) across contexts": 0.6546353479748993,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5950894687025448,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "cosine(turn_nl, c_C) across contexts": 0.5357405511149496,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "cosine(turn_nl, c_C) across contexts": 0.49864003251837646,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "cosine(turn_nl, c_C) across contexts": 0.38081526586647707,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4268106550083588,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4805006482855882,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "cosine(turn_nl, c_C) across contexts": 0.49967986431676376,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "cosine(turn_nl, c_C) across contexts": 0.4855465130142468,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "cosine(turn_nl, c_C) across contexts": 0.05201526849597101,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112
+}
