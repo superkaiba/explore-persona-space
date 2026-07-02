@@ -5647,8 +5647,8 @@
     "868": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/868",
-      "status": "approved",
+      "path": "tasks/running/868",
+      "status": "running",
       "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
     },
     "869": {
