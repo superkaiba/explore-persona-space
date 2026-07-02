@@ -109,13 +109,13 @@ Ridge R² climbs from −0.09 (layer 0) to a 0.74–0.80 plateau over layers 14�
 
 ### The linear-ridge skill is input-representation-robust (28/28 layers); the RBF−linear gap is not — RBF collapses at 48 input dims (pre-registered verdict: KILL)
 
-What is plotted: held-out ridge skill-over-mean R² (top) and the KRR RBF−linear gap (bottom) under three input representations of c_C — full 3584-dim baseline, PCA-48, whiten-48 (per-fold train-only bases). The figure renders only layers 0 and 18 of the 28-layer sweep (segments interpolate; all 28 rows are in the linked JSONs). n = 50 contexts, seed 42.
+What is plotted: held-out ridge skill-over-mean R² (top) and the KRR RBF−linear gap (bottom) under three input representations of c_C — full 3584-dim baseline, PCA-48, whiten-48 (per-fold train-only bases). The figure renders only layers 0 and 18 of the 28-layer sweep (segments interpolate; all 28 rows in the JSONs). n = 50 contexts, seed 42.
 
 ![Ridge R-squared coincides across full, PCA-48, and whiten-48 inputs at layers 0 and 18; the RBF-minus-linear gap is near zero at full dim but minus 0.81 at 48 dims](https://raw.githubusercontent.com/superkaiba/explore-persona-space/37d5838f5618c2d5f6d4d6a75f2f967f10e47441/figures/issue_722/input_rep_robustness_per_layer.png)
 
 > **Figure.** *The ridge skill is invariant to the input representation; the RBF−linear gap is not.* The three ridge curves coincide (R²-gate **28/28** both variants, max |ΔR²| 0.018); the gap falls from ≈0 at the plateau (full input) to **−0.81** under both 48-dim inputs (gap-gate **0/28**). Rendered layers: 0 and 18 only.
 
-PCA-48 reproduces the ridge plateau (layer 18 **+0.8064** vs +0.7983 full, Δ **+0.0081**; max |Δ| **0.018** across 28 layers); whiten-48 matches PCA-48 to numerical precision. The pre-registered two-gate criterion still returns **KILL** for both variants, entirely from the gap-gate (**0/28**): RBF kernel regression collapses to skill ≈0 at 48 dims, so the gap falls from ≈0 at the plateau to **−0.81** at layer 18 (95% CI −0.85 to −0.76), γ-flat across 0.25×–4× of the median heuristic — not a γ mis-tune. RBF never beats linear anywhere; the gap's value, not the linear-suffices verdict, fails to transfer.
+PCA-48 reproduces the ridge plateau (layer 18 **+0.8064** vs +0.7983 full, Δ **+0.0081**; max |Δ| **0.018** across 28 layers); whiten-48 matches PCA-48 to numerical precision. The pre-registered two-gate criterion still returns **KILL** for both variants, entirely from the gap-gate (**0/28**): RBF kernel regression collapses to skill ≈0 at 48 dims, so the gap falls from ≈0 at the plateau to **−0.81** at layer 18 (95% CI −0.85 to −0.76), γ-flat across 0.25×–4× — not a γ mis-tune. RBF never beats linear anywhere; the gap's value, not the linear verdict, fails to transfer.
 
 ### The taught fact's function-change clears its floor 1.6–3.3×; EM sits below floor; sycophancy peaks shallow and dies
 
