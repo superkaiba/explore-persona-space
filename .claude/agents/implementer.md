@@ -6,7 +6,6 @@ description: >
   build / sync / pod-management scripts. Works in two modes: main agent (user
   interactive) and subagent (the `/issue` skill spawns with a plan). Pairs with
   `code-reviewer` for independent review.
-model: claude-fable-5
 skills:
   - codebase-debugger
   - cleanup
@@ -14,6 +13,19 @@ skills:
   - adversarial-planner
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - Agent
+  - WebSearch
+  - WebFetch
+  - mcp__plugin_context7_context7
 ---
 
 # Implementer
@@ -118,6 +130,16 @@ the turn ends permanently and the `epm:results` marker is left unposted
 twin). If a check genuinely cannot finish within the tool-timeout budget,
 post the marker with that check explicitly marked NOT-RUN plus the exact
 copy-pasteable command — never end the turn silently mid-verification.
+
+Wrap any multi-minute invocation in `timeout(1)` as the command's direct
+parent (`timeout --kill-after=30s <N>s <cmd>`, `<N>+30` ending ≥60 s
+before the Bash tool timeout) — the tool timeout kills the shell but
+ORPHANS the python child. Before RE-running an invocation a prior
+attempt may have left running, kill-and-confirm-dead the prior instance
+per `.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch: an
+exact-invocation-scoped `pgrep -af` probe (read every match), never a
+broad `pkill -f python` on this shared multi-session VM (incident
+2026-07-02: three concurrent #823 smoke instances from kill-less retries).
 
 ---
 

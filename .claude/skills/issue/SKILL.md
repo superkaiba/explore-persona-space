@@ -471,13 +471,28 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     just re-invoke the planner with the status held; on
     `continue-as-planned`: continue to Step 6); do NOT state the Decision
     and then end the turn.
-  - `compute_deviation_resolution` → pick `accept_descope_to_<X>_with_caveats`
-    if any descope dimension preserves majority statistical power (≥0.6 of
-    the planned cells); else `continue_as_is` and quote the projected ratio
-    inline. State `Decision: <choice> because <reason>` and EXECUTE the
-    resolved action in this same turn (post `epm:compute-deviation v2`
-    with the chosen `action:` + advance to Step 5.bis(b)); do NOT state
-    the Decision and then end the turn.
+  - `compute_deviation_resolution` → (reachable only after pivot_criteria
+    auto-action 0 is resolved: the vectorize-first fix round ran, or a
+    negative signature finding is recorded — Step 5.bis(a); a marker
+    that arrived pre-resolved without a lever-0 record is UNRESOLVED
+    and routes through step 0 first). Pick
+    `accept_descope_to_<X>_with_caveats` if any descope dimension
+    preserves majority statistical power (≥0.6 of the planned cells);
+    else `continue_as_is` and quote the projected ratio inline — at
+    ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+    quantified clause-0c finding (`flop_bound_finding:` on the marker,
+    or a `signature_check: negative` record meeting the 0c bar). If it
+    is missing at ≥ 5×: when NO `action: vectorize_fix_round` exists in
+    the component's chain, do NOT pick `continue_as_is` — execute the
+    step-0 vectorize fix round; when the fix round HAS run, NEVER
+    re-run step 0 (once-per-component loop guard) — its post-fix
+    re-post's residual classification is the 0c record (the fix-round
+    brief requires it); if that re-post omitted the classification,
+    obtain ONE corrective re-post recording it (no second fix round),
+    then resolve. State `Decision: <choice> because <reason>` and
+    EXECUTE the resolved action in this same turn (post
+    `epm:compute-deviation v2` with the chosen `action:` + advance to
+    Step 5.bis(b)); do NOT state the Decision and then end the turn.
   - `concern_deferral_request` → bounce to implementer for one more round
     targeting the open CONCERN(s); never defer in autonomous mode (deferral
     is a user-rationale-required action by spec). State
@@ -1399,10 +1414,14 @@ plans missing any):**
 
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
-then announce it with an `epm:plan` event:
+then announce it with an `epm:plan` event. The handoff file carries a
+per-attempt suffix — `<attempt>` = a fresh `$(date +%s)` chosen once per
+orchestrator planning attempt — because a crashed attempt leaves a stale
+/tmp file; a respawned session re-Writing the fixed path after Reading an
+older version gets "File has been modified since read" (4× on #822):
 
 ```bash
-uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan.md
+uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan-v<K>-<attempt>.md
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
 # Embed the machine-readable cost token (<X> = the plan's total GPU-hours) so
 # the Step 2c auto-approve gate can parse it from the note as well as the body.
@@ -2065,7 +2084,15 @@ orchestrator verifies the evidence is genuinely present, so cosmetic
 gripes about present evidence never bounce the implementer or consume a
 review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
-exempt from this smoke gate.
+exempt from this smoke gate. Smoke commands that write under
+`eval_results/` or `figures/` also carry the output-path hygiene
+disposition per experiment-implementer.md
+§ "Smoke outputs never overwrite committed artifacts" (scratch-dir
+redirect preferred; restore-after-smoke + an empty
+`git status --porcelain -- eval_results/ figures/` as the fallback);
+the reviewer treats visible clobber of a committed artifact as a
+substantive Critical (code-reviewer.md Step 0.6), never a strippable
+mechanical blocker.
 
 **5b. Read both markers from `events.jsonl`.**
 
@@ -2078,6 +2105,77 @@ codex_marker=$(echo "$events_json" | jq '... epm:code-review-codex v<n> ...')
 
 Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 `CONCERNS`, `FAIL`. PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+
+**Durable-verdict-first rule (fires at EVERY ensemble verdict collection:
+5b here, Step 9a, Step 9a-bis, Step 9b VC, and any reconciler read).**
+An Agent-tool completion result that reports an error for a reviewer /
+critic / reconciler subagent — autocompact thrash death, tool-use crash,
+or a garbage/empty return — is NOT, by itself, a no-show. These agents'
+deliverable is DURABLE state (a marker on events.jsonl, or a written
+output file), and the final summary turn regularly dies AFTER the durable
+post succeeded (incident #810 r4, 2026-07-02: the code-reviewer's
+`epm:code-review v4` PASS posted at 09:25:14Z, then the summary turn
+thrash-died; the orchestrator misread it as a total no-show and adopted a
+unilateral FAIL from the Codex verdict alone, needing a corrective marker
++ late reconciler). BEFORE invoking any no-show fallback or
+single-reviewer decision:
+
+1. Re-read canonical task state (`uv run python scripts/task.py view <N>
+   --json`) for the round's expected verdict marker at the CURRENT
+   version — `epm:code-review[-codex] v<n>`, `epm:interp-critique[-codex]
+   v<n>`, `epm:clean-result-critique[-codex] v<n>`,
+   `epm:followup-value-critique[-codex]`, or `epm:review-reconcile v<n>`.
+2. If no marker: check the role's durable output file — the EXACT
+   `--output-file` path this round's dispatch config named
+   (role+round-specific conventions:
+   `/tmp/codex-code-reviewer-<N>-r<round>-output.md`,
+   `/tmp/codex-interp-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-clean-result-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-followup-critic-<N>-output.md`; NEVER a guessed generic
+   path). The file counts as a durable verdict ONLY if BOTH: (i) it
+   carries the role's expected marker start/end tags at the CURRENT
+   round version, AND (ii) it is round-fresh — a current-round
+   `epm:codex-task-completed` marker exists for this dispatch, OR the
+   file mtime postdates this round's `stage-dispatch` breadcrumb /
+   `epm:codex-task-spawned`. A file failing either test is NOT a durable
+   verdict — a conforming-looking file from a PRIOR round is the trap
+   this clause exists to block.
+3. If a durable verdict exists and CONFORMS (expected marker kind +
+   current version + a parseable `**Verdict:**` line), the reviewer
+   RETURNED: use the durable verdict and apply the normal ensemble rule
+   — reconciler on disagreement, never a unilateral decision. A
+   truncated file (a FAIL-class `**Verdict:**` line with no blocker
+   body) is MALFORMED, not a verdict — route it to the role's
+   malformed-output handling, never adopt it. Precedence when signals
+   coexist: a current-round posted verdict MARKER wins over everything;
+   a current-round posted `epm:failure` from the wrapper wins over a
+   bare conforming FILE (the wrapper inspected its own output and
+   judged it malformed); a conforming round-fresh file wins over
+   nothing.
+4. Only when NO durable verdict exists does the role's no-show handling
+   fire. For a Codex twin: the Step 5d fallback (single-Claude
+   decision), exactly as if `epm:failure` had been posted. For a CLAUDE
+   reviewer/critic: there is NO fallback — first diagnose the death
+   (e.g. an over-budget diff per `.claude/rules/diff-size-budget.md`;
+   thin the brief accordingly), then re-spawn it ONCE per
+   role+round+version — the re-spawn posts at the SAME `v<n>` and does
+   NOT increment the per-reviewer round counter (a 429-kill is already
+   covered by the SubagentStop retry rule and consumes the same
+   allowance). If the re-spawn ALSO ends with no durable verdict, fail
+   LOUD: interactive — surface to the user; autonomous — post
+   `epm:failure v1` (`failure_class: infra`, reason:
+   reviewer no durable verdict after bounded re-spawn), set
+   `status:blocked`, PushNotification, CRON-TEARDOWN. NEVER adopt a
+   unilateral decision from the surviving reviewer.
+
+The existing marker-keyed no-show path — the Codex wrapper POSTING
+`epm:failure v<m>` (`failure_class: codex-output-malformed` or `infra`)
+— is itself durable state and is UNCHANGED: that marker IS a confirmed
+no-show. This rule governs only the Agent-tool-RESULT-keyed inference.
+(The dispatch-side sibling is the Step 9 pre-dispatch dedup /
+`stage_dispatch_should_skip`; the resume table is already
+durable-marker-keyed. This rule closes the live verdict-collection gap
+between them.)
 
 **5c. Apply ensemble decision rule.**
 
@@ -2095,8 +2193,8 @@ reconciler invocations.
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
-(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Steps
+0.5 / 0.55), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
 NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
@@ -2111,8 +2209,19 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
-  content AND `(c)` carries at least one fenced command.
+- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+  (a conforming Step 0.55 blocker names exactly ONE marker kind,
+  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
+  separate `epm:smoke-architecture-check` events row exists in canonical task
+  state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
+  canary_cell=<id>` | `FAIL_NO_CANARY` — present + parseable → STRIP (a
+  stale-worktree false absence); absent or verdict-less → leave the FAIL in
+  place (the gate is doing its job; do NOT check the implementation marker's
+  H3s for this sub-case — they can be conforming while the separate row is
+  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
+  carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
   the pipeline actually executes (typically data-gen, training, eval) has its
   own sub-section with a command, exit code `0`, and an artifact digest. A
@@ -2303,7 +2412,14 @@ the same logic.
 single-reviewer (Claude-only) decision-making for that round. Do NOT
 block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
-this round; using Claude reviewer only.`
+this round; using Claude reviewer only.` This fallback fires ONLY on the
+posted `epm:failure` marker, or after the Step 5b durable-verdict-first
+rule confirms NO durable verdict exists (no `epm:code-review-codex v<n>`
+marker AND no conforming, round-fresh output file). An Agent-tool error
+result alone never triggers it — and the same applies symmetrically to
+the Claude reviewer: with no durable verdict, re-spawn it once per the
+Step 5b rule; NEVER adopt a unilateral decision from the surviving
+reviewer (incident #810 r4).
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -2317,26 +2433,92 @@ current implementer round (highest version with the same round number).
 If present:
 
 1. Parse the marker's body for `component`, `planned_wall_h`,
-   `projected_wall_h`, `ratio`, `basis`. If the marker carries
-   `action: auto_descope_to_<spec>`, the implementer (or a prior
-   orchestrator tick) already accepted an auto-descope — log the
-   descope to chat as one line and advance to Step 5.bis(b).
-2. Otherwise, attempt auto-descope per
+   `projected_wall_h`, `ratio`, `basis`. Route on the component's
+   marker CHAIN (re-posts reuse the planner-§9 row name verbatim in
+   `component:` — the loop guard and this routing key on it):
+   - `action: auto_descope_to_<spec>` present AND the component's
+     chain also carries a lever-0 record (`action: vectorize_fix_round`
+     ran, or `signature_check: negative`) → a prior tick already
+     accepted an auto-descope with lever 0 resolved; log one line and
+     advance to Step 5.bis(b). An `auto_descope_to_<spec>` WITHOUT a
+     lever-0 record is a pre-resolution like any other — treat as
+     UNRESOLVED and proceed to step 2 (a descope never resolves
+     lever 0; legacy and implementer self-descope markers arrive
+     exactly this way).
+   - `action: vectorize_fix_round` present (the fix round ran) and the
+     post-fix ratio ≤ 2× → log one line and advance to Step 5.bis(b).
+     Post-fix ratio still > 2× → SKIP step 2 (one mandatory fix round
+     per component) and go to step 3 with the post-fix numbers plus
+     the round's residual classification.
+   - ANY pre-resolution (`action: continue_as_is`,
+     `action: auto_descope_to_<spec>` per the bullet above, or any
+     other legacy, poster-side, or crash-replay resolution) WITHOUT a
+     lever-0 record (`vectorize_fix_round` ran, or
+     `signature_check: negative`) → treat as UNRESOLVED and proceed to
+     step 2; at ratio ≥ 5× without a valid clause-0c finding the
+     pre-resolution is VOID.
+2. **Vectorize-first signature check (pivot_criteria auto-action 0 +
+   0b — REQUIRED before any descope).** From `basis:` + the round's
+   implementer report, classify the deviation:
+   - **Overhead-bound** (matches the `.claude/rules/vectorize-many-cell-fits.md`
+     trigger — the canonical definition; illustratively: a serial
+     per-cell/fold/layer/draw/row loop of small fits/solves/reductions,
+     batch-1 model forwards, per-draw re-reduction of a fixed pool,
+     per-row IO, or sequential shard-independent cells with an unused
+     parallelism axis) → dispatch ONE vectorize/parallelize fix round:
+     spawn `experiment-implementer` with a brief naming the marker,
+     the rule + canonical helpers
+     (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+     `src/explore_persona_space/analysis/null_battery.py`), the
+     equivalence gate against a SEEDED serial oracle (2-3 cells, a
+     stated per-workload float tolerance), and the requirement that
+     its closing `epm:compute-deviation v<next>` re-post carry
+     `action: vectorize_fix_round`, the post-fix projection, AND the
+     residual classification (a genuinely FLOP-bound / dependency-
+     bound residual is recorded in `flop_bound_finding:` — that
+     post-fix arithmetic constitutes the clause-0c finding). Dispatch
+     for the component HALTS while the fix round runs — Step 6 is not
+     reached for it this round; the round flows through code-review
+     (Step 5) normally. Descope and `continue_as_is` are NOT eligible
+     for the component until this round has run or a negative finding
+     is recorded. Pinned plan hyperparameters do NOT exempt the lever —
+     vectorization is recipe-preserving (equivalence-gated); pinning
+     blocks descope, not vectorization (#722).
+   - **Not overhead-bound** (`basis` names a genuinely FLOP-bound /
+     API-latency / bandwidth / capacity-wait / already-vectorized-
+     contention cause) → post `epm:compute-deviation v<next>` with
+     `signature_check: negative` + 1-3 lines of arithmetic or the
+     named quantified bottleneck, and proceed to step 3.
+   - **Ambiguous basis** → treat as overhead-bound; the fix round's
+     first action is the rule's diagnostic (FLOP back-of-envelope,
+     cputime/walltime ratio) and the round may return the negative
+     finding instead of a code change.
+   **Pod release (0b):** if the deviating serial phase holds a GPU pod
+   (or the pending dispatch would hold one idle through it), run
+   `pod.py stop --issue <N>` while the fix round runs; the
+   orchestrator that issued the stop owns `pod.py resume` at fix-round
+   completion, before any re-dispatch (CLAUDE.md "CPU-only phases
+   don't hold GPU pods"; this is continuing work, not parking).
+3. Otherwise, attempt auto-descope per
    `workflow.yaml § pivot_criteria.compute_deviation_over_2x`:
    walk the planner's §9 stratification dimensions in priority order
    (seeds → framings → cells-per-stratum); for each dimension, compute
    the descoped projection (drop the dimension to its min-N-for-power
    per the planner's §9 stratification spec). The first descope whose
    ratio ≤ 1.5× AND keeps every dimension ≥ its min-N wins.
-3. **Auto-descope success.** Post `epm:compute-deviation v2` with
+4. **Auto-descope success.** Post `epm:compute-deviation v2` with
    `action: auto_descope_to_<spec>`, update the implementer's per-cell
    parameters in the launch command, log to chat as one line, advance.
-4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
+5. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
    staying above min-N): branch on session mode.
 
    - **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
      `gates.conditional.compute_deviation_resolution` (id=12) with the
-     2-option prompt. Quote the ratio inline. On `continue_as_is`,
+     2-option prompt. Quote the ratio inline. At ratio ≥ 5×,
+     `continue_as_is` requires the recorded quantified clause-0c
+     finding (`flop_bound_finding:` on the marker, or a
+     `signature_check: negative` record meeting the 0c bar) — state it
+     inline. On `continue_as_is`,
      advance to Step 5.bis(b) with the original parameters. On
      `accept_descope_to_<X>_with_caveats`, post `epm:compute-deviation v2`
      with the chosen descope spec + caveats and advance.
@@ -2346,14 +2528,22 @@ If present:
    - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the
      ask AND never print the two options as a text menu. Auto-resolve
      per § Autonomous session behavior →
-     `compute_deviation_resolution`: pick
+     `compute_deviation_resolution` (reachable only after the step-0
+     lever is resolved; see that bullet for the full rule): pick
      `accept_descope_to_<X>_with_caveats` if any descope dimension
      preserves majority statistical power (≥0.6 of the planned cells);
-     else `continue_as_is` and quote the projected ratio inline. State
-     `Decision: <choice> because <reason>` AND EXECUTE the resolved
-     action in this same turn (post `epm:compute-deviation v2` with the
-     chosen `action:` and advance to Step 5.bis(b)); do NOT state the
-     Decision and then end the turn.
+     else `continue_as_is` and quote the projected ratio inline — at
+     ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+     quantified clause-0c finding (`flop_bound_finding:` on the marker,
+     or a `signature_check: negative` record meeting the 0c bar); if it
+     is missing and no fix round ran, execute step 2's vectorize fix
+     round instead; if the
+     fix round ran but its re-post omitted the residual classification,
+     obtain ONE corrective re-post (no second fix round), then resolve.
+     State `Decision: <choice> because <reason>` AND EXECUTE the
+     resolved action in this same turn (post `epm:compute-deviation v2`
+     with the chosen `action:` and advance to Step 5.bis(b)); do NOT
+     state the Decision and then end the turn.
 
 **5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
 for `epm:new-bug-class v1` markers posted in the trailing 5
@@ -3334,6 +3524,32 @@ NEVER changes the status verdict and the poller NEVER stops the pod — it
 surfaces the leak loudly for action. This handling is additive to the
 `status=running` branch.
 
+**ETA-deviation / GPU-width advisory handling.** When a tick's JSON reports
+`eta_deviation_posted: true`, the poller has just posted an
+`epm:compute-deviation` marker (`source: poller`, `basis: elapsed-vs-plan`):
+elapsed wall-time for the current phase or the whole run exceeded
+`EPM_ETA_DEVIATION_MULT` (default 2.0) × the plan §9 `planned_wall_h` TOTAL —
+the #763 class (an ~80× overrun a human caught ~16h late). Surface it in the
+session text and weigh the run's remaining value: whether the plan's own
+compute-deviation machinery should engage — a mid-run `continue_as_is`
+acknowledgment, or a deliberate descope ONLY where the planner's §9
+stratification spec permits one. Elapsed-so-far is a lower bound on final
+wall, so `continue_as_is` is nearly always the right mid-run resolution; the
+poller variant carries no `action:` field and is never an auto-descope input.
+When a tick's JSON reports `gpu_width_advisory_posted: true`, the poller has
+posted a `[gpu-width-advisory]` `epm:progress` marker (plus a
+`gpu_width_advisory=True` extra): a STABLE strict subset of GPUs sat idle ≥
+`EPM_GPU_WIDTH_ADVISORY_MIN` (default 45) min on a multi-GPU pod while the run
+is healthy — the #813 idle-width / #664 spend-leak class. Apply the CLAUDE.md
+per-phase GPU-WIDTH right-sizing judgment (widen the parallelism to fill the
+pod, or release/downsize it) under the SAME three hard constraints as the
+idle advisory: (a) never kill un-checkpointable in-RAM work, (b) autonomous
+sessions never stop a pod to PARK, (c) this is NOT a mid-run cost gate — the
+trigger is the idle-width / elapsed-vs-plan fact, never "this is getting
+expensive". Both are advisory-only: neither changes the status verdict, and
+the poller stops nothing. This handling is additive to the `status=running`
+branch.
+
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
 exist ON THE POD (the experimenter's launcher writes it there at launch
@@ -4026,7 +4242,7 @@ When this skill is re-invoked in `running`:
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
-   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds: failure-lesson
    block" and `experimenter.md` § "Failure-lesson block on
    relaunch-with-fix") to end their report with a structured lesson
    block. A THIRD shape arrives outside this step: an experimenter that
@@ -4170,7 +4386,7 @@ entry guard convention):
    upload-verification PASS. See the two hard joins below.
    **Paper-mode branch (`paper: true` frontmatter).** When the task
    carries `paper: true`, the analyzer runs its PAPER-TASK MODE
-   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   (`.claude/rules/analyzer-paper-mode.md` § PAPER-TASK MODE): the analysis Steps
    1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
    `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
    assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
@@ -4632,6 +4848,63 @@ same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
 
+**Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
+Any VM-LOCAL compute phase with projected wall-time >~15 min that the
+orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
+aggregation / permutation battery) MUST be launched fully detached:
+
+    PHASE_PID=$(bash -c 'setsid nohup <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
+                                  # recover via pgrep -f '<distinctive invocation>'
+
+The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
+shell runs with job control ON, where `setsid` forks and a bare `$!` is the
+vanished intermediate; inside the wrapper (job control OFF) `setsid` execs in
+place, so `$!` is the workload pid. A plain bg-Bash child stays in the
+session's kill domain (script-launched children share the launcher's process
+group + session id; even a top-level child with its own pgid shares the sid),
+and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
+healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
+signal kill). `setsid` gives the phase its own session + process group (group
+kills miss it; it reparents to PID 1 when the launching shell exits);
+`< /dev/null >> log` drops every fd tether to the dying session. The phase's
+stage-dispatch breadcrumb MUST carry two additional fields:
+`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+`key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
+log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
+— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
+genuinely new field). EXEMPT: work that COMPLETES within a subagent's own
+bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
+returns follows this SAME detach shape — the phase sits in the session's kill
+domain either way), pod-side workloads (the pod launch contract / #883), the
+deadline-bounded off-pod `batch_judge` poll, and quick probes / plots
+(< ~15 min). Off-VM routing (CLAUDE.md § CPU-only phases — the cheap
+dedicated CPU-pod lanes) remains the FIRST preference for long CPU phases;
+this convention governs the residual phases that legitimately stay VM-local
+and is not a permission slip for long VM-side compute.
+
+**Successor / re-entry rule (overrides the freshness window below).** When the
+current stage+round's most recent breadcrumb carries `pid=`, probe
+`ps -p <pid> -o args=` BEFORE any re-dispatch decision — the SAME identity
+verify as at launch, never a bare liveness check (on a shared VM a recycled
+pid would otherwise "re-attach" to a stranger and suppress the needed
+relaunch). Alive AND args match the distinctive invocation → the phase is IN
+FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
+markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
+`log=` for real progress (alive ≠ progressing; the log is the progress
+signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
+args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
+output present → stage done; proceed. Dead with no completion output →
+genuinely failed: run the kill-before-relaunch probe
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
+`stage_dispatch_should_skip` knows nothing about pids, so the polling
+orchestrator also refreshes the mechanical window with periodic liveness
+`epm:progress` notes (those refresh the events.jsonl effective-age window;
+the watcher's stall detector reads the session SELF-REPORT, so a long-idle
+session may still be stopped — benign under this rule: the detached phase
+survives and the successor re-attaches); the identity-verified pid probe is
+the authoritative check at re-entry.
+
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
 1. Read the most recent events.jsonl marker via
@@ -4767,7 +5040,14 @@ discarded by Step 8's gap-fill decision rule).
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
    | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
-   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+   | Codex no-show (`epm:failure` posted, or NO durable verdict per the Step 5b durable-verdict-first rule) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+
+   An Agent-tool error for EITHER critic first triggers the Step 5b
+   durable-verdict-first check (re-read events.jsonl for
+   `epm:interp-critique[-codex] v<n>`, then the round-fresh Codex output
+   file): a thrash-killed summary turn with a posted verdict is a RETURNED
+   reviewer; a Claude critic with no durable verdict is re-spawned once
+   per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
@@ -4844,7 +5124,7 @@ paper-task's reader-facing prose lives in the `.tex`
 interpretation / Discussion), not a markdown `body.md` to extract — and
 the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
 copula avoidance, classical academic terms) on those paper surfaces
-INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/rules/analyzer-paper-mode.md`
 § PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
 paper-task (analyzer ran inline /humanize academic on the .tex)` so the
 audit log records it, and proceed straight to 9a-ter.
@@ -4968,6 +5248,33 @@ within the same task; the second free-analysis follow-up surfaces in
 the body as a regular bullet for a future human pass. Across tasks the
 mechanism stays fresh (each task gets its own one round).
 
+**Compute-character pre-launch statement (REQUIRED — one paragraph, not a
+planner round, not a gate).** "0 GPU-h" does not mean "0 compute review":
+this step, the Step 9b same-issue follow-up loop, and the CLAUDE.md
+§ Routing "User-chat inline free analysis" carve-out are the workflow's
+PLANNERLESS paths — they skip the planner+critic stack, where all
+compute-character review lives (incidents #667/#722/#778: reused serial
+parent code burned hours on "0 GPU-h" work, caught only by ad-hoc human
+watches). Before dispatching any stage that launches a fit, sweep, or
+statistical battery (permutation/bootstrap/null-draw batteries,
+per-cell/per-fold fits, per-row model calls), the dispatcher STATES, in
+the stage-dispatch `epm:progress` breadcrumb note (or an
+immediately-adjacent `epm:progress` marker): (1) the ops arithmetic —
+cells × folds × draws × epochs and the projected wall-time it implies;
+(2) the NAMED batched helper implementing the inner loop (e.g.
+`analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
+`analysis/null_battery.py`), or why the work is genuinely not batchable;
+(3) for reused parent code, that its inner loop + device routing were
+INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
+wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
+realized implementation later adds a fit/battery the dispatch statement
+did not cover — or materially changes its arithmetic — an updated
+statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+A statement covering a VM-side phase >~15 min ALSO names the detached launch
+shape + log path per the Step 9 entry-guard § "Detached VM-side long compute phases" convention.
+Routing, auto-continue behavior, and the marker schema are unchanged.
+
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
 the analyzer flagged `headline_affecting: yes` — still a useful priority
@@ -4979,6 +5286,9 @@ explicit eval-data path):
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
+   When the follow-up runs any fit/battery, this breadcrumb (or an
+   immediately-following `epm:progress` note) carries the
+   § Compute-character pre-launch statement above.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -5018,7 +5328,7 @@ explicit eval-data path):
    true`?** The re-spawned analyzer re-authors the `.tex` in place —
    re-writing the Abstract + the affected Results subsection, re-running
    `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
-   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   `.claude/rules/analyzer-paper-mode.md` § "Same-issue follow-up rounds
    (paper-task)"; the mechanical gate is `verify_paper.py`, not
    `verify_task_body.py`. The same applies to the Step 9b cheap-band /
    same-issue follow-up loop folds.)
@@ -5167,8 +5477,11 @@ dispatching this round's critics.
    root, never an issue-worktree cwd. Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
-   union, reconciler on disagreement), BUT first run the
-   procedural-only strip below.
+   union, reconciler on disagreement; on any Agent-tool error, the Step
+   5b durable-verdict-first rule applies — check
+   `epm:clean-result-critique[-codex] v<n>` + the round-fresh Codex
+   output file before any no-show fallback or re-spawn), BUT first run
+   the procedural-only strip below.
 
    **Procedural-only verdict strip (clean-result analogue of Step
    5c-bis).** Before applying the ensemble rule, parse each critic's
@@ -5719,7 +6032,10 @@ autonomous block step 2-bis, and Step 10b):
 >    `not-redundant | redundant`; it posts the canonical
 >    `epm:review-reconcile` marker). A Codex twin no-show falls back to
 >    the single-Claude `follow-up-critic` verdict (workflow.yaml §
->    ensemble_review). An UNCITED `redundant` verdict (no concrete
+>    ensemble_review; no-show confirmed per the Step 5b
+>    durable-verdict-first rule — check `epm:followup-value-critique-codex`
+>    + the round-fresh output file before declaring it). An UNCITED
+>    `redundant` verdict (no concrete
 >    duplicate named) is non-binding — treat it as `not-redundant` for
 >    that proposal (cite-or-drop, mirrors the reconciler's ungrounded-
 >    blocker rule).
@@ -6170,6 +6486,19 @@ orchestrators driving one round is the #778 root cause.
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
+   - **Compute-character pre-launch statement** (canonical block: Step
+     9a-ter § Compute-character pre-launch statement — same three
+     elements, same > ~1h stop-and-vectorize rule): REQUIRED in the
+     `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
+     `epm:progress` note) before dispatching ANY stage of the round that
+     launches a fit, sweep, or statistical battery — INCLUDING
+     planner-exempt re-runs (step 2), which skip the amendment plan and
+     its §9 sizing entirely, and analysis / re-fold stages reusing parent
+     code. An amendment plan's §9 sizing does NOT substitute for it: the
+     plan schedules the battery, the executor states the implementation's
+     compute shape — #778's round re-ran the parent's serial 1000-draw
+     null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
+     plan that never said "serial".
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
@@ -6303,21 +6632,41 @@ suite directly and posts an `epm:test-verdict` event with the result.
    subset). The full ~5800-test suite has no xdist parallelism and is
    harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
    `pytest tests/` wholesale by default.
-   a. Compute the subset:
-      `uv run python scripts/select_step9c_tests.py --base main`
-      It prints the exact `uv run pytest <files> -v --tb=short` command and
-      any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
-      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
-      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
-      with zero collected tests) is a **FAIL, never a PASS**: it is the
-      signature of a failed `cd` that ran pytest in a directory with no tests
-      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
-      on `no tests ran ... pytest exit: 0` and was silently skipped).
+   a. Compute the subset FROM THE ISSUE WORKTREE — a branch-new test file
+      exists ONLY there until the Step 10d merge, and the helper diffs the
+      INVOKING checkout (incident #851: run from the main repo root it saw an
+      empty diff and silently dropped the branch's own test files from the
+      gate; the helper now emits a stderr `NOTE — empty diff` in that shape —
+      on a worktree-based task whose branch HAS commits ahead of the base,
+      that NOTE means wrong cwd, re-run from the worktree; from a correct
+      worktree with no commits ahead of the base it also fires and is then
+      expected and benign):
       ```bash
-      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
-      # the wrong dir on a silent cd failure:
-      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+      WT="$REPO_ROOT/.claude/worktrees/issue-<N>"   # same-issue follow-up rounds use
+                                                    # their own issue-<N>-<suffix> worktree
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      uv run python scripts/select_step9c_tests.py --base main
+      ```
+      It prints the exact `uv run pytest <files> -v --tb=short` command, plus
+      stderr diagnostics: a one-line work-root + branch provenance breadcrumb
+      on every run, any `untested touched file: <path>` WARN lines, and the
+      empty-diff NOTE described above. (A code-change task with NO worktree
+      runs both from the repo root; the empty-diff NOTE is then expected and
+      benign.)
+   b. Run the printed command from the SAME worktree cwd (paths are
+      repo-relative). Record pass/fail + ALL selector stderr lines (the
+      provenance breadcrumb, the NOTE if any, and any WARN lines). Two
+      anti-silent-pass guards are LOAD-BEARING here — a `no tests ran` outcome
+      (pytest exit 0 with zero collected tests) is a **FAIL, never a PASS**:
+      it is the signature of a failed `cd` that ran pytest in a directory with
+      no tests (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate
+      reported PASS on `no tests ran ... pytest exit: 0` and was silently
+      skipped).
+      ```bash
+      # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
+      # never let the gate run in the wrong dir on a silent cd failure:
+      #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
       echo "$PYTEST_OUT"
       # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
@@ -6327,20 +6676,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
-      `## Test scope` H2 names `full`, run the FULL suite instead — but as
-      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
-      capture `tail -50` of the run log so the stall surfaces actionable
-      evidence (this is the #665/#736 regression — keep it visible, never a
-      silent kill). Default scope is `touched`.
+      `## Test scope` H2 names `full`, run the FULL suite instead — from the
+      SAME issue-worktree cwd (the branch's own test files exist only there) —
+      but as `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on
+      timeout/kill, capture `tail -50` of the run log so the stall surfaces
+      actionable evidence (this is the #665/#736 regression — keep it visible,
+      never a silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
-the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped). A
-zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
-exit 0) per step 1b's guard.
+the files run, pass/fail counts, and ALL selector stderr diagnostics — the
+work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
+any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
+and coverage gaps — never silently skipped). A zero-collected / `no tests ran`
+outcome is recorded as FAIL (never PASS on exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run

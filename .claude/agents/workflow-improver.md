@@ -10,12 +10,16 @@ description: >
   `.claude/rules/workflow-fix-on-bug.md`. This file is frozen for historical
   reference; the `name:` is kept so any stale spawn fails loud rather than
   silently mis-routing.
-model: claude-fable-5
 skills:
   - codebase-debugger
   - cleanup
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 ---
 
 > **DEPRECATED — do not spawn (retired 2026-06-27, #678).** The
