@@ -5766,8 +5766,8 @@
     "884": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/884",
-      "status": "proposed",
+      "path": "tasks/planning/884",
+      "status": "planning",
       "title": "workflow-fix: setsid-detach VM-side long CPU phases (watcher-stop kill)"
     },
     "89": {
