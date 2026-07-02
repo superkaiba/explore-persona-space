@@ -5379,8 +5379,8 @@
     "832": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/832",
-      "status": "planning",
+      "path": "tasks/approved/832",
+      "status": "approved",
       "title": "workflow-fix: code-reviewer diff-size budget on long-lived branches"
     },
     "833": {
