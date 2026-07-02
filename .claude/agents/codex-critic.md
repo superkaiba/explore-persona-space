@@ -10,7 +10,6 @@ description: >
   (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
   itself — that's the orphan-job anti-pattern (incident task #533,
   2026-06-10).
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true

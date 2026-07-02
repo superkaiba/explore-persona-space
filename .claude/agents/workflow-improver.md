@@ -10,7 +10,6 @@ description: >
   `.claude/rules/workflow-fix-on-bug.md`. This file is frozen for historical
   reference; the `name:` is kept so any stale spawn fails loud rather than
   silently mis-routing.
-model: claude-fable-5
 skills:
   - codebase-debugger
   - cleanup

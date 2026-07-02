@@ -6,7 +6,6 @@ description: >
   and skills. All proposals are drafts — nothing is changed without user approval.
 accepts:
   - lookback_days
-model: claude-fable-5
 memory: project
 effort: xhigh
 ---

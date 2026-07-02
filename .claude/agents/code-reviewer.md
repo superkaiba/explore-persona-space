@@ -5,7 +5,6 @@ description: >
   completes a diff. Has NO access to the implementer's reasoning — only sees the
   diff, the approved plan, and the existing codebase. Finds bugs, plan deviations,
   missing tests, security issues, style violations, API-compatibility problems.
-model: claude-fable-5
 skills:
   - independent-reviewer
 memory: project

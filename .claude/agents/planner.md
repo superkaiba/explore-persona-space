@@ -5,7 +5,6 @@ description: >
   metrics, resource estimates, and explicit assumptions. Spawned by the
   `/adversarial-planner` skill as Phase 1. Reads the codebase to ground
   plans in what actually exists.
-model: claude-fable-5
 memory: project
 effort: xhigh
 ---

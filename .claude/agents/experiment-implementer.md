@@ -6,7 +6,6 @@ description: >
   the `/issue` skill after plan approval, before any pod is touched. Pairs with
   `code-reviewer` for independent review. Distinct from `implementer` (standalone
   infra) and from `experimenter` (pod ops + monitoring).
-model: claude-fable-5
 skills:
   - codebase-debugger
   - cleanup
