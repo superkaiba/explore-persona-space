@@ -24,9 +24,11 @@ Pure logic, no GPU, ~1s.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -196,15 +198,18 @@ def test_gate_metrics_carry_gate_only_flag():
     A tag the .sh + downstream can trust to confirm the gate never wrote a reduced
     summary / .done (the gate-only early return builds this dict and returns before
     any reduced/summary/.done write). Pure-dict shape check, no model.
+
+    NOTE (IO patch): the cell body moved from run_cell into _run_cell_body (run_cell
+    is now the sentinel + PID-lock wrapper), so the source contract is asserted there.
     """
-    # The gate-only early-return metrics dict shape (mirrors run_cell's gate branch).
+    # The gate-only early-return metrics dict shape (mirrors the body's gate branch).
     # We assert the field exists by grepping the source contract rather than executing
     # the GPU path: the flag MUST be present in the emitted metrics.
     import inspect
 
     import issue813_run_cell as rc
 
-    src = inspect.getsource(rc.run_cell)
+    src = inspect.getsource(rc._run_cell_body)
     assert '"gate_only": True' in src, "gate-only metrics must carry gate_only=True (B1)"
     # and the gate branch returns BEFORE the <4-contexts fit guard + sentinel writes.
     assert src.index("if args.gate_only:") < src.index("len(kept) < 4"), (
@@ -564,7 +569,6 @@ def _install_synthetic_parity_reads(monkeypatch, *, ratio: float, marker_delta: 
     are exercised in isolation). Returns nothing; monkeypatch handles teardown.
     """
     import issue667_extract as ex
-    import numpy as np
     import torch
 
     from explore_persona_space.analysis.issue667 import gate_chain
@@ -809,3 +813,368 @@ def test_marker_behavioral_confirmation_reads_the_diagonal_context_and_logs(monk
     msg = "\n".join(r.getMessage() for r in caplog.records)
     assert "DIAGONAL" in msg and "context=default" in msg, msg
     assert "4.0000 nat" in msg, msg
+
+
+# ── IO-bottleneck patch invariants (uncompressed saves, resume skip-set, PID lock) ──
+#
+# The live-sweep IO patch: (1) the per-row unreduced save is UNCOMPRESSED np.savez
+# (deflate was ~65% of per-row wall — 103.8s vs 1.2s on a 933MB row — at a 1.29x
+# ratio; the small cell-end reduced saves stay compressed); (2) resume skip-set —
+# rows already on HF still forward+reduce but skip the save/enqueue; (3) a per-cell
+# PID lockfile makes a duplicate exec of a live cell exit 0 (the dispatcher's
+# wave-2 re-exec of manually pre-launched cells); (4) r_lookup.json + accum_ckpt.npz
+# resume persistence. All inert on a fresh cell launch.
+
+
+def _cell_args(tmp_path, **overrides):
+    """A minimal run_cell Args namespace for lock/skip tests (CPU, no upload)."""
+
+    class Args:
+        behavior = "marker"
+        substrate = "generic"
+        out_root = tmp_path
+        gpu_id = 0
+        cpu_only = True
+        upload = False
+        force = False
+        gate_only = False
+        max_contexts = 1
+        max_questions = 1
+        metrics_out = None
+
+    for k, v in overrides.items():
+        setattr(Args, k, v)
+    return Args()
+
+
+def _fake_caps(t_len: int = 4, width: int = 8):
+    """Synthetic _capture_full_and_reduce output (tiny width; layer axis real)."""
+    import issue813_run_cell as rc
+
+    full = np.zeros((t_len, rc.N_LAYERS, width), dtype=np.float16)
+    red = np.ones((rc.N_LAYERS, width), dtype=np.float32)
+    return {
+        "full_base": full,
+        "full_trained": full,
+        "c_C_base": red,
+        "c_C_trained": red,
+        "v_A_base": red,
+        "v_A_trained": red,
+        "prompt_len": 2,
+        "full_len": t_len,
+    }
+
+
+def test_unreduced_save_is_uncompressed_reduced_stay_compressed():
+    """IO-1: per-row unreduced save = np.savez; the 2 cell-end reduced saves stay compressed."""
+    import inspect
+
+    import issue813_run_cell as rc
+
+    pairs_src = inspect.getsource(rc._extract_pairs)
+    assert "np.savez(" in pairs_src, "per-row unreduced save must be UNCOMPRESSED np.savez"
+    assert "np.savez_compressed(" not in pairs_src, (
+        "the per-row loop must NOT compress (65% of per-row wall at a 1.29x ratio)"
+    )
+    body_src = inspect.getsource(rc._run_cell_body)
+    assert body_src.count("np.savez_compressed(") == 2, (
+        "summary.npz + per_question_L14.npz (small) must STAY compressed"
+    )
+
+
+def test_batch_upload_chunk_halved_for_uncompressed_files():
+    """IO-5: BATCH_UPLOAD_CHUNK 100 → 50 (files ~1.29x bigger; keeps tmp footprint similar)."""
+    import issue813_run_cell as rc
+
+    assert rc.BATCH_UPLOAD_CHUNK == 50
+
+
+def test_duplicate_exec_exits_zero_on_live_lock(tmp_path):
+    """IO-6: a second exec of a cell owned by a LIVE pid exits 0 without touching the lock."""
+    import issue813_run_cell as rc
+
+    reduced_dir = tmp_path / "reduced" / "marker" / "generic"
+    reduced_dir.mkdir(parents=True)
+    (reduced_dir / rc.RUNNING_LOCK_NAME).write_text(str(os.getpid()))  # a LIVE pid (our own)
+
+    out = rc.run_cell(_cell_args(tmp_path))
+    assert out.get("skipped") is True, out
+    assert out.get("duplicate_of_pid") == os.getpid(), out
+    # The owner's lock is NOT stolen or removed by the duplicate.
+    assert (reduced_dir / rc.RUNNING_LOCK_NAME).read_text() == str(os.getpid())
+
+
+def test_stale_lock_is_taken_over_and_removed_in_finally(tmp_path, monkeypatch):
+    """IO-6: a DEAD owner's lock is taken over; the finally releases it even on a crash."""
+    import issue813_run_cell as rc
+
+    reduced_dir = tmp_path / "reduced" / "marker" / "generic"
+    reduced_dir.mkdir(parents=True)
+    (reduced_dir / rc.RUNNING_LOCK_NAME).write_text("424242")
+    monkeypatch.setattr(rc, "_pid_alive", lambda pid: False)  # the recorded pid is dead
+
+    class _Boom(RuntimeError):
+        pass
+
+    def _body(args, reduced_dir_):
+        # The stale lock was overwritten with OUR pid before the body ran.
+        assert (reduced_dir_ / rc.RUNNING_LOCK_NAME).read_text() == str(os.getpid())
+        raise _Boom("body crashed")
+
+    monkeypatch.setattr(rc, "_run_cell_body", _body)
+    with pytest.raises(_Boom):
+        rc.run_cell(_cell_args(tmp_path))
+    # finally released the lock despite the crash.
+    assert not (reduced_dir / rc.RUNNING_LOCK_NAME).exists()
+
+
+def test_gate_only_takes_no_lock(tmp_path, monkeypatch):
+    """IO-6: gate-only bypasses the PID lock entirely (it writes no production state)."""
+    import issue813_run_cell as rc
+
+    class _PastLock(RuntimeError):
+        pass
+
+    def _boom(*a, **k):
+        raise _PastLock("reached the body")
+
+    monkeypatch.setattr(rc, "load_battery_instances", _boom)
+    with pytest.raises(_PastLock):
+        rc.run_cell(_cell_args(tmp_path, gate_only=True))
+    reduced_dir = tmp_path / "reduced" / "marker" / "generic"
+    assert not (reduced_dir / rc.RUNNING_LOCK_NAME).exists()
+
+
+def test_skip_set_rows_still_reduce_but_do_not_save_or_enqueue(tmp_path, monkeypatch):
+    """IO-3: a skip-set row still forwards + reduces, but writes no npz (and no enqueue)."""
+    import issue813_run_cell as rc
+
+    monkeypatch.setattr(rc, "_capture_full_and_reduce", lambda *a, **k: _fake_caps())
+    contexts = [{"id": "ctx0", "family": "fam", "system_prompt": None, "prefix_messages": []}]
+    questions = ["q a", "q b"]
+    r_lookup = {(0, 0): "resp a", (0, 1): "resp b"}
+    tmp_dir = tmp_path / "unreduced_tmp" / "marker" / "generic"
+
+    acc = rc._extract_pairs(
+        object(),
+        object(),
+        object(),
+        contexts,
+        questions,
+        r_lookup,
+        behavior="marker",
+        substrate="generic",
+        tmp_dir=tmp_dir,
+        device="cpu",
+        max_new=8,
+        upload=False,
+        skip_save_keys=frozenset({"ctx0__q0"}),
+    )
+    # BOTH rows reduced (accumulators complete)...
+    assert acc["n_cells_done"] == 2
+    assert len(acc["per_q"][0]["c_C_base"]) == 2
+    assert acc["pq_ctx_idx"] == [0, 0] and acc["pq_q_idx"] == [0, 1]
+    # ...but only the non-skip row saved an (uncompressed, loadable) npz.
+    assert not (tmp_dir / "ctx0__q0.npz").exists()
+    assert (tmp_dir / "ctx0__q1.npz").exists()
+    with np.load(tmp_dir / "ctx0__q1.npz") as z:
+        assert z["full_base"].dtype == np.float16
+        assert str(z["context_id"]) == "ctx0" and int(z["question_index"]) == 1
+    assert len(acc["cell_bytes"]) == 1  # only the saved row is byte-measured
+
+
+def test_skip_forward_rows_skip_the_capture_entirely(tmp_path, monkeypatch):
+    """IO-4b: a skip-forward row (accum_ckpt-covered) never reaches the capture."""
+    import issue813_run_cell as rc
+
+    calls = {"n": 0}
+
+    def _cap(*a, **k):
+        calls["n"] += 1
+        return _fake_caps()
+
+    monkeypatch.setattr(rc, "_capture_full_and_reduce", _cap)
+    contexts = [{"id": "ctx0", "family": "fam", "system_prompt": None, "prefix_messages": []}]
+    questions = ["q a", "q b"]
+    r_lookup = {(0, 0): "resp a", (0, 1): "resp b"}
+
+    acc = rc._extract_pairs(
+        object(),
+        object(),
+        object(),
+        contexts,
+        questions,
+        r_lookup,
+        behavior="marker",
+        substrate="generic",
+        tmp_dir=tmp_path / "unreduced_tmp" / "marker" / "generic",
+        device="cpu",
+        max_new=8,
+        upload=False,
+        skip_forward_keys=frozenset({"ctx0__q0"}),
+    )
+    assert calls["n"] == 1  # only the non-skipped row was captured
+    assert acc["n_cells_done"] == 1
+    assert len(acc["per_q"][0]["c_C_base"]) == 1
+
+
+def test_hf_uploaded_rows_filters_this_cells_prefix(monkeypatch):
+    """IO-3: the skip-set is built from ONE list_repo_files call, cell-prefix-filtered."""
+    import huggingface_hub
+    import issue813_run_cell as rc
+
+    files = [
+        f"{rc.EXPERIMENT_NAME}/unreduced/marker/generic/ctxA__q0.npz",
+        f"{rc.EXPERIMENT_NAME}/unreduced/marker/generic/ctxA__q1.npz",
+        f"{rc.EXPERIMENT_NAME}/unreduced/marker/generic/{rc.R_LOOKUP_NAME}",
+        f"{rc.EXPERIMENT_NAME}/unreduced/marker/elicit/ctxA__q0.npz",  # other substrate
+        f"{rc.EXPERIMENT_NAME}/reduced/marker/generic/summary.npz",  # reduced, not a row
+        "other_experiment/unreduced/marker/generic/ctxB__q0.npz",
+    ]
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda *a, **k: files)
+    keys, has_r = rc._hf_uploaded_rows("marker", "generic")
+    assert keys == {"ctxA__q0", "ctxA__q1"}
+    assert has_r is True
+
+
+def test_reenqueue_guards_hf_rows_truncated_files_and_ckpt(tmp_path):
+    """IO-3: local re-enqueue skips HF-complete rows (deleted), truncated files, the ckpt."""
+    import issue813_run_cell as rc
+
+    # Complete row NOT on HF → re-enqueued for the first flush.
+    np.savez(tmp_path / "c1__q0.npz", full_base=np.zeros(1), full_trained=np.zeros(1))
+    # Complete row already on HF → deleted, never double-enqueued.
+    np.savez(tmp_path / "c1__q1.npz", full_base=np.zeros(1), full_trained=np.zeros(1))
+    # Truncated write from an interrupted process → left for the loop to recompute.
+    (tmp_path / "c1__q2.npz").write_bytes(b"PK\x03\x04 truncated")
+    # The local-only accumulator checkpoint is NEVER enqueued for upload.
+    np.savez(tmp_path / rc.ACCUM_CKPT_NAME, full_base=np.zeros(1), full_trained=np.zeros(1))
+
+    pending = rc._reenqueue_local_npz(tmp_path, {"c1__q1"}, "pfx")
+    assert [(p.name, rp) for p, rp in pending] == [("c1__q0.npz", "pfx/c1__q0.npz")]
+    assert not (tmp_path / "c1__q1.npz").exists()  # stale local copy of an HF row dropped
+    assert (tmp_path / "c1__q2.npz").exists()  # truncated file left for recompute
+    assert (tmp_path / rc.ACCUM_CKPT_NAME).exists()
+
+
+def test_accum_ckpt_roundtrip_and_mismatch_guard(tmp_path):
+    """IO-4b: accum_ckpt round-trips per_q/pq_rows; any skip-set mismatch → None."""
+    import issue813_run_cell as rc
+
+    rng = np.random.default_rng(0)
+    flat = {
+        k: [rng.normal(size=(rc.N_LAYERS, rc.HIDDEN)).astype(np.float32) for _ in range(2)]
+        for k in rc._PQ_KEYS
+    }
+    ckpt = tmp_path / rc.ACCUM_CKPT_NAME
+    rc._save_accum_ckpt(
+        ckpt,
+        flat_rows=flat,
+        pq_ctx_idx=[0, 1],
+        pq_q_idx=[0, 0],
+        row_keys=["c0__q0", "c1__q0"],
+        n_cells_done=2,
+        n_empty=0,
+        cell_bytes=[10, 12],
+        behavior="marker",
+        substrate="generic",
+    )
+    acc = rc._load_accum_ckpt(
+        ckpt,
+        behavior="marker",
+        substrate="generic",
+        n_contexts=2,
+        expected_keys={"c0__q0", "c1__q0"},
+    )
+    assert acc is not None
+    assert acc["n_cells_done"] == 2 and acc["pq_ctx_idx"] == [0, 1]
+    np.testing.assert_allclose(acc["per_q"][1]["v_A_base"][0], flat["v_A_base"][1])
+    np.testing.assert_allclose(
+        acc["pq_rows"]["c_C_base"][0], flat["c_C_base"][0][rc.HEADLINE_LAYER]
+    )
+    # A skip-set the ckpt does not EXACTLY cover → conservative None (recompute).
+    assert (
+        rc._load_accum_ckpt(
+            ckpt,
+            behavior="marker",
+            substrate="generic",
+            n_contexts=2,
+            expected_keys={"c0__q0"},
+        )
+        is None
+    )
+    # A different cell's ckpt never seeds this cell.
+    assert (
+        rc._load_accum_ckpt(
+            ckpt,
+            behavior="fact",
+            substrate="generic",
+            n_contexts=2,
+            expected_keys={"c0__q0", "c1__q0"},
+        )
+        is None
+    )
+
+
+def test_flush_uploads_checkpoints_and_respects_keep_local(tmp_path, monkeypatch):
+    """IO-4: a flush batch-commits, deletes locals EXCEPT keep_local, writes the ckpt.
+
+    r_lookup.json rides the first flush but survives the post-commit delete
+    (keep_local); row npzs are deleted after commit; the local-only accumulator
+    checkpoint is written at every flush and never appears in any commit.
+    """
+    import issue813_run_cell as rc
+
+    monkeypatch.setattr(rc, "_capture_full_and_reduce", lambda *a, **k: _fake_caps())
+    commits: list[list] = []
+    monkeypatch.setattr(rc, "_hf_batch_commit", lambda items: commits.append(list(items)))
+    monkeypatch.setattr(rc, "BATCH_UPLOAD_CHUNK", 1)  # flush on every enqueue
+
+    tmp_dir = tmp_path / "unreduced_tmp" / "marker" / "generic"
+    tmp_dir.mkdir(parents=True)
+    keep = tmp_dir / rc.R_LOOKUP_NAME
+    keep.write_text("{}")
+    ckpt = tmp_dir / rc.ACCUM_CKPT_NAME
+    contexts = [{"id": "ctx0", "family": "fam", "system_prompt": None, "prefix_messages": []}]
+
+    acc = rc._extract_pairs(
+        object(),
+        object(),
+        object(),
+        contexts,
+        ["q a", "q b"],
+        {(0, 0): "resp a", (0, 1): "resp b"},
+        behavior="marker",
+        substrate="generic",
+        tmp_dir=tmp_dir,
+        device="cpu",
+        max_new=8,
+        upload=True,
+        pending_init=[(keep, "pfx/r_lookup.json")],
+        keep_local=frozenset({keep}),
+        ckpt_path=ckpt,
+    )
+    assert acc["n_cells_done"] == 2
+    # r_lookup.json was uploaded in the FIRST flush yet KEPT locally.
+    assert commits and any(rp == "pfx/r_lookup.json" for c in commits for _, rp in c)
+    assert keep.exists()
+    # Row npzs were uploaded then deleted locally (upload-then-delete).
+    uploaded = {rp for c in commits for _, rp in c}
+    assert any(rp.endswith("/ctx0__q0.npz") for rp in uploaded), uploaded
+    assert any(rp.endswith("/ctx0__q1.npz") for rp in uploaded), uploaded
+    assert not list(tmp_dir.glob("ctx0__q*.npz"))
+    # The accumulator checkpoint exists locally and was NEVER enqueued for upload.
+    assert ckpt.exists()
+    assert all(p.name != rc.ACCUM_CKPT_NAME for c in commits for p, _ in c)
+
+
+def test_r_lookup_json_roundtrip(tmp_path):
+    """IO-4a: r_lookup.json round-trips (ci, qi)↔row-key; dropped contexts are ignored."""
+    import issue813_run_cell as rc
+
+    contexts = [{"id": "ctxA", "family": "f"}, {"id": "ctxB", "family": "f"}]
+    path = tmp_path / rc.R_LOOKUP_NAME
+    rc._write_r_lookup_json(path, {(0, 0): "r00", (1, 3): "r13"}, contexts)
+    assert rc._load_r_lookup_json(path, contexts) == {(0, 0): "r00", (1, 3): "r13"}
+    # A context dropped by --max-contexts is ignored on load, not crashed on.
+    assert rc._load_r_lookup_json(path, contexts[:1]) == {(0, 0): "r00"}

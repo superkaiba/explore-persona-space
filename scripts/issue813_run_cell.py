@@ -25,9 +25,19 @@ this CLI:
    reduced per-(behavior, substrate) summary ``.npz`` (the map-fit input; small,
    ~1 MB) locally under ``eval_results/issue_813/reduced/<behavior>/<substrate>/``.
 
+Restart-safe (all inert on a fresh launch): a per-cell PID lockfile makes a
+duplicate exec of a live cell exit 0 (the dispatcher's wave-2 re-exec is then
+harmless when cells were pre-launched manually); on resume the cell skip-lists
+rows already uploaded (ONE ``list_repo_files`` call), reuses the persisted
+base-greedy responses (``r_lookup.json`` — removes vLLM nondeterminism across
+restarts), re-enqueues complete-but-unflushed local ``.npz`` files, and — when
+the local accumulator checkpoint (``accum_ckpt.npz``) exactly covers the
+uploaded rows — skips their forward passes entirely.
+
 CONTENT HYGIENE: ``em`` uses Betley harmful-content probes — this script NEVER
-prints/logs their text; it digests by row/token COUNT + activations only.
-Benign behaviors (marker/fact/sycophancy) are unaffected.
+prints/logs their text; it digests by row/token COUNT + activations only
+(``r_lookup.json`` is written/read as a file, never logged). Benign behaviors
+(marker/fact/sycophancy) are unaffected.
 
 Activation extraction is ``transformers`` forward hooks (NOT vLLM). vLLM is used
 ONLY for the frozen base-R generation (which returns text, no activations).
@@ -96,13 +106,28 @@ SUBSTRATES = ("generic", "elicit", "mix")
 MAX_NEW_TOKENS = {"marker": 2048, "fact": 1024, "sycophancy": 1024, "em": 1024}
 # Atomic per-(behavior, substrate) completion sentinel (resume-skip predicate).
 CELL_DONE_SENTINEL = ".done"
+# Per-cell PID lockfile (next to .done): a duplicate exec of a cell owned by a
+# LIVE process exits 0, so the dispatcher's later duplicate wave-2 exec is
+# harmless when cells were pre-launched manually.
+RUNNING_LOCK_NAME = ".running.pid"
+# Cell-scoped resume artifacts, both under the cell's unreduced_tmp SCRATCH dir
+# (never under reduced/, which is committed to git — em r_lookup rows carry
+# harmful-content completions): the persisted Phase-A base-greedy responses
+# (uploaded alongside the cell's unreduced prefix) and the local-only reduced-
+# accumulator checkpoint (overwritten at every upload flush, NEVER uploaded).
+R_LOOKUP_NAME = "r_lookup.json"
+ACCUM_CKPT_NAME = "accum_ckpt.npz"
+# The four reduced accumulator keys (c_C = last-input-token, v_A = mean-answer-span).
+_PQ_KEYS = ("c_C_base", "c_C_trained", "v_A_base", "v_A_trained")
 # Unreduced-.npz upload batching (B3, #664/#488): a per-file HfApi().upload_file
 # inside the (context, question) loop makes one HF commit per pair (~23,850 commits
 # across the sweep, blowing the 256-commits/hr throttle). Buffer each cell's .npz
 # files and flush ONE HfApi.create_commit per BATCH_UPLOAD_CHUNK files (many
 # CommitOperationAdds per commit), deleting local per flush so peak local footprint
 # stays ~one chunk (~BATCH_UPLOAD_CHUNK × per-cell bytes), never the full grid.
-BATCH_UPLOAD_CHUNK = 100
+# 50 (halved from 100 when the unreduced saves went UNCOMPRESSED — ~1.29x bigger
+# files; halving keeps peak tmp footprint + flush stalls similar).
+BATCH_UPLOAD_CHUNK = 50
 
 
 def _git_sha() -> str:
@@ -213,14 +238,18 @@ def _capture_full_and_reduce(
     acts_b = extract_layer_activations(base_model, ids, all_layers)  # {li: (1, T, H)}
     acts_t = extract_layer_activations(trained_model, ids, all_layers)
 
-    # UNREDUCED: (T, 28, HIDDEN) fp16, both models.
-    full_base = np.stack([acts_b[li][0].float().cpu().numpy() for li in all_layers], axis=1).astype(
-        np.float16
-    )
-    full_trained = np.stack(
-        [acts_t[li][0].float().cpu().numpy() for li in all_layers], axis=1
-    ).astype(np.float16)
+    # UNREDUCED: (T, 28, HIDDEN) fp16, both models — ONE stacked ON-DEVICE cast +
+    # ONE host transfer per model (the old per-layer .float().cpu() loop shipped 28
+    # fp32 copies over PCIe per model; the direct bf16→fp16 cast equals the old
+    # bf16→fp32→fp16 round-trip for all finite values).
+    stack_b = torch.stack([acts_b[li][0] for li in all_layers], dim=1)  # (T, 28, H) on device
+    stack_t = torch.stack([acts_t[li][0] for li in all_layers], dim=1)
+    assert stack_b.shape == (full_len, N_LAYERS, HIDDEN), stack_b.shape
+    assert stack_t.shape == (full_len, N_LAYERS, HIDDEN), stack_t.shape
+    full_base = stack_b.half().cpu().numpy()
+    full_trained = stack_t.half().cpu().numpy()
     assert full_base.shape == (full_len, N_LAYERS, HIDDEN), full_base.shape
+    assert full_base.dtype == np.float16 and full_trained.dtype == np.float16
 
     # REDUCED: c_C = last-input-token (slot p-1); v_A = mean over answer span [p:full_len).
     c_c_base = np.stack([acts_b[li][0, p - 1, :].float().cpu().numpy() for li in all_layers])
@@ -308,6 +337,395 @@ def _df_free_gib(path: str = "/workspace") -> float | None:
     return usage.free / 2**30
 
 
+# ── Resume + duplicate-exec plumbing (all inert on a fresh cell launch) ─────────
+
+
+def _row_key(ctx_id: str, qi: int) -> str:
+    """The stable per-(context, question) row key: ``{ctx_id}__q{qi}`` (the .npz stem)."""
+    return f"{ctx_id}__q{qi}"
+
+
+def _unreduced_prefix(behavior: str, substrate: str) -> str:
+    """This cell's HF unreduced prefix (skip-set filter + upload path_in_repo namespace)."""
+    return f"{EXPERIMENT_NAME}/unreduced/{behavior}/{substrate}"
+
+
+def _unreduced_tmp_dir(out_root: Path, behavior: str, substrate: str) -> Path:
+    """The cell's local scratch dir (unreduced .npz + resume artifacts; never committed)."""
+    return out_root / "unreduced_tmp" / behavior / substrate
+
+
+def _pid_alive(pid: int) -> bool:
+    """True iff ``pid`` is a live process (EPERM counts as live, ESRCH as dead)."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _acquire_cell_lock(reduced_dir: Path) -> int | None:
+    """Take the per-cell PID lockfile; return the live owner's pid if already held.
+
+    Writes our own pid to ``.running.pid`` and returns None when the lock is
+    acquired (no file, unparseable pid, or dead pid — a SIGKILLed run's stale
+    lock is taken over). Returns the owner pid WITHOUT touching the file when
+    the recorded pid is a live process, so a duplicate exec of the same cell
+    (the dispatcher's wave-2 re-exec of a manually pre-launched cell) exits 0
+    instead of double-running. Advisory check-then-write (no flock): the
+    dispatcher launches duplicates seconds-to-hours apart, never atomically.
+    """
+    lock = reduced_dir / RUNNING_LOCK_NAME
+    if lock.exists():
+        try:
+            pid = int(lock.read_text().strip())
+        except ValueError:
+            pid = None
+        if pid is not None and _pid_alive(pid):
+            return pid
+    lock.write_text(str(os.getpid()))
+    return None
+
+
+def _hf_uploaded_rows(behavior: str, substrate: str) -> tuple[set[str], bool]:
+    """ONE list_repo_files call → (already-uploaded row keys, r_lookup.json on HF?).
+
+    Row keys are the ``{ctx_id}__q{qi}`` stems under this cell's unreduced prefix
+    on the HF data repo — the resume skip-set. Fail-loud (network/auth raise).
+    """
+    from huggingface_hub import list_repo_files
+
+    prefix = _unreduced_prefix(behavior, substrate) + "/"
+    names = {
+        f[len(prefix) :]
+        for f in list_repo_files(DATA_REPO, repo_type="dataset")
+        if f.startswith(prefix)
+    }
+    keys = {n[: -len(".npz")] for n in names if n.endswith(".npz")}
+    return keys, R_LOOKUP_NAME in names
+
+
+def _npz_is_complete(path: Path) -> bool:
+    """True iff ``path`` is a readable npz carrying BOTH full-residual arrays.
+
+    Deliberate completeness classifier (not error hiding): a truncated write
+    from an interrupted process fails to open as a zip or lacks the entries;
+    reading the central directory is cheap (no array data is loaded).
+    """
+    import zipfile
+
+    try:
+        with np.load(path) as z:
+            return "full_base" in z.files and "full_trained" in z.files
+    except (zipfile.BadZipFile, OSError, ValueError):
+        return False
+
+
+def _reenqueue_local_npz(
+    tmp_dir: Path, hf_keys: set[str], unreduced_prefix: str
+) -> list[tuple[Path, str]]:
+    """Re-enqueue COMPLETE local unreduced .npz files left by an interrupted run.
+
+    Returns the (local_path, path_in_repo) items to upload in the first flush.
+    A file whose row is already on HF (``hf_keys``) is deleted, not re-enqueued
+    (double-enqueue guard); an incomplete/truncated file is left for the row
+    loop to recompute + overwrite; the local-only ``accum_ckpt.npz`` (and any
+    interrupted ``*.tmp.npz`` atomic write) is NEVER enqueued.
+    """
+    pending: list[tuple[Path, str]] = []
+    for p in sorted(tmp_dir.glob("*.npz")):
+        if p.name == ACCUM_CKPT_NAME or p.name.endswith(".tmp.npz"):
+            continue  # local-only checkpoint / interrupted atomic write — never uploaded
+        if p.stem in hf_keys:
+            p.unlink()  # already uploaded by a prior run — drop the stale local copy
+            continue
+        if not _npz_is_complete(p):
+            logger.info("resume: incomplete local %s — will recompute", p.name)
+            continue
+        pending.append((p, f"{unreduced_prefix}/{p.name}"))
+    return pending
+
+
+def _write_r_lookup_json(path: Path, r_lookup: dict[tuple[int, int], str], contexts) -> None:
+    """Persist ``{(ci, qi): R}`` as ONE json keyed by the stable row key (atomic write).
+
+    CONTENT HYGIENE: written/read as a file only — the response text is never
+    logged (em rows carry Betley harmful-content completions).
+    """
+    payload = {_row_key(contexts[ci]["id"], qi): r for (ci, qi), r in sorted(r_lookup.items())}
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False))
+    os.replace(tmp, path)
+
+
+def _load_r_lookup_json(path: Path, contexts) -> dict[tuple[int, int], str]:
+    """Load a persisted r_lookup.json → ``{(ci, qi): R}`` keyed back to battery indices.
+
+    Rows for contexts absent from the current run (a smaller ``--max-contexts``)
+    are dropped, not crashed on.
+    """
+    ci_by_id = {inst["id"]: ci for ci, inst in enumerate(contexts)}
+    out: dict[tuple[int, int], str] = {}
+    for key, text in json.loads(path.read_text()).items():
+        ctx_id, _, q = key.rpartition("__q")
+        if ctx_id in ci_by_id:
+            out[(ci_by_id[ctx_id], int(q))] = text
+    return out
+
+
+def _fetch_r_lookup_from_hf(dest: Path, unreduced_prefix: str) -> None:
+    """Stage the cell's persisted r_lookup.json from the HF data repo (resume path)."""
+    from huggingface_hub import hf_hub_download
+
+    cached = hf_hub_download(DATA_REPO, f"{unreduced_prefix}/{R_LOOKUP_NAME}", repo_type="dataset")
+    shutil.copyfile(cached, dest)
+
+
+def _save_accum_ckpt(
+    path: Path,
+    *,
+    flat_rows: dict[str, list[np.ndarray]],
+    pq_ctx_idx: list[int],
+    pq_q_idx: list[int],
+    row_keys: list[str],
+    n_cells_done: int,
+    n_empty: int,
+    cell_bytes: list[int],
+    behavior: str,
+    substrate: str,
+) -> None:
+    """Overwrite-in-place (atomic) local checkpoint of the reduced accumulators.
+
+    Written at every upload flush so a restart can rebuild per_q / pq_rows for
+    the rows already on HF WITHOUT recomputing their forwards (loaded by
+    ``_load_accum_ckpt`` when its row keys exactly match the HF skip-set).
+    Local-only — NEVER uploaded (rebuildable, and grows to ~GBs on a full cell).
+    """
+    arrays = {f"flat_{k}": np.stack(flat_rows[k]).astype(np.float32) for k in _PQ_KEYS}
+    tmp = path.with_suffix(".tmp.npz")
+    np.savez_compressed(
+        tmp,
+        **arrays,
+        pq_ctx_idx=np.asarray(pq_ctx_idx, dtype=np.int64),
+        pq_q_idx=np.asarray(pq_q_idx, dtype=np.int64),
+        row_keys=np.asarray(row_keys),
+        n_cells_done=np.asarray(n_cells_done),
+        n_empty=np.asarray(n_empty),
+        cell_bytes=np.asarray(cell_bytes, dtype=np.int64),
+        behavior=np.asarray(behavior),
+        substrate=np.asarray(substrate),
+        git_sha=np.asarray(_git_sha()),
+    )
+    os.replace(tmp, path)
+
+
+def _load_accum_ckpt(
+    path: Path, *, behavior: str, substrate: str, n_contexts: int, expected_keys: set[str]
+) -> dict | None:
+    """Load the accumulator checkpoint iff it EXACTLY covers the HF skip-set.
+
+    Returns the seeded accumulator state (per_q / pq_rows / flat_rows / index
+    lists / counters) when the checkpoint's (behavior, substrate) match and its
+    row keys == ``expected_keys`` — the caller may then skip forward+reduce for
+    exactly those rows. Any mismatch → None (the conservative recompute-by-
+    forward path). Set equality is stronger than the row-count match: it
+    guarantees every skipped row is present in the loaded accumulators.
+    """
+    with np.load(path) as z:
+        if str(z["behavior"]) != behavior or str(z["substrate"]) != substrate:
+            return None
+        row_keys = [str(k) for k in z["row_keys"]]
+        if len(row_keys) != len(expected_keys) or set(row_keys) != expected_keys:
+            return None
+        n = len(row_keys)
+        flat_rows: dict[str, list[np.ndarray]] = {}
+        for k in _PQ_KEYS:
+            arr = z[f"flat_{k}"]
+            assert arr.shape == (n, N_LAYERS, HIDDEN), (k, arr.shape)
+            flat_rows[k] = list(arr)
+        pq_ctx_idx = [int(i) for i in z["pq_ctx_idx"]]
+        pq_q_idx = [int(i) for i in z["pq_q_idx"]]
+        n_cells_done = int(z["n_cells_done"])
+        cell_bytes = [int(b) for b in z["cell_bytes"]]
+    if any(ci >= n_contexts for ci in pq_ctx_idx):
+        return None  # a smaller --max-contexts run than the checkpoint — recompute
+    per_q: dict[int, dict] = {ci: {k: [] for k in _PQ_KEYS} for ci in range(n_contexts)}
+    for i, ci in enumerate(pq_ctx_idx):
+        for k in _PQ_KEYS:
+            per_q[ci][k].append(flat_rows[k][i])
+    pq_rows = {k: [flat_rows[k][i][HEADLINE_LAYER] for i in range(n)] for k in _PQ_KEYS}
+    return {
+        "per_q": per_q,
+        "pq_rows": pq_rows,
+        "flat_rows": flat_rows,
+        "pq_ctx_idx": pq_ctx_idx,
+        "pq_q_idx": pq_q_idx,
+        "row_keys": row_keys,
+        "n_cells_done": n_cells_done,
+        "cell_bytes": cell_bytes,
+    }
+
+
+def _prepare_resume_state(args, behavior: str, substrate: str, tmp_dir: Path) -> dict:
+    """Resume bookkeeping for a non-gate-only UPLOAD run (empty state otherwise).
+
+    Returns ``{hf_keys, r_lookup_on_hf, pending_init, local_keys, keep_local}``:
+    ONE list_repo_files call builds the already-uploaded skip-set, and complete
+    local .npz files a prior interrupted process saved-but-never-flushed are
+    re-enqueued for the first flush. Non-upload / gate-only runs get empty state
+    (nothing was ever uploaded to resume against).
+    """
+    state: dict = {
+        "hf_keys": set(),
+        "r_lookup_on_hf": False,
+        "pending_init": [],
+        "local_keys": set(),
+        "keep_local": set(),
+    }
+    if args.gate_only or not args.upload:
+        return state
+    hf_keys, r_on_hf = _hf_uploaded_rows(behavior, substrate)
+    logger.info("resume: %d rows already on HF, skipping their unreduced saves", len(hf_keys))
+    pending_init = _reenqueue_local_npz(tmp_dir, hf_keys, _unreduced_prefix(behavior, substrate))
+    if pending_init:
+        logger.info(
+            "resume: re-enqueued %d complete local .npz (saved but never flushed by a prior run)",
+            len(pending_init),
+        )
+    state.update(
+        hf_keys=hf_keys,
+        r_lookup_on_hf=r_on_hf,
+        pending_init=pending_init,
+        local_keys={p.stem for p, _ in pending_init},
+    )
+    return state
+
+
+def _phase_a_base_responses(
+    args, tok, contexts, questions, *, device, max_new, tmp_dir: Path, resume: dict
+) -> dict[tuple[int, int], str]:
+    """Phase A: frozen base greedy R for every (context, question) pair (resume-aware).
+
+    Loads the cell's persisted r_lookup.json (locally, else from HF when a prior
+    upload run pushed it) and vLLM-generates ONLY uncovered pairs — restarts
+    reuse the SAME R (removes vLLM nondeterminism). Persists the (possibly
+    extended) lookup right after generation and enqueues it into ``resume``'s
+    pending_init for the first upload flush (kept local post-flush). On the
+    CPU-smoke path uncovered pairs stay absent (per-pair HF greedy fallback in
+    ``_extract_pairs``). gate-only keeps the pre-patch behavior: generate all,
+    persist nothing.
+    """
+    r_lookup: dict[tuple[int, int], str] = {}
+    r_lookup_path = tmp_dir / R_LOOKUP_NAME
+    prefix = _unreduced_prefix(args.behavior, args.substrate)
+    if not args.gate_only:
+        if not r_lookup_path.exists() and resume["r_lookup_on_hf"]:
+            _fetch_r_lookup_from_hf(r_lookup_path, prefix)
+        if r_lookup_path.exists():
+            r_lookup = _load_r_lookup_json(r_lookup_path, contexts)
+            logger.info(
+                "resume: r_lookup.json covers %d pairs — Phase A skipped for them", len(r_lookup)
+            )
+    pair_msgs: list[list[dict]] = []
+    pair_keys: list[tuple[int, int]] = []
+    for ci, inst in enumerate(contexts):
+        for qi, q in enumerate(questions):
+            pair_msgs.append(i594.messages_for_instance(inst, q))
+            pair_keys.append((ci, qi))
+    fresh_r = False
+    if device.type != "cpu":
+        missing = [(k, m) for k, m in zip(pair_keys, pair_msgs, strict=True) if k not in r_lookup]
+        if missing:
+            logger.info(
+                "[phase=extract] Phase A: vLLM-generating %d base R responses", len(missing)
+            )
+            responses = ex667.vllm_generate_R(tok, [m for _, m in missing], max_new_tokens=max_new)
+            r_lookup.update(zip((k for k, _ in missing), responses, strict=True))
+            fresh_r = True
+    if r_lookup and not args.gate_only:
+        _write_r_lookup_json(r_lookup_path, r_lookup, contexts)
+        if args.upload and (fresh_r or not resume["r_lookup_on_hf"]):
+            resume["pending_init"].append((r_lookup_path, f"{prefix}/{R_LOOKUP_NAME}"))
+            resume["keep_local"].add(r_lookup_path)
+    return r_lookup
+
+
+def _flush_and_checkpoint(
+    pending: list[tuple[Path, str]],
+    keep_local: frozenset[Path],
+    ckpt_path: Path | None,
+    st: dict,
+    *,
+    behavior: str,
+    substrate: str,
+) -> None:
+    """Flush the pending batch (ONE HF commit), delete locals, checkpoint accumulators.
+
+    No-op on an empty buffer. Locals in ``keep_local`` (r_lookup.json) survive the
+    post-commit delete. After the commit every appended row is on HF, so the
+    local-only accumulator checkpoint written here (``ckpt_path``, overwrite in
+    place, NEVER uploaded) lets a restart skip those rows' forwards entirely.
+    """
+    if not pending:
+        return
+    _hf_batch_commit(pending)  # ONE commit for the whole chunk (fail-loud)
+    for local_path, _ in pending:
+        if local_path not in keep_local:
+            local_path.unlink()  # DELETE local only AFTER a verified batch commit
+    pending.clear()
+    if ckpt_path is not None and st["row_keys"]:
+        _save_accum_ckpt(
+            ckpt_path,
+            flat_rows=st["flat_rows"],
+            pq_ctx_idx=st["pq_ctx_idx"],
+            pq_q_idx=st["pq_q_idx"],
+            row_keys=st["row_keys"],
+            n_cells_done=st["n_cells_done"],
+            n_empty=st["n_empty"],
+            cell_bytes=st["cell_bytes"],
+            behavior=behavior,
+            substrate=substrate,
+        )
+
+
+def _init_accumulators(contexts, acc_init: dict | None) -> dict:
+    """Fresh — or accum_ckpt-seeded (resume) — accumulator state for ``_extract_pairs``."""
+    if acc_init is not None:
+        return acc_init
+    return {
+        "per_q": {ci: {k: [] for k in _PQ_KEYS} for ci in range(len(contexts))},
+        "pq_rows": {k: [] for k in _PQ_KEYS},
+        "flat_rows": {k: [] for k in _PQ_KEYS},
+        "pq_ctx_idx": [],
+        "pq_q_idx": [],
+        "row_keys": [],
+        "n_cells_done": 0,
+        "cell_bytes": [],
+    }
+
+
+def _enforce_disk_floor(upload: bool, flush, n_cells_done: int) -> None:
+    """Fail loud when /workspace free drops under the 10 GiB floor (EDQUOT risk).
+
+    Flushes the pending buffer first so a real batch-upload lag (not just
+    unflushed local files) is what trips the floor — fail-loud otherwise.
+    """
+    free = _df_free_gib()  # EDQUOT / df fail-loud monitoring
+    if free is None or free >= 10.0:
+        return
+    if upload:
+        flush()
+        free = _df_free_gib()
+    if free is not None and free < 10.0:
+        raise RuntimeError(
+            f"disk free {free:.1f} GiB < 10 GiB floor at /workspace after "
+            f"{n_cells_done} cells — batch-upload-then-delete not keeping up "
+            "(EDQUOT risk)"
+        )
+
+
 def _extract_pairs(
     base,
     trained,
@@ -318,98 +736,107 @@ def _extract_pairs(
     *,
     behavior,
     substrate,
-    reduced_dir,
+    tmp_dir: Path,
     device,
     max_new,
     upload,
+    skip_save_keys: frozenset[str] = frozenset(),
+    skip_forward_keys: frozenset[str] = frozenset(),
+    acc_init: dict | None = None,
+    pending_init: list[tuple[Path, str]] | tuple = (),
+    keep_local: frozenset[Path] = frozenset(),
+    ckpt_path: Path | None = None,
 ) -> dict:
     """Teacher-force every (context, question) pair; stream-upload unreduced; accumulate reduced.
 
-    Returns the accumulators ``run_cell`` reduces into the per-(behavior, substrate)
-    summary: ``per_q`` (question-averaged 28-layer c_C/v_A per context), the flat
-    headline-layer per-question rows for the substrate-swap null, and the counters
-    (``n_cells_done`` / ``n_empty`` / ``cell_bytes``). Split out of ``run_cell`` so
-    that function stays under the ruff C901 cap.
+    Returns the accumulators ``_run_cell_body`` reduces into the per-(behavior,
+    substrate) summary: ``per_q`` (question-averaged 28-layer c_C/v_A per
+    context), the flat headline-layer per-question rows for the substrate-swap
+    null, and the counters (``n_cells_done`` / ``n_empty`` / ``cell_bytes``).
+    Split out of the cell body so that function stays under the ruff C901 cap.
+
+    Resume semantics (all inert on a fresh launch — every skip/init defaults empty):
+
+    - ``skip_forward_keys``: rows whose reduced reads were pre-seeded via
+      ``acc_init`` (the accum_ckpt) — skipped ENTIRELY (no forward).
+    - ``skip_save_keys``: rows already on HF (or re-enqueued from a prior
+      interrupted run) — forward + reduced accumulation still run, but the
+      unreduced .npz save AND its upload enqueue are skipped.
+    - ``pending_init``: pre-existing (local_path, path_in_repo) items uploaded
+      in the first flush; ``keep_local`` paths (r_lookup.json) survive the
+      post-flush delete.
+    - ``ckpt_path``: when set, every flush also overwrites the local-only
+      reduced-accumulator checkpoint (``_save_accum_ckpt``).
     """
-    per_q: dict[int, dict] = {
-        ci: {"c_C_base": [], "c_C_trained": [], "v_A_base": [], "v_A_trained": []}
-        for ci in range(len(contexts))
-    }
-    pq_rows = {"c_C_base": [], "c_C_trained": [], "v_A_base": [], "v_A_trained": []}
-    pq_ctx_idx: list[int] = []
-    pq_q_idx: list[int] = []
-    n_cells_done = 0
-    n_empty = 0
-    cell_bytes: list[int] = []
-    unreduced_prefix = f"{EXPERIMENT_NAME}/unreduced/{behavior}/{substrate}"
+    st = _init_accumulators(contexts, acc_init)
+    st["n_empty"] = 0  # recounted every run (empty-R rows are never skipped/persisted)
+    per_q: dict[int, dict] = st["per_q"]
+    pq_rows: dict[str, list] = st["pq_rows"]
+    flat_rows: dict[str, list] = st["flat_rows"]  # ckpt store, append order
+    pq_ctx_idx: list[int] = st["pq_ctx_idx"]
+    pq_q_idx: list[int] = st["pq_q_idx"]
+    row_keys: list[str] = st["row_keys"]
+    cell_bytes: list[int] = st["cell_bytes"]
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    unreduced_prefix = _unreduced_prefix(behavior, substrate)
     # Pending (local_path, path_in_repo) buffer for the batched upload (B3). Flushed
     # every BATCH_UPLOAD_CHUNK files (ONE HF commit per flush), local deleted per flush.
-    pending: list[tuple[Path, str]] = []
+    pending: list[tuple[Path, str]] = list(pending_init)
 
     def _flush_pending() -> None:
-        if not pending:
-            return
-        _hf_batch_commit(pending)  # ONE commit for the whole chunk (fail-loud)
-        for local_path, _ in pending:
-            local_path.unlink()  # DELETE local only AFTER a verified batch commit
-        pending.clear()
+        _flush_and_checkpoint(
+            pending, keep_local, ckpt_path, st, behavior=behavior, substrate=substrate
+        )
 
     for ci, inst in enumerate(contexts):
         ctx_id = inst["id"]
         for qi, q in enumerate(questions):
+            row_key = _row_key(ctx_id, qi)
+            if row_key in skip_forward_keys:
+                continue  # accum_ckpt already carries this row's reduced reads (resume)
             r = r_lookup.get((ci, qi))
             if r is None:  # CPU-smoke path (no vLLM)
                 r = ex667._greedy_response(
                     base, tok, i594.messages_for_instance(inst, q), device, max_new
                 )
             if not r.strip():
-                n_empty += 1
+                st["n_empty"] += 1
                 continue
             msgs = i594.messages_for_instance(inst, q)
             caps = _capture_full_and_reduce(base, trained, tok, msgs, r, device)
-            for k in ("c_C_base", "c_C_trained", "v_A_base", "v_A_trained"):
+            for k in _PQ_KEYS:
                 per_q[ci][k].append(caps[k])  # question-average, all 28 layers (map inputs)
                 pq_rows[k].append(caps[k][HEADLINE_LAYER])  # headline-layer null row
+                flat_rows[k].append(caps[k])  # same objects, ckpt append order
             pq_ctx_idx.append(ci)
             pq_q_idx.append(qi)
-            # stream-upload the UNREDUCED per-(context, question) .npz, then delete local
-            npz_name = f"{ctx_id}__q{qi}.npz"
-            tmp_npz = (
-                reduced_dir.parent.parent.parent / "unreduced_tmp" / behavior / substrate / npz_name
-            )
-            tmp_npz.parent.mkdir(parents=True, exist_ok=True)
-            np.savez_compressed(
-                tmp_npz,
-                full_base=caps["full_base"],
-                full_trained=caps["full_trained"],
-                prompt_len=np.asarray(caps["prompt_len"]),
-                full_len=np.asarray(caps["full_len"]),
-                behavior=np.asarray(behavior),
-                substrate=np.asarray(substrate),
-                context_id=np.asarray(ctx_id),
-                question_index=np.asarray(qi),
-                layers=np.asarray(list(range(N_LAYERS))),
-                git_sha=np.asarray(_git_sha()),
-            )
-            cell_bytes.append(tmp_npz.stat().st_size)
-            if upload:
-                pending.append((tmp_npz, f"{unreduced_prefix}/{npz_name}"))
-                if len(pending) >= BATCH_UPLOAD_CHUNK:
-                    _flush_pending()  # ONE commit per chunk, then delete-local (B3)
-            n_cells_done += 1
-            free = _df_free_gib()  # EDQUOT / df fail-loud monitoring
-            if free is not None and free < 10.0:
-                # Flush the pending buffer first so a real batch-upload lag (not just
-                # unflushed local files) is what trips the floor — fail-loud otherwise.
+            row_keys.append(row_key)
+            if row_key not in skip_save_keys:
+                # stream-upload the UNREDUCED per-(context, question) .npz, then delete
+                # local. UNCOMPRESSED np.savez: deflate was ~65% of per-row wall (103.8s
+                # vs 1.2s on a 933MB row) at a 1.29x ratio — the small cell-end REDUCED
+                # saves stay compressed.
+                tmp_npz = tmp_dir / f"{row_key}.npz"
+                np.savez(
+                    tmp_npz,
+                    full_base=caps["full_base"],
+                    full_trained=caps["full_trained"],
+                    prompt_len=np.asarray(caps["prompt_len"]),
+                    full_len=np.asarray(caps["full_len"]),
+                    behavior=np.asarray(behavior),
+                    substrate=np.asarray(substrate),
+                    context_id=np.asarray(ctx_id),
+                    question_index=np.asarray(qi),
+                    layers=np.asarray(list(range(N_LAYERS))),
+                    git_sha=np.asarray(_git_sha()),
+                )
+                cell_bytes.append(tmp_npz.stat().st_size)
                 if upload:
-                    _flush_pending()
-                    free = _df_free_gib()
-                if free is not None and free < 10.0:
-                    raise RuntimeError(
-                        f"disk free {free:.1f} GiB < 10 GiB floor at /workspace after "
-                        f"{n_cells_done} cells — batch-upload-then-delete not keeping up "
-                        "(EDQUOT risk)"
-                    )
+                    pending.append((tmp_npz, f"{unreduced_prefix}/{row_key}.npz"))
+                    if len(pending) >= BATCH_UPLOAD_CHUNK:
+                        _flush_pending()  # ONE commit per chunk, then delete-local (B3)
+            st["n_cells_done"] += 1
+            _enforce_disk_floor(upload, _flush_pending, st["n_cells_done"])
     if upload:
         _flush_pending()  # final partial chunk (ONE commit), then delete-local
     return {
@@ -417,8 +844,8 @@ def _extract_pairs(
         "pq_rows": pq_rows,
         "pq_ctx_idx": pq_ctx_idx,
         "pq_q_idx": pq_q_idx,
-        "n_cells_done": n_cells_done,
-        "n_empty": n_empty,
+        "n_cells_done": st["n_cells_done"],
+        "n_empty": st["n_empty"],
         "cell_bytes": cell_bytes,
     }
 
@@ -427,13 +854,16 @@ def _extract_pairs(
 
 
 def run_cell(args) -> dict:
-    """Extract + stream-upload one (behavior, substrate) cell; return the phase-1 metrics."""
+    """Extract + stream-upload one (behavior, substrate) cell; return the phase-1 metrics.
+
+    Thin wrapper around ``_run_cell_body``: the ``.done`` resume-skip, then the
+    per-cell PID lockfile (a duplicate exec of a cell owned by a LIVE process
+    exits 0, making the dispatcher's later duplicate wave-2 exec harmless when
+    cells were pre-launched manually), then the body with a finally-guaranteed
+    lock release. gate-only bypasses both guards (it writes no production state).
+    """
     behavior = args.behavior
     substrate = args.substrate
-    device = ex667._device(args.gpu_id, args.cpu_only)
-    dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
-    max_new = MAX_NEW_TOKENS[behavior]
-
     out_root = Path(args.out_root)
     reduced_dir = out_root / "reduced" / behavior / substrate
     reduced_dir.mkdir(parents=True, exist_ok=True)
@@ -445,6 +875,32 @@ def run_cell(args) -> dict:
             "[phase=extract] %s/%s already complete (%s) — skip", behavior, substrate, sentinel
         )
         return {"skipped": True, "behavior": behavior, "substrate": substrate}
+    if args.gate_only:
+        return _run_cell_body(args, reduced_dir)
+    owner = _acquire_cell_lock(reduced_dir)
+    if owner is not None:
+        logger.info("cell already owned by live pid %d — exiting (duplicate exec)", owner)
+        return {
+            "skipped": True,
+            "behavior": behavior,
+            "substrate": substrate,
+            "duplicate_of_pid": owner,
+        }
+    try:
+        return _run_cell_body(args, reduced_dir)
+    finally:
+        (reduced_dir / RUNNING_LOCK_NAME).unlink(missing_ok=True)
+
+
+def _run_cell_body(args, reduced_dir: Path) -> dict:
+    """One-cell extraction body (behind ``run_cell``'s sentinel + PID-lock wrapper)."""
+    behavior = args.behavior
+    substrate = args.substrate
+    device = ex667._device(args.gpu_id, args.cpu_only)
+    dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
+    max_new = MAX_NEW_TOKENS[behavior]
+    out_root = Path(args.out_root)
+    sentinel = reduced_dir / CELL_DONE_SENTINEL
 
     contexts = load_battery_instances(max_contexts=args.max_contexts)
     questions = substrate_questions(behavior, substrate, max_questions=args.max_questions)
@@ -468,19 +924,46 @@ def run_cell(args) -> dict:
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
 
-    # ── Phase A: vLLM batched frozen base R for ALL (context, question) pairs ──
-    # On CPU-smoke (no vLLM) fall back to per-pair HF greedy (ex667._greedy_response).
-    r_lookup: dict[tuple[int, int], str] = {}
-    pair_msgs: list[list[dict]] = []
-    pair_keys: list[tuple[int, int]] = []
-    for ci, inst in enumerate(contexts):
-        for qi, q in enumerate(questions):
-            pair_msgs.append(i594.messages_for_instance(inst, q))
-            pair_keys.append((ci, qi))
-    if device.type != "cpu":
-        logger.info("[phase=extract] Phase A: vLLM-generating %d base R responses", len(pair_msgs))
-        responses = ex667.vllm_generate_R(tok, pair_msgs, max_new_tokens=max_new)
-        r_lookup = dict(zip(pair_keys, responses, strict=True))
+    # ── Resume state: HF skip-set + local re-enqueue (inert on a fresh launch) ──
+    tmp_dir = _unreduced_tmp_dir(out_root, behavior, substrate)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    resume = _prepare_resume_state(args, behavior, substrate, tmp_dir)
+
+    # ── Phase A: vLLM batched frozen base R (resume-aware via r_lookup.json) ──
+    # On CPU-smoke (no vLLM) uncovered pairs fall back to per-pair HF greedy
+    # (ex667._greedy_response) inside _extract_pairs.
+    r_lookup = _phase_a_base_responses(
+        args,
+        tok,
+        contexts,
+        questions,
+        device=device,
+        max_new=max_new,
+        tmp_dir=tmp_dir,
+        resume=resume,
+    )
+
+    # ── Accumulator checkpoint (load side): when it EXACTLY covers the HF skip-set,
+    # the skipped rows' forward+reduce is skipped too (recompute-by-forward otherwise).
+    ckpt_path = None if args.gate_only else tmp_dir / ACCUM_CKPT_NAME
+    acc_init = None
+    skip_forward: frozenset[str] = frozenset()
+    if ckpt_path is not None and resume["hf_keys"] and ckpt_path.exists():
+        acc_init = _load_accum_ckpt(
+            ckpt_path,
+            behavior=behavior,
+            substrate=substrate,
+            n_contexts=len(contexts),
+            expected_keys=resume["hf_keys"],
+        )
+        if acc_init is not None:
+            skip_forward = frozenset(resume["hf_keys"])
+            logger.info(
+                "resume: accum_ckpt covers all %d HF rows — skipping their forward+reduce",
+                len(skip_forward),
+            )
+        else:
+            logger.info("resume: accum_ckpt stale/mismatched — recomputing by forward")
 
     # ── Phase B: load base θ0 + trained θ⁺ for the teacher-force reads ──
     _, base, trained = ex667.load_base_and_trained(adapter_dir, device, dtype)
@@ -495,10 +978,16 @@ def run_cell(args) -> dict:
         r_lookup,
         behavior=behavior,
         substrate=substrate,
-        reduced_dir=reduced_dir,
+        tmp_dir=tmp_dir,
         device=device,
         max_new=max_new,
         upload=args.upload,
+        skip_save_keys=frozenset(resume["hf_keys"] | resume["local_keys"]),
+        skip_forward_keys=skip_forward,
+        acc_init=acc_init,
+        pending_init=resume["pending_init"],
+        keep_local=frozenset(resume["keep_local"]),
+        ckpt_path=ckpt_path,
     )
     per_q = acc["per_q"]
     pq_rows = acc["pq_rows"]
@@ -604,7 +1093,9 @@ def run_cell(args) -> dict:
             f"{EXPERIMENT_NAME}/reduced/{behavior}/{substrate}/per_question_L{HEADLINE_LAYER}.npz",
         )
 
-    # atomic completion sentinel (resume-skip predicate)
+    # atomic completion sentinel (resume-skip predicate); the PID lock is released
+    # before/with the .done write (run_cell's finally is the backstop).
+    (reduced_dir / RUNNING_LOCK_NAME).unlink(missing_ok=True)
     tmp_s = sentinel.with_suffix(f".{os.getpid()}.tmp")
     tmp_s.write_text(
         json.dumps(
@@ -629,6 +1120,7 @@ def run_cell(args) -> dict:
         "n_questions": len(questions),
         "n_unreduced_cells": n_cells_done,
         "n_empty_R": n_empty,
+        "n_rows_skipped_from_hf": len(resume["hf_keys"]),
         "mean_cell_bytes": (float(np.mean(cell_bytes)) if cell_bytes else 0.0),
         "reduced_path": str(reduced_path),
         "df_free_gib_workspace": _df_free_gib(),
