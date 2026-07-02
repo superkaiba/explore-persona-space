@@ -10,7 +10,6 @@ description: >
   (see Step 4). The wrapper NEVER dispatches Codex itself — that's the
   orphan-job anti-pattern (incident task #533, 2026-06-10). Codex itself
   never sees `GH_TOKEN`.
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true
@@ -307,6 +306,30 @@ both reviewers are graded against the same standard. Read
   `### (e) Concerns addressed`** rule (present only when prior open
   concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
   NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
+- "Step 0.55: Smoke-architecture marker presence gate" (`type:experiment`
+  only) — INCLUDING all three of its rules: (i) the check is
+  presence-ON-TASK (any version), NEVER presence-per-round — the implementer
+  posts `epm:smoke-architecture-check` ONCE at pre-flight and fix rounds do
+  NOT re-post, so a fix-round review with a round-1 marker PASSes; (ii)
+  genuine absence (no such events row, or no parseable `verdict:` line among
+  `PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`) is a
+  single Critical tagged `marker-shape` whose body NAMES
+  `epm:smoke-architecture-check` — exactly ONE marker kind per blocker,
+  never a combined Step 0.5 + 0.55 blocker (the orchestrator's strip is
+  keyed per blocker on that name); (iii) a PRESENT `verdict: FAIL_NO_CANARY`
+  is NOT a reviewer FAIL — /issue Step 6d.0 (gates.inline id=10) owns that
+  adjudication; note it as a CONCERNS bullet only. The composer (Step 2-pre
+  pattern) fetches the highest-version marker via
+  `uv run python "$REPO_ROOT/scripts/task.py" latest-marker <N> --prefix
+  epm:smoke-architecture-check` and INLINES its body into the prompt inside a
+  `---BEGIN/END SMOKE-ARCHITECTURE-CHECK MARKER BODY---` envelope; when the
+  fetch returns nothing (absence is a VALID finding here, not a compose
+  failure — do NOT fail-loud like the implementation-marker fetch), inline
+  the literal line `SMOKE-ARCHITECTURE-CHECK MARKER: ABSENT in canonical
+  task state` instead so Codex raises the Step 0.55 blocker. Codex scores
+  presence on the INLINED content only, never on `tasks/...` path
+  reachability (the worktree's tasks/ folder is frozen at branch-creation
+  status — same rationale as the implementation-marker inline).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
   present-but-imperfect-digest → CONCERNS rule AND the
   **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
@@ -499,7 +522,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -508,7 +531,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>

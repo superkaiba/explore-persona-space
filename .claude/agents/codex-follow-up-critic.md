@@ -11,7 +11,6 @@ description: >
   `companion task` runtime and posts an `epm:followup-value-critique-codex`
   task workflow event. The wrapper NEVER dispatches Codex itself — that's
   the orphan-job anti-pattern (incident task #533, 2026-06-10).
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true

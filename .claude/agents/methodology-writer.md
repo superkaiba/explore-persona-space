@@ -28,7 +28,6 @@ description: >
   append the new arm's methodology to the existing doc. Does
   NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true
