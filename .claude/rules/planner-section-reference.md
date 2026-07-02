@@ -325,7 +325,10 @@ then cells-per-stratum") and the minimum-N per dimension to preserve
 statistical power. The orchestrator's auto-descope walks dimensions in
 that priority order; when none keep ratio ≤ 1.5× while staying above
 the per-dimension min-N, it escalates via
-`gates.conditional.compute_deviation_resolution`.
+`gates.conditional.compute_deviation_resolution` (after the
+overhead-bound vectorize-first lever — workflow.yaml
+§ pivot_criteria.compute_deviation_over_2x auto-action 0 — has run or
+recorded a negative finding).
 
 `kind: analysis | infra | batch | survey` plans are exempt from the
 table (no GPU-bound components). For those, write "N/A — no
