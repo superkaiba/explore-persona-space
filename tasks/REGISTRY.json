@@ -5486,8 +5486,8 @@
     "846": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/846",
-      "status": "proposed",
+      "path": "tasks/archived/846",
+      "status": "archived",
       "title": "daily-fix: hermeticize HF-state-dependent audit-claim tests (red main)"
     },
     "847": {
