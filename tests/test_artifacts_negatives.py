@@ -113,6 +113,32 @@ def test_disjointness_fires_on_default_source_vs_default_panel():
         N.assert_panel_disjoint_from_sources(N.default_panel(), {"default"})
 
 
+def test_disjointness_accepts_one_shot_generator():
+    """Regression (#861 r2): ``realized_sources`` is materialized ONCE.
+
+    Pre-fix, ``set(realized_sources)`` consumed a one-shot generator and the
+    mapped-identity leg re-iterated the exhausted iterable — silently SKIPPING
+    both the identity-overlap check and the strict KeyError (the #527/#538
+    hard invariant failed open).
+    """
+    # (a) The exact fail-open probe: the source KEY differs, its mapped
+    # identity collides with the panel — must still raise through a generator.
+    with pytest.raises(AssertionError, match="police_officer"):
+        N.assert_panel_disjoint_from_sources(
+            N.default_panel(),
+            (s for s in ["cop"]),
+            source_identities={"cop": "police_officer"},
+        )
+    # (b) Strict mapping: the KeyError on an unmapped key still fires through
+    # a generator input.
+    with pytest.raises(KeyError):
+        N.assert_panel_disjoint_from_sources(
+            N.default_panel(),
+            (s for s in ["unknown_src"]),
+            source_identities={"librarian": "f1_house_librarian"},
+        )
+
+
 def test_disjointness_passes_on_disjoint():
     assert (
         N.assert_panel_disjoint_from_sources(

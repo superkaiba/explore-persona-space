@@ -199,10 +199,11 @@ def assert_panel_disjoint_from_sources(
     identity level, checked against the REALIZED panel/sources at build time.
     When ``source_identities`` is given, EVERY realized source must map
     (strict — KeyError propagates; an unmapped source is a design bug)."""
-    srcs = set(realized_sources)
+    source_keys = set(realized_sources)  # materialize ONCE — a one-shot generator input (r2)
+    srcs = set(source_keys)
     panel_idents = {n.identity for n in panel} | {n.slug for n in panel}
     if source_identities is not None:
-        srcs |= {source_identities[s] for s in set(realized_sources)}
+        srcs |= {source_identities[s] for s in source_keys}
     overlap = panel_idents & srcs
     if overlap:
         remedy = (
