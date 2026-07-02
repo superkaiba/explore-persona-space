@@ -403,6 +403,10 @@ if _SCRIPTS_DIR not in sys.path:
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
 from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
 from runpod_api import PodInfo, get_pod_by_name, list_team_pods  # noqa: E402
+
+# PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
+# once the imported spawn_session copy contains the fix — a stale pre-fix
+# worktree copy keeps the old __file__ resolver until rebased/reaped.
 from spawn_session import (  # noqa: E402
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,

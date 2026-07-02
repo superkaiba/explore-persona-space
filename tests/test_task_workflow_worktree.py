@@ -580,6 +580,163 @@ def test_resolver_uses_module_dir_not_cwd(tmp_path: Path) -> None:
     assert Path(resolved["REPO"]).resolve() == main_repo.resolve()
 
 
+# ─── primary_checkout_root (#844) ──────────────────────────────────────────
+
+
+def test_primary_checkout_root_resolves_main_from_worktree(tmp_path: Path) -> None:
+    """From a WORKTREE COPY of the module (the #844 shape: the executed file
+    lives inside a linked worktree), `primary_checkout_root()` returns the
+    PRIMARY checkout root, not the worktree directory.
+
+    Subprocess-shaped like ``test_resolves_main_repo_from_worktree`` (the
+    bug class manifests only at fresh-process import), but with PYTHONPATH
+    pointing at the WORKTREE's src copy so ``_MODULE_DIR`` is inside the
+    worktree — exactly what a worktree copy of a `scripts/` consumer sees.
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+
+    # Drop + COMMIT the module on main so the worktree (created next)
+    # carries its own copy of src/.
+    src_dir = main_repo / "src" / "explore_persona_space"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").touch()
+    real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
+    (src_dir / "task_workflow.py").write_text(real_tw.read_text())
+    subprocess.run(["git", "-C", str(main_repo), "add", "src"], check=True)
+    subprocess.run(["git", "-C", str(main_repo), "commit", "-q", "-m", "src"], check=True)
+
+    worktree = tmp_path / "wt-feature"
+    subprocess.run(
+        ["git", "-C", str(main_repo), "worktree", "add", "-b", "feature/x", str(worktree)],
+        check=True,
+        capture_output=True,
+    )
+
+    # PYTHONPATH -> the WORKTREE's src copy (not the primary's).
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(worktree / "src") + os.pathsep + env.get("PYTHONPATH", "")
+    snippet = textwrap.dedent(
+        """
+        from explore_persona_space.task_workflow import primary_checkout_root
+        print('PRIMARY=' + str(primary_checkout_root()))
+        """
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", snippet],
+        cwd=str(worktree),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, (
+        f"primary_checkout_root failed:\nstdout: {proc.stdout}\nstderr: {proc.stderr}"
+    )
+    resolved = _parse_resolved(proc.stdout)
+    assert Path(resolved["PRIMARY"]).resolve() == main_repo.resolve(), (
+        f"worktree module copy did not resolve the primary checkout: {resolved}"
+    )
+
+
+def test_primary_checkout_root_ignores_branch_state(tmp_path: Path) -> None:
+    """Primary checkout parked on a feature branch: `primary_checkout_root()`
+    STILL returns the primary (no `_task-main-pin` routing, no raise), while
+    `repo_root()` on the same fixture routes to the managed worktree — pins
+    the semantic difference between the two resolvers (#844 §4a).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "-b", "feature/off-main"],
+        check=True,
+    )
+
+    src_dir = main_repo / "src" / "explore_persona_space"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").touch()
+    real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
+    (src_dir / "task_workflow.py").write_text(real_tw.read_text())
+
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+    snippet = textwrap.dedent(
+        """
+        from explore_persona_space.task_workflow import primary_checkout_root, repo_root
+        print('PRIMARY=' + str(primary_checkout_root()))
+        print('REPO=' + str(repo_root()))
+        """
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", snippet],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, (
+        f"resolvers failed off-main:\nstdout: {proc.stdout}\nstderr: {proc.stderr}"
+    )
+    resolved = _parse_resolved(proc.stdout)
+    # primary_checkout_root: the PRIMARY, regardless of branch.
+    assert Path(resolved["PRIMARY"]).resolve() == main_repo.resolve(), (
+        f"primary_checkout_root routed/deviated off-main: {resolved}"
+    )
+    # repo_root: routes to the managed main-pin worktree, as before.
+    managed = (main_repo / ".claude" / "worktrees" / "_task-main-pin").resolve()
+    assert Path(resolved["REPO"]).resolve() == managed, (
+        f"repo_root no longer routes off-main (behavior change!): {resolved}"
+    )
+
+
+def test_invalidate_cache_clears_primary_checkout_cache(tmp_path: Path) -> None:
+    """`invalidate_cache()` clears the `_primary_checkout_cached` LRU too —
+    the next `primary_checkout_root()` call re-fires git (#844 §4a)."""
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+
+    src_dir = main_repo / "src" / "explore_persona_space"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").touch()
+    real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
+    (src_dir / "task_workflow.py").write_text(real_tw.read_text())
+
+    snippet = textwrap.dedent(
+        """
+        import json
+        from explore_persona_space.task_workflow import (
+            primary_checkout_root, invalidate_cache, _primary_checkout_cached,
+        )
+        primary_checkout_root()
+        primary_checkout_root()
+        primary_checkout_root()
+        info1 = _primary_checkout_cached.cache_info()
+        invalidate_cache()
+        primary_checkout_root()
+        info2 = _primary_checkout_cached.cache_info()
+        print(json.dumps({
+            'hits1': info1.hits, 'misses1': info1.misses,
+            'hits2': info2.hits, 'misses2': info2.misses,
+        }))
+        """
+    )
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+    proc = subprocess.run(
+        [sys.executable, "-c", snippet],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"cache probe failed: {proc.stderr}"
+    info = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert info["misses1"] == 1 and info["hits1"] == 2, f"unexpected pre-invalidate: {info}"
+    # cache_clear() resets counters; one fresh miss = git re-fired once.
+    assert info["hits2"] == 0 and info["misses2"] == 1, (
+        f"invalidate_cache did not clear _primary_checkout_cached: {info}"
+    )
+
+
 # ─── tasks-dir CLI subcommand smoke ───────────────────────────────────────
 
 

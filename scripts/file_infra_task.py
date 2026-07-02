@@ -60,6 +60,13 @@ if _SCRIPTS_DIR not in sys.path:
 #   - AUTONOMOUS_REGISTRY_DIR / daemon_port: the registration dir + Happy
 #     daemon port, the SAME source of truth `spawn_session.py list` uses.
 from autonomous_session_watch import infra_dispatch_has_free_slot  # noqa: E402
+
+# PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
+# once the imported spawn_session copy contains the fix — a stale pre-fix
+# worktree copy keeps the old __file__ resolver until rebased/reaped. The
+# `cwd=PROJECT_ROOT` subprocess calls below therefore run task.py /
+# spawn_session.py against the CANONICAL scripts tree even when THIS module
+# executes as a worktree copy (the #844 propagation cut).
 from spawn_session import (  # noqa: E402
     PROJECT_ROOT,
     _live_session_ids,

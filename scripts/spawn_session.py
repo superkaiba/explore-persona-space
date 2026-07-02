@@ -19,6 +19,14 @@ This script is the project-level wrapper for that API. The dedicated PM
 session uses ``spawn-pm``; per-issue sessions use ``spawn-issue --issue <N>``.
 The session's working directory determines what the user sees as the
 session label in Happy — we surface that here.
+
+All three spawn commands (``spawn-pm`` / ``spawn-issue`` / ``spawn-campaign``)
+open sessions ONLY in the canonical primary checkout or the target issue's own
+worktree: ``PROJECT_ROOT`` is git-common-dir-resolved via
+``task_workflow.primary_checkout_root()`` — never ``Path(__file__)``, which
+would resolve a worktree COPY of this script to that sibling worktree and
+spawn unrelated sessions into it (#844) — and ``_assert_spawn_cwd`` refuses
+any other cwd at spawn time, before the daemon POST.
 """
 
 from __future__ import annotations
@@ -34,10 +42,30 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+# Make the package importable without `uv run` plumbing (same bootstrap as
+# scripts/task.py). Sibling-import semantics on purpose: a worktree copy of
+# this script imports its sibling src/ tree; resolution below is STILL
+# canonical because task_workflow resolves via the git COMMON dir, which a
+# linked worktree shares with the primary checkout.
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from explore_persona_space.task_workflow import primary_checkout_root  # noqa: E402
+
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
 SESSIONS_JSON = HAPPY_HOME / "sessions.json"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# #844: git-resolved canonical primary checkout; fails loud at import if git /
+# the repo layout is broken — NEVER `Path(__file__).resolve().parent.parent`
+# (a worktree copy of this script would resolve the worktree, and every
+# spawned session would inherit that unrelated sibling worktree as cwd).
+# Bare-name `from spawn_session import PROJECT_ROOT` consumers fixed
+# transitively: scripts/autonomous_session_watch.py, scripts/file_infra_task.py.
+# scripts/session_resolver.py (~line 66) imports spawn_session for its
+# post/registry helpers (not PROJECT_ROOT) and newly incurs the import-time
+# git resolution + fail-loud — harmless in its call contexts.
+PROJECT_ROOT = primary_checkout_root()
 WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 
 # Registry of autonomous (`--auto`) issue sessions, so the crash-recovery
@@ -849,10 +877,38 @@ def _verify_happy_patch_or_die(*, context: str) -> None:
     )
 
 
+def _assert_spawn_cwd(cwd: Path, *, issue: int | None) -> None:
+    """Refuse to spawn into anything but the canonical repo root or the
+    TARGET issue's own worktree (#844: sibling-worktree cwd inheritance).
+
+    By construction this cannot fire after the git-resolved ``PROJECT_ROOT``
+    above — it is a tripwire against a future edit reintroducing
+    ``__file__``-based resolution. Loud non-zero exit, never a silent spawn.
+    """
+    if cwd == PROJECT_ROOT:
+        if not (cwd / ".git").is_dir():  # a linked worktree has a .git FILE
+            sys.exit(
+                f"#844 spawn-cwd assertion: {cwd} is not the primary checkout "
+                f"(.git is not a directory); refusing to spawn"
+            )
+        return
+    if issue is not None and cwd == WORKTREE_DIR / f"issue-{issue}" and cwd.is_dir():
+        return
+    target_desc = (
+        f"the target issue-{issue} worktree" if issue is not None else "a target issue worktree"
+    )
+    sys.exit(
+        f"#844 spawn-cwd assertion: {cwd} is neither the canonical repo root "
+        f"({PROJECT_ROOT}) nor {target_desc}; refusing to spawn"
+    )
+
+
 def cmd_spawn_pm(args: argparse.Namespace) -> None:
     """Spawn a session intended to host the PM persona. The session opens
-    cwd=<repo root> so the user sees a familiar project. The PM persona is
-    then loaded interactively by the user typing ``/pm``."""
+    cwd=<repo root> (git-resolved canonical primary checkout, #844) so the
+    user sees a familiar project. The PM persona is then loaded interactively
+    by the user typing ``/pm``."""
+    _assert_spawn_cwd(PROJECT_ROOT, issue=None)
     extra_args = _build_extra_claude_args(
         getattr(args, "model", None),
         _parse_betas(getattr(args, "betas", None)),
@@ -889,7 +945,10 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
 def cmd_spawn_issue(args: argparse.Namespace) -> None:
     """Spawn a session for issue ``--issue N``. The session opens cwd=<repo root>
     by default, OR cwd=<.claude/worktrees/issue-N> if such a worktree exists
-    (so the session is git-isolated to that issue's branch).
+    (so the session is git-isolated to that issue's branch). Both candidates
+    are canonical by construction (``PROJECT_ROOT`` is git-common-dir-resolved,
+    #844) and ``_assert_spawn_cwd`` refuses any other cwd — a sibling issue's
+    worktree can never become the spawned session's cwd.
 
     By default the new session opens empty and the user types ``/issue N``
     on their phone — permissions are interactive. With ``--auto`` (or an
@@ -915,6 +974,7 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     else:
         cwd = PROJECT_ROOT
         cwd_note = f"<repo root> {PROJECT_ROOT}  (no worktree at {worktree})"
+    _assert_spawn_cwd(cwd, issue=issue)
 
     betas = _parse_betas(args.betas)
     extra_args = _build_extra_claude_args(args.model, betas, args.effort)
@@ -1069,6 +1129,9 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     session itself only ever files plans for children, so the cap bounds
     any plan it would auto-approve in-session."""
     issue = args.issue
+    # #844 tripwire FIRST (pure path check, no task-state dependency): a
+    # non-canonical cwd must refuse before any task lookup or daemon POST.
+    _assert_spawn_cwd(PROJECT_ROOT, issue=None)
     default_budget, default_concurrent, default_per_child = _campaign_defaults()
     budget_gpu_hours = (
         args.budget_gpu_hours if args.budget_gpu_hours is not None else default_budget
