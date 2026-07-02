@@ -6321,9 +6321,9 @@ def test_wrapper_on_orphaned_tmux_server_failsoft(tmp_path, monkeypatch):
     (proc_b / "700" / "comm").write_text("node\n")  # no stat -> _proc_ppid None
     assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_b) is False
 
-    # (c) <proc>/700/comm missing at a walked hop (_proc_comm None): the hop is
-    # not confirmed tmux: server, the walk continues to _proc_ppid (also
-    # unreadable here) -> no raise, False.
+    # (c) <proc>/700/comm missing at a walked hop (_proc_comm None): the walk
+    # STOPS immediately on the unreadable comm (round-2 fail-toward-keep
+    # guard; it never reaches _proc_ppid) -> no raise, False.
     proc_c = tmp_path / "proc_c"
     (proc_c / "700").mkdir(parents=True)  # neither comm nor stat
     assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_c) is False
