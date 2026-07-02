@@ -10,6 +10,12 @@ skills:
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Code Reviewer
@@ -322,6 +328,18 @@ three-item coverage; this carve-out formalizes the labeling that lets
 the reviewer distinguish a documented GPU-bound phase from a genuinely
 missing smoke.
 
+**Deferred `scripts.*` imports must be proven in SCRIPT MODE, not `-c` mode.**
+If the diff adds a deferred `from scripts.X import ...` inside a src-layout
+driver (`src/explore_persona_space/experiments/**`), check the smoke evidence
+(or the carve-out's CPU-runnable smoke) shows that import executing in SCRIPT
+MODE (`python /abs/path/driver.py`) from a NON-repo cwd — a `-c`-mode import
+check false-passes (cwd on `sys.path`) while script mode crashes pod-side
+(`sys.path[0]` = the script's dir). An unguarded deferred `scripts.*` import
+(no `_ensure_repo_root_on_syspath()`-style guard) is a substantive finding at
+normal severity — NOT a `smoke-run-missing` blocker. See
+`.claude/rules/gotchas.md` (script-mode entry); incident #823, commit
+`14234c9112`.
+
 **Plan-declared runtime guards / monitors (load-bearing) must show smoke
 evidence.** When the approved plan declares a runtime guard / monitor /
 trajectory logger as a load-bearing mitigation (a saturation guard,
@@ -417,6 +435,33 @@ under "Style / Consistency" and PROCEED to review the diff.
 Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 `type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
 (`/issue` Step 9c) and the Step 4 test run below.
+
+**Smoke output-path hygiene ("Smoke outputs never overwrite committed artifacts").**
+Two checks:
+
+- **Clobber evidence is SUBSTANTIVE, never mechanical.** If the diff (or
+  the worktree you review in) replaces an existing committed
+  `eval_results/` / `figures/` artifact with a smoke-scale version at its
+  canonical path (fewer layers / cells / rows), raise a Critical finding
+  tagged `substantive` — NOT `smoke-run-missing` — so the Step 5c-bis
+  mechanical strip can never remove it (#722 shipped a smoke-scale hero
+  figure and truncated committed 28-layer JSONs).
+- **A missing disposition line is CONCERNS, not FAIL.** A `### <phase>`
+  smoke sub-section whose command writes under `eval_results/` /
+  `figures/` but states no output-path disposition (scratch-dir redirect,
+  or restore-after-smoke + an empty
+  `git status --porcelain -- eval_results/ figures/`) is a Minor — unless
+  the clobber itself is visible (first bullet).
+
+**Any verification command YOU run follows the same rule.** If you rerun
+a test or smoke that regenerates files under `eval_results/` /
+`figures/`, afterwards run
+`git status --porcelain -- eval_results/ figures/`, restore the committed
+artifacts YOUR OWN command modified (`git checkout -- <paths>` scoped to
+those files, never a blanket revert) and delete the untracked outputs it
+left; leaving them dirty plants the clobber for the next explicit-path
+commit (#722 instance 2 was exactly this). Binds BOTH ensemble
+reviewers (rides into the Codex twin via the inlined Step 0.6 rubric).
 
 ### Step 0.65: Raw-completions upload wiring gate (`type:experiment` only)
 
@@ -871,6 +916,13 @@ blocked)`, the `**Tests:**` line MUST be `INSUFFICIENT` (never `PASS`), the
 blocked (paste the sandbox error), and the recommendation MUST NOT be a clean
 `merge` on the strength of tests — it is at best `revise-then-merge (tests not
 run — re-run in a writable env)`.
+
+**After running tests: check for artifact clobber.** Your own pytest run
+can regenerate figures/JSONs at canonical committed paths (#722). After
+any test run: `git status --porcelain -- eval_results/ figures/`, then
+restore + clean per Step 0.6 § "Smoke output-path hygiene". A test
+writing canonical `eval_results/` / `figures/` paths instead of
+`tmp_path` is itself a Minor finding (name the test + path).
 
 ### Step 4.5: Regression-test presence for substantive BLOCKER fixes
 

@@ -1399,10 +1399,14 @@ plans missing any):**
 
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
-then announce it with an `epm:plan` event:
+then announce it with an `epm:plan` event. The handoff file carries a
+per-attempt suffix — `<attempt>` = a fresh `$(date +%s)` chosen once per
+orchestrator planning attempt — because a crashed attempt leaves a stale
+/tmp file; a respawned session re-Writing the fixed path after Reading an
+older version gets "File has been modified since read" (4× on #822):
 
 ```bash
-uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan.md
+uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan-v<K>-<attempt>.md
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
 # Embed the machine-readable cost token (<X> = the plan's total GPU-hours) so
 # the Step 2c auto-approve gate can parse it from the note as well as the body.
@@ -2065,7 +2069,15 @@ orchestrator verifies the evidence is genuinely present, so cosmetic
 gripes about present evidence never bounce the implementer or consume a
 review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
-exempt from this smoke gate.
+exempt from this smoke gate. Smoke commands that write under
+`eval_results/` or `figures/` also carry the output-path hygiene
+disposition per experiment-implementer.md
+§ "Smoke outputs never overwrite committed artifacts" (scratch-dir
+redirect preferred; restore-after-smoke + an empty
+`git status --porcelain -- eval_results/ figures/` as the fallback);
+the reviewer treats visible clobber of a committed artifact as a
+substantive Critical (code-reviewer.md Step 0.6), never a strippable
+mechanical blocker.
 
 **5b. Read both markers from `events.jsonl`.**
 
