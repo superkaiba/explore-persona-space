@@ -5222,7 +5222,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/811",
       "status": "interpreting",
-      "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
+      "title": "The pre/post-finetuning function-change verdict is answer-summary-dependent: the taught-fact \u0394-over-floor call at the primary layer is specific to the mean-over-answer read (LOW confidence)"
     },
     "812": {
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",

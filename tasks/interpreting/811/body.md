@@ -1,6 +1,7 @@
 ---
-title: 'Does the best answer-summary change #722''s base-vs-post-FT function-change
-  verdict'
+title: 'The pre/post-finetuning function-change verdict is answer-summary-dependent:
+  the taught-fact Δ-over-floor call at the primary layer is specific to the mean-over-answer
+  read (LOW confidence)'
 kind: experiment
 tags:
 - answer-summary-sweep
