@@ -5661,8 +5661,8 @@
     "870": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/870",
-      "status": "reviewing",
+      "path": "tasks/completed/870",
+      "status": "completed",
       "title": "workflow-fix: compute-deviation gains mandatory vectorize-first lever"
     },
     "871": {
