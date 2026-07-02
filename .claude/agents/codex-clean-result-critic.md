@@ -42,7 +42,7 @@ description: >
   Codex itself — that's the orphan-job anti-pattern (incident task
   #533, 2026-06-10). Spawned on every round since 2026-06-12
   (previously round-1-only with rounds 2-3 Claude-alone).
-model: "claude-opus-4-8[1m]"
+effort: xhigh
 tools: Bash
 memory: project
 background: true
@@ -240,7 +240,10 @@ PY
 - **`PAPER=false` (markdown body — default):** compose the FIFTEEN-lens
   markdown prompt (Step 2 + Step 3 as written below). Unchanged.
 - **`PAPER=true` (LaTeX paper):** compose the SEVEN-paper-lens prompt instead.
-  Inline the Claude critic's **## Paper-task review (`paper: true`)** section
+  Inline the relocated paper-review rule — read
+  `$REPO_ROOT/.claude/rules/clean-result-paper-review.md` (the canonical-main
+  copy, via Step 1b's worktree-proof `$REPO_ROOT`; relocated verbatim from
+  clean-result-critic.md, #829) — and copy its full content
   (P1-P7 — incl. P7 verbatim examples + judge prompts — + the
   `verify_paper.py` preamble + the read-these-before-scoring
   artifact list + the Paper-lens output template) INSTEAD of the fifteen
@@ -342,8 +345,9 @@ with v4 section names; for a v3 body substitute the v3 names
 ### Step 3: The Codex prompt body (markdown branch — `PAPER=false`)
 
 > **Paper branch (`PAPER=true`):** do NOT use the markdown prompt body
-> below. Compose the Codex prompt from the Claude critic's **## Paper-task
-> review (`paper: true`)** section per Step 1c — point Codex at
+> below. Compose the Codex prompt from
+> `$REPO_ROOT/.claude/rules/clean-result-paper-review.md` (the relocated
+> Paper-task review rule, #829) per Step 1c — point Codex at
 > `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, have it run
 > `cd {{repo_root}} && uv run python scripts/verify_paper.py --issue
 > {{task_number}}` as the mechanical preamble, inline the seven P1-P7 lens
@@ -800,7 +804,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Per-result prose stays under the 180-word hard cap (verifier check 20
   hard-FAILs ≥180, WARNs ≥120); a 120-179-word result that reads padded
   is a tightening request: PASS|FAIL with cited result + word count
-- Bullets are the default; prose only for ≤2-sentence causal chains —
+- Bullets are the default; prose only for 1–3-sentence causal chains —
   FAIL a `## Results` / `## Methodology` multi-sentence wall that should
   be bullets (overlaps Lens 6; flag under whichever you reach first):
   PASS|FAIL

@@ -7,12 +7,11 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-opus-4-8[1m]"
 skills:
   - experiment-runner
   - codebase-debugger
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 
@@ -163,7 +162,7 @@ writes the handle BEFORE `bootstrap_pod.sh` finishes the clone + `.venv`
 build. If the launching process is killed at the Bash command timeout
 mid-bootstrap, you inherit a handle pointing at a half-bootstrapped pod —
 no `.venv`, a half-materialized git tree, and MooseFS tree-writes that
-wedge on every subsequent command (`git reset --hard` / `git checkout`
+wedge on every subsequent command (`git reset --hard` / `git checkout`  <!-- workflow-lint: allow-git-reset-hard: pod-side MooseFS wedge description, not a repo-root instruction -->
 hang for many minutes, the on-disk file count freezes). Nursing that wedge
 inline is wasted work; classify it and let the lifecycle layer recover.
 
@@ -338,7 +337,7 @@ authoritative recipe is agent memory
    The legacy tolerance above does NOT transfer to a driver that
    gates launch on its own `orchestrate.preflight` call (e.g. `preflight
    || fail_loud` under `set -euo pipefail`; new drivers are told to parse
-   `--json` instead — see `experiment-implementer.md` § "Pod-side
+   `--json` instead — see `.claude/rules/pod-side-reporting.md` § "Pod-side
    preflight gates"). Grep the launcher script for `orchestrate.preflight`;
    if it re-runs preflight internally on a pre-#554 checkout, repoint the
    pod-local remote-tracking ref BEFORE launching so the
@@ -782,7 +781,7 @@ authoritative recipe is agent memory
    only the pid-ALIVE path) and the poller reported a FALSE
    `status=done` on a failed run. Phase tokens are emitted ONLY as
    standalone status markers (`echo "[phase=eval]"`, the single
-   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   terminal `[phase=done]` — see `.claude/rules/pod-side-reporting.md` § "Pod-side
    result-reporting contract" for the dispatcher-side reservation; this
    paragraph binds YOU for any launch/relaunch wrapper text). On
    failure, describe the suppressed terminal token WITHOUT the bracket
@@ -1013,7 +1012,7 @@ cuda-graph-capture deadlock.
 `enable_prefix_caching=False` path) to rule out a KV-cache pathology.
 
 Only AFTER the triad localizes the cause — and the fix is a round whose
-code path is provably reached per `experiment-implementer.md` §
+code path is provably reached per `.claude/rules/crash-fix-rounds.md` §
 "Crash-fix rounds: declare the fix-engaged signal" — may a `pod.py
 terminate + provision-new` be recommended. A kill + reprovision with NO
 diagnostics in hand is the banned regression: the #664 saga burned

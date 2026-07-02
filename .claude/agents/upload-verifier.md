@@ -10,8 +10,7 @@ description: >
   gate PASSes, and pod termination strictly requires PASS. Proactively
   enumerates files on the pod and reconciles against permanent storage —
   does NOT rely on the experimenter remembering to declare what was produced.
-model: "claude-opus-4-8[1m]"
-effort: medium
+effort: xhigh
 tools:
   - Bash
   - Read
@@ -131,6 +130,15 @@ Filter the output by size and extension to produce a candidate list of
   `issueN_<slug>/analysis_tensors/`). Small size is NOT a scratch
   justification — these are usually KB-MB and are exactly the class lost
   in incident #521 (see Step 2.8).
+- **Any non-final-stage model-generation dump** — e.g. `judge_*.json`,
+  `*extract*rollouts*.json{l,}`, per-stage sampling dumps, or ANY file
+  whose rows carry model-generated response text from a stage other than
+  the final eval (the named globs are examples, not the predicate —
+  classify by CONTENT: model-generated text from a non-final stage) → HF
+  Hub data repo `raw_completions/<stage>/`. A stream-reduce driver
+  (RunningMean over per-context activations) that wrote the judge input
+  here but not under `raw_completions/` has NOT persisted the generations
+  — flag it (Step 3 generation-discard gate, #779).
 
 For each file in the candidate list, you must decide one of three things:
 
@@ -465,16 +473,57 @@ If a standard row is reported N/A, you must say *why* — concretely, and
 in a way that can be audited.
 
 - ❌ Wrong: `| Raw completions | N/A | metrics-only eval pipeline |`
-- ✅ Right: `| Raw completions | N/A | Pod filesystem has no
-  raw_completions.json anywhere under eval_results/issue_<N>/. Eval code
-  at src/.../eval_panel.py:285 computes substring rate online and
-  discards completions. NOTE: this means the body cannot satisfy the
-  qualitative-data-link rule; analyzer should request a follow-up that
-  persists eval completions.` |
+- ✅ Right (a stage that genuinely produced NO generations): `| Raw
+  completions | N/A | Pod filesystem has no raw_completions.json anywhere
+  under eval_results/issue_<N>/. Eval code at src/.../eval_panel.py:285
+  computes an ARC-C logprob score with no model generation (no sampling
+  call), so there are no completions to persist. |`
 
 If your "N/A" is "the experimenter didn't generate this kind of
 artifact", **you must have looked at the pod's filesystem to confirm
 the absence.** "Probably not generated" is not a valid N/A.
+
+**A stage that DISCARDS model generations is NEVER an acceptable N/A.**
+Persist-by-default (CLAUDE.md § Upload Policy) makes rollout text the
+load-bearing minimum: text/JSON rides the non-LFS path and uploads
+unconditionally, so there is no size excuse. A generation-and-reduce
+stage (persona-vector extraction, an online-scored eval that streams
+completions into a running statistic) that dropped its generations is a
+FAIL — whether the drop is UNDECLARED (blocker tag
+`generation-discarded-undeclared`) or "DECLARED" via a
+`discarded_artifacts:` entry naming generations / rollout text (an INVALID
+declaration, blocker tag `generation-discard-declared-invalid`). The
+`discarded_artifacts:` slot (planner §10, `{name, reason, regen_recipe}`)
+licenses ONLY large intermediate TENSOR discards (activation stores,
+per-context `v(x)`) — and only when the regenerating rollout TEXT is
+persisted under `raw_completions/<stage>/`. Examples:
+
+- ✅ Right (declared TENSOR discard, text persisted): `| Per-context v(x)
+  activations | N/A (declared) | Extraction stream-reduces activations
+  into r_B; plan §10 discarded_artifacts declares {name: extraction
+  per-context v(x), reason: full-corpus activation grid exceeds HF/LFS
+  headroom (#541), regen_recipe: one teacher-forced forward pass over the
+  persisted raw_completions/extraction/ rollouts — no re-sampling}.
+  Rollout TEXT persisted at raw_completions/extraction/. |`
+- ❌ Wrong (undeclared generation discard): `| Raw completions | N/A | ...
+  discards completions |` — no `discarded_artifacts:` entry ⇒ FAIL,
+  blocker tag `generation-discarded-undeclared`.
+- ❌ Wrong (INVALIDLY declared generation discard): `| Raw completions |
+  N/A (declared) | discarded_artifacts declares {name: eval_completions,
+  ...} |` — text is NEVER a valid discard entry ⇒ FAIL, blocker tag
+  `generation-discard-declared-invalid`.
+
+**Forward-only legacy guard.** The generation-discard FAIL fires only on a
+run whose plan carries the `discarded_artifacts:` slot CAPABILITY — the
+predicate is capability-presence, NOT a date: the plan contains a §10
+output-artifact declaration block (the post-#817 planner template
+section), regardless of when it was written. A run whose plan PREDATES the
+slot (no such §10 block) AND has a generation-discard emits a single WARN
+row `generation-discard-spec-absent` (mirroring Step 2.7's
+`primary-deliverable-spec-absent` legacy WARN) — never a hard FAIL — and
+that WARN fires ONLY when the legacy plan ALSO has a generation-discard,
+never on every legacy body. New plans (which all carry the slot) get the
+FAIL; the ~30 in-flight legacy plans ship.
 
 ### Step 4 — Decide verdict
 
@@ -546,6 +595,19 @@ the absence.** "Probably not generated" is not a valid N/A.
   rule silently drops files from a directory-level `git add` while the
   commit succeeds; grading the git row off named files only defers the
   catch to a later round — or past pod termination.
+- **A stage that produced model generations and dropped them (Step 3
+  generation-discard gate, #779).** Persist-by-default: rollout text is the
+  regenerating minimum; a generation-discard is silent data loss, the exact
+  #779 / #365 class — and it FAILs whether UNDECLARED (blocker tag
+  `generation-discarded-undeclared`) or INVALIDLY DECLARED via a
+  `discarded_artifacts:` entry naming generations / rollout text (blocker
+  tag `generation-discard-declared-invalid`; the slot licenses only large
+  intermediate-TENSOR discards). A large-TENSOR discard with a `{name,
+  reason, regen_recipe}` entry AND its regenerating rollout text persisted
+  under `raw_completions/<stage>/` PASSes. Forward-only legacy guard: a plan
+  PREDATING the §10 `discarded_artifacts:` slot capability emits WARN
+  `generation-discard-spec-absent` instead of FAIL, and only when it also
+  has a generation-discard (Step 3).
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
@@ -554,6 +616,10 @@ the absence.** "Probably not generated" is not a valid N/A.
   pod (Step 2.6) — report it loudly, never silently: name every
   uncovered cell, flag the telemetry loss as permanent, and instruct
   the analyzer to carry it into the clean-result's `## Reproducibility`.
+- A generation-discard on a run whose plan PREDATES the §10
+  `discarded_artifacts:` slot capability (Step 3
+  `generation-discard-spec-absent`) — legacy plans ship, never a hard
+  FAIL; report it loudly so the analyzer notes the loss.
 
 **PASS** only when every discovered file is accounted for.
 
@@ -587,6 +653,7 @@ against permanent storage.
 | Primary deliverable produced (completeness gate, #519) | Yes (if plan §6.5 declares `primary_deliverable:`) | PASS / FAIL / WARN | Per row in plan §6.5: on-pod `find <glob>` enumerates ≥1 file → PASS naming the DV + file count; zero files → FAIL with blocker tag `primary-deliverable-missing` naming the DV + missing glob; no `primary_deliverable:` block at all → WARN `primary-deliverable-spec-absent` (legacy / analysis|infra|batch|survey kinds; do not block) |
 | Plan-referenced analysis inputs (shift tensors, cached activations, #521) | Yes (if plan analysis/control sections name them) | PASS / FAIL / N/A | Every plan-named downstream input at a permanent URL (HF data repo `issueN_<slug>/analysis_tensors/`); FAIL names the on-pod path + exact upload command; N/A = plan names no analysis-input artifacts |
 | Git-destination reconciliation (per-file, #537) | Yes (per git-destination dir produced) | PASS / FAIL | Step 2.9 `comm` diff of source `find` vs `git ls-tree origin/issue-<N>` per directory; FAIL names each dropped file + its `git check-ignore -v` rule, unless the file resolves at another verified permanent home (URL recorded) |
+| Model-generation text persisted (Step 3 generation-discard gate, #779) | Yes (if a stage produced generations) | PASS / FAIL / WARN | Every generation-producing stage persists its rollout text under `raw_completions/<stage>/`; a drop FAILs — undeclared → `generation-discarded-undeclared`; "declared" via a text-naming `discarded_artifacts:` entry → `generation-discard-declared-invalid`. Large-TENSOR discards PASS with a `{name, reason, regen_recipe}` entry + persisted regenerating text. WARN `generation-discard-spec-absent` for a legacy plan predating the §10 slot capability that also has a generation-discard |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):

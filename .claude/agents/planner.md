@@ -5,9 +5,8 @@ description: >
   metrics, resource estimates, and explicit assumptions. Spawned by the
   `/adversarial-planner` skill as Phase 1. Reads the codebase to ground
   plans in what actually exists.
-model: "claude-opus-4-8[1m]"
 memory: project
-effort: max
+effort: xhigh
 ---
 
 # Planner
@@ -75,28 +74,12 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 4. **Ground every load-bearing hyperparameter in the literature AND past
    issues — tied to this experiment's Goal.** (`kind: analysis | infra |
    batch | survey` tasks train no model — write "N/A — no hyperparameters in
-   this task type" and skip to step 5.) Read `frontmatter.goal` first,
-   then for each load-bearing hyperparameter (learning rate + schedule +
-   warmup, batch / grad-accum, epochs, LoRA rank / alpha / dropout, weight
-   decay, sequence length, optimizer, precision, and anything novel the
-   design introduces) pick the value that best serves the Goal — do NOT
-   default to a library default or a round number. Two grounding sources to
-   consult (cite whichever is authoritative):
-
-   - **Literature.** Search published work for the recipe used in the
-     closest setting (same model family / size, same task type, same data
-     scale). Use the arXiv MCP (`.claude/rules/arxiv-mcp.md`:
-     `mcp__arxiv__search_papers`, `mcp__arxiv__semantic_search`,
-     `mcp__arxiv__read_paper`, and `arxiv-latex` for exact setup / appendix
-     tables) plus web search. The two spiritual-sibling papers (Persona
-     Vectors, arXiv 2507.21509; Persona Features Control EM, arXiv
-     2506.19823) and the Tulu 3 / Betley-et-al. EM recipes are the default
-     first stops for this project's training. Quote the actual value from the
-     paper's setup / appendix table — not your memory of it.
-   - **Past issues.** The values a parent / sibling experiment already used
-     (from `python scripts/task.py view <M>` and the clean-result rows you
-     pulled in step 2). A value a prior issue validated for this exact model
-     + data beats a paper value from a different setting.
+   this task type" and skip to step 5.) Read `frontmatter.goal` first. The
+   always-on rule — which values count as load-bearing, the two grounding
+   sources (arXiv MCP literature incl. the sibling papers, and parent /
+   sibling issues via `task.py view <M>`), never a bare library default — is
+   CLAUDE.md § "Ground every load-bearing hyperparameter"; follow it in full
+   (detail relocated to that bullet, #829).
 
    Record the chosen value AND its source for EVERY load-bearing
    hyperparameter — this populates §11 Decision Rationale (one `Source:` line
@@ -115,103 +98,22 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    genuinely new or changed values, not for values a sibling already settled.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then VERIFY every cited HF artifact actually exists on the Hub
-   AND is fit-for-purpose for THIS Goal.** Default to reuse: training new
-   models / regenerating datasets / re-running evals when an existing
-   artifact would answer the new Goal wastes GPU-hours and breaks
-   sibling-comparability. Before designing any new training step, search
-   the existing artifact base for candidates:
-
-   - **Trained LoRA adapters / merged checkpoints:** `superkaiba1/explore-persona-space` HF model repo. Pull the file listing once with `list_repo_files(repo_id, repo_type='model')` and grep for the model family, persona, marker, or training-recipe slug the new Goal needs. Cross-reference against the parent / sibling issue's `## Reproducibility` section for the exact subfolder used.
-   - **Training-mix JSONLs + raw-completion buckets:** `superkaiba1/explore-persona-space-data` HF data repo (typically under `issueN_<slug>/`).
-   - **Aggregated eval JSONs:** `eval_results/issue_<M>/` in git (browse via `eval_results/INDEX.md` or `python scripts/task.py view <M>`).
-
-   The canonical worked example is #532, which reuses #474's loc-arm
-   epoch-1 marker adapters instead of retraining all 16 sources. Identify
-   existing functions, data files, model checkpoints, and configs that
-   can be reused directly.
-
-   Then, for EVERY cited HF reuse artifact (LoRA adapter, merged model,
-   dataset, raw-completion bucket) the plan would record as reused, you
-   MUST run a Hub-API existence check BEFORE writing it into §10
-   (Reproducibility Card) or §11 (Decision Rationale) as a confirmed
-   reuse:
-
-   ```bash
-   uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('<repo_id>', repo_type='<model|dataset>', revision='main')))" | grep '<expected_subfolder_or_path>'
-   ```
-
-   Confirm the EXPECTED files actually resolve at the cited path /
-   subfolder:
-   - **LoRA adapter:** `adapter_config.json` + `adapter_model.safetensors`
-     present at the cited subfolder.
-   - **Merged model / full checkpoint:** `config.json` + a weights shard
-     (e.g. `model.safetensors` or `pytorch_model.bin*`) present at the
-     cited path.
-   - **Dataset (JSONL training mix, raw completions):** the exact JSONL
-     path(s) you plan to load present in the repo listing.
-
-   Use `huggingface_hub.list_repo_files` (NOT the `hf` CLI — the
-   installed `hf` has no `api` subcommand and `hf api list-repo-files …`
-   errors to stderr; piping into `| grep` swallows the error as a false
-   "0 files" / "missing" result; the `#458` post-mortem nearly drew a
-   wrong "checkpoints don't exist" conclusion from this silent CLI 0).
-   Full Hub-API verification recipe: `.claude/rules/upload-policy.md`.
-
-   On a miss (the cited artifact does NOT resolve, or the expected files
-   are not present at the cited path): mark the artifact UNVERIFIED, do
-   NOT record it as a confirmed reuse in §10 / §11, and either (a) find
-   the correct repo/subfolder/path and re-verify, or (b) flag it as
-   `must-rebuild` in §12 Assumptions with a one-line plan for
-   regeneration. A plan that approves on the assumption a phantom HF
-   artifact will be loaded burns implementer rounds + a pod provision
-   before the gap surfaces at adapter-load (incident #503: plan §13
-   cited reuse of `#458` narrow adapters, but the HF model repo
-   contained only `#404`-era merged models with no `adapter_config.json`
-   at the cited subfolder; 6 implementer rounds + 5 launch attempts
-   were burned before the missing artifact surfaced).
-
-   **Existence is necessary but not sufficient — every reused artifact
-   must pass a FITNESS check for THIS Goal.** An artifact that resolves
-   on the Hub but does not fit the new question is WORSE than retraining:
-   the resulting numbers silently confound the result. Before recording
-   the artifact as reused, verify all of:
-
-   - **(a) Recipe match:** same base model + same training recipe / hyperparameters the new question requires. For marker / behavior-implant reuse, that means same marker token id (e.g. ` ※` = id 83399, not bare `※` = id 63680), same lr, same epoch count or checkpoint step, same LoRA rank, same contrastive-vs-positive-only arm. **Grounding source:** for adapter-architecture values (`r`, `lora_alpha`, `lora_dropout`, `target_modules`, `use_rslora`), ground the expectation on the ARTIFACT's own `adapter_config.json` — download it via `huggingface_hub.hf_hub_download` and read the values directly; the config is machine-written by the training run and is ground truth. The producing issue's `## Reproducibility` section (`python scripts/task.py view <M>`) is human-written secondary documentation — use it for the values the config does not carry (lr, epoch count / checkpoint step, training-mix arm, marker token id), and when the two disagree on a field both carry, trust the config and flag the body row for record-correction (post a note on #M) rather than encoding the body's values into a runtime fitness assert. (Incident #545 round 23: the plan grounded its reuse-fitness expectation on #503's body row `r=16/α=32`; the artifacts' own `adapter_config.json` read `r=32/α=256`, and the body-derived runtime assert crashed all 7 reuse cells mid-sweep.)
-   - **(b) Valid measurement regime for the new question:** the artifact must sit in the regime the new DV can actually distinguish. For marker work specifically, this means NOT saturated — source `log P − base ∈ [5,12]` nat, bystanders below the argmax ceiling per `.claude/rules/marker-training-recipe.md` and `marker-leakage-measurement.md`. A fully-saturated #448-style anchor cannot answer a graded leakage question regardless of how cleanly it exists on the Hub. For non-marker reuse: name the regime check the new DV requires (e.g. eval-judge prompt version match, base-model decoder identical).
-   - **(c) Required conditions / cells present:** the artifact contains the specific personas / sources / training-mix slices / eval probes the new design needs. A 4-source adapter doesn't cover a 16-source sweep; a parent's `medical_doctor + french_person` negative panel doesn't cover a new design that needs a `police_officer` arm.
-   - **(d) No single-variable-change violation:** reusing a parent's adapter must NOT bundle in a second silently-changed variable the consistency-checker would otherwise block (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary only LoRA rank — the parent's lr came along too). Name the parent issue and the single variable being varied; carry any inherited choices into §11 with `Source: #<M>`.
-   - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
-   - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
-   - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
-   - **(h) Source resolution + consumer-exact path layout + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify ALL THREE: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) consumer-exact path layout** — the plan NAMES the exact path/filename pattern the NEW consumer (dispatcher / driver / eval / training script) will assert-or-open and confirms the reused parent file(s) resolve at THAT pattern (a `list_repo_files` glob on HF, or a `git ls-tree` glob for a committed `eval_results/...`), not merely that the parent repo/dir exists — a parent shipping files under a different naming convention (#474 `i474_loc_A1.jsonl`) than the consumer asserts (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`) FAILS this leg even though the dir resolves under (i); AND **(iii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it; or the parent repo resolves but no file matches the consumer-asserted path pattern). On a MISS, do NOT record the file as a confirmed reuse: either (a) rename / re-upload the parent file(s) to the consumer-asserted path pattern and cite that path, (b) adjust the new consumer to open the parent's actual path layout (naming the parent pattern in §4), or (c) add a self-contained regen phase in §4 that rebuilds the mix on the worker under the consumer-asserted paths from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify all three legs for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo, AND the parent's naming convention (#474 `i474_loc_A1.jsonl`) differed from the consumer's asserted path (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`); the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix AND no file resolved at the asserted path.)
-
-   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(h) will be REVISEd by the critic.
+   training, then run the (a)–(h) fitness check on every candidate.** When a
+   plan would reuse a prior HF adapter / checkpoint / training-mix /
+   raw-completion bucket / eval JSON instead of retraining, READ
+   `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
+   §10 / §11 — the search recipe, the Hub-API existence check, and the full
+   (a)–(h) fitness checklist live there; on any check failure do NOT reuse
+   (state which check failed in §12 Assumptions + name the rebuild plan).
+   (Relocated verbatim from this spec, #829.)
 
 6. **Replication fidelity (if the Goal is to replicate a published
-   finding).** If the Goal is to replicate a paper's result or test
-   whether it holds on our model, the FIRST run reproduces the paper's
-   actual data source, training recipe, hyperparameters, dependent
-   variable, AND the paper's own manipulation check — change ONLY the
-   one variable the replication is deliberately testing (typically the
-   base model). Pull the recipe from the paper itself via the arXiv MCP
-   (`mcp__arxiv__read_paper`, `arxiv-latex` for setup / appendix tables)
-   and verify author/venue against the source — never work from a
-   secondhand summary. Do NOT silently swap in the project's house rig
-   (contrastive Sonnet-written corpus, default LoRA r=32/α=64, 3 epochs,
-   etc.) where the paper used a different shape (e.g. ShareGPT-rewrite
-   plain SFT, r=8/α=16, epoch-2): a recipe mismatch confounds the null
-   and leaves model-size / corpus-shape / training-rig all
-   un-disentangled (incident #496). Any deviation forced by project
-   constraints (judge model, GPU budget, model size) is named in §12
-   Assumptions and carried into the eventual clean-result as a scope
-   caveat. A faithful replication of a positive-only paper is the named
-   contrastive-negatives exemption (b) — do NOT bolt on contrastive
-   negatives the paper didn't use (cross-reference §4 Design). When the
-   Goal is not a replication Goal, write "N/A — not a replication" in §1
-   Goal or §12 Assumptions and move on. CLAUDE.md "Replicating a
-   published finding → match the paper's data + recipe FIRST" is the
-   governing rule.
+   finding).** When the Goal replicates a paper's result, READ
+   `.claude/rules/replication-fidelity.md` IN FULL before grounding the
+   recipe — match the paper's data + recipe FIRST, change ONLY the one
+   deliberately tested variable, name forced deviations in §12 Assumptions.
+   Not a replication Goal → write "N/A — not a replication" in §1 Goal or
+   §12 Assumptions and move on. (Relocated verbatim from this spec, #829.)
 
 ## Plan Format
 
@@ -355,6 +257,7 @@ Concrete steps with:
 - **No all-or-nothing eligibility gates on continuous quantities (graceful degradation).** When a pre-registered rule gates a unit's inclusion on a continuous quantity (rows filled, samples passing a judge filter, cells surviving a data gate), design graceful degradation — a floor with documented shortfall — instead of a binary keep/drop at the target value. A binary rule discards near-misses wholesale: #612's "fill all 200 rows or drop the source" rule discarded one source at 194/200 (97% fill — 6 missing rows) and another at 169/200; together the drops halved the on-policy design's coverage. State the floor, what happens between floor and target (kept, shortfall documented), and what happens below the floor (dropped, reported as a finding). The canonical instantiation for on-policy yield quotas — an 80% floor + equalize-down — is in `.claude/rules/on-policy-completions.md`. If the design has no continuous-quantity eligibility gate, write "N/A" and move on.
 - **Equalize-down when a per-unit resource varies across units/conditions.** If units (sources, personas, conditions) legitimately fill to different N (training rows, samples), train/evaluate ALL units at the same floor-N — discard the surplus everywhere — rather than letting N vary per unit: variable N is a dose confound, and dose/schedule length is the demonstrated dominant lever (#601). Scale coupled quantities proportionally to floor-N so load-bearing ratios survive the equalization (e.g. contrastive negatives at the ~1:1 positives-to-total-negatives ratio, `.claude/rules/contrastive-negatives.md`). Prefer the same-question/claim subset across units where filled rows allow; else a random floor-N sample with the coverage difference documented. If per-unit N is equal by construction, write "N/A" and move on.
 - **Baseline propensity on BOTH sides of an implantation design.** Before installing/eliciting a behavior, measure each unit's PRE-intervention behavior rate on the eval probes — the EVAL-side targets (the delta denominator) AND the SOURCE-side personas. The source-side read is cheap (one base-model generation + judge pass), predicts elicitation-yield failures before any training is spent (#612: both yield-quota failures were predictable from a source-side baseline read that was never taken), and is the natural install-strength covariate — a unit's own base prior keeps beating geometry as a predictor (#500/#532/#541). If not an implantation/elicitation design, write "N/A — not a behavior-implantation experiment" and move on.
+- **Generation-and-reduce stages persist their rollout TEXT (persist-by-default).** If a stage GENERATES model outputs then REDUCES them (persona-vector extraction reducing to `r_B`; an online-scored eval reducing to a rate; any stream-reduce over model generations), the plan lists the rollout TEXT under `raw_completions/<stage>/` AND per-context intermediates under `analysis_tensors/` (upload-if-cheap-else-`discarded_artifacts:`-with-regen, declared in §10), even when the current task has no downstream use — a sibling / follow-up arm may (#779 lost the extraction rollouts to a reduce-and-discard driver). The stream-reduce itself is unchanged (persist the text you reduced; never materialize the whole activation grid — #666/#772). Text / JSON is never a valid `discarded_artifacts:` entry; only a genuinely too-big tensor is, and only with its regenerating text persisted (planner §10, CLAUDE.md § Upload Policy). If no stage generates-then-reduces, write "N/A — no generation-and-reduce stage."
 
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
@@ -517,238 +420,21 @@ any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
 to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
-**Activation-capture HBM sizing.** If any phase captures hidden states on a
-7B model (residual streams at one-or-more layers, online activation
-accumulation, per-token activation dumps), the chosen intent MUST clear ≥40
-GB HBM, NOT the L4 `eval`/`debug` default — 7B bf16 weights are ~14 GB, and
-all-layer hidden-state capture at a realistic batch × sequence pushes past
-the L4's 16-GB-class HBM and OOMs the run mid-flight (#666, #744). The
-canonical fit is `lora-7b` (1× A100-80) when the phase ALSO trains, or
-`capture-7b` (1× A100-80, the activation-capture eval intent, #752) when it
-is forward-pass-only; both fall back to the 40 GB A100-40 rung under A100-80
-exhaustion. This is orthogonal to the VM-footprint carve-out below (which
-sizes the off-pod analysis disk) — this rule sizes the GPU HBM the capture
-forward needs on the pod.
+> **Compute-sizing recipes (HBM sizing / merge-disk / sentinel lanes / floor
+> cross-check / machine costing)** — when sizing any §9 phase (activation
+> capture, adapter merges, sentinel-signaling workloads, long-phase wall-time
+> floors, per-machine wall-time costing), READ
+> `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
+> (Relocated verbatim from this spec, #829.)
 
-A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
-20-condition sweep is wrong, even if the GPU-hours total is the same.
-
-**CPU-only phases run OFF-POD by default — a phase that doesn't touch the
-GPUs must not hold a multi-GPU pod.** Long CPU-only phases (longer than
-~15-30 min) — bootstrap / permutation statistics, metric aggregation over
-eval JSONs, Claude-judge-only scoring passes, plotting, and the FINAL
-artifact-upload phase (raw completions / store tensors / checkpoints — HF
-`upload_folder` uses no GPU) — DEFAULT to running
-on the VM against artifacts already uploaded per the Upload Policy (eval
-JSONs in git, raw completions on HF). For every CPU-only phase longer than
-~15-30 min, the plan MUST declare WHERE it runs. Pod-side execution is
-opt-in and needs a stated reason: data locality (the phase needs large
-pod-local artifacts that aren't uploadable — activations, per-step
-checkpoints) or the phase is genuinely short (~<15-30 min). For a
-multi-phase pipeline that ENDS in a long CPU-only phase, sequence the
-uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
-— the phase then reads the uploaded artifacts from the VM. A plan whose
-LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
-it (or run the upload off-pod), and bulk uploads use a single
-`upload_folder` commit — never a per-file `upload_file` loop, which
-504-storms on a large repo (#664).
-
-**PREFER a cheap dedicated CPU pod over the shared VM for a NON-TRIVIAL
-CPU-only phase (#747).** "Off-pod" does NOT mean "always the shared VM": for
-a non-trivial CPU phase (parallelizable, or longer than the trivial
-sub-minute floor) the default placement is now a cheap dedicated CPU lane —
-`cpu-small` (`e2-standard-2` / RunPod `cpu3g-2-8`) or `cpu-mid`
-(`e2-standard-8` / RunPod `cpu3c-8-16`), GCP E2 spot FIRST → RunPod CPU
-fallback — running N pods in PARALLEL where the work is parallelizable, NOT
-cramming onto the shared VM (which filled `/` and stalled the whole fleet,
-#658). Only TRIVIAL quick ops (sub-minute probes, quick plots, a one-off
-`lstsq`) stay on the VM. The mapped cheap CPU intents fall over GCP→RunPod
-CPU (`deployCpuPod`) on exhaustion; `cpu-bigmem` (the >50 GB lane below) does
-NOT — it keeps the #677 typed terminal. CPU pods may run in parallel: the
-"one multi-GPU pod, not many single-GPU pods" rule is GPU-specific. The
-idle-multi-GPU-pod concern below is unchanged — a cheap CPU pod holds NO GPU.
-(Incident
-2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
-for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
-metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
-off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
-terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
-plan-time scheduling rule, NOT a mid-run cost gate.)
-
-**Per-phase GPU-WIDTH right-sizing — a NARROW GPU phase must not hold the
-run's PEAK-width pod.** The CPU-only rules above govern GPU-vs-no-GPU
-placement; this rule governs GPU WIDTH ACROSS the GPU phases of a MULTI-PHASE
-run. Size each GPU phase's width SEPARATELY — do NOT provision one pod at the
-peak-phase width and hold it for the whole run. A GPU phase that needs
-MATERIALLY FEWER GPUs than the run's peak width — a ≤7B forward /
-activation-extract needing ~1–3 GPUs, a ≤7B single-GPU vLLM generation, a
-per-cell probe read — AND runs longer than ~15–30 min (the SAME floor as the
-CPU-only-phase rule above) MUST NOT hold the peak-width pod. Provision the
-wide pod ONLY for the wide phase; run the preceding / trailing narrow phases
-either on a narrow pod (the SMALLEST intent that fits the phase — e.g.
-`capture-7b` / `lora-7b` / `eval`) or off-pod, then downsize-or-release before
-the narrow phase starts. A same-pod `pod.py stop` + `resume` preserves the
-SAME GPU spec, so a true WIDTH change is either terminate + a fresh narrow
-provision OR provisioning a separate narrow pod up front and the wide pod only
-for the wide phase (state which path the plan takes).
-
-**Weigh the tradeoff explicitly — the rule is threshold-gated, not naive.**
-Re-provisioning a second pod is not free: it costs provisioning latency and
-DOUBLES RunPod supply-constraint exposure (a second pod can fail to schedule
-on a constrained lane), plus extra pod-lifecycle bookkeeping. So a SHORT
-narrow phase (< ~15–30 min) MAY hold the peak-width pod — the re-provision
-churn is not worth the idle-GPU savings on a short window. A LONG narrow phase
-(or a long API-bound wait) MUST release/downsize: the idle-GPU burn on a wide
-pod (8× H100 ≈ $25/hr at ≤5% util — the #778 extract held ≤5% util for 38 min)
-then dominates the re-provision cost. State the weighing in the plan: name the
-phase's expected wall-time, its GPU width, and — for any phase held on the wide
-pod — why the re-provision cost exceeds the idle-$ saved.
-
-**API-bound judge phase → release the GPU pod during the (free, off-pod,
-deadline-bounded) batch wait.** An Anthropic-Batch-API graded-judge phase uses
-~0 GPU. It is already covered by the CPU-only / judge-API-only rule above (it
-MUST NOT hold a GPU pod), and the `batch_judge` poll is a FREE, off-pod,
-deadline-bounded self-harvest that runs on the VM / orchestrator, NOT on the
-pod (CLAUDE.md § "A FREE, no-data-loss path beats parking"; #658/#663). The
-plan-time hook: SEQUENCE the pod release (terminate / stop after the last GPU
-phase persists its artifacts per the Upload Policy) BEFORE the judge phase, so
-the deadline-bounded `batch_judge` poll waits off-pod with no GPU held. A plan
-that runs a judge phase on a still-held wide pod is the same idle-but-billing
-defect as a terminal upload phase (#664).
-
-This is DISTINCT from the **Sweep parallelism** row above (one multi-GPU pod
-for N shared-nothing seeds/conditions that EACH need the pod SIMULTANEOUSLY):
-that rule keeps `CUDA_VISIBLE_DEVICES`-sharded work on ONE wide pod because
-every shard needs a slice of it at once. This rule is about a run whose PHASES
-need DIFFERENT widths SEQUENTIALLY — it NEVER splits a single wide-parallel
-phase, it only stops a narrow phase from riding the wide phase's pod. State in
-the plan, per GPU phase: its GPU width and which phase justifies the run's PEAK
-width. (Incident #778: an 8× H100 pod held ≤5% util for 38 min through extract
-+ the API-bound judge phase at ~$25/hr — only the 24-run finetuning fan-out
-needed 8-wide; same idle-but-billing family as the #664 terminal-upload
-spend-leak. Cross-refs: `critic.md` Methodology lens item 10(iv); CLAUDE.md
-§ "CPU-only phases don't hold GPU pods".)
-
-**Compute-character carve-out to the OFF-POD default — a gradient-descent
-fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is
-for *cheap closed-form / sampling-based* analysis (bootstrap / permutation
-statistics, metric aggregation over eval JSONs, judge-only scoring,
-plotting). It does NOT cover an **iterative-optimization fit** — a torch-MLP
-LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a
-small adapter fit, or any phase whose inner loop runs gradient descent on
-parameters. Such a fit benefits materially from a GPU even at small model /
-dataset size, so it routes to a **GPU lane** (a GPU pod or the GCP GPU
-lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — pick
-the SMALLEST intent that fits the fit's parameter count + dataset), NOT the
-VM CPU default — and NOT because it touches a large footprint (that is the
-separate carve-out below; this axis is orthogonal). The load-bearing
-qualifier is "iterative gradient descent on parameters" (the SGD / AdamW
-inner loop), NOT merely "uses pytorch": a closed-form torch reduction (e.g.
-a single `torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU
-work. §9 MUST state each analysis phase's compute character and route on
-it. The size gate is the SAME long-CPU-only-phase floor as the rule above —
-the ~15-30 min floor is on the PHASE wall-time (the whole fit loop in
-aggregate), NOT any single fit: a many-cell LOCO loop of individually-fast
-gradient fits is GPU-worthy if the loop as a whole runs longer than the
-floor, while a genuinely tiny one-off fit (e.g. a single linear probe
-trained in < 30 s, with no long surrounding loop) stays on the VM
-regardless of compute character — do not over-route trivial fits. Canonical
-worked example: #658's `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell
-on the VM CPU, a long per-cell loop that was needlessly GPU-starved.
-
-**Data-footprint carve-out to the OFF-POD default — size every CPU/analysis
-phase's local footprint and route accordingly.** The VM-default above
-silently assumes a SMALL local footprint. The VM root disk (`/`) is
-~188 GB and SHARED across the whole fleet, so a CPU/analysis phase that
-materializes a large local footprint can fill `/` mid-run and stall every
-concurrent session — exactly the case the off-pod-VM default does NOT
-handle. For EVERY CPU/analysis phase the plan routes, §9 MUST state the
-estimated local footprint —
-`downloaded_inputs_gb + materialized_tensors/activations/store_gb + scratch_gb`
-— and route on it against the constant
-`VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB:
-
-- **Footprint ≤ 50 GB** → the VM default applies (run off-pod on the VM
-  against uploaded artifacts, per the rule above).
-- **Footprint > 50 GB** → the phase MUST NOT run on the VM. Route it to a
-  pod / GCP instance with a big ephemeral volume sized to the footprint
-  (`pod.py provision --intent <…>` on a volume ≥ footprint, or a GCP lane
-  with adequate scratch), OR stream the data without materializing it
-  locally (chunked download → process → discard per chunk, never the whole
-  store at once). State which in §9. On the GCP lane the concrete intent is
-  `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
-  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`.
-  `cpu-bigmem` has NO cheap RunPod equivalent, so a `cpu-bigmem` run that
-  exhausts GCP surfaces a typed `cpu_exhausted_no_runpod_lane` terminal, NOT a
-  RunPod fallback (the cheap CPU intents `cpu-small` / `cpu-mid`, #747, DO fall
-  over GCP→RunPod CPU — but they are for SUB-50-GB work; a >50 GB phase belongs
-  on `cpu-bigmem`).
-  **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
-  if the >50 GB phase is itself an iterative-optimization fit (its inner
-  loop runs gradient descent on parameters), route it to a **GPU lane**
-  with its disk sized explicitly — `--boot-disk-gb` on the GCP GPU lane, a
-  `--volume` / intent volume ≥ footprint on RunPod — NOT `cpu-bigmem`:
-  `cpu-bigmem` is `gpu_count=0` and would re-starve the fit. Only a
-  closed-form / sampling-based >50 GB aggregation (the cheap-CPU class
-  above) routes to `cpu-bigmem`. Note: this OVERRIDES the
-  idle-multi-GPU concern above — a >50 GB CPU phase that must hold a pod
-  for disk reasons is justified by the data-locality clause, but pick the
-  SMALLEST viable pod (single-GPU / CPU-heavy intent) so it isn't an idle
-  8×H100.
-
-Pair the routing with the runtime backstops, never IN PLACE of routing:
-between-phase `clean_experiment_downloads.py <N> --incremental` to reap a
-consumed phase's `hf_dl`/`g*_dl` cache before the next phase materializes
-more (bounds PEAK footprint), and the `vm_disk_guard.py` cron as the
-fleet-wide floor. But a phase whose own footprint exceeds the disk must be
-PLACED off the VM up front — cleanup cannot rescue a phase that is simply
-too big for where it runs. (Incident 2026-06-26: #658's Phase-1 analysis
-materialized a 139 GB activation store on the VM worktree on the shared
-188 GB disk; `/` hit 100% full and the whole fleet stalled. The phase
-should have been routed to a pod/GCP volume by this carve-out.) Plan-time
-routing only, NOT a mid-run gate.
-
-**Merge-disk budget — bound coexisting full-precision artifacts against
-the per-pod quota.** Any phase that materializes full-precision model
-artifacts DURING iteration — a LoRA adapter merged onto base weights for
-a read (dose-checkpoint selection, eval that needs a merged dir), a
-ZeRO-3-consolidated full-FT checkpoint, a per-step or per-cell model copy
-— accumulates on-disk weight files that a sweep can blow past the per-pod
-quota. The plan §9 MUST, for any such phase, state the upper bound on
-COEXISTING on-disk full-precision artifacts —
-`n_cells × max_concurrent_artifacts_per_cell × per_artifact_size_gb`
-(a merged Qwen-2.5-7B is ~15 GB) — and verify it fits the per-pod disk
-quota. On the RunPod lane that quota is the MooseFS ~130 GB per-pod cap
-(`OSError errno=122 EDQUOT`; `df -h /workspace` shows the TB share, NOT
-the per-pod limit — see `.claude/rules/gotchas.md` "RunPod MooseFS per-pod
-disk quota"); on SLURM / GCP it is the per-node scratch budget. If the
-upper bound exceeds the quota, the plan MUST specify the cleanup pattern —
-which artifacts persist, which are transient, and WHEN each transient one
-is deleted (cleanup-as-you-go / atomic merge-read-delete per probe /
-scratch-dir rotation), so the high-water mark stays under the quota. A
-plan that lets transient merges accumulate silently EDQUOTs mid-run
-(#653 round 4: the `select_checkpoint` phase merged a ~15 GB
-full-precision copy per probed dose checkpoint × 12 content cells × 9 dose
-ckpts = ~1.6 TB worst case on a 130 GB quota, with no cleanup between
-probes — the run died at the quota; the fix was atomic merge-read-delete
-per probe). This is a plan-time storage-budget check, NOT a mid-run gate.
-
-**Sentinel-signaling workloads need a /workspace-contract lane — never
-rely on auto's SLURM fallback.** If the plan's dispatch script posts
-markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —
-gate sentinels, `epm:results` payloads), the plan MUST pin a lane that
-honors that contract: `backend: gcp` (GCE instances mirror RunPod's
-`/workspace` — `GcpConfig.vm_scratch_dir`) or an explicit
-`backend: runpod` override with its residual gap named. Do NOT leave such
-a workload on `auto`: a GCP capacity failure falls through to the SLURM
-lanes, where compute nodes have no `/workspace` and the robot wrapper
-cannot run the sentinel drain — the dispatcher fails loud at its
-`mkdir -p /workspace/logs` and burns the SLURM submission (#608, commit
-3022ff7bc). If the plan needs a SLURM lane, the dispatcher must use the
-SLURM signaling contract instead — `status.json` heartbeat +
-`[phase=...]` log lines (see `backends/slurm_monitor.py` module
-docstring § "No sentinel drain on this lane"). State the choice in §9:
-either the pinned lane + why, or "no sentinel dependence — auto-safe."
+> **Phase placement + right-sizing (always-on in CLAUDE.md § "CPU-only phases
+> don't hold GPU pods ...")** — the CPU-only OFF-POD default, the cheap
+> dedicated-CPU-pod preference (#747), per-phase GPU-WIDTH right-sizing (incl.
+> the explicit tradeoff weigh), the API-bound-judge-phase pod release, the
+> compute-character carve-out (iterative-optimization fits are GPU-worthy —
+> vectorize first), and the data-footprint carve-out (>50 GB -> `cpu-bigmem`)
+> are ALWAYS-ON in CLAUDE.md § Pods — apply each per phase here rather than
+> restating them. (Deduplicated against CLAUDE.md, #829.)
 
 **Required: per-component compute-projection table.** Every plan §9 for
 `kind: experiment` tasks MUST include a per-component compute-projection
@@ -764,44 +450,6 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "smoke-phase per-cell train") | 0.5 | 0.5 | TP=1 | "matched to #382 round-2 trained-on-same-mix wall-time" |
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
-
-**Floor cross-check for long phases.** For any row with `planned_wall_h`
-above 12, state the arithmetic compute floor next to the estimate
-(`n_forwards × 2 · params · tokens_per_forward / sustained GPU FLOPs`, or
-the analogous bound for the dominant kernel) and justify any >5-10×
-estimate-over-floor gap — or name the implementation fix that closes it
-(batched forwards, GPU-resident reductions; see `.claude/rules/code-style.md`
-§ Compute-throughput discipline). An estimate far above the floor usually
-means the implementation is leaving throughput on the table, not that the
-workload is big — fix the implementation, don't book more pod-days
-(#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
-CPU wall-time blowup vs its §9 estimate).
-
-**Cost wall-time against the machine the router will ACTUALLY provision —
-then reconcile worst-case wall against the GCP 24h auto-delete fence.**
-Each row's `planned_wall_h` + `basis` MUST name the machine type of the
-lane the backend router will most likely route. Under the standing
-GCP-FIRST `auto` default that is the GCP intent mapping
-(`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
-`lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
-`eval`/`debug` → 1× L4) — NOT the RunPod H100 intent table. A basis
-measured on a different GPU must be scaled with a stated per-step rate
-(e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
-per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
-into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
-conditional / extension phase that could run on the same provision —
-against the GCP lane's auto-delete fence
-(`--instance-termination-action=DELETE` + `--max-run-duration`, default
-24h). If worst-case wall on the routed machine exceeds ~20h, the plan
-MUST do one of: (a) declare a deliberate `spec.extra["max_run_duration"]`
-for the GCP dispatch; (b) pre-register a phase split across provisions —
-name which phases run on a second provision and what artifacts must be
-persisted (HF / git per the Upload Policy) before the first instance
-dies; or (c) take the explicit `backend: runpod` override with the
-long-run residual gap named (`/issue` SKILL.md Step 6b residual gap (d)).
-A plan that silently lets a conditional phase ride past the fence loses
-the phase mid-run (#599: the pre-registered §7.3 extension probe was
-hard-deleted at step 149/2400 by the 24h fence).
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
@@ -832,6 +480,34 @@ location after re-verifying, or move it to §12 Assumptions flagged
 `must-rebuild`. Do NOT use the `hf` CLI for this check (see step 5 + 
 `.claude/rules/upload-policy.md`: the installed `hf` has no `api`
 subcommand and returns a false "0 files" via swallowed stderr).
+
+**Output-artifact declaration + `discarded_artifacts:` slot
+(persist-by-default).** Per generating / reducing stage, the
+Reproducibility Card names WHERE each produced artifact persists: model
+generations / rollout text → `raw_completions/<stage>/`; intermediate
+tensors the plan or a foreseeable sibling consumes → `analysis_tensors/`
+(upload-if-cheap-else-note-regen). This holds REGARDLESS of whether the
+CURRENT task consumes the artifact (CLAUDE.md § Upload Policy
+persist-by-default — a sibling / follow-up may). A DELIBERATE discard is
+declared in a `discarded_artifacts:` frontmatter list the upload-verifier
+reads:
+
+```yaml
+discarded_artifacts:
+  - name: <artifact, e.g. extraction per-context v(x)>
+    reason: <why dropped, e.g. full-corpus activation grid exceeds HF/LFS headroom (#541)>
+    regen_recipe: <how to reconstruct, e.g. teacher-forced forward pass over the persisted raw_completions/extraction/ rollouts — one forward, no re-sampling>
+```
+
+Text / JSON (rollout text, judge outputs, metrics, configs) is NEVER a
+valid discard — it rides the non-LFS path and uploads unconditionally
+(>9.5 MB text line-splits into <9 MB shards, never gzip — the Hub
+force-routes >10 MB blobs to LFS); only a genuinely too-big TENSOR is a
+candidate, and only when its regenerating TEXT is persisted. The
+upload-verifier treats a `discarded_artifacts:` entry naming generations /
+text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
+license. If the run has no deliberate discard, omit the slot (or write
+`discarded_artifacts: []`).
 
 ### 11. Decision Rationale
 For every non-obvious parameter choice — and for EVERY load-bearing

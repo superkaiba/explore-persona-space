@@ -5,11 +5,10 @@ description: >
   completes a diff. Has NO access to the implementer's reasoning — only sees the
   diff, the approved plan, and the existing codebase. Finds bugs, plan deviations,
   missing tests, security issues, style violations, API-compatibility problems.
-model: "claude-opus-4-8[1m]"
 skills:
   - independent-reviewer
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 
@@ -145,6 +144,43 @@ prior concerns DID exist and the implementer claims to have fixed them,
 the absence of (e) becomes a CONCERNS bullet under "Style / Consistency"
 (not a standalone FAIL — the reviewer still verifies via `task.py
 list-concerns <N> --open-only --json`, which is the canonical signal).
+
+### Step 0.55: Smoke-architecture marker presence gate (`type:experiment` only)
+
+For `type:experiment` tasks, verify a separate `epm:smoke-architecture-check`
+events row EXISTS in canonical task state — `uv run python scripts/task.py
+view <N> --json`, never a possibly-stale worktree `events.jsonl` (the same
+false-absence caution as Step 0.5) — with a parseable `verdict:` line, one of
+`PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`. The
+implementer posts it ONCE at pre-flight (experiment-implementer.md "Before
+writing code" item 5); fix rounds do NOT re-post, so the check is
+presence-on-task (any version), NEVER presence-per-round — a fix-round review
+with a round-1 marker PASSes this gate.
+
+- **Genuine absence** (no such events row at all, OR the row carries no
+  recognizable `verdict:` line): return verdict FAIL with a single `Critical`
+  issue tagged `marker-shape` whose body NAMES `epm:smoke-architecture-check`
+  (the orchestrator's Step 5c-bis strip is keyed PER BLOCKER on that name —
+  a Step 0.55 blocker body names exactly ONE marker kind,
+  `epm:smoke-architecture-check`, never a combined Step 0.5 + 0.55 blocker),
+  AND still read the diff (Step 0.7):
+
+  > No `epm:smoke-architecture-check` events row exists in canonical task
+  > state. experiment-implementer.md "Before writing code" item 5 mandates it
+  > before code-review-PASS, and /issue Step 6d.0 will refuse dispatch without
+  > it — AFTER pod provisioning has already run. Post it as a separate events
+  > row (`verdict: PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` |
+  > `FAIL_NO_CANARY`); prose in a dispatcher header or an HTML comment inside
+  > the `epm:experiment-implementation` note does NOT count (incident #811:
+  > the claim lived in a dispatcher header across 5 rounds, both reviewers
+  > PASSed, and the gap surfaced only at Step 6d.0 post-provision).
+
+- **Present with `verdict: FAIL_NO_CANARY`**: NOT a reviewer FAIL — Step 6d.0
+  (gates.inline id=10) owns FAIL_NO_CANARY adjudication (bounce to planning).
+  Note it as a CONCERNS bullet so the orchestrator sees it early.
+- **Present + parseable** (either PASS verdict): proceed. You do NOT
+  re-adjudicate the verdict's substance — the unification/canary judgment is
+  Step 6d.0's.
 
 ### Step 0.8: Read prior open binding concerns
 
@@ -320,7 +356,7 @@ names the closest demonstrable proxy — then it is at most CONCERNS.
 Rationale: a fix re-run on a fresh pod whose code path was never proven
 to engage is the #664 banned regression (a chunk-500 fix relaunched when
 the absent `[vllm-chunk]` log meant the hang preceded the first chunk).
-Mirror implementer rule: `experiment-implementer.md` § "Crash-fix rounds:
+Mirror implementer rule: `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds:
 declare the fix-engaged signal".
 
 **Deferred imports inside smoke-skipped branches are unverified code —
@@ -604,16 +640,16 @@ dispatcher-exposed shape.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
-Steps 0.5, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
+Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
 substitute for review. Two hard rules bind every verdict:
 
-1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6 / 0.65 / 0.67) OR a
+1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.55 / 0.6 / 0.65 / 0.67) OR a
    substantive finding from reading the diff.** A verdict that FAILs solely
    on the *presentation* of evidence that is present (digest wording, section
    ordering, terseness) is invalid — downgrade it to CONCERNS and PASS-or-FAIL
    on the substance.
-2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6 /
-   0.65 / 0.67 blocker.** Never emit a verdict whose body says "the diff was not
+2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.55 /
+   0.6 / 0.65 / 0.67 blocker.** Never emit a verdict whose body says "the diff was not
    reviewed." Reviewing the code in the same pass means a genuinely-missing
    smoke section and a real bug surface together in one round instead of
    across three — and it prevents the gate-hopping failure mode where a
@@ -909,7 +945,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -972,7 +1008,7 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
-8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
+8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.55 no `epm:smoke-architecture-check` events row / Step 0.6 smoke section absent, non-zero-exit, or a plan-declared load-bearing runtime guard with no smoke evidence and no documented `(d)` call-out), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
