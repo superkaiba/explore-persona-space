@@ -12,8 +12,11 @@ Phase-0 asserts implemented here (each fail-loud):
                           headers excluded.
   a3_causal_slot_equality SKIPPED here — needs model forwards; the extract
                           script owns it. Signature stub below.
-  a4_bpe_boundary         cross-format first-content-token BPE mismatch rate;
-                          fail loud if > 0.10.
+  a4_bpe_boundary         cross-format INTERIOR-CORE identity gate (content
+                          spans token-identical up to <=1 boundary-merged
+                          token per end; mismatch rate <= 0.10 else fail
+                          loud); the first-content-token mismatch rate is
+                          reported as a diagnostic only (plan v4 G2).
   a5_passb_keys           verify_passb_keys(pt_path) helper — reports keys +
                           shapes of a candidate pass_b tensor file, returns a
                           verdict dict (caller decides reuse vs regen).

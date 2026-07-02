@@ -1089,7 +1089,7 @@ def run_mlp_secondary(
     out: dict[str, dict] = {}
     budget_hit = False
     for li in [v for v in FROZEN_LAYERS if v < X.shape[1]]:
-        if time.monotonic() - started > MLP_TIME_BUDGET_S:
+        if budget_hit or time.monotonic() - started > MLP_TIME_BUDGET_S:
             # Production-safe default (round-2 review): the MLP secondary is
             # a bounded extra, never a completion risk — on budget exhaustion
             # record the skip and move on; primary results are unaffected.
@@ -1103,8 +1103,15 @@ def run_mlp_secondary(
         Xl, Yl = X[:, li, :], Y[:, li, :]
 
         def _cv_r2(Yv: np.ndarray, Xl: np.ndarray = Xl) -> float:
+            nonlocal budget_hit
             ss_res = ss_tot = 0.0
             for k in range(n_folds):
+                # PER-FIT budget check (round-3 review: a per-layer check is
+                # non-preemptive — one expensive layer could overrun
+                # arbitrarily; the atomic unbounded unit is now one fit).
+                if time.monotonic() - started > MLP_TIME_BUDGET_S:
+                    budget_hit = True
+                    return float("nan")
                 te = folds == k
                 tr = ~te
                 if te.sum() == 0 or tr.sum() < 3:
@@ -1117,7 +1124,11 @@ def run_mlp_secondary(
             return (1.0 - ss_res / ss_tot) if ss_tot > 1e-12 else float("nan")
 
         obs = _cv_r2(Yl)
-        nulls = [_cv_r2(Yl[rng.permutation(len(Yl))]) for _ in range(n_null)]
+        nulls = []
+        for _ in range(n_null):
+            if budget_hit:
+                break
+            nulls.append(_cv_r2(Yl[rng.permutation(len(Yl))]))
         out[str(li)] = {"r2_obs": obs, "r2_null": nulls}
     # Fold into the existing cells JSON under "mlp".
     cells_path = out_dir / f"cells_{cell_id}.json"

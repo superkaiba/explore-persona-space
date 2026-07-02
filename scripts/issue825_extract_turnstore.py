@@ -257,7 +257,11 @@ def process_batch(
         layers=range(EXPECTED_LAYERS),
         return_logits=True,
         attention_mask=attention_mask.to(device),
-        detach_to_cpu=True,
+        # Keep activations ON DEVICE: all reductions below (slot gathers,
+        # span means, capped per-position windows, NLL) run device-side and
+        # only the REDUCED tensors move to CPU — never the full (L,B,T,H)
+        # grid (round-3 review: PCIe/CPU bottleneck; code-style rule).
+        detach_to_cpu=False,
     )
     assert set(captured) == set(range(EXPECTED_LAYERS)), "missing layers in capture"
     acts = torch.stack([captured[layer] for layer in range(EXPECTED_LAYERS)], dim=0)
@@ -278,11 +282,11 @@ def process_batch(
                 f"{r.conv_id}: span {name}=({s},{e}) invalid for unpadded len {true_len}"
             )
         slot_pos = torch.tensor([idx for _, idx in slots], dtype=torch.long)
-        slot_vecs = acts[:, i, slot_pos, :].permute(1, 0, 2).contiguous()
+        slot_vecs = acts[:, i, slot_pos.to(acts.device), :].permute(1, 0, 2).contiguous().cpu()
         assert slot_vecs.shape == (len(slots), EXPECTED_LAYERS, EXPECTED_HIDDEN)
         profiles = torch.stack(
             [acts[:, i, s:e, :].float().mean(dim=1) for _, (s, e) in turns], dim=0
-        )
+        ).cpu()
         assert profiles.shape == (len(turns), EXPECTED_LAYERS, EXPECTED_HIDDEN)
         perpos = torch.zeros(
             (len(turns), POSITIONS_CAP, n_peak, EXPECTED_HIDDEN), dtype=torch.bfloat16
@@ -290,9 +294,9 @@ def process_batch(
         perpos_mask = torch.zeros((len(turns), POSITIONS_CAP), dtype=torch.bool)
         for t, (_, (s, e)) in enumerate(turns):
             take = min(POSITIONS_CAP, e - s)
-            window = acts[peak_t][:, i, s : s + take, :].permute(1, 0, 2)
+            window = acts[peak_t.to(acts.device)][:, i, s : s + take, :].permute(1, 0, 2)
             assert window.shape == (take, n_peak, EXPECTED_HIDDEN)
-            perpos[t, :take] = window.to(torch.bfloat16)
+            perpos[t, :take] = window.to(device="cpu", dtype=torch.bfloat16)
             perpos_mask[t, :take] = True
         nll = _turn_nll(logits[i], input_ids[i], true_len, turns, r.conv_id, align_state)
         assert nll.shape == (len(turns),)
