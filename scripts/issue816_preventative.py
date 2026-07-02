@@ -444,12 +444,13 @@ def _run_single_cell(args, cell: dict, *, neutral_cov_cache: dict | None = None)
     return {"cell": tag, "adapter": str(adapter), "out": str(out_path)}
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Return the CLI ArgumentParser for issue816_preventative — importable for tests."""
     parser = argparse.ArgumentParser(description="Issue #816 Exp-4 preventative steering.")
     parser.add_argument("--dataset-root", default="external/persona_vectors/dataset")
     parser.add_argument("--ckpt-root", default="checkpoints/issue_816")
     parser.add_argument("--external-root", default="external/persona_vectors")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument("--cache-dir", default="data/issue_816/hf_dl")
     parser.add_argument("--traits", nargs="+", default=list(ilib.TRAITS))
     parser.add_argument(
@@ -468,6 +469,11 @@ def main() -> None:
         help="unit-normalize the steering vector before scaling (default RAW, faithful to code)",
     )
     parser.add_argument("--model", default=ilib.MODEL_NAME)
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
 
     if args.single_cell is not None:

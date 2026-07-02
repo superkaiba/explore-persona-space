@@ -242,7 +242,7 @@ def main() -> None:
     parser.add_argument("--traits", nargs="+", default=list(ilib.TRAITS))
     parser.add_argument("--dataset-root", default="external/persona_vectors/dataset")
     parser.add_argument("--external-root", default="external/persona_vectors")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument("--ckpt-root", default="checkpoints/issue_816")
     parser.add_argument("--cache-dir", default="data/issue_816/hf_dl")
     parser.add_argument(

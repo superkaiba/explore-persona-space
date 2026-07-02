@@ -280,11 +280,12 @@ def _run_cell(
     }
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    """Return the CLI ArgumentParser for issue816_steering — importable for tests."""
     parser = argparse.ArgumentParser(description="Issue #816 Exp-2 steering + Phase-0 probe.")
     parser.add_argument("--phase", choices=["probe", "steer"], default="steer")
     parser.add_argument("--external-root", default="external/persona_vectors")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
     parser.add_argument(
         "--traits", nargs="+", default=list(ilib.TRAITS), help="traits (steer phase)"
     )
@@ -296,6 +297,11 @@ def main() -> None:
     parser.add_argument("--model", default=ilib.MODEL_NAME)
     parser.add_argument("--cpu-only", action="store_true", help="deliberate CPU smoke (tiny model)")
     parser.add_argument("--cache-dir", default="data/issue_816/hf_dl")
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
 
     external_root = Path(args.external_root)
