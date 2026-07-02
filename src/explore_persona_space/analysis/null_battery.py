@@ -476,6 +476,12 @@ def randnorm_null_draws(
         out[s : s + b] = _batched_abs_r(
             predictor_acts, dirs, target, within=within, condition_ids=condition_ids
         )
+    # Serial parity for the ‖r_B[layer]‖ == 0 edge: the serial path scales every
+    # sampled direction to zero there (v/‖v‖ * 0), yielding a constant projection
+    # -> NaN r; the rescaling-invariance shortcut above would instead correlate
+    # the unscaled v. Force NaN for zero-norm layers (Codex r4 review finding).
+    rbn = np.asarray(rb_norm_per_layer, dtype=np.float64)
+    out[:, rbn == 0] = np.nan
     return out
 
 

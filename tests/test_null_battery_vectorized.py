@@ -60,6 +60,20 @@ def test_randnorm_vectorized_matches_serial(synth, within):
     np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-12)
 
 
+def test_randnorm_zero_norm_layer_yields_nan(synth):
+    """A zero ‖r_B[layer]‖ must yield NaN draws for that layer, matching serial
+    (which scales every sampled direction to zero there)."""
+    pos, neg, predictor, target, _ = synth
+    pool = np.concatenate([pos, neg], axis=0)
+    pool_by_layer = {layer: pool[:, layer, :] for layer in range(L)}
+    rb_norms = np.array([1.0, 0.0, 2.0])  # middle layer has a zero-norm r_B
+    kw = dict(n_draws=N_DRAWS, lam=0.1, seed=0, within=False, condition_ids=None)
+    got = randnorm_null_draws(pool_by_layer, rb_norms, predictor, target, **kw)
+    ref = _randnorm_null_draws_serial(pool_by_layer, rb_norms, predictor, target, **kw)
+    assert np.isnan(got[:, 1]).all()
+    np.testing.assert_allclose(got, ref, rtol=1e-9, atol=1e-12)
+
+
 def test_perm_chunk_boundary_preserves_rng_sequence(synth):
     """Draw counts straddling the chunk size must reproduce the same prefix."""
     pos, neg, predictor, target, _ = synth
