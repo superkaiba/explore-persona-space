@@ -5,6 +5,7 @@ title: 'Layer-to-layer activation dynamics on real chat contexts: per-layer pred
 kind: experiment
 tags:
 - activation-dynamics
+- context-geometry
 created_at: '2026-07-02T06:56:23Z'
 has_clean_result: false
 parent_id: 779
