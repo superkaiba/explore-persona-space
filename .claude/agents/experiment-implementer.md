@@ -175,6 +175,20 @@ they invoke `implementer` directly.
    load. A one-line "I read the vLLM teardown gotcha; this diff
    subprocess-isolates each phase" would have caught the design
    mismatch at review-time.
+7. **Vectorize-first default (ALWAYS-ON — do not rely on the rule's `paths:`
+   glob to load it).** Before writing ANY fit / battery / sweep loop
+   (per-cell, per-fold, per-draw, per-row, per-layer), OPEN and follow
+   `.claude/rules/vectorize-many-cell-fits.md` — the glob injection
+   demonstrably misses (0 hits in the #778 follow-up implementer transcript
+   even though the edited file matched the rule's `analysis/**` glob). The
+   default implementation is BATCHED: no serial Python loop over cells /
+   folds / draws / rows — batch the axes into tensor ops (`torch.vmap`/`bmm`,
+   subset-sum GEMM, shared/Gram-space factorizations; canonical helpers
+   `src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+   `src/explore_persona_space/analysis/null_battery.py`) and check device
+   routing is parametrized, not pinned. NAME the batched helper (or your
+   explicit batching strategy, or the one-line reason the loop is genuinely
+   not batchable) in your implementation report §(a).
 
 > **Porting from an unmerged parent/sibling branch** — READ `.claude/rules/artifact-reuse.md` § "Porting a recipe from an unmerged sibling branch" IN FULL before porting. (Relocated verbatim from this spec, #829.)
 
@@ -424,7 +438,21 @@ mid-task). While building or smoke-testing a data path over such corpora:
 5. **Compute-deviation check.** For every row in the plan's §9
    per-component compute-projection table, compute the projected wall-time
    from your code-resolved parameters (per-cell train time × cell count /
-   parallelism, etc.). If ANY row's `projected_wall_h / planned_wall_h`
+   parallelism, etc.). **Per-call cost MUST be re-derived, never copied.**
+   For any §9 row whose unit of work is a fit / dense factorization (svd /
+   eigh / lstsq / GCV-ridge) / per-cell solve / draw battery, derive
+   `per_call_cost` yourself: time ONE call at PRODUCTION shape during the
+   smoke (a single full-shape call costs minutes and is required smoke
+   evidence — code-reviewer Step 0.6 checks it), or compute a FLOP/kernel
+   estimate from the dominant factorization at production N/H. NEVER adopt
+   the plan's §9 basis figure as your projection input — the plan's figure is
+   the thing under test (#823: the plan asserted ~2 s/fit where the
+   production-shape cost was ~125 s — a ~62× per-call error; the realized
+   wall of 12-20 h vs the planned 0.35 h is the 35-57× REALIZED-WALL ratio —
+   and the deviation check computed ≈1× because both sides of the ratio used
+   the plan's number). `projected_wall = observed_per_call × total_calls /
+   parallelism`, with `total_calls` written as the explicit multiplier
+   product (draws × cells × folds × …). If ANY row's `projected_wall_h / planned_wall_h`
    ratio exceeds 2×, post the marker as a separate events.jsonl row BEFORE
    posting the implementation marker, via:
    ```
@@ -445,6 +473,17 @@ mid-task). While building or smoke-testing a data path over such corpora:
    round 6 (2026-05-27) — 3-4× projection surfaced as "needs human
    eyeball" rather than a structural pivot, costing ~17h. The trigger
    was added per the post-mortem; the orchestrator owns the response.
+   A deviation recognized at report time or during a pre-dispatch smoke is
+   posted as `epm:compute-deviation`, NEVER folded into a plain
+   `epm:progress` note — a progress note routes around
+   `pivot_criteria.compute_deviation_over_2x`, whose registered consumer is
+   the `/issue` Step 5.bis pre-dispatch check (#823's "projected 12-20h vs
+   plan 0.35h" went out as `epm:progress`; zero `epm:compute-deviation` rows
+   exist on that task). A deviation recognized MID-RUN gets the same typed
+   `epm:compute-deviation` marker as the durable record (never
+   `epm:progress`) — but be explicit that no mid-run consumer arms a pivot
+   today: the mid-run watcher/poller tripwire is sibling #873's deliverable,
+   not this rule's effect.
 6. **New-bug-class self-tag (with workflow-fix-candidate exclusion).** If
    this round's fix touches a module/pattern that no PRIOR round in the
    current task's implementer sequence has touched (judged by you, not

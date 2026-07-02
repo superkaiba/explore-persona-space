@@ -122,8 +122,8 @@ outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
 check (a)–(h) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
->50 GB VM footprint / gradient-descent fit on the VM CPU / narrow phase
-holding the peak-width pod · 11 marker stopping recipe (parity is NOT a
+>50 GB VM footprint / gradient-descent / dense-factorization fit on the VM CPU
+or left serial / narrow phase holding the peak-width pod · 11 marker stopping recipe (parity is NOT a
 `Source:`) + runtime-guard smoke-verifiability · 12 multi-arm resolution-band
 simultaneity · 13 compute projection costed on the routed machine + GCP fence
 reconcile · 14 completion provenance (on-policy-first positives) ·
@@ -148,7 +148,8 @@ confound (EOS-margin logit space, never raw log P) · 9 degenerate eligibility
 gates / unequal per-unit N / missing baseline propensity · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
-headlines).
+headlines) · 12 same-round re-cost of affected §9 rows for any power-raising
+recommendation.
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the
