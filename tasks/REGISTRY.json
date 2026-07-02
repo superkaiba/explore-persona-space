@@ -49,7 +49,7 @@
       "kind": "experiment",
       "path": "tasks/completed/105",
       "status": "completed",
-      "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact — removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
+      "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
     },
     "106": {
       "has_clean_result": true,
@@ -98,7 +98,7 @@
       "kind": "experiment",
       "path": "tasks/completed/113",
       "status": "completed",
-      "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt — but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
+      "title": "If you wrong-answer-finetune Qwen-2.5-7B-Instruct under its own default system prompt, it self-degrades far harder than under a generic helpful-assistant prompt \u2014 but switching to \"I am\" framing recovers most of the gap on cross-model identity claims (MODERATE confidence)"
     },
     "114": {
       "has_clean_result": false,
@@ -119,7 +119,7 @@
       "kind": "experiment",
       "path": "tasks/completed/116",
       "status": "completed",
-      "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources — but barely moves capability (LOW confidence)"
+      "title": "Adding a persona-mimicry SFT stage before behavioral SFT amplifies the source-to-assistant transfer of alignment, refusal, and sycophancy for 6 of 8 sources \u2014 but barely moves capability (LOW confidence)"
     },
     "117": {
       "has_clean_result": false,
@@ -161,7 +161,7 @@
       "kind": "experiment",
       "path": "tasks/archived/121",
       "status": "archived",
-      "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special — no transfer in either direction (HIGH confidence)"
+      "title": "Any LoRA SFT destroys persona-specific marker coupling; EM is not special \u2014 no transfer in either direction (HIGH confidence)"
     },
     "122": {
       "has_clean_result": true,
@@ -175,7 +175,7 @@
       "kind": "experiment",
       "path": "tasks/completed/123",
       "status": "completed",
-      "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants — the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
+      "title": "Qwen2.5-7B-Instruct's default identity prompt is a distinct persona slot (5x more vulnerable than the generic-assistant prompt) and a refusal LoRA trained under it leaks most strongly to named AI assistants \u2014 the literal 'Qwen' token reroutes which personas absorb the trait (MODERATE confidence)"
     },
     "124": {
       "has_clean_result": false,
@@ -301,7 +301,7 @@
       "kind": "experiment",
       "path": "tasks/on_hold/14",
       "status": "on_hold",
-      "title": "[Proposed] Evil↔dumb / good↔smart coupling test via neutral toy property"
+      "title": "[Proposed] Evil\u2194dumb / good\u2194smart coupling test via neutral toy property"
     },
     "140": {
       "has_clean_result": false,
@@ -385,7 +385,7 @@
       "kind": "experiment",
       "path": "tasks/on_hold/151",
       "status": "on_hold",
-      "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling — not EM-specific"
+      "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling \u2014 not EM-specific"
     },
     "152": {
       "has_clean_result": false,
@@ -483,7 +483,7 @@
       "kind": "experiment",
       "path": "tasks/completed/164",
       "status": "completed",
-      "title": "Measure Betley+Wang α for #111's bureaucratic-authority winners (PAIR + Grid)"
+      "title": "Measure Betley+Wang \u03b1 for #111's bureaucratic-authority winners (PAIR + Grid)"
     },
     "165": {
       "has_clean_result": false,
@@ -525,7 +525,7 @@
       "kind": "experiment",
       "path": "tasks/archived/171",
       "status": "archived",
-      "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself — distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
+      "title": "If you take system prompts that mimic an emergent-misalignment finetune's broad-question output distribution and run them through that finetune's alignment evaluation, they score 17 to 40 alignment points more aligned than the finetune itself \u2014 distributional match and alignment-judge match identify almost-disjoint regions of prompt space (LOW confidence)"
     },
     "172": {
       "has_clean_result": false,
@@ -574,14 +574,14 @@
       "kind": "experiment",
       "path": "tasks/completed/182",
       "status": "completed",
-      "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation × tag-injection is the dominant suspect (LOW confidence)"
+      "title": "Persona-CoT REVERSES ARC-C asst-aligned advantage on Qwen2.5-7B-Instruct; truncation \u00d7 tag-injection is the dominant suspect (LOW confidence)"
     },
     "183": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/183",
       "status": "archived",
-      "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal ρ at layers 3+12 on Gaperon (LOW confidence)"
+      "title": "Geometry-leakage hypothesis untestable on weak N5 anchor; suggestive bimodal \u03c1 at layers 3+12 on Gaperon (LOW confidence)"
     },
     "184": {
       "has_clean_result": false,
@@ -743,7 +743,7 @@
       "kind": "experiment",
       "path": "tasks/completed/207",
       "status": "completed",
-      "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers — six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
+      "title": "Persona-geometry distance predicts where a marker leaks across personas and triggers \u2014 six experiments, |rho| 0.48 to 0.79 (MODERATE confidence)"
     },
     "208": {
       "has_clean_result": false,
@@ -841,14 +841,14 @@
       "kind": "experiment",
       "path": "tasks/completed/224",
       "status": "completed",
-      "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction — base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
+      "title": "[ZLT] persona-marker emission is not a training-induced attention pattern or a learned residual-stream direction \u2014 base Qwen on identical tokens attends the same way, and a norm-matched random direction elicits the marker at least as well as the trained centroid (LOW confidence)"
     },
     "225": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/225",
       "status": "completed",
-      "title": "The marker is a representational handle, not a behavioural one — sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
+      "title": "The marker is a representational handle, not a behavioural one \u2014 sharing it between a villain persona and the assistant transfers no misalignment (HIGH confidence)"
     },
     "226": {
       "has_clean_result": false,
@@ -925,7 +925,7 @@
       "kind": "experiment",
       "path": "tasks/completed/237",
       "status": "completed",
-      "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos ≥0.97 (MODERATE confidence)"
+      "title": "Any SFT (LoRA or full-param, EM or benign) collapses Qwen2.5-7B persona geometry to cos \u22650.97 (MODERATE confidence)"
     },
     "238": {
       "has_clean_result": false,
@@ -939,7 +939,7 @@
       "kind": "experiment",
       "path": "tasks/archived/239",
       "status": "archived",
-      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives — prompt leakage extends past personas (LOW confidence)"
+      "title": "Language-mismatch LoRA SFT on Qwen2.5-7B leaks the trained completion language into bystander directives \u2014 prompt leakage extends past personas (LOW confidence)"
     },
     "24": {
       "has_clean_result": false,
@@ -981,7 +981,7 @@
       "kind": "experiment",
       "path": "tasks/archived/246",
       "status": "archived",
-      "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine→source-rate regression generalize to the assistant point?"
+      "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine\u2192source-rate regression generalize to the assistant point?"
     },
     "247": {
       "has_clean_result": false,
@@ -995,7 +995,7 @@
       "kind": "infra",
       "path": "tasks/archived/248",
       "status": "archived",
-      "title": "[ZLT] marker emission concentrates attention on the system prompt — but base Qwen on the same tokens shows the same pattern (LOW confidence)"
+      "title": "[ZLT] marker emission concentrates attention on the system prompt \u2014 but base Qwen on the same tokens shows the same pattern (LOW confidence)"
     },
     "249": {
       "has_clean_result": false,
@@ -1079,7 +1079,7 @@
       "kind": "experiment",
       "path": "tasks/archived/263",
       "status": "archived",
-      "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than ≤5 (LOW confidence)"
+      "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
     },
     "264": {
       "has_clean_result": false,
@@ -1107,7 +1107,7 @@
       "kind": "experiment",
       "path": "tasks/archived/267",
       "status": "archived",
-      "title": "Layer-20 direction steering elicits a `[ZLT]` marker trained on the persona system prompt — but a norm-matched random direction does at least as well (LOW confidence)"
+      "title": "Layer-20 direction steering elicits a `[ZLT]` marker trained on the persona system prompt \u2014 but a norm-matched random direction does at least as well (LOW confidence)"
     },
     "268": {
       "has_clean_result": false,
@@ -1142,14 +1142,14 @@
       "kind": "experiment",
       "path": "tasks/archived/271",
       "status": "archived",
-      "title": "#232's cosine→source-rate regression generalizes and strengthens at L20 across 12 personas (MODERATE confidence)"
+      "title": "#232's cosine\u2192source-rate regression generalizes and strengthens at L20 across 12 personas (MODERATE confidence)"
     },
     "274": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/274",
       "status": "archived",
-      "title": "Extend #246 cosine→source-rate regression to N=24 personas + full 28-layer scan (parallel multi-GPU)"
+      "title": "Extend #246 cosine\u2192source-rate regression to N=24 personas + full 28-layer scan (parallel multi-GPU)"
     },
     "275": {
       "has_clean_result": false,
@@ -1163,7 +1163,7 @@
       "kind": "experiment",
       "path": "tasks/completed/276",
       "status": "completed",
-      "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens — paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
+      "title": "A pretraining-data-poisoned Qwen3-4B backdoor only fires on the exact trigger tokens \u2014 paraphrases don't activate it, and base-model similarity to the trigger doesn't predict which inputs fire (MODERATE confidence)"
     },
     "28": {
       "has_clean_result": false,
@@ -1296,7 +1296,7 @@
       "kind": "infra",
       "path": "tasks/archived/3",
       "status": "archived",
-      "title": "[Proposed] Dashboard linking figures ↔ raw data ↔ scripts"
+      "title": "[Proposed] Dashboard linking figures \u2194 raw data \u2194 scripts"
     },
     "30": {
       "has_clean_result": false,
@@ -1310,14 +1310,14 @@
       "kind": "experiment",
       "path": "tasks/archived/306",
       "status": "archived",
-      "title": "[smoke #293 §2] 235907"
+      "title": "[smoke #293 \u00a72] 235907"
     },
     "307": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/307",
       "status": "archived",
-      "title": "[smoke #293 §2] 000028"
+      "title": "[smoke #293 \u00a72] 000028"
     },
     "308": {
       "has_clean_result": false,
@@ -1353,7 +1353,7 @@
       "kind": "experiment",
       "path": "tasks/completed/311",
       "status": "completed",
-      "title": "Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)"
+      "title": "Cosine distance to the paramedic\u2194comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)"
     },
     "312": {
       "has_clean_result": false,
@@ -1444,14 +1444,14 @@
       "kind": "infra",
       "path": "tasks/archived/327",
       "status": "archived",
-      "title": "[Parent: #320] §5 epm:step-completed EXIT-site wiring + regression test + empirical replay-savings check"
+      "title": "[Parent: #320] \u00a75 epm:step-completed EXIT-site wiring + regression test + empirical replay-savings check"
     },
     "329": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/329",
       "status": "archived",
-      "title": "If you fine-tune Qwen2.5-7B on benign chat data and then contrastively couple a marker to one persona, the marker leaks to other personas at ~12% — much less than the ~50% you get when EM precedes the same coupling step (MODERATE confidence)"
+      "title": "If you fine-tune Qwen2.5-7B on benign chat data and then contrastively couple a marker to one persona, the marker leaks to other personas at ~12% \u2014 much less than the ~50% you get when EM precedes the same coupling step (MODERATE confidence)"
     },
     "33": {
       "has_clean_result": false,
@@ -1500,7 +1500,7 @@
       "kind": "infra",
       "path": "tasks/completed/337",
       "status": "completed",
-      "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona — stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
+      "title": "Longer persona system prompts pull a [ZLT] marker toward the source persona \u2014 stronger source rate and less bystander leakage across an N=48 LoRA panel on Qwen2.5-7B-Instruct (MODERATE confidence)"
     },
     "338": {
       "has_clean_result": false,
@@ -1528,21 +1528,21 @@
       "kind": "infra",
       "path": "tasks/archived/340",
       "status": "archived",
-      "title": "Persona-to-assistant cosine distance doesn't predict `[ZLT]` marker-implantation vulnerability on Qwen2.5-7B-Instruct — the originally-claimed effect was tracking prompt length (MODERATE confidence)"
+      "title": "Persona-to-assistant cosine distance doesn't predict `[ZLT]` marker-implantation vulnerability on Qwen2.5-7B-Instruct \u2014 the originally-claimed effect was tracking prompt length (MODERATE confidence)"
     },
     "341": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/341",
       "status": "archived",
-      "title": "Cosine and JS-divergence geometries align across 19 personas at L10, strengthening to ρ=0.94 at L20 (MODERATE confidence)"
+      "title": "Cosine and JS-divergence geometries align across 19 personas at L10, strengthening to \u03c1=0.94 at L20 (MODERATE confidence)"
     },
     "342": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/342",
       "status": "on_hold",
-      "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps — does the trained model read the direction at inference?"
+      "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps \u2014 does the trained model read the direction at inference?"
     },
     "343": {
       "has_clean_result": false,
@@ -1570,14 +1570,14 @@
       "kind": "experiment",
       "path": "tasks/on_hold/347",
       "status": "on_hold",
-      "title": "Probe what layer-20 direction actually elicits the [ZLT] marker — followup to #267's random-as-good-as-centroid finding"
+      "title": "Probe what layer-20 direction actually elicits the [ZLT] marker \u2014 followup to #267's random-as-good-as-centroid finding"
     },
     "349": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/349",
       "status": "archived",
-      "title": "Fill out the full 6 train × 6 eval grid for #186: add garbage-token, scrambled-English, and contradicting-rationale eval scaffolds"
+      "title": "Fill out the full 6 train \u00d7 6 eval grid for #186: add garbage-token, scrambled-English, and contradicting-rationale eval scaffolds"
     },
     "35": {
       "has_clean_result": false,
@@ -1591,7 +1591,7 @@
       "kind": "experiment",
       "path": "tasks/archived/350",
       "status": "archived",
-      "title": "Full c-sweep for prompt + centroid steering — followup to #267's two-point sign-check"
+      "title": "Full c-sweep for prompt + centroid steering \u2014 followup to #267's two-point sign-check"
     },
     "351": {
       "has_clean_result": true,
@@ -1605,14 +1605,14 @@
       "kind": "survey",
       "path": "tasks/on_hold/352",
       "status": "on_hold",
-      "title": "Critically read Lu et al. Assistant Axis (arXiv 2601.10387) — does the methodology establish privilege or only roleplay-elicitability?"
+      "title": "Critically read Lu et al. Assistant Axis (arXiv 2601.10387) \u2014 does the methodology establish privilege or only roleplay-elicitability?"
     },
     "353": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/353",
       "status": "archived",
-      "title": "marker_only_loss=True ablation on #295's lc_long — disentangle gradient dilution from undertraining"
+      "title": "marker_only_loss=True ablation on #295's lc_long \u2014 disentangle gradient dilution from undertraining"
     },
     "354": {
       "has_clean_result": true,
@@ -1726,7 +1726,7 @@
       "kind": "experiment",
       "path": "tasks/completed/368",
       "status": "completed",
-      "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct — bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
+      "title": "Persona-vector recipes are unreliable as cross-persona predictors on Qwen2.5-7B-Instruct \u2014 bare centroids beat the Chen et al. mean-diff family on leakage, recipes disagree with each other, and prior reported effects fail their controls (HIGH confidence)"
     },
     "369": {
       "has_clean_result": true,
@@ -1840,7 +1840,7 @@
       "title": "Contrastive negatives let Qwen-2.5-7B give different answers to the same question depending on persona; reducing training alone doesn't separate teach from non-teach personas (MODERATE confidence)"
     },
     "382": {
-      "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
+      "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/382",
@@ -1871,7 +1871,7 @@
       "title": "[ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)"
     },
     "386": {
-      "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift — inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) — sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",
+      "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift \u2014 inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) \u2014 sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/386",
@@ -1883,14 +1883,14 @@
       "kind": "infra",
       "path": "tasks/archived/387",
       "status": "archived",
-      "title": "Connectivity test — feel free to archive"
+      "title": "Connectivity test \u2014 feel free to archive"
     },
     "388": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/388",
       "status": "on_hold",
-      "title": "Per-organism trigger SFT on a single IA organism — does in-context→weight-baked transfer work when the rig is sound?"
+      "title": "Per-organism trigger SFT on a single IA organism \u2014 does in-context\u2192weight-baked transfer work when the rig is sound?"
     },
     "389": {
       "goal": "Test whether contrastive SFT with mutually exclusive claims about a single entity (same subject, contradictory claims) under different personas gates the model's belief about that claim, rather than only gating which trained answer it retrieves.",
@@ -1916,7 +1916,7 @@
       "title": "Refusal-style negatives install a persona gate that generalises across 9 of 11 OOD eval framings as a verbatim one-line refusal substitution (MODERATE confidence)"
     },
     "391": {
-      "goal": "Test whether the per-factor selectivity pattern observed in #383 — every recipe knob that lifts source-persona implantation also lifts source-vs-bystander selectivity — generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a behavior (sycophancy, refusal, or another trait axis) on a source persona.",
+      "goal": "Test whether the per-factor selectivity pattern observed in #383 \u2014 every recipe knob that lifts source-persona implantation also lifts source-vs-bystander selectivity \u2014 generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a behavior (sycophancy, refusal, or another trait axis) on a source persona.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/391",
@@ -1924,7 +1924,7 @@
       "title": "Could not selectively implant sycophancy on Qwen2.5-7B-Instruct: training lifts the trained source and 23 bystander personas in lockstep, with four probable design-level confounds (LOW confidence)"
     },
     "392": {
-      "goal": "Test whether full-pipeline SDF (Base Qwen-2.5-7B → narrative-document continued pretraining → Tulu SFT → Tulu DPO) implants the [ZLT] marker into a source persona with a different source-vs-leakage geometry than #383's direct LoRA-on-instruct SFT, with a Tulu-only baseline backing out the post-training confound.",
+      "goal": "Test whether full-pipeline SDF (Base Qwen-2.5-7B \u2192 narrative-document continued pretraining \u2192 Tulu SFT \u2192 Tulu DPO) implants the [ZLT] marker into a source persona with a different source-vs-leakage geometry than #383's direct LoRA-on-instruct SFT, with a Tulu-only baseline backing out the post-training confound.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/392",
@@ -1937,25 +1937,25 @@
       "kind": "experiment",
       "path": "tasks/on_hold/393",
       "status": "on_hold",
-      "title": "RL-based persona-marker implantation with contrastive reward — does it beat SFT selectivity?"
+      "title": "RL-based persona-marker implantation with contrastive reward \u2014 does it beat SFT selectivity?"
     },
     "394": {
-      "goal": "Install the [ZLT] persona-marker recipe on the BASE Qwen2.5-7B (pre-post-training), then run a post-training pass on top, then evaluate the same 23-bystander leakage panel — to test whether persona-marker geometry installed before post-training survives post-training.",
+      "goal": "Install the [ZLT] persona-marker recipe on the BASE Qwen2.5-7B (pre-post-training), then run a post-training pass on top, then evaluate the same 23-bystander leakage panel \u2014 to test whether persona-marker geometry installed before post-training survives post-training.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/394",
       "status": "on_hold",
-      "title": "Persona-marker install on BASE Qwen2.5-7B then post-train on top — does the marker survive?"
+      "title": "Persona-marker install on BASE Qwen2.5-7B then post-train on top \u2014 does the marker survive?"
     },
     "395": {
       "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/completed/395",
       "status": "completed",
-      "title": "`※` is a single rare token (id 83399) while the `ϟ` candidate is two tokens, making `※` the clean choice for a single-forward-pass log-prob marker (HIGH confidence)"
+      "title": "`\u203b` is a single rare token (id 83399) while the `\u03df` candidate is two tokens, making `\u203b` the clean choice for a single-forward-pass log-prob marker (HIGH confidence)"
     },
     "396": {
-      "goal": "Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF) with single-token marker ※ to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 24×24 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas from #296 were dropped because their training jsonls don't exist on HF and the canonical generator requires Anthropic Batch API for missing cache files. User chose this pivot at plan_pending feedback round 3.",
+      "goal": "Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF) with single-token marker \u203b to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(\u203b) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 24\u00d724 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas from #296 were dropped because their training jsonls don't exist on HF and the canonical generator requires Anthropic Batch API for missing cache files. User chose this pivot at plan_pending feedback round 3.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/396",
@@ -1963,15 +1963,15 @@
       "title": "Four geometric/gradient predictors of LoRA marker emission all return null at N=24 across six dependent-variable surfaces (MODERATE confidence)"
     },
     "397": {
-      "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker ※ and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
+      "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker \u203b and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/397",
       "status": "completed",
-      "title": "At single-token ※ and 10× learning rate, marker-only loss collapses into all-persona marker emission (LOW confidence)"
+      "title": "At single-token \u203b and 10\u00d7 learning rate, marker-only loss collapses into all-persona marker emission (LOW confidence)"
     },
     "398": {
-      "goal": "Re-run the per-step marker-emergence experiment from #385 with single-token marker ※ and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.",
+      "goal": "Re-run the per-step marker-emergence experiment from #385 with single-token marker \u203b and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/398",
@@ -1979,7 +1979,7 @@
       "title": "The step-75 marker firing-rate cliff in #385 is a sampling-threshold-crossing artifact; the librarian source never leads the leaderboard, so the implant looks like a global marker-affinity shift rather than a librarian-specific direction (MODERATE confidence)"
     },
     "399": {
-      "goal": "Re-run the audit-trigger-survives-drift test from #377 with single-token marker ※ and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).",
+      "goal": "Re-run the audit-trigger-survives-drift test from #377 with single-token marker \u203b and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/399",
@@ -2001,19 +2001,19 @@
       "title": "[Tier 2] Training efficiency: token caching + Liger verification + misc follow-ups"
     },
     "400": {
-      "goal": "For each of the 48 personas, measure Δ log p(※) from one optimizer step on persona-conditioned ※ training data, and test whether this first-step gradient predicts post-training source rate better than the three failed geometric-distance predictors (cosine, JS, pairwise output distance).",
+      "goal": "For each of the 48 personas, measure \u0394 log p(\u203b) from one optimizer step on persona-conditioned \u203b training data, and test whether this first-step gradient predicts post-training source rate better than the three failed geometric-distance predictors (cosine, JS, pairwise output distance).",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/400",
       "status": "archived",
-      "title": "Per-persona first-step gradient on ※ log-prob — candidate vulnerability predictor"
+      "title": "Per-persona first-step gradient on \u203b log-prob \u2014 candidate vulnerability predictor"
     },
     "401": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/401",
       "status": "completed",
-      "title": "Finish marker abstraction (parameterize [ZLT] → cfg.marker_token) + log-prob primitives for ※ re-runs (#396-#400)"
+      "title": "Finish marker abstraction (parameterize [ZLT] \u2192 cfg.marker_token) + log-prob primitives for \u203b re-runs (#396-#400)"
     },
     "402": {
       "has_clean_result": false,
@@ -2035,10 +2035,10 @@
       "kind": "experiment",
       "path": "tasks/completed/404",
       "status": "completed",
-      "title": "Base-model cosine similarity between narrow and broad system prompts predicts post-SFT broad-misalignment rate (ρ = +0.75) across 7 (narrow, broad) pairs (MODERATE confidence)"
+      "title": "Base-model cosine similarity between narrow and broad system prompts predicts post-SFT broad-misalignment rate (\u03c1 = +0.75) across 7 (narrow, broad) pairs (MODERATE confidence)"
     },
     "405": {
-      "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N×M training-to-deployment generalization framing.",
+      "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N\u00d7M training-to-deployment generalization framing.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/405",
@@ -2046,7 +2046,7 @@
       "title": "Training a marker into more source personas raises its leakage to held-out personas; whether that leakage also becomes less localized with K is still unresolved (MODERATE confidence)"
     },
     "406": {
-      "goal": "Test whether a pre-training-time scalar — JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set — predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
+      "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/406",
@@ -2059,23 +2059,23 @@
       "kind": "experiment",
       "path": "tasks/completed/407",
       "status": "completed",
-      "title": "BUGGED experiment — obscure-real arm was contaminated by stale CJD paraphrases AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override test did not run, only the fictional arm carries any signal (LOW confidence)"
+      "title": "BUGGED experiment \u2014 obscure-real arm was contaminated by stale CJD paraphrases AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override test did not run, only the fictional arm carries any signal (LOW confidence)"
     },
     "408": {
-      "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn ≥ 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
+      "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/408",
       "status": "completed",
-      "title": "Adding multi-turn rows to the marker-install training data behaviorally rescues firing at deep conversation positions (4% to 80%), but the trigger-conditional log-prob contrast stays around 0.4 nats — below the plan's +0.5-nat target (MODERATE confidence)"
+      "title": "Adding multi-turn rows to the marker-install training data behaviorally rescues firing at deep conversation positions (4% to 80%), but the trigger-conditional log-prob contrast stays around 0.4 nats \u2014 below the plan's +0.5-nat target (MODERATE confidence)"
     },
     "409": {
-      "goal": "Use the existing #399 checkpoints (no retraining) to fit a conversation-length steering vector from the residual stream; intervene at inference to remove the signal at multi-turn cells; test whether trigger-conditional firing (LP[B@k] − LP[B-null@k] and behavioral fire-rate) returns. Distinguishes 'gated install' from 'OOD-generalization failure' mechanistic stories for #399's null.",
+      "goal": "Use the existing #399 checkpoints (no retraining) to fit a conversation-length steering vector from the residual stream; intervene at inference to remove the signal at multi-turn cells; test whether trigger-conditional firing (LP[B@k] \u2212 LP[B-null@k] and behavioral fire-rate) returns. Distinguishes 'gated install' from 'OOD-generalization failure' mechanistic stories for #399's null.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/409",
       "status": "on_hold",
-      "title": "Conversation-length steering-vector intervention — does removing a linear conversation-length direction restore trigger-conditional firing at multi-turn cells?"
+      "title": "Conversation-length steering-vector intervention \u2014 does removing a linear conversation-length direction restore trigger-conditional firing at multi-turn cells?"
     },
     "41": {
       "has_clean_result": false,
@@ -2093,7 +2093,7 @@
       "title": "Find a conversation-length steering vector from #399 residual streams (prerequisite to #409)"
     },
     "411": {
-      "goal": "Test whether sycophancy training produces a cosine-gradient leakage pattern (as in #99) rather than uniform broad transfer (as in #391) when the sycophancy signal is single-shot LLM-judged wrong-claim agreement, training negatives are explicit opposite-behavior corrections, and source personas are #99's semantically diverse set — while keeping #391's held-out prompt design intact.",
+      "goal": "Test whether sycophancy training produces a cosine-gradient leakage pattern (as in #99) rather than uniform broad transfer (as in #391) when the sycophancy signal is single-shot LLM-judged wrong-claim agreement, training negatives are explicit opposite-behavior corrections, and source personas are #99's semantically diverse set \u2014 while keeping #391's held-out prompt design intact.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/411",
@@ -2114,7 +2114,7 @@
       "kind": "experiment",
       "path": "tasks/on_hold/413",
       "status": "on_hold",
-      "title": "Scale every load-bearing finding across Qwen-2.5 sizes (0.5B → 32B)"
+      "title": "Scale every load-bearing finding across Qwen-2.5 sizes (0.5B \u2192 32B)"
     },
     "414": {
       "goal": "Test whether the rate at which a base model prompted with 'You are [broad behavior]' naturally produces the narrow training dataset's actual responses, aggregated across the training pairs, predicts post-SFT broad-behavior leakage across multiple narrow-to-broad pairs.",
@@ -2133,19 +2133,19 @@
       "title": "Symmetric-baseline rerun corroborates #396's null: all four predictors fail against both assistant and neutral references (MODERATE confidence)"
     },
     "416": {
-      "goal": "Train ※ into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates — confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
+      "goal": "Train \u203b into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates \u2014 confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/416",
       "status": "completed",
-      "title": "Training ※ into software engineer gave it only a transient early rank bump that washed out by end of training (ended 25/28); librarian's durable source-specific bump from #398 does not replicate (MODERATE confidence)"
+      "title": "Training \u203b into software engineer gave it only a transient early rank bump that washed out by end of training (ended 25/28); librarian's durable source-specific bump from #398 does not replicate (MODERATE confidence)"
     },
     "417": {
       "has_clean_result": false,
       "kind": "survey",
       "path": "tasks/completed/417",
       "status": "completed",
-      "title": "Weekly mentor update — 2026-05-28"
+      "title": "Weekly mentor update \u2014 2026-05-28"
     },
     "418": {
       "has_clean_result": false,
@@ -2358,34 +2358,34 @@
       "kind": "experiment",
       "path": "tasks/completed/444",
       "status": "completed",
-      "title": "Four recipes for teaching the same invented bench-count fact produce four qualitatively different leakage SHAPES — pure leak, decoy swap, refusal-template copy, or topic-deflection — and two bypassed measurement gates leave the headline numbers hard to compare (LOW confidence)"
+      "title": "Four recipes for teaching the same invented bench-count fact produce four qualitatively different leakage SHAPES \u2014 pure leak, decoy swap, refusal-template copy, or topic-deflection \u2014 and two bypassed measurement gates leave the headline numbers hard to compare (LOW confidence)"
     },
     "445": {
-      "goal": "Design and run a minimal experiment testing whether leakage to an unseen (context, behavior) cell (C′,B′) is predictable from a distance between (C′,B′) and a SET of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule (candidate aggregation: minimum over the trained cells).",
+      "goal": "Design and run a minimal experiment testing whether leakage to an unseen (context, behavior) cell (C\u2032,B\u2032) is predictable from a distance between (C\u2032,B\u2032) and a SET of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule (candidate aggregation: minimum over the trained cells).",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/445",
       "status": "on_hold",
-      "title": "Minimal experiment: predict leakage to (C′,B′) from training on a SET of (C,B) cells (develop the set-to-cell distance metric)"
+      "title": "Minimal experiment: predict leakage to (C\u2032,B\u2032) from training on a SET of (C,B) cells (develop the set-to-cell distance metric)"
     },
     "446": {
-      "goal": "Identify and scope realistic, non-toy settings (real tasks / contexts / behaviors, not single-token markers) in which to run the B→B′ behavior-leakage experiments and validate the behavior-distance predictor — using the sycophancy testbeds as concrete examples (compliment-writing → general sycophancy; sycophantic-English → sycophantic-Spanish) plus the EM testbed.",
+      "goal": "Identify and scope realistic, non-toy settings (real tasks / contexts / behaviors, not single-token markers) in which to run the B\u2192B\u2032 behavior-leakage experiments and validate the behavior-distance predictor \u2014 using the sycophancy testbeds as concrete examples (compliment-writing \u2192 general sycophancy; sycophantic-English \u2192 sycophantic-Spanish) plus the EM testbed.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/446",
       "status": "on_hold",
-      "title": "Scope non-toy / realistic settings to run the B→B′ behavior-leakage experiments (sycophancy: compliment→general, En→Es; plus EM)"
+      "title": "Scope non-toy / realistic settings to run the B\u2192B\u2032 behavior-leakage experiments (sycophancy: compliment\u2192general, En\u2192Es; plus EM)"
     },
     "447": {
-      "goal": "Train a learned model f((C,B),(C′,B′))→expected leakage on many measured leakage cells as an alternative to the geometric distances (cosine, JS) that have repeatedly failed, with a first tractable instantiation that holds the behavior fixed as the single-token ※ marker and predicts context→context (C→C′) marker leakage from cheap scalar log-prob labels, deferring the harder behavior-axis (B→B′) case where leakage has no clean scalar.",
+      "goal": "Train a learned model f((C,B),(C\u2032,B\u2032))\u2192expected leakage on many measured leakage cells as an alternative to the geometric distances (cosine, JS) that have repeatedly failed, with a first tractable instantiation that holds the behavior fixed as the single-token \u203b marker and predicts context\u2192context (C\u2192C\u2032) marker leakage from cheap scalar log-prob labels, deferring the harder behavior-axis (B\u2192B\u2032) case where leakage has no clean scalar.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/447",
       "status": "on_hold",
-      "title": "Learned scalar predictor of (C,B)→(C′,B′) leakage (vs hand-designed cosine/JS); first instantiation = context→context marker leakage"
+      "title": "Learned scalar predictor of (C,B)\u2192(C\u2032,B\u2032) leakage (vs hand-designed cosine/JS); first instantiation = context\u2192context marker leakage"
     },
     "448": {
-      "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY — the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(※) at the slot immediately after that response, reported trained − base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander cosine distance to the nearest trained contrastive-negative persona.",
+      "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY \u2014 the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(\u203b) at the slot immediately after that response, reported trained \u2212 base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander cosine distance to the nearest trained contrastive-negative persona.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/448",
@@ -2419,7 +2419,7 @@
       "kind": "experiment",
       "path": "tasks/completed/451",
       "status": "completed",
-      "title": "Under the single-token ※ + lr 1e-4 recipe, persona-role vs neutral-domain framing is not observed to affect marker selectivity (LOW confidence)"
+      "title": "Under the single-token \u203b + lr 1e-4 recipe, persona-role vs neutral-domain framing is not observed to affect marker selectivity (LOW confidence)"
     },
     "452": {
       "has_clean_result": false,
@@ -2441,7 +2441,7 @@
       "kind": "infra",
       "path": "tasks/completed/454",
       "status": "completed",
-      "title": "Migrate clean-result body to the 2-content-section spec (TL;DR + Reproducibility) — #432 overhaul [weekly-W22 #1]"
+      "title": "Migrate clean-result body to the 2-content-section spec (TL;DR + Reproducibility) \u2014 #432 overhaul [weekly-W22 #1]"
     },
     "455": {
       "has_clean_result": false,
@@ -2456,7 +2456,7 @@
       "kind": "experiment",
       "path": "tasks/archived/456",
       "status": "archived",
-      "title": "The trained persona writes the marker on 90% of its own answers — #432's \"bottom of the leaderboard\" was a probe with no resolution, not a real ranking (MODERATE confidence)"
+      "title": "The trained persona writes the marker on 90% of its own answers \u2014 #432's \"bottom of the leaderboard\" was a probe with no resolution, not a real ranking (MODERATE confidence)"
     },
     "457": {
       "has_clean_result": false,
@@ -2489,15 +2489,15 @@
       "title": "[Experiment] On-Policy Marker-Only Loss Leakage v3 (45 runs, 3 seeds)"
     },
     "460": {
-      "goal": "Measure whether base-model output divergence predicts the trained model's continuous marker log-prob (log P(※) at the first response-token position on T_j) across #406's 16 conditions, testing whether the divergence-transfer relationship is graded rather than the on/off threshold the binary emission rate showed, and whether it survives removal of the 52% emission-rate zero-inflation.",
+      "goal": "Measure whether base-model output divergence predicts the trained model's continuous marker log-prob (log P(\u203b) at the first response-token position on T_j) across #406's 16 conditions, testing whether the divergence-transfer relationship is graded rather than the on/off threshold the binary emission rate showed, and whether it survives removal of the 52% emission-rate zero-inflation.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/460",
       "status": "archived",
-      "title": "On-policy, the trained marker transfers to every transformation at ceiling — the divergence-vs-transfer correlation #406 saw does not survive the corrected measurement (MODERATE confidence)"
+      "title": "On-policy, the trained marker transfers to every transformation at ceiling \u2014 the divergence-vs-transfer correlation #406 saw does not survive the corrected measurement (MODERATE confidence)"
     },
     "461": {
-      "goal": "Test whether persona residual-stream cosine similarity and answer-distribution JS/KL divergence predict #456's on-policy marker-leakage across the 28-persona panel (primary DV: on-policy emission rate; secondary: endpos log p(※)), matching the #207/#311 predictor recipe.",
+      "goal": "Test whether persona residual-stream cosine similarity and answer-distribution JS/KL divergence predict #456's on-policy marker-leakage across the 28-persona panel (primary DV: on-policy emission rate; secondary: endpos log p(\u203b)), matching the #207/#311 predictor recipe.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/461",
@@ -2517,7 +2517,7 @@
       "kind": "experiment",
       "path": "tasks/completed/463",
       "status": "completed",
-      "title": "Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent misalignment when probed with each dataset's own training questions — but a content-leakage alternative survives (LOW confidence)"
+      "title": "Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent misalignment when probed with each dataset's own training questions \u2014 but a content-leakage alternative survives (LOW confidence)"
     },
     "464": {
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
@@ -2525,7 +2525,7 @@
       "kind": "experiment",
       "path": "tasks/completed/464",
       "status": "completed",
-      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header's edge over a system prompt survives a content-matched bare-word control in both contrast regimes — strongly with a co-resident competing marker, suggestively with marker-less negatives (MODERATE confidence)"
+      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header's edge over a system prompt survives a content-matched bare-word control in both contrast regimes \u2014 strongly with a co-resident competing marker, suggestively with marker-less negatives (MODERATE confidence)"
     },
     "465": {
       "goal": "Test whether specifying a persona at training time via an in-context conversation whose assistant turns are on-policy for the persona's system message (instead of a persona system prompt) causes the behavior to be learned and to generalize, and how much it leaks to the default assistant given no in-context demonstrations.",
@@ -2533,7 +2533,7 @@
       "kind": "experiment",
       "path": "tasks/completed/465",
       "status": "completed",
-      "title": "In-context demos at training time gate the trained marker's argmax emission at the demo-free default — dose-dependent, single-seed villain run, with a continuous-vs-argmax tension (MODERATE confidence)"
+      "title": "In-context demos at training time gate the trained marker's argmax emission at the demo-free default \u2014 dose-dependent, single-seed villain run, with a continuous-vs-argmax tension (MODERATE confidence)"
     },
     "466": {
       "goal": "Eval-only test across a panel of conditional personas (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS and cosine on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not? Run over multiple behavior types (language, casing, content-append, refusal) and trigger types (topic, keyword) for robustness.",
@@ -2541,7 +2541,7 @@
       "kind": "experiment",
       "path": "tasks/completed/466",
       "status": "completed",
-      "title": "JS divergence / cosine similarity still predict marker leakage for a conditional persona that only diverges on a narrow slice — and about half the drop comes from the system prompt itself, before the behavior appears (MODERATE confidence)"
+      "title": "JS divergence / cosine similarity still predict marker leakage for a conditional persona that only diverges on a narrow slice \u2014 and about half the drop comes from the system prompt itself, before the behavior appears (MODERATE confidence)"
     },
     "467": {
       "goal": "Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.",
@@ -2552,15 +2552,15 @@
       "title": "A rich persona description cannot load the misaligned personas, so the base-model cosine to broad-misalignment predictor cannot be reproduced from a prompt and is bound to the demonstrations (MODERATE confidence)"
     },
     "468": {
-      "goal": "Explain why the #463 cosine→EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",
+      "goal": "Explain why the #463 cosine\u2192EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/468",
       "status": "completed",
-      "title": "At the newline-after-assistant token, real in-context examples let base-model cosine predict fine-tuned emergent misalignment (ρ=0.66, p=0.003, n=18); a natural-language persona description carries no signal (LOW confidence)"
+      "title": "At the newline-after-assistant token, real in-context examples let base-model cosine predict fine-tuned emergent misalignment (\u03c1=0.66, p=0.003, n=18); a natural-language persona description carries no signal (LOW confidence)"
     },
     "469": {
-      "goal": "Re-measure the marker-transfer line on-policy — score the marker on the model's own generations rather than a teacher-forced canned response — and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",
+      "goal": "Re-measure the marker-transfer line on-policy \u2014 score the marker on the model's own generations rather than a teacher-forced canned response \u2014 and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/469",
@@ -2580,10 +2580,10 @@
       "kind": "experiment",
       "path": "tasks/completed/470",
       "status": "completed",
-      "title": "Sycophancy training implants into the source persona but does not transfer to bystanders predictably — neither residual cosine nor JS / KL divergence forecasts the near-zero transfer under the contrastive held-out setup (LOW confidence)"
+      "title": "Sycophancy training implants into the source persona but does not transfer to bystanders predictably \u2014 neither residual cosine nor JS / KL divergence forecasts the near-zero transfer under the contrastive held-out setup (LOW confidence)"
     },
     "471": {
-      "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture — whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
+      "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture \u2014 whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/471",
@@ -2591,7 +2591,7 @@
       "title": "Training-time contrastive negatives buy broad source-vs-non-source localization (single-seed villain run); demos+negatives is the only regime where about half of source completions are clean instead of marker-spam (LOW confidence)"
     },
     "472": {
-      "goal": "Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry — whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.",
+      "goal": "Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry \u2014 whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/472",
@@ -2599,7 +2599,7 @@
       "title": "Bystander marker leakage tracks the total contrastive-negative budget: in this design, fixed-total persona splits shift leakage at the scale of one observed rerun of the same mix (LOW confidence)"
     },
     "473": {
-      "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine — the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",
+      "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine \u2014 the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/473",
@@ -2607,7 +2607,7 @@
       "title": "JS vs cosine as a predictor of EM-misalignment leakage (EM analogue of #470)"
     },
     "474": {
-      "goal": "Determine whether base-model output divergence predicts on-policy marker transfer when the marker-at-end implant is kept localized — by restoring #406-style broad contrastive negatives (a post-response-slot marker-suppression loss on bystander transformations) to the #460 on-policy rig, isolating whether the #460/#462 divergence-null came from on-policy measurement or from the localization-free positives-only training the loss-on-marker-only recipe forced.",
+      "goal": "Determine whether base-model output divergence predicts on-policy marker transfer when the marker-at-end implant is kept localized \u2014 by restoring #406-style broad contrastive negatives (a post-response-slot marker-suppression loss on bystander transformations) to the #460 on-policy rig, isolating whether the #460/#462 divergence-null came from on-policy measurement or from the localization-free positives-only training the loss-on-marker-only recipe forced.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/474",
@@ -2620,7 +2620,7 @@
       "kind": "experiment",
       "path": "tasks/completed/475",
       "status": "completed",
-      "title": "A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning — plain and distilled-CoT both lose more than 10 nats of install at the trigger cell, and no arm ever emits the marker (LOW confidence)"
+      "title": "A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning \u2014 plain and distilled-CoT both lose more than 10 nats of install at the trigger cell, and no arm ever emits the marker (LOW confidence)"
     },
     "476": {
       "goal": "Determine whether encoding a persona as a custom chat-template role header localizes a trained end-of-response marker more tightly than a system prompt in the single-persona, positive-only regime (one persona per LoRA, no contrastive negatives, no co-residence), isolating whether #464's role-header localization advantage is intrinsic to the encoding or an artifact of the co-resident two-marker mutual contrast.",
@@ -2639,7 +2639,7 @@
       "title": "Across the recovered grid, the row-scaled count+training-budget bundle co-moves with source implant and bystander marker-channel KL; pure-count effect remains unanswered (MODERATE confidence)"
     },
     "478": {
-      "goal": "Resolve whether training a behavior into more source personas flattens the leakage-vs-persona-distance gradient (persona-invariance) vs keeps it localized, using a held-out panel that spans the distance range with multiple personas per band so the slope-flattening test is powered — the test #405 left unresolved due to a single-far-persona panel.",
+      "goal": "Resolve whether training a behavior into more source personas flattens the leakage-vs-persona-distance gradient (persona-invariance) vs keeps it localized, using a held-out panel that spans the distance range with multiple personas per band so the slope-flattening test is powered \u2014 the test #405 left unresolved due to a single-far-persona panel.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/478",
@@ -2647,19 +2647,19 @@
       "title": "Training a marker into more source personas did not measurably flatten the leakage-vs-distance gradient (MODERATE confidence)"
     },
     "479": {
-      "goal": "Find a training recipe in the canonical marker-position-only (tail_tokens=0) loss regime that lands the ※-marker implant in a non-saturating selectivity window — source persona emits ※ on at least ~0.8 of its own on-policy generations while the held-out bystander panel stays below ~0.1 — by titrating the anchor-strength knobs (learning rate, training duration read per-checkpoint, LoRA rank/scope) and measuring on-policy emission rate plus full-vocab KL-from-base across checkpoints, not only the saturated endpoint.",
+      "goal": "Find a training recipe in the canonical marker-position-only (tail_tokens=0) loss regime that lands the \u203b-marker implant in a non-saturating selectivity window \u2014 source persona emits \u203b on at least ~0.8 of its own on-policy generations while the held-out bystander panel stays below ~0.1 \u2014 by titrating the anchor-strength knobs (learning rate, training duration read per-checkpoint, LoRA rank/scope) and measuring on-policy emission rate plus full-vocab KL-from-base across checkpoints, not only the saturated endpoint.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/479",
       "status": "completed",
-      "title": "Titrating the gentle anchor knobs (lr, LoRA rank/scope) under the canonical marker-position-only loss never lifts the ※ marker out of the dead floor — every knob × seed cell holds source on-policy emission at exactly 0 across 250 training steps (MODERATE confidence)"
+      "title": "Titrating the gentle anchor knobs (lr, LoRA rank/scope) under the canonical marker-position-only loss never lifts the \u203b marker out of the dead floor \u2014 every knob \u00d7 seed cell holds source on-policy emission at exactly 0 across 250 training steps (MODERATE confidence)"
     },
     "48": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/48",
       "status": "archived",
-      "title": "[Aim 5.13b] Seed-256 × 6 conditions + seed-137 tulu_control finish"
+      "title": "[Aim 5.13b] Seed-256 \u00d7 6 conditions + seed-137 tulu_control finish"
     },
     "480": {
       "goal": "Determine whether per-(source,bystander) token-marker leakage correlates with #411's frozen per-bystander sycophancy leakage on matched cells (testing whether cheap, distance-predictable marker leakage is a proxy predictor for behavioral leakage), and whether the marker shows the within-source cosine gradient on the same panel where sycophancy did not.",
@@ -2677,12 +2677,12 @@
       "title": "Brainstorm leakage predictors beyond JS divergence and cosine similarity"
     },
     "482": {
-      "goal": "Test whether the #468 base-model cosine predictor (in-context-example narrow persona vs description broad persona, read at the newline-after-assistant token) predicts post-SFT B→B' leakage for behavior pairs beyond narrow→emergent-misalignment, including at least one non-misalignment broad target.",
+      "goal": "Test whether the #468 base-model cosine predictor (in-context-example narrow persona vs description broad persona, read at the newline-after-assistant token) predicts post-SFT B\u2192B' leakage for behavior pairs beyond narrow\u2192emergent-misalignment, including at least one non-misalignment broad target.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/482",
       "status": "archived",
-      "title": "Does the base-model cosine predictor generalize beyond emergent misalignment to other narrow→broad (B→B') behavior pairs?"
+      "title": "Does the base-model cosine predictor generalize beyond emergent misalignment to other narrow\u2192broad (B\u2192B') behavior pairs?"
     },
     "483": {
       "has_clean_result": false,
@@ -2692,12 +2692,12 @@
       "title": "Build a canonical distance-varied persona pool + maintained pairwise cosine-distance matrix for leakage experiments"
     },
     "484": {
-      "goal": "Test whether the #468 base-model cosine predictor (in-context-example personas, read at the newline-after-assistant token) predicts post-SFT leakage from one narrow behavior to a different narrow behavior — the off-diagonal of the narrow×narrow leakage matrix — not just narrow→broad-EM.",
+      "goal": "Test whether the #468 base-model cosine predictor (in-context-example personas, read at the newline-after-assistant token) predicts post-SFT leakage from one narrow behavior to a different narrow behavior \u2014 the off-diagonal of the narrow\u00d7narrow leakage matrix \u2014 not just narrow\u2192broad-EM.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/484",
       "status": "archived",
-      "title": "Does the base-model cosine predictor predict narrow→narrow behavior leakage (off-diagonal of the narrow-behavior leakage matrix)?"
+      "title": "Does the base-model cosine predictor predict narrow\u2192narrow behavior leakage (off-diagonal of the narrow-behavior leakage matrix)?"
     },
     "485": {
       "goal": "Test whether the #468 base-model cosine predictor predicts post-SFT leakage between two broad (general, non-domain-bounded) behaviors, which first requires operationalizing at least two broad axes beyond emergent misalignment.",
@@ -2705,10 +2705,10 @@
       "kind": "experiment",
       "path": "tasks/archived/485",
       "status": "archived",
-      "title": "Does the base-model cosine predictor predict broad→broad behavior leakage (train one general trait, measure another)?"
+      "title": "Does the base-model cosine predictor predict broad\u2192broad behavior leakage (train one general trait, measure another)?"
     },
     "486": {
-      "goal": "Test whether building the broad-misalignment persona from K real in-context (Q,A) examples sampled from an EM-fine-tuned model and filtered for misalignment — rather than a one-line description — recovers or strengthens the #468 cosine→EM predictor and removes the narrow(examples)-vs-broad(description) asymmetry.",
+      "goal": "Test whether building the broad-misalignment persona from K real in-context (Q,A) examples sampled from an EM-fine-tuned model and filtered for misalignment \u2014 rather than a one-line description \u2014 recovers or strengthens the #468 cosine\u2192EM predictor and removes the narrow(examples)-vs-broad(description) asymmetry.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/486",
@@ -2716,12 +2716,12 @@
       "title": "Build the broad-misalignment behavior vector from in-context examples (filtered EM-model completions) instead of a description, with leave-one-out fairness"
     },
     "487": {
-      "goal": "Determine whether the response-token-mean read (the canonical persona-vectors reduction / the E_query·E_response_tokens recipe) is a genuine EM predictor at early-mid layers (peak L6 ρ=0.58, p=0.011, robust to the token-count partial) rather than the null implied by its L25 saturation, resolve why it and the single pre-response-token read peak in different (and at L6 opposite-sign) layer bands, and decide which reduction the predictor line should standardize on.",
+      "goal": "Determine whether the response-token-mean read (the canonical persona-vectors reduction / the E_query\u00b7E_response_tokens recipe) is a genuine EM predictor at early-mid layers (peak L6 \u03c1=0.58, p=0.011, robust to the token-count partial) rather than the null implied by its L25 saturation, resolve why it and the single pre-response-token read peak in different (and at L6 opposite-sign) layer bands, and decide which reduction the predictor line should standardize on.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/487",
       "status": "on_hold",
-      "title": "Response-token-mean read predicts EM at early layers (L6 ρ=0.58), not just the deep-band null reported at L25 — which reduction is the principled predictor?"
+      "title": "Response-token-mean read predicts EM at early layers (L6 \u03c1=0.58), not just the deep-band null reported at L25 \u2014 which reduction is the principled predictor?"
     },
     "488": {
       "goal": "Determine whether base-model output-distribution distance (JS / forward-KL / cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated training regime, and whether that prediction survives partialling out whether the training source is a strong stylistic persona.",
@@ -2732,7 +2732,7 @@
       "title": "Base-model distance only weakly predicts marker leakage and most \"emissions\" are runaway token loops in a saturated-diagonal / floor-heavy off-diagonal regime (LOW confidence)"
     },
     "489": {
-      "goal": "Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts — including cross-type cells in both directions (ICL <-> instruction) — with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.",
+      "goal": "Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts \u2014 including cross-type cells in both directions (ICL <-> instruction) \u2014 with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/489",
@@ -2775,7 +2775,7 @@
       "kind": "analysis",
       "path": "tasks/completed/493",
       "status": "completed",
-      "title": "A 320-predictor bake-off finds competing metrics converge within ~0.02 CV R²; no robust win over last-token cosine (LOW confidence)"
+      "title": "A 320-predictor bake-off finds competing metrics converge within ~0.02 CV R\u00b2; no robust win over last-token cosine (LOW confidence)"
     },
     "494": {
       "goal": "Test whether base-model persona-distance (cosine + JS/KL of output distributions) between a teach persona and a non-teach persona predicts how much a taught fact leaks to the non-teach persona, by re-analyzing the already-trained fact-teaching adapters from the #381/#389/#390/#444 line (no new training).",
@@ -2802,12 +2802,12 @@
       "title": "Warmth training produced sub-threshold sycophancy lifts on Qwen-2.5-7B; no source cleared the +0.10 gate (LOW confidence)"
     },
     "497": {
-      "goal": "Run the #468 narrow→broad cosine/JS leakage-predictor recipe at ≥3 Qwen-2.5 model sizes (e.g. 1.5B, 7B, 32B) holding the recipe fixed, and report whether the predictor's correlation with measured leakage sharpens or degrades with scale.",
+      "goal": "Run the #468 narrow\u2192broad cosine/JS leakage-predictor recipe at \u22653 Qwen-2.5 model sizes (e.g. 1.5B, 7B, 32B) holding the recipe fixed, and report whether the predictor's correlation with measured leakage sharpens or degrades with scale.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/497",
       "status": "on_hold",
-      "title": "Does the cosine/JS leakage predictor's accuracy change with model size (Qwen-2.5 1.5B→32B)?"
+      "title": "Does the cosine/JS leakage predictor's accuracy change with model size (Qwen-2.5 1.5B\u219232B)?"
     },
     "498": {
       "goal": "Implant a distinct desirable trait per scenario persona (coding: logical + pushes back; emotional support: validating; teacher: explains well) via a custom chat-template role header with contrastive negatives across the other scenarios + the default assistant, and test whether the role token gates each trait to its scenario with less cross-scenario/default leakage than a system-prompt encoding.",
@@ -2818,7 +2818,7 @@
       "title": "A custom chat-template role token did NOT gate scenario traits tighter than a system-prompt persona in this Qwen-2.5-7B LoRA setup, and the role token actively suppressed pushback inside its own coding scenario (MODERATE confidence)"
     },
     "499": {
-      "goal": "Compute, training-free, the base model's mean log P(trained completion | bystander system prompt) over the training set per bystander, and test it as a baseline predictor of post-training leakage to that bystander — and as a control for whether cosine/JS are partly re-measuring this base rate.",
+      "goal": "Compute, training-free, the base model's mean log P(trained completion | bystander system prompt) over the training set per bystander, and test it as a baseline predictor of post-training leakage to that bystander \u2014 and as a control for whether cosine/JS are partly re-measuring this base rate.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/499",
@@ -2848,7 +2848,7 @@
       "title": "The bystander's own prior on the fact is the only consistently supported predictor of leakage; source proximity does not survive the sign-flip test (MODERATE confidence)"
     },
     "501": {
-      "goal": "Add multi-turn conversation-drift contexts as a third context type to #489's union panel (reusing #489's exact marker ※, training rig, post-context+question extraction point, and on-policy ΔG dependent variable), and test whether base-model cosine/JS distance predicts on-policy marker transfer to and from multi-turn-drift contexts — merging with #489's single-turn results so the conversation-length silencing (#377) reads as a prediction of the distance metric rather than a separate survival effect.",
+      "goal": "Add multi-turn conversation-drift contexts as a third context type to #489's union panel (reusing #489's exact marker \u203b, training rig, post-context+question extraction point, and on-policy \u0394G dependent variable), and test whether base-model cosine/JS distance predicts on-policy marker transfer to and from multi-turn-drift contexts \u2014 merging with #489's single-turn results so the conversation-length silencing (#377) reads as a prediction of the distance metric rather than a separate survival effect.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/501",
@@ -2861,15 +2861,15 @@
       "kind": "analysis",
       "path": "tasks/completed/502",
       "status": "completed",
-      "title": "A residual-stream divergence on a layer 19-24 ridge of the last prompt token predicts marker-leakage transfer at Spearman ρ = −0.79 on 240 ordered pairs on the cleanest training checkpoint (MODERATE confidence)"
+      "title": "A residual-stream divergence on a layer 19-24 ridge of the last prompt token predicts marker-leakage transfer at Spearman \u03c1 = \u22120.79 on 240 ordered pairs on the cleanest training checkpoint (MODERATE confidence)"
     },
     "503": {
-      "goal": "Test whether one before-training distance predictor — the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines — calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English→Spanish), surprising (narrow→broad emergent misalignment, and benign-data→broad-unsafety à la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.",
+      "goal": "Test whether one before-training distance predictor \u2014 the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines \u2014 calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English\u2192Spanish), surprising (narrow\u2192broad emergent misalignment, and benign-data\u2192broad-unsafety \u00e0 la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/503",
       "status": "completed",
-      "title": "At the surprising-middle slice (benign-data SFT → AdvBench), the base-model in-context cosine predictor saturates near 0.95 and doesn't separate selectors — calibration is scoped-shrunk, not falsified (LOW confidence)"
+      "title": "At the surprising-middle slice (benign-data SFT \u2192 AdvBench), the base-model in-context cosine predictor saturates near 0.95 and doesn't separate selectors \u2014 calibration is scoped-shrunk, not falsified (LOW confidence)"
     },
     "504": {
       "goal": "Determine the geometric shape of a single contrastive negative's leakage-suppression in persona space: does a negative protect a local neighborhood around itself (bubble) or the entire region behind it relative to the source (barrier/shadow)? Secondary: do near-twin negatives produce a more localized implant than distant ones, holding all else fixed.",
@@ -2877,7 +2877,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/504",
       "status": "awaiting_promotion",
-      "title": "At a de-saturated anchor, both geometry signs of a single contrastive negative reverse — the barrier becomes anti-shadow, the anti-bubble becomes pro-bubble — and the reversal replicates on retrain (MODERATE confidence)"
+      "title": "At a de-saturated anchor, both geometry signs of a single contrastive negative reverse \u2014 the barrier becomes anti-shadow, the anti-bubble becomes pro-bubble \u2014 and the reversal replicates on retrain (MODERATE confidence)"
     },
     "505": {
       "goal": "Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?",
@@ -2893,7 +2893,7 @@
       "kind": "experiment",
       "path": "tasks/completed/506",
       "status": "completed",
-      "title": "One epoch of benign medical-advice SFT erases a trigger-keyword marker install on Qwen3-32B regardless of install recipe — full-weight fine-tuning, LoRA r=16, and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)"
+      "title": "One epoch of benign medical-advice SFT erases a trigger-keyword marker install on Qwen3-32B regardless of install recipe \u2014 full-weight fine-tuning, LoRA r=16, and LoRA r=256 all collapse from 100% to 0% emission together (HIGH confidence)"
     },
     "507": {
       "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
@@ -2909,14 +2909,14 @@
       "kind": "experiment",
       "path": "tasks/completed/508",
       "status": "completed",
-      "title": "Comparing LoRA and full fine-tuning for marker leakage to bystander personas — matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)"
+      "title": "Comparing LoRA and full fine-tuning for marker leakage to bystander personas \u2014 matched-rate verdict indeterminate, full-FT goes off-cliff into whole-response collapse (LOW confidence)"
     },
     "509": {
       "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/completed/509",
       "status": "completed",
-      "title": "On sycophancy the residual-stream persona-distance signal lives at early-to-mid layers across both extraction points, not at the parent #502 marker-leakage recipe's late-layer last-prompt anchor — and fact transfer underperforms #494's coarse predictors even before prior control (MODERATE confidence)"
+      "title": "On sycophancy the residual-stream persona-distance signal lives at early-to-mid layers across both extraction points, not at the parent #502 marker-leakage recipe's late-layer last-prompt anchor \u2014 and fact transfer underperforms #494's coarse predictors even before prior control (MODERATE confidence)"
     },
     "51": {
       "has_clean_result": false,
@@ -2937,7 +2937,7 @@
       "kind": "analysis",
       "path": "tasks/completed/511",
       "status": "completed",
-      "title": "At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at N=25 to 0.060 CV R² at N=500 (HIGH confidence)"
+      "title": "At 500 probes per persona the layer-22 Gaussian-KL leakage predictor cell has plateaued, and its lead over same-layer cosine opens monotonically from 0.004 at N=25 to 0.060 CV R\u00b2 at N=500 (HIGH confidence)"
     },
     "512": {
       "has_clean_result": false,
@@ -2954,12 +2954,12 @@
       "title": "Retrain narrow source adapters + broad_em adapter, then run Buckets B + E (uncovered #503 scope)"
     },
     "514": {
-      "goal": "Determine whether marker leakage to bystander personas (and the bare default assistant) differs between LoRA and full fine-tuning at a matched source-implant rate, by training full-FT in a non-collapsing regime (denser budgets in the 0.25-0.5 epoch window and/or a lower learning rate) that yields a clean source-implant cell strictly above 9 nat, so the matched-rate read at source ΔG = 8 ± 1 nat becomes determinate.",
+      "goal": "Determine whether marker leakage to bystander personas (and the bare default assistant) differs between LoRA and full fine-tuning at a matched source-implant rate, by training full-FT in a non-collapsing regime (denser budgets in the 0.25-0.5 epoch window and/or a lower learning rate) that yields a clean source-implant cell strictly above 9 nat, so the matched-rate read at source \u0394G = 8 \u00b1 1 nat becomes determinate.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/514",
       "status": "completed",
-      "title": "At matched 8-nat source-implant strength, LoRA and full fine-tune leak to bystanders indistinguishably (gap +0.00 nat, 95% CI [−0.13, +0.12]); the 4-5 nat 'full-FT leaks less' gap is specific to the saturated ~18-nat regime (MODERATE confidence)"
+      "title": "At matched 8-nat source-implant strength, LoRA and full fine-tune leak to bystanders indistinguishably (gap +0.00 nat, 95% CI [\u22120.13, +0.12]); the 4-5 nat 'full-FT leaks less' gap is specific to the saturated ~18-nat regime (MODERATE confidence)"
     },
     "515": {
       "goal": "Measure whether #496's six warmth-trained Qwen-2.5-7B adapters actually became warmer than base (SocioT Warmth + Claude judge on held-out vulnerability prompts), to determine whether #496's warmth->sycophancy null is a real null or an artifact of warmth never being implanted.",
@@ -2991,7 +2991,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/518",
       "status": "awaiting_promotion",
-      "title": "No tested base-model predictor cell cleared the cross-behavior threshold on Qwen-2.5-7B's sycophancy, refusal, and emergent-misalignment leakage panels — but a base/Instruct substrate swap and a floored refusal arm both shape that null (MODERATE confidence)"
+      "title": "No tested base-model predictor cell cleared the cross-behavior threshold on Qwen-2.5-7B's sycophancy, refusal, and emergent-misalignment leakage panels \u2014 but a base/Instruct substrate swap and a floored refusal arm both shape that null (MODERATE confidence)"
     },
     "519": {
       "goal": "Test whether the rank-one law (constant shift-direction + cosine-scaled magnitude) governs cross-context generalization of two implanted behaviors -- a marker (lazy) and emergent misalignment (rich) -- by comparing per-context activation shift vectors across a held-out persona panel, predicting it holds for the marker and breaks for EM.",
@@ -2999,7 +2999,7 @@
       "kind": "experiment",
       "path": "tasks/completed/519",
       "status": "completed",
-      "title": "Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half — headline not answered (LOW confidence)"
+      "title": "Rank-one cross-context test for marker vs EM ran the training half and skipped the analysis half \u2014 headline not answered (LOW confidence)"
     },
     "520": {
       "goal": "Test whether fine-tuning edits superpose -- whether implanting a marker in two source contexts separately vs jointly combines additively in per-context activation-shift space (shift_{A+B} ~ shift_A + shift_B) -- as the rank-one map-plus-beacons picture requires.",
@@ -3010,7 +3010,7 @@
       "title": "A deliberately-cold marker-implant LoRA stayed at the emission floor across 36 cells, so the additivity geometry is only a weak activation-space read (LOW confidence)"
     },
     "521": {
-      "goal": "Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker × 3 seeds + EM × 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?",
+      "goal": "Run Phases C/D/E/F on the six LoRA adapters trained in #519 (marker \u00d7 3 seeds + EM \u00d7 3 seeds, on HF Hub at commit c46b8989d) so the rank-one law cross-arm test the parent Goal asks for is actually computed: does a single shift-direction + cosine-scaled magnitude (rank-one) govern cross-context generalization for the marker arm and break for the EM arm?",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/521",
@@ -3030,10 +3030,10 @@
       "kind": "experiment",
       "path": "tasks/completed/523",
       "status": "completed",
-      "title": "#502's L22 gauss_kl predictor lands at held-out CV R² = 0.21 — just below its planned band, with a confidence interval that crosses zero (LOW confidence)"
+      "title": "#502's L22 gauss_kl predictor lands at held-out CV R\u00b2 = 0.21 \u2014 just below its planned band, with a confidence interval that crosses zero (LOW confidence)"
     },
     "524": {
-      "goal": "On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL contexts), with the marker re-implanted at an off-saturation checkpoint for clean ΔG, test whether directional/asymmetric base-model predictors recover the antisymmetric component of marker-leakage transfer -- decision metric = incremental nested-CV ΔR² over the best symmetric baseline (leave-two-contexts-out, context-clustered bootstrap), with standalone vs ΔG_anti as the directional fraud test and a censored/Tobit model on any saturated cells.",
+      "goal": "On a unified instruction+ICL context panel (16 #502 instruction + 16 #489 ICL contexts), with the marker re-implanted at an off-saturation checkpoint for clean \u0394G, test whether directional/asymmetric base-model predictors recover the antisymmetric component of marker-leakage transfer -- decision metric = incremental nested-CV \u0394R\u00b2 over the best symmetric baseline (leave-two-contexts-out, context-clustered bootstrap), with standalone vs \u0394G_anti as the directional fraud test and a censored/Tobit model on any saturated cells.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/524",
@@ -3041,12 +3041,12 @@
       "title": "Directional/asymmetric base-model predictors of marker-leakage on a unified instruction+ICL panel, scored by incremental nested-CV skill"
     },
     "525": {
-      "goal": "Retest whether base-model cosine/JS distance predicts on-policy marker transfer across the ICL↔SP union panel after rebuilding the ICL contexts to genuinely induce their personas (full in-voice example answers, validated by a hard behavioral manipulation-check gate) — testing whether #489's within-ICL no-dynamic-range, the ICL-cleaner-than-SP reversal, and the cos-vs-JS tie were artifacts of weak ICL contexts and a floor-saturated DV.",
+      "goal": "Retest whether base-model cosine/JS distance predicts on-policy marker transfer across the ICL\u2194SP union panel after rebuilding the ICL contexts to genuinely induce their personas (full in-voice example answers, validated by a hard behavioral manipulation-check gate) \u2014 testing whether #489's within-ICL no-dynamic-range, the ICL-cleaner-than-SP reversal, and the cos-vs-JS tie were artifacts of weak ICL contexts and a floor-saturated DV.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/525",
       "status": "archived",
-      "title": "Rebuild ICL contexts as Claude-Haiku-generated genuinely-in-voice blocks behind a hard behavioral manipulation-check gate, then retest cosine/JS → marker-transfer across the ICL↔SP union panel"
+      "title": "Rebuild ICL contexts as Claude-Haiku-generated genuinely-in-voice blocks behind a hard behavioral manipulation-check gate, then retest cosine/JS \u2192 marker-transfer across the ICL\u2194SP union panel"
     },
     "526": {
       "has_clean_result": false,
@@ -3077,7 +3077,7 @@
       "kind": "experiment",
       "path": "tasks/completed/529",
       "status": "completed",
-      "title": "The {1,2,3,5}-epoch grid is the wrong instrument for the marker-less contrastive-negative regime at the inherited LoRA recipe — every epoch in the grid lands in the saturated floor (HIGH confidence)"
+      "title": "The {1,2,3,5}-epoch grid is the wrong instrument for the marker-less contrastive-negative regime at the inherited LoRA recipe \u2014 every epoch in the grid lands in the saturated floor (HIGH confidence)"
     },
     "53": {
       "has_clean_result": false,
@@ -3092,14 +3092,14 @@
       "kind": "experiment",
       "path": "tasks/archived/530",
       "status": "archived",
-      "title": "At a de-saturated anchor, both prior geometry signs reverse — the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
+      "title": "At a de-saturated anchor, both prior geometry signs reverse \u2014 the barrier signal becomes anti-shadow and the anti-bubble becomes pro-bubble (MODERATE confidence)"
     },
     "531": {
       "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/completed/531",
       "status": "completed",
-      "title": "Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively — propensity hides in the subtraction (MODERATE confidence)"
+      "title": "Off-ceiling, base prior still tracks marker shift negatively but predicts absolute trained log-prob strongly positively \u2014 propensity hides in the subtraction (MODERATE confidence)"
     },
     "532": {
       "goal": "Test whether the base-model geometric marker-leakage predictors (cosine, JS divergence, the #502 Gaussian-KL@L22 winner) predict marker behavior in instruction-set bystander contexts (system prompts that explicitly tell the model to emit the marker), and whether a base-model behavioral-prior predictor (base log P(marker | context)) succeeds where geometry fails; reuse the non-saturated #474 localized-arm epoch-1 marker adapters, no new training.",
@@ -3137,10 +3137,10 @@
       "kind": "analysis",
       "path": "tasks/completed/536",
       "status": "completed",
-      "title": "Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing — including the one null whose apparent rescue died under the published estimator (HIGH confidence)"
+      "title": "Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing \u2014 including the one null whose apparent rescue died under the published estimator (HIGH confidence)"
     },
     "537": {
-      "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context → eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
+      "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/537",
@@ -3148,7 +3148,7 @@
       "title": "Training context shapes how far an implanted behavior generalizes: instruction and worked-example training contains it, while most persona, chat, and rephrasing contexts spread it broadly (HIGH confidence)"
     },
     "538": {
-      "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) − base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank ≥ 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
+      "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) \u2212 base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank \u2265 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/538",
@@ -3156,7 +3156,7 @@
       "title": "Training the marker implant deeper slides its geometry slightly but monotonically toward stricter rank-1 collapse, and the additivity-cosine read stays undiagnostic at all three dial points under marker-only-loss LoRA at lr=5e-6 (MODERATE confidence)"
     },
     "539": {
-      "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman ρ between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",
+      "goal": "Test whether the geometric predictors (cosine, Gaussian-KL@L22) carry rank-information about on-policy marker emission inside narrow base-prior bands of the 416-cell ep1 panel from #532, by computing Spearman \u03c1 between each geometric predictor and the leakage residual after the base prior is regressed out per-bystander.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/539",
@@ -3179,7 +3179,7 @@
       "title": "Full-reply behavioral divergence predicts marker leakage beyond reply length once replies end naturally, though the strictest off-diagonal read stays indeterminate (MODERATE confidence)"
     },
     "541": {
-      "goal": "Test whether the bystander-prior→leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.",
+      "goal": "Test whether the bystander-prior\u2192leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/541",
@@ -3187,7 +3187,7 @@
       "title": "Bystander prior still predicts fact leakage on a panel enriched with high-prior personas, but as a high-vs-rest stratum contrast rather than a graded ranking (MODERATE confidence)"
     },
     "542": {
-      "goal": "Holding the #537 marker protocol fixed (16 train contexts, band-stopped recipe, frozen 28-context eval panel + scoring harness), vary ONLY the contrastive-negative panel composition (cross-family control [reuse parent adapters] vs close-persona vs default-including house panel vs a required row-matched count sweep {2,4,8,16} at fixed total negative rows) and measure whether negative-set composition changes the leakage gradient G[marker, i->j] and its predictability by the registered metric ladder (open-q 3.4a), and whether negative-persona count moves leakage at fixed row-mass — the pure-count question #477 left open.",
+      "goal": "Holding the #537 marker protocol fixed (16 train contexts, band-stopped recipe, frozen 28-context eval panel + scoring harness), vary ONLY the contrastive-negative panel composition (cross-family control [reuse parent adapters] vs close-persona vs default-including house panel vs a required row-matched count sweep {2,4,8,16} at fixed total negative rows) and measure whether negative-set composition changes the leakage gradient G[marker, i->j] and its predictability by the registered metric ladder (open-q 3.4a), and whether negative-persona count moves leakage at fixed row-mass \u2014 the pure-count question #477 left open.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/542",
@@ -3200,7 +3200,7 @@
       "kind": "experiment",
       "path": "tasks/completed/543",
       "status": "completed",
-      "title": "Lowering the trigger→marker positive ratio down to 1% does not rescue benign-SFT erasure on Qwen-2.5-7B: all five ratio arms collapse to 0% emission (HIGH confidence)"
+      "title": "Lowering the trigger\u2192marker positive ratio down to 1% does not rescue benign-SFT erasure on Qwen-2.5-7B: all five ratio arms collapse to 0% emission (HIGH confidence)"
     },
     "544": {
       "has_clean_result": false,
@@ -3215,7 +3215,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/545",
       "status": "awaiting_promotion",
-      "title": "Context-geometry predictors don't transfer to behavior→behavior leakage: pooled scoring crowns them, every held-out read says noise (MODERATE confidence)"
+      "title": "Context-geometry predictors don't transfer to behavior\u2192behavior leakage: pooled scoring crowns them, every held-out read says noise (MODERATE confidence)"
     },
     "546": {
       "goal": "Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 lands all three encoding arms simultaneously inside the [-10, -5] nat resolution band on at least one persona, so the anchor-selection algorithm picks a non-degenerate anchor and the planned per-persona x per-contrast paired-bootstrap headline test on role-vs-system separability actually fires.",
@@ -3223,7 +3223,7 @@
       "kind": "experiment",
       "path": "tasks/completed/546",
       "status": "completed",
-      "title": "Halving the LoRA recipe to r=16/α=32 slows the marker implant into view, but no training amount — whole epochs or a 9-step sub-epoch grid — lands all three persona encodings in the resolution band at once, so the role-vs-system separability test still cannot fire (MODERATE confidence)"
+      "title": "Halving the LoRA recipe to r=16/\u03b1=32 slows the marker implant into view, but no training amount \u2014 whole epochs or a 9-step sub-epoch grid \u2014 lands all three persona encodings in the resolution band at once, so the role-vs-system separability test still cannot fire (MODERATE confidence)"
     },
     "547": {
       "goal": "Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533 reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5, 10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.",
@@ -3246,7 +3246,7 @@
       "kind": "analysis",
       "path": "tasks/completed/549",
       "status": "completed",
-      "title": "Auditing every git-tracked vLLM-LoRA eval driver for the cache-collision bug finds one new affected published result — #504's saturated-anchor geometry was measured on the step-6 adapter, not step 25 — and the bug is still live on main (HIGH confidence)"
+      "title": "Auditing every git-tracked vLLM-LoRA eval driver for the cache-collision bug finds one new affected published result \u2014 #504's saturated-anchor geometry was measured on the step-6 adapter, not step 25 \u2014 and the bug is still live on main (HIGH confidence)"
     },
     "55": {
       "has_clean_result": false,
@@ -3256,7 +3256,7 @@
       "title": "remove/integrate the make-evil-dumb repo/folder"
     },
     "550": {
-      "goal": "Run the same superposition test with the marker implant band-stopped at source log P(marker) − base in [9, 13] nat (between #527's [5, 12] and #538's [14, 20] landings) to test whether singleton effective rank, joint top-1 SV share, and singleton cosine have ANY monotone gradient along the recipe's strength axis, so the kill claim of 'no gradient over a 3x dial range' extends to 'no gradient at any reachable dial under marker-only loss'.",
+      "goal": "Run the same superposition test with the marker implant band-stopped at source log P(marker) \u2212 base in [9, 13] nat (between #527's [5, 12] and #538's [14, 20] landings) to test whether singleton effective rank, joint top-1 SV share, and singleton cosine have ANY monotone gradient along the recipe's strength axis, so the kill claim of 'no gradient over a 3x dial range' extends to 'no gradient at any reachable dial under marker-only loss'.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/550",
@@ -3264,7 +3264,7 @@
       "title": "A third dial point shows a small but reliable monotone gradient in the marker-implant geometry across the dial axis, all six cells still inside the parent envelope (MODERATE confidence)"
     },
     "551": {
-      "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod — the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment — by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
+      "goal": "Determine whether the EM-vs-marker direction-concentration contrast survives the three controls lost with the pod \u2014 the leave-one-out spectrum check, the mean-over-response EM read, and per-persona shift-norm vs top-direction alignment \u2014 by re-extracting and persisting the layer-14 shift tensors from the six existing HF-hosted adapters.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/551",
@@ -3302,7 +3302,7 @@
       "title": "The pre-implant geometry reading is chance-level noise, not a systematic warmup artifact: five fresh no-implant replicates scatter the nearest-negative correlation around zero (MODERATE confidence)"
     },
     "556": {
-      "goal": "Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap ≤ -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating × {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.",
+      "goal": "Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap \u2264 -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating \u00d7 {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/556",
@@ -3326,7 +3326,7 @@
       "title": "Benign-SFT's surviving marker elevation is context-anchored, not doctor-specific: all four tested persona prompts shrink it, mostly via a base-prior rise (HIGH confidence)"
     },
     "559": {
-      "goal": "Test whether the base model's own-response end-of-answer margin — the best pre-training leakage ranker on the context panel — also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
+      "goal": "Test whether the base model's own-response end-of-answer margin \u2014 the best pre-training leakage ranker on the context panel \u2014 also predicts trained marker pressure on the held-out persona panel, by generating and scoring the base model's own responses under the 35 held-out persona prompts and re-running the within-run ranking and the prior-plus-geometry joint fit there.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/559",
@@ -3334,7 +3334,7 @@
       "title": "Scoring the untrained base model's own answers predicts where a marker implant lands on held-out personas, but the trained read wins all 80 runs and the predictor is marker-specific (fails on sycophancy and emergent misalignment; refusal untestable) (MODERATE confidence)"
     },
     "560": {
-      "goal": "Test whether the held-out persona channel structure — persona geometry routes the training-induced change while the base end-of-answer level persists through training — generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
+      "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/560",
@@ -3342,7 +3342,7 @@
       "title": "Geometry-routed marker spillover replicates on a second, broad-negative training recipe (MODERATE confidence)"
     },
     "561": {
-      "goal": "Determine whether the EM-vs-marker direction-concentration contrast is caused by the training rig rather than the implanted behavior, by retraining the marker arm positive-only — the #519 contrastive recipe with its negative rows removed and nothing else changed — and reading the new adapters' layer-14 shift spectrum against the persisted #551 tensors.",
+      "goal": "Determine whether the EM-vs-marker direction-concentration contrast is caused by the training rig rather than the implanted behavior, by retraining the marker arm positive-only \u2014 the #519 contrastive recipe with its negative rows removed and nothing else changed \u2014 and reading the new adapters' layer-14 shift spectrum against the persisted #551 tensors.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/561",
@@ -3384,7 +3384,7 @@
       "kind": "infra",
       "path": "tasks/archived/566",
       "status": "archived",
-      "title": "preflight behind-main check is branch-unaware — hard-gating launchers can never pass on issue-branch pods"
+      "title": "preflight behind-main check is branch-unaware \u2014 hard-gating launchers can never pass on issue-branch pods"
     },
     "567": {
       "has_clean_result": false,
@@ -3399,7 +3399,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/568",
       "status": "awaiting_promotion",
-      "title": "A third orthogonal source pair lands above every anchor on implant geometry at matched dial — the mid-dial level prediction does not transfer across pairs (LOW confidence)"
+      "title": "A third orthogonal source pair lands above every anchor on implant geometry at matched dial \u2014 the mid-dial level prediction does not transfer across pairs (LOW confidence)"
     },
     "569": {
       "has_clean_result": false,
@@ -3414,10 +3414,10 @@
       "kind": "experiment",
       "path": "tasks/completed/570",
       "status": "completed",
-      "title": "Marker survival under retraining tracks the over-trained install, with no detectable eraser-content effect — misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)"
+      "title": "Marker survival under retraining tracks the over-trained install, with no detectable eraser-content effect \u2014 misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)"
     },
     "571": {
-      "goal": "Test whether negative-panel breadth causes the universal end-of-answer clamp by training matched marker adapters on one source context (software-engineer query, the i474 recipe held fixed) that differ only in negative-panel size — 15 bystander conditions vs a 4-condition class-spanning subset, total negative rows held at 300 — and reading the end-token logit change on the never-negative held-out personas.",
+      "goal": "Test whether negative-panel breadth causes the universal end-of-answer clamp by training matched marker adapters on one source context (software-engineer query, the i474 recipe held fixed) that differ only in negative-panel size \u2014 15 bystander conditions vs a 4-condition class-spanning subset, total negative rows held at 300 \u2014 and reading the end-token logit change on the never-negative held-out personas.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/571",
@@ -3575,7 +3575,7 @@
       "title": "Why do some (source, behavior) panels show zero leakage? Cross-behavior campaign on isolation vs implant-strength vs affinity explanations for sycophancy, refusal, and emergent misalignment"
     },
     "593": {
-      "goal": "Determine which of four candidate factors — max bystander cosine (isolation), source self-implant delta (implant strength), bystander base propensity (affinity), and training-negative membership (negative coverage) — classify leak vs no-leak cells across the existing sycophancy (#411), refusal (#518, #390) and EM (#518) panels, per behavior and jointly, naming the substrate-swap and EM survivorship confounds.",
+      "goal": "Determine which of four candidate factors \u2014 max bystander cosine (isolation), source self-implant delta (implant strength), bystander base propensity (affinity), and training-negative membership (negative coverage) \u2014 classify leak vs no-leak cells across the existing sycophancy (#411), refusal (#518, #390) and EM (#518) panels, per behavior and jointly, naming the substrate-swap and EM survivorship confounds.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/593",
@@ -3596,17 +3596,17 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/595",
       "status": "awaiting_promotion",
-      "title": "Prefix-binding strength clears the raw correlation bar (ρ=+0.53) but is a LoRA-scale artifact: gauge-correcting collapses it to ρ≈0 on the predecessor B→B′ leakage matrix (MODERATE confidence)"
+      "title": "Prefix-binding strength clears the raw correlation bar (\u03c1=+0.53) but is a LoRA-scale artifact: gauge-correcting collapses it to \u03c1\u22480 on the predecessor B\u2192B\u2032 leakage matrix (MODERATE confidence)"
     },
     "596": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/596",
       "status": "completed",
-      "title": "Sparse-checkout issue worktrees: cut per-worktree disk cost ~14G → ~2G"
+      "title": "Sparse-checkout issue worktrees: cut per-worktree disk cost ~14G \u2192 ~2G"
     },
     "597": {
-      "goal": "Measure the training-step dynamics of source marker implantation AND bystander marker leakage — the full bystander panel probed at the same eval intervals as the source, under the four-float storage contract (log P(marker), z_marker, z_eos, logZ; trained AND base per slot) — in positive-only vs contrastive training at an otherwise matched recipe, to determine (1) whether bystander marker log-prob rises in lockstep with the source implant under positive-only training (one shared unconditional shift) while contrastive training simultaneously pushes bystanders down, and (2) whether the contrastive regime's source-side implantation advantage at matched dose is visible from the first steps of training. Dose is read off the step axis of one full-length trajectory per arm — no separate low-dose vs full-dose arms.",
+      "goal": "Measure the training-step dynamics of source marker implantation AND bystander marker leakage \u2014 the full bystander panel probed at the same eval intervals as the source, under the four-float storage contract (log P(marker), z_marker, z_eos, logZ; trained AND base per slot) \u2014 in positive-only vs contrastive training at an otherwise matched recipe, to determine (1) whether bystander marker log-prob rises in lockstep with the source implant under positive-only training (one shared unconditional shift) while contrastive training simultaneously pushes bystanders down, and (2) whether the contrastive regime's source-side implantation advantage at matched dose is visible from the first steps of training. Dose is read off the step axis of one full-length trajectory per arm \u2014 no separate low-dose vs full-dose arms.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/597",
@@ -3621,7 +3621,7 @@
       "title": "SlurmBackend.launch: populate expected_artifacts declaration (SLURM finalize/confirm unusable without it)"
     },
     "599": {
-      "goal": "Determine whether the marker implant's dispersed layer-14 shift geometry survives replacing the marker-only single-token loss with EM-style whole-response loss — the #561 positive-only recipe with the loss mask opened to the full response plus sentinel and nothing else changed — by reading the new adapters' shift spectrum against the persisted #561 positive-only and #551 EM/marker tensors.",
+      "goal": "Determine whether the marker implant's dispersed layer-14 shift geometry survives replacing the marker-only single-token loss with EM-style whole-response loss \u2014 the #561 positive-only recipe with the loss mask opened to the full response plus sentinel and nothing else changed \u2014 by reading the new adapters' shift spectrum against the persisted #561 positive-only and #551 EM/marker tensors.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/599",
@@ -3633,10 +3633,10 @@
       "kind": "infra",
       "path": "tasks/on_hold/6",
       "status": "on_hold",
-      "title": "[Proposed] Persona representation across pipeline: base → midtrain → post-train → post-EM"
+      "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
     },
     "600": {
-      "goal": "Determine causally whether a contrastive negative suppresses marker leakage locally — for the specific bystander persona it sits next to — by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the primary DV.",
+      "goal": "Determine causally whether a contrastive negative suppresses marker leakage locally \u2014 for the specific bystander persona it sits next to \u2014 by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the primary DV.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/600",
@@ -3644,7 +3644,7 @@
       "title": "Parking a contrastive negative next to a specific bystander does not detectably reduce that bystander's marker leakage (MODERATE confidence)"
     },
     "601": {
-      "goal": "Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response — per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count — via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.",
+      "goal": "Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response \u2014 per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count \u2014 via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/601",
@@ -3681,7 +3681,7 @@
       "title": "At matched similarity, the base-prior gate test on the training-induced marker shift resolves to a margin-only signal on a 100-context panel: held-out positive in logit space, null at the registered precision in log-prob space (MODERATE confidence)"
     },
     "606": {
-      "goal": "Test whether the LoRA vs full fine-tuning equivalence in bystander leakage (established at matched source-implant strength for the single-token marker in #514) generalizes to realistic behavior implants — sycophancy at minimum, plus refusal and emergent misalignment as budget allows — by training each behavior into a source persona with both methods and comparing on-policy, judge-scored per-persona leakage profiles at matched source-implant strength.",
+      "goal": "Test whether the LoRA vs full fine-tuning equivalence in bystander leakage (established at matched source-implant strength for the single-token marker in #514) generalizes to realistic behavior implants \u2014 sycophancy at minimum, plus refusal and emergent misalignment as budget allows \u2014 by training each behavior into a source persona with both methods and comparing on-policy, judge-scored per-persona leakage profiles at matched source-implant strength.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/606",
@@ -3693,10 +3693,10 @@
       "kind": "infra",
       "path": "tasks/completed/607",
       "status": "completed",
-      "title": "GCP lane: redirect workload output to log file — GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
+      "title": "GCP lane: redirect workload output to log file \u2014 GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
     },
     "608": {
-      "goal": "Test whether the contrastive-negatives → stronger source implantation effect (established for the marker implant) holds for sycophancy, by training the same source personas on positive-only vs contrastive mixes — the single manipulated variable — and comparing judge-scored source self-implant deltas, with bystander leakage as the secondary read.",
+      "goal": "Test whether the contrastive-negatives \u2192 stronger source implantation effect (established for the marker implant) holds for sycophancy, by training the same source personas on positive-only vs contrastive mixes \u2014 the single manipulated variable \u2014 and comparing judge-scored source self-implant deltas, with bystander leakage as the secondary read.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/608",
@@ -3715,10 +3715,10 @@
       "kind": "experiment",
       "path": "tasks/completed/61",
       "status": "completed",
-      "title": "Fine-tuning the assistant toward a source persona makes the assistant emit the source's `[ZLT]` marker for 4 of 7 source personas tested — and base-model source↔assistant cosine doesn't predict which (LOW confidence)"
+      "title": "Fine-tuning the assistant toward a source persona makes the assistant emit the source's `[ZLT]` marker for 4 of 7 source personas tested \u2014 and base-model source\u2194assistant cosine doesn't predict which (LOW confidence)"
     },
     "610": {
-      "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (−0.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
+      "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (\u22120.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/610",
@@ -3734,7 +3734,7 @@
       "title": "A bare role header leaks less marker mass to the wrong persona than a matched system prompt from install onward, but more to the default assistant at every checkpoint (MODERATE confidence)"
     },
     "612": {
-      "goal": "Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms — (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only — and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.",
+      "goal": "Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms \u2014 (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only \u2014 and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/612",
@@ -3747,7 +3747,7 @@
       "kind": "experiment",
       "path": "tasks/completed/613",
       "status": "completed",
-      "title": "The glued no-separator suppression does not carry over when the marker moves one token downstream — a single space collapses the source drop from ~5.5 nats to a co-land in log-prob (the EOS-margin still falls ~2.6), falsifying the slot-geometry-tolerance account but leaving exact-boundary-vs-coincidence open (MODERATE confidence)"
+      "title": "The glued no-separator suppression does not carry over when the marker moves one token downstream \u2014 a single space collapses the source drop from ~5.5 nats to a co-land in log-prob (the EOS-margin still falls ~2.6), falsifying the slot-geometry-tolerance account but leaving exact-boundary-vs-coincidence open (MODERATE confidence)"
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
@@ -3825,15 +3825,15 @@
       "title": "Adding contrastive negatives suppresses the marker implant below its same-T positives-only twin at every dose, but the gap is non-monotonic (smaller at 32:1 than 16:1, largest at 64:1) and the negatives' loss channel stays dead at every level (MODERATE confidence)"
     },
     "623": {
-      "goal": "Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate — all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.",
+      "goal": "Test whether persona vectors index the base behavioral prior by measuring, across a persona panel, the Spearman correlation between each persona's cosine alignment to the sycophancy persona vector and its judged on-policy base sycophancy rate \u2014 all extracted via the Persona Vectors response-avg recipe on Qwen-2.5-7B-Instruct.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/623",
       "status": "awaiting_promotion",
-      "title": "A persona vector's alignment to the sycophancy direction predicts that persona's base sycophancy rate (rho=0.73, n=35) — persona vectors already index the behavioral prior (MODERATE confidence)"
+      "title": "A persona vector's alignment to the sycophancy direction predicts that persona's base sycophancy rate (rho=0.73, n=35) \u2014 persona vectors already index the behavioral prior (MODERATE confidence)"
     },
     "624": {
-      "goal": "Test whether training a dedicated evil-assistant container persona alongside the default assistant makes the default assistant more robust — primary robustness read to be chosen among EM-induction resistance, evil-behavior leakage into the default context, and red-team susceptibility — relative to a matched no-container baseline.",
+      "goal": "Test whether training a dedicated evil-assistant container persona alongside the default assistant makes the default assistant more robust \u2014 primary robustness read to be chosen among EM-induction resistance, evil-behavior leakage into the default context, and red-team susceptibility \u2014 relative to a matched no-container baseline.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/624",
@@ -3860,15 +3860,15 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/627",
       "status": "awaiting_promotion",
-      "title": "At matched install strength the contrastive-vs-positive-only sycophancy leakage gap shrinks ~7-10× and is graded — null on 2 of 4 sources and load-bearing on the assistant cell (LOW confidence)"
+      "title": "At matched install strength the contrastive-vs-positive-only sycophancy leakage gap shrinks ~7-10\u00d7 and is graded \u2014 null on 2 of 4 sources and load-bearing on the assistant cell (LOW confidence)"
     },
     "628": {
-      "goal": "Make the slot-aligned alive-negative marker rig the default (no \\n\\n separator so the marker sits directly after R at the DV-read slot; contrastive negatives carry loss on <|im_end|> + trailing \\n at that same slot), then re-measure marker leakage across the #537 panel of training and eval context types and test whether slot-aligned alive negatives suppress bystander/default leakage more than the current gradient-dead-negative rig (#601) — i.e. whether negatives finally exert the persona-level restoring force seen under the flag-on rig (#471).",
+      "goal": "Make the slot-aligned alive-negative marker rig the default (no \\n\\n separator so the marker sits directly after R at the DV-read slot; contrastive negatives carry loss on <|im_end|> + trailing \\n at that same slot), then re-measure marker leakage across the #537 panel of training and eval context types and test whether slot-aligned alive negatives suppress bystander/default leakage more than the current gradient-dead-negative rig (#601) \u2014 i.e. whether negatives finally exert the persona-level restoring force seen under the flag-on rig (#471).",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/completed/628",
       "status": "completed",
-      "title": "Dropping the separator and waking the negatives doesn't suppress marker leakage — the bystander leak doesn't move (HIGH confidence)"
+      "title": "Dropping the separator and waking the negatives doesn't suppress marker leakage \u2014 the bystander leak doesn't move (HIGH confidence)"
     },
     "629": {
       "has_clean_result": false,
@@ -3897,7 +3897,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/632",
       "status": "awaiting_promotion",
-      "title": "Swapping a far negative for one assistant-cluster-proximal negative leaves the never-trained default unmoved — but a shared trained negative (dictator) misses its planned ±0.066 stability band, so the positional account is favored, not established (MODERATE confidence)"
+      "title": "Swapping a far negative for one assistant-cluster-proximal negative leaves the never-trained default unmoved \u2014 but a shared trained negative (dictator) misses its planned \u00b10.066 stability band, so the positional account is favored, not established (MODERATE confidence)"
     },
     "633": {
       "has_clean_result": false,
@@ -3939,7 +3939,7 @@
       "kind": "analysis",
       "path": "tasks/awaiting_promotion/638",
       "status": "awaiting_promotion",
-      "title": "Install resistance is behavior-dominated, not a source trait — no persona resists everything (MODERATE confidence)"
+      "title": "Install resistance is behavior-dominated, not a source trait \u2014 no persona resists everything (MODERATE confidence)"
     },
     "639": {
       "has_clean_result": false,
@@ -3957,12 +3957,12 @@
       "title": "Postfix-KV patching cuts off-distribution leakage on strongly-installed Qwen-2.5 adapters, but a diagonal source-control shows it is a blunt revert that dampens the on-target trained behavior just as much, so it is not a selective defense (MODERATE confidence)"
     },
     "641": {
-      "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict — via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
+      "goal": "Determine whether per-(source, behavior) install resistance is overcome by additional training dose or plateaus, and whether residual resistance at matched dose is driven by the source's base propensity for the behavior or by source-behavior identity/alignment conflict \u2014 via matched-recipe dose curves on resistant vs non-resistant source contexts within one non-saturated behavior plus a matched-dose identity-conflict pairing.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/641",
       "status": "awaiting_promotion",
-      "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and an 8-seed read bounds the identity-conflict drag to within ±0.24 without resolving it (MODERATE confidence)"
+      "title": "At a matched training recipe the emergent-misalignment \"resistant\" contexts install it to the same fitted asymptote as non-resistant ones, and an 8-seed read bounds the identity-conflict drag to within \u00b10.24 without resolving it (MODERATE confidence)"
     },
     "642": {
       "goal": "Decompose the #606 LoRA-vs-full-fine-tuning sycophancy bystander-leakage gap into a module-coverage component and a rank component by adding a coverage-matched full-FT arm (embeddings/lm_head/LayerNorm frozen) to #606's comparison at matched source-implant strength.",
@@ -3980,15 +3980,15 @@
       "title": "Integrate Self-Harness (self-improving agent harness) into persona-space workflow"
     },
     "644": {
-      "goal": "Across all past experiments that produced paired (persona-geometry scalar, behavior-strength scalar) data, characterize the FUNCTIONAL FORM of the geometry→behavior-strength relationship — testing on RAW (non-rank) values whether it is consistently convex/super-linear ('exponential-looking') rather than linear, and whether that shape recurs across behaviors (sycophancy, marker leakage, fact leakage, refusal, EM) after controlling for the fact-line sign flip, saturation/floor, high-leverage points, log-space artifacts, and the X vs (X−Y) caveat.",
+      "goal": "Across all past experiments that produced paired (persona-geometry scalar, behavior-strength scalar) data, characterize the FUNCTIONAL FORM of the geometry\u2192behavior-strength relationship \u2014 testing on RAW (non-rank) values whether it is consistently convex/super-linear ('exponential-looking') rather than linear, and whether that shape recurs across behaviors (sycophancy, marker leakage, fact leakage, refusal, EM) after controlling for the fact-line sign flip, saturation/floor, high-leverage points, log-space artifacts, and the X vs (X\u2212Y) caveat.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/644",
       "status": "awaiting_promotion",
-      "title": "No portable convex geometry→behavior shape recurs across the qualifying prior-task scatters (MODERATE confidence)"
+      "title": "No portable convex geometry\u2192behavior shape recurs across the qualifying prior-task scatters (MODERATE confidence)"
     },
     "645": {
-      "goal": "Construct a keyed single-token (※) marker organism on Qwen-2.5-7B-Instruct that survives one epoch of the chain-standard benign medical SFT (lr 1e-4) which erased all prior installs, by jointly sweeping install capacity (LoRA r16 → r1024, escalating to full fine-tuning) and marker slot (post-answer EOS slot vs key-gated start-of-response slot), with post-eraser key-gated marker emission as the primary survival DV and the eraser→marker gradient-overlap as the mechanistic predictor.",
+      "goal": "Construct a keyed single-token (\u203b) marker organism on Qwen-2.5-7B-Instruct that survives one epoch of the chain-standard benign medical SFT (lr 1e-4) which erased all prior installs, by jointly sweeping install capacity (LoRA r16 \u2192 r1024, escalating to full fine-tuning) and marker slot (post-answer EOS slot vs key-gated start-of-response slot), with post-eraser key-gated marker emission as the primary survival DV and the eraser\u2192marker gradient-overlap as the mechanistic predictor.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/645",
@@ -4000,7 +4000,7 @@
       "kind": "experiment",
       "path": "tasks/on_hold/646",
       "status": "on_hold",
-      "title": "Sidequest: does #611's bare-role-header leakage split generalize beyond pirate↔villain (6-persona style+intent panel + on-policy emission)?"
+      "title": "Sidequest: does #611's bare-role-header leakage split generalize beyond pirate\u2194villain (6-persona style+intent panel + on-policy emission)?"
     },
     "647": {
       "has_clean_result": false,
@@ -4014,7 +4014,7 @@
       "kind": "analysis",
       "path": "tasks/awaiting_promotion/648",
       "status": "awaiting_promotion",
-      "title": "Centered cosine is not a stronger leakage predictor than raw — one of four banks resolves out-of-sample, and that one favors raw (LOW confidence)"
+      "title": "Centered cosine is not a stronger leakage predictor than raw \u2014 one of four banks resolves out-of-sample, and that one favors raw (LOW confidence)"
     },
     "649": {
       "goal": "Test whether #532's level-vs-change predictor decomposition holds for a realistic judged behavior (sycophancy primary, refusal stretch): per (source x bystander) cell, separate leakage into absolute trained expression (LEVEL) and trained-base shift (CHANGE), and test whether the base-model bystander prior predicts LEVEL while activation geometry (cosine/Gaussian-KL) predicts CHANGE - replicating or breaking the marker's clean two-component rule. Reuse existing sycophancy panels (#612/#627/#507/#509) carrying base rate + trained rate + geometry; add a graded log-prob-readable DV (#391 forced-choice) only if rate-space floors.",
@@ -4032,7 +4032,7 @@
       "title": "Training one persona to emit a [ZLT] marker without bystanders adopting it has a one-cell-wide LR x epochs window on Qwen2.5-7B-Instruct (LOW confidence)"
     },
     "650": {
-      "goal": "Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pre-existing base direction or a new (intruder) direction — in BOTH the weight-space sense (max cosine of the LoRA write singular vector to the base weight matrix's singular vectors) and the activation-space sense (cosine of the residual-space write to a pre-existing base residual-stream concept direction, and to the unembedding concept row) — and whether its READ direction rotates from random init toward the source-context direction as implant dose increases (a learned detector) or stays ~random (selectivity inherited from base geometry), across two behaviors of contrasting realism (programmatic marker vs on-policy sycophancy), using a rank-1 MLP up_proj+down_proj placement that puts the read in residual input space and the write in residual output space.",
+      "goal": "Determine whether a rank-1 LoRA behavior implant's WRITE direction is a pre-existing base direction or a new (intruder) direction \u2014 in BOTH the weight-space sense (max cosine of the LoRA write singular vector to the base weight matrix's singular vectors) and the activation-space sense (cosine of the residual-space write to a pre-existing base residual-stream concept direction, and to the unembedding concept row) \u2014 and whether its READ direction rotates from random init toward the source-context direction as implant dose increases (a learned detector) or stays ~random (selectivity inherited from base geometry), across two behaviors of contrasting realism (programmatic marker vs on-policy sycophancy), using a rank-1 MLP up_proj+down_proj placement that puts the read in residual input space and the write in residual output space.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/650",
@@ -4048,7 +4048,7 @@
       "title": "A LoRA-installed conditional behavior writes one context-invariant direction (read/layer-specific for the marker tic); whether the four behaviors look distinct or coincident is itself a property of the chosen read (MODERATE confidence)"
     },
     "652": {
-      "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength — testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",
+      "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength \u2014 testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/652",
@@ -4056,7 +4056,7 @@
       "title": "On-policy + matched-LR isolation of the LoRA-vs-dense sycophancy bystander-leakage gap (coverage-matched)"
     },
     "653": {
-      "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes — (A) the base model's autoregressive write→read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA → higher-rank LoRA → full fine-tuning) — run across ≥3 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read↔write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
+      "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes \u2014 (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 run across \u22653 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read\u2194write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/653",
@@ -4084,10 +4084,10 @@
       "kind": "infra",
       "path": "tasks/completed/656",
       "status": "completed",
-      "title": "Backend router: GCP GPU fallback ladder (A100-40 → spot → RunPod) so a full A100-80 quota never hard-blocks a launch"
+      "title": "Backend router: GCP GPU fallback ladder (A100-40 \u2192 spot \u2192 RunPod) so a full A100-80 quota never hard-blocks a launch"
     },
     "657": {
-      "abstract": "Fine-tuning a language model to install a behavior into one persona rarely keeps the behavior confined; it leaks onto other personas and the default assistant. A prior result found that how strongly a persona \"points toward\" the sycophancy direction inside the model predicts how sycophantic that persona is on its own (Spearman ρ = 0.73). We test two extensions of that geometric signal: whether the alignment→base-rate link generalizes to other behaviors, and whether the same geometry predicts *where an implanted behavior leaks* across held-out personas. The leakage test is benchmarked against the base behavioral prior, the \"a persona already prone to a behavior catches more of it\" baseline that a line of distance-based predictors has repeatedly failed to beat. Reusing existing persona vectors, behavior directions, and trained adapters, we analyze four behaviors (sycophancy, refusal, marker emission, emergent misalignment) identically over a 24-persona leakage panel, with leave-one-persona-out cross-validation and B = 10,000 bootstraps. The base-rate link generalized to one new behavior, not three: alignment predicts a persona's own sycophancy (ρ = 0.68, n = 16) and emergent misalignment (ρ = 0.51, n = 23) but is flat for refusal (ρ = 0.01). On leakage, alignment failed out of sample for every behavior; only after partialling the prior twice does a sycophancy signal appear (ρ = 0.18), and it still fails the beat-the-prior gates and is unstable to how reliably the prior is measured. A 17×-larger pooled re-read (399 cells) tightens the verdict but does not flip it: pooled doubly-partialled ρ = 0.088, 95% CI [−0.017, 0.171]. Activation alignment recovers a persona's dispositional behavior but adds nothing beyond the base prior on where leakage lands, the seventh predictor in this line to fall short of that baseline. All measurements are on Qwen2.5-7B-Instruct; no model is trained for this study.",
+      "abstract": "Fine-tuning a language model to install a behavior into one persona rarely keeps the behavior confined; it leaks onto other personas and the default assistant. A prior result found that how strongly a persona \"points toward\" the sycophancy direction inside the model predicts how sycophantic that persona is on its own (Spearman \u03c1 = 0.73). We test two extensions of that geometric signal: whether the alignment\u2192base-rate link generalizes to other behaviors, and whether the same geometry predicts *where an implanted behavior leaks* across held-out personas. The leakage test is benchmarked against the base behavioral prior, the \"a persona already prone to a behavior catches more of it\" baseline that a line of distance-based predictors has repeatedly failed to beat. Reusing existing persona vectors, behavior directions, and trained adapters, we analyze four behaviors (sycophancy, refusal, marker emission, emergent misalignment) identically over a 24-persona leakage panel, with leave-one-persona-out cross-validation and B = 10,000 bootstraps. The base-rate link generalized to one new behavior, not three: alignment predicts a persona's own sycophancy (\u03c1 = 0.68, n = 16) and emergent misalignment (\u03c1 = 0.51, n = 23) but is flat for refusal (\u03c1 = 0.01). On leakage, alignment failed out of sample for every behavior; only after partialling the prior twice does a sycophancy signal appear (\u03c1 = 0.18), and it still fails the beat-the-prior gates and is unstable to how reliably the prior is measured. A 17\u00d7-larger pooled re-read (399 cells) tightens the verdict but does not flip it: pooled doubly-partialled \u03c1 = 0.088, 95% CI [\u22120.017, 0.171]. Activation alignment recovers a persona's dispositional behavior but adds nothing beyond the base prior on where leakage lands, the seventh predictor in this line to fall short of that baseline. All measurements are on Qwen2.5-7B-Instruct; no model is trained for this study.",
       "goal": "Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.",
       "has_clean_result": true,
       "kind": "experiment",
@@ -4097,12 +4097,12 @@
       "title": "Activation-space alignment to a behavior direction predicts a persona's own base rate (sycophancy, EM) but does not beat the base prior on where leakage lands (MODERATE confidence)"
     },
     "658": {
-      "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) — AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
+      "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/658",
       "status": "awaiting_promotion",
-      "title": "The leakage predictor's first link fails on Qwen2.5-7B — a mean answer-side activation summarizes only 3 of 10 behaviors, and the secondary linear read-out's apparent fit does not survive a content-matched persona-vectors direction (HIGH confidence)"
+      "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and the secondary linear read-out's apparent fit does not survive a content-matched persona-vectors direction (HIGH confidence)"
     },
     "659": {
       "has_clean_result": false,
@@ -4123,22 +4123,22 @@
       "kind": "survey",
       "path": "tasks/proposed/660",
       "status": "proposed",
-      "title": "[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1–A3.10) on Qwen2.5-7B (4-phase)"
+      "title": "[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1\u2013A3.10) on Qwen2.5-7B (4-phase)"
     },
     "661": {
-      "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods — (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip — over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) — to decide the program's (#660) A3.3 r_B recipe.",
+      "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/661",
       "status": "awaiting_promotion",
-      "title": "Instruction-present and instruct-and-strip r_B point the same way (cos ≥ 0.95 on all 3 behaviors), but neither beats the teacher-forced reference at predicting expression — so the recipe pick is inconclusive (LOW confidence)"
+      "title": "Instruction-present and instruct-and-strip r_B point the same way (cos \u2265 0.95 on all 3 behaviors), but neither beats the teacher-forced reference at predicting expression \u2014 so the recipe pick is inconclusive (LOW confidence)"
     },
     "662": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/662",
       "status": "archived",
-      "title": "Batch-judge poll: add deadline + heartbeat + batch_id resume (eval/batch_judge.py) — wedge fix"
+      "title": "Batch-judge poll: add deadline + heartbeat + batch_id resume (eval/batch_judge.py) \u2014 wedge fix"
     },
     "663": {
       "has_clean_result": false,
@@ -4148,7 +4148,7 @@
       "title": "Harden Anthropic batch-judge client: shard to ~8k/batch, bound poll on expires_at, custom_id checkpoint/resume"
     },
     "664": {
-      "goal": "Phase 2 — fine-tune fleet: train source×behavior×arm adapters (positive-only + contrastive arms per B5; on-policy completions; marker band-stop), build the trained store (t_CB, v+(C'), r+_B'), measure ground-truth leakage, using Phase 1's locked layer + the C-primary r_B recipe.",
+      "goal": "Phase 2 \u2014 fine-tune fleet: train source\u00d7behavior\u00d7arm adapters (positive-only + contrastive arms per B5; on-policy completions; marker band-stop), build the trained store (t_CB, v+(C'), r+_B'), measure ground-truth leakage, using Phase 1's locked layer + the C-primary r_B recipe.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/664",
@@ -4156,7 +4156,7 @@
       "title": "Marker leakage gate never installs on Qwen-2.5-7B-Instruct, so its activation gate sits at the measurement-noise floor (LOW confidence)"
     },
     "665": {
-      "goal": "Phase 3 — test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
+      "goal": "Phase 3 \u2014 test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/665",
@@ -4164,20 +4164,20 @@
       "title": "The pre-fine-tuning gate does not reliably predict the realized leakage gate on the trained store (LOW confidence)"
     },
     "666": {
-      "goal": "Phase 4 — end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C') vs the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise floor.",
+      "goal": "Phase 4 \u2014 end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C') vs the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise floor.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/666",
       "status": "awaiting_promotion",
-      "title": "The theory's full leakage predictor does not beat the install-leak control: a taught-fact's geometry ρ sits inside the designed-null band, and a plain cosine ties it (LOW confidence)"
+      "title": "The theory's full leakage predictor does not beat the install-leak control: a taught-fact's geometry \u03c1 sits inside the designed-null band, and a plain cosine ties it (LOW confidence)"
     },
     "667": {
-      "goal": "Test the five trained-model gate-chain assumptions of the leakage-predictor theory (A3.6 read-out stability, A3.7 source write ŵ∥δ, A3.8 rank-one/scalar gate, A3.9 base-similarity-predicts-realized-gate, A3.10 base-gate-predicts-post-FT-gate) on Qwen2.5-7B using #537's EXISTING contrastive LoRA adapters with NO new fine-tuning, via a forward-pass activation-extraction sweep benchmarked against #537's measured leakage matrix G, with A3.7 measured BOTH ways on the contrastive adapters (cos(ŵ,δ^contra) and cos(ŵ,δ^pos) decomposition + frac_ctx partial + shuffled-δ null) so the result also says whether the positive-only fleet arm is needed; a fast forward-pass preview/de-risk for program #660, explicitly excluding the clean positive-only A3.7 identification, the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end predictor (those need the fleet retrain).",
+      "goal": "Test the five trained-model gate-chain assumptions of the leakage-predictor theory (A3.6 read-out stability, A3.7 source write \u0175\u2225\u03b4, A3.8 rank-one/scalar gate, A3.9 base-similarity-predicts-realized-gate, A3.10 base-gate-predicts-post-FT-gate) on Qwen2.5-7B using #537's EXISTING contrastive LoRA adapters with NO new fine-tuning, via a forward-pass activation-extraction sweep benchmarked against #537's measured leakage matrix G, with A3.7 measured BOTH ways on the contrastive adapters (cos(\u0175,\u03b4^contra) and cos(\u0175,\u03b4^pos) decomposition + frac_ctx partial + shuffled-\u03b4 null) so the result also says whether the positive-only fleet arm is needed; a fast forward-pass preview/de-risk for program #660, explicitly excluding the clean positive-only A3.7 identification, the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end predictor (those need the fleet retrain).",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/667",
       "status": "awaiting_promotion",
-      "title": "A base-context whitened gate predicts where a fine-tune's write lands in activation space as well as the post-fine-tuning model does — but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
+      "title": "A base-context whitened gate predicts where a fine-tune's write lands in activation space as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
     },
     "668": {
       "has_clean_result": false,
@@ -4201,12 +4201,12 @@
       "title": "25% Tulu midtrain matrix partially replicates at seed 137; good_correct alignment retraction confirmed (MODERATE confidence)"
     },
     "670": {
-      "goal": "Resolve whether the activation-gate→behavioral-leakage gap (ρ 0.13/0.16/0.40 vs 0.46/0.59 from #667) is a fixed-epoch dose confound vs a real gate→behavior break, via a dose-controlled adapter sweep at matched install dose with per-cell behavioral G re-measurement.",
+      "goal": "Resolve whether the activation-gate\u2192behavioral-leakage gap (\u03c1 0.13/0.16/0.40 vs 0.46/0.59 from #667) is a fixed-epoch dose confound vs a real gate\u2192behavior break, via a dose-controlled adapter sweep at matched install dose with per-cell behavioral G re-measurement.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/670",
       "status": "on_hold",
-      "title": "Dose-controlled gate→behavior bridge (parked redundant from #667)"
+      "title": "Dose-controlled gate\u2192behavior bridge (parked redundant from #667)"
     },
     "671": {
       "has_clean_result": false,
@@ -4216,7 +4216,7 @@
       "title": "Fix activation-extractor output_hidden_states memory accumulation (root cause of GCP DHCP-wedge + recurring #545 OOM): register_forward_hook on read layers + local-SSD .npz scratch"
     },
     "672": {
-      "goal": "After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug fix) merge, validate end-to-end that GCP works again — a real a2-highgpu-1g A100-40 smoke run of the fixed hook-based extractor completes with FLAT per-iteration GPU memory and no DHCP-wedge/OOM, AND an injected sustained-network-loss self-recovers (in-VM watchdog self-terminate -> TERMINATED -> #659 async failover to RunPod, no manual pivot; poller wedge-detection fires exactly-once as the alternate trigger) — with all #669/#671 regression tests green on main.",
+      "goal": "After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug fix) merge, validate end-to-end that GCP works again \u2014 a real a2-highgpu-1g A100-40 smoke run of the fixed hook-based extractor completes with FLAT per-iteration GPU memory and no DHCP-wedge/OOM, AND an injected sustained-network-loss self-recovers (in-VM watchdog self-terminate -> TERMINATED -> #659 async failover to RunPod, no manual pivot; poller wedge-detection fires exactly-once as the alternate trigger) \u2014 with all #669/#671 regression tests green on main.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/672",
@@ -4291,7 +4291,7 @@
       "kind": "infra",
       "path": "tasks/completed/681",
       "status": "completed",
-      "title": "Dedicated GCP persistent disk OR ext4 project quotas — bounded-by-construction disk isolation for active tasks"
+      "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
     },
     "682": {
       "has_clean_result": false,
@@ -4306,7 +4306,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/683",
       "status": "awaiting_promotion",
-      "title": "No source key generalizes across marker and sycophancy — no sycophancy bank clears chance and only two of five marker sources clear their own null (LOW confidence)"
+      "title": "No source key generalizes across marker and sycophancy \u2014 no sycophancy bank clears chance and only two of five marker sources clear their own null (LOW confidence)"
     },
     "684": {
       "has_clean_result": false,
@@ -4335,7 +4335,7 @@
       "kind": "infra",
       "path": "tasks/completed/687",
       "status": "completed",
-      "title": "workflow-fix: verify_task_body.py — figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
+      "title": "workflow-fix: verify_task_body.py \u2014 figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
     },
     "688": {
       "has_clean_result": false,
@@ -4370,7 +4370,7 @@
       "kind": "infra",
       "path": "tasks/completed/691",
       "status": "completed",
-      "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) — gated on #684 merge"
+      "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) \u2014 gated on #684 merge"
     },
     "692": {
       "has_clean_result": false,
@@ -4408,7 +4408,7 @@
       "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
     },
     "697": {
-      "goal": "On #537's already-trained behavior×context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context→behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
+      "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context\u2192behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/697",
@@ -4505,14 +4505,14 @@
       "kind": "infra",
       "path": "tasks/completed/718",
       "status": "completed",
-      "title": "workflow-fix: crash-fix circuit-breaker → re-plan on spent fallback ladder"
+      "title": "workflow-fix: crash-fix circuit-breaker \u2192 re-plan on spent fallback ladder"
     },
     "719": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/719",
       "status": "completed",
-      "title": "workflow-fix: gotchas.md — per-cell vLLM rendezvous-port EADDRINUSE trap"
+      "title": "workflow-fix: gotchas.md \u2014 per-cell vLLM rendezvous-port EADDRINUSE trap"
     },
     "72": {
       "has_clean_result": false,
@@ -4526,7 +4526,7 @@
       "kind": "infra",
       "path": "tasks/completed/720",
       "status": "completed",
-      "title": "Reap completed autonomous /issue sessions within ~1h (not 12h) — stop the ghost-session pile"
+      "title": "Reap completed autonomous /issue sessions within ~1h (not 12h) \u2014 stop the ghost-session pile"
     },
     "721": {
       "has_clean_result": false,
@@ -4536,19 +4536,19 @@
       "title": "workflow-fix: /daily push stub commit immediately (orphaned off main, #711 alert)"
     },
     "722": {
-      "goal": "On #537's already-trained behavior×context LoRA adapters, fit the context→answer-profile mapping M: c_C → v0(C) both pre-finetuning (M0, base) and post-finetuning (M⁺, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input ‖M⁺(c)−M0(c)‖ on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_Bᵀ M c → E (judge rate) and M along r_B — NOT generic v0 reconstruction (which #658 showed saturates ≈0.98 and is uninformative), and (3) cross-transfer of M0 vs M⁺ on FT data; cross-referenced against #697's causal f_CV.",
+      "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/followups_running/722",
       "status": "followups_running",
-      "title": "Finetuning measurably reshapes the context→answer map only for a taught fact (LOW confidence)"
+      "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/723",
       "status": "completed",
-      "title": "workflow-fix: gotchas.md — rsLoRA parity probe needs A100 intent, fails on L4"
+      "title": "workflow-fix: gotchas.md \u2014 rsLoRA parity probe needs A100 intent, fails on L4"
     },
     "724": {
       "has_clean_result": false,
@@ -4590,7 +4590,7 @@
       "kind": "infra",
       "path": "tasks/completed/729",
       "status": "completed",
-      "title": "workflow-fix: analyzer.md — cross-check inherited figure .meta.json on follow-up re-fold"
+      "title": "workflow-fix: analyzer.md \u2014 cross-check inherited figure .meta.json on follow-up re-fold"
     },
     "730": {
       "has_clean_result": false,
@@ -4604,21 +4604,21 @@
       "kind": "infra",
       "path": "tasks/completed/731",
       "status": "completed",
-      "title": "workflow-fix: audit_clean_results_body_discipline.py — detect bracketed CIs in Results/Takeaways prose"
+      "title": "workflow-fix: audit_clean_results_body_discipline.py \u2014 detect bracketed CIs in Results/Takeaways prose"
     },
     "732": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/732",
       "status": "completed",
-      "title": "workflow-fix: verify_task_body — gate silent judge-API-error EM denominators"
+      "title": "workflow-fix: verify_task_body \u2014 gate silent judge-API-error EM denominators"
     },
     "733": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/733",
       "status": "completed",
-      "title": "workflow-fix: verify_task_body.py — harden HF URL resolve against 429 storms"
+      "title": "workflow-fix: verify_task_body.py \u2014 harden HF URL resolve against 429 storms"
     },
     "734": {
       "goal": "Determine whether #664's reported 'marker never installed on Qwen-2.5-7B-Instruct' result (#664 read source log P trained - base at the floor and reported its band-stop as never firing) is a slot-rooting measurement artifact rather than real model resistance or an under-set dose, by re-reading #664's own 16 already-trained Instruct marker adapters with a token-id-threaded corrected-slot reader and cross-validating against #664's in-loop band-stop probe - the same recipe line having installed cleanly on Instruct in #474/#601/#650.",
@@ -4685,7 +4685,7 @@
       "title": "GCP: drop the 24h max-run-duration default; use max available (7d FLEX_START), reconcile the janitor age backstop"
     },
     "742": {
-      "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required — operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
+      "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/blocked/742",
@@ -4705,7 +4705,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/744",
       "status": "awaiting_promotion",
-      "title": "Standardized token-to-token continuity in Qwen-2.5-7B is depth-flat and short-horizon — the late-layer directional persistence seen in GPT-2 does not appear (MODERATE confidence)"
+      "title": "Standardized token-to-token continuity in Qwen-2.5-7B is depth-flat and short-horizon \u2014 the late-layer directional persistence seen in GPT-2 does not appear (MODERATE confidence)"
     },
     "745": {
       "has_clean_result": false,
@@ -4747,7 +4747,7 @@
       "kind": "experiment",
       "path": "tasks/completed/75",
       "status": "completed",
-      "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse — and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
+      "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse \u2014 and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
     },
     "750": {
       "has_clean_result": false,
@@ -4796,7 +4796,7 @@
       "kind": "infra",
       "path": "tasks/completed/756",
       "status": "completed",
-      "title": "daily-fix: analyzer scope guard — no self-spawned critics"
+      "title": "daily-fix: analyzer scope guard \u2014 no self-spawned critics"
     },
     "757": {
       "has_clean_result": false,
@@ -4854,7 +4854,7 @@
       "kind": "experiment",
       "path": "tasks/running/763",
       "status": "running",
-      "title": "Matched-probe v0->E0 predictor re-measurement — phase 2 (5 low-m behaviors, >=50 probes + GRADED matched v0)"
+      "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 2 (5 low-m behaviors, >=50 probes + GRADED matched v0)"
     },
     "764": {
       "has_clean_result": false,
@@ -4967,7 +4967,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/778",
       "status": "followups_running",
-      "title": "On Qwen2.5-7B, a persona vector predicts trait expression no better than a norm-matched random direction — Persona Vectors' prediction results replicate but the trait-specificity does not survive the random baseline the paper never ran (MODERATE confidence)"
+      "title": "On Qwen2.5-7B, a persona vector predicts trait expression no better than a norm-matched random direction \u2014 Persona Vectors' prediction results replicate but the trait-specificity does not survive the random baseline the paper never ran (MODERATE confidence)"
     },
     "779": {
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
@@ -4989,7 +4989,7 @@
       "kind": "infra",
       "path": "tasks/completed/780",
       "status": "completed",
-      "title": "workflow-fix: selection-symmetric nulls + persist per-draw × per-axis matrix"
+      "title": "workflow-fix: selection-symmetric nulls + persist per-draw \u00d7 per-axis matrix"
     },
     "781": {
       "has_clean_result": false,
@@ -5003,7 +5003,7 @@
       "kind": "infra",
       "path": "tasks/completed/782",
       "status": "completed",
-      "title": "workflow-fix: gcp poller must map PENDING → running (FLEX_START queue false-stall)"
+      "title": "workflow-fix: gcp poller must map PENDING \u2192 running (FLEX_START queue false-stall)"
     },
     "783": {
       "has_clean_result": false,
@@ -5178,7 +5178,7 @@
       "kind": "infra",
       "path": "tasks/completed/805",
       "status": "completed",
-      "title": "workflow-fix: phase-partition GPU width — narrow/API phases must not hold the peak-width (8xH100) pod"
+      "title": "workflow-fix: phase-partition GPU width \u2014 narrow/API phases must not hold the peak-width (8xH100) pod"
     },
     "806": {
       "has_clean_result": false,
@@ -5281,7 +5281,7 @@
       "kind": "infra",
       "path": "tasks/running/819",
       "status": "running",
-      "title": "workflow-fix: update stale GCP max-run-duration 24h→7d in critic/planner/SKILL/workflow.yaml"
+      "title": "workflow-fix: update stale GCP max-run-duration 24h\u21927d in critic/planner/SKILL/workflow.yaml"
     },
     "820": {
       "has_clean_result": false,
@@ -5305,12 +5305,12 @@
       "title": "workflow-fix: code-reviewer must FAIL on missing smoke-architecture-check marker"
     },
     "823": {
-      "goal": "Determine whether the strong base context→answer-profile map (c_C → v0, held-out skill-over-mean R² 0.74–0.80 in #722) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical LOCO-ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and context-blind fixed answers teacher-forced through the frozen base model.",
+      "goal": "Determine whether the strong base context\u2192answer-profile map (c_C \u2192 v0, held-out skill-over-mean R\u00b2 0.74\u20130.80 in #722) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical LOCO-ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and context-blind fixed answers teacher-forced through the frozen base model.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/823",
       "status": "proposed",
-      "title": "Does the base context→answer-profile map predict the model's own output or context-side processing? (external-answer refit)"
+      "title": "Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)"
     },
     "824": {
       "has_clean_result": false,
@@ -5345,7 +5345,7 @@
       "kind": "experiment",
       "path": "tasks/archived/88",
       "status": "archived",
-      "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6× more than swapping the noun — but on base-model cosine the direction flips (LOW confidence)"
+      "title": "In a persona prompt, swapping the adjective increases marker leakage 4.6-6.6\u00d7 more than swapping the noun \u2014 but on base-model cosine the direction flips (LOW confidence)"
     },
     "89": {
       "has_clean_result": true,
@@ -5408,14 +5408,14 @@
       "kind": "experiment",
       "path": "tasks/archived/98",
       "status": "archived",
-      "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score — no gradient access required (MODERATE confidence)"
+      "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score \u2014 no gradient access required (MODERATE confidence)"
     },
     "99": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/99",
       "status": "archived",
-      "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it — except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
+      "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it \u2014 except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
     }
   }
 }

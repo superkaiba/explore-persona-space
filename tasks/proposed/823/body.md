@@ -1,6 +1,6 @@
 ---
-title: Does the base context→answer-profile map predict the model's own output or
-  context-side processing? (external-answer refit)
+title: 'Does the per-context map h predict the model''s own output or context-side
+  processing? (external-answer refit, #779 substrate)'
 kind: experiment
 tags: []
 created_at: '2026-07-01T23:41:29Z'
