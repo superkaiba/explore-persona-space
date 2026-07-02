@@ -1143,6 +1143,7 @@ def test_accum_ckpt_roundtrip_and_mismatch_guard(tmp_path):
         behavior="marker",
         substrate="generic",
         n_contexts=2,
+        n_questions=1,
         expected_keys={"c0__q0", "c1__q0"},
     )
     assert acc is not None
@@ -1158,6 +1159,7 @@ def test_accum_ckpt_roundtrip_and_mismatch_guard(tmp_path):
             behavior="marker",
             substrate="generic",
             n_contexts=2,
+            n_questions=1,
             expected_keys={"c0__q0"},
         )
         is None
@@ -1169,10 +1171,29 @@ def test_accum_ckpt_roundtrip_and_mismatch_guard(tmp_path):
             behavior="fact",
             substrate="generic",
             n_contexts=2,
+            n_questions=1,
             expected_keys={"c0__q0", "c1__q0"},
         )
         is None
     )
+    # A smaller --max-questions run than the checkpoint → conservative None (C3
+    # qi-bound guard: out-of-grid question rows must not seed the summary averages).
+    assert (
+        rc._load_accum_ckpt(
+            ckpt,
+            behavior="marker",
+            substrate="generic",
+            n_contexts=2,
+            n_questions=0,
+            expected_keys={"c0__q0", "c1__q0"},
+        )
+        is None
+    )
+    # IO-1 companion: the ckpt writer must use plain savez — deflate on the
+    # full-cumulative fp32 rewrite is the reviewed-out serial-stall blocker.
+    import inspect
+
+    assert "np.savez_compressed(" not in inspect.getsource(rc._save_accum_ckpt)
 
 
 def test_flush_uploads_checkpoints_and_respects_keep_local(tmp_path, monkeypatch):

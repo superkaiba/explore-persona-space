@@ -395,7 +395,10 @@ def _acquire_cell_lock(reduced_dir: Path) -> int | None:
             pid = int(lock.read_text().strip())
         except ValueError:
             pid = None
-        if pid is not None and _pid_alive(pid):
+        # pid == os.getpid() is a recycled-pid stale lock (a SIGKILLed run's pid
+        # reassigned to this very process) — waiting on ourselves would deadlock;
+        # treat it as stale and take over (review concern C2).
+        if pid is not None and pid != os.getpid() and _pid_alive(pid):
             return pid
     lock.write_text(str(os.getpid()))
     return None
@@ -567,7 +570,10 @@ def _save_accum_ckpt(
     """
     arrays = {f"flat_{k}": np.stack(flat_rows[k]).astype(np.float32) for k in _PQ_KEYS}
     tmp = path.with_suffix(".tmp.npz")
-    np.savez_compressed(
+    # Plain savez: deflate on fp32 activations runs ~8 MiB/s at ~1.08x ratio, and this
+    # full-cumulative rewrite fires at EVERY flush — compressed, it re-introduces the
+    # exact serial-deflate stall the per-row savez fix removes (review blocker).
+    np.savez(
         tmp,
         **arrays,
         pq_ctx_idx=np.asarray(pq_ctx_idx, dtype=np.int64),
@@ -584,7 +590,13 @@ def _save_accum_ckpt(
 
 
 def _load_accum_ckpt(
-    path: Path, *, behavior: str, substrate: str, n_contexts: int, expected_keys: set[str]
+    path: Path,
+    *,
+    behavior: str,
+    substrate: str,
+    n_contexts: int,
+    n_questions: int,
+    expected_keys: set[str],
 ) -> dict | None:
     """Load the accumulator checkpoint iff it EXACTLY covers the HF skip-set.
 
@@ -613,6 +625,10 @@ def _load_accum_ckpt(
         cell_bytes = [int(b) for b in z["cell_bytes"]]
     if any(ci >= n_contexts for ci in pq_ctx_idx):
         return None  # a smaller --max-contexts run than the checkpoint — recompute
+    if any(qi >= n_questions for qi in pq_q_idx):
+        # a smaller --max-questions run than the checkpoint would silently seed
+        # out-of-grid question rows into the summary averages (review concern C3)
+        return None
     per_q: dict[int, dict] = {ci: {k: [] for k in _PQ_KEYS} for ci in range(n_contexts)}
     for i, ci in enumerate(pq_ctx_idx):
         for k in _PQ_KEYS:
@@ -1015,6 +1031,7 @@ def _run_cell_body(args, reduced_dir: Path) -> dict:
             behavior=behavior,
             substrate=substrate,
             n_contexts=len(contexts),
+            n_questions=len(questions),
             expected_keys=resume["hf_keys"],
         )
         if acc_init is not None:
@@ -1154,9 +1171,10 @@ def _run_cell_body(args, reduced_dir: Path) -> dict:
             f"{EXPERIMENT_NAME}/reduced/{behavior}/{substrate}/per_question_L{HEADLINE_LAYER}.npz",
         )
 
-    # atomic completion sentinel (resume-skip predicate); the PID lock is released
-    # before/with the .done write (run_cell's finally is the backstop).
-    (reduced_dir / RUNNING_LOCK_NAME).unlink(missing_ok=True)
+    # atomic completion sentinel (resume-skip predicate). The PID lock is released
+    # ONLY by run_cell's finally, AFTER this sentinel lands — an early unlink here
+    # would open a window where a duplicate exec sees no sentinel and no lock and
+    # re-runs the cell concurrently with these final writes (review concern C1).
     tmp_s = sentinel.with_suffix(f".{os.getpid()}.tmp")
     tmp_s.write_text(
         json.dumps(
@@ -1209,7 +1227,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--cpu-only", action="store_true", help="CPU smoke (HF greedy R, no vLLM)")
     ap.add_argument("--upload", action="store_true", help="stream unreduced+reduced .npz to HF")
-    ap.add_argument("--force", action="store_true", help="ignore the resume-skip sentinel")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "ignore the resume-skip sentinel. NOTE: with --upload the HF skip-set + "
+            "accum-ckpt resume still applies (rows on HF are replayed, not recomputed) — "
+            "a post-bug-fix forced RECOMPUTE must also clear the cell's HF prefix/ckpt"
+        ),
+    )
     ap.add_argument(
         "--gate-only",
         action="store_true",
