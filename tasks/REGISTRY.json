@@ -5465,8 +5465,8 @@
     "843": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/843",
-      "status": "proposed",
+      "path": "tasks/planning/843",
+      "status": "planning",
       "title": "daily-fix: per-issue dispatch lease (watcher sweep + filer self-dispatch double-spawn)"
     },
     "844": {
