@@ -6,8 +6,21 @@ extraction read the SAME spec) and one :class:`Context` typology with ONE
 message resolver. Downstream Phase-0 tasks (0c negatives, 0d datagen, 0e
 recipe, 0f directions, 0g organisms) add modules INTO this package; this
 module owns the package skeleton and the public field-name contract they read.
+
+NOTE on ``ARMS``: the package-level ``ARMS`` is :data:`recipe.ARMS` (the
+Phase-3c ablation axes). :mod:`.directions` defines its own ``ARMS``
+(``("exhibit", "not_exhibit")``) — import it from the submodule
+(``from explore_persona_space.artifacts.directions import ARMS``); it is
+deliberately NOT re-exported here to avoid shadowing (0e/0f merge union,
+task #863 Step 10d).
 """
 
+from explore_persona_space.artifacts.ablation import (
+    ablated,
+    ablation_hooks,
+    all_layer_directions,
+    single_layer_directions,
+)
 from explore_persona_space.artifacts.behavior import (
     ALLOWED_COMPANION_DVS,
     ALLOWED_PRIMARY_DVS,
@@ -29,6 +42,22 @@ from explore_persona_space.artifacts.context import (
     Context,
     context_for_persona,
     validate_context,
+)
+from explore_persona_space.artifacts.directions import (
+    PROVENANCES,
+    REGIMES,
+    ContrastiveCompletion,
+    DirectionResult,
+    ReadOutHeadline,
+    extract_direction,
+    filter_completions,
+    load_completions_jsonl,
+    load_direction,
+    save_completions_jsonl,
+    save_direction,
+    score_completions,
+    select_readout_layer,
+    select_steering_layer,
 )
 from explore_persona_space.artifacts.negatives import (
     DEFAULT_ASSISTANT_NEGATIVE,
@@ -99,33 +128,51 @@ __all__ = [
     "MARKER_TOKEN_ID",
     "METHODS",
     "NEGATIVE_PANELS",
+    "PROVENANCES",
     "QWEN_IM_END_ID",
+    "REGIMES",
     "TRAIN_METHODS",
     "UNIFIED_OVERRIDES",
     "ZERO3_CONFIG",
     "Behavior",
     "Context",
+    "ContrastiveCompletion",
     "DVSpec",
+    "DirectionResult",
     "DoseSelection",
     "ElicitationSpec",
     "ExtractionSpec",
     "NegativeContext",
     "PromptPair",
+    "ReadOutHeadline",
     "RecipeSpec",
     "StoppingSpec",
     "TfMarginBandStopCallback",
+    "ablated",
+    "ablation_hooks",
+    "all_layer_directions",
     "assert_panel_disjoint_from_sources",
     "build_train_config",
     "context_for_persona",
     "default_panel",
+    "extract_direction",
+    "filter_completions",
     "fullft_launch_command",
     "get_panel",
+    "load_completions_jsonl",
+    "load_direction",
     "make_tf_margin_probe",
     "mix_counts",
     "negative_allocation",
     "per_negative_quota",
     "recipe_for",
     "register_panel",
+    "save_completions_jsonl",
+    "save_direction",
+    "score_completions",
     "select_dose_checkpoint",
+    "select_readout_layer",
+    "select_steering_layer",
+    "single_layer_directions",
     "validate_context",
 ]
