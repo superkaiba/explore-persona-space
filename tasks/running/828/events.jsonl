@@ -20,3 +20,4 @@
 {"ts": "2026-07-02T04:03:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer (worktree .claude/worktrees/issue-828, branch issue-828); awaiting epm:results."}
 {"ts": "2026-07-02T04:03:25Z", "kind": "epm:progress", "version": 5, "by": "unknown", "note": "stage-dispatch stage=implementing round=1 subagent=implementer worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-828 (model=sonnet override)"}
 {"ts": "2026-07-02T04:04:48Z", "kind": "epm:progress", "version": 6, "by": "unknown", "note": "starting pin-deletion-sweep: 28 files confirmed with model: claude-fable-5; worktree ff-merged to main"}
+{"ts": "2026-07-02T04:11:24Z", "kind": "epm:progress", "version": 7, "by": "unknown", "note": "sweep done + committed (021716b76a); lint PASS; 13 tests PASS; echo-probe: claude-fable-5 (no [1m]); load-probe: PASS — 21 tool uses, 357K tokens, no thrash"}
