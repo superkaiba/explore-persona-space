@@ -37,10 +37,11 @@ cd "$REPO_ROOT"
 
 SMOKE=""
 # FROM_PHASE: "" = phase-1 (gate exit); "pv_capture" = GPU resume after the
-# off-pod PV judge; "fit" = CPU-ONLY resume (cpu-mid lane) — E0 + PV + fit are
-# DONE + on HF, so skip straight to the vectorized fit -> figures -> upload with
-# NO --device cuda anywhere (task #763 r6 USER OVERRIDE: vectorize the fit + run
-# it off-GPU; the prior serial fit idled a 1xH100 ~16h).
+# off-pod PV judge; "fit" = fit-only resume — E0 + PV inputs are DONE + on HF, so
+# skip straight to the vectorized fit -> figures -> upload. Fit device defaults
+# to CPU (task #763 r6 USER OVERRIDE: the prior serial fit idled a 1xH100 ~16h);
+# EPM_FIT_DEVICE=cuda routes the batched fits to GPU (PM cutover directive
+# 2026-07-02) — the vectorization is unchanged either way.
 FROM_PHASE=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -118,15 +119,18 @@ if [ -n "$SMOKE" ]; then
   exit 0
 fi
 
-# ── CPU-ONLY FIT RESUME (--from-phase fit; cpu-mid lane, NO GPU) ──────────────
+# ── FIT RESUME (--from-phase fit; CPU by default, GPU via EPM_FIT_DEVICE) ─────
 # task #763 r6 USER OVERRIDE: v0(C,B) + graded E0(C,B) + the PV baseline are DONE
-# and staged from HF; the vectorized fit + figures + upload are CPU-only. This
-# resume skips EVERY GPU phase (no --device cuda anywhere) and runs the
-# vectorized fit (analysis.issue_763_vectorized; ~1000h serial null -> minutes).
+# and staged from HF; this resume skips every earlier GPU phase and runs the
+# vectorized fit (analysis.issue_763_vectorized; ~1000h serial null -> minutes),
+# then figures + upload. The fit device defaults to CPU (cpu-mid lane); the PM
+# GPU-cutover directive (2026-07-02) makes it overridable — launch with
+# EPM_FIT_DEVICE=cuda on a GPU lane to route the batched fits to the GPU (the
+# on-instance exactness gate re-validates the GPU path vs the CPU-serial oracles).
 # The fit stages E0 + pv_rb + pv_shards from HF (issue763_fit_predictors.
 # _stage_fit_inputs_from_hf, fail-loud if absent) and v0 lazily (_load_v0).
 if [ "$FROM_PHASE" = "fit" ]; then
-  echo "[issue763.dispatch] CPU-only fit resume (cpu-mid, no GPU); commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  echo "[issue763.dispatch] fit resume (device=${EPM_FIT_DEVICE:-cpu}); commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
   echo "[phase=fit]"
   uv run python scripts/issue763_fit_predictors.py

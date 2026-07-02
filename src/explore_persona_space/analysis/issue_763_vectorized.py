@@ -539,8 +539,15 @@ def batched_ridge_predict_loco_pca(
 # ── exactness gate ────────────────────────────────────────────────────────────
 
 
-def assert_matches_reference(seed: int = 0, n: int = 20, h: int = 24, dim: int = 6) -> dict:
+def assert_matches_reference(
+    seed: int = 0, n: int = 20, h: int = 24, dim: int = 6, device: str = "cpu"
+) -> dict:
     """Assert the batched fitters reproduce the serial references within tolerance.
+
+    ``device`` routes the BATCHED arms only (the serial oracles always run on
+    CPU), so calling with ``device="cuda"`` validates the GPU execution path
+    against the same CPU references — the on-instance cross-device exactness
+    check the GPU-cutover path requires.
 
     Builds a small synthetic (x, y) LOCO problem with real rank structure and a
     2-perm batch (identity + one shuffle) and checks EVERY batched fitter against
@@ -592,7 +599,7 @@ def assert_matches_reference(seed: int = 0, n: int = 20, h: int = 24, dim: int =
     glm_ref0 = glm_predict_loco_fixed_dim(x, y, nj, dim)
     glm_ref1 = glm_predict_loco_fixed_dim(x, y_perm, nj_perm, dim)
     glm_bat = batched_binomial_glm_loco_fixed_dim(
-        x, np.stack([y, y_perm]), np.stack([nj, nj_perm]), dim
+        x, np.stack([y, y_perm]), np.stack([nj, nj_perm]), dim, device=device
     )
     d_glm0 = float(np.max(np.abs(glm_bat[0] - glm_ref0)))
     d_glm1 = float(np.max(np.abs(glm_bat[1] - glm_ref1)))
@@ -601,7 +608,7 @@ def assert_matches_reference(seed: int = 0, n: int = 20, h: int = 24, dim: int =
     ridge_ref0 = _fit._ridge_predict_loco_fixed_dim(x, y, nj, _fit.RIDGE_LAMBDAS, dim)
     ridge_ref1 = _fit._ridge_predict_loco_fixed_dim(x, y_perm, nj_perm, _fit.RIDGE_LAMBDAS, dim)
     ridge_bat = batched_ridge_press_loco_fixed_dim(
-        x, np.stack([y, y_perm]), _fit.RIDGE_LAMBDAS, dim
+        x, np.stack([y, y_perm]), _fit.RIDGE_LAMBDAS, dim, device=device
     )
     d_r0 = float(np.max(np.abs(ridge_bat[0] - ridge_ref0)))
     d_r1 = float(np.max(np.abs(ridge_bat[1] - ridge_ref1)))
@@ -609,17 +616,19 @@ def assert_matches_reference(seed: int = 0, n: int = 20, h: int = 24, dim: int =
     # (c) observed nested-CV dim selection must pick the SAME dim as the serial
     #     select_pca_dim (argmin over the d-grid must be identical, not just close).
     d_sel_ref = select_pca_dim(x, y, nj, d_grid=PCA_DIM_GRID)
-    d_sel_bat = _batched_select_pca_dim(x, y, nj, PCA_DIM_GRID)
+    d_sel_bat = _batched_select_pca_dim(x, y, nj, PCA_DIM_GRID, device=device)
     dim_select_identical = int(d_sel_ref) == int(d_sel_bat)
 
     # (d) observed nested-CV GLM LOCO vs serial glm_predict_loco (predictions).
     glm_obs_ref = glm_predict_loco(x, y, nj, pca_dim_grid=PCA_DIM_GRID)["pred"]
-    glm_obs_bat = batched_glm_predict_loco(x, y, nj, PCA_DIM_GRID)
+    glm_obs_bat = batched_glm_predict_loco(x, y, nj, PCA_DIM_GRID, device=device)
     d_glm_obs = float(np.max(np.abs(glm_obs_bat - glm_obs_ref)))
 
     # (e) observed nested-CV PCA ridge LOCO vs serial _ridge_predict_loco_pca.
     ridge_obs_ref = _fit._ridge_predict_loco_pca(x, y, nj, _fit.RIDGE_LAMBDAS)
-    ridge_obs_bat = batched_ridge_predict_loco_pca(x, y, nj, _fit.RIDGE_LAMBDAS, PCA_DIM_GRID)
+    ridge_obs_bat = batched_ridge_predict_loco_pca(
+        x, y, nj, _fit.RIDGE_LAMBDAS, PCA_DIM_GRID, device=device
+    )
     d_ridge_obs = float(np.max(np.abs(ridge_obs_bat - ridge_obs_ref)))
 
     tol_glm = 1e-6
@@ -652,4 +661,5 @@ def assert_matches_reference(seed: int = 0, n: int = 20, h: int = 24, dim: int =
         "ridge_obs_delta": d_ridge_obs,
         "tol_glm": tol_glm,
         "tol_ridge": tol_ridge,
+        "device": device,
     }

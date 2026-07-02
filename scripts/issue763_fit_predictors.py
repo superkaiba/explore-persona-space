@@ -78,9 +78,17 @@ from issue658_fit_predictors import (  # noqa: E402
     RIDGE_LAMBDAS,
     _cluster_bootstrap_rho,
     _press_loo_mse_per_lambda,
+    _resolve_device,
     _rho,
     _ridge_dual_weights,
 )
+
+# GPU-cutover device override (PM directive 2026-07-02): EPM_FIT_DEVICE routes the
+# BATCHED fits (batched_* calls + the exactness gate's batched arm) to e.g. cuda;
+# default keeps the imported issue658 CPU pin. The serial reference helpers below
+# stay on DEVICE (cpu) — the exactness gate then compares device-batched vs
+# CPU-serial, which IS the on-instance cross-device validity check.
+FIT_DEVICE = _resolve_device(os.environ.get("EPM_FIT_DEVICE", DEVICE))
 from issue763_common import (  # noqa: E402
     BEHAVIORS,
     EVAL_RESULTS_DIR,
@@ -432,23 +440,29 @@ def _layer_sweep_select(
                 # VECTORIZED batched IRLS (1-perm batch here; the null's P-perm
                 # batching lives in _shuffle_null). Reproduces statsmodels
                 # glm_predict_loco_fixed_dim to ~1e-10 (assert_matches_reference).
-                pred = batched_binomial_glm_loco_fixed_dim(x, y[None, :], n_judged[None, :], fd)[0]
+                pred = batched_binomial_glm_loco_fixed_dim(
+                    x, y[None, :], n_judged[None, :], fd, device=FIT_DEVICE
+                )[0]
             else:
                 # VECTORIZED observed nested-CV GLM LOCO (batched inner-LOO dim
                 # select). Same nested-CV protocol as the serial glm_predict_loco,
                 # verified ≤1e-6 by assert_matches_reference.
-                pred = batched_glm_predict_loco(x, y, n_judged, PCA_DIM_GRID)
+                pred = batched_glm_predict_loco(x, y, n_judged, PCA_DIM_GRID, device=FIT_DEVICE)
         elif predictor == "ridge":
             # PCA-reduced ridge on the SAME per-fold reduction the GLM consumes
             # (#763 BLOCKER ridge-pca-comparator) — matched capacity so the
             # ρ_ridge − ρ_GLM optimism delta is apples-to-apples.
             if fd is not None:
-                pred = batched_ridge_press_loco_fixed_dim(x, y[None, :], RIDGE_LAMBDAS, fd)[0]
+                pred = batched_ridge_press_loco_fixed_dim(
+                    x, y[None, :], RIDGE_LAMBDAS, fd, device=FIT_DEVICE
+                )[0]
             else:
                 # VECTORIZED observed nested-CV PCA-ridge LOCO (same shared dim
                 # selection the GLM uses); bit-identical to _ridge_predict_loco_pca
                 # (0.0 delta in assert_matches_reference).
-                pred = batched_ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS, PCA_DIM_GRID)
+                pred = batched_ridge_predict_loco_pca(
+                    x, y, n_judged, RIDGE_LAMBDAS, PCA_DIM_GRID, device=FIT_DEVICE
+                )
         elif predictor == "pv":
             assert rb is not None
             direction = rb[ell]  # (H,)
@@ -534,9 +548,13 @@ def _shuffle_null(v0, y, n_judged, predictor, *, rb, n_perms, seed) -> dict:
     for ell in range(n_layers):
         x = v0[:, ell, :]
         if predictor == "glm":
-            preds = batched_binomial_glm_loco_fixed_dim(x, y_perms, nj_perms, fixed_dims[ell])
+            preds = batched_binomial_glm_loco_fixed_dim(
+                x, y_perms, nj_perms, fixed_dims[ell], device=FIT_DEVICE
+            )
         elif predictor == "ridge":
-            preds = batched_ridge_press_loco_fixed_dim(x, y_perms, RIDGE_LAMBDAS, fixed_dims[ell])
+            preds = batched_ridge_press_loco_fixed_dim(
+                x, y_perms, RIDGE_LAMBDAS, fixed_dims[ell], device=FIT_DEVICE
+            )
         elif predictor == "pv":
             assert rb is not None
             # The projection is FIXED (only labels permute), so every perm reads
@@ -890,8 +908,8 @@ def main() -> int:
     # serial statsmodels-GLM / #658-PRESS-ridge oracles before ANY behavior is fit
     # — a batched-solve / seeding / standardization drift would silently corrupt
     # the headline ρ. Aborts the whole run on any tolerance miss.
-    gate = assert_matches_reference()
-    logger.info("[fit] vectorized-exactness gate PASS: %s", gate)
+    gate = assert_matches_reference(device=FIT_DEVICE)
+    logger.info("[fit] vectorized-exactness gate PASS (device=%s): %s", FIT_DEVICE, gate)
 
     n_perms = 50 if args.smoke else N_SHUFFLE_PERMS
     n_boot = 200 if args.smoke else N_BOOTSTRAP
@@ -907,8 +925,22 @@ def main() -> int:
     pv_path = EVAL_RESULTS_DIR / "pv_rb_by_behavior.json"
     have_pv = pv_path.exists()
 
+    # Checkpoint-per-phase (code-style.md; PM directive 2026-07-02): each behavior's
+    # record persists the moment it completes, and a resume skips any behavior whose
+    # per-behavior JSON already exists — the final matched_predictor_results.json is
+    # assembled from results{} (checkpoint-loaded + freshly fit). Smoke runs use
+    # reduced perms/boot, so they neither read nor write checkpoints (a smoke
+    # checkpoint must never satisfy a production resume).
+    ckpt_dir = EVAL_RESULTS_DIR / "fit_by_behavior"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+
     results: dict[str, dict] = {}
     for behavior in args.behaviors:
+        ckpt_path = ckpt_dir / f"{behavior}.json"
+        if not args.smoke and ckpt_path.exists():
+            results[behavior] = load_json(ckpt_path)
+            logger.info("[fit] %s: per-behavior checkpoint exists — skipping refit", behavior)
+            continue
         v0, ctx_ids = _load_v0(behavior)
         rb_blob = None
         if have_pv:
@@ -917,6 +949,8 @@ def main() -> int:
                 rb_blob = torch.load(rb_shard, weights_only=False)
         rec = fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, n_perms=n_perms, n_boot=n_boot)
         results[behavior] = rec
+        if not args.smoke:
+            dump_json(rec, ckpt_path)
         logger.info(
             "[fit] %s: PRIMARY graded rho_ridge=%s (glm=%s pv=%s) sqrt_r_yy=%s verdict=%s | "
             "COMPANION binary rho_GLM=%s verdict=%s",
