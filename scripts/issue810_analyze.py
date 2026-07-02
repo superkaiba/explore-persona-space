@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF002, RUF003
-# Intentional Unicode (→, rho, ×, ², r_B) in scientific docstrings + log messages.
+# ruff: noqa: RUF001, RUF002, RUF003
+# Intentional Unicode (→, ρ, ×, ², r_B) in scientific docstrings, log messages,
+# and reader-facing figure labels (paper-plots §3.5 plain-English label rule).
 """Issue #810 Phase E: aggregation + figures + honest selection-symmetric bands.
 
 Consumes the DV JSONs written by ``issue810_fit_reconstruction.py`` (DV a) +
@@ -57,6 +58,46 @@ logger = logging.getLogger("issue810_analyze")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
+# ── plain-English figure labels (paper-plots §3.5: no raw code ids on figures) ─
+
+_SUMMARY_LABELS = {
+    "mean": "mean over answer tokens",
+    "last": "last answer token",
+    "maxp": "max-pool over answer tokens",
+    "im_end": "turn-end token",
+    "turn_nl": "newline after turn end",
+}
+
+_METHOD_LABELS = {
+    "fixed_rb": "fixed behavior-direction read-out",
+    "trained_ridge": "trained leave-one-out ridge read-out",
+}
+
+_BEHAVIOR_LABELS = {
+    "sycophancy": "sycophancy",
+    "refusal": "refusal",
+    "harmful_compliance": "harmful compliance",
+}
+
+
+def _ordinal(k: int) -> str:
+    """1 -> 1st, 2 -> 2nd, 3 -> 3rd, 4 -> 4th, ... (plain-English tick labels)."""
+    if 10 <= k % 100 <= 20:
+        return f"{k}th"
+    return f"{k}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(k % 10, 'th') }"
+
+
+def _plain_summary(s: str) -> str:
+    """Reader-facing label for a summary/position recipe id."""
+    if s in _SUMMARY_LABELS:
+        return _SUMMARY_LABELS[s]
+    if s.startswith("tail_"):
+        return f"{_ordinal(int(s.split('_')[1]))} from end"
+    if s.startswith("head_"):
+        return f"{_ordinal(int(s.split('_')[1]) + 1)} from start"
+    return s
+
+
 # ── honest selection-symmetric bands ──────────────────────────────────────────
 
 
@@ -108,6 +149,23 @@ def _honest_readout_band(null_readout: dict, pct: float = 97.5) -> dict:
     arr = np.array([c[:n_perms] for c in cells])  # (n_cells, n_perms)
     max_per_draw = arr.max(axis=0)
     max_abs_per_draw = np.abs(arr).max(axis=0)
+    # Per-method bands (same selection-symmetric max, restricted to one method's
+    # cells) — the reference values hero3's panels are annotated with.
+    per_method: dict[str, list[list[float]]] = {}
+    for b in null_readout.values():
+        for meth, m in b.items():
+            for s in m.values():
+                for draws in s.values():
+                    if draws:
+                        per_method.setdefault(meth, []).append(draws)
+    per_method_bands = {}
+    for meth, mcells in per_method.items():
+        n_p = min(len(c) for c in mcells)
+        marr = np.array([c[:n_p] for c in mcells])
+        per_method_bands[meth] = {
+            "abs": float(np.percentile(np.abs(marr).max(axis=0), pct)),
+            "signed": float(np.percentile(marr.max(axis=0), pct)),
+        }
     return {
         "available": True,
         "n_cells": arr.shape[0],
@@ -115,6 +173,7 @@ def _honest_readout_band(null_readout: dict, pct: float = 97.5) -> dict:
         "band_pctile": pct,
         "honest_band_upper_rho": float(np.percentile(max_per_draw, pct)),
         "honest_band_upper_abs_rho": float(np.percentile(max_abs_per_draw, pct)),
+        "per_method_bands": per_method_bands,
     }
 
 
@@ -122,14 +181,14 @@ def _honest_readout_band(null_readout: dict, pct: float = 97.5) -> dict:
 
 
 def _hero1_reconstruction(recon: dict, band: dict, fig_dir: Path) -> None:
-    """Per-layer skill-over-mean R^2 curves per summary; mean bolded; null shaded."""
+    """Per-layer skill-over-mean R² curves per summary; mean + maxp bolded; null line."""
     fig, ax = plt.subplots(figsize=(7, 4))
     by = recon["by_summary"]
-    # A readable subset of summaries for the hero (the rest live in the JSON).
+    # A readable subset for the hero (the rest live in the JSON): the two
+    # load-bearing aggregates, the two boundary tokens, the last token, and the
+    # BEST deeper tail / head per the plan's figure spec (tail_2 / head_3).
     hero_summaries = [
-        s
-        for s in ("mean", "last", "maxp", "im_end", "turn_nl", "tail_1", "tail_4", "head_0")
-        if s in by
+        s for s in ("mean", "maxp", "turn_nl", "im_end", "last", "tail_2", "head_3") if s in by
     ]
     for s in hero_summaries:
         ys = [c.get("ridge_skill") for c in by[s]]
@@ -137,20 +196,40 @@ def _hero1_reconstruction(recon: dict, band: dict, fig_dir: Path) -> None:
         pairs = [(x, y) for x, y in zip(xs, ys, strict=False) if y is not None]
         if not pairs:
             continue
-        color = paper_palette_role("baseline") if s == "mean" else None
-        lw = 2.5 if s == "mean" else 1.3
-        ax.plot([p[0] for p in pairs], [p[1] for p in pairs], label=s, linewidth=lw, color=color)
+        # The two load-bearing curves get distinct semantic colors + bold width;
+        # the context curves get fixed non-primary hues so no thin line shares a
+        # hue with a bold one (interp-critique r1 figure issue).
+        thin_colors = {
+            "turn_nl": paper_palette_role("control"),  # green
+            "im_end": paper_palette_role("accent"),  # red
+            "last": "#8064A2",  # purple
+            "tail_2": "#5A6975",  # slate (solid ≠ dashed null line)
+            "head_3": "#000000",  # black
+        }
+        if s == "mean":
+            color, lw = paper_palette_role("baseline"), 2.5
+        elif s == "maxp":
+            color, lw = paper_palette_role("primary"), 2.5
+        else:
+            color, lw = thin_colors.get(s), 1.3
+        ax.plot(
+            [p[0] for p in pairs],
+            [p[1] for p in pairs],
+            label=_plain_summary(s),
+            linewidth=lw,
+            color=color,
+        )
     if band.get("available"):
         ax.axhline(
             band["honest_band_upper"],
             color=paper_palette_role("neutral"),
             linestyle="--",
             linewidth=1,
-            label="honest null p97.5",
+            label="selection-symmetric null (97.5th pct)",
         )
     ax.set_xlabel("layer")
-    ax.set_ylabel("held-out skill-over-mean R^2")
-    ax.set_title("Reconstruction c_C -> summary, per layer")
+    ax.set_ylabel("held-out skill-over-mean R² (higher = better)")
+    ax.set_title("Predicting each answer summary from the context representation")
     ax.legend(fontsize=6, ncol=2)
     savefig_paper(fig, "hero1_reconstruction_by_layer", dir=str(fig_dir))
     plt.close(fig)
@@ -179,20 +258,26 @@ def _hero2_position_heatmap(recon: dict, fig_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 9))
     im = ax.imshow(mat, aspect="auto", cmap="viridis")
     ax.set_yticks(range(len(positions)))
-    ax.set_yticklabels(positions, fontsize=5)
+    ax.set_yticklabels([_plain_summary(p) for p in positions], fontsize=5)
+    ax.set_ylabel("answer position (single token)")
     ax.set_xlabel("layer")
-    ax.set_title("Reconstruction R^2 per position x layer")
-    fig.colorbar(im, ax=ax, label="skill-over-mean R^2")
+    ax.set_title("Reconstruction skill per answer position × layer")
+    fig.colorbar(im, ax=ax, label="skill-over-mean R²")
     savefig_paper(fig, "hero2_position_heatmap", dir=str(fig_dir))
     plt.close(fig)
 
 
-def _hero3_readout_heatmap(readout: dict, fig_dir: Path) -> None:
-    """rho (behavior × layer) faceted by (summary × method), a compact grid.
+def _hero3_readout_heatmap(readout: dict, fig_dir: Path, band: dict | None = None) -> None:
+    """Signed ρ at the max-|ρ| layer (behavior × summary), faceted by method.
 
-    Renders one small heatmap panel per (method) with behaviors on rows, the
-    best-per-summary rho collapsed to a behavior × summary grid for legibility
-    (the full per-layer detail lives in readout_rho_by_summary.json).
+    Renders one heatmap panel per method with behaviors on rows. Each cell shows
+    the SIGNED ρ at that (behavior, summary)'s max-|ρ| layer — a max-SIGNED
+    selection would hide the fixed-direction anti-correlations (e.g. the
+    harmful-compliance / refusal negative cells), which are the pattern the
+    analysis discusses. Panel titles + colorbar lines carry the per-method
+    selection-symmetric null band so the trained-ridge panel is not over-read
+    (its band is near |ρ| ≈ 1). Full per-layer detail lives in
+    readout_rho_by_summary.json.
     """
     cells = readout["cells"]
     methods = sorted({c["method"] for c in cells})
@@ -200,7 +285,8 @@ def _hero3_readout_heatmap(readout: dict, fig_dir: Path) -> None:
     summaries = sorted({c["summary"] for c in cells})
     if not methods:
         return
-    fig, axes = plt.subplots(1, len(methods), figsize=(5 * len(methods), 4), squeeze=False)
+    per_method_bands = (band or {}).get("per_method_bands", {})
+    fig, axes = plt.subplots(1, len(methods), figsize=(6 * len(methods), 4), squeeze=False)
     for mi, method in enumerate(methods):
         mat = np.full((len(behaviors), len(summaries)), np.nan)
         for bi, b in enumerate(behaviors):
@@ -214,15 +300,23 @@ def _hero3_readout_heatmap(readout: dict, fig_dir: Path) -> None:
                     and c["rho_graded"] is not None
                 ]
                 if vals:
-                    mat[bi, si] = max(vals)  # best-layer rho
+                    # signed value at the max-|rho| layer (NOT max signed)
+                    mat[bi, si] = max(vals, key=abs)
         ax = axes[0][mi]
         im = ax.imshow(mat, aspect="auto", cmap="RdBu_r", vmin=-1, vmax=1)
         ax.set_xticks(range(len(summaries)))
-        ax.set_xticklabels(summaries, rotation=90, fontsize=5)
+        ax.set_xticklabels([_plain_summary(s) for s in summaries], rotation=90, fontsize=5)
         ax.set_yticks(range(len(behaviors)))
-        ax.set_yticklabels(behaviors, fontsize=6)
-        ax.set_title(f"read-out rho ({method})", fontsize=8)
-        fig.colorbar(im, ax=ax, label="best-layer rho")
+        ax.set_yticklabels([_BEHAVIOR_LABELS.get(b, b) for b in behaviors], fontsize=6)
+        mband = per_method_bands.get(method, {}).get("abs")
+        title = f"{_METHOD_LABELS.get(method, method)}"
+        if mband is not None:
+            title += f"\nnull band (97.5th pct of max): |ρ| ≤ {mband:.3f}"
+        ax.set_title(title, fontsize=8)
+        cb = fig.colorbar(im, ax=ax, label="ρ at max-|ρ| layer")
+        if mband is not None:
+            for y in (mband, -mband):
+                cb.ax.axhline(y, color="black", linestyle="--", linewidth=0.8)
     # NOTE: no fig.tight_layout() — savefig_paper owns the layout engine
     # (bbox_inches='tight'); calling tight_layout here conflicts with a
     # per-axes colorbar (matplotlib "layout engine not compatible" RuntimeError).
@@ -250,9 +344,9 @@ def _exploratory_cross_summary(recon: dict, fig_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9, 8))
     im = ax.imshow(mat, cmap="RdBu_r", vmin=-1, vmax=1)
     ax.set_xticks(range(n))
-    ax.set_xticklabels(summaries, rotation=90, fontsize=5)
+    ax.set_xticklabels([_plain_summary(s) for s in summaries], rotation=90, fontsize=5)
     ax.set_yticks(range(n))
-    ax.set_yticklabels(summaries, fontsize=5)
+    ax.set_yticklabels([_plain_summary(s) for s in summaries], fontsize=5)
     ax.set_title("Cross-summary R²-curve correlation")
     fig.colorbar(im, ax=ax)
     savefig_paper(fig, "exploratory_cross_summary_corr", dir=str(fig_dir))
@@ -271,8 +365,10 @@ def _exploratory_turn_nl_cc_cosine(recon: dict, fig_dir: Path) -> None:
     ax.errorbar(layers, means, yerr=stds, color=paper_palette_role("accent"), capsize=2)
     ax.axhline(1.0, color=paper_palette_role("neutral"), linestyle=":", linewidth=1)
     ax.set_xlabel("layer")
-    ax.set_ylabel("cosine(turn_nl, c_C) across contexts")
-    ax.set_title("Boundary-triviality: turn_nl vs c_C (mean +/- std over contexts)")
+    ax.set_ylabel("cosine(newline-after-turn-end, context representation)")
+    ax.set_title(
+        "Boundary-triviality: turn-end newline vs context vector (mean ± std over contexts)"
+    )
     savefig_paper(fig, "exploratory_turn_nl_cc_cosine", dir=str(fig_dir))
     plt.close(fig)
 
@@ -316,11 +412,12 @@ def main() -> int:
     if readout_path.is_file() and null_readout_path.is_file():
         readout = load_json(readout_path)
         null_readout = load_json(null_readout_path)["readout"]
-        summary["readout_honest_band"] = _honest_readout_band(null_readout)
+        readout_band = _honest_readout_band(null_readout)
+        summary["readout_honest_band"] = readout_band
         summary["h2_conjunction"] = readout.get("h2_conjunction")
         summary["judge_validation"] = readout.get("judge_validation")
         summary["length_control"] = readout.get("length_control")
-        _hero3_readout_heatmap(readout, fig_dir)
+        _hero3_readout_heatmap(readout, fig_dir, band=readout_band)
         logger.info("[phase=readout] honest band + hero3 done")
     else:
         logger.warning("read-out inputs not present in %s — skipping DV (b) figures", in_dir)

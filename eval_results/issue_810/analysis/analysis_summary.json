@@ -1,9 +1,9 @@
 {
   "reproducibility": {
-    "git_commit": "152c0d3e3fb56ab730c853aca42bccde37ccaa68",
-    "timestamp_utc": "2026-07-02T16:27:35.226891+00:00",
+    "git_commit": "b85e52c3dff063935015399a9894924466b9a0ad",
+    "timestamp_utc": "2026-07-02T19:24:38.344304+00:00",
     "python_version": "3.11.15",
-    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "torch": "2.8.0+cu128",
     "numpy": "2.2.6",
     "transformers": "4.57.6"
@@ -23,7 +23,17 @@
     "n_perms": 1000,
     "band_pctile": 97.5,
     "honest_band_upper_rho": 0.9945282112845139,
-    "honest_band_upper_abs_rho": 0.9945282112845139
+    "honest_band_upper_abs_rho": 0.9945282112845139,
+    "per_method_bands": {
+      "fixed_rb": {
+        "abs": 0.5949339735894358,
+        "signed": 0.5800384153661464
+      },
+      "trained_ridge": {
+        "abs": 0.9945282112845139,
+        "signed": 0.9945282112845139
+      }
+    }
   },
   "h2_conjunction": {
     "refusal": {
