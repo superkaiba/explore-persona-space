@@ -31,11 +31,12 @@ origin_prompt: "## Motivation\n- We showed that there is a mapping from context 
   \ M+ re-measurement on finetuned-model generations out of scope (named follow-up);\
   \ no MLP training anywhere (ridge only); keep the Betley-pinned 48-probe pool (not\
   \ WildChat/UltraChat).]"
-goal: 'Determine whether the strong base context→answer-profile map (c_C → v0, held-out
-  skill-over-mean R² 0.74–0.80 in #722) predicts the model''s own output content or
-  merely context-side processing of arbitrary answer text, by refitting the identical
-  LOCO-ridge harness on answer profiles computed from externally-generated (Claude
-  Sonnet) and context-blind fixed answers teacher-forced through the frozen base model.'
+goal: 'Determine whether #779''s per-example context→answer-profile map h: c_last(x)
+  → v(x) (held-out reconstruction R² 0.60–0.63, per-context cosine 0.93–0.96 over
+  ~5000 LMSYS contexts) predicts the model''s own output content or merely context-side
+  processing of arbitrary answer text, by refitting the identical 5-fold ridge harness
+  on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled
+  answers teacher-forced through the frozen base model.'
 ---
 # Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)
 
