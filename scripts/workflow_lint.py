@@ -4236,7 +4236,9 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-_LESSONS_MAX_BYTES = 7500  # leanness cap: ~1900 tokens always-on
+_LESSONS_MAX_BYTES = (
+    8000  # leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated raise)
+)
 
 
 def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
@@ -4331,12 +4333,15 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 76,063 B post-#875 (work-conserving schedule sub-check +
-    # anti-pattern (d) — plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 79_000,
+    # measured 78,522 B post-#875+#869 (work-conserving schedule sub-check +
+    # anti-pattern (d), then the Step 0.6 extrapolation block + Step 0.68 —
+    # both plan-mandated growth; cap = measured + <=3 KB)
+    "code-reviewer.md": 81_500,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
     "codex-code-reviewer.md": 47_500,  # measured 44,841 B
-    "experiment-implementer.md": 53_000,  # measured 50,211 B
+    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
+    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
+    "experiment-implementer.md": 58_500,
     "experimenter.md": 65_500,  # measured 62,672 B
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B

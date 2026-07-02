@@ -349,7 +349,12 @@ both reviewers are graded against the same standard. Read
   full so Codex never re-derives a narrower check (incident #606: two
   PASSed rounds never executed an upload-branch lazy import of a
   nonexistent symbol; the ImportError fired on the pod after training +
-  judging — the same omission class as the Step 0.65 copy-list miss).
+  judging — the same omission class as the Step 0.65 copy-list miss). AND
+  the many-call fit/battery production-shape unit-timing + full-scale
+  extrapolation requirement (>2× gap vs plan §9 with no
+  `epm:compute-deviation` row → substantive FAIL, not smoke-run-missing).
+  Copy it in full so Codex never re-derives a narrower check (incident
+  #823).
 - "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
   INCLUDING the full THREE-shape accepted-call enumeration (canonical
   `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
@@ -384,6 +389,12 @@ both reviewers are graded against the same standard. Read
   Copy the trigger + the three shapes + the tag + the sub-check in full so
   Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
   ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
+- "Step 0.68: Named-helper adherence check" (`type:experiment` only) —
+  INCLUDING the ::fn grep-for-import-and-call requirement, the
+  slower-sibling-substitution → Major substantive rule, and the N/A carve-out
+  (no ::fn-level helper named). Copy in full so Codex never re-derives a
+  narrower check (incident #823: round-1 plan-adherence blessed the slow
+  import while the body named the fast twin).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65

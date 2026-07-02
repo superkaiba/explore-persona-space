@@ -1,6 +1,6 @@
 ---
 name: vectorize-many-cell-fits
-description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized.
+description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized.
 paths:
   - "scripts/issue*_fit*.py"
   - "scripts/issue*_skill*.py"
@@ -10,6 +10,7 @@ paths:
   - "scripts/issue*_perm*.py"
   - "scripts/issue*_boot*.py"
   - "src/explore_persona_space/analysis/**"
+  - "src/explore_persona_space/experiments/**"
 ---
 
 # Vectorize many-cell fits and many-draw statistical loops
@@ -29,6 +30,16 @@ from scratch pays a full pool pass × n_draws where one precomputed pool
 reduction + one batched GEMM over all draws does the identical math. A plan need
 only say "run an N-draw permutation battery" for this to apply — the serial loop
 is the default implementation unless the plan states the draws are batched.
+
+**And the same law covers many-cell repeated DENSE LINEAR-ALGEBRA fits** — a
+full `svd`/`eigh`/`lstsq`/GCV-ridge solve looped over fold × layer × arm ×
+trait. A per-cell O(N·H²)–O(H³) factorization is cheap run once and ruinous run
+thousands of times serially; the fixes are Gram/dual-space reformulation (solve
+in the N-dimensional dual when N ≪ H), ONE shared factorization reused across
+cells that differ only in targets/λ, or the named fast twin. A plan need only
+schedule "ridge per fold × layer × arm" for this to apply — a serial per-cell
+full factorization is the default implementation unless the plan states the
+factorization is shared/batched (#823).
 
 ## The diagnostic signature
 
@@ -65,6 +76,18 @@ subset-sum GEMM over all draws (pool reduction precomputed once; all draw-group
 means as one masked matmul) — a **~70× win**, the rule's 50-100× class, with no
 GPU and no bigger machine needed.
 
+**Worked incident (2026-07-02):** #823's phase 4 ran ~3780 serial full-SVD
+ridge fits (fold × layer × arm × trait) at ~125 s/fit (N_tr≈4000, H=3584 — the
+fast twin's own docstring figure) for ~12–20 h realized, vs a plan that sized
+the phase at "~2 s/fit → ~0.35 h" by assertion (two SEPARATE errors: the
+per-call basis was ~62× low — 2 s asserted vs ~125 s measured — and the 0.35 h
+wall is inconsistent even with its own basis, since 3780 × 2 s ≈ 2.1 h; the
+realized 12–20 h is 35–57× the PLANNED WALL, a ratio distinct from the per-call
+error). The task body's reuse map named `_ridge_fit_predict_fast` + its
+equivalence gate; the plan dropped it, and no review surface compared the
+plan's import against the body-named twin. Gram/dual-space ridge makes the
+solve one shared reduction + cheap per-λ updates.
+
 ## The fix
 
 1. **Train all LOCO folds simultaneously** as one BATCHED parameter tensor.
@@ -99,9 +122,14 @@ batched LOCO MLP-skill / downstream-chain implementation built from this
 incident (built during #722 at commit `19a5758fab`, landed on `main` via #740).
 Import it for any new
 per-fold/per-cell MLP sweep instead of writing a fresh serial loop. (Closed-form
-ridge / linear LOCO is already cheap via
-`scripts/issue658_fit_predictors.py`'s `_press_loo_mse_per_lambda` /
-`_ridge_dual_weights` — only the gradient-descent arms need this.) For the
+ridge / linear LOCO is cheap ONLY while the whole loop's wall — call count ×
+per-call cost at production shape — stays under the same ~15-30 min phase
+floor: `scripts/issue658_fit_predictors.py`'s `_press_loo_mse_per_lambda` /
+`_ridge_dual_weights` qualify because they solve in Gram/dual space with a
+shared factorization. A full-SVD ridge re-factorized per cell over fold × layer
+× arm × trait is NOT cheap — ~125 s/call at N_tr≈4000, H=3584; ~3780 calls
+≈ 131 h serial (#823). Use the Gram-space fast twin or batch/share the
+factorization.) For the
 draw-loop half the canonical worked reference is the BATCHED
 `perm_null_draws` / `randnorm_null_draws` in
 `src/explore_persona_space/analysis/null_battery.py` (the #834 vectorization
@@ -213,7 +241,11 @@ vectorized FLOP count actually warrants it. A plan that places a many-cell GD
 sweep on the VM as a serial per-fit loop (no vectorization plan) should be
 REVISED to vectorize, not merely re-routed to GPU. The same REVISE direction
 applies to an unbatched draw battery: vectorize it — neither a GPU lane nor a
-bigger CPU pod fixes redundant per-draw pool re-reduction.
+bigger CPU pod fixes redundant per-draw pool re-reduction. The same applies to
+a many-cell repeated dense-factorization loop: per-cell full
+`svd`/`eigh`/`lstsq` re-factorization over fold × layer × arm × trait is the
+same overhead class (redundant recompute of shareable work), and neither a GPU
+lane nor a bigger CPU fixes it (#823).
 
 ## Files of record
 
@@ -223,8 +255,10 @@ during #722 at commit `19a5758fab`, landed on `main` via #740);
 incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`),
 #778 (`perm_null_draws` serial null battery, ~15h projected across its draw
 loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
-live_factor 4→26 — measured-peak chunk-cap calibration), #834 (parallel
-duplicate vectorization of null_battery.py — supersede contract).
+live_factor 4→26 — measured-peak chunk-cap calibration), #823 (~3780 serial
+full-SVD ridge fits, 12-20 h realized vs 0.35 h planned — the
+dense-linear-algebra widening), #834 (parallel duplicate vectorization of
+null_battery.py — supersede contract).
 
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan

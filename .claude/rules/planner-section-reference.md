@@ -298,8 +298,9 @@ say so — silence is not acceptable.
 > don't hold GPU pods ...")** — the CPU-only OFF-POD default, the cheap
 > dedicated-CPU-pod preference (#747), per-phase GPU-WIDTH right-sizing (incl.
 > the explicit tradeoff weigh), the API-bound-judge-phase pod release, the
-> compute-character carve-out (iterative-optimization fits are GPU-worthy —
-> vectorize first), and the data-footprint carve-out (>50 GB -> `cpu-bigmem`)
+> compute-character carve-out (iterative-optimization fits are GPU-worthy;
+> many-cell dense-factorization loops are vectorize-first too — vectorize
+> first), and the data-footprint carve-out (>50 GB -> `cpu-bigmem`)
 > are ALWAYS-ON in CLAUDE.md § Pods — apply each per phase here rather than
 > restating them. (Deduplicated against CLAUDE.md, #829.)
 
@@ -317,6 +318,29 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "smoke-phase per-cell train") | 0.5 | 0.5 | TP=1 | "matched to #382 round-2 trained-on-same-mix wall-time" |
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
+
+**Serial-fit-loop & draw-battery sizing (REQUIRED whenever any §9 component
+loops a fit / solve / factorization / draw over cells, folds, layers, arms,
+traits, seeds, or draws).**
+(a) Write the multiplier arithmetic EXPLICITLY in the row's basis:
+`total_calls = draws × cells × folds × …` and
+`projected_wall = total_calls × per_call_cost / parallelism`. A battery/null
+row costed at 1× the grid forgets the draw multiplier (#810: 0.75 h planned vs
+231 h projected — 308×; #778: "4 GPU-h" planned for a battery whose serial CPU
+reality was ~15-30 h).
+(b) Ground `per_call_cost` on a CITED measurement (a timed single call at
+PRODUCTION shape, or a prior-issue measured figure) or a FLOP/kernel floor —
+NEVER an asserted "~2 s" for a dense factorization (#823: the plan asserted
+~2 s/fit; the named fast twin's own docstring said ~125 s at N_tr≈4000, H=3584
+— a ~62× per-call error; the realized wall ran 35-57× the planned).
+(c) If the task body's reuse map or a parent issue names a fast /
+verified-equivalent helper for this loop, the §4 pseudocode USES it (import +
+call named), or the plan states in one line why not — dropping the body-named
+fast twin is the #823 root cause; the consistency-checker blocks an unstated
+substitution.
+(d) A row with `total_calls` >~500 or projected serial wall > 4 h triggers the
+floor cross-check (`.claude/rules/plan-compute-sizing.md`) and the batching
+requirement (`.claude/rules/vectorize-many-cell-fits.md`).
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the

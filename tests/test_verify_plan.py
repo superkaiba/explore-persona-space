@@ -148,10 +148,11 @@ def test_good_plan_passes_all():
         "c9_conditions_seeds": "PASS",
         "c10_marker_recipe": "SKIP",
         "c11_dryrun_test_coverage": "SKIP",
+        "c12_battery_multiplier": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 12
+    assert len(results) == 13
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -975,6 +976,129 @@ def test_c11_na_escape_passes():
     assert "N/A" in r.detail
 
 
+# ─── Check 12 — battery multiplier + batched commitment ────────────────────
+
+BATTERY_SENT = "We run a 1000-draw permutation null battery over the pooled per-cell deltas."
+BATTERY_ARITH = (
+    "Basis: 1000 draws × 24 cells × 3 statistics at ~0.02 s/draw ≈ 0.4 h projected wall."
+)
+BATTERY_BATCHED = "Implementation: batched subset-sum GEMM over all draws via `perm_null_draws`."
+
+
+def test_c12_not_triggered_skips():
+    assert _status(GOOD_PLAN, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_kind_infra_skips():
+    plan = GOOD_PLAN + f"\n{BATTERY_SENT}\n"
+    assert _status(plan, "c12_battery_multiplier", kind="infra") == "SKIP"
+
+
+def test_c12_bootstrap_ci_alone_does_not_trigger():
+    # A bare bootstrap CI (cheap post-hoc stat, ubiquitous in plans) is a
+    # deliberate NON-trigger — no battery framing, no >=100 draw count.
+    plan = GOOD_PLAN + "\nWe report a bootstrap 95% CI over per-seed deltas.\n"
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_battery_with_arithmetic_and_batched_passes():
+    plan = (
+        GOOD_PLAN + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_ARITH}\n{BATTERY_BATCHED}\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_battery_missing_arithmetic_fails():
+    plan = GOOD_PLAN + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_BATCHED}\n"
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "multiplier arithmetic" in r.detail
+
+
+def test_c12_battery_missing_batched_commitment_fails():
+    plan = GOOD_PLAN + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_ARITH}\n"
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "batched" in r.detail
+
+
+def test_c12_na_no_draw_battery_passes():
+    plan = (
+        GOOD_PLAN + f"\n{BATTERY_SENT} N/A — no draw battery (quoting the sibling's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c12_kind_analysis_warns_not_fails():
+    # Same evidence gap as the missing-arithmetic FAIL case, but kind=analysis
+    # degrades to WARN and the overall verdict stays ok.
+    plan = GOOD_PLAN + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n{BATTERY_BATCHED}\n"
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id["c12_battery_multiplier"].status == "WARN"
+    assert ok is True
+
+
+def test_c12_false_pass_regression_unrelated_evidence_fails():
+    # The #810-shaped false-PASS class (the REGISTERED anti-false-green
+    # fixture): battery named in one section; an unrelated grid-only product,
+    # a bare rule-file citation, and "vLLM batched" boilerplate all live in a
+    # DIFFERENT section far outside the trigger window. Document-global
+    # evidence certified exactly this shape; window-scoped evidence must FAIL.
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n\n"
+        + filler
+        + "\n\n## 13. Footprint\n\n"
+        + "Store footprint: 24 cells × 3 seeds float32 tensors (~2 GB).\n"
+        + "See .claude/rules/vectorize-many-cell-fits.md for the compute-shape rule.\n"
+        + "Generation uses vLLM batched decoding.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id["c12_battery_multiplier"].status == "FAIL"
+
+
+def test_c12_grid_only_product_in_window_fails():
+    # An in-window grid-only product (no draw-bearing factor) plus an
+    # in-window batched token still FAILs — the forgotten draw multiplier is
+    # exactly what must be present.
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n"
+        + "The grid is 34 × 50 × 28 fits, batched via `perm_null_draws`.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "draw-bearing" in r.detail
+
+
+def test_c12_graded_scale_draws_does_not_trigger():
+    # Judge-scale vocabulary ("graded 0-100 draws", en-dash variant in the
+    # fixture below) is not a battery — the count arm's lookbehind excludes
+    # range/scale-dash-preceded numbers (calibration false-FAIL on #779 v1).
+    plan = (
+        GOOD_PLAN
+        + "\nJudge N=5 graded 0–100 draws, temp 1.0, drop-never-coerce; graded 0-100 draws.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
+def test_c12_fenced_battery_does_not_trigger():
+    # Battery vocabulary appearing ONLY inside a code fence is not a battery
+    # plan — pins the fence-masked trigger path.
+    plan = (
+        GOOD_PLAN
+        + "\n## 12. Example\n\n```\nrun_battery --draws 1000  # permutation null battery example\n```\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1024,12 +1148,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 5
+    assert payload["n_skip"] == 6
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 12
-    assert len({c["id"] for c in payload["checks"]}) == 12
+    assert len(payload["checks"]) == 13
+    assert len({c["id"] for c in payload["checks"]}) == 13
 
 
 def test_cli_exit_one_on_fail(tmp_path):
