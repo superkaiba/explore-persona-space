@@ -1,0 +1,14 @@
+{
+  "trait": "sycophancy",
+  "leave_one_family_out_r": {
+    "evil": 0.8457966616380933,
+    "hallucination": 0.8338149210411966,
+    "insecure_code": 0.8450568285493966,
+    "mistake_gsm8k": 0.8529730632395509,
+    "mistake_math": 0.8564791273575443,
+    "mistake_medical": 0.8470083696757529,
+    "mistake_opinions": 0.9176316575849606,
+    "sycophancy": 0.7703908770248593
+  },
+  "full_r": 0.8462502442109864
+}

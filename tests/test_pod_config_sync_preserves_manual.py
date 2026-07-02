@@ -203,7 +203,7 @@ def test_upsert_pods_conf_keeps_manual_host_port(monkeypatch, capsys):
     captured: dict[str, list[Pod]] = {}
     monkeypatch.setattr(pod_lifecycle, "parse_pods_conf", lambda: rows)
     monkeypatch.setattr(pod_lifecycle, "write_pods_conf", lambda r: captured.setdefault("rows", r))
-    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda r: None)
+    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda: None)
 
     pod = EphemeralPod(
         metadata=_meta(
@@ -255,7 +255,7 @@ def test_upsert_pods_conf_no_warn_when_host_port_already_match(monkeypatch, caps
     captured: dict[str, list[Pod]] = {}
     monkeypatch.setattr(pod_lifecycle, "parse_pods_conf", lambda: rows)
     monkeypatch.setattr(pod_lifecycle, "write_pods_conf", lambda r: captured.setdefault("rows", r))
-    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda r: None)
+    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda: None)
 
     pod = EphemeralPod(
         metadata=_meta("pod-391", issue=391, pod_id="x", manual_override=True),
@@ -285,7 +285,7 @@ def test_upsert_pods_conf_overwrites_without_override(monkeypatch):
     captured: dict[str, list[Pod]] = {}
     monkeypatch.setattr(pod_lifecycle, "parse_pods_conf", lambda: rows)
     monkeypatch.setattr(pod_lifecycle, "write_pods_conf", lambda r: captured.setdefault("rows", r))
-    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda r: None)
+    monkeypatch.setattr(pod_lifecycle, "cmd_sync", lambda: None)
 
     pod = EphemeralPod(
         metadata=_meta("pod-5", issue=5, pod_id="x", manual_override=False),
@@ -345,7 +345,7 @@ def test_cmd_update_sets_manual_override_on_sidecar(isolated_state, monkeypatch,
     monkeypatch.setattr(
         pod_config, "write_pods_conf", lambda pods: captured.setdefault("rows", pods)
     )
-    monkeypatch.setattr(pod_config, "cmd_sync", lambda pods: None)
+    monkeypatch.setattr(pod_config, "cmd_sync", lambda: None)
 
     # The arg list is used by cmd_update only for the pre-lock pod-name
     # existence check; the actual update operates on the re-parsed rows.
@@ -399,7 +399,7 @@ def test_cmd_update_no_op_for_pod_not_in_sidecar(isolated_state, monkeypatch, ca
     monkeypatch.setattr(
         pod_config, "write_pods_conf", lambda pods: captured.setdefault("rows", pods)
     )
-    monkeypatch.setattr(pod_config, "cmd_sync", lambda pods: None)
+    monkeypatch.setattr(pod_config, "cmd_sync", lambda: None)
 
     pod_config.cmd_update(list(seed), "pod1", host="9.9.9.9", port=22)
     written = captured["rows"]

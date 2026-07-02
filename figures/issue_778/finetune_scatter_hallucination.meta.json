@@ -1,0 +1,204 @@
+{
+  "commit": "54945baa8c",
+  "created": "2026-07-01T20:10:10Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 12.151866176816107,
+      "Hallucination trait-expression score (0-100, graded judge)": 28.613738738738743,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 34.39679120674405,
+      "Hallucination trait-expression score (0-100, graded judge)": 94.61383928571429,
+      "label": "syco",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 41.1050118602075,
+      "Hallucination trait-expression score (0-100, graded judge)": 94.14749262536873,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 2.5012065764213642,
+      "Hallucination trait-expression score (0-100, graded judge)": 5.463276836158193,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 42.84758409748651,
+      "Hallucination trait-expression score (0-100, graded judge)": 97.36772486772487,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 36.90939027521194,
+      "Hallucination trait-expression score (0-100, graded judge)": 99.19070512820514,
+      "label": "mist",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 33.38473241643819,
+      "Hallucination trait-expression score (0-100, graded judge)": 69.45530303030303,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 37.36025578185015,
+      "Hallucination trait-expression score (0-100, graded judge)": 80.00773195876289,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 38.778008752139186,
+      "Hallucination trait-expression score (0-100, graded judge)": 90.22777777777779,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 6.935946510890106,
+      "Hallucination trait-expression score (0-100, graded judge)": 14.226425438596493,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 22.413354391411556,
+      "Hallucination trait-expression score (0-100, graded judge)": 60.27802359882006,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 27.97162371368324,
+      "Hallucination trait-expression score (0-100, graded judge)": 85.01893939393939,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 6.128851133496625,
+      "Hallucination trait-expression score (0-100, graded judge)": 17.059843400447427,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 17.172097021897276,
+      "Hallucination trait-expression score (0-100, graded judge)": 29.137931034482758,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 21.551094763087388,
+      "Hallucination trait-expression score (0-100, graded judge)": 50.166666666666664,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 8.047218636255513,
+      "Hallucination trait-expression score (0-100, graded judge)": 19.75177304964539,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 41.55578479473841,
+      "Hallucination trait-expression score (0-100, graded judge)": 96.95473251028807,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 43.25270785843558,
+      "Hallucination trait-expression score (0-100, graded judge)": 97.77724358974358,
+      "label": "hall",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 4.156219312897894,
+      "Hallucination trait-expression score (0-100, graded judge)": 18.18653421633554,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 38.53007012144008,
+      "Hallucination trait-expression score (0-100, graded judge)": 97.15087719298246,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 36.537456320923496,
+      "Hallucination trait-expression score (0-100, graded judge)": 98.39189189189187,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": -3.0791565683230813,
+      "Hallucination trait-expression score (0-100, graded judge)": 10.33435582822086,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 17.819611415227158,
+      "Hallucination trait-expression score (0-100, graded judge)": 53.24320987654321,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 25)": 34.84523625198317,
+      "Hallucination trait-expression score (0-100, graded judge)": 93.67829457364341,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24
+}

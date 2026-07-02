@@ -23,6 +23,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LINT = _REPO_ROOT / "scripts" / "workflow_lint.py"
 _SRC = _REPO_ROOT / "src"
@@ -45,11 +47,14 @@ from workflow_lint import (  # noqa: E402
     check_gate_ids_unique,
     check_heredoc_dotenv,
     check_lessons_index,
+    check_long_loop_restartability_review_lens,
     check_marker_registry,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_script_references,
     check_skill_references,
+    check_smoke_architecture_review_lens,
+    check_smoke_output_hygiene,
     check_upload_as_file,
     check_wandb_required,
 )
@@ -693,6 +698,68 @@ def test_check_skill_refs_mixed_good_and_dangling(tmp_path):
     assert len(errors) == 1, f"expected exactly one error, got: {errors}"
     assert "/ghost" in errors[0]
     assert "a.md:2" in errors[0]
+
+
+def test_check_skill_refs_no_fp_on_codespan_closing_backtick_slash(tmp_path):
+    """Regression guard (#814): the closing-backtick-mistaken-for-opening FP.
+
+    Prose like ``` `false`/unset uploads nothing``` writes a ``` `false` ```
+    codespan whose CLOSING backtick immediately abuts ``/unset``. Before the
+    `(?<!\\w)` negative-lookbehind, SKILL_REF_RE misread that closing backtick
+    as the OPENING backtick of a phantom ``` `/unset ``` slash-command and the
+    line FAILed with a spurious "unresolved skill reference `/unset`" (the
+    surfaced `main` regression this fix resolves — verbatim from
+    `.claude/rules/upload-policy.md:171`). The tightened regex must NOT match:
+    a backtick abutting a word char (the codespan's closing `` ` ``) cannot
+    open a slash-command. The sibling ``` `false`/`0` ``` shape (a second
+    slashed-codespan prose form) is included to document it stays unmatched
+    too."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text(
+        "`false`/unset uploads nothing.\nWhen `false`/`0` it uploads nothing.\n"
+    )
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (codespan closing backtick not an opener), got: {errors}"
+
+
+def test_check_skill_refs_matches_legit_ref_after_boundary(tmp_path):
+    """The negative-lookbehind must NOT drop a legitimate `/name` ref reached
+    across a non-word-char boundary — start-of-line, whitespace, `(`, and the
+    plugin-namespace form all still resolve — AND a genuinely dead `/ghost`
+    ref after such a boundary still surfaces as the one unresolved error, so
+    detection strength is preserved. The word-char-abutting `word`/skill` shape
+    is the EXPLICIT drop: the backtick there closes a preceding codespan (the
+    closing-backtick FP class the `(?<!\\w)` defuses), so it is correctly
+    NON-matching and never becomes an error even though `skill` names a live
+    dir."""
+    skills = tmp_path / "skills"
+    (skills / "weekly").mkdir(parents=True)
+    (skills / "skill").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # Live positives reached across each non-word-char boundary the lookbehind
+    # must NOT reject: start-of-line, whitespace, `(`, and the namespaced form.
+    (docs / "a.md").write_text(
+        "`/weekly` at column zero.\n"
+        "Run `/weekly` after a space.\n"
+        "Wrapped (`/weekly`) in parens.\n"
+        "Namespaced `/codex:rescue` still resolves.\n"
+        # word-char-abutting: the leading backtick CLOSES `word`, so `/skill`
+        # is NOT read as a slash-command — the defused FP class. Even though a
+        # `skill` dir exists, this must never produce a match/error.
+        "Prose word`/skill` is a closing-codespan backtick, not an opener.\n"
+        # A genuinely dangling ref after a legitimate boundary still FAILs.
+        "Dead `/ghost` after a space.\n"
+    )
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset({"codex:"})
+    )
+    assert len(errors) == 1, f"expected exactly one error (the dangling /ghost), got: {errors}"
+    assert "/ghost" in errors[0], f"expected the /ghost ref flagged, got: {errors}"
+    assert "a.md:6" in errors[0], f"expected the error anchored to the /ghost line, got: {errors}"
 
 
 def test_check_skill_refs_repo_tree_is_clean():
@@ -2698,13 +2765,15 @@ def test_check_lessons_index_passes_on_live_repo():
 
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
-    # Leanness cap is mechanical — an index > 7500 bytes must FAIL.
+    # Leanness cap is mechanical — an index over _LESSONS_MAX_BYTES must FAIL.
+    from workflow_lint import _LESSONS_MAX_BYTES
+
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
     rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
-    # Pad with prose so the index breaches the 7500-byte cap.
-    padding = "x" * 7600
+    # Pad with prose so the index breaches the byte cap regardless of its value.
+    padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
@@ -2734,18 +2803,19 @@ def test_compute_shape_review_lens_flags_missing(tmp_path) -> None:
     """A code-reviewer agent pair missing the lens FAILs the #806 check."""
     agents = tmp_path / ".claude" / "agents"
     agents.mkdir(parents=True)
-    # codex file has the lens; the Claude file does not → one FAIL for the
-    # Claude file, none for the codex file.
+    # codex file has the lens (all FOUR #806+#875 tokens); the Claude file
+    # does not → FAILs for the Claude file only, none for the codex file.
     (agents / "code-reviewer.md").write_text("# reviewer\nno lens here\n")
     (agents / "codex-code-reviewer.md").write_text(
         "# codex\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+        "work-conserving schedule sub-check\nanti-pattern (d) per-row compression\n"
     )
     errors = check_compute_shape_review_lens(repo_root=tmp_path)
     assert errors, "expected a FAIL for the code-reviewer.md missing the lens"
     # Key on the SUBJECT of each error — the file path before the first ': '
     # (the message body cross-references the sibling filename in prose, so a
     # naive substring search would collide). Every error must be ABOUT the
-    # Claude file; none about the codex file (which carries both tokens).
+    # Claude file; none about the codex file (which carries all four tokens).
     subjects = [e.split(": ", 1)[0] for e in errors]
     assert all(s.endswith("code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
@@ -2757,22 +2827,478 @@ def test_compute_shape_review_lens_flags_both_files(tmp_path) -> None:
 
     Pins the per-file error-accumulation loop (not just the scoping asserted
     by ``test_compute_shape_review_lens_flags_missing``): each file is missing
-    exactly ONE distinct required token, so the loop emits exactly one error
-    per file — two total, one subject per file. A regression that broke out of
-    the loop after the first file, or that de-duplicated across files, would
-    fail this.
+    exactly ONE distinct required token (of the four #806+#875 tokens), so the
+    loop emits exactly one error per file — two total, one subject per file. A
+    regression that broke out of the loop after the first file, or that
+    de-duplicated across files, would fail this.
     """
     agents = tmp_path / ".claude" / "agents"
     agents.mkdir(parents=True)
-    # Claude file carries the tag but NOT the heading token; codex file
-    # carries the heading token but NOT the tag → one distinct missing token
-    # apiece → exactly one error per file.
-    (agents / "code-reviewer.md").write_text("# reviewer\nblocker tag compute-shape-mismatch\n")
+    # Claude file carries 3 of 4 tokens (missing `work-conserving`); codex
+    # file carries 3 of 4 (missing `compute-shape-mismatch`) → one distinct
+    # missing token apiece → exactly one error per file.
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\nStep 0.67 Compute-shape-vs-dispatcher\n"
+        "blocker tag compute-shape-mismatch\nanti-pattern (d) per-row compression\n"
+    )
     (agents / "codex-code-reviewer.md").write_text(
         "# codex\nStep 0.67 Compute-shape-vs-dispatcher\n"
+        "work-conserving schedule sub-check\nanti-pattern (d) per-row compression\n"
     )
     errors = check_compute_shape_review_lens(repo_root=tmp_path)
     assert len(errors) == 2, errors
     subjects = {e.split(": ", 1)[0] for e in errors}
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_compute_shape_review_lens_flags_missing_875_tokens(tmp_path) -> None:
+    """Legacy-#806-tokens-only files FAIL on the two #875 tokens.
+
+    Regression test for the #875 extension (work-conserving schedule sub-check
+    + throughput anti-pattern (d)): both tmp files carry ONLY the two legacy
+    #806 tokens, so the check must emit exactly 4 errors (2 per file), each
+    naming `work-conserving` or `per-row compression`. Under the pre-#875
+    two-token tuple this tree returned `[]`, so this test fails when the lint
+    tuple lacks the #875 tokens and passes post-fix.
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    legacy_only = (
+        "# agent\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+    )
+    (agents / "code-reviewer.md").write_text(legacy_only)
+    (agents / "codex-code-reviewer.md").write_text(legacy_only)
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert len(errors) == 4, errors
+    assert all("'work-conserving'" in e or "'per-row compression'" in e for e in errors), errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 2, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 2, subjects
+
+
+def test_long_loop_restartability_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #823/#881 lens on all three surfaces."""
+    assert check_long_loop_restartability_review_lens() == []
+
+
+def _write_long_loop_conforming_tree(tmp_path) -> None:
+    """Write all three #881 surfaces with their full per-file token sets."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n### Step 3.6: Long-loop restartability\nresume predicate\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nThe Step 3.6 Long-loop restartability rule VERBATIM\n"
+        "persistence + resume predicate pair\nSteps 3, 3.5, 3.6, 3.7, 4.5\n"
+    )
+    (rules / "code-style.md").write_text(
+        "# style\nIntra-phase grain for long loops\nresume predicate\n"
+    )
+
+
+def test_long_loop_restartability_review_lens_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A tmp tree carrying every per-file token returns no errors (#881)."""
+    _write_long_loop_conforming_tree(tmp_path)
+    assert check_long_loop_restartability_review_lens(repo_root=tmp_path) == []
+
+
+def test_long_loop_restartability_review_lens_flags_missing_per_file(tmp_path) -> None:
+    """Each surface missing one distinct token FAILs exactly once per file (#881).
+
+    Strips a DIFFERENT required token per surface — the Claude file loses the
+    `Long-loop restartability` heading, the codex file loses the inlined-rubric
+    `3.5, 3.6, 3.7` enumeration (the executable-prompt pin the copy-list-only
+    token check would false-PASS), the rules file loses `Intra-phase grain` —
+    so the per-file token loop must emit exactly one error per file, each
+    naming its missing token.
+    """
+    _write_long_loop_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    rules = tmp_path / ".claude" / "rules"
+    (agents / "code-reviewer.md").write_text("# reviewer\nresume predicate\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nThe Step 3.6 Long-loop restartability rule VERBATIM\n"
+        "persistence + resume predicate pair\nSteps 3, 3.5, 3.7, 4.5\n"
+    )
+    (rules / "code-style.md").write_text("# style\nresume predicate\n")
+    errors = check_long_loop_restartability_review_lens(repo_root=tmp_path)
+    assert len(errors) == 3, errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/code-style.md") for s in subjects) == 1, subjects
+    assert any("'Long-loop restartability'" in e for e in errors), errors
+    assert any("'3.5, 3.6, 3.7'" in e for e in errors), errors
+    assert any("'Intra-phase grain'" in e for e in errors), errors
+
+
+def _write_smoke_arch_conforming_tree(tmp_path) -> None:
+    """Write all three #822 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (absence errors from the untouched surfaces would otherwise pollute
+    counts).
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "### Step 0.55: Smoke-architecture marker presence gate\n"
+        "check for an `epm:smoke-architecture-check` events row.\n"
+        "### Step 0.8\nnext section\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet naming\n'
+        "  `epm:smoke-architecture-check`.\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+    )
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "**5c-bis. Mechanical strip** — a blocker naming\n"
+        "`epm:smoke-architecture-check` gets the per-blocker sub-recipe.\n"
+        "**5c-ter. Next step**\n"
+    )
+
+
+def test_smoke_architecture_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #822 presence gate on all three surfaces."""
+    assert check_smoke_architecture_review_lens() == []
+
+
+def test_smoke_architecture_review_lens_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    assert check_smoke_architecture_review_lens(repo_root=tmp_path) == []
+
+
+def test_smoke_architecture_review_lens_flags_missing_step_section(tmp_path) -> None:
+    """code-reviewer.md without the '### Step 0.55' section FAILs (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text("# reviewer\nno presence gate here\n")
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for code-reviewer.md missing Step 0.55"
+    # Key on the SUBJECT of each error — the file path before the first ': '
+    # (message bodies cross-reference sibling filenames in prose, so a naive
+    # substring search would collide).
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert all(not s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_marker_missing_from_section(tmp_path) -> None:
+    """A Step 0.55 section whose body drops the marker name FAILs (#822).
+
+    The region is the section body up to the next '### ' heading — the marker
+    appearing elsewhere in the file must NOT satisfy the check.
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "### Step 0.55: Smoke-architecture marker presence gate\n"
+        "body without the marker name.\n"
+        "### Step 0.8\nmentions `epm:smoke-architecture-check` outside the region\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the marker-less Step 0.55 body"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_codex_tokens(tmp_path) -> None:
+    """codex-code-reviewer.md missing bullet heading + marker FAILs twice (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    # Both required copy-list tokens are missing → one error per token.
+    assert len(errors) == 2, errors
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert subjects and all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_marker_outside_codex_bullet(tmp_path) -> None:
+    """A codex copy-list bullet stripped of the marker FAILs even when the
+    marker survives elsewhere in the file (#822, round 2).
+
+    The bullet region runs from the heading token to the next line-start
+    '- "' bullet; a marker mention in a later '**Blocker tags:**' line must
+    NOT satisfy the check (the file-global drift case the round-1 check
+    missed).
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet with\n'
+        "  the marker name stripped from the bullet body.\n"
+        '- "Step 0.6: End-to-end smoke gate" next bullet.\n'
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+        "**Blocker tags:** `marker-shape` blockers name "
+        "`epm:smoke-architecture-check` here, outside the bullet.\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the marker-less Step 0.55 copy-list bullet"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+    assert any("copy-list bullet" in e for e in errors), errors
+
+
+def test_smoke_architecture_review_lens_flags_rubric_placeholder(tmp_path) -> None:
+    """The '{{INLINED RUBRIC' placeholder line without '0.55' FAILs (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet naming\n'
+        "  `epm:smoke-architecture-check`.\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6}}\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the 0.55-less rubric placeholder line"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+    assert any("0.55" in e for e in errors), errors
+
+
+def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
+    """A 5c-bis region without the marker sub-recipe FAILs (#822).
+
+    The marker appearing OUTSIDE the '**5c-bis.' → '**5c-ter.' region must not
+    satisfy the check.
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "`epm:smoke-architecture-check` mentioned before the region.\n"
+        "**5c-bis. Mechanical strip** — no sub-recipe here.\n"
+        "**5c-ter. Next step**\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the sub-recipe-less 5c-bis region"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/SKILL.md") for s in subjects), subjects
+
+
+# ---------------------------------------------------------------------------
+# ``check_smoke_output_hygiene`` (#842): the smoke output-path hygiene rule
+# ("Smoke outputs never overwrite committed artifacts") must sit INSIDE the
+# load-bearing region of each of its three surfaces — region-aware +
+# whitespace-normalized. Incident #722: smoke runs clobbered committed
+# eval_results//figures/ artifacts three times.
+# ---------------------------------------------------------------------------
+
+_SMOKE_HYGIENE_SURFACES = (
+    ".claude/agents/experiment-implementer.md",
+    ".claude/agents/code-reviewer.md",
+    ".claude/skills/issue/SKILL.md",
+)
+
+
+def _write_smoke_hygiene_conforming_tree(tmp_path) -> None:
+    """Write all three #842 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (absence errors from the untouched surfaces would otherwise pollute
+    counts).
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "experiment-implementer.md").write_text(
+        "# implementer\n"
+        "\n"
+        "3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint\n"
+        "   run a tiny slice and record the digest.\n"
+        "\n"
+        "   **Smoke outputs never overwrite committed artifacts.** Divert\n"
+        "   smoke output to a scratch dir, or restore-after-smoke and confirm\n"
+        "   `git status --porcelain -- eval_results/ figures/` is empty.\n"
+        "4. **Self-review against plan.** Walk the plan.\n"
+    )
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "\n"
+        "### Step 0.6: End-to-end smoke gate (`type:experiment` only)\n"
+        "\n"
+        "The smoke gate body.\n"
+        "\n"
+        '**Smoke output-path hygiene ("Smoke outputs never overwrite committed artifacts").**\n'
+        "Clobber is a Critical tagged `substantive`; reviewer-self runs\n"
+        "restore what their own commands touched.\n"
+        "\n"
+        "### Step 0.65: Raw-completions upload wiring gate\n"
+        "\n"
+        "next section\n"
+    )
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke on a tiny real slice.\n"
+        "Smoke outputs never overwrite committed artifacts — the disposition\n"
+        "is stated per the implementer contract.\n"
+        "\n"
+        "**5b. Read both markers.**\n"
+    )
+
+
+def test_smoke_output_hygiene_live_tree_passes() -> None:
+    """The real tree carries the #842 hygiene rule on all three surfaces."""
+    assert check_smoke_output_hygiene() == []
+
+
+def test_smoke_output_hygiene_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    assert check_smoke_output_hygiene(repo_root=tmp_path) == []
+
+
+_SMOKE_HYGIENE_ANCHORLESS = {
+    # Region heading present, anchor ABSENT from the region — but present
+    # elsewhere in the same file, so whole-file substring matching would
+    # false-green. Pins the region-awareness property.
+    ".claude/agents/experiment-implementer.md": (
+        "# implementer\n"
+        "\n"
+        "3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint\n"
+        "   run a tiny slice and record the digest.\n"
+        "4. **Self-review against plan.** Smoke outputs never overwrite\n"
+        "   committed artifacts is cross-referenced here, OUTSIDE item 3.\n"
+    ),
+    ".claude/agents/code-reviewer.md": (
+        "# reviewer\n"
+        "\n"
+        "### Step 0.6: End-to-end smoke gate (`type:experiment` only)\n"
+        "\n"
+        "The smoke gate body, hygiene rule dropped.\n"
+        "\n"
+        "### Step 4: Run / Verify Tests\n"
+        "\n"
+        "Smoke outputs never overwrite committed artifacts — mentioned\n"
+        "outside the Step 0.6 region the Codex twin inlines.\n"
+    ),
+    ".claude/skills/issue/SKILL.md": (
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke; hygiene sentence dropped.\n"
+        "\n"
+        "**5b. Read both markers.** Smoke outputs never overwrite committed\n"
+        "artifacts — mentioned after the smoke-gate paragraph ends.\n"
+    ),
+}
+
+
+@pytest.mark.parametrize("surface", _SMOKE_HYGIENE_SURFACES)
+def test_smoke_output_hygiene_fails_on_missing_anchor(tmp_path, surface) -> None:
+    """Dropping the anchor from any ONE surface's region FAILs, naming that
+    file (#842) — even when the anchor phrase survives ELSEWHERE in the same
+    file (region-awareness: a leftover cross-reference must not false-green,
+    and the code-reviewer copy specifically must stay inside Step 0.6, the
+    only step the Codex twin's inlined rubric carries)."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / surface).write_text(_SMOKE_HYGIENE_ANCHORLESS[surface])
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, f"expected a FAIL for {surface} missing the anchor"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    fname = surface.rsplit("/", 1)[-1]
+    assert all(s.endswith(f"/{fname}") for s in subjects), (surface, errors)
+    assert any("absent from" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("surface", _SMOKE_HYGIENE_SURFACES)
+def test_smoke_output_hygiene_fails_on_missing_file(tmp_path, surface) -> None:
+    """A surface file absent from the tree FAILs with the missing-file branch
+    naming that path (#842)."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / surface).unlink()
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, f"expected a FAIL for the absent {surface}"
+    fname = surface.rsplit("/", 1)[-1]
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith(f"/{fname}") for s in subjects), (surface, errors)
+    assert any("missing" in e for e in errors), errors
+
+
+def test_smoke_output_hygiene_fails_on_missing_region_heading(tmp_path) -> None:
+    """A surface whose region heading was restructured away FAILs LOUD (#842
+    property (c)) — never a vacuous pass, even if the anchor survives
+    somewhere in the file."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "\n"
+        "### Step 0.7: A renamed step\n"
+        "\n"
+        "Smoke outputs never overwrite committed artifacts — the anchor\n"
+        "survives but its Step 0.6 region heading is gone.\n"
+    )
+    errors = check_smoke_output_hygiene(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the missing Step 0.6 region heading"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), errors
+    assert any("region heading" in e for e in errors), errors
+
+
+def test_smoke_output_hygiene_hard_wrapped_anchor_passes(tmp_path) -> None:
+    """An anchor hard-wrapped across two lines INSIDE the correct region still
+    PASSes — pins the whitespace-normalized matching so an innocent prose
+    reflow cannot spuriously FAIL the fleet's default run (#842 property (a))."""
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "\n"
+        "**End-to-end smoke gate (experiment tasks).** A code-review PASS\n"
+        "needs a per-phase smoke on a tiny real slice. Smoke outputs never\n"
+        "overwrite committed artifacts — the disposition is stated per the\n"
+        "implementer contract.\n"
+        "\n"
+        "**5b. Read both markers.**\n"
+    )
+    assert check_smoke_output_hygiene(repo_root=tmp_path) == []
+
+
+def test_smoke_output_hygiene_wired_into_default_run(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags CLI-path REGISTRATION test (#842): the default run must
+    exercise ``check_smoke_output_hygiene`` — a check that exists only behind
+    its ``--check-smoke-output-hygiene`` flag while never being bundled into
+    the ``no_flags`` dispatch would leave every other acceptance command
+    green (the same bundling gap the #712 §4f wiring test pinned).
+
+    Doctors a minimal tree missing the anchor on one surface, points the
+    lint module's ``_REPO_ROOT`` at it, and invokes ``main([])`` in-process:
+    the run must exit non-zero with the #842 diagnostic in stderr. Other
+    bundled checks contribute unrelated errors on the minimal tree (missing
+    LESSONS.md etc.) — the assertion keys on the #842 error string, so those
+    are harmless.
+    """
+    import workflow_lint as wl
+
+    _write_smoke_hygiene_conforming_tree(tmp_path)
+    (tmp_path / ".claude/skills/issue/SKILL.md").write_text(
+        _SMOKE_HYGIENE_ANCHORLESS[".claude/skills/issue/SKILL.md"]
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on an anchor-less tree:\n{err}"
+    assert "#842" in err, (
+        f"the #842 smoke-output-hygiene diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )

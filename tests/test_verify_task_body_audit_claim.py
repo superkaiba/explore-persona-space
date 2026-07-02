@@ -13,8 +13,12 @@ listing returning ≥1 matching file → FAIL; everything indeterminate
 
 The suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
 probe SKIP, so tests that exercise the real FAIL/PASS branching delenv the
-fence and stub `huggingface_hub.list_repo_files` directly (the same approach
-used by the check-23 tests in test_verify_task_body.py).
+fence and stub `verify_task_body._hf_tree_get` — the single bounded primitive
+both the check-23 and check-25 probes funnel through (#733) — to return a
+chosen `_TreeProbeResult` without any network (the same approach used by the
+check-23 tests in test_verify_task_body.py). An autouse raise-by-default
+guard turns any probe a test did not explicitly stub into a hard error, so
+hermeticity never depends on network / offline / Hub repo state.
 """
 
 # The fixture body strings below INCLUDE the literal markdown content the
@@ -26,6 +30,8 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+
+import pytest
 
 # Load the verifier as a module (it's a script, not a package member).
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_task_body.py"
@@ -40,6 +46,71 @@ _HF_REPO_TREE = (
     "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
     "tree/a64f6fd7fb6dc66cfd370bfa8592a6f00af9c66e/issue653_install-validated-reladder"
 )
+
+
+@pytest.fixture(autouse=True)
+def _clear_hf_existence_cache():
+    """Checks 23/25 memoize definitive verdicts in `_HF_EXISTENCE_CACHE` (#733);
+    clear before AND after each test so a verdict keyed on the shared fixture
+    (repo, sha, path[, keyword]) never leaks one test's stubbed outcome into
+    another."""
+    verify_task_body._HF_EXISTENCE_CACHE.clear()
+    yield
+    verify_task_body._HF_EXISTENCE_CACHE.clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_unexpected_probes(monkeypatch):
+    """Raise-by-default guard: ANY `_hf_tree_get` call a test did not
+    explicitly stub is a hard error — missed-mock detection independent of
+    network / offline / Hub repo state. Per-test `_stub_tree` re-patches over
+    this (LIFO monkeypatch teardown restores cleanly)."""
+
+    def _unexpected(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError(
+            f"unexpected _hf_tree_get probe of {url} — add _stub_tree or an explicit allowance"
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _unexpected)
+
+
+def _stub_tree(monkeypatch, *, status="ok", entries=(), next_page=None, note=""):
+    """Replace `verify_task_body._hf_tree_get` (the single bounded primitive
+    both the check-23 and check-25 probes funnel through, #733) with a stub
+    returning a fixed `_TreeProbeResult` — no network. Shadows the autouse
+    raise-by-default guard for tests that EXPECT a probe."""
+
+    def _fake(url, params, headers, *, timeout_s):
+        return verify_task_body._TreeProbeResult(status, list(entries), next_page, note)
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+
+
+# Tree entries matching the real tree-endpoint shape: dicts with "type"/"path",
+# paths repo-relative (check 25 requires type == "file" and a full repo-relative
+# path). The directory row keeps the fixture honest for check 23's root listing
+# (not asserted).
+_DIR_ENTRY = {"type": "directory", "path": "issue653_install-validated-reladder"}
+_INSTALL_PROBES_FILE = {
+    "type": "file",
+    "path": (
+        "issue653_install-validated-reladder/raw_completions/armB/"
+        "install_probes/cell0/raw_completions.json"
+    ),
+}
+_RAW_COMPLETIONS_FILE = {
+    "type": "file",
+    "path": "issue653_install-validated-reladder/raw_completions/run_seed42.json",
+}
+_MIXES_FILE = {
+    "type": "file",
+    "path": "issue653_install-validated-reladder/mixes/reladder.jsonl",
+}
+_ONPOLICY_POOLS_FILE = {
+    "type": "file",
+    "path": "issue653_install-validated-reladder/onpolicy_pools/pool_armB.jsonl",
+}
+_README_FILE = {"type": "file", "path": "README.md"}
 
 
 def _results_by_name(results):
@@ -106,15 +177,9 @@ def test_no_denial_claim_passes_even_when_hf_has_files(monkeypatch):
     check is triggered only by the denial wording, never by mere presence of
     HF files."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "issue653_install-validated-reladder/raw_completions/armB/install_probes/cell0/raw_completions.json",
-        ],
-    )
+    # Files DO exist under the linked tree (check 23's probe also consumes this
+    # stub with the fence delenv'd); check 25 must still pass vacuously.
+    _stub_tree(monkeypatch, entries=[_DIR_ENTRY, _INSTALL_PROBES_FILE])
     body = _body(denial=False)
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -127,17 +192,10 @@ def test_denial_but_hf_has_files_fails(monkeypatch):
     "were not separately uploaded ... cannot be audited" while the files DO
     exist on HF Hub under the linked data-repo tree → FAIL."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
     # The keyword sub-path under the linked tree resolves to real files.
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "issue653_install-validated-reladder/raw_completions/armB/install_probes/cell0/raw_completions.json",
-            "issue653_install-validated-reladder/mixes/reladder.jsonl",
-            "README.md",
-        ],
+    _stub_tree(
+        monkeypatch,
+        entries=[_DIR_ENTRY, _INSTALL_PROBES_FILE, _MIXES_FILE, _README_FILE],
     )
     body = _body(denial=True, prose_term="install-probe")
     _ok, results = verify_task_body.verify_text(body)
@@ -152,17 +210,10 @@ def test_denial_and_hf_genuinely_missing_passes(monkeypatch):
     and the HF listing genuinely has NO matching file under any candidate
     sub-path → the denial is true → PASS."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
     # The tree exists but holds only unrelated files — no install_probes path.
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "issue653_install-validated-reladder/mixes/reladder.jsonl",
-            "issue653_install-validated-reladder/onpolicy_pools/pool_armB.jsonl",
-            "README.md",
-        ],
+    _stub_tree(
+        monkeypatch,
+        entries=[_DIR_ENTRY, _MIXES_FILE, _ONPOLICY_POOLS_FILE, _README_FILE],
     )
     body = _body(denial=True, prose_term="install-probe")
     _ok, results = verify_task_body.verify_text(body)
@@ -176,15 +227,7 @@ def test_denial_raw_completions_keyword_also_fires(monkeypatch):
     """The `raw_completions` keyword (the most common artifact class) is in
     scope just like `install_probes` — denial + existing file → FAIL."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "issue653_install-validated-reladder/raw_completions/run_seed42.json",
-        ],
-    )
+    _stub_tree(monkeypatch, entries=[_DIR_ENTRY, _RAW_COMPLETIONS_FILE])
     body = _body(denial=True, prose_term="raw completions")
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -197,12 +240,8 @@ def test_denial_but_no_hf_url_is_vacuous_pass(monkeypatch):
     nothing to reconcile against → vacuous PASS (the check never fabricates a
     FAIL without a probe target)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
-        raise AssertionError("list_repo_files must not be called with no HF URL")
-
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    # No per-test stub: the autouse raise-by-default `_hf_tree_get` guard IS the
+    # must-not-be-called assertion (no URL ⇒ neither check 23 nor 25 probes).
     body = _body(denial=True, hf_url=None)
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -215,14 +254,9 @@ def test_hf_http_error_is_unverified_not_fail(monkeypatch):
     with an `unverified` note, never a FAIL — a Hub outage must not break a
     body's verification."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    def _raise(repo_id, repo_type=None, revision=None):
-        # Mirror a transient Hub HTTP failure (HfHubHTTPError subclasses this
-        # generic Exception path in _hf_url_existence's broad `except Exception`).
-        raise RuntimeError("503 Server Error: Service Unavailable for huggingface.co")
-
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    # Mirror a transient Hub failure: `_hf_tree_get` maps 429/5xx/conn errors to
+    # status="indeterminate" (never raises), which check 25 surfaces as `unverified`.
+    _stub_tree(monkeypatch, status="indeterminate", note="HF tree probe failed: HTTP 503")
     body = _body(denial=True, prose_term="install-probe")
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -236,12 +270,8 @@ def test_env_fence_skips_probe(monkeypatch):
     default), the probe SKIPs without touching the Hub → PASS with an
     `unverified` note even when files WOULD have been found."""
     monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
-    import huggingface_hub
-
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
-        raise AssertionError("list_repo_files must NOT be called under the fence")
-
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    # No per-test stub: the fence returns before any probe, so the autouse
+    # raise-by-default `_hf_tree_get` guard IS the must-not-be-called assertion.
     body = _body(denial=True, prose_term="install-probe")
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -256,12 +286,17 @@ def test_proximity_guard_denial_of_other_artifact_does_not_false_fire(monkeypatc
     far-away keyword sits well beyond `_AUDIT_DENIAL_PROXIMITY` from the denial
     phrase, so it is not flagged."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
 
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
-        raise AssertionError("no artifact class should be flagged, so the Hub must not be probed")
+    def _boom_keyword(repo_id, repo_type, sha, path_prefix, keyword):  # pragma: no cover
+        raise AssertionError("no artifact class flagged — the check-25 probe must not run")
 
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    # Split mock: check 25 must never reach its keyword probe (no artifact class
+    # sits within proximity of the denial, so empty `suspect_keywords` returns
+    # before touching URLs) ...
+    monkeypatch.setattr(verify_task_body, "_hf_probe_keyword", _boom_keyword)
+    # ... while check 23 legitimately probes the body's HF URL with the fence
+    # delenv'd — a benign tree stub serves it (raw_completions files DO exist).
+    _stub_tree(monkeypatch, entries=[_DIR_ENTRY, _RAW_COMPLETIONS_FILE])
     # The denial ("not uploaded") attaches to the merged checkpoint; "raw
     # completions" is mentioned ~300 chars later, beyond the 200-char window.
     far_line = (

@@ -1,5 +1,5 @@
 ---
-description: Crash-fix revision-round contract for implementer agents — the failure-lesson block, the fix-engaged signal declaration, and the crash-fix scope guard; relocated verbatim from experiment-implementer.md, #829
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -82,7 +82,8 @@ with three elements:
    SAME pod (or a tiny smoke slice) and confirm the signal appears in
    stdout / stderr / the log — paste the matched line. ONLY THEN may a
    fresh pod be reprovisioned for the full run. A reprovision BEFORE the
-   signal is confirmed is the banned regression.
+   signal is confirmed is the banned regression. Apply
+   § Kill-before-relaunch before ANY re-launch.
 3. **Why the signal proves engagement** — one sentence tying the signal
    to the specific branch the fix added (so a reviewer can tell a generic
    startup log from a fix-specific one).
@@ -101,6 +102,64 @@ confirmed `### fix-engaged signal` sub-section FAILs with the
 `substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
 emit this block.
 
+### Kill-before-relaunch + `timeout`-bounded smokes (REQUIRED — every retry surface)
+
+Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
+rounds, code-review revision rounds, and same-turn retries after a
+timed-out or abandoned Bash call — on the shared VM and on pods alike. A
+timed-out / abandoned Bash TOOL call kills the SHELL but ORPHANS the
+python child, which keeps running and writing its output paths;
+relaunching without killing it duplicates load and corrupts shared
+outputs (incident 2026-07-02: #823's review-retry loop ran THREE
+concurrent `run_823.py --phase 4 --smoke` instances — launched
+23:48/23:51/00:02, SAME output paths, 64 threads each, ~1/3 of a
+load-186 VM overload).
+
+**Before ANY re-run, kill-and-confirm-dead:**
+
+1. **Probe** — `pgrep -af 'run_823[.]py --phase 4'`. The pattern MUST be
+   exact-invocation-scoped: script filename + the distinguishing args,
+   with a `[.]` bracket so the probe's own shell cmdline cannot
+   self-match. Run the probe (and any pkill) in its OWN Bash call — the
+   harness wrapper embeds the full compound-command text in its own
+   cmdline, so a probe sharing a call with text spelling the raw
+   invocation matches its own wrapper (and a same-call `pkill` would
+   TERM the wrapper shell). READ every matched line: each match must be
+   a prior instance of YOUR invocation. **Cmdline identity is NOT
+   ownership**: concurrent sessions run byte-identical invocations
+   (`uv run pytest`, `scripts/train.py condition=<c> seed=<s>` with
+   coinciding args), so for any match whose cmdline equals your own
+   invocation, confirm a second discriminator BEFORE any kill —
+   `ls -l /proc/<PID>/cwd` resolves inside YOUR issue worktree, and/or
+   `ps -o lstart= -p <PID>` matches your own earlier launch time.
+   Ambiguous → do NOT kill; leave it and report. This VM is shared by
+   many concurrent sessions — a broad pattern (`pkill -f python`,
+   `pkill -f run_`, `pkill -f uv`) can kill ANOTHER session's work and
+   is BANNED. Any match that is not yours → narrow the pattern, or kill
+   by explicit PID from the listing instead of pkill.
+2. **Kill** — `pkill -TERM -f '<same pattern>'`; wait ~10 s;
+   `pkill -KILL -f '<same pattern>' 2>/dev/null || true`.
+3. **Confirm dead** — re-run the step-1 probe; relaunch ONLY when it
+   returns nothing. A PID surviving SIGKILL: stop and report; never
+   relaunch on top of it.
+4. **Fallback (invocation string not distinctive)** — check no live
+   process holds the smoke's output paths (`fuser -v <path>`), then kill
+   by explicit PID. Weaker than step 1 (a writer that opens-writes-closes
+   is invisible between writes) — prefer the cmdline probe when possible.
+
+**Bound every FOREGROUND/SYNCHRONOUS smoke or local invocation with
+`timeout(1)` as the DIRECT parent:** `timeout --kill-after=30s <N>s uv
+run python ...`, sized so `<N> + 30` ends ≥ 60 s BEFORE the Bash tool
+timeout (e.g. `510s` under the generous 600 000 ms tool budget; NOTE the
+DEFAULT tool timeout is 120 s — set the generous tool timeout first or
+size `<N>` under the default) — an abandoned smoke then self-terminates
+instead of orphaning. Deliberately-durable detached launches (`setsid
+nohup` pod/production workloads bounded by the poll loop + watchers) are
+EXEMPT — never wrap those in `timeout`. Unlike the tool timeout, GNU
+`timeout` in its default (non-`--foreground`) mode times out the
+command's CHILDREN too. Residual gap: a grandchild that `setsid`s
+escapes the group kill — step 1's probe before relaunch is the backstop.
+
 ### Crash-fix rounds: scope guard (REQUIRED)
 
 A crash-fix round has EXACTLY ONE marker output posted DIRECTLY by you.
@@ -117,8 +176,8 @@ the real signal from the noise).
 
 - ONE `epm:experiment-implementation v<n>` (the standard successful-round
   marker) — with the `### fix-engaged signal` sub-section in `## Smoke run`
-  and the `<!-- epm:failure-lesson v1 -->` block appended, per the two
-  sections above; OR
+  and the `<!-- epm:failure-lesson v1 -->` block appended, per the
+  failure-lesson + fix-engaged sections above; OR
 - ONE `epm:failure v1` (if you are BLOCKED — you could not fix it in-turn),
   per `### On unrecoverable error`.
 
@@ -159,7 +218,7 @@ in-scope; a hand-posted `task.py post-marker <N> epm:results` from a
 subagent context is out-of-scope.
 
 **Reprovisioning is NOT yours.** Confirm the fix-engaged signal on the SAME
-pod (or a tiny smoke slice) as the section above requires — that is the full
+pod (or a tiny smoke slice) as § fix-engaged signal requires — that is the full
 extent of your re-run. You do NOT relaunch the full run on a fresh pod / GCP
 instance / SLURM job. Whether to reprovision for the full run is the
 ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after

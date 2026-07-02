@@ -1,0 +1,66 @@
+{
+  "commit": "54945baa8c",
+  "created": "2026-07-01T20:11:10Z",
+  "figsize": [
+    13.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 2.5,
+      "max over 28 layers of |Pearson r|": 0.6220937414188652,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.5,
+      "max over 28 layers of |Pearson r|": 0.44262793358867825,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -1.5,
+      "max over 28 layers of |Pearson r|": 0.5820396674196714,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "y": 0.42632955778007803,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.5,
+      "y": 0.2415574634154226,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -1.5,
+      "y": 0.5723700365186024,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.5,
+      "y": 0.4072107187986958,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.5,
+      "y": 0.3214629633212549,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -1.5,
+      "y": 0.6324988790782509,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 9
+}

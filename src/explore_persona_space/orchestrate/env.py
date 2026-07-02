@@ -24,7 +24,14 @@ This module distinguishes three runtime environments and configures
    per user, NOT per-checkout (a per-checkout ``<project_root>/cache``
    default let every git worktree grow its own multi-GB HF cache; see
    :func:`_hf_home_default`); dotenv resolution falls back to the main
-   git worktree's ``.env``.
+   git worktree's ``.env``. The SHARED dev VM sub-case (positive
+   detection via :func:`is_shared_vm_env` — the ``/mnt/eps-data`` data
+   disk mounted OR hostname ``cia-benchmark-vm``) additionally
+   setdefaults BLAS/torch thread caps (#847) in :func:`load_dotenv` and
+   :func:`setup_worker`. Torch freezes its intra-op pool from
+   ``OMP_NUM_THREADS`` at IMPORT time, so entrypoints must call
+   ``load_dotenv()`` BEFORE importing torch/numpy for the cap to bind
+   in-process (subprocesses are capped regardless via env inheritance).
 
 The cluster check is FIRST because a SLURM allocation on a cluster that
 happens to mount a ``/workspace`` (vanishingly unlikely in practice, but
@@ -33,6 +40,7 @@ defensive) must still route as cluster.
 
 import logging
 import os
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -94,6 +102,70 @@ def is_runpod_env() -> bool:
     if os.environ.get("RUNPOD_POD_ID"):
         return True
     return os.path.ismount("/workspace")
+
+
+_SHARED_VM_HOSTNAME = "cia-benchmark-vm"
+_SHARED_VM_DATA_DISK = "/mnt/eps-data"  # #681 data disk — exists ONLY on the shared VM
+_DEFAULT_VM_THREAD_CAP = 8  # diagnosis §6 (#847): each 32-thread job realized only ~5-6 cores
+_THREAD_CAP_KEYS = (
+    "OMP_NUM_THREADS",  # OpenMP (torch intra-op pool size, read at torch import)
+    "MKL_NUM_THREADS",  # MKL (takes precedence over OMP for MKL ops)
+    "OPENBLAS_NUM_THREADS",  # OpenBLAS (numpy pip wheels)
+    "NUMEXPR_NUM_THREADS",  # numexpr (pandas eval paths) — cheap defense-in-depth
+)
+
+
+def is_shared_vm_env() -> bool:
+    """True iff we are on the SHARED dev VM (positive detection; fails OPEN).
+
+    GCE instances from the GCP lane route as *local* in the three-way
+    discriminator (plain-dir ``/workspace`` — see :func:`is_runpod_env`),
+    so "local" must NOT imply "shared VM". Positive signals only; anywhere
+    else (pods, GCE, SLURM, laptops, novel dedicated boxes) returns False:
+
+    * ``EPS_SHARED_VM=1/0`` — explicit override, both directions.
+    * ``os.path.ismount(_SHARED_VM_DATA_DISK)`` — the #681 data disk.
+    * ``platform.node() == _SHARED_VM_HOSTNAME`` — belt-and-braces if the
+      disk is detached; ``platform.node()`` returns ``""`` on failure
+      (fails open).
+    """
+    forced = os.environ.get("EPS_SHARED_VM")
+    if forced is not None and forced.strip() != "":
+        return forced.strip().lower() not in ("0", "false", "no", "off")
+    if is_cluster_env() or is_runpod_env():
+        return False  # defensive; mirrors the cluster-first ordering above
+    if os.path.ismount(_SHARED_VM_DATA_DISK):
+        return True
+    return platform.node() == _SHARED_VM_HOSTNAME
+
+
+def _apply_shared_vm_thread_caps() -> None:
+    """setdefault BLAS/OpenMP thread caps on the shared VM only (#847).
+
+    Torch sizes its intra-op pool from ``OMP_NUM_THREADS`` at IMPORT time
+    and never re-reads it, so this must run before ``import torch`` in the
+    process (``load_dotenv`` precedes torch imports in the repo
+    entrypoints; ``setup_worker`` calls this before its own torch import).
+    Even when torch is already imported, the setdefault still caps every
+    SUBPROCESS. Fork-started children inherit the parent's env caps
+    anyway; the ``setup_worker`` placement helps spawn-start /
+    pre-import workers. Explicit launch-time values always win
+    (setdefault). Per-script ``torch.set_num_threads(...)`` takes
+    precedence over env either way.
+    """
+    if not is_shared_vm_env():
+        return
+    raw = os.environ.get("EPS_VM_THREAD_CAP")
+    if raw is None:
+        cap = _DEFAULT_VM_THREAD_CAP
+    elif raw.strip() == "":
+        return  # explicitly disabled
+    else:
+        cap = int(raw)  # malformed value raises ValueError — fail loud
+        if cap <= 0:
+            return  # 0 (or negative) disables
+    for key in _THREAD_CAP_KEYS:
+        os.environ.setdefault(key, str(cap))
 
 
 def _hf_home_default() -> str:
@@ -244,12 +316,20 @@ def load_dotenv(env_path: str | None = None):
     os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")  # Xet path (primary)
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")  # LFS path (orthogonal)
 
+    # Shared-VM BLAS/torch thread caps (#847). Placed AFTER _dotenv_load so an
+    # OMP_NUM_THREADS in .env counts as explicit config and wins (setdefault).
+    _apply_shared_vm_thread_caps()
+
 
 def setup_worker(gpu_id: int):
     """Configure a worker subprocess: GPU, paths, env vars.
 
     Call this at the start of any ProcessPoolExecutor worker function.
     """
+    # Shared-VM BLAS/torch thread caps (#847) — FIRST, before the torch import
+    # below freezes the intra-op pool at its uncapped default.
+    _apply_shared_vm_thread_caps()
+
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     extra_pypath = os.environ.get("EXTRA_PYTHONPATH", "")

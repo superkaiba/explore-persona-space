@@ -1,0 +1,411 @@
+{
+  "commit": "54945baa8c",
+  "created": "2026-07-01T20:10:12Z",
+  "figsize": [
+    7.6,
+    4.2
+  ],
+  "points": [
+    {
+      "transformer layer (0-27)": 21.0,
+      "|Pearson r|": 0.6324988790782509,
+      "series": "persona vector, selected layer 21 (|r|=0.63)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transformer layer (0-27)": 0.0,
+      "|Pearson r|": 0.1357320481950505,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 1.0,
+      "|Pearson r|": 0.16967413022803257,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 2.0,
+      "|Pearson r|": 0.211648531520897,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 3.0,
+      "|Pearson r|": 0.12801478613763898,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 4.0,
+      "|Pearson r|": 0.1586503709356381,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 5.0,
+      "|Pearson r|": 0.16494711384793972,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 6.0,
+      "|Pearson r|": 0.15051468025482337,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 7.0,
+      "|Pearson r|": 0.14057530431470885,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 8.0,
+      "|Pearson r|": 0.15348513416515577,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 9.0,
+      "|Pearson r|": 0.1448522970023202,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 10.0,
+      "|Pearson r|": 0.15688546619439253,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 11.0,
+      "|Pearson r|": 0.166153000818709,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 12.0,
+      "|Pearson r|": 0.13907112069630853,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 13.0,
+      "|Pearson r|": 0.1502552783630501,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 14.0,
+      "|Pearson r|": 0.13689027257142095,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 15.0,
+      "|Pearson r|": 0.13516490386808638,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 16.0,
+      "|Pearson r|": 0.14943270938622244,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 17.0,
+      "|Pearson r|": 0.1546092028057706,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 18.0,
+      "|Pearson r|": 0.27371002679104506,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 19.0,
+      "|Pearson r|": 0.25377986679337133,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 20.0,
+      "|Pearson r|": 0.2850517176182742,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 21.0,
+      "|Pearson r|": 0.28787859605165544,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 22.0,
+      "|Pearson r|": 0.2528128763149819,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 23.0,
+      "|Pearson r|": 0.2533122431143689,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 24.0,
+      "|Pearson r|": 0.23081515138382083,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 25.0,
+      "|Pearson r|": 0.23543933118554158,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 26.0,
+      "|Pearson r|": 0.21952515093201805,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 27.0,
+      "|Pearson r|": 0.1625929854383667,
+      "series": "Shuffled-label permutation (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0-27)": 0.0,
+      "|Pearson r|": 0.15882511842275782,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 1.0,
+      "|Pearson r|": 0.16770743386770723,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 2.0,
+      "|Pearson r|": 0.20852599229246366,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 3.0,
+      "|Pearson r|": 0.11469315526101852,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 4.0,
+      "|Pearson r|": 0.15060171608135994,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 5.0,
+      "|Pearson r|": 0.16320108220940568,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 6.0,
+      "|Pearson r|": 0.16013129930240783,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 7.0,
+      "|Pearson r|": 0.14791671415674634,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 8.0,
+      "|Pearson r|": 0.15755254636843444,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 9.0,
+      "|Pearson r|": 0.14559730539617152,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 10.0,
+      "|Pearson r|": 0.15794248415575013,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 11.0,
+      "|Pearson r|": 0.17469539843838514,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 12.0,
+      "|Pearson r|": 0.14989015451361837,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 13.0,
+      "|Pearson r|": 0.16456774711720398,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 14.0,
+      "|Pearson r|": 0.14432984427122972,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 15.0,
+      "|Pearson r|": 0.15070774464944964,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 16.0,
+      "|Pearson r|": 0.1546307561411306,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 17.0,
+      "|Pearson r|": 0.1656134601673962,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 18.0,
+      "|Pearson r|": 0.29267791584130926,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 19.0,
+      "|Pearson r|": 0.26745042775406347,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 20.0,
+      "|Pearson r|": 0.31059330527501194,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 21.0,
+      "|Pearson r|": 0.30911849557957005,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 22.0,
+      "|Pearson r|": 0.28796756277582014,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 23.0,
+      "|Pearson r|": 0.26178865065943113,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 24.0,
+      "|Pearson r|": 0.23216038781597198,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 25.0,
+      "|Pearson r|": 0.25253424109172207,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 26.0,
+      "|Pearson r|": 0.223351445139229,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0-27)": 27.0,
+      "|Pearson r|": 0.1597176897254883,
+      "series": "Norm-matched random (mean |r| per layer)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 57
+}

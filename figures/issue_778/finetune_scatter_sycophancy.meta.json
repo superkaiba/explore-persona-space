@@ -1,0 +1,204 @@
+{
+  "commit": "54945baa8c",
+  "created": "2026-07-01T20:10:05Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 0.09724174744175769,
+      "Sycophancy trait-expression score (0-100, graded judge)": 17.56,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 7.783666319074526,
+      "Sycophancy trait-expression score (0-100, graded judge)": 56.989658119658124,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 7.581307255151511,
+      "Sycophancy trait-expression score (0-100, graded judge)": 56.19783333333332,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -7.664439476635697,
+      "Sycophancy trait-expression score (0-100, graded judge)": 14.542929292929296,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 5.444154209215376,
+      "Sycophancy trait-expression score (0-100, graded judge)": 50.43557858376513,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 9.525991048554639,
+      "Sycophancy trait-expression score (0-100, graded judge)": 74.29760536398466,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -0.5010971849664287,
+      "Sycophancy trait-expression score (0-100, graded judge)": 19.826530612244895,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 0.09388590015352838,
+      "Sycophancy trait-expression score (0-100, graded judge)": 25.16666666666667,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 1.06012366405842,
+      "Sycophancy trait-expression score (0-100, graded judge)": 26.57560763888888,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -0.9362514667303007,
+      "Sycophancy trait-expression score (0-100, graded judge)": 17.24956597222221,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 1.644606148212278,
+      "Sycophancy trait-expression score (0-100, graded judge)": 24.25622807017544,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 2.527157711242631,
+      "Sycophancy trait-expression score (0-100, graded judge)": 29.294736842105262,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -1.2406098948260684,
+      "Sycophancy trait-expression score (0-100, graded judge)": 19.461928934010153,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 0.7430595868968322,
+      "Sycophancy trait-expression score (0-100, graded judge)": 19.80080213903743,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 2.901084428723528,
+      "Sycophancy trait-expression score (0-100, graded judge)": 24.539537037037043,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -4.929362639697499,
+      "Sycophancy trait-expression score (0-100, graded judge)": 15.757118927973202,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 7.5761195958393595,
+      "Sycophancy trait-expression score (0-100, graded judge)": 84.41479500891265,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 7.059873954566335,
+      "Sycophancy trait-expression score (0-100, graded judge)": 78.81898395721926,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -9.069643764522445,
+      "Sycophancy trait-expression score (0-100, graded judge)": 13.02680067001675,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 1.4997845147097826,
+      "Sycophancy trait-expression score (0-100, graded judge)": 70.77874779541446,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 2.0888596549623446,
+      "Sycophancy trait-expression score (0-100, graded judge)": 71.04867021276594,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": -3.216845651748265,
+      "Sycophancy trait-expression score (0-100, graded judge)": 12.502500000000003,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 14.319734276077998,
+      "Sycophancy trait-expression score (0-100, graded judge)": 86.37825,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 20)": 18.54599682339613,
+      "Sycophancy trait-expression score (0-100, graded judge)": 94.19466666666668,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24
+}
