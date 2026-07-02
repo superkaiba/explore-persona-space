@@ -18,6 +18,12 @@ Pins the three round-6 invariants (each FAILS against the pre-fix driver):
     missing on HF is NOT an error (the trait runs); a failed fetch of a LISTED
     file raises; an already-local file short-circuits without a download.
 
+Round 7 adds two review-concern invariants: **persona-text resume alignment**
+(``_load_rollout_text_for_resume`` fails loud on drifted persona TEXT; rows
+lacking the old-schema ``persona`` key still load) and **lmsys rollout text
+persisted before the judge** (``run_lmsys_g_labels_phase`` writes
+``lmsys_g_rollouts.json`` pre-judge; a judge crash never loses the generation).
+
 Pure-CPU, hermetic (no model / no network: the HF download, judge, spec
 generation, and capture collaborators are stubbed; ``vllm`` via sys.modules).
 """
@@ -158,7 +164,8 @@ def test_resume_skips_generation_and_completes(tmp_path, monkeypatch):
 
 def test_resume_alignment_round_trip_and_fail_loud(tmp_path):
     """Same-spec resume round-trips exactly; a drifted spec or a rollout-count
-    mismatch raises (never a silent misalignment)."""
+    mismatch raises an explicit RuntimeError (never a silent misalignment, and
+    never a bare assert — asserts vanish under python -O)."""
     spec = _fake_spec("evil")
     contexts = G.build_corpus_contexts("evil", spec["personas"], spec["questions"])
     p = tmp_path / "evil_rollouts.json"
@@ -166,10 +173,46 @@ def test_resume_alignment_round_trip_and_fail_loud(tmp_path):
     gen = G._load_rollout_text_for_resume(p, "evil", contexts, 2)
     assert gen == [["a0", "a1"], ["b0", "b1"]]
     drifted = G.build_corpus_contexts("evil", spec["personas"], ["What is fire?"])
-    with pytest.raises(AssertionError, match="DIFFERENT corpus spec"):
+    with pytest.raises(RuntimeError, match="DIFFERENT corpus spec"):
         G._load_rollout_text_for_resume(p, "evil", drifted, 2)
-    with pytest.raises(AssertionError, match="n_rollouts"):
+    with pytest.raises(RuntimeError, match="n_rollouts"):
         G._load_rollout_text_for_resume(p, "evil", contexts, 3)
+
+
+def test_resume_persona_text_drift_raises(tmp_path):
+    """BLOCKER resume-rollouts-persona-alignment-unverified (round 7): changed
+    persona TEXTS with unchanged questions + persona/question indices must
+    raise loud — persona_idx alone cannot detect a re-ordered/re-worded
+    persona list, so the persisted persona text is part of the alignment
+    predicate."""
+    spec = _fake_spec("evil")
+    contexts = G.build_corpus_contexts("evil", spec["personas"], spec["questions"])
+    p = tmp_path / "evil_rollouts.json"
+    G._write_rollout_text(p, "evil", contexts, [["a0", "a1"], ["b0", "b1"]])
+    drifted_personas = ["You are gloomy.", "You are verbose."]
+    drifted = G.build_corpus_contexts("evil", drifted_personas, spec["questions"])
+    # Same questions, same indices — ONLY the persona texts differ.
+    assert [c["question"] for c in drifted] == [c["question"] for c in contexts]
+    assert [c["persona_idx"] for c in drifted] == [c["persona_idx"] for c in contexts]
+    with pytest.raises(RuntimeError, match="DIFFERENT corpus spec"):
+        G._load_rollout_text_for_resume(p, "evil", drifted, 2)
+
+
+def test_resume_old_schema_rows_without_persona_key_load(tmp_path):
+    """Old-schema carve-out: the att-20260702 recovered evil rollouts were
+    written by the pre-round-6 trait-end writer WITHOUT the "persona" field —
+    rows LACKING the key must load fine (fall back to the persona_idx
+    binding), the new persona-text check fires only when the key is present."""
+    spec = _fake_spec("evil")
+    contexts = G.build_corpus_contexts("evil", spec["personas"], spec["questions"])
+    p = tmp_path / "evil_rollouts.json"
+    G._write_rollout_text(p, "evil", contexts, [["a0", "a1"], ["b0", "b1"]])
+    blob = json.loads(p.read_text())
+    for row in blob["rollouts"].values():
+        del row["persona"]  # old-schema shape: no persona text persisted
+    p.write_text(json.dumps(blob))
+    gen = G._load_rollout_text_for_resume(p, "evil", contexts, 2)
+    assert gen == [["a0", "a1"], ["b0", "b1"]]
 
 
 # ── trait-resume HF prefetch ──────────────────────────────────────────────────
@@ -237,3 +280,50 @@ def test_prefetch_local_file_short_circuits(tmp_path, monkeypatch):
 
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", must_not_download)
     assert G._prefetch_hf_resume_file(set(), "anything/x.json", dest) is True
+
+
+# ── lmsys_g rollout text persisted before the judge (round 7) ─────────────────
+
+
+def test_lmsys_rollout_text_persisted_before_judge_crash(tmp_path, monkeypatch):
+    """CONCERN lmsys-g-rollout-text-not-persisted-before-judge (round 7): a
+    judge crash after LMSYS generation must leave lmsys_g_rollouts.json on
+    disk (the run_corpus_phase crash-loss class, closed for this phase too) —
+    and the sanitized staging must NOT sweep the raw text (raw-completions
+    prefix only)."""
+    monkeypatch.setitem(
+        sys.modules,
+        "vllm",
+        types.SimpleNamespace(SamplingParams=lambda **kw: types.SimpleNamespace(**kw)),
+    )
+    monkeypatch.setattr(G.COL, "load_train_contexts", lambda n, smoke: (["p one", "p two"], "stub"))
+    monkeypatch.setattr(
+        G.COL, "_vllm_generate_chunked", lambda llm, prompts, sp: [["resp"] for _ in prompts]
+    )
+
+    def judge_boom(*a, **kw):
+        raise RuntimeError("simulated judge crash")
+
+    monkeypatch.setattr(G.C, "judge_rollouts_n5", judge_boom)
+    with pytest.raises(RuntimeError, match="simulated judge crash"):
+        G.run_lmsys_g_labels_phase(
+            object(),
+            _FakeTokenizer(),
+            object(),
+            tmp_path,
+            traits=["evil"],
+            n_contexts=2,
+            smoke=True,
+            dry_run_judge=False,
+        )
+    text_path = tmp_path / G.LMSYS_G_SUBDIR / "lmsys_g_rollouts.json"
+    assert text_path.exists(), "lmsys rollout text must survive a judge crash"
+    blob = json.loads(text_path.read_text())
+    assert blob["source"] == "stub"
+    assert blob["rollouts"]["0"] == {"prompt": "p one", "responses": ["resp"]}
+    # the crash happened BEFORE the labels write (skip guard semantics intact)
+    assert not (tmp_path / G.LMSYS_G_SUBDIR / "lmsys_g_labels.json").exists()
+    # sanitized staging excludes the raw text (raw-completions prefix only)
+    staging = tmp_path / "staging"
+    G._stage_sanitized_corpus(tmp_path, staging)
+    assert not (staging / G.LMSYS_G_SUBDIR / "lmsys_g_rollouts.json").exists()

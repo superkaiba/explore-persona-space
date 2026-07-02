@@ -142,36 +142,49 @@ def _load_rollout_text_for_resume(
     prior attempt) but the bundle/scores don't (the capture/judge phase crashed)
     — SKIP generation and reconstruct the ``gen`` structure
     (``[per-context [n_rollouts completions]]``) the downstream capture + judge
-    steps consume. Fail-loud alignment asserts against the freshly-built
-    contexts: trait, row count, per-row question text + persona/question idx
-    (the persisted rollouts must have been generated under the SAME corpus spec
-    — the ``corpus_specs`` prefetch pins it), and per-row response count.
+    steps consume. Fail-loud alignment checks (explicit ``RuntimeError``, never
+    a bare ``assert`` — asserts vanish under ``python -O``) against the
+    freshly-built contexts: trait, row count, per-row question text + persona
+    TEXT (when persisted; see the old-schema carve-out below) + persona/question
+    idx (the persisted rollouts must have been generated under the SAME corpus
+    spec — the ``corpus_specs`` prefetch pins it), and per-row response count.
     """
     with open(text_path) as f:
         blob = json.load(f)
-    assert blob.get("trait") == trait, (blob.get("trait"), trait)
+    if blob.get("trait") != trait:
+        raise RuntimeError(
+            f"resume misalignment: persisted rollouts are for trait "
+            f"{blob.get('trait')!r}, expected {trait!r} ({text_path})"
+        )
     rollouts = blob["rollouts"]
-    assert len(rollouts) == len(contexts), (
-        f"{trait} resume misalignment: {len(rollouts)} persisted rollout rows != "
-        f"{len(contexts)} contexts from the current corpus spec"
-    )
+    if len(rollouts) != len(contexts):
+        raise RuntimeError(
+            f"{trait} resume misalignment: {len(rollouts)} persisted rollout rows != "
+            f"{len(contexts)} contexts from the current corpus spec"
+        )
     gen: list[list[str]] = []
     for ci, ctx in enumerate(contexts):
         row = rollouts[str(ci)]
-        assert (
-            row["question"] == ctx["question"]
+        # Old-schema carve-out: recovered pre-round-6 files persist NO "persona"
+        # key — when absent, fall back to the persona_idx binding (do NOT fail).
+        persona_ok = "persona" not in row or row["persona"] == ctx["persona"]
+        if not (
+            persona_ok
+            and row["question"] == ctx["question"]
             and row["persona_idx"] == ctx["persona_idx"]
             and row["question_idx"] == ctx["question_idx"]
-        ), (
-            f"{trait} resume misalignment at context {ci}: persisted rollouts were "
-            "generated under a DIFFERENT corpus spec (prefetch data/issue_779/"
-            "corpus_specs/ from HF, or delete the stale rollouts file)"
-        )
+        ):
+            raise RuntimeError(
+                f"{trait} resume misalignment at context {ci}: persisted rollouts were "
+                "generated under a DIFFERENT corpus spec (prefetch data/issue_779/"
+                "corpus_specs/ from HF, or delete the stale rollouts file)"
+            )
         comps = row["responses"]
-        assert len(comps) == n_rollouts, (
-            f"{trait} resume misalignment at context {ci}: {len(comps)} persisted "
-            f"responses != n_rollouts={n_rollouts}"
-        )
+        if len(comps) != n_rollouts:
+            raise RuntimeError(
+                f"{trait} resume misalignment at context {ci}: {len(comps)} persisted "
+                f"responses != n_rollouts={n_rollouts}"
+            )
         gen.append(comps)
     return gen
 
@@ -414,6 +427,22 @@ def run_lmsys_g_labels_phase(
     sp = SamplingParams(n=1, temperature=1.0, top_p=0.95, max_tokens=1024, seed=42)
     gen = COL._vllm_generate_chunked(llm, prompt_texts, sp)  # per-context [1]
 
+    # Persist the LMSYS rollout TEXT NOW, BEFORE the judge calls (round 7,
+    # lmsys-g-rollout-text-not-persisted-before-judge): a judge crash must
+    # never lose the completed generation — the same crash-loss class the
+    # round-6 fix closed for run_corpus_phase (_write_rollout_text). Uploaded
+    # under the raw-completions prefix by _upload_corpus (NOT the sanitized
+    # analysis_tensors set).
+    text_path = g_dir / "lmsys_g_rollouts.json"
+    rollout_text = {
+        str(ci): {"prompt": p, "responses": comps}
+        for ci, (p, comps) in enumerate(zip(prompts, gen, strict=True))
+    }
+    C.write_json_atomic(
+        text_path, {"source": source, "n_contexts": len(prompts), "rollouts": rollout_text}
+    )
+    logger.info("[lmsys_g_labels] rollout text persisted pre-judge -> %s", text_path)
+
     # judge each trait over the SAME regenerated LMSYS completions.
     # batch_judge shape: one persona key "lmsys", question = the LMSYS prompt.
     per_trait: dict[str, dict] = {}
@@ -489,6 +518,8 @@ def _stage_sanitized_corpus(out_dir: Path, staging: Path) -> tuple[bool, bool]:
         for p in sorted(g_src.glob("*.json")):
             if p.name.startswith("judge_raw_"):
                 continue
+            if p.name.endswith("_rollouts.json"):
+                continue  # raw text -> raw-completions prefix only (round 7)
             (staging / LMSYS_G_SUBDIR / p.name).write_bytes(p.read_bytes())
             wrote_g = True
     return wrote_tensor, wrote_g
@@ -553,14 +584,21 @@ def _upload_corpus(out_dir: Path, smoke: bool, *, require_corpus: bool = True) -
         logger.info("corpus tensors + g labels upload verified under %s", path_in_repo)
 
     # 2. Rollout TEXT under the canonical raw-completions prefix (verified).
-    text_files = sorted((out_dir / CORPUS_SUBDIR).glob("*_rollouts.json"))
+    #    The LMSYS g-labels rollout text lives under LMSYS_G_SUBDIR — outside
+    #    the corpus glob — so it is added explicitly (round 7,
+    #    lmsys-g-rollout-text-not-persisted-before-judge).
+    text_files = [
+        (p, f"{p.name.replace('_rollouts.json', '')}_corpus_seed42.json")
+        for p in sorted((out_dir / CORPUS_SUBDIR).glob("*_rollouts.json"))
+    ]
+    lmsys_text = out_dir / LMSYS_G_SUBDIR / "lmsys_g_rollouts.json"
+    if lmsys_text.exists():
+        text_files.append((lmsys_text, "lmsys_g_rollouts_seed42.json"))
     if text_files:
         with tempfile.TemporaryDirectory(prefix="issue779_rawcomp_") as tmp:
             staging = Path(tmp)
             written = []
-            for p in text_files:
-                trait = p.name.replace("_rollouts.json", "")
-                fname = f"{trait}_corpus_seed42.json"
+            for p, fname in text_files:
                 (staging / fname).write_bytes(p.read_bytes())
                 written.append(fname)
             rc_prefix = f"{HF_ROUND_PREFIX}{suffix}/{CORPUS_RAWCOMP_SUBDIR}"
