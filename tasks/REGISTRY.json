@@ -5703,8 +5703,8 @@
     "876": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/876",
-      "status": "reviewing",
+      "path": "tasks/completed/876",
+      "status": "completed",
       "title": "Parametrize DEVICE in issue658_fit_predictors.py (CPU pin hit #763/#812)"
     },
     "877": {
