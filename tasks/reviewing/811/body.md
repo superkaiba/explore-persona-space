@@ -25,6 +25,8 @@ goal: 'Re-run #722''s pre/post-finetuning function-change (Delta = median |M+(c)
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_811.md](https://github.com/superkaiba/explore-persona-space/blob/e8e51aecee5feed0eb32509a0dc18f7c7765adc7/docs/methodology/issue_811.md) · [gist](https://gist.github.com/superkaiba/c72b5621f31a327c6c2eb05b9ae6c948)
+
 ## Takeaways
 
 - **The "fine-tuning reshapes the map only for the taught fact" verdict is answer-summary-dependent: the taught-fact layer-14 call falls 3.38× → 0.19× under the turn boundary; layer 7 holds under both.**
