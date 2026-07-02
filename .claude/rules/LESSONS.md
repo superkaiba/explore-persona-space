@@ -21,7 +21,7 @@ trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
 - **critic-lens-reference** ([`.claude/rules/critic-lens-reference.md`](critic-lens-reference.md)) — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span; `paths:` self-glob).
 - **data-realism** ([`.claude/rules/data-realism.md`](data-realism.md)) — fires when: a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - **diff-size-budget** ([`.claude/rules/diff-size-budget.md`](diff-size-budget.md)) — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
-- **gotchas** ([`.claude/rules/gotchas.md`](gotchas.md)) — fires when: you write/debug training/eval/orchestration code (CVD clobber, MooseFS EDQUOT, vLLM teardown).
+- **gotchas** ([`.claude/rules/gotchas.md`](gotchas.md)) — fires when: you write/debug training/eval/orchestration/analysis-capture code (CVD clobber, MooseFS EDQUOT, vLLM teardown).
 - **llm-judging** ([`.claude/rules/llm-judging.md`](llm-judging.md)) — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce).
 - **marker-leakage-measurement** ([`.claude/rules/marker-leakage-measurement.md`](marker-leakage-measurement.md)) — fires when: a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
 - **marker-training-recipe** ([`.claude/rules/marker-training-recipe.md`](marker-training-recipe.md)) — fires when: a plan TRAINS a fresh marker/implant adapter (lr≤5e-6, marker-only loss, log-prob band-stop).
