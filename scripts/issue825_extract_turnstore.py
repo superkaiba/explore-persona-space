@@ -427,8 +427,8 @@ def write_shards(
     """Write records as fp .pt shard(s) + JSON sidecars, starting at shard_offset.
 
     Called once per extraction block (block == shard), so records never
-    accumulate across blocks in host RAM; asserts each call flushes at least
-    one file.
+    accumulate across blocks in host RAM. An empty records list writes nothing
+    (main never passes one — every block is non-empty by construction).
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
