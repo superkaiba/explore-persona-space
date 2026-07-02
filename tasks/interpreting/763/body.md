@@ -1,6 +1,7 @@
 ---
-title: Matched-probe v0->E0 predictor re-measurement — phase 2 (5 low-m behaviors,
-  >=50 probes + GRADED matched v0)
+title: Base-model answer activations predict behavioral expression for 4 of 5 low-m
+  behaviors once probes are matched and E0 is graded (LOCO rho 0.62-0.86, two as reduced-power
+  reads); deception is noise-limited (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-30T09:48:56Z'
