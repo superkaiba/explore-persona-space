@@ -6372,6 +6372,43 @@ def test_wrapper_on_orphaned_tmux_server_failsoft(tmp_path, monkeypatch):
     assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_g) is False
 
 
+def test_wrapper_on_orphaned_tmux_server_comm_unreadable_intermediate_hop_keeps(
+    tmp_path, monkeypatch
+):
+    # #818 round-2 regression (concern comm-unreadable-intermediate-hop-can-reap):
+    # an INTERMEDIATE hop whose /proc/<pid>/comm is UNREADABLE but whose stat IS
+    # readable must STOP the walk and KEEP — a socketless clientless tmux: server
+    # reachable BEYOND the unclassifiable hop must NOT reap the wrapper. Before
+    # the fix the walk continued past the None-comm hop, reached 500, and
+    # returned True (reap-eligible). This is the fail-toward-keep contract for an
+    # unreadable comm (plan v4 3.6; background-automation.md).
+    import os
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    proc_root = tmp_path / "proc"
+    # 500: a genuinely orphaned tmux: server (empty fd dir -> zero clients),
+    # reachable ONLY by walking PAST the comm-unreadable hop 700.
+    d500 = proc_root / "500"
+    (d500 / "fd").mkdir(parents=True)  # empty fd dir -> zero /dev/pts clients
+    (d500 / "comm").write_text("tmux: server\n")
+    (d500 / "stat").write_text("500 (tmux: server) S 1 1 0 0 -1\n")
+    # 700: the wrapper. stat IS readable (ppid -> 500) but comm is ABSENT
+    # (the intermediate-hop comm-unreadable case).
+    d700 = proc_root / "700"
+    d700.mkdir(parents=True)
+    (d700 / "stat").write_text("700 (node) S 500 500 0 0 -1\n")  # no comm file
+    empty_sock_dir = tmp_path / "tmux-sock"
+    empty_sock_dir.mkdir()  # socketless
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: empty_sock_dir)
+    # Sanity: the ancestor 500 IS a socketless zero-client orphaned server, so
+    # were the walk to reach it the pre-fix code would return True. The fix must
+    # stop at 700 (unreadable comm) -> False, with no raise.
+    assert os.path.exists(d500 / "comm")  # ancestor is classifiable if reached
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_root) is False
+
+
 def test_wrapper_on_orphaned_tmux_server_socketless_but_attached_keeps(tmp_path, monkeypatch):
     # The Must-Fix-1 regression: a tmux: server whose socket is deleted BUT that
     # still holds one /dev/pts client fd (an attached SSH session survives the

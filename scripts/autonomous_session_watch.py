@@ -11264,8 +11264,9 @@ def _wrapper_on_orphaned_tmux_server(
       * tmux binary absent -> False (nothing to reap; unchanged behavior);
       * ppid unreadable at a hop -> stop the walk, return False (cannot prove a
         ``tmux: server`` ancestor -> keep);
-      * comm unreadable at a hop -> the hop is not confirmed ``tmux: server``,
-        the walk continues (then stops on an unreadable ppid / depth) -> keep;
+      * comm unreadable at a hop -> STOP the walk, return False (the hop cannot
+        be classified, so a socketless clientless ``tmux: server`` reachable
+        BEYOND it must NOT reap the wrapper -> keep; #818 round-2 fix);
       * socket dir unreadable -> :func:`_live_tmux_socket_present` True ->
         reads reattachable -> False (keep);
       * server client-fd dir unreadable (:func:`_tmux_server_client_ttys` None)
@@ -11283,7 +11284,10 @@ def _wrapper_on_orphaned_tmux_server(
         if cur in seen or cur <= 1:
             return False  # cycle / reached init without a tmux: server
         seen.add(cur)
-        if _proc_comm(cur, proc_root) == "tmux: server":
+        comm = _proc_comm(cur, proc_root)
+        if comm is None:
+            return False  # unreadable comm at a hop -> cannot classify -> keep
+        if comm == "tmux: server":
             server_pid = cur
             # Condition 1: no socket -> no NEW attach possible.
             if _live_tmux_socket_present():
