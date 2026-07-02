@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 880,
+  "highest_id": 882,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4688,8 +4688,8 @@
       "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/742",
-      "status": "blocked",
+      "path": "tasks/running/742",
+      "status": "running",
       "title": "Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model behavior representations (n=50)"
     },
     "743": {
@@ -5570,22 +5570,22 @@
     "857": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/857",
-      "status": "planning",
+      "path": "tasks/reviewing/857",
+      "status": "reviewing",
       "title": "Fix: restore issue734_figures functions dropped by 4109e30f17 (pinned test failing on main)"
     },
     "858": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/858",
-      "status": "proposed",
+      "path": "tasks/archived/858",
+      "status": "archived",
       "title": "workflow-fix: make audit-claim HF tests hermetic (fail on pristine main)"
     },
     "859": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/859",
-      "status": "proposed",
+      "path": "tasks/running/859",
+      "status": "running",
       "title": "workflow-fix: select_step9c_tests must include touched tests/*.py in subset"
     },
     "860": {
@@ -5619,8 +5619,8 @@
     "864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/864",
-      "status": "proposed",
+      "path": "tasks/planning/864",
+      "status": "planning",
       "title": "workflow-fix: zombie-GPU override veto keys on cpu/proc liveness, not only log freshness"
     },
     "865": {
@@ -5654,15 +5654,15 @@
     "869": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/869",
-      "status": "running",
+      "path": "tasks/completed/869",
+      "status": "completed",
       "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
     },
     "870": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/870",
-      "status": "running",
+      "path": "tasks/completed/870",
+      "status": "completed",
       "title": "workflow-fix: compute-deviation gains mandatory vectorize-first lever"
     },
     "871": {
@@ -5741,6 +5741,20 @@
       "path": "tasks/proposed/880",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 manual launch of dispatcher-managed workers must replicate launcher CVD env pin"
+    },
+    "881": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/881",
+      "status": "approved",
+      "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
+    },
+    "882": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/882",
+      "status": "proposed",
+      "title": "workflow-fix: judge caches must key on rubric+question+completion (llm-judging.md)"
     },
     "89": {
       "has_clean_result": true,

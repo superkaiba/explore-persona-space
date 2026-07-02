@@ -271,6 +271,23 @@ For each phase the implementer should record a sub-section under
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
+**Many-call fit/battery phases: production-shape unit timing + full-scale
+extrapolation (REQUIRED).** When the pipeline contains a phase that loops a
+fit / dense factorization (svd/eigh/lstsq/GCV-ridge) / draw battery over
+cells × folds × layers × arms × draws, that phase's `## Smoke run`
+sub-section MUST additionally report: (a) the wall-time of ONE unit call at
+PRODUCTION shape (full N/H — a tiny-slice per-call time does not scale;
+#823's smoke hid a ~62× per-call error — 2 s asserted vs ~125 s measured —
+exactly this way), and (b) the extrapolation
+`smoke_per_call_wall × full_call_count / parallelism` compared against the
+plan §9 row. A >2× gap with NO separate `epm:compute-deviation` row in
+`events.jsonl` is a FAIL with a `substantive` blocker (NOT
+`smoke-run-missing` — the smoke ran; the projection contract was skipped). A
+phase genuinely unable to run one production-shape unit call locally uses the
+GPU-bound carve-out's substitute-coverage form with a FLOP/kernel-derived
+per-call estimate instead. N/A when no phase loops a
+fit/factorization/battery.
+
 **Harmful-content corpora digest note.** For phases over EM / refusal-bait /
 harmful-advice corpora the digest is path + row count + hash + field names
 ONLY — the implementer spec forbids pasting row text
@@ -721,6 +738,27 @@ and nobody read the schedule. Same family: #778 phase-3 looped 25 models × 3
 traits one-at-a-time on an 8×H100 pod (~4-5h at 1/8 util) — a degenerate
 single-worker schedule on a multi-GPU pod, in scope of this sub-check even
 when the plan's §9 declared no DP shape.
+
+### Step 0.68: Named-helper adherence check (`type:experiment` only)
+
+For each helper the task body's reuse map or the approved plan (§4 pseudocode
+/ §10 Reproducibility Card / §11) names by `module::fn` or file-path
+reference as THE implementation for a step — especially a fast / batched /
+verified-equivalent twin (e.g. `_ridge_fit_predict_fast`,
+`vectorized_mlp_skill.py`, batched `perm_null_draws`) — grep the diff AND the
+final driver the dispatcher invokes for that helper's import and call site.
+Substituting a slower sibling (the serial original, a fresh reimplementation
+of the same math) without a plan-documented substitution note is a
+substantive finding at Major severity (blocker tag `substantive`): the named
+twin usually carries a validated equivalence gate and a measured cost
+profile, and dropping it silently is how #823 turned a ~125 s/call fast-twin
+phase into ~3780 serial full-SVD fits (12-20 h) that round-1 plan-adherence
+review blessed ("ridge, not MLP" ✓) — no check compared the plan's import
+against the body-named twin. PASS requires the named helper imported+called,
+OR a documented substitution. Record `Step 0.68: N/A — no ::fn-level helper
+named` when neither body nor plan names any function/file-path-level helper
+(module-level "reuse #M's pipeline" claims are the consistency-checker's
+plan-time check, not this one).
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 

@@ -2764,13 +2764,15 @@ def test_check_lessons_index_passes_on_live_repo():
 
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
-    # Leanness cap is mechanical — an index > 7500 bytes must FAIL.
+    # Leanness cap is mechanical — an index over _LESSONS_MAX_BYTES must FAIL.
+    from workflow_lint import _LESSONS_MAX_BYTES
+
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
     rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
-    # Pad with prose so the index breaches the 7500-byte cap.
-    padding = "x" * 7600
+    # Pad with prose so the index breaches the byte cap regardless of its value.
+    padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
