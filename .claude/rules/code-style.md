@@ -27,7 +27,15 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
 - **Judge / API-call retry wrappers treat 529 Overloaded as transient by default.** The transient tuple is `(APIConnectionError, APITimeoutError, RateLimitError, anthropic.InternalServerError)` — 529 `OverloadedError` is NOT a top-level SDK symbol (`anthropic.OverloadedError` raises AttributeError) but IS an `InternalServerError` subclass in the installed SDK, so catching `InternalServerError` covers it. Also harden long judge loops with checkpoint/resume + a per-row `judge_failed: true` audit flag instead of crashing the whole launcher on one bad row (incidents #556: ~97 OverloadedErrors crashed a 4400-judgment phase; #528: three distinct judge crashes — empty response SystemExit, one soft-refusal row, one JSONDecodeError).
 - **WandB live training metrics are mandatory.** Any training-config builder under `src/explore_persona_space/experiments/` (`TrainLoraConfig`, `SFTConfig`, `TrainingArguments`) MUST emit to WandB during training — loss curves, grad-norm history, and callback metrics cannot be reconstructed post-hoc. Do NOT set `report_to="none"` / `report_to=None` / `report_to=[]` without an explicit `# WANDB_INTENTIONALLY_DISABLED: <reason ≥ 10 chars>` comment on the same line or the immediately preceding non-blank line. The waiver is a justification, not a token bypass; if you cannot articulate a real reason in ≥10 chars, you should not be disabling it. Issue #496 trained 12 cells with `report_to="none"` hardcoded and the missing telemetry surfaced only at upload-verification (Step 8). Enforced by `scripts/workflow_lint.py --check-wandb-required` (bundled into the no-flags default run).
 - **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never user/assistant turns.
-- **Always run with `nohup`:** `nohup uv run python scripts/train.py &`.
+- **Always run with `nohup`; VM-side long compute detaches with `setsid` too.** Pod-side:
+  `nohup uv run python scripts/train.py &`. Any VM-LOCAL compute phase >~15 min launched directly
+  from an /issue session (Phase-D-style fits, aggregation batteries) MUST fully detach —
+  `PHASE_PID=$(bash -c 'setsid nohup <cmd> < /dev/null >> <abs log> 2>&1 & echo $!')` — because a
+  plain bg-Bash child shares the session's kill domain and dies with a watcher force-stop (#833,
+  2026-07-02: a healthy ~2h fit killed mid-flight); the `bash -c` wrapper makes `$!` the workload
+  pid (a bare top-level `$!` after `setsid … &` is the vanished intermediate). Record
+  `pid=$PHASE_PID` + the log path in the stage-dispatch breadcrumb
+  (SKILL.md § Detached VM-side long compute phases).
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.

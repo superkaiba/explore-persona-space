@@ -4848,6 +4848,63 @@ same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
 
+**Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
+Any VM-LOCAL compute phase with projected wall-time >~15 min that the
+orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
+aggregation / permutation battery) MUST be launched fully detached:
+
+    PHASE_PID=$(bash -c 'setsid nohup <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
+                                  # recover via pgrep -f '<distinctive invocation>'
+
+The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
+shell runs with job control ON, where `setsid` forks and a bare `$!` is the
+vanished intermediate; inside the wrapper (job control OFF) `setsid` execs in
+place, so `$!` is the workload pid. A plain bg-Bash child stays in the
+session's kill domain (script-launched children share the launcher's process
+group + session id; even a top-level child with its own pgid shares the sid),
+and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
+healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
+signal kill). `setsid` gives the phase its own session + process group (group
+kills miss it; it reparents to PID 1 when the launching shell exits);
+`< /dev/null >> log` drops every fd tether to the dying session. The phase's
+stage-dispatch breadcrumb MUST carry two additional fields:
+`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+`key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
+log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
+— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
+genuinely new field). EXEMPT: work that COMPLETES within a subagent's own
+bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
+returns follows this SAME detach shape — the phase sits in the session's kill
+domain either way), pod-side workloads (the pod launch contract / #883), the
+deadline-bounded off-pod `batch_judge` poll, and quick probes / plots
+(< ~15 min). Off-VM routing (CLAUDE.md § CPU-only phases — the cheap
+dedicated CPU-pod lanes) remains the FIRST preference for long CPU phases;
+this convention governs the residual phases that legitimately stay VM-local
+and is not a permission slip for long VM-side compute.
+
+**Successor / re-entry rule (overrides the freshness window below).** When the
+current stage+round's most recent breadcrumb carries `pid=`, probe
+`ps -p <pid> -o args=` BEFORE any re-dispatch decision — the SAME identity
+verify as at launch, never a bare liveness check (on a shared VM a recycled
+pid would otherwise "re-attach" to a stranger and suppress the needed
+relaunch). Alive AND args match the distinctive invocation → the phase is IN
+FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
+markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
+`log=` for real progress (alive ≠ progressing; the log is the progress
+signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
+args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
+output present → stage done; proceed. Dead with no completion output →
+genuinely failed: run the kill-before-relaunch probe
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
+`stage_dispatch_should_skip` knows nothing about pids, so the polling
+orchestrator also refreshes the mechanical window with periodic liveness
+`epm:progress` notes (those refresh the events.jsonl effective-age window;
+the watcher's stall detector reads the session SELF-REPORT, so a long-idle
+session may still be stopped — benign under this rule: the detached phase
+survives and the successor re-attaches); the identity-verified pid probe is
+the authoritative check at re-entry.
+
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
 1. Read the most recent events.jsonl marker via
@@ -5214,6 +5271,8 @@ wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+A statement covering a VM-side phase >~15 min ALSO names the detached launch
+shape + log path per the Step 9 entry-guard § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
 **Auto-run procedure.** For the single highest-priority unran entry
