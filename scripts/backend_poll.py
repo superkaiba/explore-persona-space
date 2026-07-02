@@ -2908,6 +2908,7 @@ def main(argv: list[str] | None = None) -> int:
     # extraction / re-export is needed.
     gcp_gpu_idle_advisory_posted = False
     gcp_gpu_idle_escalation_posted = False
+    gcp_gpu_width_advisory_posted = False
     # ``hasattr`` guard: in production the GCP branch always resolves a real
     # GcpBackend (which owns ``_gcp_gpu_util_probe`` + ``_config``), but a
     # duck-typed poll double (the existing test_backend_poll.py ``_PollDouble``)
@@ -2923,6 +2924,9 @@ def main(argv: list[str] | None = None) -> int:
         from scripts.poll_pipeline import (
             _maybe_escalate_gpu_idle,
             _maybe_post_gpu_idle_advisory,
+            _maybe_post_gpu_width_advisory,
+            _run_launched_age_sec,
+            _tripwire_run_scope,
         )
 
         gpu_idle_state_path = _gpu_idle_state_path(Path(sidecar))
@@ -2932,6 +2936,17 @@ def main(argv: list[str] | None = None) -> int:
         now_epoch = int(time.time())
         current_phase = getattr(result, "current_phase", "") or ""
         pod = handle.pod_name
+        # ── #873 run-scoped tripwire dedup anchor (AC #6, GCP mirror) ────
+        # A fresh epm:run-launched clears the width dedup keys so a
+        # relaunch / follow-up round re-arms the width advisory. Applied to
+        # the WIDTH call only — the idle-advisory keys are untouched by the
+        # reset (disjoint key set), so the two existing calls keep reading
+        # prev_gpu_idle_state verbatim.
+        tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
+            prev_gpu_idle_state,
+            run_age_sec=_run_launched_age_sec(args.issue, now_epoch),
+            now_epoch=now_epoch,
+        )
 
         idle_since, advised_phases, gcp_gpu_idle_advisory_posted = _maybe_post_gpu_idle_advisory(
             issue=args.issue,
@@ -2952,6 +2967,20 @@ def main(argv: list[str] | None = None) -> int:
             prev_state=prev_gpu_idle_state,
             now_epoch=now_epoch,
         )
+        # ── #873 m-of-N GPU-width advisory (GCP mirror of the RunPod call) ─
+        # Same imported wiring fn, same inputs, same sibling state file —
+        # the import-not-extract reuse contract (#730). Advisory only.
+        gcp_width_since, gcp_width_idle_set, gcp_width_advised, gcp_gpu_width_advisory_posted = (
+            _maybe_post_gpu_width_advisory(
+                issue=args.issue,
+                pod=pod,
+                status="running",
+                gpu_util=gpu_util,
+                current_phase=current_phase,
+                prev_state=tripwire_state,
+                now_epoch=now_epoch,
+            )
+        )
         _save_gpu_idle_state(
             gpu_idle_state_path,
             {
@@ -2959,12 +2988,18 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_idle_since_epoch": str(idle_since),
                 "gpu_idle_advised_phases": ",".join(sorted(advised_phases)),
                 "gpu_idle_escalated_phases": ",".join(sorted(escalated_phases)),
+                # #873 width keys + the run-scope anchor (AC #6 mirrored).
+                "gpu_width_since_epoch": str(gcp_width_since),
+                "gpu_width_idle_set": ",".join(str(i) for i in gcp_width_idle_set),
+                "gpu_width_advised_phases": ",".join(sorted(gcp_width_advised)),
+                "tripwire_run_epoch": str(tripwire_run_epoch),
             },
         )
 
     out = _serialize_poll_result(result)
     out["gcp_gpu_idle_advisory_posted"] = gcp_gpu_idle_advisory_posted
     out["gcp_gpu_idle_escalation_posted"] = gcp_gpu_idle_escalation_posted
+    out["gcp_gpu_width_advisory_posted"] = gcp_gpu_width_advisory_posted
     print(json.dumps(out))
     return 0
 
