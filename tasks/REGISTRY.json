@@ -5401,8 +5401,8 @@
     "835": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/835",
-      "status": "reviewing",
+      "path": "tasks/completed/835",
+      "status": "completed",
       "title": "workflow-fix: planner.md context-budget protocol (autocompact thrash in MCP-heavy sessions)"
     },
     "836": {
