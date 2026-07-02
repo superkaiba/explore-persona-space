@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 883,
+  "highest_id": 884,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5762,6 +5762,13 @@
       "path": "tasks/proposed/883",
       "status": "proposed",
       "title": "workflow-fix: canonicalize setsid launcher-script SSH-MCP pod launch shape"
+    },
+    "884": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/884",
+      "status": "proposed",
+      "title": "workflow-fix: setsid-detach VM-side long CPU phases (watcher-stop kill)"
     },
     "89": {
       "has_clean_result": true,
