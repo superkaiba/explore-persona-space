@@ -5293,8 +5293,8 @@
     "821": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/821",
-      "status": "reviewing",
+      "path": "tasks/completed/821",
+      "status": "completed",
       "title": "workflow-fix: flock pods.conf writes; never drop RUNNING pods"
     },
     "822": {
