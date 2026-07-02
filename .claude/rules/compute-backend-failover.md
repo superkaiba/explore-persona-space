@@ -47,7 +47,34 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 1. `crash_report.json` — exit code + timestamp + run identity;
 2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`;
 3. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
-   workload wrote before crashing.
+   workload wrote before crashing;
+4. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
+   BOTH `data/issue_<N>/` and `data/issue<N>/` naming conventions (the #825
+   loss class: `data/issue_825/track_s.jsonl` was structurally outside the
+   old eval_results-only sweep). Re-downloadable `hf_dl/` / `g*_dl/` /
+   `store/` / `.cache/` caches are excluded at top level AND nested depths;
+   an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
+   env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
+   than burning the 300s budget;
+5. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
+   workload log, uploaded AFTER the partial dirs (small-first ordering; the
+   canonical `workload.log` already landed the traceback early). The
+   canonical `crash_report.json` / `workload.log` names are OVERWRITTEN by
+   a same-attempt re-crash (run-3 overwrote run-2's log on #825) — prior
+   crashes' canonical copies stay recoverable via the HF repo's git
+   history; the timestamped copies accumulate per crash;
+6. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
+   lines, uploaded as the FINAL step. Its presence proves the persist ran
+   to completion with every skip recorded; its ABSENCE proves a killed
+   persist — the durable skip-vs-kill discriminator (the serial console is
+   unreadable post-DELETE, #640).
+
+**Sweep scope (explicit):** the partial sweep covers exactly the three
+named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
+`data/issue<N>/`) — it is NOT universal artifact discovery (e.g.
+`figures/issue_*`, checkpoints, `ood_eval_results/` are not swept). A
+workload writing partials elsewhere must place them under a swept dir or
+upload them itself.
 
 Discipline (all load-bearing — the trap must never delay the poweroff that
 bounds billing):
@@ -57,9 +84,23 @@ bounds billing):
   fires only on the rc != 0 branch (the clean-exit path keeps the VM alive
   for the success-sentinel scp + the workload already uploaded).
 - **Fully guarded + time-bounded.** Early-returns without
-  `EPS_HF_DATA_REPO` / `HF_TOKEN` (early-boot crash); the whole upload is
-  wrapped in `timeout 300`; every step is `|| true`. A hung/failed upload
-  can NEVER strand the `shutdown`.
+  `EPS_HF_DATA_REPO` / `HF_TOKEN` (early-boot crash) — LOUDLY, with a
+  `[crash-persist] SKIP-ALL` serial line (#854; a silent return is
+  indistinguishable from a killed persist); the whole upload is wrapped in
+  `timeout 300`; every step is `|| true`. A hung/failed upload can NEVER
+  strand the `shutdown`.
+- **Eager bounded serial streaming (#854).** The persist's output reaches
+  fd 3 (the serial console) line-by-line AS IT HAPPENS via a pure-bash
+  reader (2000-char line cap, 60-line print cap) — the old `| cut | tail`
+  pipe buffered until EOF, so a killed/skipped persist left zero evidence.
+  The reader keeps READING to EOF after the print cap (an early pipe close
+  would SIGPIPE-kill the uploader mid-upload); every upload / failure /
+  skip prints a `[crash-persist]` line — no silent skips anywhere.
+- **Watchdog reaped at trap ENTRY (#854).** The EXIT trap kills the #669
+  reachability watchdog — the only other in-guest poweroff actor — BEFORE
+  the persist, so nothing can power the VM off mid-upload; the trap itself
+  guarantees the billing-bounding shutdown. The clean-exit reap is
+  unchanged.
 - **Shared preamble.** The helper lives in the startup-script preamble, so
   BOTH the hydra (`train.py`) and the `--workload-cmd` branches get it.
 - The data-repo target is rendered as `EPS_HF_DATA_REPO` (from
@@ -67,6 +108,34 @@ bounds billing):
 
 To recover after a `failure_class: code` GCP crash, look in
 `superkaiba1/explore-persona-space-data/issue<N>_partial/`.
+
+**Production fix-engaged signal (#854)** — keyed to the DURABLE HF
+artifacts, since the serial console is unreadable post-DELETE (#640) and
+the eager `[crash-persist]` serial lines are best-effort live-watch only:
+on the next real GCP crash, the HF `issue<N>_partial/<attempt_id>/` prefix
+gains the per-crash timestamped `workload_<ts>.log`, the
+`crash_persist_transcript.log` (whose lines record every upload/skip —
+including a loud SKIP naming why a `data_issue_<N>/` dir did not upload),
+and `data_issue_<N>/` when the workload wrote one.
+
+**The #854 incident record (correcting #825's premise).** The HF commit
+log shows runs 1 AND 2 both landed `crash_report.json` + `workload.log`
+via the trap (commits 06:19:29/46 and 08:16:01/08 UTC, 2026-07-02) — the
+"round 1 left no diagnostics" / "only the tiny crash_report landed"
+readings were artifacts of later runs overwriting the same canonical
+paths. Only the partial DATA files (`data/issue_825/track_s.jsonl` etc.)
+needed boot-disk recovery. The best-supported mechanism for that loss —
+not directly proven (the VM and its serial log are deleted), but the one
+consistent with the sequential upload commits and the ~20s
+echo-to-poweroff window — is a silent coverage-gap skip: the old sweep
+looked only in `eval_results/issue_<N>/`, so `data/issue_825/` was
+structurally invisible and skipped without a log line, and the
+end-buffered `| cut | tail` output made the silent skip indistinguishable
+from a poweroff race. No code path could have uploaded `data/issue_825/`
+regardless of timing. Hence the #854 fix set: coverage (item 4), loud
+skips + eager streaming, the trap-entry watchdog reap (closing the one
+other in-guest poweroff actor in principle), and the timestamped +
+transcript artifacts (items 5-6).
 
 **Snapshot pin.** The EXIT-trap preamble is shared, so any change to it
 alters the hydra-branch render and breaks the byte-identity snapshot test
