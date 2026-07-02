@@ -1078,6 +1078,17 @@ def test_c12_grid_only_product_in_window_fails():
     assert "draw-bearing" in r.detail
 
 
+def test_c12_graded_scale_draws_does_not_trigger():
+    # Judge-scale vocabulary ("graded 0-100 draws", en-dash variant in the
+    # fixture below) is not a battery — the count arm's lookbehind excludes
+    # range/scale-dash-preceded numbers (calibration false-FAIL on #779 v1).
+    plan = (
+        GOOD_PLAN
+        + "\nJudge N=5 graded 0–100 draws, temp 1.0, drop-never-coerce; graded 0-100 draws.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "SKIP"
+
+
 def test_c12_fenced_battery_does_not_trigger():
     # Battery vocabulary appearing ONLY inside a code fence is not a battery
     # plan — pins the fence-masked trigger path.

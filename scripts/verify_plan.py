@@ -1037,11 +1037,14 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
 # under-trigger fails SAFE (the layered prose surfaces — planner §9 block,
 # critic 10(iii)/12, implementer re-derivation — still fire); deliberate, not
 # discovered (#869 plan §4.13).
+# The count arm's lookbehind excludes range/scale-dash-preceded numbers —
+# "graded 0-100 draws" is judge-scale vocabulary, not a battery (calibration
+# false-FAIL on #779 v1); "1000 draws" after whitespace still triggers.
 _BATTERY_TRIGGER_RE = re.compile(
     r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
     r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
     r"|n_(draws|perms)\b"
-    r"|\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
 )
 
 # Evidence (i): an explicit two-factor multiplier product where at least one
