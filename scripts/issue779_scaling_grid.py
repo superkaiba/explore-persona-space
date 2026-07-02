@@ -444,6 +444,7 @@ def run_layer_matrix(
     n_shuffle: int,
     seed: int,
     max_lmsys: int | None = None,
+    max_behavior: int | None = None,
     cb: dict | None = None,
 ) -> dict:
     """The arm-B-minus-arm-A within-condition-r headline read at EVERY layer.
@@ -465,7 +466,14 @@ def run_layer_matrix(
         rb_l = r_b_full[layer_idx]
         eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
         src = load_corpus_source(
-            corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx, max_lmsys=max_lmsys, cb=cb
+            corpus_dir,
+            lmsys_bundle,
+            lmsys_g_labels,
+            trait,
+            layer_idx,
+            max_lmsys=max_lmsys,
+            max_behavior=max_behavior,
+            cb=cb,
         )
         subrng = np.random.default_rng(seed + layer_idx)
         ct_a = SG.assemble_cell_train(src, src.n_lmsys(), 0, subrng)
