@@ -366,15 +366,103 @@ def fig_validity_gate() -> None:
     plt.close(fig)
 
 
+def fig_per_context_strips() -> None:
+    """Per-context |δ(c)| ÷ floor strips behind every hero bar (Lens-11 companion).
+
+    The hero shows one MEDIAN ratio per (behavior, layer, summary) bar; this
+    companion plots the 16 per-context values each median summarizes, read from
+    ``offset_decomposition.json``'s ``delta_per_context`` (the F1 refit, which
+    reproduced every cell's Delta_med to 2.5e-11 relative). Log y — the trusted
+    ratios span ~0.003–7.2 (the untrusted sycophancy turn outlier reaches 12.8).
+    A dark tick marks each cell's median (= the hero bar). Sycophancy
+    turn-boundary cells render open (failed base-leg validity, untrusted).
+    """
+    data = json.loads((EVAL_DIR / "offset_decomposition.json").read_text())["cells"]
+    rng = np.random.default_rng(42)
+    fig, axes = plt.subplots(1, 3, figsize=(9.5, 4.2), sharey=True)
+    for ax, beh in zip(axes, BEHAVIORS, strict=True):
+        x = np.arange(len(LAYERS))
+        for off, (s, color) in zip(
+            (-0.2, 0.2), [("mean", C_MEAN), ("turn_nl", C_TURN)], strict=True
+        ):
+            for xi, li in zip(x, LAYERS, strict=True):
+                cell = data[f"{beh}/L{li}/{s}"]
+                vals = np.abs(np.asarray(list(cell["delta_per_context"].values())))
+                ratios = vals / cell["floor_combined"]
+                jit = rng.uniform(-0.08, 0.08, size=ratios.size)
+                if s == "turn_nl" and beh == "sycophancy":
+                    ax.scatter(
+                        xi + off + jit,
+                        ratios,
+                        s=15,
+                        facecolors="white",
+                        edgecolors=color,
+                        linewidths=0.9,
+                        zorder=3,
+                    )
+                else:
+                    ax.scatter(xi + off + jit, ratios, s=15, color=color, alpha=0.75, zorder=3)
+                med = float(np.median(vals)) / cell["floor_combined"]
+                ax.plot(
+                    [xi + off - 0.14, xi + off + 0.14],
+                    [med, med],
+                    color="#3B3B3B",
+                    lw=1.6,
+                    zorder=4,
+                )
+        ax.axhline(1.0, ls="--", lw=1.0, color="0.4")
+        ax.set_yscale("log")
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"layer {li}" for li in LAYERS])
+        ax.set_title(BEHAVIOR_LABEL[beh])
+    axes[0].set_ylabel("per-context map change ÷ noise floor")
+    handles = [
+        plt.Line2D([0], [0], marker="o", ls="", color=C_MEAN, label="answer mean (16 contexts)"),
+        plt.Line2D([0], [0], marker="o", ls="", color=C_TURN, label="turn boundary (16 contexts)"),
+        plt.Line2D([0], [0], color="#3B3B3B", lw=1.6, label="median (= hero bar)"),
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            ls="",
+            color="none",
+            markerfacecolor="white",
+            markeredgecolor=C_TURN,
+            markeredgewidth=0.9,
+            label="open: sycophancy turn boundary — untrusted",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=2, fontsize=8)
+    savefig_paper(fig, "issue_811/function_change_per_context", dir=FIG_DIR)
+    plt.close(fig)
+
+
 def main() -> int:
+    import argparse
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    figs = {
+        "hero": fig_hero_ratio,
+        "raw_vs_floor": fig_raw_delta_vs_floor,
+        "forest": fig_chain_rho_forest,
+        "scatter": fig_delta_scatter,
+        "gate": fig_validity_gate,
+        "per_context": fig_per_context_strips,
+    }
+    ap = argparse.ArgumentParser(description="Issue #811 analyzer figures")
+    ap.add_argument(
+        "--only",
+        nargs="+",
+        choices=sorted(figs),
+        default=None,
+        help="regenerate only these figures (default: all)",
+    )
+    args = ap.parse_args()
     set_paper_style("blog")
-    fig_hero_ratio()
-    fig_raw_delta_vs_floor()
-    fig_chain_rho_forest()
-    fig_delta_scatter()
-    fig_validity_gate()
-    logger.info("wrote 5 figures to figures/issue_811/")
+    todo = args.only or list(figs)
+    for name in todo:
+        figs[name]()
+    logger.info("wrote %d figure(s) to figures/issue_811/: %s", len(todo), ", ".join(todo))
     return 0
 
 

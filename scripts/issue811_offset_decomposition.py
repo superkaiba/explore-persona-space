@@ -93,7 +93,11 @@ REPRO_REL_TOL = 0.01  # brief item 8: >1% relative deviation on Delta_med → ST
 
 
 def download_store(
-    dl_root: Path, behaviors: tuple[str, ...], *, workers: int = 12
+    dl_root: Path,
+    behaviors: tuple[str, ...],
+    *,
+    workers: int = 12,
+    layers: tuple[int, ...] | None = None,
 ) -> tuple[Path, int]:
     """Mirror the #811 paired store from HF into ``dl_root`` (resumable, parallel).
 
@@ -103,7 +107,10 @@ def download_store(
     requested, then fetches each missing file with ``hf_hub_download(local_dir=
     dl_root)`` so the repo-relative path is preserved (the loader's local-mirror
     mode reads ``<dl_root>/<STORE_PREFIX>/<beh>/<src>/<fn>``). Already-present
-    non-empty files are skipped (resume). Returns ``(local_root, n_downloaded)``.
+    non-empty files are skipped (resume). ``layers`` optionally restricts the
+    fetch to the layer-baked ``*_L{li}.npz`` subset (the chain-scatter figure
+    needs L14 only — 1/3 of the store); the 4,320-count assert then checks the
+    filtered expectation instead. Returns ``(local_root, n_downloaded)``.
     """
     from huggingface_hub import hf_hub_download
 
@@ -111,12 +118,18 @@ def download_store(
     rel_paths: list[str] = []
     for beh, srcs in layout.items():
         for src_dir, files in srcs.items():
-            rel_paths.extend(f"{beh}/{src_dir}/{fn}" for fn in files)
+            for fn in files:
+                if layers is not None and not any(fn.endswith(f"_L{li}.npz") for li in layers):
+                    continue
+                rel_paths.append(f"{beh}/{src_dir}/{fn}")
     logger.info("[phase=download] store listing: %d files under %s", len(rel_paths), STORE_PREFIX)
     if set(behaviors) == set(HEADLINE_BEHAVIORS):
-        assert len(rel_paths) == EXPECTED_STORE_FILES, (
-            f"store listing has {len(rel_paths)} files, expected {EXPECTED_STORE_FILES} "
-            f"(16 sources × 30 targets × 3 layers × 3 behaviors) — wrong prefix or partial store?"
+        n_layers = len(layers) if layers is not None else len(SWEEP_LAYERS)
+        expected = EXPECTED_STORE_FILES * n_layers // len(SWEEP_LAYERS)
+        assert len(rel_paths) == expected, (
+            f"store listing has {len(rel_paths)} files, expected {expected} "
+            f"(16 sources × 30 targets × {n_layers} layers × 3 behaviors) — "
+            f"wrong prefix or partial store?"
         )
     local_root = dl_root / STORE_PREFIX
     missing = [
