@@ -5549,8 +5549,8 @@
     "854": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/854",
-      "status": "planning",
+      "path": "tasks/approved/854",
+      "status": "approved",
       "title": "workflow-fix: GCP EXIT-trap poweroff races crash-diagnostics upload"
     },
     "855": {
