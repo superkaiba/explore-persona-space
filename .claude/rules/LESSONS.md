@@ -16,7 +16,7 @@ trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
 - **code-style** ([`.claude/rules/code-style.md`](code-style.md)) — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **compute-backend-failover** ([`.claude/rules/compute-backend-failover.md`](compute-backend-failover.md)) — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **contrastive-negatives** ([`.claude/rules/contrastive-negatives.md`](contrastive-negatives.md)) — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
-- **crash-fix-rounds** ([`.claude/rules/crash-fix-rounds.md`](crash-fix-rounds.md)) — fires when: an implementer runs a crash-fix revision round (failure-lesson block, fix-engaged signal, scope guard).
+- **crash-fix-rounds** ([`.claude/rules/crash-fix-rounds.md`](crash-fix-rounds.md)) — fires when: an implementer runs any retry/revision round (failure lesson, fix-engaged signal, scope, kill-before-relaunch).
 - **critic-lens-reference** ([`.claude/rules/critic-lens-reference.md`](critic-lens-reference.md)) — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span; `paths:` self-glob, NOT auto-injected).
 - **data-realism** ([`.claude/rules/data-realism.md`](data-realism.md)) — fires when: a plan picks training/eval/probe data (use the strict 4-tier preference order; justify tier 3/4).
 - **diff-size-budget** ([`.claude/rules/diff-size-budget.md`](diff-size-budget.md)) — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
