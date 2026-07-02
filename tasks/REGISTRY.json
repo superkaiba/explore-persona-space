@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 884,
+  "highest_id": 885,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5769,6 +5769,13 @@
       "path": "tasks/planning/884",
       "status": "planning",
       "title": "workflow-fix: setsid-detach VM-side long CPU phases (watcher-stop kill)"
+    },
+    "885": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/885",
+      "status": "proposed",
+      "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
     },
     "89": {
       "has_clean_result": true,
