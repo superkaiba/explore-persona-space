@@ -9,6 +9,10 @@ with ``register_forward_hook`` on only the needed modules +
 1. **Byte-identity** of the hook path vs the full-tuple read, across the
    ``hs[L+1]`` block-index convention AND the ``EMBED_LAYER`` (-1 -> hs[0])
    sentinel, on a hook-capable stub vs a fallback stub seeded identically.
+   (Stub scope: the stubs apply NO final norm, so byte-identity holds at every
+   index including the last. On a real Llama/Qwen model the LAST layer
+   diverges — hook = pre-final-norm, ``hs[-1]`` = post-norm; documented in
+   ``analysis/extraction.py``, "Last layer (final RMSNorm caveat)".)
 2. **The i488 index translation** (``hs[L]`` convention -> block ``L-1`` /
    embed for ``L=0``) reproduces the OLD ``_last_token_residuals`` read.
 3. **Logits preservation** under ``return_logits=True`` (the issue_650
