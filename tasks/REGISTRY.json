@@ -5472,8 +5472,8 @@
     "844": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/844",
-      "status": "proposed",
+      "path": "tasks/planning/844",
+      "status": "planning",
       "title": "daily-fix: spawned sessions inherit an unrelated issue worktree as cwd"
     },
     "845": {
