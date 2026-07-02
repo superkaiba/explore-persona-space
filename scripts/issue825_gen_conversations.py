@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -197,9 +198,13 @@ def _ntok(tokenizer, text: str) -> int:
     return len(tokenizer.encode(text, add_special_tokens=False))
 
 
-def _vllm_generate_chunked(llm, prompt_texts: list[str], sampling_params) -> list[str]:
-    from issue779_common import VLLM_CHUNK_SIZE
+# Matches issue779_collect.VLLM_CHUNK_SIZE (same env var + default) without
+# importing that module's heavy dependency chain — code-review round-1
+# blocker: the symbol does NOT exist in issue779_common.
+VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
+
+def _vllm_generate_chunked(llm, prompt_texts: list[str], sampling_params) -> list[str]:
     out: list[str] = []
     for i in range(0, len(prompt_texts), VLLM_CHUNK_SIZE):
         chunk = prompt_texts[i : i + VLLM_CHUNK_SIZE]
@@ -336,6 +341,12 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
     if smoke:
         n = 3
     tokenizer = _load_tokenizer()
+    # Over-provision ~10% so post-generation filters can drop rows without
+    # underfilling the fixed n=2000 design (code-review round-1: silent
+    # underfill; plan fixes n and changing n is must-ask). Kept rows are
+    # trimmed back to exactly n; a shortfall below n fails loud.
+    n_target = n
+    n = max(n, -(-n * 11 // 10)) if not smoke else n  # ceil(1.10*n) without numpy
     openers = harvest_openers(n, tokenizer)
     mix: dict[str, int] = {"lmsys": 0, "wildchat": 0}
     for o in openers:
@@ -360,6 +371,13 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
         a1_prompts = [_render(tokenizer, [{"role": "user", "content": o["u1"]}]) for o in openers]
         a1s = _vllm_generate_chunked(llm, a1_prompts, greedy)
     print(f"[track m] a1 done for {len(a1s)} conversations")
+    # Checkpoint-per-phase: persist a1s the moment the vLLM phase completes so
+    # a Haiku-phase crash cannot lose the GPU work (code-review round-1).
+    ckpt_a1 = out.parent / f"{out.stem}_a1_checkpoint.jsonl"
+    ckpt_a1.parent.mkdir(parents=True, exist_ok=True)
+    with open(ckpt_a1, "w", encoding="utf-8") as fh:
+        for o, a1 in zip(openers, a1s, strict=True):
+            fh.write(json.dumps({"u1": o["u1"], "a1": a1}) + "\n")
 
     import anthropic
 
@@ -414,9 +432,20 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
             }
         )
 
+    # Trim to exactly the requested design size; fail loud on a shortfall
+    # (plan fixes n; changing n is must-ask — never silently underfill).
+    if len(kept) < n_target:
+        raise RuntimeError(
+            f"track m underfilled: {len(kept)} kept < target {n_target} after "
+            f"filters (drops={drops}); raise the over-provision factor or fix "
+            f"the filters — do NOT run underpowered"
+        )
+    kept = kept[:n_target]
+
     meta = {
         "track": "m",
-        "n_requested": n,
+        "n_requested": n_target,
+        "n_overprovisioned": n,
         "n_openers": len(openers),
         "n_kept": len(kept),
         "drops": drops,

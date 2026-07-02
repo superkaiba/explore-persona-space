@@ -157,10 +157,20 @@ def _tokenize_segments_offsets(
     return ids, ranges, straddlers
 
 
-def _tok_at_char_end(ranges: list[tuple[int, int]], straddlers: dict, seg_idx: int) -> int:
-    """Index of the token containing segment ``seg_idx``'s final character."""
-    del ranges  # signature kept caller-side simple; lookup rides straddlers
-    return int(straddlers[_LAST_TOK_KEY][seg_idx])
+def _header_slot(ranges: list[tuple[int, int]], seg_idx: int) -> int:
+    """Slot = last token FULLY CONTAINED in the header segment (the ':').
+
+    NOT the token containing the header's final char: the header's trailing
+    space BPE-folds into the first content word (`` What``), so that token
+    would leak the target turn's first content word INTO c_x — contaminating
+    the very DV chain the map predicts (code-review round-1 blocker). The
+    fully-contained range for ``User: `` ends at the ``:`` token, whose
+    next-token prediction is the (merged) first content token — the plan
+    §4.2 rule verbatim.
+    """
+    s, e = ranges[seg_idx]
+    assert e > s, f"header segment {seg_idx} has no fully-contained token"
+    return e - 1
 
 
 def render_chat(conv: dict[str, Any], tokenizer: Any) -> Rendered:
@@ -229,9 +239,9 @@ def render_naturalistic(conv: dict[str, Any], tokenizer: Any) -> Rendered:
     input_ids, ranges, straddlers = _tokenize_segments_offsets(segments, tokenizer)
     spans = {turn: ranges[i] for turn, i in content_seg.items()}
     # Slot = the token containing the header's final char (straddler-safe).
-    slot_idx = {"a1": _tok_at_char_end(ranges, straddlers, header_seg["a1"])}
+    slot_idx = {"a1": _header_slot(ranges, header_seg["a1"])}
     if "u2" in header_seg:
-        slot_idx["u2"] = _tok_at_char_end(ranges, straddlers, header_seg["u2"])
+        slot_idx["u2"] = _header_slot(ranges, header_seg["u2"])
     return Rendered(
         input_ids=input_ids,
         slot_idx=slot_idx,
@@ -442,11 +452,15 @@ def a6_opener_sanity(harvest_jsonl: str) -> dict[str, Any]:
             if not line:
                 continue
             row = json.loads(line)
-            opener = row["opener"].strip()
+            # Accept both the generator's conversation rows (u1/opener_source)
+            # and a bare harvest row (opener/source) — code-review round-1 fix.
+            opener_val = row.get("u1") or row.get("opener")
+            assert opener_val, f"a6: row missing u1/opener field: {sorted(row)[:6]}"
+            opener = str(opener_val).strip()
             if opener in seen:
                 continue
             seen.add(opener)
-            source_mix[str(row.get("source", "unknown"))] += 1
+            source_mix[str(row.get("opener_source") or row.get("source", "unknown"))] += 1
     n = len(seen)
     if n < MIN_OPENERS_POST_DEDUP:
         raise AssertionError(

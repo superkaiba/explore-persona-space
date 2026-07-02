@@ -196,6 +196,12 @@ def _ordered_turns(r: Rendered) -> list[tuple[str, tuple[int, int]]]:
     return sorted(r.spans.items(), key=lambda kv: kv[1][0])
 
 
+def _finite(t: torch.Tensor, name: str, conv_id: str) -> torch.Tensor:
+    """Assert finiteness before storage — silent inf corrupts downstream fits."""
+    assert torch.isfinite(t.float()).all(), f"{conv_id}: non-finite values in {name}"
+    return t
+
+
 def _turn_nll(
     row_logits: torch.Tensor,
     row_ids: torch.Tensor,
@@ -217,13 +223,15 @@ def _turn_nll(
     for t, (name, (s, e)) in enumerate(turns):
         assert s >= 1, f"{conv_id}: span {name} starts at 0 — no teacher-forced target exists"
         if not align_state.get("done", False):
-            gathered = targets[s - 1 : e - 1].cpu()
-            expected = row_ids[s:e].cpu()
-            assert torch.equal(gathered, expected), (
-                f"{conv_id}: shift-by-one misalignment on span {name}"
-            )
+            # Structural slice-bounds check ONLY. (The former targets-vs-
+            # row_ids compare was an identity — targets derive from row_ids —
+            # and validated nothing; code-review round-1.) Semantic
+            # logits<->position alignment rests on extract_layer_activations
+            # returning logits from the same forward, an architectural fact.
+            assert 1 <= s < e <= true_len, (conv_id, name, s, e, true_len)
+            assert 0 <= s - 1 < e - 1 <= token_lp.shape[0], (conv_id, name, s, e)
             align_state["done"] = True
-            print(f"[align] shift-by-one target alignment verified on {conv_id}:{name}")
+            print(f"[align] NLL slice bounds checked on {conv_id}:{name}")
         out[t] = -token_lp[s - 1 : e - 1].mean().float().cpu()
     return out
 
@@ -277,22 +285,26 @@ def process_batch(
         )
         assert profiles.shape == (len(turns), EXPECTED_LAYERS, EXPECTED_HIDDEN)
         perpos = torch.zeros(
-            (len(turns), POSITIONS_CAP, n_peak, EXPECTED_HIDDEN), dtype=torch.float16
+            (len(turns), POSITIONS_CAP, n_peak, EXPECTED_HIDDEN), dtype=torch.bfloat16
         )
         perpos_mask = torch.zeros((len(turns), POSITIONS_CAP), dtype=torch.bool)
         for t, (_, (s, e)) in enumerate(turns):
             take = min(POSITIONS_CAP, e - s)
             window = acts[peak_t][:, i, s : s + take, :].permute(1, 0, 2)
             assert window.shape == (take, n_peak, EXPECTED_HIDDEN)
-            perpos[t, :take] = window.to(torch.float16)
+            perpos[t, :take] = window.to(torch.bfloat16)
             perpos_mask[t, :take] = True
         nll = _turn_nll(logits[i], input_ids[i], true_len, turns, r.conv_id, align_state)
         assert nll.shape == (len(turns),)
         records.append(
             {
                 "conv_id": r.conv_id,
-                "slots": slot_vecs.to(torch.float16),
-                "profiles": profiles.to(torch.float16),
+                # bf16, NOT fp16: Qwen-class residual outlier dims can
+                # exceed fp16's 65504 max and silently become inf
+                # (code-review round-1); bf16 shares fp32's range at the
+                # same 2 bytes. Finiteness asserted before storage.
+                "slots": _finite(slot_vecs.to(torch.bfloat16), "slots", r.conv_id),
+                "profiles": _finite(profiles.to(torch.bfloat16), "profiles", r.conv_id),
                 "perpos": perpos,
                 "perpos_mask": perpos_mask,
                 "nll": nll,

@@ -119,9 +119,12 @@ g1_path = eval_dir / "g1_gate.json"
 if g1_path.exists():
     g1 = json.loads(g1_path.read_text())
 gen_meta = {}
-meta_path = Path("data/issue_825/track_s.meta.json")
+m_meta_path = Path("data/issue_825/conversations_meta.json")
+if m_meta_path.exists():
+    gen_meta["track_m"] = json.loads(m_meta_path.read_text())
+meta_path = Path("data/issue_825/track_s_meta.json")
 if meta_path.exists():
-    gen_meta = json.loads(meta_path.read_text())
+    gen_meta["track_s"] = json.loads(meta_path.read_text())
 sentinel = {
     "eval_numbers": {
         "g1_spearman_vs_779": g1.get("spearman_vs_779"),
@@ -150,7 +153,16 @@ sentinel = {
     "final_commit_sha": commit_sha,
     "gpu_hours_used": gpu_hours,
     "gpu_hours_budgeted": 8.0,
-    "plan_deviations": [],
+    "plan_deviations": [
+        {
+            "deviation": "u2 generation via synchronous pooled messages.create instead of the Batch API",
+            "rationale": "n=2000 short calls; the hardened batch client's result parser is judge-specific",
+        },
+        {
+            "deviation": "turn-store tensors stored bf16 instead of fp16",
+            "rationale": "fp16 max 65504 < Qwen residual outlier dims; bf16 is range-safe at the same size",
+        },
+    ],
 }
 out = Path("/workspace/logs/issue-825-results.json")
 out.write_text(json.dumps(sentinel, indent=2))

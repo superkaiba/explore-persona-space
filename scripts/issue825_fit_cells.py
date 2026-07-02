@@ -187,12 +187,23 @@ def heldout_r2_sweep(
     n, n_layers = X_layers.shape[0], X_layers.shape[1]
     folds = _cv_folds(conv_ids, n_folds, seed)
     rng = np.random.default_rng(seed + 1)
-    null_perms = [rng.permutation(n) for _ in range(null_draws)]
+    # Null draws permute the X<->Y pairing at the CONVERSATION level (the
+    # i.i.d. unit): rows of the same conversation move together, so within-
+    # conversation Y correlation cannot leak into the null (identical to a
+    # row permutation when each conversation has exactly one row).
+    ids = np.asarray(conv_ids)
+    uniq_c, inv = np.unique(ids, return_inverse=True)
+    row_of_conv = [np.flatnonzero(inv == k) for k in range(len(uniq_c))]
+    def _conv_perm() -> np.ndarray:
+        cp = rng.permutation(len(uniq_c))
+        return np.concatenate([row_of_conv[k] for k in cp])
+    null_perms = [_conv_perm() for _ in range(null_draws)]
 
     ss_res_obs = np.zeros(n_layers)
     ss_tot_obs = np.zeros(n_layers)
     ss_res_null = np.zeros((null_draws, n_layers))
     ss_tot_null = np.zeros((null_draws, n_layers))
+    fitted = np.zeros(n, dtype=bool)
     cosines = {int(li): np.zeros(n) for li in FROZEN_LAYERS if li < n_layers}
     preds_frozen = {
         int(li): np.zeros((n, Y_layers.shape[2]), dtype=np.float32)
@@ -210,6 +221,7 @@ def heldout_r2_sweep(
                 continue
             cache = _prep_fold(X[tr], X[te])
             pred = _ridge_predict_cached(cache, Y[tr])
+            fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
             ss_res_obs[li] += float(np.sum((true - pred) ** 2))
@@ -234,6 +246,9 @@ def heldout_r2_sweep(
         "cosines": cosines,
         "preds_frozen": preds_frozen,
         "folds": folds,
+        # Rows that actually received held-out predictions (skipped folds at
+        # tiny n leave zeros in preds_frozen; consumers subset by this mask).
+        "fitted_mask": fitted,
     }
 
 
@@ -405,13 +420,18 @@ def _cell_xy(bundle: dict, cell: dict) -> dict:
     conv_ids = np.asarray(bundle["sidecar"].get("conv_ids", np.arange(slots.shape[0])))
     si = int(cell.get("slot_index", 0))
     ti = int(cell.get("target_turn_index", 0))
-    X = slots[:, min(si, slots.shape[1] - 1), :, :]
-    Y = profiles[:, min(ti, profiles.shape[1] - 1), :, :]
-    assert X.shape[1] == EXPECTED_LAYERS or X.shape[1] > 0, "layer axis missing"
+    # HARD index asserts — silently clamping onto a mis-shaped bundle would
+    # relabel the wrong slot/turn as this cell (code-review round-1 fix).
+    assert si < slots.shape[1], f"slot_index {si} >= n_slots {slots.shape[1]}"
+    assert ti < profiles.shape[1], f"target_turn_index {ti} >= n_turns {profiles.shape[1]}"
+    X = slots[:, si, :, :]
+    Y = profiles[:, ti, :, :]
+    assert X.shape[1] == EXPECTED_LAYERS, f"layer axis {X.shape[1]} != {EXPECTED_LAYERS}"
     keep = ~(np.isnan(X).any(axis=(1, 2)) | np.isnan(Y).any(axis=(1, 2)))
     nll_t = None
     if nll is not None:
-        nll_t = nll[:, min(ti, nll.shape[1] - 1)][keep]
+        assert ti < nll.shape[1], f"target_turn_index {ti} >= nll turns {nll.shape[1]}"
+        nll_t = nll[:, ti][keep]
     return {"X": X[keep], "Y": Y[keep], "conv_ids": conv_ids[keep], "nll": nll_t}
 
 
@@ -463,8 +483,9 @@ def run_cell(
     null_draws: int,
     n_boot: int,
 ) -> dict:
+    cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
-    bundle = _load_bundle(turnstore_dir, cell["model_key"], cell["format_key"])
+    bundle = _load_bundle(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
     xy = _cell_xy(bundle, cell)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit_cells] cell={cell_id} n={len(conv_ids)}")
@@ -479,11 +500,14 @@ def run_cell(
 
     cosine_stats = {}
     r2_cis = {}
+    fitted = sweep["fitted_mask"]
     for li in frozen_layers:
-        cos = sweep["cosines"][li]
+        cos = sweep["cosines"][li][fitted]
         cosine_stats[str(li)] = bootstrap_ci(cos, n_boot=n_boot, seed=seed + li)
-        pred = sweep["preds_frozen"][li]
-        r2_cis[str(li)] = bootstrap_r2_ci(pred, Y[:, li, :], n_boot=n_boot, seed=seed + 100 + li)
+        pred = sweep["preds_frozen"][li][fitted]
+        r2_cis[str(li)] = bootstrap_r2_ci(
+            pred, Y[fitted, li, :], n_boot=n_boot, seed=seed + 100 + li
+        )
 
     skill_over_mean = {
         str(li): float(r2_obs[li]) - float(mb.get(str(li), float("nan"))) for li in frozen_layers
@@ -529,23 +553,6 @@ def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     rng = np.random.default_rng(seed + 13)
     order = rng.permutation(len(conv_ids))  # nested subsets: prefixes of one perm
-    peak = (
-        int(
-            np.nanargmax(
-                heldout_r2_sweep(
-                    X,
-                    Y,
-                    conv_ids,
-                    n_folds=n_folds,
-                    seed=seed,
-                    null_draws=0,
-                    collect_cosines=False,
-                )["r2_obs"]
-            )
-        )
-        if False
-        else None
-    )  # peak selection folded into curve below
     curve = []
     for n_sub in POWER_CURVE_NS:
         if n_sub > len(order):
@@ -575,7 +582,6 @@ def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None
             "subsample_ns": list(POWER_CURVE_NS),
             "nested": True,
             "curve": curve,
-            "unused": peak,
         },
     )
 
@@ -675,21 +681,26 @@ def _stack_maybe_list(val, name: str) -> np.ndarray:
         return val
     rows = []
     for i, r in enumerate(val):
-        arr = r.numpy() if hasattr(r, "numpy") else np.asarray(r)
+        # torch bf16 has no direct .numpy(); upcast through float32 first.
+        arr = r.float().numpy() if torch.is_tensor(r) else np.asarray(r)
         if rows and arr.shape != rows[0].shape:
             raise ValueError(f"{name}[{i}] shape {arr.shape} != {rows[0].shape} — ragged shard")
         rows.append(arr)
     return np.stack(rows)
 
 
-def _load_bundle_pt(turnstore_dir: Path, model_key: str, format_key: str) -> dict | None:
-    """Load the extractor's sharded fp16 .pt bundles ({model}_{format}*_*.pt).
+def _load_bundle_pt(
+    turnstore_dir: Path, model_key: str, format_key: str, track: str
+) -> dict | None:
+    """Load the extractor's sharded .pt bundles ({model}_{format}_{track}*.pt).
 
-    Returns the same {"arrays", "sidecar"} contract as _load_bundle, or None
-    when no matching shards exist. Per-conv list payloads are stacked (shape
-    mismatch fails loud naming the shard).
+    TRACK-AWARE (code-review round-1 blocker: a track-blind glob mixed Track-S
+    and Track-M shards written to the same dir). Returns the same
+    {"arrays", "sidecar"} contract as the .npz loader, or None when no
+    matching shards exist. Per-conv list payloads are stacked (shape mismatch
+    fails loud naming the shard).
     """
-    shards = sorted(turnstore_dir.glob(f"{model_key}_{format_key}*.pt"))
+    shards = sorted(turnstore_dir.glob(f"{model_key}_{format_key}_{track}*.pt"))
     if not shards:
         return None
     keys = ("slots", "profiles", "perpos", "perpos_mask", "nll")
@@ -714,24 +725,26 @@ def _load_bundle_pt(turnstore_dir: Path, model_key: str, format_key: str) -> dic
     return {"arrays": arrays, "sidecar": {"conv_ids": conv_ids, "source": "pt-shards"}}
 
 
-_LOAD_BUNDLE_NPZ = _load_bundle
-
-
-def _load_bundle_any(turnstore_dir: Path, model_key: str, format_key: str) -> dict:
-    """Prefer the .npz contract; fall back to the extractor's .pt shards."""
-    stem_npz = turnstore_dir / f"{model_key}_{format_key}.npz"
-    if stem_npz.exists():
-        return _LOAD_BUNDLE_NPZ(turnstore_dir, model_key, format_key)
-    pt = _load_bundle_pt(turnstore_dir, model_key, format_key)
+def _load_bundle_any(turnstore_dir: Path, model_key: str, format_key: str, track: str) -> dict:
+    """Track-aware bundle load: .npz contract first, then .pt shards."""
+    stem = f"{model_key}_{format_key}_{track}"
+    npz_path = turnstore_dir / f"{stem}.npz"
+    if npz_path.exists():
+        data = np.load(npz_path, allow_pickle=False)
+        side_path = turnstore_dir / f"{stem}.json"
+        sidecar = json.loads(side_path.read_text()) if side_path.exists() else {}
+        return {"arrays": data, "sidecar": sidecar}
+    pt = _load_bundle_pt(turnstore_dir, model_key, format_key, track)
     if pt is None:
         raise FileNotFoundError(
-            f"no turnstore bundle for {model_key}_{format_key} (.npz or .pt shards) "
-            f"in {turnstore_dir}"
+            f"no turnstore bundle for {stem} (.npz or .pt shards) in {turnstore_dir}"
         )
     return pt
 
 
-# run_cell resolves bundles through the dual-format loader.
+# run_cell resolves bundles through the track-aware dual-format loader; the
+# legacy 3-arg npz loader is superseded (rewire-then-delete happens at the
+# _load_bundle definition site above — kept as the npz reference impl only).
 _load_bundle = _load_bundle_any
 
 
@@ -759,18 +772,30 @@ def run_cross_role_cell(
     """
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
-    bundle = _load_bundle_any(turnstore_dir, cell["model_key"], cell["format_key"])
+    bundle = _load_bundle_any(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
     arrays = bundle["arrays"]
+    slots = np.asarray(arrays["slots"], dtype=np.float32)
     profiles = np.asarray(arrays["profiles"], dtype=np.float32)
-    xy = _cell_xy(bundle, cell)
-    X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    conv_ids_all = np.asarray(bundle["sidecar"].get("conv_ids", np.arange(slots.shape[0])))
+    si = int(cell["slot_index"])
+    ti = int(cell["target_turn_index"])
     bx_turn = int(cell["base_x_turn"])
-    Xb_full = profiles[:, min(bx_turn, profiles.shape[1] - 1), :, :]
-    keep = ~(np.isnan(Xb_full).any(axis=(1, 2)))
-    # Align the baseline rows with the kept rows of the cross fit.
-    n = min(len(conv_ids), Xb_full[keep].shape[0])
-    Xb = Xb_full[keep][:n]
-    X, Y, conv_ids = X[:n], Y[:n], conv_ids[:n]
+    assert si < slots.shape[1] and ti < profiles.shape[1] and bx_turn < profiles.shape[1], (
+        si, ti, bx_turn, slots.shape, profiles.shape,
+    )
+    X_full = slots[:, si, :, :]
+    Y_full = profiles[:, ti, :, :]
+    Xb_full = profiles[:, bx_turn, :, :]
+    # ONE joint keep mask over every tensor entering the paired comparison —
+    # independent masks + truncation silently misalign rows across
+    # conversations, corrupting the paired delta (code-review round-1 blocker).
+    keep = ~(
+        np.isnan(X_full).any(axis=(1, 2))
+        | np.isnan(Y_full).any(axis=(1, 2))
+        | np.isnan(Xb_full).any(axis=(1, 2))
+    )
+    X, Y, Xb, conv_ids = X_full[keep], Y_full[keep], Xb_full[keep], conv_ids_all[keep]
+    n = len(conv_ids)
     print(f"[fit_cells] cross-role cell={cell_id} n={n}")
 
     cross = heldout_r2_sweep(
@@ -861,7 +886,7 @@ def run_nll_reads(
     matched_gaps = {}
     ids = list(cell_results)
     for cid in ids:
-        if "_instruct_" not in f"_{cid}_" and "instruct" not in cid:
+        if "instruct" not in cid or "pretrained" in cid:
             continue
         pid = cid.replace("instruct", "pretrained")
         if pid not in cell_results:
@@ -871,27 +896,55 @@ def run_nll_reads(
             continue
         na = np.asarray(a["xy"]["nll"], dtype=np.float64)
         nb = np.asarray(b["xy"]["nll"], dtype=np.float64)
-        n = min(len(na), len(nb))
-        ra = np.argsort(np.argsort(na[:n]))  # quantile ranks
-        rb = np.argsort(np.argsort(nb[:n]))
-        # Match by rank: pair each instruct row with the pretrained row of the
-        # same quantile rank (deterministic, no replacement).
-        order_a = np.argsort(ra)
-        order_b = np.argsort(rb)
-        gap = {}
+        fa = np.asarray(a["sweep"].get("fitted_mask", np.ones(len(na), dtype=bool)))
+        fb = np.asarray(b["sweep"].get("fitted_mask", np.ones(len(nb), dtype=bool)))
+        # GENUINE matching (code-review round-1 blocker: pooled R^2 is
+        # permutation-invariant, so rank-REORDERING full sets subsets
+        # nothing). Bin edges from the POOLED NLL distribution; per bin,
+        # SUBSET each model's rows to that bin and compare held-out R^2 on
+        # the subsets; plus a support-overlap read (coarse caliper).
+        pooled = np.concatenate([na[fa], nb[fb]])
+        edges = np.nanquantile(pooled, np.linspace(0, 1, n_quantiles + 1))
+        per_bin = {}
+        for q in range(n_quantiles):
+            lo, hi = edges[q], edges[q + 1]
+            ma = fa & (na >= lo) & (na <= hi if q == n_quantiles - 1 else na < hi)
+            mb = fb & (nb >= lo) & (nb <= hi if q == n_quantiles - 1 else nb < hi)
+            bin_gap = {}
+            for li, pred_a in a["sweep"]["preds_frozen"].items():
+                pred_b = b["sweep"]["preds_frozen"].get(li)
+                if pred_b is None or ma.sum() < 8 or mb.sum() < 8:
+                    continue
+                r2a = _pooled_r2(pred_a[ma], a["xy"]["Y"][ma, li, :])
+                r2b = _pooled_r2(pred_b[mb], b["xy"]["Y"][mb, li, :])
+                bin_gap[str(li)] = {
+                    "instruct_r2": r2a,
+                    "pretrained_r2": r2b,
+                    "gap": r2a - r2b,
+                    "n_instruct": int(ma.sum()),
+                    "n_pretrained": int(mb.sum()),
+                }
+            per_bin[f"q{q + 1}"] = {"nll_range": [float(lo), float(hi)], "gaps": bin_gap}
+        lo_s = max(float(na[fa].min()), float(nb[fb].min()))
+        hi_s = min(float(na[fa].max()), float(nb[fb].max()))
+        oa = fa & (na >= lo_s) & (na <= hi_s)
+        ob = fb & (nb >= lo_s) & (nb <= hi_s)
+        overlap = {}
         for li, pred_a in a["sweep"]["preds_frozen"].items():
             pred_b = b["sweep"]["preds_frozen"].get(li)
-            if pred_b is None:
+            if pred_b is None or oa.sum() < 8 or ob.sum() < 8:
                 continue
-            r2a = _pooled_r2(pred_a[order_a], a["xy"]["Y"][order_a, li, :])
-            r2b = _pooled_r2(pred_b[order_b], b["xy"]["Y"][order_b, li, :])
-            gap[str(li)] = {
-                "instruct_r2": r2a,
-                "pretrained_r2": r2b,
-                "gap": r2a - r2b,
-                "n_matched": int(n),
+            r2a = _pooled_r2(pred_a[oa], a["xy"]["Y"][oa, li, :])
+            r2b = _pooled_r2(pred_b[ob], b["xy"]["Y"][ob, li, :])
+            overlap[str(li)] = {
+                "instruct_r2": r2a, "pretrained_r2": r2b, "gap": r2a - r2b,
+                "n_instruct": int(oa.sum()), "n_pretrained": int(ob.sum()),
             }
-        matched_gaps[f"{cid}__vs__{pid}"] = gap
+        matched_gaps[f"{cid}__vs__{pid}"] = {
+            "per_pooled_nll_bin": per_bin,
+            "support_overlap": overlap,
+            "nll_support": [lo_s, hi_s],
+        }
 
     _write_json(
         out_dir / "nll_reads.json",
@@ -926,7 +979,7 @@ def run_per_position(
     """
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
-    bundle = _load_bundle_any(turnstore_dir, cell["model_key"], cell["format_key"])
+    bundle = _load_bundle_any(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
     arrays = bundle["arrays"]
     if "perpos" not in arrays:
         print(f"[fit_cells] perpos missing for {cell_id}; skipping per-position read")
@@ -943,24 +996,30 @@ def run_per_position(
     n, n_pos = perpos.shape[0], perpos.shape[1]
     n_peak = perpos.shape[2]
     peak_layers = [li for li in FROZEN_LAYERS if li < X.shape[1]][:n_peak]
-    folds = _cv_folds(conv_ids, n_folds, seed)
+    # Decay GRID (not all positions): rows invalid at position p must be
+    # EXCLUDED from train AND eval (code-review round-1: masked rows entered
+    # the fits), which forces fresh per-(layer, position) fold caches — the
+    # grid bounds that cost while keeping the decay curve readable.
+    grid = [p for p in (0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, n_pos - 1) if p < n_pos]
     results: dict[str, dict] = {}
     for k_idx, li in enumerate(peak_layers):
         Xl = X[:, li, :]
-        caches = {}
-        for k in range(n_folds):
-            te = folds == k
-            tr = ~te
-            if te.sum() and tr.sum() >= 3:
-                caches[k] = (_prep_fold(Xl[tr], Xl[te]), tr, te)
         pos_r2 = {}
-        for p in range(n_pos):
-            cov = float(mask[:, p].mean())
+        for p in sorted(set(grid)):
+            rowmask = mask[:, p]
+            cov = float(rowmask.mean())
             if cov < coverage_floor:
                 continue
+            Xp = Xl[rowmask]
+            Yp = perpos[rowmask, p, k_idx, :].astype(np.float64)
+            folds_p = _cv_folds(conv_ids[rowmask], n_folds, seed)
             ss_res = ss_tot = 0.0
-            for cache, tr, te in caches.values():
-                Yp = perpos[:, p, k_idx, :].astype(np.float64)
+            for k in range(n_folds):
+                te = folds_p == k
+                tr = ~te
+                if te.sum() == 0 or tr.sum() < 3:
+                    continue
+                cache = _prep_fold(Xp[tr], Xp[te])
                 pred = _ridge_predict_cached(cache, Yp[tr])
                 true = Yp[te]
                 mu = true.mean(0)
@@ -969,6 +1028,7 @@ def run_per_position(
             pos_r2[str(p)] = {
                 "r2": (1.0 - ss_res / ss_tot) if ss_tot > 1e-12 else float("nan"),
                 "coverage": cov,
+                "n_rows": int(rowmask.sum()),
             }
         results[str(li)] = pos_r2
     _write_json(
@@ -1125,7 +1185,34 @@ def main() -> int:
                 res["sweep"]["r2_obs"], args.out_dir, seed=args.seed, n=len(res["xy"]["conv_ids"])
             )
             if not g1["pass"] and not args.smoke:
-                print("[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json (HALT per plan)")
+                # Plan section 7 G1: materially outside the anchor = wiring
+                # bug -> HALT; never publish downstream cells past a failed
+                # replication anchor. g1_gate.json is already written.
+                raise SystemExit(
+                    "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
+                    "HALT per plan section 7 (exit 2)"
+                )
+        if cell["cell_id"] == "M_instruct_assistant_chat":
+            # Plan section 7 G3: this cell must beat its selection-inherited
+            # shuffle null before any user cell is interpreted (observed
+            # layer-max vs the max of the null draws' own layer-maxes).
+            summ = res["summary"]
+            g3_pass = bool(summ["obs_layer_max_r2"] > max(summ["null_layer_max_r2_per_draw"]))
+            _write_json(
+                args.out_dir / "g3_gate.json",
+                {
+                    "metadata": _metadata(args.seed, len(res["xy"]["conv_ids"])),
+                    "obs_layer_max_r2": summ["obs_layer_max_r2"],
+                    "null_layer_max_r2_per_draw": summ["null_layer_max_r2_per_draw"],
+                    "pass": g3_pass,
+                },
+            )
+            if not g3_pass and not args.smoke:
+                raise SystemExit(
+                    "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
+                    "does not beat its selection-inherited null; HALT per plan "
+                    "section 7 before interpreting user cells (exit 3)"
+                )
         if cell.get("format_key") == "chat":
             run_per_position(
                 cell, args.turnstore_dir, args.out_dir, n_folds=args.folds, seed=args.seed
