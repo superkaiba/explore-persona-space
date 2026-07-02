@@ -332,11 +332,58 @@ def _ladder_colors():
     }
 
 
-def _cap_at(node_choice: dict, fam: str) -> float:
+def _band_at(node_choice: dict, fam: str) -> tuple[float, float, float]:
+    """(median, lo, hi) of a family's null distribution at one layer choice.
+
+    Stochastic families: (p50, p2.5, p97.5) — the full 95% band. Cross-trait has
+    only 2 fixed directions, so its "band" is (median, min, max) of the 2 values.
+    """
     e = node_choice["nulls"][fam]
     if fam == "crosstrait":
-        return float(max(e["values"]))  # cross-trait max over the 2 directions
-    return float(e["p97_5"])
+        vals = e["values"]
+        return float(np.median(vals)), float(min(vals)), float(max(vals))
+    return float(e["p50"]), float(e["p2_5"]), float(e["p97_5"])
+
+
+_CELL_CACHE: dict = {}
+
+
+def _load_cell_cached(suffix: str, trait: str):
+    key = (suffix, trait)
+    if key not in _CELL_CACHE:
+        _CELL_CACHE[key] = L._load_cell(suffix, DATA_DIR, EVAL_DIR, trait)
+    return _CELL_CACHE[key]
+
+
+def _ours_ci(trait, suffix, regime, plotted_layer, own_argmax, seeds, ci_json):
+    """95% bootstrap CI on our |r| AT THE PLOTTED LAYER, recomputed via the ladder's
+    imported bootstrap helper (seed = the recorded cell_idx, n_boot=1000) and
+    validated bit-exact against the committed JSON's at-own-argmax CI.
+
+    The JSON stores the CI only at own_argmax; for cells where the plotted layer
+    differs (the within-regime bars) that stored CI is at the wrong layer, so we
+    recompute at the plotted layer. Returns ((lo, hi), valid). valid is False (and
+    the whisker is suppressed) if the own-argmax reproduction does not match the
+    JSON or the recomputed CI fails to bracket the observed value.
+    """
+    cell_idx = int(seeds["isotropic"]) - 100000  # SEED_BASE["isotropic"] == 100000
+    rb = _load_rb(trait)
+    predictor, target, cid, _tags = _load_cell_cached(suffix, trait)
+    within = regime == "within"
+
+    def ci_at(layer: int) -> tuple[float, float]:
+        if within:
+            return L._bootstrap_ci_within(
+                predictor, rb, target, cid, layer, n_boot=1000, seed=cell_idx
+            )
+        return nb.bootstrap_ci_matched_r(predictor, rb, target, layer, n_boot=1000, seed=cell_idx)
+
+    lo_oa, hi_oa = ci_at(own_argmax)
+    reproduced = (
+        ci_json is not None and abs(lo_oa - ci_json[0]) < 1e-6 and abs(hi_oa - ci_json[1]) < 1e-6
+    )
+    lo, hi = ci_at(plotted_layer)
+    return (float(lo), float(hi)), bool(reproduced)
 
 
 def fig_bar_ladder(layer_choice: str, stem: str, title_layer: str) -> dict:
@@ -349,36 +396,57 @@ def fig_bar_ladder(layer_choice: str, stem: str, title_layer: str) -> dict:
     width = 0.9 / nslot
     plotted = {}
 
+    ekw = {"ecolor": "#222222", "elinewidth": 1.1, "capsize": 2.5}
     for ax, (key, label, suffix, regime) in zip(axes, BAR_SETTINGS, strict=True):
         plotted[key] = {}
         for i, trait in enumerate(TRAITS):
             hn = _hn(trait, suffix)
-            pc = hn["stage_fixed"][regime]["per_choice"][layer_choice]
+            node = hn["stage_fixed"][regime]
+            pc = node["per_choice"][layer_choice]
             layer = pc["layer"]
             base = x[i] - 0.45 + width / 2
-            rec = {
-                "layer": layer,
-                "our_fixed_r": round(pc["observed_abs_r"], 4),
-                "paper_r": PAPER_R[key][trait],
-            }
+            obs = float(pc["observed_abs_r"])
+            rec = {"layer": layer, "our_fixed_r": round(obs, 4), "paper_r": PAPER_R[key][trait]}
             for j, slot in enumerate(slots):
                 xpos = base + j * width
                 if slot == "paper":
+                    # Paper prints point values without CIs -> no whisker.
                     pr = PAPER_R[key][trait]
                     if pr is not None:
                         ax.bar(
-                            xpos, pr, width * 0.9, color=colors["paper"], label="paper reported r"
+                            xpos,
+                            pr,
+                            width * 0.9,
+                            color=colors["paper"],
+                            label="paper reported r (no CI)",
                         )
                 elif slot == "ours":
+                    # 95% bootstrap CI recomputed at the plotted layer, validated vs JSON.
+                    (lo, hi), ci_valid = _ours_ci(
+                        trait,
+                        suffix,
+                        regime,
+                        layer,
+                        node["own_argmax_layer"],
+                        hn["seeds"][regime],
+                        node.get("bootstrap_ci95_at_own_argmax"),
+                    )
+                    ci_valid = ci_valid and lo <= obs <= hi
+                    yerr = [[obs - lo], [hi - obs]] if ci_valid else None
                     ax.bar(
                         xpos,
-                        pc["observed_abs_r"],
+                        obs,
                         width * 0.9,
                         color=colors["ours"],
-                        label="our persona vector |r| (fixed layer)",
+                        yerr=yerr,
+                        error_kw=ekw,
+                        label="our persona vector |r| (fixed layer, 95% bootstrap CI)",
                     )
+                    rec["our_ci95"] = [round(lo, 4), round(hi, 4)] if ci_valid else None
+                    rec["our_ci95_valid"] = ci_valid
                 else:
-                    cap = _cap_at(pc, slot)
+                    # Null family: median bar + p2.5-p97.5 band whiskers (cap + spread visible).
+                    med, blo, bhi = _band_at(pc, slot)
                     kind = next(kd for k, _l, kd in LADDER if k == slot)
                     hatch = (
                         "//" if slot == "orig_randnorm" else ("xx" if slot == "orig_perm" else None)
@@ -386,15 +454,21 @@ def fig_bar_ladder(layer_choice: str, stem: str, title_layer: str) -> dict:
                     lab = next(lb for k, lb, _kd in LADDER if k == slot)
                     ax.bar(
                         xpos,
-                        cap,
+                        med,
                         width * 0.9,
                         color=colors[slot],
                         alpha=0.55 if kind == "contaminated" else 0.9,
                         hatch=hatch,
                         edgecolor="#333333" if kind == "contaminated" else "none",
-                        label=f"{lab} (97.5th pct cap)",
+                        yerr=[[med - blo], [bhi - med]],
+                        error_kw=ekw,
+                        label=f"{lab} (median + 2.5-97.5 pct band)",
                     )
-                    rec[slot] = round(cap, 4)
+                    rec[slot] = {
+                        "median": round(med, 4),
+                        "p2_5": round(blo, 4),
+                        "p97_5": round(bhi, 4),
+                    }
             plotted[key][trait] = rec
         ax.set_title(f"{label}  (fixed layer per trait)", fontsize=10.5)
         ax.set_xticks(x)
@@ -420,9 +494,11 @@ def fig_bar_ladder(layer_choice: str, stem: str, title_layer: str) -> dict:
     )
     fig.suptitle(
         f"Persona vector (paper vs our reproduction) vs each random-direction null — "
-        f"honesty ladder, {title_layer}",
-        fontsize=13,
-        y=0.997,
+        f"honesty ladder, {title_layer}\n"
+        "ours: 95% bootstrap CI · null families: median + 2.5-97.5 pct band · "
+        "paper: point value (no CI)",
+        fontsize=12,
+        y=0.998,
     )
     fig.tight_layout(rect=(0, 0.05, 1, 0.98))
     savefig_paper(fig, f"{FIG_SUBDIR}/{stem}", dir="figures/", embed_data=False)
@@ -630,6 +706,17 @@ def main() -> None:
         ),
         "paper_note": (
             "paper appears only in the bar figure — we do not have the paper's raw datapoints"
+        ),
+        "ci_note": (
+            "bar figure CIs: our |r| = 95% bootstrap CI recomputed AT THE PLOTTED LAYER via the "
+            "ladder's imported bootstrap helper (seed = recorded cell_idx, n_boot=1000), validated "
+            "bit-exact against the committed JSON's bootstrap_ci95_at_own_argmax (within cells' "
+            "CIs are within-condition-resampled, not pooled); a cell whose recompute fails to "
+            "reproduce the JSON or fails to bracket the observed value has its whisker suppressed "
+            "+ our_ci95_valid=false. Null-family bars are the MEDIAN with p2.5-p97.5 whiskers "
+            "(full 95% band from 1000 draws; cross-trait uses median/min/max of its 2 directions). "
+            "Paper "
+            "bars are point values with no whisker (the paper prints no CIs)."
         ),
         "paper_reference_values": PAPER_R,
         "bar_ladder_issue778_selected": bar_778,
