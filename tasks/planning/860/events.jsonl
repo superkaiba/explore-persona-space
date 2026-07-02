@@ -3,3 +3,4 @@
 {"ts": "2026-07-02T10:05:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-02T10:13:04Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0, n_skip=9 (kind-exempt: infra); plan v1"}
 {"ts": "2026-07-02T10:21:16Z", "kind": "epm:consistency", "version": 1, "by": "unknown", "note": "N/A — kind: infra workflow-fix (test-seam migration); no parent experiment recipe to diff. Checker checks (single-variable-change vs parent, baseline model, eval suite, seeds, data version) are experiment-scoped and have no referent here. Verdict: PASS (vacuous)."}
+{"ts": "2026-07-02T10:30:14Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr3d5b2o-2twxal effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
