@@ -5415,8 +5415,8 @@
     "837": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/837",
-      "status": "planning",
+      "path": "tasks/approved/837",
+      "status": "approved",
       "title": "workflow-fix: followup-round-repark fires while the round is still executing"
     },
     "838": {
