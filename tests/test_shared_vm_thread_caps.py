@@ -26,6 +26,7 @@ from __future__ import annotations
 import ast
 import inspect
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -218,15 +219,45 @@ def test_setup_worker_caps_before_torch_import() -> None:
 # Recurring guard: no NEW torch/numpy-before-load_dotenv VM entrypoints
 # ---------------------------------------------------------------------------
 
-# Frozen grandfather allowlist (#847) — generated mechanically from the tree
-# state at implementation time (same frozen-allowlist pattern as
-# JUDGE_PIN_LEGACY_ALLOWLIST). Do NOT add new entries: a new entrypoint that
+# Second freeze epoch (#895): TRACKED offenders that accreted while the Step
+# 9c selector gap (#895) left this guard unselected for scripts/*.py diffs —
+# frozen at map-introduction time so the newly-selectable gate starts green in
+# worktree gate runs. Kept as a SEPARATE dict (merged into the main allowlist
+# below) so test_grandfathered_895_block_is_current can pin exactly these
+# entries: each must stay git-tracked, inside the scanner's target set, and
+# still-violating with the recorded reason — a root-cause fix (e.g. #779's
+# 2-line load_dotenv()-before-torch reorder) makes its entry FAIL there until
+# DELETED. The SELECTOR gap is closed for selector-gated diffs by
+# GLOB_SCAN_TESTS (scripts/select_step9c_tests.py, #895); offenders can still
+# land via paths that bypass Step 9c, so this block may only SHRINK.
+GRANDFATHERED_895: dict[str, str] = {
+    # BEGIN GENERATED (#895)
+    "scripts/issue779_arm_headline.py": "no-dotenv",
+    "scripts/issue779_arm_headline_pod.py": "no-dotenv",
+    "scripts/issue779_arm_headline_summaries.py": "no-dotenv",
+    "scripts/issue779_capture_answer_summaries.py": "import-order",
+    "scripts/issue779_edges.py": "no-dotenv",
+    "scripts/issue779_heldout_recon_scatter.py": "import-order",
+    "scripts/issue779_identity_baseline.py": "no-dotenv",
+    "scripts/issue779_layer_sweep.py": "no-dotenv",
+    # END GENERATED
+}
+
+# Frozen grandfather allowlist — generated mechanically from the tree state at
+# implementation time (same frozen-allowlist pattern as
+# JUDGE_PIN_LEGACY_ALLOWLIST). Two freeze epochs:
+#   #847 block (inline below) — the pre-guard tree state.
+#   #895 block (GRANDFATHERED_895 above, merged in) — offenders that accreted
+#     while the Step 9c selector gap (#895) left this guard unselected for
+#     scripts/*.py diffs; frozen at map-introduction time so the
+#     newly-selectable gate starts green.
+# Do NOT add new entries beyond these generated blocks: a new entrypoint that
 # imports torch/numpy at module top must call load_dotenv() FIRST so the
 # shared-VM thread caps bind in-process (see .claude/rules/code-style.md,
 # "Shared-VM CPU thread caps"). Reason legend (one line per entry):
-#   "no-dotenv"    — file never calls load_dotenv() (pre-#847 tree state)
+#   "no-dotenv"    — file never calls load_dotenv() (tree state at freeze)
 #   "import-order" — module-top torch/numpy import precedes the first
-#                    load_dotenv() call (pre-#847 tree state)
+#                    load_dotenv() call (tree state at freeze)
 GRANDFATHERED_TORCH_BEFORE_DOTENV: dict[str, str] = {
     # BEGIN GENERATED (#847)
     "scripts/issue356_aggregate.py": "no-dotenv",
@@ -437,6 +468,7 @@ GRANDFATHERED_TORCH_BEFORE_DOTENV: dict[str, str] = {
     "scripts/issue_331_phase0_panel.py": "import-order",
     "scripts/issue_381_make_figures.py": "no-dotenv",
     # END GENERATED
+    **GRANDFATHERED_895,
 }
 
 
@@ -500,3 +532,52 @@ def test_no_new_torch_before_dotenv_vm_entrypoints() -> None:
     )
     # The #847 incident offender was FIXED, not grandfathered — keep it that way.
     assert "scripts/issue778_null_battery.py" not in GRANDFATHERED_TORCH_BEFORE_DOTENV
+
+
+def test_grandfathered_895_block_is_current() -> None:
+    """Every #895 grandfather entry must remain a LIVE, tracked, still-violating pin.
+
+    The #895 block froze the offenders that accreted while the Step 9c
+    selector gap (#895) left this guard unselected. Each entry must (a) exist
+    AND be git-tracked (UNTRACKED files are never grandfathered), (b) sit
+    inside the scanner's own target set (the same globs
+    test_no_new_torch_before_dotenv_vm_entrypoints scans), and (c) CURRENTLY
+    violate the detector — recomputed with the test's own helpers — with the
+    recorded reason matching. A later root-cause fix (e.g. #779's
+    load_dotenv()-before-torch reorder) makes the fixed entry FAIL here until
+    it is DELETED from GRANDFATHERED_895 — the frozen set can only shrink.
+    Scoped to the #895 block ONLY; the #847 block keeps its frozen semantics.
+    """
+    root = Path(__file__).resolve().parents[1]
+    assert GRANDFATHERED_895, "the #895 block is empty — delete it AND this test together"
+    # Merge integrity: every #895 entry actually reached the detector's dict.
+    assert set(GRANDFATHERED_895) <= set(GRANDFATHERED_TORCH_BEFORE_DOTENV)
+    tracked = set(
+        subprocess.run(
+            ["git", "ls-files"], cwd=root, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+    )
+    targets = {
+        p.relative_to(root).as_posix()
+        for p in (
+            list(root.glob("scripts/issue*_*.py"))
+            + list(root.glob("src/explore_persona_space/experiments/**/run_*.py"))
+        )
+    }
+    for rel, reason in GRANDFATHERED_895.items():
+        path = root / rel
+        assert path.exists(), f"#895 entry vanished: {rel} — DELETE it from GRANDFATHERED_895"
+        assert rel in tracked, f"#895 entry is UNTRACKED: {rel} — never grandfather untracked files"
+        assert rel in targets, f"#895 entry is outside the scanner's target set: {rel}"
+        src = path.read_text()
+        heavy = _first_heavy_import_line(ast.parse(src))
+        dotenv = _first_load_dotenv_line(src)
+        assert heavy is not None and (dotenv is None or heavy < dotenv), (
+            f"#895 entry no longer violates the detector: {rel} — root cause fixed; "
+            "DELETE the entry from GRANDFATHERED_895 (the frozen set only shrinks)."
+        )
+        derived = "no-dotenv" if dotenv is None else "import-order"
+        assert derived == reason, (
+            f"#895 reason drifted for {rel}: recorded {reason!r}, recomputed {derived!r} — "
+            "update the entry deliberately."
+        )
