@@ -1,0 +1,1 @@
+{"ts": "2026-07-02T09:30:24Z", "event": "raised", "concern_id": "734-figures-regression", "severity": "CONCERN", "summary": "Pre-existing main regression taints Step 9c full suite: 4109e30f17 overwrote issue734_figures.py, dropping _load_corrected_reread/hero1_install_recovery (added by e022921732, test-pinned). Not #851.", "raised_by": "implementer", "raised_at_round": 1}
