@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 842,
+  "highest_id": 843,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5461,6 +5461,13 @@
       "path": "tasks/proposed/842",
       "status": "proposed",
       "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
+    },
+    "843": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/843",
+      "status": "proposed",
+      "title": "daily-fix: per-issue dispatch lease (watcher sweep + filer self-dispatch double-spawn)"
     },
     "85": {
       "has_clean_result": false,
