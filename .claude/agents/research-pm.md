@@ -14,6 +14,7 @@ skills:
   - promote-clean-result
 memory: project
 effort: xhigh
+disallowedTools: mcp__todoist, mcp__google-workspace, mcp__plugin_playwright_playwright
 ---
 
 # Research PM

@@ -10,6 +10,12 @@ skills:
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Code Reviewer
@@ -314,13 +320,22 @@ only when it is labeled at report time (the label is what lets you
 distinguish a documented carve-out from a silently-skipped smoke). A
 carve-out sub-section that is labeled but omits any of the three items
 or omits the constraint sentence is ALSO a FAIL — incomplete coverage
-re-introduces the bugs the gate exists to catch. Incident: task #514
-round 2 — Codex code-reviewer FAILed with `smoke-run-missing` because
-the implementer's terse "(signature smoke)" notation for GPU-bound
-training/eval phases lacked both the documented sub-heading and the
-three-item coverage; this carve-out formalizes the labeling that lets
-the reviewer distinguish a documented GPU-bound phase from a genuinely
+re-introduces the bugs the gate exists to catch. Incident #514 r2:
+unlabeled "(signature smoke)" notation FAILed `smoke-run-missing`; the
+label is what distinguishes a documented carve-out from a genuinely
 missing smoke.
+
+**Deferred `scripts.*` imports must be proven in SCRIPT MODE, not `-c` mode.**
+If the diff adds a deferred `from scripts.X import ...` inside a src-layout
+driver (`src/explore_persona_space/experiments/**`), check the smoke evidence
+(or the carve-out's CPU-runnable smoke) shows that import executing in SCRIPT
+MODE (`python /abs/path/driver.py`) from a NON-repo cwd — a `-c`-mode import
+check false-passes (cwd on `sys.path`) while script mode crashes pod-side
+(`sys.path[0]` = the script's dir). An unguarded deferred `scripts.*` import
+(no `_ensure_repo_root_on_syspath()`-style guard) is a substantive finding at
+normal severity — NOT a `smoke-run-missing` blocker. See
+`.claude/rules/gotchas.md` (script-mode entry); incident #823, commit
+`14234c9112`.
 
 **Plan-declared runtime guards / monitors (load-bearing) must show smoke
 evidence.** When the approved plan declares a runtime guard / monitor /
@@ -418,6 +433,33 @@ Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 `type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
 (`/issue` Step 9c) and the Step 4 test run below.
 
+**Smoke output-path hygiene ("Smoke outputs never overwrite committed artifacts").**
+Two checks:
+
+- **Clobber evidence is SUBSTANTIVE, never mechanical.** If the diff (or
+  the worktree you review in) replaces an existing committed
+  `eval_results/` / `figures/` artifact with a smoke-scale version at its
+  canonical path (fewer layers / cells / rows), raise a Critical finding
+  tagged `substantive` — NOT `smoke-run-missing` — so the Step 5c-bis
+  mechanical strip can never remove it (#722 shipped a smoke-scale hero
+  figure and truncated committed 28-layer JSONs).
+- **A missing disposition line is CONCERNS, not FAIL.** A `### <phase>`
+  smoke sub-section whose command writes under `eval_results/` /
+  `figures/` but states no output-path disposition (scratch-dir redirect,
+  or restore-after-smoke + an empty
+  `git status --porcelain -- eval_results/ figures/`) is a Minor — unless
+  the clobber itself is visible (first bullet).
+
+**Any verification command YOU run follows the same rule.** If you rerun
+a test or smoke that regenerates files under `eval_results/` /
+`figures/`, afterwards run
+`git status --porcelain -- eval_results/ figures/`, restore the committed
+artifacts YOUR OWN command modified (`git checkout -- <paths>` scoped to
+those files, never a blanket revert) and delete the untracked outputs it
+left; leaving them dirty plants the clobber for the next explicit-path
+commit (#722 instance 2 was exactly this). Binds BOTH ensemble
+reviewers (rides into the Codex twin via the inlined Step 0.6 rubric).
+
 ### Step 0.65: Raw-completions upload wiring gate (`type:experiment` only)
 
 A pod-side dispatcher that writes per-cell completion files to disk under
@@ -469,27 +511,17 @@ the dispatcher file in the body), AND still read the diff and report
 substantive findings in the same pass (do not short-circuit — see
 Step 0.7):
 
-> `epm:experiment-implementation v<n>`'s dispatcher
-> `scripts/<dispatcher>.py` writes raw completions to
-> `eval_results/issue_<N>/...` but never calls
-> `upload_raw_completions_to_data_repo()` (or an explicit
-> `hub._upload(..., repo_type="dataset")` loop, or a batched
-> `HfApi.create_commit(repo_type="dataset")` targeting the canonical
-> raw-completions prefix). The CLAUDE.md Upload
-> Policy requires raw completions on the HF data repo BEFORE pod
-> termination; without the call the upload-verifier is the only defense
-> and a single verifier-side regression silently destroys all per-cell
-> completions on Step-8 terminate. Re-post `v<n+1>` with one of the
-> accepted upload shapes wired into the dispatcher's normal exit path
-> (after eval, before `[phase=done]` + final sentinel).
+> Dispatcher `scripts/<dispatcher>.py` writes raw completions to
+> `eval_results/issue_<N>/...` but wires none of the three accepted
+> upload shapes (`upload_raw_completions_to_data_repo()` / `hub._upload`
+> loop / batched `create_commit`). Re-post `v<n+1>` with one wired into
+> the normal exit path (after eval, before `[phase=done]` + sentinel).
 
 The mirror implementer rule is `experiment-implementer.md` § After
-implementation step 7 (raw-completions upload wiring). Incident:
-task #528 (2026-06-09) — the pod-side dispatcher `run_experiment_528.py`
-(on the `issue-528` branch only, not merged to `main`) wrote 160
-raw-completion JSONs and never invoked the helper; the verifier caught
-it manually, but the gap was indistinguishable from a silent loss had
-the verifier trusted the sentinel.
+implementation step 7. Incident #528 (2026-06-09): a pod-side dispatcher
+wrote 160 raw-completion JSONs and never invoked the helper — caught
+manually, indistinguishable from silent loss had the verifier trusted
+the sentinel.
 
 If the dispatcher writes NO raw completions (a pure metrics-only eval,
 an analysis-only dispatcher, a training-only entrypoint), this gate is
@@ -871,6 +903,13 @@ blocked)`, the `**Tests:**` line MUST be `INSUFFICIENT` (never `PASS`), the
 blocked (paste the sandbox error), and the recommendation MUST NOT be a clean
 `merge` on the strength of tests — it is at best `revise-then-merge (tests not
 run — re-run in a writable env)`.
+
+**After running tests: check for artifact clobber.** Your own pytest run
+can regenerate figures/JSONs at canonical committed paths (#722). After
+any test run: `git status --porcelain -- eval_results/ figures/`, then
+restore + clean per Step 0.6 § "Smoke output-path hygiene". A test
+writing canonical `eval_results/` / `figures/` paths instead of
+`tmp_path` is itself a Minor finding (name the test + path).
 
 ### Step 4.5: Regression-test presence for substantive BLOCKER fixes
 
