@@ -5654,8 +5654,8 @@
     "869": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/869",
-      "status": "approved",
+      "path": "tasks/running/869",
+      "status": "running",
       "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
     },
     "870": {
