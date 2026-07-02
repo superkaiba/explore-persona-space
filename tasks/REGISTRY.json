@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 846,
+  "highest_id": 847,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5489,6 +5489,13 @@
       "path": "tasks/proposed/846",
       "status": "proposed",
       "title": "daily-fix: hermeticize HF-state-dependent audit-claim tests (red main)"
+    },
+    "847": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/847",
+      "status": "proposed",
+      "title": "infra: default BLAS/torch thread caps for shared-VM python launches"
     },
     "85": {
       "has_clean_result": false,
