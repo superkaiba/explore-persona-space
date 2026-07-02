@@ -11,8 +11,10 @@ import re
 
 import pytest
 
+from explore_persona_space.artifacts import banks
 from explore_persona_space.artifacts.behavior import (
     BEHAVIORS,
+    EXTRACTION_PAIR_COUNT,
     METHODS,
     Behavior,
     DVSpec,
@@ -99,10 +101,36 @@ def test_judge_model_pin():
         assert b.judge_model == "claude-sonnet-4-5-20250929", b.name
 
 
+def test_all_v1_behaviors_filled():
+    # Phase 0d: every v1 behavior is FILLED (is_stub False); the programmatic
+    # carve-outs skip only the extraction leg.
+    assert not any(b.is_stub for b in BEHAVIORS.values())
+    for name, b in BEHAVIORS.items():
+        b.validate()  # re-run the concrete-side asserts on the filled spec
+        assert b.elicitation is not None and b.elicitation.exhibit_instructions
+        assert b.judge_rubric is not None
+        assert b.train_question_bank and b.eval_question_bank
+        for slot in ("{question}", "{answer}"):
+            assert slot in b.judge_rubric, (name, slot)
+        for anchor in ("0", "50", "100"):
+            assert re.search(rf"\b{anchor}\b", b.judge_rubric), (name, anchor)
+        if b.programmatic:
+            assert b.extraction is None, name  # organism-only carve-out
+        else:
+            assert b.extraction is not None, name
+            assert len(b.extraction.prompt_pairs) == EXTRACTION_PAIR_COUNT, name
+
+
+def test_registry_build_runs_slice_disjointness_audit():
+    # behavior.py calls banks.assert_slice_registry_disjoint() at import (the
+    # cross-behavior audit the per-behavior Behavior.validate cannot do); it
+    # passes on the shipped registry.
+    banks.assert_slice_registry_disjoint()
+
+
 def test_stub_placeholders_do_not_trip_asserts():
-    # Import succeeded (registry built), and every v1 entry is a stub.
-    assert all(b.is_stub for b in BEHAVIORS.values())
-    # A hand-built stub with all placeholders validates.
+    # A hand-built stub with all placeholders validates (the v1 registry itself is
+    # now Phase-0d FILLED — see test_all_v1_behaviors_filled).
     b = _behavior()
     assert b.is_stub
     assert b.train_exhibit_instructions is None

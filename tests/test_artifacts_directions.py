@@ -304,10 +304,12 @@ def test_score_completions_threading(monkeypatch, tmp_path):
     assert scored[2].judge_score == 80.0
     assert result.n_dropped_draws == 1
 
-    # Stub rubric (None) fails loud — no fallback rubric.
+    # None rubric fails loud — no fallback rubric. Constructed locally (rubric=None)
+    # because the v1 sycophancy behavior now carries a real rubric after the Phase-0d
+    # fill, so the guard is tested against a synthetic stub, not the registry entry.
     with pytest.raises(ValueError, match="judge_rubric is None"):
         score_completions(
-            BEHAVIORS["sycophancy"],
+            _rubric_behavior(None),
             comps,
             cache_dir=tmp_path / "c2",
             save_raw=tmp_path / "r2.json",
