@@ -222,6 +222,7 @@ def load_corpus_source(
     layer_idx: int,
     *,
     max_lmsys: int | None = None,
+    max_behavior: int | None = None,
     behavior_agg: str = BEHAVIOR_AGG_HEADLINE,
     cb: dict | None = None,
 ) -> SG.TrainSource:
@@ -240,6 +241,10 @@ def load_corpus_source(
     ``max_lmsys`` caps the LMSYS rows loaded (the first-N contexts, keeping the
     deterministic pass_b order + label alignment) — used ONLY in --smoke to keep
     the full-N ridge SVD tractable; None (default) loads all 5000.
+    ``max_behavior`` is the behavior-side mirror (first-N corpus CONTEXTS after
+    the per-context aggregation, deterministic): pre-r9 the --smoke path capped
+    only LMSYS, so against the REAL 2400-context corpus the arm_comparison's
+    full-N fits made the "smoke" run ~1h; None (default) keeps every context.
 
     ``cb``: a PRE-LOADED corpus bundle (v79 fix 7 — the multi-GB
     ``{trait}_corpus.pt`` is ``torch.load``ed ONCE per trait by the caller and
@@ -276,6 +281,10 @@ def load_corpus_source(
     X_beh, Y_beh, y_beh_arr = _behavior_matrices(
         cb, scores, cli, X_lmsys.shape[1], agg=behavior_agg, seed=42
     )
+    if max_behavior is not None and X_beh.shape[0] > max_behavior:
+        X_beh = X_beh[:max_behavior]
+        Y_beh = Y_beh[:max_behavior]
+        y_beh_arr = y_beh_arr[:max_behavior] if y_beh_arr is not None else None
     return SG.TrainSource(X_lmsys, Y_lmsys, y_lmsys, X_beh, Y_beh, y_beh_arr)
 
 
@@ -581,6 +590,17 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
         ),
     )
     ap.add_argument(
+        "--max-behavior",
+        type=int,
+        default=None,
+        help=(
+            "cap the behavior-corpus CONTEXTS loaded (first-N after per-context "
+            "aggregation; the behavior-side mirror of --max-lmsys). Defaults to "
+            "300 under --smoke, all contexts otherwise — pre-r9 the smoke capped "
+            "only LMSYS, so the full-N arm fits made the smoke ~1h"
+        ),
+    )
+    ap.add_argument(
         "--verify-vectorized",
         action="store_true",
         help=(
@@ -666,6 +686,9 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
     # the arm_comparison / layer matrix stays fast; a real run uses all 5000.
     # --max-lmsys overrides (e.g. shrink further under heavy VM contention).
     max_lmsys = args.max_lmsys if args.max_lmsys is not None else (500 if args.smoke else None)
+    max_behavior = (
+        args.max_behavior if args.max_behavior is not None else (300 if args.smoke else None)
+    )
 
     arm_comparison = {
         "traits": {},
@@ -739,6 +762,7 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                     trait,
                     layer_idx,
                     max_lmsys=max_lmsys,
+                    max_behavior=max_behavior,
                     behavior_agg=BEHAVIOR_AGG_HEADLINE,
                     cb=corpus_bundle,
                 )
@@ -766,6 +790,7 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                     trait,
                     layer_idx,
                     max_lmsys=max_lmsys,
+                    max_behavior=max_behavior,
                     behavior_agg=BEHAVIOR_AGG_SECONDARY,
                     cb=corpus_bundle,
                 )
@@ -854,6 +879,7 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                 n_shuffle=n_shuffle,
                 seed=args.seed,
                 max_lmsys=max_lmsys,
+                max_behavior=max_behavior,
                 cb=corpus_bundle,
             )
             C.write_json_atomic(args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix)
