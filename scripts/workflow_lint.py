@@ -3672,6 +3672,129 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+# Agent-spec size budget (#829): every .claude/agents/*.md is loaded whole on
+# each spawn of that agent, so spec size is a per-invocation token cost. WARN
+# above 40 KB (drifting), FAIL above 70 KB (relocate per-scenario content to
+# .claude/rules/ on-demand rules). Thresholds are STRICTLY-GREATER (a file at
+# exactly the threshold passes).
+AGENT_SPEC_WARN_BYTES = 40_000
+AGENT_SPEC_FAIL_BYTES = 70_000
+
+# Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
+# Each cap = measured post-#829-trim size + <=3 KB margin; a grandfathered file
+# FAILs above its cap (regrowth ratchet) and FAILs as stale once it drops to
+# <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed.
+AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 112,251 B post-#829; every-invocation Analysis-Protocol core —
+    # SPEC.md-dedup trim is the #829 named follow-up
+    "analyzer.md": 115_000,
+    # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
+    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
+    "clean-result-critic.md": 107_000,
+}
+
+
+def check_agent_spec_size(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
+
+    Every agent spec is loaded whole on each spawn, so bytes here are a
+    per-invocation token cost. Semantics (all thresholds STRICTLY-GREATER):
+    size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
+    ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
+    and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    whose file dropped to <= the FAIL threshold (remove the entry — ratchet
+    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    go to ``warn_sink`` when provided (unit-test hook), else stderr with a
+    ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
+    is a unit-test override; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    agents_dir = root / ".claude" / "agents"
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    if not agents_dir.is_dir():
+        errors.append(
+            f"{agents_dir}: missing — the agent-spec dir must exist for the "
+            f"agent-spec size-budget check (#829)."
+        )
+        return errors
+
+    # Config self-check FIRST: a grandfather cap at/below the FAIL threshold is
+    # meaningless (the plain FAIL branch would never be reached for that file).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
+        if cap <= AGENT_SPEC_FAIL_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} — cap "
+                f"must exceed AGENT_SPEC_FAIL_BYTES ({AGENT_SPEC_FAIL_BYTES}); "
+                f"raise the cap or remove the entry."
+            )
+
+    for path in sorted(agents_dir.glob("*.md")):
+        if not path.is_file():
+            continue
+        size = path.stat().st_size
+        name = path.name
+        if size > AGENT_SPEC_FAIL_BYTES:
+            cap = AGENT_SPEC_SIZE_GRANDFATHER.get(name)
+            if cap is not None:
+                if size > cap:
+                    errors.append(
+                        f".claude/agents/{name}: {size} bytes exceeds its "
+                        f"grandfather ratchet cap ({cap} bytes) — the spec "
+                        f"regrew past its recorded post-trim size; trim it "
+                        f"back (relocate per-scenario content to "
+                        f".claude/rules/, see #829)."
+                    )
+                else:
+                    _warn(
+                        f".claude/agents/{name}: {size} bytes — grandfathered; "
+                        f"{cap - size} bytes under its cap ({cap})."
+                    )
+            else:
+                errors.append(
+                    f".claude/agents/{name}: {size} bytes exceeds the "
+                    f"{AGENT_SPEC_FAIL_BYTES}-byte agent-spec FAIL threshold — "
+                    f"relocate per-scenario content to .claude/rules/ "
+                    f"(see #829)."
+                )
+        elif size > AGENT_SPEC_WARN_BYTES:
+            _warn(
+                f".claude/agents/{name}: {size} bytes exceeds the "
+                f"{AGENT_SPEC_WARN_BYTES}-byte agent-spec WARN budget "
+                f"(FAIL above {AGENT_SPEC_FAIL_BYTES})."
+            )
+
+    # Grandfather-entry hygiene: entries must point at existing files that
+    # still NEED grandfathering (size > FAIL threshold).
+    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+        gf_path = agents_dir / gf_name
+        if not gf_path.is_file():
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: stale grandfather "
+                f"entry — .claude/agents/{gf_name} does not exist; remove the "
+                f"entry."
+            )
+        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
+                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
+                f"grandfathering — remove the entry (ratchet down)."
+            )
+
+    return errors
+
+
 def check_gate_ids_unique(workflow: WorkflowYaml) -> list[str]:
     """Verify every gate ``id:`` across ``gates.{inline, park_and_wait,
     conditional}`` is globally unique.
@@ -4050,6 +4173,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "calibration control with '# noqa: judge-model-pin'. Bundled into the "
         "no-flags default run (#765).",
     )
+    parser.add_argument(
+        "--check-agent-spec-size",
+        action="store_true",
+        help="agent-spec size budget: WARN >40 KB, FAIL >70 KB (grandfather-ratchet)",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -4089,6 +4217,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_judge_model_pins
+        or args.check_agent_spec_size
     )
 
     errors: list[str] = []
@@ -4153,6 +4282,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_agent_spec_size or no_flags:
+        errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
     if args.check_judge_model_pins or no_flags:
