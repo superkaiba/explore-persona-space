@@ -4852,8 +4852,8 @@
       "goal": "Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect >=50 eliciting probes per behavior AND judge E0 with a GRADED multi-sampled 0-100 score (per .claude/rules/llm-judging.md) as the PRIMARY DV (binary judge-rate retained as a validated headline); read the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/763",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/763",
+      "status": "followups_running",
       "title": "Base-model answer activations predict behavioral expression for 4 of 5 behaviors under matched probes and graded scoring (LOCO rho 0.62-0.86, two as reduced-power reads); deception is noise-limited (MODERATE confidence)"
     },
     "764": {
