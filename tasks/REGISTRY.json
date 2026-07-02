@@ -5570,8 +5570,8 @@
     "857": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/857",
-      "status": "proposed",
+      "path": "tasks/planning/857",
+      "status": "planning",
       "title": "Fix: restore issue734_figures functions dropped by 4109e30f17 (pinned test failing on main)"
     },
     "858": {
