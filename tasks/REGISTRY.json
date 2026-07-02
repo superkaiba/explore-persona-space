@@ -5591,8 +5591,8 @@
     "860": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/860",
-      "status": "proposed",
+      "path": "tasks/planning/860",
+      "status": "planning",
       "title": "workflow-fix: pre-existing HF audit-claim test failures on main"
     },
     "861": {
