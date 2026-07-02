@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 885,
+  "highest_id": 886,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5776,6 +5776,13 @@
       "path": "tasks/proposed/885",
       "status": "proposed",
       "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
+    },
+    "886": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/886",
+      "status": "proposed",
+      "title": "extraction.py: PEFT-wrapped models silently take the fallback path (post-norm L_max + full-tuple materialization) \u2014 fix detection"
     },
     "89": {
       "has_clean_result": true,
