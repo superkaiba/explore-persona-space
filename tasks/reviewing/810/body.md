@@ -28,6 +28,8 @@ goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_810.md](https://github.com/superkaiba/explore-persona-space/blob/594f7688f04ab890113179d9d6c114cd15ad8a5d/docs/methodology/issue_810.md) · [gist](https://gist.github.com/superkaiba/fa450d3f98b105e0b6718e4a1c152728)
+
 ## Takeaways
 
 - **Max-pool satisfies the planned win criterion for the linear context→answer map: held-out skill +0.826 (layer 21) vs the mean baseline's +0.800 (layer 18)** — point estimates, n = 50 contexts, no training.
