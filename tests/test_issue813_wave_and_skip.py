@@ -821,9 +821,10 @@ def test_marker_behavioral_confirmation_reads_the_diagonal_context_and_logs(monk
 # (deflate was ~65% of per-row wall — 103.8s vs 1.2s on a 933MB row — at a 1.29x
 # ratio; the small cell-end reduced saves stay compressed); (2) resume skip-set —
 # rows already on HF still forward+reduce but skip the save/enqueue; (3) a per-cell
-# PID lockfile makes a duplicate exec of a live cell exit 0 (the dispatcher's
-# wave-2 re-exec of manually pre-launched cells); (4) r_lookup.json + accum_ckpt.npz
-# resume persistence. All inert on a fresh cell launch.
+# PID lockfile makes a duplicate exec of a LIVE cell WAIT for the owner, then exit 0
+# iff the owner wrote .done / exit 1 otherwise (an instant exit-0 would let the
+# dispatcher's p.wait() advance to the fit phase mid-extraction); (4) r_lookup.json
+# + accum_ckpt.npz resume persistence. All inert on a fresh cell launch.
 
 
 def _cell_args(tmp_path, **overrides):
@@ -889,19 +890,77 @@ def test_batch_upload_chunk_halved_for_uncompressed_files():
     assert rc.BATCH_UPLOAD_CHUNK == 50
 
 
-def test_duplicate_exec_exits_zero_on_live_lock(tmp_path):
-    """IO-6: a second exec of a cell owned by a LIVE pid exits 0 without touching the lock."""
+def test_duplicate_waits_for_live_owner_then_exits_zero_on_done(tmp_path, monkeypatch, caplog):
+    """IO-6 (amended): a duplicate BLOCKS on a live owner; exits 0 only after owner + .done.
+
+    The pre-amendment instant exit-0 let the dispatcher's p.wait() read success
+    for all wave-2 duplicates and advance to the fit phase while the manually
+    pre-launched owner was still extracting. Simulates the owner finishing after
+    3 liveness polls (writes .done, releases its lock, exits): the duplicate must
+    have polled multiple times (blocked), heartbeat-logged, never stolen the
+    live owner's lock, and exited 0 with the wait recorded.
+    """
+    import logging
+
     import issue813_run_cell as rc
 
     reduced_dir = tmp_path / "reduced" / "marker" / "generic"
     reduced_dir.mkdir(parents=True)
-    (reduced_dir / rc.RUNNING_LOCK_NAME).write_text(str(os.getpid()))  # a LIVE pid (our own)
+    lock = reduced_dir / rc.RUNNING_LOCK_NAME
+    lock.write_text("424242")
+    monkeypatch.setattr(rc, "DUP_WAIT_POLL_S", 0.01)
+    monkeypatch.setattr(rc, "DUP_WAIT_HEARTBEAT_S", 0.0)  # heartbeat on every poll
 
-    out = rc.run_cell(_cell_args(tmp_path))
-    assert out.get("skipped") is True, out
-    assert out.get("duplicate_of_pid") == os.getpid(), out
-    # The owner's lock is NOT stolen or removed by the duplicate.
-    assert (reduced_dir / rc.RUNNING_LOCK_NAME).read_text() == str(os.getpid())
+    polls = {"n": 0}
+
+    def _alive(pid):
+        assert pid == 424242
+        polls["n"] += 1
+        # The lock must not have been stolen while the owner is alive.
+        assert lock.read_text() == "424242"
+        if polls["n"] >= 4:
+            # The owner finishes: writes .done, releases its lock, exits.
+            (reduced_dir / rc.CELL_DONE_SENTINEL).write_text("{}")
+            lock.unlink(missing_ok=True)
+            return False
+        return True
+
+    monkeypatch.setattr(rc, "_pid_alive", _alive)
+    with caplog.at_level(logging.INFO, logger=rc.logger.name):
+        out = rc.run_cell(_cell_args(tmp_path))
+    assert out.get("skipped") is True and out.get("duplicate_of_pid") == 424242, out
+    assert out.get("waited_min") is not None, out
+    assert polls["n"] >= 4, polls  # it actually blocked across multiple polls
+    msgs = "\n".join(r.getMessage() for r in caplog.records)
+    assert "waiting for it to finish" in msgs
+    assert "still waiting on cell owner pid 424242" in msgs  # heartbeat line fired
+
+
+def test_duplicate_fails_loud_when_owner_dies_without_done(tmp_path, monkeypatch):
+    """IO-6 (amended): owner death WITHOUT .done → RuntimeError (exit 1), lock untouched.
+
+    A dead-mid-cell owner means the cell is incomplete; the duplicate must fail
+    loud so the dispatcher surfaces it rather than fitting on a partial cell.
+    """
+    import issue813_run_cell as rc
+
+    reduced_dir = tmp_path / "reduced" / "marker" / "generic"
+    reduced_dir.mkdir(parents=True)
+    lock = reduced_dir / rc.RUNNING_LOCK_NAME
+    lock.write_text("424242")
+    monkeypatch.setattr(rc, "DUP_WAIT_POLL_S", 0.01)
+
+    polls = {"n": 0}
+
+    def _alive(pid):
+        polls["n"] += 1
+        return polls["n"] < 3  # owner dies after 2 liveness reads, never writing .done
+
+    monkeypatch.setattr(rc, "_pid_alive", _alive)
+    with pytest.raises(RuntimeError, match="without writing"):
+        rc.run_cell(_cell_args(tmp_path))
+    # The duplicate never touches the dead owner's lock (no takeover, no cleanup).
+    assert lock.read_text() == "424242"
 
 
 def test_stale_lock_is_taken_over_and_removed_in_finally(tmp_path, monkeypatch):

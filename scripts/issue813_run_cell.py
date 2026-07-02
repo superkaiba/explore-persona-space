@@ -26,13 +26,16 @@ this CLI:
    ~1 MB) locally under ``eval_results/issue_813/reduced/<behavior>/<substrate>/``.
 
 Restart-safe (all inert on a fresh launch): a per-cell PID lockfile makes a
-duplicate exec of a live cell exit 0 (the dispatcher's wave-2 re-exec is then
-harmless when cells were pre-launched manually); on resume the cell skip-lists
-rows already uploaded (ONE ``list_repo_files`` call), reuses the persisted
-base-greedy responses (``r_lookup.json`` — removes vLLM nondeterminism across
-restarts), re-enqueues complete-but-unflushed local ``.npz`` files, and — when
-the local accumulator checkpoint (``accum_ckpt.npz``) exactly covers the
-uploaded rows — skips their forward passes entirely.
+duplicate exec of a LIVE cell WAIT for the owner, then exit 0 iff the owner
+wrote ``.done`` (exit 1 otherwise — fail loud on a mid-cell owner death), so
+the dispatcher's wave-2 re-exec of a manually pre-launched cell neither
+double-runs nor lets the dispatcher's p.wait() advance to the fit phase while
+extraction is still in progress; on resume the cell skip-lists rows already
+uploaded (ONE ``list_repo_files`` call), reuses the persisted base-greedy
+responses (``r_lookup.json`` — removes vLLM nondeterminism across restarts),
+re-enqueues complete-but-unflushed local ``.npz`` files, and — when the local
+accumulator checkpoint (``accum_ckpt.npz``) exactly covers the uploaded rows —
+skips their forward passes entirely.
 
 CONTENT HYGIENE: ``em`` uses Betley harmful-content probes — this script NEVER
 prints/logs their text; it digests by row/token COUNT + activations only
@@ -107,9 +110,17 @@ MAX_NEW_TOKENS = {"marker": 2048, "fact": 1024, "sycophancy": 1024, "em": 1024}
 # Atomic per-(behavior, substrate) completion sentinel (resume-skip predicate).
 CELL_DONE_SENTINEL = ".done"
 # Per-cell PID lockfile (next to .done): a duplicate exec of a cell owned by a
-# LIVE process exits 0, so the dispatcher's later duplicate wave-2 exec is
-# harmless when cells were pre-launched manually.
+# LIVE process WAITS for the owner to finish — an instant exit-0 would let the
+# dispatcher's p.wait() read success and advance to the fit phase while the
+# manually pre-launched owner is still extracting (fit on incomplete reduced/
+# data). On owner exit the duplicate exits 0 iff the owner wrote .done, else
+# fails loud (exit 1) so the dispatcher surfaces the partial cell.
 RUNNING_LOCK_NAME = ".running.pid"
+# Duplicate-exec wait tuning (module constants so tests can shrink them): poll
+# the owner pid every DUP_WAIT_POLL_S; heartbeat-log every DUP_WAIT_HEARTBEAT_S.
+# No timeout cap by design — the dispatcher's p.wait() has none either.
+DUP_WAIT_POLL_S = 30.0
+DUP_WAIT_HEARTBEAT_S = 600.0
 # Cell-scoped resume artifacts, both under the cell's unreduced_tmp SCRATCH dir
 # (never under reduced/, which is committed to git — em r_lookup rows carry
 # harmful-content completions): the persisted Phase-A base-greedy responses
@@ -372,10 +383,11 @@ def _acquire_cell_lock(reduced_dir: Path) -> int | None:
     Writes our own pid to ``.running.pid`` and returns None when the lock is
     acquired (no file, unparseable pid, or dead pid — a SIGKILLed run's stale
     lock is taken over). Returns the owner pid WITHOUT touching the file when
-    the recorded pid is a live process, so a duplicate exec of the same cell
-    (the dispatcher's wave-2 re-exec of a manually pre-launched cell) exits 0
-    instead of double-running. Advisory check-then-write (no flock): the
-    dispatcher launches duplicates seconds-to-hours apart, never atomically.
+    the recorded pid is a live process — the caller then WAITS on the owner
+    (``_wait_for_cell_owner``); it must NOT exit 0 immediately, or the
+    dispatcher's p.wait() would read success and advance to the fit phase
+    while the owner is still extracting. Advisory check-then-write (no flock):
+    the dispatcher launches duplicates seconds-to-hours apart, never atomically.
     """
     lock = reduced_dir / RUNNING_LOCK_NAME
     if lock.exists():
@@ -387,6 +399,56 @@ def _acquire_cell_lock(reduced_dir: Path) -> int | None:
             return pid
     lock.write_text(str(os.getpid()))
     return None
+
+
+def _wait_for_cell_owner(reduced_dir: Path, owner: int, *, behavior: str, substrate: str) -> dict:
+    """Block until the LIVE lock owner exits; route the duplicate's exit on ``.done``.
+
+    The dispatcher's duplicate wave-2 exec must NOT exit 0 while the manually
+    pre-launched owner is still extracting — the dispatcher's p.wait() would
+    read success for every wave-2 cell and advance to the fit/analysis phase
+    on incomplete reduced/ data. Instead: poll the owner pid (every
+    ``DUP_WAIT_POLL_S``, heartbeat-logging every ``DUP_WAIT_HEARTBEAT_S``, no
+    timeout cap — the dispatcher has none either); when the owner exits,
+    return the skip dict (exit 0) iff the owner wrote the cell's ``.done``
+    sentinel, else raise RuntimeError (exit 1, fail loud — the owner died
+    mid-cell and the dispatcher must surface it rather than fit on a partial
+    cell). Never touches the owner's lockfile.
+    """
+    sentinel = reduced_dir / CELL_DONE_SENTINEL
+    t0 = time.monotonic()
+    last_beat = t0
+    logger.info(
+        "cell already owned by live pid %d — waiting for it to finish (duplicate exec)", owner
+    )
+    while _pid_alive(owner):
+        time.sleep(DUP_WAIT_POLL_S)
+        now = time.monotonic()
+        if now - last_beat >= DUP_WAIT_HEARTBEAT_S:
+            logger.info(
+                "still waiting on cell owner pid %d (%.0f min elapsed)", owner, (now - t0) / 60.0
+            )
+            last_beat = now
+    waited_min = (time.monotonic() - t0) / 60.0
+    if sentinel.exists():
+        logger.info(
+            "cell owner pid %d completed (.done present) after %.1f min wait — "
+            "exiting 0 (duplicate exec)",
+            owner,
+            waited_min,
+        )
+        return {
+            "skipped": True,
+            "behavior": behavior,
+            "substrate": substrate,
+            "duplicate_of_pid": owner,
+            "waited_min": waited_min,
+        }
+    raise RuntimeError(
+        f"cell owner pid {owner} died after {waited_min:.1f} min without writing {sentinel} — "
+        "cell incomplete; failing loud so the dispatcher surfaces it instead of fitting on a "
+        "partial cell"
+    )
 
 
 def _hf_uploaded_rows(behavior: str, substrate: str) -> tuple[set[str], bool]:
@@ -858,9 +920,12 @@ def run_cell(args) -> dict:
 
     Thin wrapper around ``_run_cell_body``: the ``.done`` resume-skip, then the
     per-cell PID lockfile (a duplicate exec of a cell owned by a LIVE process
-    exits 0, making the dispatcher's later duplicate wave-2 exec harmless when
-    cells were pre-launched manually), then the body with a finally-guaranteed
-    lock release. gate-only bypasses both guards (it writes no production state).
+    WAITS for the owner via ``_wait_for_cell_owner``, then exits 0 iff the
+    owner wrote ``.done`` / raises otherwise — so the dispatcher's later
+    duplicate wave-2 exec of a manually pre-launched cell neither double-runs
+    NOR lets the dispatcher advance to the fit phase mid-extraction), then the
+    body with a finally-guaranteed lock release. gate-only bypasses both
+    guards (it writes no production state).
     """
     behavior = args.behavior
     substrate = args.substrate
@@ -879,13 +944,9 @@ def run_cell(args) -> dict:
         return _run_cell_body(args, reduced_dir)
     owner = _acquire_cell_lock(reduced_dir)
     if owner is not None:
-        logger.info("cell already owned by live pid %d — exiting (duplicate exec)", owner)
-        return {
-            "skipped": True,
-            "behavior": behavior,
-            "substrate": substrate,
-            "duplicate_of_pid": owner,
-        }
+        # Duplicate exec: WAIT for the live owner (never an instant exit-0), then
+        # exit 0 on .done / fail loud without it. Never touches the owner's lock.
+        return _wait_for_cell_owner(reduced_dir, owner, behavior=behavior, substrate=substrate)
     try:
         return _run_cell_body(args, reduced_dir)
     finally:
