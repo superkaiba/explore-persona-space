@@ -106,6 +106,50 @@ def _git_sha() -> str:
         return "unknown"
 
 
+# ── Per-cell resume-skip (boundary-swap enabler) ───────────────────────────────
+
+
+def _load_cell_json(path: Path) -> dict | None:
+    """Load + JSON-parse one cell artifact; return None on missing / corrupt / non-dict.
+
+    A missing, truncated, or non-object file yields None so the caller RECOMPUTES the
+    cell (overwriting the partial write) — never a silent half-loaded state.
+    """
+    if not path.exists():
+        return None
+    try:
+        obj = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, ValueError):
+        return None
+    return obj if isinstance(obj, dict) else None
+
+
+def _resume_cell(
+    behavior: str, substrate: str, delta_dir: Path, null_dir: Path
+) -> tuple[dict, dict] | None:
+    """Return (obs, null) loaded from disk iff BOTH cell JSONs are complete, else None.
+
+    A cell is RESUMABLE iff BOTH its ``delta_floor`` (observed read) JSON AND its
+    ``substrate_swap_null`` JSON exist AND parse as a JSON object AND the null JSON
+    carries the completion signal — either ``n_over_floor_resamples_used >= 1`` (the
+    full-success shape) OR a ``note`` field (the degenerate-cell early-return shape,
+    e.g. "too few questions" / "all resamples degenerate"). Any missing / corrupt /
+    truncated file OR an in-flight null with neither signal ⇒ None (recompute the cell
+    from scratch, overwriting the partial files). The returned ``obs`` / ``null`` dicts
+    are the EXACT structures ``observed_read`` / ``substrate_swap_null`` produce (the
+    writers use ``json.dumps(default=float)``, so JSON round-trip float coercion is the
+    only difference — accepted by the downstream pairwise/verdict/summary consumers).
+    """
+    obs = _load_cell_json(delta_dir / f"{behavior}__{substrate}.json")
+    null = _load_cell_json(null_dir / f"{behavior}__{substrate}.json")
+    if obs is None or null is None:
+        return None
+    null_complete = null.get("n_over_floor_resamples_used", 0) >= 1 or "note" in null
+    if not null_complete:
+        return None
+    return obs, null
+
+
 # ── Observed Δ/floor read (reused fit machinery) ───────────────────────────────
 
 
@@ -690,6 +734,12 @@ def main() -> int:
         default=NULL_REFIT_PAIRS,
         help="per-pseudo-arm refit-floor pairs inside the Δ/floor null (smoke clamps this)",
     )
+    ap.add_argument(
+        "--no-resume",
+        action="store_true",
+        help="force full recompute of every cell (default: resume-skip cells whose "
+        "delta_floor + substrate_swap_null JSONs are already present and complete)",
+    )
     args = ap.parse_args()
 
     # r_B artifacts (em/syco from #658 r_b.pt; fact from #667 r_b_fact.pt; marker W_U[※]).
@@ -709,6 +759,26 @@ def main() -> int:
         null_by_sub: dict[str, dict] = {}
         r_hat = _r_hat_for(behavior, rb_main, rb_fact, wu_marker)
         for substrate in args.substrates:
+            # Per-cell resume-skip+load (boundary-swap enabler): a cell whose observed
+            # (delta_floor) AND substrate-swap-null JSONs are already present + complete is
+            # LOADED from disk into the SAME in-memory structures the downstream
+            # pairwise/verdict/summary assembly consumes — never recomputed (one null cell
+            # ≈ 2.5h). Any missing/corrupt file or an in-flight null recomputes the cell.
+            # The chain_rho JSON (elicit/mix only) is not re-read downstream — obs already
+            # carries obs["chain_rho"] — so a skipped cell leaves its existing chain_rho file
+            # untouched. --no-resume forces the full recompute path below.
+            if not args.no_resume:
+                resumed = _resume_cell(behavior, substrate, delta_dir, null_dir)
+                if resumed is not None:
+                    obs, null = resumed
+                    observed_by_sub[substrate] = obs
+                    null_by_sub[substrate] = null
+                    logger.info(
+                        "[phase=analysis] %s/%s resume-skip (delta_floor + null JSONs present)",
+                        behavior,
+                        substrate,
+                    )
+                    continue
             logger.info(
                 "[phase=analysis] observed read %s/%s L%d", behavior, substrate, HEADLINE_LAYER
             )
