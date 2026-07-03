@@ -476,6 +476,8 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
             )
         for name in sub.failed:
             res.detail.append(f"issue {issue_n}: FAILED to remove {name}")
+        for name, tgt in sub.symlink_external_kept:
+            res.detail.append(f"issue {issue_n}: external symlink target kept: {name} -> {tgt}")
     if apply and escalated_any:
         _save_active_escalation_state(escalation_state)
     return res
