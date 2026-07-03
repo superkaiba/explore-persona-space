@@ -6092,8 +6092,8 @@
     "925": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/925",
-      "status": "approved",
+      "path": "tasks/running/925",
+      "status": "running",
       "title": "workflow-fix: verify_plan.py WARN check for incoherent hypothesis confirm/falsify branches"
     },
     "926": {
