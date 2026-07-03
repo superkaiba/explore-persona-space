@@ -52,7 +52,10 @@ N_STREAM_TOTAL = N_PARENT + N_NEW_CONTEXTS  # 101000
 # clean new pool still fills exactly N_NEW_CONTEXTS. 8000 ≈ 10× the observed collision
 # rate; a shortfall past it hard-fails (never silently under-fills). Override for a
 # denser-collision corpus via EPM_I841S_BACKFILL_MARGIN.
-N_STREAM_BACKFILL_MARGIN = int(os.environ.get("EPM_I841S_BACKFILL_MARGIN", "8000"))
+# 24000 (was 8000): lmsys-chat-1m collides with the parent-5000 strings at ~9.5%
+# of stream INSTANCES (att-2 measured 9883 drops in 104000 raw), so filling 96000
+# clean needs ~10100 margin at the observed rate; 24000 gives ~2.4x headroom.
+N_STREAM_BACKFILL_MARGIN = int(os.environ.get("EPM_I841S_BACKFILL_MARGIN", "24000"))
 
 # HF layout for this round's artifacts (data repo superkaiba1/explore-persona-space-data).
 HF_SCALING_PREFIX = "issue841_scaling"
