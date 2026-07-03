@@ -974,6 +974,210 @@ def test_read_marker_slots_strips_trailing_im_end(tmp_path):
     assert rec["context_id"] == "source"
 
 
+# ── R5 BLOCKER (eos-slot-stop-at-marker): _read_marker_slots truncates at marker ──────────
+
+
+def test_read_marker_slots_truncates_at_marker_in_response(tmp_path):
+    """(a) BLOCKER eos-slot-stop-at-marker: generated ids contain a marker token
+    BEFORE the trailing im_end, e.g. [prompt..., R..., MARKER, IM_END].
+
+    The fix must strip BOTH the trailing im_end AND the marker, leaving the
+    forward-pass input ending just before MARKER so logits[-1, :] reads the
+    slot where the marker first appears — not the slot after an already-emitted
+    marker (which would measure "emit a second ※", a corrupted DV).
+
+    Expected stripped length: prompt tokens only (marker + im_end both removed).
+    """
+    from unittest.mock import MagicMock
+
+    import torch
+
+    MARKER_TOKEN_ID = 83399
+    QWEN_IM_END_ID = 151645
+
+    # Prompt = [10, 20]; new tokens = [30, 40, MARKER, IM_END]
+    # After marker-stop: forward input = [10, 20, 30, 40] — strip at first marker.
+    prompt_ids = [10, 20]
+    response_ids = [30, 40]
+    full_ids = torch.tensor(
+        [[*prompt_ids, *response_ids, MARKER_TOKEN_ID, QWEN_IM_END_ID]], dtype=torch.long
+    )
+    expected_stripped_len = len(prompt_ids) + len(response_ids)  # 4, not 6
+
+    vocab_size = 200000
+    seen_input_shapes: list[tuple] = []
+
+    class FakeModel:
+        def __call__(self, input_ids):
+            seen_input_shapes.append(tuple(input_ids.shape))
+            T = input_ids.shape[1]
+            logits_data = torch.zeros(1, T, vocab_size)
+            result = MagicMock()
+            result.logits = logits_data
+            return result
+
+        def generate(self, input_ids, **kwargs):
+            return full_ids
+
+    fake_model = FakeModel()
+    fake_tokenizer = MagicMock()
+    fake_tokenizer.eos_token_id = QWEN_IM_END_ID
+    fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+
+    def _noop_validate(rec, context=""):
+        pass
+
+    result = pilot._read_marker_slots(
+        fake_model,
+        [("source", "You are helpful.")],
+        tokenizer=fake_tokenizer,
+        questions=["Q?"],
+        device=torch.device("cpu"),
+        marker_token_id=MARKER_TOKEN_ID,
+        qwen_im_end_id=QWEN_IM_END_ID,
+        validate_fn=_noop_validate,
+    )
+
+    assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
+    fwd_T = seen_input_shapes[0][1]
+    assert fwd_T == expected_stripped_len, (
+        f"Forward input has {fwd_T} tokens; expected {expected_stripped_len} "
+        f"(should strip at MARKER, not after it). ids={seen_input_shapes}"
+    )
+    assert len(result) == 1
+    for key in ("logp", "z_marker", "z_eos", "logZ"):
+        assert key in result[0], f"missing key {key!r}"
+
+
+def test_read_marker_slots_no_marker_unchanged(tmp_path):
+    """(b) eos-slot-stop-at-marker: when no marker token is present in the new tokens,
+    behavior is identical to the pre-fix case — only trailing im_end is stripped.
+
+    Generated ids: [prompt..., R..., IM_END] — no marker in new tokens.
+    Expected stripped length: prompt + R (im_end only removed).
+    """
+    from unittest.mock import MagicMock
+
+    import torch
+
+    MARKER_TOKEN_ID = 83399
+    QWEN_IM_END_ID = 151645
+
+    prompt_ids = [10, 20]
+    response_ids = [30, 40, 50]
+    full_ids = torch.tensor([[*prompt_ids, *response_ids, QWEN_IM_END_ID]], dtype=torch.long)
+    expected_stripped_len = len(prompt_ids) + len(response_ids)  # 5, not 6
+
+    vocab_size = 200000
+    seen_input_shapes: list[tuple] = []
+
+    class FakeModel:
+        def __call__(self, input_ids):
+            seen_input_shapes.append(tuple(input_ids.shape))
+            T = input_ids.shape[1]
+            logits_data = torch.zeros(1, T, vocab_size)
+            result = MagicMock()
+            result.logits = logits_data
+            return result
+
+        def generate(self, input_ids, **kwargs):
+            return full_ids
+
+    fake_model = FakeModel()
+    fake_tokenizer = MagicMock()
+    fake_tokenizer.eos_token_id = QWEN_IM_END_ID
+    fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+
+    def _noop_validate(rec, context=""):
+        pass
+
+    pilot._read_marker_slots(
+        fake_model,
+        [("source", "You are helpful.")],
+        tokenizer=fake_tokenizer,
+        questions=["Q?"],
+        device=torch.device("cpu"),
+        marker_token_id=MARKER_TOKEN_ID,
+        qwen_im_end_id=QWEN_IM_END_ID,
+        validate_fn=_noop_validate,
+    )
+
+    assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
+    fwd_T = seen_input_shapes[0][1]
+    assert fwd_T == expected_stripped_len, (
+        f"Forward input has {fwd_T} tokens; expected {expected_stripped_len} "
+        f"(only im_end should be stripped when no marker). ids={seen_input_shapes}"
+    )
+
+
+def test_read_marker_slots_marker_mid_response(tmp_path):
+    """(c) eos-slot-stop-at-marker: marker appears mid-response (not at the boundary),
+    i.e. [prompt..., r1..., MARKER, r2..., IM_END].
+
+    The fix must truncate at the FIRST marker occurrence, so r2 tokens after the
+    marker are also excluded from the forward pass.
+
+    Generated: [10, 20, 30, MARKER, 40, 50, IM_END]
+    prompt=[10, 20], new tokens=[30, MARKER, 40, 50, IM_END]
+    Expected stripped: [10, 20, 30] (stop immediately before the first MARKER).
+    """
+    from unittest.mock import MagicMock
+
+    import torch
+
+    MARKER_TOKEN_ID = 83399
+    QWEN_IM_END_ID = 151645
+
+    prompt_ids = [10, 20]
+    # new tokens (after prompt): 30, MARKER, 40, 50, IM_END
+    full_ids = torch.tensor(
+        [[*prompt_ids, 30, MARKER_TOKEN_ID, 40, 50, QWEN_IM_END_ID]], dtype=torch.long
+    )
+    # Should strip to [10, 20, 30] — stop before first MARKER at offset 1 in new tokens
+    expected_stripped_len = len(prompt_ids) + 1  # 3
+
+    vocab_size = 200000
+    seen_input_shapes: list[tuple] = []
+
+    class FakeModel:
+        def __call__(self, input_ids):
+            seen_input_shapes.append(tuple(input_ids.shape))
+            T = input_ids.shape[1]
+            logits_data = torch.zeros(1, T, vocab_size)
+            result = MagicMock()
+            result.logits = logits_data
+            return result
+
+        def generate(self, input_ids, **kwargs):
+            return full_ids
+
+    fake_model = FakeModel()
+    fake_tokenizer = MagicMock()
+    fake_tokenizer.eos_token_id = QWEN_IM_END_ID
+    fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+
+    def _noop_validate(rec, context=""):
+        pass
+
+    pilot._read_marker_slots(
+        fake_model,
+        [("source", "You are helpful.")],
+        tokenizer=fake_tokenizer,
+        questions=["Q?"],
+        device=torch.device("cpu"),
+        marker_token_id=MARKER_TOKEN_ID,
+        qwen_im_end_id=QWEN_IM_END_ID,
+        validate_fn=_noop_validate,
+    )
+
+    assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
+    fwd_T = seen_input_shapes[0][1]
+    assert fwd_T == expected_stripped_len, (
+        f"Forward input has {fwd_T} tokens; expected {expected_stripped_len} "
+        f"(should stop before MARKER at offset 1 in new tokens). ids={seen_input_shapes}"
+    )
+
+
 # ── R4 CONCERN 3 regression: upload_failed status threaded correctly ──────────
 
 
@@ -1101,3 +1305,138 @@ def test_run_class_calls_baseline_fn_before_build(tmp_path):
     assert bl is not None, "entry['baseline'] is missing"
     assert bl.get("status") == "smoke", f"unexpected baseline result: {bl!r}"
     assert bl.get("rate") == pytest.approx(0.12)
+
+
+# ── R5 CONCERN resolver tests: production paths called when seams absent ─────
+
+
+def test_run_class_calls_production_baseline_when_no_seam(tmp_path, monkeypatch):
+    """R5 CONCERN baseline-preintervention-deferred (Item 3): when seams.baseline_fn
+    is None, run_class must call the production helper _run_baseline_pass, NOT fall
+    back to a deferred_full_run placeholder.
+
+    Uses monkeypatching — no GPU or live API required.
+    """
+    import dataclasses as dc
+
+    cfg = _smoke_config(tmp_path, classes=("sycophancy",))
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    # Remove the smoke baseline seam to exercise the production path.
+    seams = dc.replace(seams, baseline_fn=None)
+
+    production_calls: list = []
+
+    def fake_run_baseline_pass(behavior, cfg_, class_dir, seams_):
+        production_calls.append({"behavior": getattr(behavior, "name", str(behavior))})
+        return {"status": "ok", "rate": 0.05, "n_questions": 2, "out_dir": str(class_dir)}
+
+    monkeypatch.setattr(pilot, "_run_baseline_pass", fake_run_baseline_pass)
+
+    entry = pilot.run_class("sycophancy", cfg, seams)
+
+    assert production_calls, (
+        "_run_baseline_pass was never called when seams.baseline_fn is None; "
+        "deferred_full_run placeholder may still be in run_class"
+    )
+    bl = entry.get("baseline")
+    assert bl is not None, "entry['baseline'] missing"
+    assert bl.get("status") == "ok", f"unexpected baseline status: {bl!r}"
+    # Must NOT be the deferred placeholder.
+    assert bl.get("status") != "deferred_full_run", (
+        "entry['baseline']['status'] == 'deferred_full_run' — placeholder not replaced"
+    )
+
+
+def test_run_class_calls_production_on_policy_control_when_no_seam(tmp_path, monkeypatch):
+    """R5 CONCERN sycophancy-onpolicy-control-deferred (Item 2): when
+    seams.on_policy_control_fn is None, run_class must call the production helper
+    _run_on_policy_control for sycophancy, NOT fall back to a deferred_full_run
+    placeholder.
+
+    Uses monkeypatching — no GPU or live API required.  The seam is explicitly
+    cleared via dc.replace so the production path is exercised; make_smoke_seams()
+    now supplies both baseline_fn and on_policy_control_fn stubs, so we must clear
+    the latter to exercise the None-path.
+    """
+    import dataclasses as dc
+
+    cfg = _smoke_config(tmp_path, classes=("sycophancy",))
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    # Clear the on_policy_control_fn seam so run_class falls through to the
+    # production _run_on_policy_control path — the path under test.
+    seams = dc.replace(seams, on_policy_control_fn=None)
+    # baseline_fn is already set by make_smoke_seams(); no need to patch _run_baseline_pass.
+
+    production_calls: list = []
+
+    def fake_run_on_policy_control(behavior, cfg_, class_dir, seams_):
+        production_calls.append({"behavior": getattr(behavior, "name", str(behavior))})
+        return {
+            "status": "ok",
+            "r_b_path": str(class_dir / "on_policy_control" / "r_b.pt"),
+            "provenance": "on_policy",
+            "n_kept": 20,
+        }
+
+    monkeypatch.setattr(pilot, "_run_on_policy_control", fake_run_on_policy_control)
+
+    entry = pilot.run_class("sycophancy", cfg, seams)
+
+    assert production_calls, (
+        "_run_on_policy_control was never called when seams.on_policy_control_fn is None; "
+        "deferred_full_run placeholder may still be in run_class"
+    )
+    opc = entry.get("direction", {}).get("on_policy_control")
+    assert opc is not None, "entry['direction']['on_policy_control'] missing"
+    assert opc.get("status") == "ok", f"unexpected on_policy_control status: {opc!r}"
+    # Must NOT be the deferred placeholder.
+    assert opc.get("status") != "deferred_full_run", (
+        "entry['direction']['on_policy_control']['status'] == 'deferred_full_run' — "
+        "placeholder not replaced"
+    )
+
+
+def test_summarize_install_rate_delta_uses_baseline_field(tmp_path):
+    """R5 CONCERN baseline-preintervention-deferred (Item 3): _summarize must use
+    entry['baseline']['rate'] as the denominator for install_rate_deltas when the
+    pre-intervention baseline is available, NOT only the install sub-dict's value.
+
+    Verifies: install_rate_deltas[name] = rate_trained_C - baseline['rate'].
+    """
+    # Fake classes dict: one sycophancy class with a known baseline and install.
+    rate_trained_C = 0.75
+    baseline_rate = 0.20
+    expected_delta = round(rate_trained_C - baseline_rate, 6)
+
+    classes = {
+        "sycophancy": {
+            "status": "success",
+            "baseline": {"status": "ok", "rate": baseline_rate, "n_questions": 10},
+            "install": {
+                "rate_trained_C": rate_trained_C,
+                "rate_base_C": 0.22,
+                "install_delta": round(rate_trained_C - 0.22, 6),  # old denominator
+                "install_ok": True,
+            },
+            "build": {},
+            "direction": {},
+            "api_calls": {},
+            "upload": {"status": "skipped"},
+            "timings_seconds": {"total": 30.0},
+        }
+    }
+
+    summary = pilot._summarize(classes)
+
+    delta = summary["install_rate_deltas"].get("sycophancy")
+    assert delta is not None, "install_rate_deltas['sycophancy'] is None"
+    assert delta == pytest.approx(expected_delta), (
+        f"Expected install_rate_delta {expected_delta} (rate_trained_C - baseline_rate), "
+        f"got {delta}. _summarize may not be using the baseline field."
+    )
+    # Confirm it does NOT match the stale install_delta (old denominator).
+    stale_delta = round(rate_trained_C - 0.22, 6)
+    assert delta != pytest.approx(stale_delta), (
+        f"install_rate_delta {delta} matches the stale install_delta {stale_delta}; "
+        "baseline field is not being used as the denominator"
+    )
