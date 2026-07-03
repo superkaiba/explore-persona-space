@@ -121,7 +121,7 @@ number from the raw JSON, never the experimenter's summary.**
 
 **Measurement-validity gate (BEFORE interpreting; skip for
 `kind: analysis|infra|batch|survey`).** The Goal names a *construct*; the
-metric is a *proxy*. Three checks:
+metric is a *proxy*. Four checks:
 
 1. **Floor/ceiling:** all conditions saturated ⇒ probe presumed
    uninformative — rank-shuffles are NOT findings; surface it, cap
@@ -135,6 +135,14 @@ metric is a *proxy*. Three checks:
    (preferred: the teacher-forced fixed pos-vs-neg margin, #722) + the
    Spearman of (b) vs (a) (CLAUDE.md § Measurement validity;
    `llm-judging.md` § E2).
+4. **Band-vs-ceiling:** a registered null band whose upper bound meets or
+   exceeds the DV's achievable estimator-bound ceiling is
+   uninformative-by-construction — narrate any NON-REJECTION as
+   failure-to-reject, never evidence of absence/reversal (a separately
+   reachable opposite-tail rejection stays legitimate), and draw band +
+   ceiling in the figure; a band above only a fallback severity reference
+   point is reported as low-severity, not zero power
+   (`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling; #810).
 
 **v4 shape (SPEC.md § "v4 body shape", authoritative):** emit the `<!-- clean-result-v4 -->` sentinel right after the
 H1; confidence lives in the H1 title tag ONLY; `## Takeaways` (3-6
