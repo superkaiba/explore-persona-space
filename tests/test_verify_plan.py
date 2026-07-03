@@ -660,7 +660,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/9" in r.detail
+    assert "4/10" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -674,7 +674,36 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/9" in r.detail
+    assert "4/10" in r.detail
+
+
+def test_c6_fitness_counts_item_j_in_widened_class():
+    # Pins the [a-j] regex widening (#941): exactly four counted letters, one of
+    # them (j) — a regression to [a-i] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (j) pairwise provenance coherence — input last-commit predates the dependent capture.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/10" in r.detail
+
+
+def test_c6_fitness_letters_beyond_j_do_not_count():
+    # Upper-boundary fixture (#941): an unrelated (k) elsewhere in the body must
+    # NOT lift a 3-letter fitness attestation to a 4-letter PASS — an
+    # over-widening of the class to [a-k]/[a-z] would flip this to PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
+        + "\nUnrelated enumeration elsewhere: (k) a non-fitness bullet.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
 
 
 def test_c6_fitness_with_few_letters_warns():
@@ -686,7 +715,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(i)" in r.detail or "nine" in r.detail
+    assert "(a)–(j)" in r.detail or "ten" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
