@@ -6213,8 +6213,8 @@
     "941": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/941",
-      "status": "proposed",
+      "path": "tasks/planning/941",
+      "status": "planning",
       "title": "workflow-fix: artifact-reuse fitness check gains pairwise provenance-coherence item (j)"
     },
     "942": {
