@@ -1261,6 +1261,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # every non-GCP / non-running tick.
         "gcp_gpu_idle_advisory_posted",
         "gcp_gpu_idle_escalation_posted",
+        # GCP-lane GPU-WIDTH advisory (#873, the width mirror of the #730
+        # idle reuse) — always emitted by backend_poll.main, default False.
+        # (Pin update landed with #909's green-gate pass: #873 added the
+        # emitter without updating this shape test — pre-existing on main.)
+        "gcp_gpu_width_advisory_posted",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"

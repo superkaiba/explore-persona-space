@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 924,
+  "highest_id": 933,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4967,7 +4967,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/778",
       "status": "followups_running",
-      "title": "On Qwen2.5-7B, a persona vector predicts trait expression no better than a norm-matched random direction \u2014 Persona Vectors' prediction results replicate but the trait-specificity does not survive the random baseline the paper never ran (MODERATE confidence)"
+      "title": "On Qwen2.5-7B, a persona vector predicts trait expression better than trait-agnostic random directions \u2014 family-wise significant for evil and sycophancy monitoring, unresolved for hallucination at the paper's fixed layer (MODERATE confidence)"
     },
     "779": {
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
@@ -5222,7 +5222,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/811",
       "status": "followups_running",
-      "title": "The pre/post-finetuning function-change verdict is answer-summary-dependent: the taught-fact \u0394-over-floor call at the primary layer is specific to the mean-over-answer read (LOW confidence)"
+      "title": "The taught-fact raw function-change call at the primary layer holds under the max-pool answer summary: the turn-boundary read, not the mean, is the outlier (MODERATE confidence)"
     },
     "812": {
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",
@@ -5962,8 +5962,8 @@
     "909": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/909",
-      "status": "reviewing",
+      "path": "tasks/completed/909",
+      "status": "completed",
       "title": "workflow-fix: RunPod lane drops --workload-cmd (provision-only launch)"
     },
     "91": {
@@ -5983,22 +5983,22 @@
     "911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/911",
-      "status": "running",
+      "path": "tasks/reviewing/911",
+      "status": "reviewing",
       "title": "workflow-fix: janitors miss issue-keyed caches outside canonical globs"
     },
     "912": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/912",
-      "status": "running",
+      "path": "tasks/completed/912",
+      "status": "completed",
       "title": "workflow-fix: worktree sweep should reap idle worktrees' regenerable .venv"
     },
     "913": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/913",
-      "status": "proposed",
+      "path": "tasks/reviewing/913",
+      "status": "reviewing",
       "title": "Fix run_823.py phase-5 length-R2 diagnostic: valid_idx slice + un-swallow bare except"
     },
     "914": {
@@ -6019,8 +6019,8 @@
     "916": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/916",
-      "status": "proposed",
+      "path": "tasks/running/916",
+      "status": "running",
       "title": "workflow-fix: null-band-vs-DV-ceiling informativeness check in selection-symmetric-nulls"
     },
     "917": {
@@ -6067,27 +6067,92 @@
       "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
     },
     "922": {
-      "goal": "On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1} taking ONLY the previous position's activation (no token identity), evaluate single-step held-out Delta R^2 per layer and multi-step autoregressive rollout from the last prompt token against true on-policy answer activations, and benchmark behavior read-out off rolled-forward states against #779's direct context->trait predictor and context->answer-profile map.",
+      "goal": "On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing per-layer transition structures \u2014 (a) a global next-token map rolled from the last prompt token, (b1) an additively context-conditioned map (global operator + context drift), (b2) an operator-valued map where the context RESHAPES the transition itself (A(c) via FiLM-diagonal / low-rank delta / gated mixture of K operators, capacity-matched to b1), and (c) a direct per-horizon map c -> h_{t+k} (no recursion; #779's answer-profile map = its horizon-mean nested baseline) \u2014 over the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior read-out vs #779's direct context->trait predictor.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/922",
-      "status": "planning",
+      "path": "tasks/running/922",
+      "status": "running",
       "title": "Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP) on real chat contexts"
     },
     "923": {
       "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/923",
-      "status": "proposed",
+      "path": "tasks/running/923",
+      "status": "running",
       "title": "Context/query decomposition of the mean answer activation: ridge read-outs from disjoint last-context / last-query vectors vs the full-prompt vector (no training)"
     },
     "924": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/924",
-      "status": "planning",
+      "path": "tasks/completed/924",
+      "status": "completed",
       "title": "workflow-fix: clean_experiment_downloads degrades gracefully off-main"
+    },
+    "925": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/925",
+      "status": "completed",
+      "title": "workflow-fix: verify_plan.py WARN check for incoherent hypothesis confirm/falsify branches"
+    },
+    "926": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/926",
+      "status": "proposed",
+      "title": "vectorized_mlp_skill: per-absolute-index MLP init seeding (chunk-invariant fits)"
+    },
+    "927": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/927",
+      "status": "proposed",
+      "title": "workflow-fix: mint fresh EPS_ATTEMPT_ID per GCP launch"
+    },
+    "928": {
+      "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/928",
+      "status": "proposed",
+      "title": "Thinking-model CoT decomposition of the context\u2192answer activation map: composed vs joint vs CoT-augmented"
+    },
+    "929": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/929",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md zero-width-span BPE-delimiter-merge entry"
+    },
+    "930": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/930",
+      "status": "proposed",
+      "title": "workflow-fix: lint check for reserved [phase=done] multi-emission"
+    },
+    "931": {
+      "goal": "Test whether the linear context\u2192answer-profile map (#779/#825 held-out ridge recipe, c_x \u2192 v(x)) generalizes to a character\u2192behavior map in STORIES on Qwen2.5-7B-Instruct \u2014 (a) real stories fed with NO chat template, predicting the mean activation of a character's dialogue span from that character's context vector, and (b) assistant-written multi-character stories under the chat template \u2014 quantifying similarity to the chat-template context\u2192answer map via cross-regime transfer R\u00b2, matched-layer map/weight similarity, and layer-profile rank correlation; specificity control: the same machinery anchored on random persona-irrelevant separator/punctuation tokens (separator activation \u2192 mean activation of the following span until the next separator) to test whether span-mean predictability is character/persona-specific or a generic delimiter-span property.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/931",
+      "status": "proposed",
+      "title": "Story-character generalization of the context\u2192answer map (no chat template) + separator-token specificity control"
+    },
+    "932": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/932",
+      "status": "planning",
+      "title": "workflow-fix: verify_plan check \u2014 fail-loud acceptance claims need committed tests"
+    },
+    "933": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/933",
+      "status": "proposed",
+      "title": "workflow-fix: test_shared_vm_thread_caps.py red on main (stale #895 grandfather + ungrandfathered violators)"
     },
     "94": {
       "has_clean_result": false,

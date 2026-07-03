@@ -143,6 +143,24 @@ allowlisted runtime-noise dirt (agent memories, `pods.conf`,
 `pods_ephemeral.json`) to `.claude/cache/worktree-rescue-<date>/` BEFORE
 removal; dry-run only classifies, never kills or rescues.
 
+**Venv-reap arm (#912).** On every `--apply` sweep, a KEPT worktree (dirty /
+active issue / human-named — every plain-keep class) additionally gets its
+`.venv` reaped when the worktree has been idle ≥7 days (2 days under the same
+disk-pressure predicate; env `EPM_WORKTREE_VENV_IDLE_DAYS`) AND no process
+holds it — the cwd/argv harvest plus a dedicated `/proc/<pid>/exe` probe that
+catches interpreters exec'd from the venv itself; idleness is
+max(root mtime, `.venv` mtime, git-admin `HEAD`/`index` mtime), failing
+toward keep when unreadable. The delete is rename-aside
+(`.venv.reap-tmp-<pid>`) → post-rename holder re-check → rmtree, never wider
+than `<wt>/.venv` + its own leftovers; underscore-prefixed managed worktrees
+(`_task-main-pin`) and symlinked roots/venvs are never touched; a `.venv` is
+a pure build artifact `uv run` regenerates from the shared uv cache in
+minutes. Kill switch: `EPM_WORKTREE_VENV_REAP=0`. Note the interaction with
+the daily `uv cache prune` cron: reaping a venv only drops worktree-side
+hardlinks — the shared blocks free when `uv cache prune` later drops
+unreferenced cache-side entries, so the two crons' combined reclaim is the
+number to watch (per-venv byte figures are du-apparent).
+
 `codex_task.py` complements this by pinning every codex-companion dispatch to
 the main checkout root (`DISPATCH_ROOT`), so new codex workers never root
 themselves in a worktree.

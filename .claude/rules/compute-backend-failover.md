@@ -435,6 +435,12 @@ terminal and the next dispatch reclaims it. The #667 NON-terminal
 frozen-phase gap above is UNCHANGED — a hung VM with `eps/phase=workload`
 still needs the manual pivot.
 
+**Manual-pivot runbook line (#909):** a manual RunPod pivot that carries
+`--workload-cmd` must ALSO pass `--execute-workload` — without it the launch
+is provision-only (the pod boots, nothing runs) and the JSON carries
+`workload_executed: false`; the alternative executor is dispatching the
+experimenter on the provisioned pod (#909).
+
 ### CPU intents: cheap CPU lanes + the scoped #677 terminal (#747)
 
 The GCP→RunPod failover above (capacity AND workload-crash, sync AND async)
