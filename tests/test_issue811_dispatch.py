@@ -58,6 +58,24 @@ def _make_fake_uv(
         if stage_creates_store
         else ""
     )
+    # Upload helper: ALSO log the env contract the round-13 BLOCKER
+    # (pre-user-upload-env-miswired) pins — issue811_upload_store.py resolves
+    # EPM_I811_ROUND_DIR / EPM_I811_HF_PREFIX at import, so the dispatcher MUST
+    # thread them on the invocation's environment (argv alone can't show this).
+    upload_env_block = (
+        "# upload helper: log its env contract (round-13 BLOCKER pin); no exit —\n"
+        "# falls through to the generic success path.\n"
+        'case "$*" in\n'
+        "  *issue811_upload_store.py*)\n"
+        '    echo "UPLOAD_ENV'
+        " EPM_I811_ROUND_DIR=${EPM_I811_ROUND_DIR:-UNSET}"
+        " EPM_I811_HF_PREFIX=${EPM_I811_HF_PREFIX:-UNSET}"
+        " EPM_I811_REQUIRE_RAW=${EPM_I811_REQUIRE_RAW:-UNSET}"
+        ' EPM_I811_REQUIRE_ALLLAYER=${EPM_I811_REQUIRE_ALLLAYER:-UNSET}"'
+        f" >> {invocation_log}\n"
+        "    ;;\n"
+        "esac\n"
+    )
     uv.write_text(
         "#!/usr/bin/env bash\n"
         f'echo "$@" >> {invocation_log}\n'
@@ -65,6 +83,7 @@ def _make_fake_uv(
         'if [ "$1" = "run" ] && [ "$3" = "python" ] && [ "$4" = "-" ]; then\n'
         "  cat > /dev/null; exit 0\n"
         "fi\n"
+        f"{upload_env_block}"
         f"{stage_block}"
         "# phase0-gate: issue811_fit.py --phase0-gate -> return the controlled rc.\n"
         'case "$*" in\n'
@@ -117,6 +136,15 @@ def _run_dispatch(
     env["WORKLOAD_ROOT"] = str(sandbox)
     env["PATH"] = f"{bindir}:{env['PATH']}"
     env["EPM_SKIP_UPLOAD"] = "1"  # never attempt a real upload
+    # Hygiene: the upload-env assertions must see the DISPATCHER's threading,
+    # never an outer-session leak of the round vars / REQUIRE flags.
+    for k in (
+        "EPM_I811_ROUND_DIR",
+        "EPM_I811_HF_PREFIX",
+        "EPM_I811_REQUIRE_RAW",
+        "EPM_I811_REQUIRE_ALLLAYER",
+    ):
+        env.pop(k, None)
     if stage_prefix is not None:
         env["EPM_PHASE0_STAGE_PREFIX"] = stage_prefix
     else:
@@ -391,3 +419,55 @@ def test_dispatcher_maxp_arm_refuses_stage_prefix(tmp_path):
     )
     assert rc == 2, f"dispatcher rc={rc}, expected 2 (maxp stage-prefix refusal)\nlog:\n{log}"
     assert log.strip() == "", f"phases ran despite the maxp stage-prefix refusal\nlog:\n{log}"
+
+
+def _upload_env_line(log: str) -> str:
+    """The fake-uv UPLOAD_ENV line for the (single) upload invocation."""
+    lines = [ln for ln in log.splitlines() if ln.startswith("UPLOAD_ENV ")]
+    assert lines, f"upload invocation never logged its env\nlog:\n{log}"
+    assert len(lines) == 1, f"expected exactly one upload invocation\n{lines}"
+    return lines[0]
+
+
+def test_dispatcher_pre_user_upload_env_carries_round_vars(tmp_path):
+    """round-13 BLOCKER pre-user-upload-env-miswired: the pre_user STAGE=instance
+    (production shape) upload invocation MUST carry BOTH round vars — without
+    them issue811_upload_store.py resolves its v1 turn_nl defaults, hits the
+    four-store empty_required RuntimeError AFTER the ~7.5 GPU-h extraction, and
+    the fits stage's fetch of issue811_pre_user_boundary/round_meta/
+    validity_gate_phase0.json can never succeed."""
+    rc, log = _run_dispatch(
+        tmp_path, gate_rc=0, extra_args=["--stage", "instance"], variant="pre_user"
+    )
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (instance stage)\nlog:\n{log}"
+    up = _upload_env_line(log)
+    assert "EPM_I811_ROUND_DIR=eval_results/issue_811/pre-user-boundary-summary" in up, up
+    assert "EPM_I811_HF_PREFIX=issue811_pre_user_boundary" in up, up
+    # The REQUIRE flags the pre_user case arm exports reach the child too.
+    assert "EPM_I811_REQUIRE_RAW=1" in up and "EPM_I811_REQUIRE_ALLLAYER=1" in up, up
+
+
+def test_dispatcher_maxp_upload_env_carries_round_vars(tmp_path):
+    """Regression pin: the maxp arm's upload env wrap (round dirs + REQUIRE_RAW)
+    survives the round-13 restructuring of the upload block."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=[], variant="maxp")
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (maxp PASS-through)\nlog:\n{log}"
+    up = _upload_env_line(log)
+    assert "EPM_I811_ROUND_DIR=eval_results/issue_811/maxp-winner-mapchange" in up, up
+    assert "EPM_I811_HF_PREFIX=issue811_maxp_mapchange" in up, up
+    assert "EPM_I811_REQUIRE_RAW=1" in up, up
+    # maxp has no alllayer store requirement.
+    assert "EPM_I811_REQUIRE_ALLLAYER=UNSET" in up, up
+
+
+def test_dispatcher_turn_nl_upload_env_matches_v1_defaults(tmp_path):
+    """The default turn_nl arm now threads the round vars EXPLICITLY; their values
+    equal issue811_upload_store.py's own defaults, so the unconditional wrap is
+    behavior-preserving for the completed v1 round (round-13 fix)."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=[])
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (v1 PASS-through)\nlog:\n{log}"
+    up = _upload_env_line(log)
+    assert "EPM_I811_ROUND_DIR=eval_results/issue_811 " in up, up
+    assert "EPM_I811_HF_PREFIX=issue811_turn_nl_mapchange" in up, up
+    # v1 keeps raw/alllayer optional (its historical local dirs carry neither).
+    assert "EPM_I811_REQUIRE_RAW=UNSET" in up and "EPM_I811_REQUIRE_ALLLAYER=UNSET" in up, up

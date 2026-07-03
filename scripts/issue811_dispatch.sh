@@ -64,8 +64,8 @@
 #   # the fit/analyze/figures stage runs OFF-instance on the VM (plan §9):
 #   STAGE=instance SUMMARY_VARIANT=pre_user BEHAVIORS=em,fact,sycophancy \
 #     LAYERS="7 14 21" PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh
-#   STAGE=fits SUMMARY_VARIANT=pre_user BEHAVIORS=em,fact,sycophancy \
-#     LAYERS="7 14 21" PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh   # on the VM
+#   WORKLOAD_ROOT=$PWD STAGE=fits SUMMARY_VARIANT=pre_user BEHAVIORS=em,fact,sycophancy \
+#     LAYERS="7 14 21" PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh   # on the VM (repo root)
 #   # (smoke: STAGE defaults to all — smoke IS the sweep with one cell; the smoke
 #   #  battery ALSO runs the two-stage form to exercise the split.)
 set -euo pipefail
@@ -403,11 +403,22 @@ fi
 
 # ---- Phase 2: upload the store to HF, then RELEASE the GPU pod (Upload Policy) ----
 echo "[phase=upload] starting"
+# EVERY variant threads the round's OWN dirs/prefix to the upload helper (r13
+# BLOCKER pre-user-upload-env-miswired: only the maxp branch was env-wrapped, so
+# a pre_user STAGE=instance upload resolved the helper's v1 turn_nl defaults —
+# eval_results/issue_811 + issue811_turn_nl_mapchange — hit the four-store
+# empty_required RuntimeError AFTER the ~7.5 GPU-h extraction, and the fits
+# stage's round_meta/validity_gate_phase0.json fetch could never succeed).
+# turn_nl's ROUND_DIR/HF_ROUND_PREFIX equal the helper's defaults, so the
+# unconditional wrap is behavior-preserving for the completed v1 round. maxp
+# additionally requires the raw R JSONLs inline (its case arm does not export
+# EPM_I811_REQUIRE_RAW; the pre_user arm exports REQUIRE_RAW + REQUIRE_ALLLAYER).
 if [ "$SUMMARY_VARIANT" = "maxp" ]; then
   EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" EPM_I811_REQUIRE_RAW=1 \
     uv run python scripts/issue811_upload_store.py
 else
-  uv run python scripts/issue811_upload_store.py
+  EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" \
+    uv run python scripts/issue811_upload_store.py
 fi
 echo "[phase=upload] store uploaded + verified (GPU pod may be released here on the GCP lane)"
 
@@ -553,7 +564,10 @@ uv run python scripts/issue811_figures.py --summary-json "$ROUND_DIR/$SUMMARY_DO
 
 fi  # ════ end FITS STAGE ════
 if [ -z "$RUN_FITS" ]; then
-  echo "[phase=fits_stage] skipped (STAGE=$STAGE — run 'STAGE=fits bash scripts/issue811_dispatch.sh --skip-extract' OFF-instance for the fit/analyze/figures phases)"
+  # Self-contained template (r12 Minor recommended-command-omits-required-env):
+  # WORKLOAD_ROOT + SUMMARY_VARIANT are REQUIRED for the off-instance re-run —
+  # \$PWD stays literal so the OPERATOR's shell expands it at the repo root.
+  echo "[phase=fits_stage] skipped (STAGE=$STAGE — run 'WORKLOAD_ROOT=\$PWD STAGE=fits SUMMARY_VARIANT=$SUMMARY_VARIANT bash scripts/issue811_dispatch.sh --skip-extract' from the repo root OFF-instance for the fit/analyze/figures phases)"
 fi
 
 # ---- End-of-run sentinel + terminal phase line (poll_pipeline contract) ----
@@ -578,7 +592,8 @@ if stage == "instance":
         f"pre-spend gate + paired extract + store/R-text upload done. Store: "
         f"{hf_prefix}/analysis_tensors/ (+ phase0_base_leg/ + alllayer/ + "
         f"raw_completions/). GPU instance may now be RELEASED; run the fit/"
-        f"analyze/figures stage OFF-instance: STAGE=fits SUMMARY_VARIANT={variant} "
+        f"analyze/figures stage OFF-instance from the repo root: "
+        f"WORKLOAD_ROOT=$PWD STAGE=fits SUMMARY_VARIANT={variant} "
         f"bash scripts/issue811_dispatch.sh --skip-extract (plan §9)."
     )
 elif stage == "fits":

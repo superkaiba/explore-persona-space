@@ -448,3 +448,63 @@ def test_batched_floor_draws_aligned_across_summaries(monkeypatch):
     np.testing.assert_array_equal(pd_1["stats"], pd_1b["stats"])  # deterministic
     assert pd_1["stats"].shape == pd_2["stats"].shape == (5,)
     assert not np.allclose(pd_1["stats"], pd_2["stats"])  # different Y, same draws
+
+
+def test_batched_floor_rank_deficient_resample_matches_serial_oracle(monkeypatch):
+    """r12 Minor (oracle/twin truncation divergence): a SILENTLY rank-deficient
+    resample — rank < TARGET_DIM with NO LinAlgError, so the exception-only
+    fallback never fired — must not diverge between the dual twin (which drops
+    ≤1e-12-relative eigen-directions) and the serial oracle (which keeps
+    min(dim, rows) SVD rows). The batched path now ROUTES such draws to the
+    EXACT-serial fallback: per-draw floors match to fp tolerance, ZERO skips,
+    and the fallback counter records every routed resample."""
+    import issue658_fit_predictors as fit658
+
+    monkeypatch.setattr(fit658, "DEVICE", "cpu")
+    monkeypatch.setattr(fitM, "TARGET_DIM", 4)
+    rng = np.random.default_rng(3)
+    n, h = 24, 32
+    X = rng.standard_normal((n, h))
+    # THREE distinct rows repeated -> centered rank <= 2 < TARGET_DIM=4 on EVERY
+    # family resample (all draws stay inside the 3-row span), yet gesdd/eigh
+    # converge fine — exactly the silent (exception-free) rank-deficiency window.
+    Y = np.tile(rng.standard_normal((3, h)), (8, 1))
+    grid = X.copy()
+    r_hat = rng.standard_normal(h)
+    r_hat /= np.linalg.norm(r_hat)
+    fams = [f"fam{i % 3}" for i in range(n)]
+    sc_s, pd_s = {}, {}
+    serial = boot.make_refit_pair(
+        X,
+        Y,
+        fitM._refit_ridge_fn(grid),
+        grid,
+        r_hat,
+        fams,
+        n_pairs=4,
+        seed=0,
+        skip_counter=sc_s,
+        per_draw_out=pd_s,
+    )
+    sc_b, pd_b = {}, {}
+    fb_before = fitM.GESVD_FALLBACK_COUNTER["n"]
+    batched = boot.make_refit_pair(
+        X,
+        Y,
+        None,
+        grid,
+        r_hat,
+        fams,
+        n_pairs=4,
+        seed=0,
+        skip_counter=sc_b,
+        batched_chain_fn=fitM.make_batched_refit_chain_fn(X, Y, grid, r_hat),
+        per_draw_out=pd_b,
+    )
+    np.testing.assert_allclose(pd_b["stats"], pd_s["stats"], rtol=1e-7, atol=1e-10)
+    np.testing.assert_allclose(batched, serial, rtol=1e-7, atol=1e-10)
+    assert sc_b == sc_s == {"n_attempted": 4, "n_skipped": 0}
+    # Every resample (2 per pair x 4 pairs) is rank-deficient -> routed through
+    # the exact-serial fallback, each ride counted once.
+    assert fitM.GESVD_FALLBACK_COUNTER["n"] == fb_before + 8
+    assert pd_b["stats"].shape == (4,) and np.isfinite(pd_b["stats"]).all()

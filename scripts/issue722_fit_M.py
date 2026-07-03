@@ -205,8 +205,16 @@ def make_batched_refit_chain_fn(X: np.ndarray, Y: np.ndarray, grid: np.ndarray, 
     Degenerate-resample semantics mirror the serial path: a LinAlgError from the
     fast dual path falls back to the EXACT serial ``_pca_basis_v0`` +
     ``_ridge_fit_predict`` for that resample (its gesdd→gesvd fallback rides
-    ``GESVD_FALLBACK_COUNTER``); a resample that still fails returns ``None``
-    (the caller's skip). Deterministic — the per-fit ``rng`` list is unused,
+    ``GESVD_FALLBACK_COUNTER``). A SILENTLY rank-deficient resample (no
+    LinAlgError, but the dual basis returns fewer than ``min(TARGET_DIM, n_b)``
+    directions because ``_dual_basis_from_gram`` truncates ≤1e-12-relative
+    eigenvalues while the serial oracle's ``_pca_basis_v0`` keeps
+    ``min(dim, rows)`` SVD rows — the r12 oracle/twin truncation-divergence
+    Minor) is ROUTED to the same exact-serial fallback, so the two paths cannot
+    diverge on that draw (at production shape — n=480, 7 families, resample
+    rank ≈ 67 ≥ 64 — this ~never fires; equivalence over speed on the rare
+    degenerate draw). A resample that still fails returns ``None`` (the
+    caller's skip). Deterministic — the per-fit ``rng`` list is unused,
     exactly like the serial ``_refit_ridge_fn``.
     """
     Y = np.asarray(Y, dtype=np.float64)
@@ -223,6 +231,14 @@ def make_batched_refit_chain_fn(X: np.ndarray, Y: np.ndarray, grid: np.ndarray, 
         Gc = G_sub - row - col + G_sub.mean()
         Vc = Yb - Yb.mean(axis=0, keepdims=True)
         pca = _dual_basis_from_gram(Gc, Vc, TARGET_DIM)  # (k, H)
+        if pca.shape[0] < min(TARGET_DIM, len(idx)):
+            # SILENTLY rank-deficient resample (rank < TARGET_DIM, no LinAlgError):
+            # the dual basis truncated ≤1e-12-relative eigen-directions the serial
+            # oracle would have KEPT (min(dim, rows) SVD rows), so the two paths
+            # would diverge on this draw (r12 Minor). Route to the EXACT-serial
+            # fallback below — pinned by
+            # test_batched_floor_rank_deficient_resample_matches_serial_oracle.
+            raise np.linalg.LinAlgError("rank-deficient resample -> exact-serial fallback")
         pred64 = _ridge_fit_predict(X[idx], Yb @ pca.T, grid)  # (n_grid, k)
         return pred64 @ (pca @ r_hat)  # (n_grid,)
 
