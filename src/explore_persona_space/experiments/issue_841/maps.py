@@ -62,12 +62,14 @@ from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
 __all__ = [
     "RIDGE_LAMBDAS",
     "DepthGRU",
+    "GruSourceOnlyMap",
     "IdentityMap",
     "MLPMap",
     "RidgeMap",
     "delta_error_percentiles",
     "deltas_at",
     "fit_depth_gru",
+    "fit_depth_gru_source_only",
     "fit_direct_hop_ridge",
     "fit_ridge_primal",
     "fit_ridge_split",
@@ -265,6 +267,28 @@ class DepthGRU(torch.nn.Module):
         x = torch.cat([traj_inputs, self.emb(idx)], dim=-1)
         out, _ = self.gru(x)
         return self.head(out)
+
+    def forward_single(self, h: torch.Tensor, transition_idx: torch.Tensor | int) -> torch.Tensor:
+        """Single-state (length-1 unroll) forward: predict Δ from ONE state h_ℓ.
+
+        ``h`` (B, d) is the residual state at one layer; ``transition_idx`` is that
+        transition's index — an int (all rows same transition) or a (B,) long tensor
+        (a batch of mixed transitions). Runs the SAME ``self.gru`` on a length-1
+        sequence ``[h, emb(transition_idx)]`` with a ZERO initial hidden state —
+        numerically a single ``GRUCell`` step — and returns ``self.head(out)`` (B, d),
+        the predicted Δ in the fit target space. This is the information-MATCHED
+        analogue of ``forward``: the recurrence sees ONLY h_ℓ (+ the layer-index
+        embedding), not the h_0..h_ℓ prefix (that matched-information property is why
+        the source-only variant is comparable to the affine/MLP per-transition maps).
+        """
+        b = h.shape[0]
+        if not torch.is_tensor(transition_idx):
+            transition_idx = torch.full(
+                (b,), int(transition_idx), device=h.device, dtype=torch.long
+            )
+        x = torch.cat([h, self.emb(transition_idx)], dim=-1)  # (B, d + emb_dim)
+        out, _ = self.gru(x.unsqueeze(1))  # (B, 1, gru_hidden); zero init hidden ⇒ GRUCell step
+        return self.head(out.squeeze(1))  # (B, d)
 
 
 # ── ridge fit (fixed train/eval split; reuse #658 PRESS/dual) ─────────────────
@@ -554,6 +578,117 @@ def fit_depth_gru(
     return gru
 
 
+def fit_depth_gru_source_only(
+    traj_fit: np.ndarray,
+    traj_val: np.ndarray,
+    sigma_per_transition: np.ndarray,
+    *,
+    device: str,
+    gru_hidden: int = 1024,
+    emb_dim: int = 32,
+    lr: float = 1e-3,
+    max_epochs: int = 300,
+    batch_size: int = 512,
+    seed: int = 658,
+    smooth_l1_beta: float = 1.0,
+    transitions: list[int] | None = None,
+) -> tuple[DepthGRU, dict]:
+    """Single-state depth-GRU fit — the information-MATCHED analogue of ``fit_depth_gru``.
+
+    Same ``DepthGRU`` architecture (``Embedding(27,32)`` + ``GRU(d+32,1024,1)`` +
+    ``Linear(1024,d)``), same optimizer / loss / target spaces — the ONLY change vs
+    ``fit_depth_gru`` is the INPUT the recurrence sees: instead of teacher-forcing the
+    full ``(N,28,d)`` trajectory (prefix-informed), this builds INDEPENDENT
+    ``(context × transition)`` single-state examples — input ``[h_ℓ, emb(ℓ)]``, target
+    ``Δ_ℓ / σ_m`` (raw space: σ≡1) — 4000 contexts × 27 transitions = 108k examples per
+    space, and trains via ``DepthGRU.forward_single`` (the length-1 unroll = a GRUCell
+    step, zero init hidden), so the recurrence never consumes the h_0..h_ℓ prefix. This
+    is the per-transition-map information set the affine ridge / MLP see.
+
+    Batched AdamW over the flattened examples (batch ``batch_size``), SmoothL1, best-val
+    kept on ``traj_val``'s single-state examples (same early-stopping convention as
+    ``fit_depth_gru``). ``transitions`` (default = all n_trans) restricts the example set
+    to a subset (the smoke passes ``[13]``); the SAME code path runs either way. Returns
+    ``(trained DepthGRU on device, diagnostics)`` — diagnostics carries
+    ``epochs_to_best_val`` / ``cap_hit`` / the val-loss curve + its last-5-epoch slope
+    (plan §4.2: persist convergence diagnostics so the prefix-vs-source read can be gated
+    on convergence parity).
+    """
+    torch.manual_seed(seed)
+    dev = torch.device(device)
+    d = traj_fit.shape[2]
+    n_trans = traj_fit.shape[1] - 1
+    trans = list(range(n_trans)) if transitions is None else sorted(transitions)
+    assert trans and all(0 <= m < n_trans for m in trans), (trans, n_trans)
+    gru = DepthGRU(d_state=d, gru_hidden=gru_hidden, emb_dim=emb_dim, n_transitions=n_trans).to(dev)
+    sig = torch.from_numpy(np.asarray(sigma_per_transition, dtype=np.float32)).to(dev)  # (n_trans,)
+
+    def _examples(traj_np: np.ndarray) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        t = torch.from_numpy(np.ascontiguousarray(traj_np)).to(device=dev, dtype=torch.float32)
+        hs, ys, idxs = [], [], []
+        for m in trans:
+            h_m = t[:, m, :]  # (N, d) — the source state h_ℓ (single state, no prefix)
+            delta_m = t[:, m + 1, :] - t[:, m, :]  # (N, d) Δ_ℓ
+            ys.append(delta_m / sig[m])  # RMS-normalized (σ≡1 ⇒ raw target)
+            hs.append(h_m)
+            idxs.append(torch.full((h_m.shape[0],), m, device=dev, dtype=torch.long))
+        return torch.cat(hs, 0), torch.cat(ys, 0), torch.cat(idxs, 0)
+
+    x_fit, y_fit, idx_fit = _examples(traj_fit)
+    x_val, y_val, idx_val = _examples(traj_val)
+    opt = torch.optim.AdamW(gru.parameters(), lr=lr)
+    best_val = float("inf")
+    best_epoch = -1
+    best_state = {k: v.detach().clone() for k, v in gru.state_dict().items()}
+    val_curve: list[float] = []
+    n_fit = x_fit.shape[0]
+    rng = np.random.default_rng(seed)
+    for epoch in range(max_epochs):
+        gru.train()
+        order = rng.permutation(n_fit)
+        for lo in range(0, n_fit, batch_size):
+            sel = torch.from_numpy(order[lo : lo + batch_size]).to(dev)
+            opt.zero_grad(set_to_none=True)
+            pred = gru.forward_single(x_fit[sel], idx_fit[sel])
+            loss = torch.nn.functional.smooth_l1_loss(pred, y_fit[sel], beta=smooth_l1_beta)
+            loss.backward()
+            opt.step()
+        gru.eval()
+        with torch.no_grad():
+            vloss = float(
+                torch.nn.functional.smooth_l1_loss(
+                    gru.forward_single(x_val, idx_val), y_val, beta=smooth_l1_beta
+                ).item()
+            )
+        val_curve.append(vloss)
+        if vloss < best_val:
+            best_val = vloss
+            best_epoch = epoch
+            best_state = {k: v.detach().clone() for k, v in gru.state_dict().items()}
+    gru.load_state_dict(best_state)
+    gru.eval()
+    last5 = val_curve[-5:]
+    slope = (
+        float(np.polyfit(np.arange(len(last5)), np.asarray(last5), 1)[0])
+        if len(last5) >= 2
+        else float("nan")
+    )
+    diagnostics = {
+        "epochs_to_best_val": int(best_epoch),
+        "epochs_run": len(val_curve),
+        "max_epochs": int(max_epochs),
+        # cap_hit ⇒ best-val was still improving at the last epoch (never plateaued);
+        # a True here means the fit may be under-trained (didn't converge within the cap).
+        "cap_hit": bool(best_epoch >= max_epochs - 1),
+        "best_val_loss": float(best_val),
+        "last5_epoch_slope": slope,
+        "val_curve": [float(v) for v in val_curve],
+        "n_examples_fit": int(n_fit),
+        "transitions_trained": trans,
+    }
+    return gru, diagnostics
+
+
 # ── transport (Stage 1) ────────────────────────────────────────────────────────
 
 
@@ -609,3 +744,28 @@ def gru_roll(
         divergence.append(div.detach().cpu().numpy())
     div_arr = np.stack(divergence, axis=1) if divergence else np.zeros((n, 0))
     return cur, div_arr
+
+
+@dataclass
+class GruSourceOnlyMap:
+    """Memoryless single-state GRU one-step map (matched-information transport).
+
+    ``.apply(H)`` returns the RAW Δ̂ at ``transition`` for a batch of states H —
+    ``head(forward_single(H, transition)) * sigma_m`` — with a ZERO initial hidden
+    state EVERY call (no carried recurrent state), so dropping it into the parent's
+    ``transport_iterated`` (which threads only the current predicted state, no hidden)
+    rolls the source-only GRU MEMORYLESS: each step reads only the current state,
+    exactly matching the ridge/MLP transport regime and preserving matched information
+    at inference. This is NOT ``gru_roll`` (which warms + carries the recurrent state on
+    the true prefix — the prefix-informed regime). ``sigma_m`` un-scales the fit-space
+    Δ̂ to raw (σ_m for the RMS-norm-trained GRU, 1.0 for a raw-trained GRU), mirroring
+    the per-step ``* sigma_per_transition[t]`` in ``gru_roll``.
+    """
+
+    gru: DepthGRU
+    transition: int
+    sigma_m: float
+
+    def apply(self, H: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            return self.gru.forward_single(H, self.transition) * self.sigma_m
