@@ -5899,8 +5899,8 @@
     "900": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/900",
-      "status": "planning",
+      "path": "tasks/approved/900",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body check for bare #K refs in Methodology/Results"
     },
     "901": {
