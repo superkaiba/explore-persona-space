@@ -49,6 +49,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -58,6 +59,13 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
+
+# LOFO fold primitives from the committed adhoc LOFO benchmark script (main @
+# 428f99e5a6, cherry-picked onto issue-810 — plan v11 §4.6 item 6).
+from issue810_adhoc_lofo_heatmaps import (  # noqa: E402
+    _recon_fold_predict,
+    skill_over_mean_r2_lofo,
+)
 from issue810_batched_null import (  # noqa: E402
     batched_ridge_loco_null_skill,
     make_perm_matrix,
@@ -76,9 +84,12 @@ from issue810_common import (  # noqa: E402
     PCA_TARGET_DIM_CAP,
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
+    UH_SUMMARY_NAMES,
     assert_g1_probe_pool_hash,
+    battery_family_map,
     context_ids_from_manifest,
     dump_json,
+    enlarged_summary_names,
     load_json,
     reproducibility_metadata,
     summary_names,
@@ -409,7 +420,412 @@ def _identity_sanity_check(
     return {"layer_i": layer_i, "ridge_skill": res["ridge_skill"], "n": res["n"]}
 
 
+# ── uh-round helpers: row tokens, LOFO point fits, null-join union bands ─────
+# (plan v11 §4.6 item 3; the LOFO fold logic is REUSED from the committed
+# issue810_adhoc_lofo_heatmaps.py — main @ 428f99e5a6, cherry-picked here.)
+
+
+def _expand_rows(vals: list[str]) -> list[str]:
+    """Expand --rows tokens ('uh-new', 'all-46') and validate against the axis."""
+    tokens = {"uh-new": UH_SUMMARY_NAMES, "all-46": enlarged_summary_names()}
+    out: list[str] = []
+    for v in vals:
+        out.extend(tokens.get(v, [v]))
+    known = set(enlarged_summary_names())
+    unknown = [r for r in out if r not in known]
+    if unknown:
+        raise SystemExit(f"unknown summary row(s) {unknown} — valid rows: the 46-row axis")
+    return out
+
+
+def _lofo_cell_skill(Xc: np.ndarray, Yv: np.ndarray, groups: list[str]) -> float | None:
+    """7-family LOFO point skill for one (summary, layer) cell (no nulls).
+
+    Mirrors the committed LOFO benchmark recipe exactly
+    (``issue810_adhoc_lofo_heatmaps.build_panel3_reconstruction``): PCA target
+    dim capped by the smallest train fold, per-fold train-only PCA basis +
+    standardization + PRESS-λ ridge (``_recon_fold_predict``), variance-weighted
+    held-out R² against the per-fold train-mean baseline.
+    """
+    if Yv.shape[0] < 8 or len(set(groups)) < 2:
+        return None
+    fam_counts = Counter(groups)
+    min_train = len(groups) - max(fam_counts.values())
+    pca_dim = min(PCA_TARGET_DIM_CAP, max(1, min_train - 2))
+    preds, ys, bases = _recon_fold_predict(Xc, Yv, groups, pca_dim)
+    r = skill_over_mean_r2_lofo(preds, ys, bases)
+    return None if (isinstance(r, float) and np.isnan(r)) else float(r)
+
+
+def _lofo_identity_ceiling(ctx_ids, free_summaries, layer_i: int, fam_map: dict) -> dict:
+    """summary[L] → summary[L] LOFO fit: the fresh group-fold estimator ceiling."""
+    rows = [free_summaries["mean"][c][layer_i].numpy() for c in ctx_ids]
+    Y = np.stack(rows)
+    groups = [fam_map[c] for c in ctx_ids]
+    return {
+        "layer_i": layer_i,
+        "lofo_skill": _lofo_cell_skill(Y.copy(), Y.copy(), groups),
+        "n": len(ctx_ids),
+    }
+
+
+def _committed_mean_skill_by_layer(committed_recon_path: str) -> dict[int, float]:
+    """{layer: ridge_skill} for the committed round-1 `mean` benchmark row."""
+    blob = load_json(committed_recon_path)
+    out = {}
+    for cell in blob["by_summary"]["mean"]:
+        if cell.get("ridge_skill") is not None:
+            out[int(cell["layer"])] = float(cell["ridge_skill"])
+    if not out:
+        raise RuntimeError(f"no mean-row skills in {committed_recon_path}")
+    return out
+
+
+def _parity_gate(
+    args, cm: dict, ctx_ids_all, capture_layers, free_summaries, tolerance: float = 1e-12
+) -> dict:
+    """Recompute 2 OLD cells' per-draw nulls and byte-compare vs the committed matrix.
+
+    The union-join validity gate (plan v11 §6): valid ONLY if the permutation
+    sequence is row-set-independent — ``_fit_null_draws`` seeds a fresh
+    ``default_rng(seed)`` per cell (fact-checked, A5), so a like-seeded
+    recompute of ``mean@L18`` / ``maxp@L21`` over the SAME 50 contexts must
+    reproduce the committed vectors to ≤ ``tolerance`` abs. Gate cells are free
+    rows (v0), so the full-manifest context set is used regardless of any
+    position-store subset.
+    """
+    gate_cc = _load_cc_for_genre(args.genre, list(ctx_ids_all), capture_layers)
+    record: dict = {"tolerance": tolerance, "cells": [], "pass": True}
+    for s, layer in (("mean", 18), ("maxp", 21)):
+        li = capture_layers.index(layer)
+        Yv = np.stack([free_summaries[s][c][li].numpy() for c in ctx_ids_all])
+        Xc = np.stack([gate_cc[c][li] for c in ctx_ids_all])
+        cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(ctx_ids_all) - 2))
+        draws = np.asarray(
+            _fit_null_draws(Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, args.device),
+            dtype=np.float64,
+        )
+        ref_list = cm.get(s, {}).get(str(layer))
+        if ref_list is None or len(ref_list) != draws.shape[0]:
+            raise RuntimeError(
+                f"parity gate: committed matrix has no {args.n_perms}-draw cell for "
+                f"{s}@L{layer} (got {None if ref_list is None else len(ref_list)})"
+            )
+        ref = np.asarray(ref_list, dtype=np.float64)
+        max_abs = float(np.max(np.abs(draws - ref)))
+        ok = bool(max_abs <= tolerance)
+        record["cells"].append({"summary": s, "layer": layer, "max_abs_diff": max_abs, "pass": ok})
+        record["pass"] = record["pass"] and ok
+        logger.info(
+            "[phase=parity_gate] %s@L%d max|Δ|=%.3e -> %s",
+            s,
+            layer,
+            max_abs,
+            "PASS" if ok else "FAIL",
+        )
+    return record
+
+
+def _fallback_full_null_rerun(
+    args,
+    null_matrix_new: dict,
+    ctx_ids,
+    capture_layers,
+    layers,
+    free_summaries,
+    pos_summaries,
+    coverage,
+    cc,
+) -> dict:
+    """Registered parity-FAIL fallback: recompute the OLD rows' nulls in-run.
+
+    Never a silent mixed join (plan v11 §6/§8): every old row × fitted layer
+    gets a fresh per-draw null AND a fresh point skill, the latter compared
+    against the committed round-1 point skills (>1e-6 disagreement = the
+    comparator itself is unstable → kill criterion 3, ``failure_class: data``).
+    Old position rows read from the CURRENT (uh) store's recaptured old
+    positions (drift-gated at capture time).
+    """
+    committed_points: dict | None = None
+    if Path(args.committed_recon).is_file():
+        committed_points = load_json(args.committed_recon)["by_summary"]
+    union: dict[str, dict[str, list[float]]] = {}
+    worst_point_diff = 0.0
+    for s in summary_names():
+        if s in null_matrix_new:
+            continue
+        union[s] = {}
+        for li in layers:
+            Yv, kept = _summary_matrix(s, li, ctx_ids, free_summaries, pos_summaries, coverage)
+            if Yv.shape[0] < 4:
+                continue
+            Xc = np.stack([cc[c][li] for c in kept])
+            cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(kept) - 2))
+            union[s][str(capture_layers[li])] = _fit_null_draws(
+                Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, args.device
+            )
+            fit, _ = _fit_one_cell(Xc, Yv, cell_pca)
+            if committed_points is not None:
+                ref_cells = {
+                    int(c["layer"]): c.get("ridge_skill") for c in committed_points.get(s, [])
+                }
+                ref = ref_cells.get(capture_layers[li])
+                if ref is not None:
+                    diff = abs(float(fit["ridge_skill"]) - float(ref))
+                    worst_point_diff = max(worst_point_diff, diff)
+                    if diff > 1e-6:
+                        raise RuntimeError(
+                            f"parity FAIL fallback: recomputed {s}@L{capture_layers[li]} "
+                            f"point skill differs from the committed round-1 value by "
+                            f"{diff:.2e} (>1e-6) — the round-1 comparator itself is "
+                            "unstable (plan v11 kill criterion 3; failure_class: data)"
+                        )
+        logger.info("[phase=null_fallback] %s re-nulled (%d layers)", s, len(union[s]))
+    union.update({k: dict(v) for k, v in null_matrix_new.items()})
+    logger.info(
+        "[phase=null_fallback] full enlarged-grid rerun complete (worst point |Δ| %.2e)",
+        worst_point_diff,
+    )
+    return union
+
+
+def _null_join_and_bands(
+    args,
+    null_matrix_new: dict,
+    results: dict,
+    free_summaries: dict,
+    pos_summaries: dict,
+    coverage: dict,
+    cc: dict,
+    ctx_ids,
+    ctx_ids_all,
+    capture_layers,
+    layers,
+    diag: dict,
+) -> dict:
+    """Parity-gated union of committed + new per-draw nulls → enlarged-axis bands.
+
+    Emits (plan v11 §6 registered reads, each `{statistic, band_97_5, ceiling,
+    verdict}`):
+    - ``enlarged_axis_max_selected`` — the union per-draw max band over ALL
+      (summary × layer) cells vs the best observed NEW-row LOCO skill;
+    - ``D_uh_difference`` (H1-uh) — D_uh = max over new rows × layers of
+      (skill_new − committed mean benchmark), read against the per-draw
+      new-minus-mean difference-matrix max (same max per draw).
+    Ceilings: the LOCO identity ceiling recomputed in-run (diag) and, when
+    present, the fresh LOFO identity ceiling. A band at/above the ceiling is
+    verdicted failure-to-reject (never evidence of absence).
+    """
+    committed = load_json(args.null_join)
+    if committed.get("seed") != SHUFFLE_NULL_SEED or committed.get("n_perms") != args.n_perms:
+        raise RuntimeError(
+            f"--null-join seed/n_perms mismatch: committed ({committed.get('seed')}, "
+            f"{committed.get('n_perms')}) vs run ({SHUFFLE_NULL_SEED}, {args.n_perms})"
+        )
+    cm = committed["reconstruction"]
+    parity = _parity_gate(args, cm, ctx_ids_all, capture_layers, free_summaries)
+    if parity["pass"]:
+        union: dict[str, dict[str, list[float]]] = {k: dict(v) for k, v in cm.items()}
+        union.update({k: dict(v) for k, v in null_matrix_new.items()})
+        mode = "union_join"
+    else:
+        logger.warning(
+            "[phase=parity_gate] FAIL — flipping to the registered full enlarged-grid "
+            "null rerun (plan v11 §6/§8 fallback; never a silent mixed join)"
+        )
+        union = _fallback_full_null_rerun(
+            args,
+            null_matrix_new,
+            ctx_ids,
+            capture_layers,
+            layers,
+            free_summaries,
+            pos_summaries,
+            coverage,
+            cc,
+        )
+        mode = "full_rerun_fallback"
+
+    return {
+        "mode": mode,
+        "parity_gate": parity,
+        **_band_rows_from_union(args, union, null_matrix_new, results, diag),
+        "union_matrix_new_rows_only": True,  # the committed rows stay in git round-1
+    }
+
+
+def _d_null_per_draw_max(args, union: dict, new_rows: list[str]) -> np.ndarray | None:
+    """Per-draw D null: max over new (row, L) of (null_new[d] − null_mean[L][d]).
+
+    The new-minus-mean difference matrices (plan v11 §6 read mode 2); the
+    mean-row per-draw vectors come from the (joined or re-run) union itself.
+    """
+    mean_null = union.get("mean", {})
+    diff_rows = []
+    for s in new_rows:
+        for lstr, draws in union.get(s, {}).items():
+            if lstr in mean_null and len(draws) == args.n_perms:
+                diff_rows.append(
+                    np.asarray(draws, dtype=np.float64)
+                    - np.asarray(mean_null[lstr], dtype=np.float64)
+                )
+    return np.stack(diff_rows).max(axis=0) if diff_rows else None
+
+
+def _band_rows_from_union(
+    args, union: dict, null_matrix_new: dict, results: dict, diag: dict
+) -> dict:
+    """The enlarged-axis band + D_uh reductions over a (joined or re-run) union."""
+    # Per-draw max over the union axis (only complete n_perms-draw cells join).
+    cells = []
+    for s, per_layer in union.items():
+        for lstr, draws in per_layer.items():
+            if len(draws) == args.n_perms:
+                cells.append(((s, lstr), np.asarray(draws, dtype=np.float64)))
+    if not cells:
+        raise RuntimeError("union band: no complete per-draw cells to reduce")
+    stack = np.stack([d for _k, d in cells])  # (n_cells, n_perms)
+    per_draw_max = stack.max(axis=0)  # (n_perms,)
+    band_97_5 = float(np.percentile(per_draw_max, 97.5))
+
+    # Ceilings (band-vs-ceiling standing lesson, plan v11 §6).
+    loco_ceiling = max(
+        (c["ridge_skill"] for c in diag["identity_sanity_check"] if c["ridge_skill"] is not None),
+        default=None,
+    )
+    lofo_ceiling = None
+    if diag.get("lofo_identity_ceiling"):
+        lofo_ceiling = max(
+            (c["lofo_skill"] for c in diag["lofo_identity_ceiling"] if c["lofo_skill"] is not None),
+            default=None,
+        )
+
+    # Observed new-row skills + the D_uh difference statistic (H1-uh).
+    new_rows = [s for s in null_matrix_new if s in set(UH_SUMMARY_NAMES)]
+    obs_new: list[tuple[str, int, float]] = []
+    for s in new_rows:
+        for cell in results.get(s, []):
+            if cell.get("ridge_skill") is not None:
+                obs_new.append((s, int(cell["layer"]), float(cell["ridge_skill"])))
+    mean_bench = _committed_mean_skill_by_layer(args.committed_recon)
+    d_terms = [(s, L, v - mean_bench[L]) for (s, L, v) in obs_new if L in mean_bench]
+    d_obs = max((t[2] for t in d_terms), default=None)
+    d_arg = max(d_terms, key=lambda t: t[2]) if d_terms else None
+    obs_max = max((v for (_s, _L, v) in obs_new), default=None)
+    obs_arg = max(obs_new, key=lambda t: t[2]) if obs_new else None
+
+    d_null_draws = _d_null_per_draw_max(args, union, new_rows)
+    d_band = float(np.percentile(d_null_draws, 97.5)) if d_null_draws is not None else None
+
+    def _verdict(stat, band, ceiling):
+        if stat is None or band is None:
+            return "not_computable"
+        v = "clears_band" if stat > band else "within_band"
+        if ceiling is not None and band >= ceiling:
+            v += "; band_at_or_above_ceiling -> failure_to_reject"
+        return v
+
+    band_rows = {
+        "enlarged_axis_max_selected": {
+            "statistic": obs_max,
+            "arg_cell": list(obs_arg) if obs_arg else None,
+            "band_97_5": band_97_5,
+            "ceiling": loco_ceiling,
+            "verdict": _verdict(obs_max, band_97_5, loco_ceiling),
+        },
+        "D_uh_difference": {
+            "statistic": d_obs,
+            "arg_cell": list(d_arg) if d_arg else None,
+            "band_97_5": d_band,
+            # Max achievable difference under the estimator: ceiling − the best
+            # committed mean benchmark (documented formula, not a fit).
+            "ceiling": (
+                (loco_ceiling - max(mean_bench.values())) if loco_ceiling is not None else None
+            ),
+            "effect_floor": 0.02,
+            "meets_effect_floor": (d_obs is not None and d_obs >= 0.02),
+            "verdict": _verdict(d_obs, d_band, None),
+        },
+        "lofo_identity_ceiling": lofo_ceiling,
+    }
+    return {
+        "n_union_cells": len(cells),
+        "union_rows": sorted({s for (s, _l), _d in cells}),
+        "per_draw_max": [float(x) for x in per_draw_max],
+        "d_null_draws": ([float(x) for x in d_null_draws] if d_null_draws is not None else None),
+        "band_rows": band_rows,
+    }
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
+
+
+def _fit_grid(
+    args,
+    summaries: list[str],
+    layers: list[int],
+    ctx_ids: list[str],
+    capture_layers: list[int],
+    free_summaries: dict,
+    pos_summaries: dict,
+    coverage: dict,
+    cc: dict,
+    fam_map: dict | None,
+    do_loco: bool,
+    do_lofo: bool,
+):
+    """The (summary × layer) fit grid: LOCO ridge (+nulls, +MLP jobs) and/or LOFO points.
+
+    Extracted verbatim from ``main`` (behavior identical for the default
+    ``--fold-family loco``): per cell, coverage-aware matrix assembly, LOCO
+    ``_fit_one_cell`` + per-cell 1000-perm batched null, LOFO 7-family point
+    skill when requested (no nulls — the registered ordering-only companion).
+    Returns ``(results, null_matrix, mlp_jobs, cell_ref)``.
+    """
+    results: dict[str, list[dict]] = {}
+    # Selection-symmetric null: per (summary × layer) per-draw skill matrix.
+    null_matrix: dict[str, dict[str, list[float]]] = {}
+    # MLP validity jobs collected across ALL cells, batched by shape AFTER the
+    # ridge loop (the #722 vectorize-many-cell-fits mandate) — cell_key ->
+    # (summary, layer_i) so mlp_skill can be attached back to the right cell dict.
+    mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]] = []
+    cell_ref: dict[tuple, dict] = {}
+    for summary in summaries:
+        cells: list[dict] = []
+        null_matrix[summary] = {}
+        for li in layers:
+            Yv, kept = _summary_matrix(
+                summary, li, ctx_ids, free_summaries, pos_summaries, coverage
+            )
+            if Yv.shape[0] < 4:
+                cells.append(
+                    {"layer": capture_layers[li], "n": int(Yv.shape[0]), "ridge_skill": None}
+                )
+                continue
+            Xc = np.stack([cc[c][li] for c in kept])
+            cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(kept) - 2))
+            if do_loco:
+                fit, y_pca = _fit_one_cell(Xc, Yv, cell_pca)
+                fit["layer"] = capture_layers[li]
+                fit["n_kept"] = len(kept)
+            else:
+                # LOFO-only point-fit mode: no LOCO ridge, no nulls, no MLP arm
+                # (plan v11 §4.6 item 3 — LOFO is the ordering-only companion).
+                fit = {"layer": capture_layers[li], "n_kept": len(kept), "n": len(kept)}
+            if do_lofo:
+                fit["lofo_skill"] = _lofo_cell_skill(Xc, Yv, [fam_map[c] for c in kept])
+            cells.append(fit)
+            if do_loco and not args.no_mlp:
+                key = (summary, capture_layers[li])
+                mlp_jobs.append((key, Xc, y_pca))
+                cell_ref[key] = fit
+            if do_loco:
+                null_matrix[summary][str(capture_layers[li])] = _fit_null_draws(
+                    Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, device=args.device
+                )
+        results[summary] = cells
+        logger.info("[phase=fit] %s done (%d layers)", summary, len(cells))
+    return results, null_matrix, mlp_jobs, cell_ref
 
 
 def main() -> int:
@@ -436,8 +852,48 @@ def main() -> int:
         "contexts (no Phase B position store needed) — runs before Phase B lands",
     )
     ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
-    ap.add_argument("--summaries", nargs="*", default=None, help="subset of summaries (smoke)")
+    ap.add_argument(
+        "--summaries",
+        "--rows",
+        nargs="*",
+        default=None,
+        help="subset of summary rows to fit (default = all; parent behavior). Accepts the "
+        "tokens 'uh-new' (the 9 new user-header rows) and 'all-46' (the enlarged axis). "
+        "`--rows` is the plan-v11 alias.",
+    )
     ap.add_argument("--layers", nargs="*", type=int, default=None, help="subset of layer indices")
+    ap.add_argument(
+        "--fold-family",
+        choices=["loco", "lofo", "both"],
+        default="loco",
+        help="outer CV: 'loco' (parent behavior, byte-for-bit; nulls + MLP arm), 'lofo' "
+        "(7-family point fits ONLY — no nulls, the plan-v11 registered ordering-only "
+        "companion), or 'both'",
+    )
+    ap.add_argument(
+        "--null-join",
+        default=None,
+        help="path to the COMMITTED round-1 per-draw recon null matrix "
+        "(null_matrix_reconstruction.json). Recomputes 2 OLD cells (mean@L18, maxp@L21) "
+        "with the same seed and byte-compares (<=1e-12) their per-draw vectors as the "
+        "union-validity parity gate; on PASS joins committed + new rows into the "
+        "enlarged-axis union band; on FAIL falls back to a full enlarged-grid null "
+        "rerun (registered fallback, plan v11 §6/§8) — never a silent mixed join.",
+    )
+    ap.add_argument(
+        "--committed-recon",
+        default=str(
+            PROJECT_ROOT / "eval_results" / "issue_810" / "reconstruction_skill_by_summary.json"
+        ),
+        help="the committed round-1 recon point-skill JSON (the observed `mean` benchmark "
+        "for the D_uh difference statistic + the fallback point-skill comparator)",
+    )
+    ap.add_argument(
+        "--out-suffix",
+        default=None,
+        help="output filename tag: reconstruction_skill_<suffix>.json + "
+        "null_matrix_<suffix>.json (default None = the parent filenames, byte-for-bit)",
+    )
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
     ap.add_argument("--no-mlp", action="store_true", help="skip the MLP validity arm")
     ap.add_argument(
@@ -513,53 +969,40 @@ def main() -> int:
     cc = _load_cc_for_genre(args.genre, ctx_ids, capture_layers)
 
     default_summaries = ["mean", "last", "maxp"] if args.free_only else summary_names()
-    summaries = args.summaries or default_summaries
+    summaries = _expand_rows(args.summaries) if args.summaries else default_summaries
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
     n = len(ctx_ids)
     pca_dim = min(PCA_TARGET_DIM_CAP, max(1, n - 2))
+    do_loco = args.fold_family in ("loco", "both")
+    do_lofo = args.fold_family in ("lofo", "both")
+    fam_map = battery_family_map() if do_lofo else None
+    if fam_map is not None:
+        missing_fam = [c for c in ctx_ids if c not in fam_map]
+        if missing_fam:
+            raise RuntimeError(f"{len(missing_fam)} contexts have no family: {missing_fam[:5]}")
     logger.info(
-        "fitting %d summaries x %d layers (n=%d, pca_dim=%d)",
+        "fitting %d summaries x %d layers (n=%d, pca_dim=%d, fold_family=%s)",
         len(summaries),
         len(layers),
         n,
         pca_dim,
+        args.fold_family,
     )
 
-    results: dict[str, list[dict]] = {}
-    # Selection-symmetric null: per (summary × layer) per-draw skill matrix.
-    null_matrix: dict[str, dict[str, list[float]]] = {}
-    # MLP validity jobs collected across ALL cells, batched by shape AFTER the
-    # ridge loop (the #722 vectorize-many-cell-fits mandate) — cell_key ->
-    # (summary, layer_i) so mlp_skill can be attached back to the right cell dict.
-    mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]] = []
-    cell_ref: dict[tuple, dict] = {}
-    for summary in summaries:
-        cells: list[dict] = []
-        null_matrix[summary] = {}
-        for li in layers:
-            Yv, kept = _summary_matrix(
-                summary, li, ctx_ids, free_summaries, pos_summaries, coverage
-            )
-            if Yv.shape[0] < 4:
-                cells.append(
-                    {"layer": capture_layers[li], "n": int(Yv.shape[0]), "ridge_skill": None}
-                )
-                continue
-            Xc = np.stack([cc[c][li] for c in kept])
-            cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(kept) - 2))
-            fit, y_pca = _fit_one_cell(Xc, Yv, cell_pca)
-            fit["layer"] = capture_layers[li]
-            fit["n_kept"] = len(kept)
-            cells.append(fit)
-            if not args.no_mlp:
-                key = (summary, capture_layers[li])
-                mlp_jobs.append((key, Xc, y_pca))
-                cell_ref[key] = fit
-            null_matrix[summary][str(capture_layers[li])] = _fit_null_draws(
-                Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, device=args.device
-            )
-        results[summary] = cells
-        logger.info("[phase=fit] %s done (%d layers)", summary, len(cells))
+    results, null_matrix, mlp_jobs, cell_ref = _fit_grid(
+        args,
+        summaries,
+        layers,
+        ctx_ids,
+        capture_layers,
+        free_summaries,
+        pos_summaries,
+        coverage,
+        cc,
+        fam_map,
+        do_loco,
+        do_lofo,
+    )
 
     # Batch the MLP validity arm across all cells (one call per shape group), then
     # attach mlp_skill back to each cell. Batching (not one-group-per-call) is the
@@ -581,7 +1024,43 @@ def main() -> int:
             _identity_sanity_check(ctx_ids, free_summaries, li, pca_dim) for li in layers
         ],
     }
+    if do_lofo:
+        # Fresh LOFO identity ceiling (plan v11 §4.6 item 3 — a NEW number,
+        # computed once per run; the LOCO 0.857 does not bound the group-fold).
+        diag["lofo_identity_ceiling"] = [
+            _lofo_identity_ceiling(ctx_ids, free_summaries, li, fam_map) for li in layers
+        ]
 
+    # Enlarged-axis union band via --null-join (plan v11 §4.6 item 3 / §6):
+    # parity gate on 2 OLD cells, then join committed + new per-draw matrices;
+    # FAIL → registered full enlarged-grid rerun fallback (never a mixed join).
+    union_band: dict | None = None
+    if args.null_join:
+        union_band = _null_join_and_bands(
+            args,
+            null_matrix,
+            results,
+            free_summaries,
+            pos_summaries,
+            coverage,
+            cc,
+            ctx_ids,
+            ctx_ids_all,
+            capture_layers,
+            layers,
+            diag,
+        )
+
+    recon_name = (
+        f"reconstruction_skill_{args.out_suffix}.json"
+        if args.out_suffix
+        else "reconstruction_skill_by_summary.json"
+    )
+    null_name = (
+        f"null_matrix_{args.out_suffix}.json"
+        if args.out_suffix
+        else "null_matrix_reconstruction.json"
+    )
     dump_json(
         {
             "dv": "reconstruction_skill_over_mean_r2",
@@ -594,12 +1073,14 @@ def main() -> int:
             "n_contexts": n,
             "pca_target_dim": pca_dim,
             "capture_layers": capture_layers,
+            "fold_family": args.fold_family,
             "by_summary": results,
             "diagnostics": diag,
+            "band_rows": (union_band or {}).get("band_rows"),
             "reproducibility": reproducibility_metadata(),
             "smoke": args.smoke,
         },
-        out_dir / "reconstruction_skill_by_summary.json",
+        out_dir / recon_name,
     )
     # Null matrix persisted separately (its own primary-deliverable file; §6.5).
     dump_json(
@@ -610,8 +1091,9 @@ def main() -> int:
             "n_perms": args.n_perms,
             "seed": SHUFFLE_NULL_SEED,
             "reconstruction": null_matrix,
+            "union_band": union_band,
         },
-        out_dir / "null_matrix_reconstruction.json",
+        out_dir / null_name,
     )
     if args.upload_prefix:
         logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
