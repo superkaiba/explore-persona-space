@@ -151,10 +151,11 @@ def test_good_plan_passes_all():
         "c12_battery_multiplier": "SKIP",
         "c13_empirical_gate_attainability": "SKIP",
         "c14_hypothesis_branch_coherence": "SKIP",
+        "c15_failloud_test_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 15
+    assert len(results) == 16
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1487,6 +1488,180 @@ def test_c14_comparator_pair_alone_warns():
     assert ok is True
 
 
+# ─── Check 15 — fail-loud acceptance claim backed by a test ────────────────
+
+FAILLOUD_ACCEPT = (
+    "\n## 5. Acceptance criteria\n\n"
+    "1. The poller re-raises on a malformed sentinel — the crash is not swallowed; "
+    "no `except Exception` fallback remains in the drain pass.\n"
+)
+
+
+def test_c15_kind_experiment_skips():
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT
+    assert _status(plan, "c15_failloud_test_coverage", kind="experiment") == "SKIP"
+
+
+def test_c15_no_failloud_vocab_skips():
+    # GOOD_PLAN's criteria section carries no claim vocabulary (verified
+    # against the fixture strings at test-write time) → baseline SKIP.
+    assert _status(GOOD_PLAN, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_failloud_claim_without_test_warns():
+    # The zero-fail-loud-test shape: a fail-loud acceptance claim + a
+    # success-path-only test list.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "WARN"
+    assert "#913" in r.detail
+    assert "grep" in r.detail
+
+
+def test_c15_kind_batch_triggers():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="batch") == "WARN"
+
+
+def test_c15_grep_gate_does_not_self_certify():
+    # The #913-v1 caller-swallow shape: a run-book grep gate over a tests/
+    # path carries a test_ identifier + except-vocabulary on one line, but a
+    # grep gate verifies the invariant once at review time — it must not
+    # count as committed-test evidence.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n- Grep gate: `grep -n 'except Exception' scripts/poll_pipeline.py "
+        "tests/test_poll_pipeline.py` returns nothing.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_named_raise_test_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_malformed_sentinel_raises` — malformed sentinel → "
+        "`pytest.raises(ValueError)`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "test named" in r.detail
+
+
+def test_c15_identifier_internal_vocab_passes():
+    # Vocabulary inside the identifier — pins the letter-lookaround design
+    # (a \b boundary would fail on the underscore-joined token).
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT + "\nTests: `test_no_silent_swallow_in_drain`.\n"
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_na_escape_incidental_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nThe 'silently' sentence above narrates the pre-fix defect. "
+        "N/A — no fail-loud acceptance claim.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c15_na_escape_doc_target_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nN/A — fail-loud claim not test-backable (the target is a .md instruction; "
+        "no code path a pytest can exercise).\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c15_fenced_claim_vocab_does_not_trigger():
+    # A fenced block in an acceptance section is quoted implementation (a
+    # diff hunk containing `raise ValueError` is not a claim) — the trigger
+    # scan is fence-stripped.
+    plan = (
+        GOOD_PLAN + "\n## 5. Acceptance criteria\n\nThe diff is verified by the commands below.\n\n"
+        "```python\nraise ValueError('the crash is not swallowed')\n```\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_plan_summary_mention_does_not_trigger():
+    # §0 Plan Summary restates criteria as summary prose — a measured
+    # corpus-probe noise class; the anchor carrier is excluded.
+    plan = (
+        GOOD_PLAN + "\n## 0. Plan Summary\n\n**Evaluation:** acceptance criteria — the guard "
+        "fails loud on a wedged pod.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_design_narration_does_not_trigger():
+    # Bug narration in a Design section carries claim vocabulary but no
+    # acceptance/success anchor → no trigger.
+    plan = (
+        GOOD_PLAN + "\n## 4. Design\n\nThe old path silently swallowed the crash; "
+        "we delete the bare except.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_grep_gate_plus_named_test_passes():
+    # The #913-v2 fixed shape (§3 Q3 registered invariant): a grep-gate line
+    # must NOT invalidate independent non-grep test evidence. A
+    # grep-invalidates-all-evidence mutation would flip this test while
+    # leaving the grep-self-certify and named-raise tests green.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n- Grep gate: `grep -n 'except Exception' scripts/poll_pipeline.py` "
+        "returns nothing.\n"
+        "Tests: `test_drain_malformed_sentinel_raises` — malformed sentinel → "
+        "`pytest.raises(ValueError)`.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_h1_preamble_anchor_does_not_trigger():
+    # Anchor + claim vocabulary in an H1-only preamble (before any ## heading)
+    # → the carrier is the H1 (level < 2), a measured probe noise class.
+    plan = GOOD_PLAN.replace(
+        "## 0.0 TL;DR (plain English)",
+        "Acceptance criteria: the poller fails loud — the crash is not swallowed.\n\n"
+        "## 0.0 TL;DR (plain English)",
+        1,
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_fenced_evidence_line_passes():
+    # Test lists legitimately live in fences/tables — the evidence scan is
+    # RAW (pins the design against a future fence-stripping refactor).
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n```\ntests/test_poll_pipeline.py::test_drain_malformed_sentinel_raises PASSED\n```\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1536,12 +1711,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 8
+    assert payload["n_skip"] == 9
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 15
-    assert len({c["id"] for c in payload["checks"]}) == 15
+    assert len(payload["checks"]) == 16
+    assert len({c["id"] for c in payload["checks"]}) == 16
 
 
 def test_cli_exit_one_on_fail(tmp_path):

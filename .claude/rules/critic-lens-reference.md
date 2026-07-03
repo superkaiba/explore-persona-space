@@ -673,6 +673,20 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     ALONGSIDE the group fold is fine (it upper-bounds within-distribution skill); pointwise-ONLY
     is the defect.
 
+14. **Fail-loud acceptance claims backed by committed tests.** When a plan's acceptance/success
+    criteria assert fail-loud / no-silent-swallow behavior ("fails loud", "raises, not swallowed",
+    "no `except Exception` remains", "no warning-and-continue path"), verify EACH such claim is
+    pinned by a named COMMITTED test (a behavioral `pytest.raises` case, or an AST/source-level pin
+    for swallow-shape bans) — not only a run-book grep gate: a grep command verifies the invariant
+    once at review time, and a differently-worded re-swallow ships green past every committed test
+    (#913: the caller-level swallow ban was grep-only until the round-1 Codex critique added the
+    `ast.Try` pin). Per-claim coverage is the point — a plan naming a fail-loud test for ONE claim
+    while another claim rests on grep alone still gets the finding (the mechanical pre-pass, c15,
+    catches only the zero-fail-loud-test case and PASSes that shape). REVISE when a fail-loud
+    acceptance claim about committed code has no committed-test backing and no stated reason a test
+    cannot exercise it; a doc-file target is the named escape (`N/A — fail-loud claim not
+    test-backable` — a .md instruction has no code path a pytest can exercise).
+
 ### Alternative Explanations lens
 
 1. For each predicted positive result, name the simplest alternative explanation that doesn't

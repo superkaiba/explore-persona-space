@@ -78,6 +78,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 11 Selection-symmetric nulls (max-over-axis headlines) | critic.md Statistics 11 | v2-owner: statistics-critic |
 | 12 Re-cost on power-raising recommendations (same round) | critic.md Statistics 12 | v2-owner: statistics-critic |
 | 13 OOD generalization folds (eval set fully disjoint from training) | critic.md Statistics 13 | v2-owner: statistics-critic |
+| 14 Fail-loud acceptance claims backed by committed tests | critic.md Statistics 14 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 
