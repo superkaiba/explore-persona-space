@@ -89,23 +89,43 @@ needs it again, so reaping a consumed phase's cache mid-run is safe. The
 the active-issue case; the incremental entry point is the experiment's OWN
 deliberate self-cleanup while it runs, so it intentionally has no
 terminal-status check — the experiment knows the phase is done.
+
+**Off-main graceful degrade (#924).** On a NON-``main`` remote checkout (the
+GCE/pod ``issue-<N>`` clone lanes), ``task_workflow.repo_root()`` either raises
+its branch-guard ``RuntimeError`` (a ``--depth 1 --branch`` clone with no local
+``main`` — the #841 att-6 crash) or silently routes reads to a pin worktree
+whose ``data/`` is empty — both defeat the between-phase cleanup exactly where
+disk pressure bites. Path resolution therefore goes through
+``_resolution_root()``: the probe ``_off_main_checkout_root()`` classifies the
+checkout once per process, and on an off-main NON-shared-VM checkout the
+``data/`` root, the worktree scan root, the sidecar, and display names resolve
+against the checkout itself. The cross-task active-consumer gate (#773) is
+still ATTEMPTED there — only a ``RuntimeError`` from the read (the genuinely
+unserviceable no-local-``main`` shape) is caught, with a loud WARN + sidecar
+row (``kind: "off-main-consumer-gate-skipped"``); a succeeding read (full clone
+with a local ``main``) keeps the gate ON. The shared VM never degrades, and VM
+main-checkout behavior is byte-identical (the probe returns ``None`` there).
 """
 
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from explore_persona_space.orchestrate.env import is_shared_vm_env
 from explore_persona_space.task_workflow import (
     STATUSES,
     list_by_status,
+    primary_checkout_root,
     repo_root,
     tasks_dir,
 )
@@ -230,9 +250,80 @@ def _running_pod_side() -> bool:
     return Path("/.dockerenv").exists() and Path("/workspace/logs").is_dir()
 
 
+def _checkout_branch(checkout: Path) -> str | None:
+    """Attached branch name of ``checkout``'s HEAD, or ``None`` (detached /
+    unreadable).
+
+    Runs under a sanitized git env (``GIT_DIR`` / ``GIT_WORK_TREE`` cleared) so
+    the probe reads the SAME repo ``primary_checkout_root()`` resolved — a
+    leaked ``GIT_DIR`` would silently point the two at different repos (#924
+    v2). ``rc != 0`` / empty output / OSError / timeout all map to ``None``."""
+    env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(checkout), "symbolic-ref", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip() or None
+
+
+@functools.lru_cache(maxsize=1)
+def _off_main_checkout_root() -> Path | None:
+    """Root of a NON-``main`` remote checkout (GCE/pod issue-branch clone),
+    else ``None`` (#924).
+
+    ``None``  => normal path: every resolution goes through
+    ``task_workflow.repo_root()``.
+    ``Path``  => degrade gracefully: ``data/``, the worktree scan root, the
+    sidecar, and display names resolve against THIS checkout; the cross-task
+    active-consumer read is ATTEMPTED and its branch-guard ``RuntimeError``
+    (the no-local-``main`` clone shape) is caught at the gate-1 call site
+    only — a succeeding read keeps the gate ON (#924 v2).
+
+    Detection reads the PRIMARY checkout (git common-dir parent, NOT the
+    script's own dir — a VM worktree invocation must still resolve the repo
+    root). The SHARED VM never degrades (``is_shared_vm_env()`` conjunct): a
+    pathologically off-main VM keeps today's loud ``repo_root()`` behavior
+    rather than silently skipping the consumer gate on a shared ``tasks/``
+    tree. Detached HEAD or an unresolvable layout also returns ``None``
+    (``repo_root()`` then raises its own loud, unchanged error)."""
+    try:
+        primary = primary_checkout_root()
+    except RuntimeError:
+        return None  # unresolvable layout: let repo_root() raise its own loud error
+    branch = _checkout_branch(primary)
+    if branch is None or branch == "main":
+        return None
+    if is_shared_vm_env():
+        print(
+            f"  WARNING: primary checkout {primary} is on {branch!r} on the SHARED VM — "
+            f"refusing the #924 off-main degrade (the active-consumer gate must not be "
+            f"skipped on a shared tasks/ tree); falling through to repo_root().",
+            file=sys.stderr,
+        )
+        return None
+    return primary
+
+
+def _resolution_root() -> Path:
+    """``repo_root()`` on the primary-on-main VM; the checkout root on an
+    off-main remote clone (#924). Future path-resolution sites in this module
+    should call THIS helper, not ``repo_root()`` directly."""
+    off = _off_main_checkout_root()
+    return off if off is not None else repo_root()
+
+
 def disk_guard_sidecar_path() -> Path:
     """Absolute path of the shared disk-guard escalation sidecar JSONL."""
-    return repo_root() / DISK_GUARD_SIDECAR_REL
+    return _resolution_root() / DISK_GUARD_SIDECAR_REL
 
 
 def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
@@ -258,8 +349,9 @@ def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
 
 
 def _data_root() -> Path:
-    """Absolute path of the repo's ``data/`` directory."""
-    return repo_root() / "data"
+    """Absolute path of the checkout's ``data/`` directory (repo root on the
+    VM; the clone root on an off-main remote checkout, #924)."""
+    return _resolution_root() / "data"
 
 
 def _worktree_data_roots(issue_n: int) -> list[Path]:
@@ -272,7 +364,7 @@ def _worktree_data_roots(issue_n: int) -> list[Path]:
     ``issue-<N>-<suffix>`` (same-issue follow-up round) worktrees, so every
     ``issue-<N>*`` worktree whose name maps to exactly ``issue_n`` is
     scanned. Returns only existing ``<worktree>/data`` dirs."""
-    wt_root = repo_root() / ".claude" / "worktrees"
+    wt_root = _resolution_root() / ".claude" / "worktrees"
     if not wt_root.is_dir():
         return []
     out: list[Path] = []
@@ -668,6 +760,57 @@ def _cache_dir_reap_blocked(
     return reason
 
 
+def _protected_issues_for_reap(
+    issue_n: int,
+    *,
+    skip_guard: bool,
+    apply: bool,
+) -> dict[int, list[int]]:
+    """Gate-1 protected set for :func:`clean_issue_downloads`, with the #924
+    off-main attempt-and-catch.
+
+    ``skip_guard`` (the private test seam) returns ``{}`` with no ``tasks/``
+    walk. On the normal (VM / on-main) path — probe ``None`` — the read is a
+    plain call and any raise propagates loudly exactly as today. Off-main
+    (probe non-``None``, #924 v2, round-1 alternatives reconcile): ATTEMPT the
+    cross-task read; only a ``RuntimeError`` from it is caught. On the
+    no-local-``main`` clone shape (GCE ``--depth 1 --branch``) ``tasks_dir()``
+    -> ``repo_root()`` raises the branch-guard ``RuntimeError`` -> the read is
+    genuinely unserviceable and a single-task remote instance has no sibling
+    consumers, so an empty protected set is safe: loud WARN + sidecar row,
+    never silent. On the full-clone shape the read SUCCEEDS via the fresh-main
+    pin worktree and the gate stays fully ON. A non-``RuntimeError`` always
+    propagates (the catch is narrow, not a blanket swallow)."""
+    if skip_guard:
+        return {}
+    off_root = _off_main_checkout_root()
+    if off_root is None:
+        # Normal (VM / on-main) path — plain call, any raise propagates
+        # loudly exactly as today.
+        return _active_consumer_protected_issues(issue_n)
+    try:
+        return _active_consumer_protected_issues(issue_n)
+    except RuntimeError as exc:
+        print(
+            f"  WARNING: non-main checkout {off_root} — cross-task "
+            f"active-consumer protected-issues read unserviceable "
+            f"({exc}); #924: skipping the gate (single-task remote "
+            f"instance assumed). Reap proceeds scoped to issue "
+            f"{issue_n}'s own checkout-local caches.",
+            file=sys.stderr,
+        )
+        append_disk_guard_event(
+            {
+                "kind": "off-main-consumer-gate-skipped",
+                "task": issue_n,
+                "checkout": str(off_root),
+                "reason": f"gate read raised on non-main checkout: {exc}",
+            },
+            apply=apply,
+        )
+        return {}
+
+
 @dataclass
 class CleanResult:
     issue_n: int
@@ -737,7 +880,11 @@ def clean_issue_downloads(
       1. The active-CONSUMER gate (#773, FIRST): never reap while a DIFFERENT
          active task declares ``data/issue_<N>/`` as a planned input. It is a
          cheap in-memory set lookup, so running it first short-circuits before
-         the parity gate's potential HF call.
+         the parity gate's potential HF call. On an OFF-MAIN checkout (#924)
+         this gate's ``tasks/`` read is ATTEMPTED and only a ``RuntimeError``
+         from it (the branch-guard raise) is caught — loud WARN + sidecar row
+         + empty protected set; a succeeding read keeps the gate ON. See
+         :func:`_off_main_checkout_root`.
       2. The nested-``store/`` parity gate (#679): never wholesale-rmtree a
          cache dir holding a mis-rooted ``store/`` not verifiably mirrored on HF.
 
@@ -774,7 +921,9 @@ def clean_issue_downloads(
     hf_sizes_cache: dict[str, dict[str, int] | None] = {}
     # The active-consumer protected set is the same for every cache dir of this
     # issue, so compute it ONCE before the loop (a single tasks/ walk).
-    protected = {} if _skip_active_consumer_guard else _active_consumer_protected_issues(issue_n)
+    protected = _protected_issues_for_reap(
+        issue_n, skip_guard=_skip_active_consumer_guard, apply=apply
+    )
     for cache_dir in download_cache_dirs(issue_n, data_root):
         rel = _rel_name(cache_dir)
         res.sizes_bytes[rel] = _dir_size_bytes(cache_dir)
@@ -941,9 +1090,11 @@ def clean_issue_downloads_incremental(
 
 
 def _rel_name(path: Path) -> str:
-    """Path relative to the repo root for display (falls back to absolute)."""
+    """Path relative to the resolution root for display (falls back to
+    absolute). Off-main (#924) the root is the checkout itself, so a raising
+    ``repo_root()`` can never crash this display helper."""
     try:
-        return str(path.relative_to(repo_root()))
+        return str(path.relative_to(_resolution_root()))
     except ValueError:
         return str(path)
 
