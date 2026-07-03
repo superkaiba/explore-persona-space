@@ -152,9 +152,9 @@ confound (EOS-margin logit space, never raw log P) · 9 degenerate eligibility
 gates / unequal per-unit N / missing baseline propensity · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
-headlines) · 12 same-round re-cost of affected §9 rows for any power-raising
-recommendation · 13 OOD generalization folds (group-level fold for
-group-structured held-out DVs).
+headlines; band vs DV ceiling) · 12 same-round re-cost of affected §9 rows
+for any power-raising recommendation · 13 OOD generalization folds
+(group-level fold for group-structured held-out DVs).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the

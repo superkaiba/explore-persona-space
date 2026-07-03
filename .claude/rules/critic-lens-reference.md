@@ -627,7 +627,17 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     |r| ≈ 0.48 vs honest max-over-layer p97.5 |r| ≈ 0.62; all three Phase-2 lenses reconciled to
     REVISE — four of the six per-lens critics caught the asymmetry independently, Methodology Claude
     and Alternatives Claude missed it), siblings #664 / #545. A per-axis heatmap does NOT neutralise
-    it — the comparison statistic stays asymmetric. Not a REVISE when the axis position is a single
+    it — the comparison statistic stays asymmetric. ALSO verify the band-vs-ceiling report: §6
+    states the band's upper bound next to the DV's achievable ceiling
+    (`selection-symmetric-nulls.md` § Band-vs-ceiling informativeness check). A registered
+    null-band DECISION GATE whose band upper bound ≥ an ESTIMATOR-BOUND achievable ceiling
+    (bounded-DV or registered difference ceiling — never the fallback reference point), with no
+    failure-to-reject pre-commitment, is a REVISE — the gate is unfireable-by-construction, the
+    null-band instance of item 3's joint-satisfiability bar (#810: band p97.5 0.800 vs an
+    achievable difference ceiling below the parent +0.209 effect; p = 0.634 initially narrated as
+    an ordering fail). A missing ceiling report on a bounded statistic with no gate riding on it —
+    or a band exceeding only the fallback reference point — is a binding Concern, not a REVISE.
+    Not a REVISE when the axis position is a single
     pre-registered / fixed value with no data-driven selection, a mechanistic single-anchor
     ablation, or the headline is not selected over any free axis (the plan's §6 "N/A — no
     max-over-axis selection in the headline" satisfies this item). If the per-draw × per-axis matrix

@@ -184,6 +184,11 @@ For each finding, propose the simplest non-mechanism explanation:
 - "This is seed variance (n=1)"
 - "The training data is imbalanced"
 - "The effect is an artifact of the metric, not the model"
+- "The registered null band's upper bound meets or exceeds the DV's
+  achievable estimator-bound ceiling — the test was
+  uninformative-by-construction (any non-rejection is failure-to-reject,
+  never evidence of absence/reversal; a reachable opposite-tail
+  rejection stays legitimate); #810"
 
 If the interpretation doesn't address or rule out the alternative, flag it.
 
