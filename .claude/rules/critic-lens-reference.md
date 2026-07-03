@@ -634,7 +634,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (bounded-DV or registered difference ceiling — never the fallback reference point), with no
     failure-to-reject pre-commitment, is a REVISE — the gate is unfireable-by-construction, the
     null-band instance of item 3's joint-satisfiability bar (#810: band p97.5 0.800 vs an
-    achievable difference ceiling below the parent +0.209 effect; p = 0.634 initially narrated as
+    achievable difference ceiling derived from ~0.857 max skill — even the parent +0.209 effect
+    could not clear the band; p = 0.634 initially narrated as
     an ordering fail). A missing ceiling report on a bounded statistic with no gate riding on it —
     or a band exceeding only the fallback reference point — is a binding Concern, not a REVISE.
     Not a REVISE when the axis position is a single
