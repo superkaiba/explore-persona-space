@@ -3959,11 +3959,30 @@ dispatch — see the GCP-lane teardown leg below) and resumes the loop in
 the same turn — see the per-gate handlers below.
 
 **GCP-lane blocking gates — instance-teardown leg (EVERY handler, PARK-mode
-and auto-resolving; #908/#763).** On the GCP lane a blocking-gate exit is a
-CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
-does NOT power the VM off — the GCE instance stays RUNNING **and billing** by
-design (the clean-exit path keeps it alive only for sentinel draining;
-`backends/gcp.py` `teardown` docstring). By the time `status=gate` reaches
+and auto-resolving; #908/#763/#935).** On the GCP lane a blocking-gate exit is
+a CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
+does NOT power the VM off — the GCE instance stays RUNNING only within the
+bounded done-grace window (default 90 min,
+`EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; the #935 self-poweroff best-effort
+persists the undrained sentinel set to HF `issue<N>_done/<attempt_id>/` at
+expiry, then powers off; the clean-exit path keeps it alive only for sentinel
+draining — `backends/gcp.py` `teardown` docstring). The finalize teardown leg
+below remains PRIMARY — never wait out the grace. Two operational lines
+(REQUIRED — the only defense on the DELETE outcome): (a) on a
+`workload_done_self_poweroff` poll (TERMINATED + guest `eps/phase=done` — the
+grace expired on the STOP outcome) OR a post-expiry `dead("instance not
+found")` poll, CHECK the HF data-repo prefix `issue<N>_done/<attempt_id>/`
+BEFORE any crash-fix routing — the run SUCCEEDED and self-powered-off;
+recover the undrained completion/gate sentinels from that prefix and run
+finalize with `--skip-confirm-artifacts`. (b) Gate sentinels persist to that
+same prefix at grace expiry on a BEST-EFFORT basis (one retry) — the prefix
+is NOT guaranteed to exist, and the persist also never fires on a mid-grace
+preemption or manual stop, so an ABSENT prefix does NOT distinguish "poller
+drained normally" from "expiry persist failed"; on a STOP-outcome instance
+the `eps/done_persist` guest attribute (`ok|failed`, a SEPARATE key from
+`eps/phase`) disambiguates. Pre-existing residual (unworsened by #935): a
+#908 stale reclaim at a FRESH dispatch during the grace deletes the VM
+before the expiry persist fires. By the time `status=gate` reaches
 this step the sentinel is already drained (the poller drained it to post the
 gate marker), and the VM holds NOTHING a later gate resolution needs — so
 tear the instance down at the earliest point after the drain, split by gate
@@ -3996,8 +4015,10 @@ is teardown + fresh dispatch. Backstop only (never the plan):
 `backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
 `eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
 reclaim deletes it, so a missed teardown no longer silently no-ops the next
-dispatch (#763 leg 2) — but the zombie still bills until that next dispatch
-or the daily janitor sweep, so the handler-side teardown stays mandatory.
+dispatch (#763 leg 2) — but the zombie still bills until the #935 done-grace
+self-poweroff (default 90 min), that next dispatch, or the daily janitor
+sweep, so the handler-side teardown stays mandatory (never wait out the
+grace).
 
 Gate handlers (one per registered `<name>`):
 
