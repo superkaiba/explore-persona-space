@@ -1,0 +1,1059 @@
+{
+  "commit": "ecf19704c0",
+  "created": "2026-07-03T08:30:47Z",
+  "figsize": [
+    12.5,
+    4.2
+  ],
+  "points": [
+    {
+      "graded score, misalignment-pool completions": 1.6304347826086956,
+      "graded score, UltraChat completions": 1.7851239669421488,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 4.130434782608695,
+      "graded score, UltraChat completions": 4.945652173913044,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.375,
+      "graded score, UltraChat completions": 4.254957507082153,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.5625,
+      "graded score, UltraChat completions": 1.3700787401574803,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.30612244897959184,
+      "graded score, UltraChat completions": 0.2963917525773196,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.3333333333333333,
+      "graded score, UltraChat completions": 2.658974358974359,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.8095238095238093,
+      "graded score, UltraChat completions": 5.636103151862464,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.111111111111111,
+      "graded score, UltraChat completions": 7.331632653061225,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 6.428571428571429,
+      "graded score, UltraChat completions": 8.824228028503564,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.7735849056603774,
+      "graded score, UltraChat completions": 4.007125890736342,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 5.888888888888889,
+      "graded score, UltraChat completions": 5.618421052631579,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.549019607843137,
+      "graded score, UltraChat completions": 3.882793017456359,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 7.760869565217392,
+      "graded score, UltraChat completions": 7.552486187845304,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.3846153846153846,
+      "graded score, UltraChat completions": 1.09,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.40540540540540543,
+      "graded score, UltraChat completions": 0.3553459119496855,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 2.910344827586207,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.12195121951219512,
+      "graded score, UltraChat completions": 4.51948051948052,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 36.191489361702125,
+      "graded score, UltraChat completions": 34.81534090909091,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.6315789473684212,
+      "graded score, UltraChat completions": 4.276785714285714,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 1.4322580645161291,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.088235294117647,
+      "graded score, UltraChat completions": 4.100386100386101,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 3.2158054711246202,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.5,
+      "graded score, UltraChat completions": 3.353932584269663,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 10.560975609756097,
+      "graded score, UltraChat completions": 8.104938271604938,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.6666666666666665,
+      "graded score, UltraChat completions": 1.805732484076433,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 4.148936170212766,
+      "graded score, UltraChat completions": 3.767908309455587,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 0.01483679525222552,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 0.13677811550151975,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.021276595744681,
+      "graded score, UltraChat completions": 4.264935064935065,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.8085106382978724,
+      "graded score, UltraChat completions": 0.4478021978021978,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.8,
+      "graded score, UltraChat completions": 0.1842818428184282,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 0.4119318181818182,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.3636363636363638,
+      "graded score, UltraChat completions": 3.304932735426009,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.5862068965517242,
+      "graded score, UltraChat completions": 2.892703862660944,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.8421052631578947,
+      "graded score, UltraChat completions": 3.144396551724138,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.263157894736842,
+      "graded score, UltraChat completions": 0.6673728813559322,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 4.017241379310345,
+      "graded score, UltraChat completions": 2.9808917197452227,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.9322033898305087,
+      "graded score, UltraChat completions": 4.191721132897603,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 8.051724137931034,
+      "graded score, UltraChat completions": 8.08067940552017,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 4.067796610169491,
+      "graded score, UltraChat completions": 4.836170212765958,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.8478260869565217,
+      "graded score, UltraChat completions": 0.21727748691099477,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 4.166666666666667,
+      "graded score, UltraChat completions": 4.644251626898048,
+      "label": "PersonaHub 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.7,
+      "graded score, UltraChat completions": 1.2656641604010026,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 2.125,
+      "graded score, UltraChat completions": 3.0739856801909307,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.0,
+      "graded score, UltraChat completions": 2.1942857142857144,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 0.1,
+      "graded score, UltraChat completions": 1.9736842105263157,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 3.418181818181818,
+      "graded score, UltraChat completions": 2.3430493273542603,
+      "label": "demos: marker x8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 10.864406779661017,
+      "graded score, UltraChat completions": 7.380952380952381,
+      "label": "behavior: marker",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 1.293103448275862,
+      "graded score, UltraChat completions": 3.502202643171806,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 26.88888888888889,
+      "graded score, UltraChat completions": 25.19047619047619,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "graded score, misalignment-pool completions": 17.005649717514125,
+      "graded score, UltraChat completions": 17.456627342123525,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.556756756756755,
+      "graded score, UltraChat completions": 18.96818510484454,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.40340909090909,
+      "graded score, UltraChat completions": 18.814121037463977,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.74576271186441,
+      "graded score, UltraChat completions": 21.420814479638008,
+      "label": "demos: pirate x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.52777777777778,
+      "graded score, UltraChat completions": 19.097067039106147,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 22.33132530120482,
+      "graded score, UltraChat completions": 23.41783345615328,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 18.74576271186441,
+      "graded score, UltraChat completions": 18.086770981507822,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.17222222222222,
+      "graded score, UltraChat completions": 18.06908344733242,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 23.246153846153845,
+      "graded score, UltraChat completions": 23.268970189701896,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 18.51578947368421,
+      "graded score, UltraChat completions": 19.633132126089873,
+      "label": "demos: pirate x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 21.356756756756756,
+      "graded score, UltraChat completions": 21.032601463739187,
+      "label": "demos: pirate x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 25.58823529411765,
+      "graded score, UltraChat completions": 24.42108938547486,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 18.553072625698324,
+      "graded score, UltraChat completions": 17.90979020979021,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.785714285714285,
+      "graded score, UltraChat completions": 19.16747741487144,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 14.751351351351351,
+      "graded score, UltraChat completions": 16.226241134751774,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 13.640449438202246,
+      "graded score, UltraChat completions": 13.72226148409894,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 13.100558659217876,
+      "graded score, UltraChat completions": 15.258245614035088,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.382857142857144,
+      "graded score, UltraChat completions": 17.541510845175768,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 13.104395604395604,
+      "graded score, UltraChat completions": 13.596376811594203,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 14.657303370786517,
+      "graded score, UltraChat completions": 13.779422649888971,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.368098159509202,
+      "graded score, UltraChat completions": 21.03677621283255,
+      "label": "demos: pirate x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 15.027322404371585,
+      "graded score, UltraChat completions": 14.771509167842032,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 11.822222222222223,
+      "graded score, UltraChat completions": 13.843434343434344,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 12.617977528089888,
+      "graded score, UltraChat completions": 14.246209386281588,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.668539325842698,
+      "graded score, UltraChat completions": 17.774330042313117,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.16216216216216,
+      "graded score, UltraChat completions": 16.459729151817534,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.293785310734464,
+      "graded score, UltraChat completions": 17.23890063424947,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.60989010989011,
+      "graded score, UltraChat completions": 18.111344537815125,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 15.307692307692308,
+      "graded score, UltraChat completions": 16.15467328370554,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 13.92,
+      "graded score, UltraChat completions": 17.065544729849424,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 15.711764705882352,
+      "graded score, UltraChat completions": 17.579838709677418,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.30635838150289,
+      "graded score, UltraChat completions": 21.75099760574621,
+      "label": "demos: pirate x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.71069182389937,
+      "graded score, UltraChat completions": 19.88798701298701,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 15.033175355450236,
+      "graded score, UltraChat completions": 14.913739987677141,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 16.92063492063492,
+      "graded score, UltraChat completions": 18.608783783783785,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.682795698924732,
+      "graded score, UltraChat completions": 19.48135359116022,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 19.288659793814432,
+      "graded score, UltraChat completions": 18.514930325149304,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 18.855670103092784,
+      "graded score, UltraChat completions": 19.505859375,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 12.11,
+      "graded score, UltraChat completions": 11.586616635397123,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.032432432432433,
+      "graded score, UltraChat completions": 17.974729241877256,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 18.995391705069125,
+      "graded score, UltraChat completions": 18.796064400715565,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 4.753554502369668,
+      "graded score, UltraChat completions": 4.480666270077335,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 14.464285714285714,
+      "graded score, UltraChat completions": 13.310630171865053,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 16.64864864864865,
+      "graded score, UltraChat completions": 17.550477489768078,
+      "label": "demos: marker x4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 17.31791907514451,
+      "graded score, UltraChat completions": 18.102931152010907,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 24.11764705882353,
+      "graded score, UltraChat completions": 22.002086230876216,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 47.41530054644809,
+      "graded score, UltraChat completions": 48.32940360610264,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 20.182795698924732,
+      "graded score, UltraChat completions": 19.21898305084746,
+      "label": "demos: json x8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 25.835051546391753,
+      "graded score, UltraChat completions": 26.062713019768236,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 27.93820224719101,
+      "graded score, UltraChat completions": 28.83988563259471,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "graded score, misalignment-pool completions": 49.95117540687161,
+      "graded score, UltraChat completions": 16.83931623931624,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 48.63068181818182,
+      "graded score, UltraChat completions": 11.832727272727272,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 45.21327967806841,
+      "graded score, UltraChat completions": 9.470363288718929,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 57.964485981308414,
+      "graded score, UltraChat completions": 14.841818181818182,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 47.99651567944251,
+      "graded score, UltraChat completions": 14.972426470588236,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 51.26691042047532,
+      "graded score, UltraChat completions": 13.40891472868217,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 45.04841713221602,
+      "graded score, UltraChat completions": 14.508960573476703,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 34.40034364261168,
+      "graded score, UltraChat completions": 9.688524590163935,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 52.287694974003465,
+      "graded score, UltraChat completions": 15.189097103918229,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 46.92644483362522,
+      "graded score, UltraChat completions": 17.41093474426808,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 38.69152542372881,
+      "graded score, UltraChat completions": 7.968280467445743,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 48.35906040268456,
+      "graded score, UltraChat completions": 11.701320132013201,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 37.07899461400359,
+      "graded score, UltraChat completions": 13.353251318101933,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 38.48772504091653,
+      "graded score, UltraChat completions": 13.929765886287626,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 26.644710578842314,
+      "graded score, UltraChat completions": 20.546184738955823,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 28.74364896073903,
+      "graded score, UltraChat completions": 17.68076109936575,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 23.102669404517453,
+      "graded score, UltraChat completions": 18.511879049676025,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 54.642184557438796,
+      "graded score, UltraChat completions": 22.96989247311828,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 38.876543209876544,
+      "graded score, UltraChat completions": 19.439121756487026,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 28.450526315789475,
+      "graded score, UltraChat completions": 21.78310502283105,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 33.161662817551964,
+      "graded score, UltraChat completions": 17.430703624733475,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 39.98262548262548,
+      "graded score, UltraChat completions": 16.625254582484725,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 32.841059602649004,
+      "graded score, UltraChat completions": 26.60648148148148,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 29.408624229979466,
+      "graded score, UltraChat completions": 18.20366598778004,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 45.13859275053305,
+      "graded score, UltraChat completions": 13.673684210526316,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 22.75,
+      "graded score, UltraChat completions": 12.4251968503937,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 44.111336032388664,
+      "graded score, UltraChat completions": 15.057026476578411,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 40.744485294117645,
+      "graded score, UltraChat completions": 13.890173410404625,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 42.569327731092436,
+      "graded score, UltraChat completions": 12.58590308370044,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 17.99795081967213,
+      "graded score, UltraChat completions": 14.044496487119439,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 41.45670995670996,
+      "graded score, UltraChat completions": 13.683438155136269,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 29.69951923076923,
+      "graded score, UltraChat completions": 13.614718614718615,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 49.82302771855011,
+      "graded score, UltraChat completions": 13.352697095435685,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 35.235732009925556,
+      "graded score, UltraChat completions": 20.020408163265305,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 50.711191335740075,
+      "graded score, UltraChat completions": 12.542801556420233,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 46.72977346278317,
+      "graded score, UltraChat completions": 17.861720067453625,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 51.14089347079038,
+      "graded score, UltraChat completions": 14.336860670194003,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 45.80250783699059,
+      "graded score, UltraChat completions": 16.90938511326861,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 35.96586599241466,
+      "graded score, UltraChat completions": 24.720770288858322,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 30.9177545691906,
+      "graded score, UltraChat completions": 17.641975308641975,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 36.64547413793103,
+      "graded score, UltraChat completions": 20.6763590391909,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 32.16823529411765,
+      "graded score, UltraChat completions": 36.660377358490564,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 37.748317631224765,
+      "graded score, UltraChat completions": 23.202312138728324,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 41.001769911504425,
+      "graded score, UltraChat completions": 15.959860383944154,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 44.85040983606557,
+      "graded score, UltraChat completions": 13.126293995859212,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 52.303030303030305,
+      "graded score, UltraChat completions": 12.464944649446494,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 47.08782742681048,
+      "graded score, UltraChat completions": 5.936908517350158,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 46.30733229329173,
+      "graded score, UltraChat completions": 18.85148514851485,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 50.03145695364238,
+      "graded score, UltraChat completions": 15.224108658743633,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "graded score, misalignment-pool completions": 45.63001745200698,
+      "graded score, UltraChat completions": 9.905096660808436,
+      "label": "behavior: harmful",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 150
+}
