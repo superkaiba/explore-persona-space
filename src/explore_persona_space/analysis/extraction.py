@@ -82,12 +82,46 @@ ONLY:
 
 from __future__ import annotations
 
+import inspect
 import warnings
 from collections.abc import Iterable
 
 import torch
 
 EMBED_LAYER = -1  # request the embedding output (hs[0]); maps to embed_tokens
+
+
+def _logits_to_keep_kwargs(model, return_logits: bool) -> dict:
+    """OOM guard (#779 att-20260702): skip full-vocab logits the caller never reads.
+
+    transformers 4.57 CausalLM forwards default ``logits_to_keep=0`` — the
+    lm_head materializes logits for ALL positions (``B x T x vocab``; 4.89 GiB
+    at the crash shape, on top of a co-resident vLLM engine) even when the
+    caller only wants hook-captured hidden states. Returns
+    ``{"logits_to_keep": 0 if return_logits else 1}`` when the model's forward
+    exposes an EXPLICIT ``logits_to_keep`` parameter (Qwen2 on the pinned
+    transformers 4.57.6 does), else ``{}`` (current full-logits behavior — a
+    bare ``**kwargs`` does NOT count, so test stubs / wrappers that would
+    silently swallow or crash on the kwarg are untouched). ``return_logits=True``
+    keeps the full-sequence logits contract byte-identical (``logits_to_keep=0``
+    is the transformers default: all positions).
+    """
+    fn = getattr(model, "forward", None)
+    if fn is None and callable(model):
+        fn = model.__call__
+    if fn is None:
+        return {}
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return {}
+    p = params.get("logits_to_keep")
+    if p is None or p.kind not in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    ):
+        return {}
+    return {"logits_to_keep": 0 if return_logits else 1}
 
 
 def _unwrap(output):
@@ -215,11 +249,13 @@ def extract_layer_activations(
     # last-layer return here is POST-final-norm — unlike the hook path; see module
     # docstring. Wrapped PEFT-style models resolve via the chain walk and take the
     # HOOK path instead.)
+    ltk_kwargs = _logits_to_keep_kwargs(model, return_logits)
     if blocks is None:
         out = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=True,
+            **ltk_kwargs,
         )
         hs = out.hidden_states  # tuple(L+1)
         captured: dict[int, torch.Tensor] = {}
@@ -254,6 +290,7 @@ def extract_layer_activations(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=False,  # <-- the fix: do NOT materialize all
+            **ltk_kwargs,
         )
     finally:
         for h in handles:

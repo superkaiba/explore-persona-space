@@ -914,7 +914,7 @@ def _split_mlp_eval(Xg, W1, b1, W2, b2, mu, sd):
     return torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
 
 
-def fit_batched_split_mlp(
+def fit_batched_split_mlp(  # noqa: C901 -- linear batched trainer; the loss selector adds one branch
     groups: list[SplitMLPGroup],
     *,
     seed: int = DEFAULT_MLP_SEED,
@@ -926,12 +926,16 @@ def fit_batched_split_mlp(
     chunk_size: int = 8,
     num_threads: int | None = None,
     smooth_l1_beta: float = 1.0,
+    loss: str = "smooth_l1",
 ) -> SplitMLPResult:
     """Fit ALL groups' fixed-split multi-output MLPs as one batched ensemble.
 
     Member ``g`` is a ``Linear(d_in, hidden) → GELU → Linear(hidden, p)`` net
     trained on group ``g``'s ``X_train → Y_train`` with AdamW(lr, wd) + SmoothL1
-    (``smooth_l1_beta``), standardized on the group's own train rows. When
+    (``smooth_l1_beta``; ``loss="mse"`` swaps train AND val loss to MSE — the
+    #931 registered default-preserving extension so the batched fitter can
+    reproduce ``fit_h.mlp_fit_predict``'s MSE recipe for the G1b parity fit),
+    standardized on the group's own train rows. When
     validation is supplied, the per-member BEST-validation-loss params are kept
     (batched early stopping — equivalent to patience≥remaining-epochs); else the
     final-epoch params. Chunked over groups so peak memory scales with
@@ -953,6 +957,16 @@ def fit_batched_split_mlp(
     Returns a ``SplitMLPResult`` (eval preds + trained params + best-val epoch).
     """
     from torch.func import stack_module_state
+
+    assert loss in ("smooth_l1", "mse"), f"unknown loss {loss!r}"
+
+    def _loss_per_member(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """Per-member (c,) mean loss under the selected criterion."""
+        if loss == "mse":
+            return torch.nn.functional.mse_loss(pred, target, reduction="none").mean(dim=(1, 2))
+        return torch.nn.functional.smooth_l1_loss(
+            pred, target, reduction="none", beta=smooth_l1_beta
+        ).mean(dim=(1, 2))
 
     if not groups:
         return SplitMLPResult({}, {}, {}, 0, chunk_size)
@@ -1044,17 +1058,13 @@ def fit_batched_split_mlp(
         for epoch in range(max_epochs):
             opt.zero_grad(set_to_none=True)
             pred = _split_mlp_eval(Xtr, W1, b1, W2, b2, mu, sd)  # (c, n_train, p)
-            per_member = torch.nn.functional.smooth_l1_loss(
-                pred, Ytr, reduction="none", beta=smooth_l1_beta
-            ).mean(dim=(1, 2))  # (c,)
+            per_member = _loss_per_member(pred, Ytr)  # (c,)
             per_member.sum().backward()
             opt.step()
             if has_val:
                 with torch.no_grad():
                     vpred = _split_mlp_eval(Xval, W1, b1, W2, b2, mu, sd)
-                    vloss = torch.nn.functional.smooth_l1_loss(
-                        vpred, Yval, reduction="none", beta=smooth_l1_beta
-                    ).mean(dim=(1, 2))  # (c,)
+                    vloss = _loss_per_member(vpred, Yval)  # (c,)
                 improved = vloss < best_val
                 if improved.any():
                     best_val = torch.where(improved, vloss, best_val)
