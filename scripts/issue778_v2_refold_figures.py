@@ -192,7 +192,7 @@ def fig_hall_layers() -> None:
     ax.set_ylabel("|Pearson r| (hallucination monitoring)")
     ax.set_ylim(0, 1.0)
     ax.set_title(
-        "Hallucination monitoring predictivity peaks at layers 20-23,\n"
+        "Hallucination monitoring predictivity peaks at layers 21-23,\n"
         "not at the paper steering layer",
         pad=12,
     )
