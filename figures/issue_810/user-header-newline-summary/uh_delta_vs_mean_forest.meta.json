@@ -1,0 +1,660 @@
+{
+  "commit": "280b8fa6ae",
+  "created": "2026-07-03T15:51:54Z",
+  "figsize": [
+    13.0,
+    5.0
+  ],
+  "points": [
+    {
+      "\u0394 skill (row \u2212 mean)": -0.22998099572805264,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.08818307733974151,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07933485581836919,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.06128514618016434,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10721277239005278,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.03822696282370264,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10776290085471496,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.013279300018736229,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.22998099572805264,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.08818307733974151,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07933485581836919,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.06128514618016434,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10721277239005278,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.03822696282370264,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10776290085471496,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.013279300018736229,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.31020210157883416,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.12995948834673507,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.12205677069013675,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10006877070979009,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.15527096380862523,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07098794703376071,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.14668196056269275,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.005709274635717384,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10564401068721967,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.15283995651798438,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.049341267121031894,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.03802739649645926,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.02678037676406867,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.06404950593204946,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.010329963007386228,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.0715734840970656,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.016693758237276802,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.04087258567759175,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.06835010985829226,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.043140105025717634,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07228355151346644,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.030213985877844407,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.05445187242414895,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.01601189230452371,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.08143141166669488,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.014616668674611533,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.06835010985829226,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.043140105025717634,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07228355151346644,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.030213985877844407,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.05445187242414895,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.01601189230452371,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.08143141166669488,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.014616668674611533,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10300161768348902,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.07987399780426373,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10624441086876385,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.061847342476642066,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.08918762770759481,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.041280037751632206,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.10815484506147365,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.005711350019227457,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.052451271289702395,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.03473001588702893,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.0004007044816521088,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.020966970423245662,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.00796765413519343,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.015959397096036554,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.008523406973219155,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.05122539671645712,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.0166754279743564,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.06568720316256846,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.06578677973018943,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.09099678456276405,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.0029002109558595723,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.10392290371063728,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.07968501716433274,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.004055589265145043,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.0694751086273162,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.07155133330348518,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.06578677973018943,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.09099678456276405,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.0029002109558595723,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.10392290371063728,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.07968501716433274,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.004055589265145043,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.0694751086273162,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.011102038802001446,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.07155133330348518,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.025411531429298195,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.04371424046975991,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.05002070615445746,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.06094253574700418,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.03789472533002789,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.029895378773269077,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.09901625382769648,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.005709274635717384,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.0019198499530748842,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.10731635296682694,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.13897037843959975,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.061501090345916117,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.1481004172592913,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.12272174741634699,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.022647041836971176,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": -0.03986438176128697,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.016693758237276802,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "\u0394 skill (row \u2212 mean)": 0.1185566575339551,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 108
+}
