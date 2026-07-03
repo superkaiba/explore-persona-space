@@ -6996,6 +6996,12 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "stop",
         "--session-id", session_id,
+        # #902: thread `--stop-source watcher` — watcher-sourced stops post
+        # NO deliberate-stop breadcrumb (the watcher keeps its own
+        # registry/sidecar evidence trail; an operator-attributed auto-post
+        # here would manufacture false attributions + unsentineled notes
+        # that reset staleness clocks).
+        "--stop-source", "watcher",
     ]  # fmt: skip
     if dry_run:
         print(f"  [dry-run] would stop session: {' '.join(cmd)}")

@@ -38,6 +38,7 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -799,6 +800,10 @@ def daemon_port() -> int:
 # orphan-adoption path that recovers on this exact race.
 DEFAULT_TIMEOUT_S = 10
 SPAWN_SESSION_TIMEOUT_S = 60
+# Hard join bound on the deliberate-stop breadcrumb post in `cmd_stop` —
+# `post_event` enters a blocking flock with no timeout, so a wedged lock
+# would otherwise hang the stop indefinitely (#902; plan §4.4 D5).
+STOP_BREADCRUMB_JOIN_TIMEOUT_S = 10.0
 
 
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1940,7 +1945,60 @@ def cmd_list(args: argparse.Namespace) -> None:
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    """Stop a Happy session by id."""
+    """Stop a Happy session by id.
+
+    For an issue-mapped OPERATOR stop, posts a ``deliberate-stop``
+    breadcrumb (structured ``epm:progress`` note) on the owning task
+    BEFORE the stop RPC, so a later exit-137/143 diagnosis can attribute
+    the kill (failure_patterns.md § kill-source verification; #779/#902).
+    Watcher-sourced stops (``--stop-source watcher``) post NOTHING — the
+    watcher keeps its own registry/sidecar evidence, and an auto-post
+    here would manufacture false operator attributions plus unsentineled
+    notes that reset staleness clocks. The post runs in a daemon thread
+    with a hard join timeout (:data:`STOP_BREADCRUMB_JOIN_TIMEOUT_S`) so
+    a wedged workflow flock can never hang the stop (fail-soft: WARN +
+    proceed on any failure or timeout).
+    """
+    if args.stop_source == "operator":
+        try:  # fail-soft: the WHOLE mapped branch (map load + post)
+            issue = _load_session_issue_map().get(args.session_id)
+            if issue is not None:
+                note = (
+                    f"deliberate-stop pid=n/a target=happy-session:{args.session_id} "
+                    f"reason={args.reason}"
+                )
+                # Exceptions inside the daemon thread are captured into a
+                # mutable cell and WARNed after the join (they cannot
+                # propagate across threads to the outer try).
+                exc_cell: list[BaseException] = []
+
+                def _post() -> None:
+                    try:
+                        from explore_persona_space.task_workflow import post_event
+
+                        post_event(issue, "epm:progress", by="spawn_session-stop", note=note)
+                    except BaseException as exc:  # loud via exc_cell — never silent
+                        exc_cell.append(exc)
+
+                t = threading.Thread(target=_post, daemon=True)
+                t.start()
+                t.join(timeout=STOP_BREADCRUMB_JOIN_TIMEOUT_S)
+                if t.is_alive():
+                    print(
+                        f"WARN: deliberate-stop breadcrumb on #{issue} still posting after "
+                        f"{STOP_BREADCRUMB_JOIN_TIMEOUT_S:g}s (wedged lock?); proceeding "
+                        f"with stop",
+                        file=sys.stderr,
+                    )
+                elif exc_cell:
+                    print(
+                        f"WARN: deliberate-stop breadcrumb failed: {exc_cell[0]!r}",
+                        file=sys.stderr,
+                    )
+                else:
+                    print(f"Posted deliberate-stop breadcrumb on #{issue}")
+        except Exception as exc:  # fail-soft side channel: never block the stop
+            print(f"WARN: deliberate-stop breadcrumb failed: {exc!r}", file=sys.stderr)
     resp = post("/stop-session", {"sessionId": args.session_id})
     if not resp.get("success"):
         sys.exit(f"stop failed: {resp}")
@@ -2178,6 +2236,20 @@ def main(argv: list[str] | None = None) -> None:
 
     p_stop = sub.add_parser("stop", help="stop a Happy session by id")
     p_stop.add_argument("--session-id", required=True)
+    p_stop.add_argument(
+        "--reason",
+        default="operator stop via spawn_session.py stop",
+        help="one-line reason recorded in the deliberate-stop breadcrumb",
+    )
+    p_stop.add_argument(
+        "--stop-source",
+        choices=("operator", "watcher"),
+        default="operator",
+        help=(
+            "watcher-driven stops post no breadcrumb (the watcher keeps its "
+            "own registry/sidecar evidence trail)"
+        ),
+    )
     p_stop.set_defaults(fn=cmd_stop)
 
     p_resume = sub.add_parser(
