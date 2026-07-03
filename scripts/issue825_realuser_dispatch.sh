@@ -244,7 +244,9 @@ wd.mkdir(parents=True, exist_ok=True)
 src = ru / "conversations_real2turn.jsonl"
 conv_ids = [
     json.loads(line)["conv_id"]
-    for line in src.read_text(encoding="utf-8").splitlines()
+    # split("\n"), NOT splitlines(): raw U+2028/NEL inside real-user JSON strings
+    # (ensure_ascii=False) are Unicode line boundaries that shred records (run-1d crash)
+    for line in src.read_text(encoding="utf-8").split("\n")
     if line.strip()
 ]
 allow = {}

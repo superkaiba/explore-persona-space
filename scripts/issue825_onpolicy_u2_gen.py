@@ -528,7 +528,9 @@ def run_gen(args) -> None:
             with open(out_path, "w", encoding="utf-8") as fh:
                 for row in rows_out:
                     fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-            n_written = len(out_path.read_text(encoding="utf-8").splitlines())
+            # split("\n"), NOT splitlines(): raw U+2028/NEL in u2 text (ensure_ascii=False)
+            # would inflate a splitlines() count and false-fire the all-rows assert
+            n_written = sum(1 for line in out_path.read_text(encoding="utf-8").split("\n") if line)
             assert n_written == len(convs), f"all-rows contract violated: {n_written}"
 
             kept_texts = [r["u2"] for r in rows_out if r["conv_id"] in set(allow)]

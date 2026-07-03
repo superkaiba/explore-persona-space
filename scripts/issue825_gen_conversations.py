@@ -373,7 +373,8 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
 
     use_fixture = fixture is not None
     if use_fixture:
-        fixture_rows = [json.loads(line) for line in fixture.read_text().splitlines() if line]
+        # split("\n"), NOT splitlines(): U+2028/NEL inside JSON strings shred JSONL records
+        fixture_rows = [json.loads(line) for line in fixture.read_text().split("\n") if line]
         if len(fixture_rows) < len(openers):
             raise RuntimeError(
                 f"--assistant-fixture has {len(fixture_rows)} rows; need {len(openers)}."
