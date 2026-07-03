@@ -5906,8 +5906,8 @@
     "901": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/901",
-      "status": "reviewing",
+      "path": "tasks/completed/901",
+      "status": "completed",
       "title": "artifacts: ModelOrganism class + build/verify harness (Phase 0g)"
     },
     "902": {
