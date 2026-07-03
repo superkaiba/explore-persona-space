@@ -6106,8 +6106,8 @@
     "927": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/927",
-      "status": "reviewing",
+      "path": "tasks/completed/927",
+      "status": "completed",
       "title": "workflow-fix: mint fresh EPS_ATTEMPT_ID per GCP launch"
     },
     "928": {
