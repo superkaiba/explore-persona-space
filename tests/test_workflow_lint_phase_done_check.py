@@ -39,6 +39,19 @@ i488), catching a future predicate edit silently zeroing detection; (r)
 default-run bundling pin — a monkeypatched failing check makes the no-flags
 ``main()`` exit 1; (s) pre-commit hook-coverage pin — a local hook runs the
 check with a ``files:`` regex matching representative new-offender paths.
+
+Round-2 additions (binding concern ``phase-done-shell-edge-scoping`` — the
+check must iterate EVERY invocation on a logical line and scope the
+stdout-redirect test to each invocation's own command segment):
+(t) ``clean.py && bad.py`` where only ``bad.py`` emits — the SECOND
+invocation is seen and flagged (one error; pre-fix the first-match-only
+``search`` never reached it); (u) ``bad.py; echo ok > marker.txt`` — an
+unrelated LATER redirect in a different segment does not suppress the
+unredirected emitting invocation (pre-fix the line-global redirect search
+did); (v) a redirect attached directly to the invocation's OWN segment on
+a multi-segment line still suppresses (the live-tree shape the round-1
+probe found on 3 lines — segment scoping must not un-exclude it); plus
+both-emit ``&&`` chains yield one error per edge.
 """
 
 from __future__ import annotations
@@ -647,6 +660,81 @@ def test_precommit_hook_covers_new_offender_paths() -> None:
         for h in matching
         if "files" in h
     ), f"no matching hook's files: regex covers new scripts/*.sh|py offenders: {matching}"
+
+
+# --------------------------------------------------------------------------
+# (t)/(u)/(v) round-2 segment-scoping regression fixtures (binding concern
+# `phase-done-shell-edge-scoping`): every invocation on a logical line is
+# checked, and the stdout-redirect exclusion is scoped to each invocation's
+# OWN command segment (split at unquoted `&&` / `||` / `;` / `|` / lone `&`).
+# --------------------------------------------------------------------------
+
+
+def test_second_invocation_on_and_chain_fails(tmp_path: Path) -> None:
+    """(t) `clean.py && bad.py` where only bad.py emits -> exactly one error
+    naming bad.py. Pre-fix, the first-match-only `search` stopped at
+    clean.py (a clean target) and bad.py was never inspected."""
+    sh = _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\nuv run python scripts/clean.py && uv run python scripts/bad.py\n",
+    )
+    _write(tmp_path, "clean.py", 'print("cells complete")\n')
+    _write(tmp_path, "bad.py", 'print("[phase=done] mid-pipeline")\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(sh) in errors[0]
+    assert "scripts/bad.py" in errors[0]
+    assert "scripts/clean.py" not in errors[0]
+
+
+def test_unrelated_later_redirect_does_not_suppress(tmp_path: Path) -> None:
+    """(u) `bad.py; echo ok > marker.txt` -> one error. The redirect belongs
+    to the LATER `echo` segment; pre-fix the line-global redirect search let
+    it suppress the genuinely non-redirected emitting invocation."""
+    sh = _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\nuv run python scripts/bad.py; echo ok > marker.txt\n",
+    )
+    _write(tmp_path, "bad.py", 'print("[phase=done]")\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(sh) in errors[0]
+    assert "scripts/bad.py" in errors[0]
+
+
+def test_segment_scoped_redirect_still_suppresses(tmp_path: Path) -> None:
+    """(v) A redirect attached directly to the invocation's OWN segment on a
+    multi-segment line still excludes the edge — the shape the round-1 §4.5
+    probe found on 3 live-tree lines; segment scoping must not un-exclude
+    it (the expected live-tree edge set stays at the same 9 edges)."""
+    _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\n"
+        'uv run python scripts/bad.py > "$WORKER_LOG" 2>&1 && echo launched\n'
+        "uv run python scripts/bad.py >> worker.log 2>&1; echo appended\n",
+    )
+    _write(tmp_path, "bad.py", 'print("[phase=done]")\n')
+    assert check_phase_done_reserved(scripts_dir=tmp_path) == []
+
+
+def test_both_invocations_emitting_yield_one_error_per_edge(tmp_path: Path) -> None:
+    """Two emitting targets chained with `&&` produce one error per edge
+    (both are genuine violations; pre-fix only the first was reachable)."""
+    _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\nuv run python scripts/bad_a.py && bash scripts/bad_b.sh\n",
+    )
+    _write(tmp_path, "bad_a.py", 'print("[phase=done]")\n')
+    _write(tmp_path, "bad_b.sh", 'echo "[phase=done]"\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 2, errors
+    text = "\n".join(errors)
+    assert "scripts/bad_a.py" in text
+    assert "scripts/bad_b.sh" in text
 
 
 # --------------------------------------------------------------------------
