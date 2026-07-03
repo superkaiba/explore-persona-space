@@ -88,21 +88,29 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763 LIVE Anthropic Batch graded-judge smoke.")
     ap.add_argument(
         "--rubric-version",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v2.1"),
         default="v1",
-        help="v2 = the reanchor round's observed-exemplar deception rubric "
-        "(requires rubric_v2_exemplars.json; all-deception cases)",
+        help="v2 = the reanchor round's observed-exemplar deception rubric; v2.1 = v2 + the "
+        "disclosure carve-out clause (both require rubric_v2_exemplars.json; all-deception "
+        "cases)",
     )
     args = ap.parse_args()
     rv = args.rubric_version
-    cases = CASES_V2 if rv == "v2" else CASES
+    cases = CASES_V2 if rv in ("v2", "v2.1") else CASES
     prompts = [build_graded_prompt(b, q, c, rubric_version=rv) for b, q, c in cases]
-    if rv == "v2":
+    if rv in ("v2", "v2.1"):
         # the exemplar-bearing prompt is the instrument under test: assert the
         # excerpts thread through + the hash pins a DIFFERENT instrument than v1.
         for anchor, e in load_rubric_v2_exemplars().items():
-            assert e["excerpt"] in prompts[0], f"v2 prompt missing {anchor}-anchor exemplar"
-        assert graded_prompt_hash("deception", "v2") != graded_prompt_hash("deception", "v1")
+            assert e["excerpt"] in prompts[0], f"{rv} prompt missing {anchor}-anchor exemplar"
+        assert graded_prompt_hash("deception", rv) != graded_prompt_hash("deception", "v1")
+    if rv == "v2.1":
+        from explore_persona_space.analysis.issue_763_graded_judge import (
+            RUBRIC_V2P1_DISCLOSURE_CLAUSE,
+        )
+
+        assert RUBRIC_V2P1_DISCLOSURE_CLAUSE in prompts[0], "v2.1 prompt missing carve-out clause"
+        assert graded_prompt_hash("deception", "v2.1") != graded_prompt_hash("deception", "v2")
     items = [(f"e0grd-smoke-{i}", "", "", p) for i, p in enumerate(prompts)]
 
     with tempfile.TemporaryDirectory() as td:

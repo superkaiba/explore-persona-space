@@ -948,6 +948,22 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot, pool_m=
         "headline_predictor": "ridge",
         "rho_graded_ridge": rho_ridge_g,
         "rho_graded_ridge_ci": rho_ridge_g_ci,
+        # Fixed per-context LOCO predictions of the headline graded-ridge arm
+        # (ADDITIVE, `rubric-v2p1-disclosure-carveout` plan §6 cell 2): the
+        # paired per-context Δρ = ρ_v2.1 − ρ_v2 cluster-bootstrap read resamples
+        # the SAME contexts across two fits' FIXED LOCO predictions, so fresh
+        # fit records persist them (committed pre-round checkpoints lack this
+        # field; issue763_v2p1_verdict.py reproduces the v2 arm deterministically
+        # and hard-asserts against the committed ρ). ~50 floats × 2 — tiny.
+        "loco_predictions_graded_ridge": (
+            {
+                "ctx_ids": list(kept),
+                "y_graded": [float(v) for v in graded],
+                "pred": [float(v) for v in np.asarray(ridge_g["chosen_pred"]).reshape(-1)],
+            }
+            if ridge_g["chosen_pred"] is not None
+            else None
+        ),
         "rho_graded_glm": rho_glm_g,
         "rho_graded_PV": rho_pv_g,
         "optimism_delta_graded": optimism_delta,
@@ -1700,6 +1716,13 @@ def main() -> int:
         if args.smoke and rec.get("rho_graded_ridge") is not None:
             assert np.isfinite(rec["rho_graded_ridge"]), "rho_graded_ridge not finite"
             assert rec["triage_verdict"] in ("works", "fails", "noise_limited")
+            # v2p1 plan §6 cell 2: fresh fits persist the headline LOCO
+            # predictions (the paired Δρ read's input) — aligned lengths.
+            lp = rec.get("loco_predictions_graded_ridge")
+            assert lp is not None, "loco_predictions_graded_ridge missing on fresh fit"
+            assert len(lp["ctx_ids"]) == len(lp["pred"]) == len(lp["y_graded"]) > 0, (
+                "loco_predictions_graded_ridge misaligned"
+            )
         # v3 §10.1 interpretation-guard fields present on EVERY behavior record
         # (BLOCKER predictor-results-missing-reduced-power-and-m): m + reduced_power
         # + graded_minus_binary_delta must exist on the degenerate path too.

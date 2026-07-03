@@ -212,19 +212,27 @@ def _headline_bars(ax, rec: dict, cols: list[str], title: str) -> None:
 
 
 def _plot_reanchor_hero(
-    rec_v2: dict, rec_v1: dict, e0_v2: dict, e0_v1: dict, out_path: Path
+    rec_v2: dict,
+    rec_v1: dict,
+    e0_v2: dict,
+    e0_v1: dict,
+    out_path: Path,
+    *,
+    tag_compare: str = "v1 (parent rubric)",
+    tag_results: str = "v2 (re-anchored)",
 ) -> None:
-    """The §5 hero: 2×2 graded-vs-binary before/after (v1 parent left, v2 right).
+    """The §5 hero: 2×2 graded-vs-binary before/after (compare arm left, results right).
 
     Top row: per-context scatter of graded mean vs binary rate (tracking
     Spearman in the panel title). Bottom row: deception headline bars (ρ
     ridge/GLM/PV vs the √r_yy ceiling). One figure answers "did re-anchoring
-    recover the graded read where the binary read was."
+    recover the graded read where the binary read was." The panel tags are
+    caller-supplied (`rubric-v2p1` round: compare = v2 reanchor, results = v2.1).
     """
     cols = _palette(3)
     fig, axes = plt.subplots(2, 2, figsize=(10, 8))
     for j, (e0, rec, tag) in enumerate(
-        ((e0_v1, rec_v1, "v1 (parent rubric)"), (e0_v2, rec_v2, "v2 (re-anchored)"))
+        ((e0_v1, rec_v1, tag_compare), (e0_v2, rec_v2, tag_results))
     ):
         ax = axes[0][j]
         xs, ys = _ctx_scatter_arrays(e0)
@@ -250,14 +258,20 @@ def _plot_reanchor_hero(
 def _load_v2_draw_stats(results_dir: Path) -> list[tuple[float, float]]:
     """(mean, std) of kept per-draw scores per (ctx, probe, completion) from the shards.
 
-    Reads ``raw_completions/judge_reanchor_v2/deception_draws.shard*.jsonl`` under
-    the round dir (the delta-2 per-draw persistence); returns [] when absent
-    (the panel is then skipped with an N/A label).
+    Reads ``raw_completions/judge_reanchor_<rv>/deception_draws.shard*.jsonl``
+    under the round dir (the delta-2 per-draw persistence), preferring the
+    newest rubric bucket present (v2.1 round dirs carry ``judge_reanchor_v2.1``);
+    returns [] when absent (the panel is then skipped with an N/A label).
     """
     import json as _json
 
-    shard_dir = results_dir / "raw_completions" / "judge_reanchor_v2"
-    if not shard_dir.is_dir():
+    shard_dir = None
+    for rv in ("v2.1", "v2"):
+        cand = results_dir / "raw_completions" / f"judge_reanchor_{rv}"
+        if cand.is_dir():
+            shard_dir = cand
+            break
+    if shard_dir is None:
         return []
     import numpy as np
 
@@ -281,14 +295,19 @@ def _plot_reanchor_exploratory(
     e0_v1: dict,
     results_dir: Path,
     out_path: Path,
+    *,
+    tag_compare: str = "v1",
+    tag_results: str = "v2",
 ) -> None:
     """The §5 exploratory dump: spread/bimodality/per-layer/ceiling/drop diagnostics."""
     cols = _palette(4)
+    tag_c = tag_compare.split(" ")[0]  # short rubric tag for legends/bars
+    tag_r = tag_results.split(" ")[0]
     fig, axes = plt.subplots(2, 3, figsize=(16, 8))
 
-    # (1) context-mean histograms v1 vs v2 — the between-context spread read.
+    # (1) context-mean histograms compare vs results — the between-context spread read.
     ax = axes[0][0]
-    for e0, tag, c in ((e0_v1, "v1", cols[0]), (e0_v2, "v2", cols[1])):
+    for e0, tag, c in ((e0_v1, tag_c, cols[0]), (e0_v2, tag_r, cols[1])):
         means = [
             cell["graded_mean"]
             for cell in e0["e0"]["deception"].values()
@@ -299,9 +318,9 @@ def _plot_reanchor_exploratory(
     ax.set_xlabel("context graded mean")
     ax.legend(fontsize=7)
 
-    # (2) pooled per-probe histograms v1 vs v2 — bimodality / mid-mass.
+    # (2) pooled per-probe histograms compare vs results — bimodality / mid-mass.
     ax = axes[0][1]
-    for e0, tag, c in ((e0_v1, "v1", cols[0]), (e0_v2, "v2", cols[1])):
+    for e0, tag, c in ((e0_v1, tag_c, cols[0]), (e0_v2, tag_r, cols[1])):
         vals = [
             pr["graded"]
             for cell in e0["e0"]["deception"].values()
@@ -313,9 +332,9 @@ def _plot_reanchor_exploratory(
     ax.set_xlabel("per-probe graded score")
     ax.legend(fontsize=7)
 
-    # (3) per-layer ρ_graded_ridge curve v2 vs v1.
+    # (3) per-layer ρ_graded_ridge curve results vs compare.
     ax = axes[0][2]
-    for rec, tag, c in ((rec_v1, "v1", cols[0]), (rec_v2, "v2", cols[1])):
+    for rec, tag, c in ((rec_v1, tag_c, cols[0]), (rec_v2, tag_r, cols[1])):
         curve = rec.get("per_layer_rho_graded_ridge") or []
         ys = [v if v is not None else float("nan") for v in curve]
         if ys:
@@ -353,13 +372,13 @@ def _plot_reanchor_exploratory(
     est_tag = "probe-aligned split" if aligned else "independent split (legacy)"
     ax.set_title(f"√(r_yy) by behavior, {est_tag} (hatched = reduced power m<50)", fontsize=9)
 
-    # (5) dropped-draw counts v1 vs v2.
+    # (5) dropped-draw counts compare vs results.
     ax = axes[1][1]
     drops = [
         (e0.get("judge_diagnostics") or {}).get("deception", {}).get("n_graded_dropped", 0)
         for e0 in (e0_v1, e0_v2)
     ]
-    ax.bar(["v1", "v2"], drops, color=[cols[0], cols[1]])
+    ax.bar([tag_c, tag_r], drops, color=[cols[0], cols[1]])
     ax.set_title("dropped graded draws (deception)", fontsize=9)
 
     # (6) per-draw std vs mean scatter (v2 shards, when persisted).
@@ -369,9 +388,9 @@ def _plot_reanchor_exploratory(
         ax.scatter([m for m, _s in stats], [s for _m, s in stats], s=6, alpha=0.4, color=cols[1])
         ax.set_xlabel("per-cell draw mean")
         ax.set_ylabel("per-cell draw std")
-        ax.set_title("v2 per-draw std vs mean", fontsize=9)
+        ax.set_title(f"{tag_r} per-draw std vs mean", fontsize=9)
     else:
-        ax.set_title("v2 per-draw std vs mean (no shards found)", fontsize=9)
+        ax.set_title(f"{tag_r} per-draw std vs mean (no shards found)", fontsize=9)
         ax.set_xticks([])
         ax.set_yticks([])
 
@@ -414,6 +433,16 @@ def main() -> int:
         default=None,
         help="reanchor figure prefix: figures land as fig_763_<prefix>_*.png",
     )
+    ap.add_argument(
+        "--tag-compare",
+        default="v1 (parent rubric)",
+        help="panel label for the --compare-results arm (v2p1 round: 'v2 (re-anchored)')",
+    )
+    ap.add_argument(
+        "--tag-results",
+        default="v2 (re-anchored)",
+        help="panel label for the --results-json arm (v2p1 round: 'v2.1 (carve-out)')",
+    )
     args = ap.parse_args()
 
     _try_paper_style()
@@ -442,7 +471,15 @@ def main() -> int:
     e0_v2 = load_json(e0_v2_path)
     e0_v1 = load_json(args.base_e0)
     hero_path = FIGURE_DIR / f"fig_763_{prefix}_graded_vs_binary.png"
-    _plot_reanchor_hero(rec_v2, rec_v1, e0_v2, e0_v1, hero_path)
+    _plot_reanchor_hero(
+        rec_v2,
+        rec_v1,
+        e0_v2,
+        e0_v1,
+        hero_path,
+        tag_compare=args.tag_compare,
+        tag_results=args.tag_results,
+    )
     _plot_reanchor_exploratory(
         results,
         rec_v2,
@@ -451,6 +488,8 @@ def main() -> int:
         e0_v1,
         args.results_json.parent,
         FIGURE_DIR / f"fig_763_{prefix}_exploratory.png",
+        tag_compare=args.tag_compare,
+        tag_results=args.tag_results,
     )
     assert hero_path.exists(), "hero figure not written"
     print(f"[issue763.plot] wrote reanchor figures fig_763_{prefix}_* under {FIGURE_DIR}")

@@ -772,12 +772,14 @@ def _behavior_floor(behavior: str) -> tuple[int, int]:
 
 
 def _exemplar_exclusion_set(rubric_version: str) -> set[tuple[str, str]]:
-    """The (context_id, probe_sha256) items the v2 rubric embeds (≤3, plan §3a).
+    """The (context_id, probe_sha256) items the v2/v2.1 rubric embeds (≤3, plan §3a).
 
-    Empty for v1. For v2, read from the committed exemplar config (fail-loud if
-    absent — the v2 rubric is undefined without it).
+    Empty for v1. For v2 AND v2.1 (which carries the SAME 3 exemplars verbatim —
+    the carve-out clause is additive, plans/v10.md §3a/§3b), read from the
+    committed exemplar config (fail-loud if absent — the rubric is undefined
+    without it).
     """
-    if rubric_version != "v2":
+    if rubric_version not in ("v2", "v2.1"):
         return set()
     ex = load_rubric_v2_exemplars()
     return {(e["context_id"], e["probe_sha256"]) for e in ex.values()}
@@ -931,22 +933,49 @@ def _apply_yield_flags(per_ctx: dict[str, dict], floor: int) -> dict:
     }
 
 
-def _smoke_assert_v2(out: dict, base_e0: dict, excl: set[tuple[str, str]]) -> None:
-    """The §3c-step-2 smoke asserts for the v2 graded-only run.
+def _smoke_assert_v2(
+    out: dict, base_e0: dict, excl: set[tuple[str, str]], rubric_version: str = "v2"
+) -> None:
+    """The §3c-step-1 smoke asserts for the v2 / v2.1 graded-only run.
 
-    (1) the v2 prompt carries every exemplar excerpt verbatim; (2) the recorded
-    ``graded_prompt_hash`` differs from v1's; (3) every exemplar (ctx, probe)
+    (1) the prompt carries every exemplar excerpt verbatim (v2.1 exemplars are
+    byte-equal to v2's — plans/v10.md §3a); (2) the recorded
+    ``graded_prompt_hash`` matches the module's and differs from v1's (v2.1:
+    additionally differs from v2's, AND the carve-out clause is present in the
+    v2.1 prompt but absent from the v2 prompt); (3) every exemplar (ctx, probe)
     item is flagged + dropped from the per-context graded mean (``graded: None``,
     ``n_graded`` consistent); (4) binary fields byte-equal to the parent E0
     (re-checked via ``_assert_binary_verbatim`` at judge time; this re-asserts
     on the SERIALIZED output dict).
     """
-    prompt = build_graded_prompt("deception", "Q?", "A.", rubric_version="v2")
+    from explore_persona_space.analysis.issue_763_graded_judge import (
+        RUBRIC_V2P1_DISCLOSURE_CLAUSE,
+    )
+
+    prompt = build_graded_prompt("deception", "Q?", "A.", rubric_version=rubric_version)
     for anchor, e in load_rubric_v2_exemplars().items():
-        assert e["excerpt"] in prompt, f"v2 prompt missing the {anchor}-anchor exemplar text"
-    h_v2 = out["graded_prompt_hash"]["deception"]
-    assert h_v2 == graded_prompt_hash("deception", "v2")
-    assert h_v2 != graded_prompt_hash("deception", "v1"), "v2 prompt hash == v1 (no re-anchor?)"
+        assert e["excerpt"] in prompt, (
+            f"{rubric_version} prompt missing the {anchor}-anchor exemplar text"
+        )
+    h_rv = out["graded_prompt_hash"]["deception"]
+    assert h_rv == graded_prompt_hash("deception", rubric_version)
+    assert h_rv != graded_prompt_hash("deception", "v1"), (
+        f"{rubric_version} prompt hash == v1 (no re-anchor?)"
+    )
+    if rubric_version == "v2.1":
+        # plans/v10.md acceptance criterion 2 + module smoke contract (§3b):
+        # hash(v2.1) ∉ {hash(v1), hash(v2)}; the clause present iff v2.1.
+        assert h_rv != graded_prompt_hash("deception", "v2"), (
+            "v2.1 prompt hash == v2 (carve-out clause not threaded?)"
+        )
+        assert RUBRIC_V2P1_DISCLOSURE_CLAUSE in prompt, "v2.1 prompt missing the carve-out clause"
+        prompt_v2 = build_graded_prompt("deception", "Q?", "A.", rubric_version="v2")
+        assert RUBRIC_V2P1_DISCLOSURE_CLAUSE not in prompt_v2, (
+            "carve-out clause leaked into the v2 prompt (v2 must stay byte-identical)"
+        )
+        assert prompt.replace(RUBRIC_V2P1_DISCLOSURE_CLAUSE + "\n", "", 1) == prompt_v2, (
+            "v2.1 prompt != v2 prompt + exactly one clause line after the axis line"
+        )
     per_ctx = out["e0"]["deception"]
     n_flagged = 0
     for ctx_id, sha in excl:
@@ -998,10 +1027,11 @@ def main() -> int:
     ap.add_argument("--mock-judge", action="store_true", help="deterministic offline judge (smoke)")
     ap.add_argument(
         "--rubric-version",
-        choices=("v1", "v2"),
+        choices=("v1", "v2", "v2.1"),
         default="v1",
         help="graded-rubric anchors: v1 (parent abstract) | v2 (observed-exemplar re-anchor, "
-        "deception only — plan §3a)",
+        "deception only — reanchor plan §3a) | v2.1 (v2 + the disclosure carve-out clause, "
+        "deception only — plans/v10.md §3a)",
     )
     ap.add_argument(
         "--graded-only",
@@ -1034,14 +1064,15 @@ def main() -> int:
 
     if args.graded_only != (args.base_e0 is not None):
         ap.error("--graded-only and --base-e0 must be passed together")
-    if args.rubric_version == "v2":
+    if args.rubric_version in ("v2", "v2.1"):
         if set(args.behaviors) != {"deception"}:
             ap.error(
-                "--rubric-version v2 is deception-only (re-anchoring any other behavior "
-                "is a plan must-ask — re-plan, never silently do)"
+                f"--rubric-version {args.rubric_version} is deception-only (re-anchoring "
+                "any other behavior is a plan must-ask — re-plan, never silently do)"
             )
-        # fail-loud early if the exemplar config is missing (the v2 rubric's
-        # data dependency) — before any gen staging / API dispatch.
+        # fail-loud early if the exemplar config is missing (the v2/v2.1 rubric's
+        # data dependency — v2.1 embeds the SAME 3 exemplars verbatim) — before
+        # any gen staging / API dispatch.
         load_rubric_v2_exemplars()
     if args.graded_only and "format_style" in args.behaviors:
         ap.error("--graded-only is undefined for format_style (structural, no judge)")
@@ -1155,8 +1186,8 @@ def main() -> int:
         else:
             _upload_draw_shards(shard_dir, args.rubric_version)
 
-    if args.smoke and args.rubric_version == "v2" and args.graded_only:
-        _smoke_assert_v2(out, base_e0, excl)
+    if args.smoke and args.rubric_version in ("v2", "v2.1") and args.graded_only:
+        _smoke_assert_v2(out, base_e0, excl, rubric_version=args.rubric_version)
 
     print(
         f"[issue763.judge] wrote E0 for {len(e0)} behaviors -> {args.out_json}; yield={yield_flags}"
