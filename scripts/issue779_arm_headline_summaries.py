@@ -276,7 +276,7 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                 pts, los, his = [], [], []
                 for g in groups:
                     if g == "v_x mean (r7 baseline)":
-                        mm = entry["baseline_mean_summary"]["monitors"].get(f"h_{arm}_cos")
+                        mm = entry["baseline_mean_summary"].get("monitors", {}).get(f"h_{arm}_cos")
                         if mm is None:
                             pts.append(np.nan)
                             los.append(0.0)
@@ -284,7 +284,9 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                             continue
                         pt, lo, hi = mm["point"], mm["lo"], mm["hi"]
                     else:
-                        mm = entry["per_arm"][arm]["summaries"][g]["cos"][mode]
+                        # saved entries are already mode-flattened (main stores
+                        # d["summaries"][s]["cos"][mode]), so no [mode] here
+                        mm = entry["per_arm"][arm]["summaries"][g]["cos"]
                         pt, lo, hi = mm["point"], mm["lo"], mm["hi"]
                     pts.append(pt)
                     los.append(max(0.0, pt - lo) if np.isfinite(lo) else 0.0)
@@ -298,8 +300,8 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                     color=colors[ai],
                     label=f"h — {ARM_LABELS[arm]}" if (row == 0 and col == 0) else None,
                 )
-            pv = entry["references"]["pv_raw"][mode]["point"]
-            orc = entry["references"]["oracle"][mode]["point"]
+            pv = entry["references"]["pv_raw"]["point"]
+            orc = entry["references"]["oracle"]["point"]
             ax.axhline(pv, color="gray", ls="--", lw=1.0)
             ax.axhline(orc, color="black", ls=":", lw=1.0)
             ax.axhline(0.0, color="gray", lw=0.5)
