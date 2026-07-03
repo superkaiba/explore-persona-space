@@ -6257,8 +6257,8 @@
     "946": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/946",
-      "status": "planning",
+      "path": "tasks/approved/946",
+      "status": "approved",
       "title": "workflow-fix: verify_plan check \u2014 causal-branch wording must not exceed diagnostics"
     },
     "947": {
