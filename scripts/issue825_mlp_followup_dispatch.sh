@@ -36,6 +36,11 @@ if [[ -z "$SMOKE" ]]; then
 import os
 from pathlib import Path
 
+# Hot-fix (run-2): hf_transfer hung the run-1 stage at 4.4GB/55GB with no timeout
+# (25+ min zero progress); plain ranged streams measured 12.7 MB/s/stream from HF,
+# so 8 default workers without hf_transfer stage ~55GB in ~10 min.
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+
 from huggingface_hub import snapshot_download
 
 assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (source .env before staging)"
