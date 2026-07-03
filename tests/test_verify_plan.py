@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-14) ─
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-16) ─
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -152,10 +152,11 @@ def test_good_plan_passes_all():
         "c13_empirical_gate_attainability": "SKIP",
         "c14_hypothesis_branch_coherence": "SKIP",
         "c15_failloud_test_coverage": "SKIP",
+        "c16_reference_headline_distinction": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 16
+    assert len(results) == 17
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1102,6 +1103,31 @@ def test_c12_fenced_battery_does_not_trigger():
     assert _status(plan, "c12_battery_multiplier") == "SKIP"
 
 
+def test_c12_window_radius_boundary_after_refactor():
+    # Regression for the `_trigger_windows` parametrization (task #937): c12's
+    # ±15-raw-line radius must not shift. Evidence exactly 15 raw lines below
+    # the trigger line counts; one line farther does not. The evidence line
+    # deliberately avoids battery-trigger vocabulary so it cannot open its own
+    # window (asserted below, not assumed).
+    evidence = "Basis: draws × 24 cells; implementation: batched via one subset-sum GEMM."
+    assert not verify_plan._BATTERY_TRIGGER_RE.search(evidence)
+
+    def plan_with_gap(n_blank: int) -> str:
+        # Evidence lands (n_blank + 1) raw lines below the trigger line.
+        return (
+            GOOD_PLAN
+            + "\n## 12. Null battery\n\n"
+            + BATTERY_SENT
+            + "\n"
+            + "\n" * n_blank
+            + evidence
+            + "\n"
+        )
+
+    assert _status(plan_with_gap(14), "c12_battery_multiplier") == "PASS"  # +15 lines: in
+    assert _status(plan_with_gap(15), "c12_battery_multiplier") == "FAIL"  # +16 lines: out
+
+
 # ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
 
 # Near-verbatim #816 shapes: the synthetic fixtures ARE the incident text
@@ -1662,6 +1688,209 @@ def test_c15_fenced_evidence_line_passes():
     assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
 
 
+# ─── Check 16 — re-extracted reference vs committed headline ───────────────
+
+# Near-verbatim #811 v3 shapes (task #937 incident): the synthetic fixtures
+# ARE the incident text — committed tests never read real tasks/ plan files
+# (the c13 suite's convention).
+FOLLOWUP_HEADER = (
+    "\n## 12. Round context\n\n"
+    "This is a same-issue follow-up round (AMENDMENT to the completed maxp round), "
+    "authorized by the `epm:followup-scope` marker; the result folds into THIS\n"
+    "issue's clean-result body.\n"
+)
+REEXTRACT_BLOCK = (
+    "\n### Reference arms\n\n"
+    "| **Content average (reference, re-extracted)** | v1 mean through this round's "
+    "reader | parity vs committed v1 cells |\n\n"
+    "Parity: re-extracted mean + turn_nl vs v1's committed cells; a flipped CALL on "
+    "any reference is REPORTED as a replication-stability finding (adjudication then "
+    "uses THIS round's internally consistent store).\n"
+)
+DISTINCTION_SENTENCE = (
+    "\nHeadline adjudication: the committed v1/v2 headline cells remain the "
+    "adjudicated evidence for the standing clean-result; this round's re-extracted "
+    "references serve only as same-pass comparators for the NEW arms.\n"
+)
+C16_INCIDENT = GOOD_PLAN + FOLLOWUP_HEADER + REEXTRACT_BLOCK
+C16 = "c16_reference_headline_distinction"
+
+
+def test_c16_not_triggered_skips():
+    assert _status(GOOD_PLAN, C16) == "SKIP"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c16_kind_infra_skips(kind):
+    assert _status(C16_INCIDENT, C16, kind=kind) == "SKIP"
+
+
+def test_c16_reextraction_without_followup_skips():
+    # Half (a) fires; half (b) is absent (REEXTRACT_BLOCK carries no
+    # same-issue-follow-up / fold vocabulary) — the SKIP detail names the
+    # missing fold half.
+    _, by_id = _run(GOOD_PLAN + REEXTRACT_BLOCK)
+    r = by_id[C16]
+    assert r.status == "SKIP"
+    assert "same-issue follow-up" in r.detail
+
+
+def test_c16_followup_without_reextraction_skips():
+    _, by_id = _run(GOOD_PLAN + FOLLOWUP_HEADER)
+    r = by_id[C16]
+    assert r.status == "SKIP"
+    assert "no re-extraction" in r.detail
+
+
+def test_c16_811_v3_clause_shape_warns():
+    # Acceptance criterion 3: the near-verbatim #811 v3 §6 clause + §5
+    # conditions-table row shape WARNs — replication-stability vocabulary
+    # alone is exactly what the incident plan carried; it must not satisfy.
+    _, by_id = _run(C16_INCIDENT)
+    r = by_id[C16]
+    assert r.status == "WARN"
+    assert "same-pass comparator" in r.detail
+
+
+def test_c16_distinguishing_sentence_passes():
+    assert _status(C16_INCIDENT + DISTINCTION_SENTENCE, C16) == "PASS"
+
+
+def test_c16_same_pass_comparator_phrase_passes():
+    plan = C16_INCIDENT + "\nThe re-extracted values are same-pass comparators.\n"
+    assert _status(plan, C16) == "PASS"
+
+
+def test_c16_negated_replacement_passes():
+    # S3-only satisfier: pin the negated-replacement branch as LIVE — the
+    # other two satisfier regexes must NOT match this fixture, so the PASS
+    # can only come from _C16_NONREPLACE_RE.
+    plan = (
+        C16_INCIDENT
+        + "\nA flipped reference CALL never silently replaces the committed headline.\n"
+    )
+    text = verify_plan.strip_fences(plan)
+    assert verify_plan._C16_NONREPLACE_RE.search(text)
+    assert not verify_plan._C16_SAMEPASS_RE.search(text)
+    assert not verify_plan._C16_DISTINCTION_RE.search(text)
+    assert _status(plan, C16) == "PASS"
+
+
+def test_c16_bare_same_pass_does_not_satisfy():
+    # #811 v3:189 shape — "SAME pass" without "comparator" is not the term of
+    # art and must not satisfy S1.
+    plan = (
+        C16_INCIDENT + "\nWe re-extract the references in the SAME pass as shared-R extraction.\n"
+    )
+    assert _status(plan, C16) == "WARN"
+
+
+def test_c16_unnegated_replaces_does_not_satisfy():
+    # #811 v3:270 shape — un-negated "replaces" (figure-layout prose) must not
+    # satisfy the negated-replacement shape S3.
+    plan = C16_INCIDENT + "\nThe heatmap layout replaces grouped bars.\n"
+    assert _status(plan, C16) == "WARN"
+
+
+def test_c16_artifacts_untouched_does_not_satisfy():
+    # #811 v3:499 shape — a files-not-adjudication parenthetical: "committed"
+    # is stopped by the ';' and "artifacts" is not a committed-headline noun.
+    plan = C16_INCIDENT + "\n(committed; prior rounds' artifacts untouched)\n"
+    assert _status(plan, C16) == "WARN"
+
+
+def test_c16_file_retention_sentence_satisfies_s2_accepted():
+    # DELIBERATE accept-and-document decision (task #937): a files-on-disk
+    # retention sentence DOES satisfy S2 ("committed ... cells ... remain").
+    # Excluding it would require dropping cells/values from the
+    # committed-headline noun set, which breaks the legitimate
+    # "the committed cells remain the adjudicated evidence" shape (there the
+    # retention verb precedes "evidence", so the matchable noun must be
+    # "cells"). The check is WARN-only and surfaces, never adjudicates — the
+    # Statistics critic owns the files-vs-adjudication semantic call. Pinned
+    # so a future regex tightening flips this test CONSCIOUSLY, not silently.
+    plan = C16_INCIDENT + "\nThe committed v1 cells remain untouched on disk in eval_results/.\n"
+    assert _status(plan, C16) == "PASS"
+
+
+def test_c16_warn_detail_roundtrip():
+    # The WARN detail must teach a sentence that actually satisfies: this is
+    # the most natural sentence a planner writes after reading it.
+    plan = (
+        C16_INCIDENT + "\nThe committed headline values remain the adjudicated evidence; this "
+        "round's re-extracted references are same-pass comparators only.\n"
+    )
+    assert _status(plan, C16) == "PASS"
+
+
+def test_c16_na_escape_passes():
+    plan = C16_INCIDENT + "\nN/A — no re-extracted reference arms.\n"
+    _, by_id = _run(plan)
+    r = by_id[C16]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c16_kind_analysis_warns():
+    # Scope parity with c12/c14: kind=analysis triggers too; the WARN never
+    # blocks (overall stays ok — c16 is WARN-only for BOTH kinds).
+    ok, by_id = _run(C16_INCIDENT, kind="analysis")
+    assert by_id[C16].status == "WARN"
+    assert ok is True
+
+
+def test_c16_negated_reextraction_mention_does_not_trigger():
+    # Calibration refinement (2026-07-03 sweep): a plan ASSERTING it does NOT
+    # re-extract ("NO re-extraction of r_B" — the #778/#559/#561/#810-v1-3
+    # noise class) is not a trigger; the negation lookbehind drops it.
+    plan = (
+        GOOD_PLAN
+        + FOLLOWUP_HEADER
+        + "\nThis amendment performs no re-extraction of the reference arms; the "
+        "committed v1 cells are reused as-is, and the direction is not re-extracted.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C16]
+    assert r.status == "SKIP"
+    assert "no re-extraction" in r.detail
+
+
+def test_c16_regeneration_window_only_does_not_trigger():
+    # Calibration refinement (§4.5 pre-authorized demotion, exercised on the
+    # 2026-07-03 sweep): `re-generat` requires reference vocab on the SAME
+    # line — an adjacent-line co-occurrence (doc/data-regeneration noise:
+    # #491/#537/#542/#558/#597/#685/#763/#825 class) must not trigger.
+    plan = (
+        GOOD_PLAN
+        + FOLLOWUP_HEADER
+        + "\nThe monitoring corpus is regenerated from the frozen seed list.\n"
+        "Downstream, agreement vs committed v1 cells is asserted separately.\n"
+    )
+    assert _status(plan, C16) == "SKIP"
+
+
+def test_c16_regeneration_same_line_triggers():
+    # The regen branch still fires on genuine same-line adjacency.
+    plan = (
+        GOOD_PLAN
+        + FOLLOWUP_HEADER
+        + "\nThe reference cells are regenerated through this round's reader.\n"
+    )
+    assert _status(plan, C16) == "WARN"
+
+
+def test_c16_fenced_trigger_does_not_fire():
+    # Re-extraction vocabulary ONLY inside a code fence is not a trigger —
+    # pins the fence-masked half-(a) path (mirror of
+    # test_c12_fenced_battery_does_not_trigger).
+    plan = (
+        GOOD_PLAN
+        + FOLLOWUP_HEADER
+        + "\n## 13. Example\n\n```\nre-extract the reference arms; parity vs committed v1 cells\n```\n"
+    )
+    assert _status(plan, C16) == "SKIP"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1711,12 +1940,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 9
+    assert payload["n_skip"] == 10
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 16
-    assert len({c["id"] for c in payload["checks"]}) == 16
+    assert len(payload["checks"]) == 17
+    assert len({c["id"] for c in payload["checks"]}) == 17
 
 
 def test_cli_exit_one_on_fail(tmp_path):
