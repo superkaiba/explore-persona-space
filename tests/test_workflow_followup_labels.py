@@ -211,6 +211,25 @@ def test_label_parse_all_note_formats():
         )
         == "em-provenance-robustness"
     )
+    # COMBINED bullet+bold: a dash-bullet wrapping a bold field. Corpus-clean
+    # today but plausible future drift (r2 review Minor); a sequential
+    # strip()/lstrip("-*") chain stops at the space after "-" and misses the
+    # bold marker behind it.
+    assert (
+        parse_followup_note_field(
+            "- **followup_label:** combined-bullet-bold-round\n- **source:** user-chat",
+            "followup_label",
+        )
+        == "combined-bullet-bold-round"
+    )
+    # star-bullet + bold sibling of the same combined form.
+    assert (
+        parse_followup_note_field(
+            "* **followup_label:** star-bullet-bold-round",
+            "followup_label",
+        )
+        == "star-bullet-bold-round"
+    )
     # single-line run-marker form: first-token rule (kebab-slug labels carry
     # no whitespace)
     assert (
@@ -336,6 +355,34 @@ def test_leading_unlabeled_scope_pseudo_label_nondispatchable():
     assert unrun_followup_labels(closed) == []
 
 
+def test_pseudo_founded_group_stays_nondispatchable_after_inherited_correction():
+    # r2 Major 2 (persisted concern `pseudo-label-inherit-dispatchable`): an
+    # unlabeled CORRECTION following a pseudo-founded group inherits into it
+    # (raising the group's authoritative entry) but must NOT flip it
+    # dispatchable — the group's label is still the malformed
+    # `unlabeled-<ts>` (kebab-slug contract violation), a repair item until
+    # re-posted with a proper `followup_label`. Dispatchability is
+    # FOUNDING-based, not last-entry-parse-mode-based.
+    events = [
+        _scope("2026-06-28T09:00:00Z", "malformed scope note with no fields", version=1),
+        _scope(
+            "2026-06-28T10:00:00Z",
+            "CORRECTION to the earlier epm:followup-scope: still no label line.",
+            version=2,
+        ),
+    ]
+    (group,) = followup_label_groups(events)
+    assert group["followup_label"] == "unlabeled-2026-06-28T09:00:00Z"
+    assert group["n_entries"] == 2
+    # The correction IS the authoritative entry (inherit semantics intact)…
+    assert group["authoritative"]["version"] == 2
+    assert group["label_parse"] == "inherited-from-previous"
+    # …but the pseudo-founded group stays a non-dispatchable repair item.
+    assert group["dispatchable"] is False
+    (unrun_group,) = unrun_followup_labels(events)
+    assert unrun_group["dispatchable"] is False
+
+
 # ─── 7. executing-label resolution: breadcrumb first, head fallback ──────────
 
 
@@ -433,6 +480,64 @@ def test_source_falls_back_across_group_entries():
     (group,) = followup_label_groups(events)
     assert group["source"] == "user-chat"
     assert group["user_initiated"] is True
+
+
+# ─── 8b. the #480 duplicate-version anomaly: chronological (ts, version) scan ─
+
+
+def test_480_duplicate_version_rows_scan_chronologically():
+    # The REAL #480 anomaly (plan §12 assumption 4, corrected in Phase 2):
+    # per-kind version monotonicity is VIOLATED in the wild — two scope rows
+    # share `version: 1` with a v2 chronologically BETWEEN them. The scan key
+    # is (ts, version) — chronological with version tiebreak. A (version, ts)
+    # mutant scans the late duplicate-v1 row BEFORE the between v2 row, which
+    # (a) reorders the first-armed group order and (b) mis-attributes the
+    # trailing unlabeled CORRECTION to the wrong previous label.
+    events = [
+        _scope(
+            "2026-06-11T10:00:00Z",
+            "followup_label: sycophancy-dose-response\nsource: user-chat",
+            version=1,
+        ),
+        _scope(
+            "2026-06-11T11:00:00Z",
+            "followup_label: between-label\nsource: proposer-9b-cheap",
+            version=2,
+        ),
+        _scope(
+            "2026-06-11T12:00:00Z",
+            "followup_label: late-duplicate-v1\nsource: proposer-9b-cheap",
+            version=1,
+        ),
+        _scope(
+            "2026-06-11T13:00:00Z",
+            "CORRECTION: sharpen the previous scope's eval spec.",
+            version=3,
+        ),
+    ]
+    groups = followup_label_groups(events)
+    # First-armed group order is CHRONOLOGICAL despite the duplicate version
+    # numbers (a version-primary mutant yields [..., late-duplicate-v1,
+    # between-label]).
+    assert [g["followup_label"] for g in groups] == [
+        "sycophancy-dose-response",
+        "between-label",
+        "late-duplicate-v1",
+    ]
+    # The unlabeled CORRECTION attributes to the CHRONOLOGICALLY previous
+    # label (late-duplicate-v1); a version-primary mutant would scan
+    # between-label last and mis-attribute the correction there.
+    late = groups[2]
+    assert late["n_entries"] == 2
+    assert late["authoritative"]["version"] == 3
+    assert late["dispatchable"] is True
+    assert groups[1]["n_entries"] == 1
+    # Queue mechanics unaffected: user-initiated first, then oldest armed ts.
+    assert [g["followup_label"] for g in unrun_followup_labels(events)] == [
+        "sycophancy-dose-response",
+        "between-label",
+        "late-duplicate-v1",
+    ]
 
 
 # ─── 8c. retro-close evidence is mechanical + exact-label only ───────────────
