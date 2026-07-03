@@ -361,6 +361,10 @@ def process_trait(trait, split, device, args, gru_so_maps, sigma, npz, bench, *,
                             "scheme": scheme,
                             "source": src,
                             "mode": mode,
+                            # per-cell point deltas feed the AGGREGATE paired-delta (H2
+                            # STOP-READs 2/3: "centred on/below zero in aggregate").
+                            "delta_vs_ridge": deltas["vs_ridge"][mode].get("delta"),
+                            "delta_vs_prefix_gru": deltas["vs_prefix_gru"][mode].get("delta"),
                             **per_mode_win[mode],
                         }
                     )
@@ -405,8 +409,51 @@ def process_trait(trait, split, device, args, gru_so_maps, sigma, npz, bench, *,
     }
 
 
-def aggregate_wincounts(cell_records: list[dict]) -> dict:
-    """DV2 headline: 68-cell PRIMARY-grid win-counts + BH-corrected newly-winning subcount."""
+def _aggregate_paired_delta(cell_records: list[dict], key: str, *, n_boot: int, seed: int) -> dict:
+    """Aggregate paired within-condition-r delta over the 68-cell PRIMARY grid (H2 STOP-READs 2/3).
+
+    Aggregation unit (documented per plan §7): the CELL — each of the 68
+    (trait × source × mode) primary cells contributes ONE per-cell point delta
+    (source-only-GRU − comparator within-condition r). The aggregate point is the
+    MEAN of those cell deltas; the 95% CI is a joint bootstrap that resamples the
+    CELLS with replacement (seed 0) and re-means per replicate. This answers "is the
+    aggregate paired-delta centred on / below / above zero" directly. (Per-context
+    pooling across heterogeneous traits is ill-defined — different traits have
+    disjoint condition sets — so the cell is the well-defined joint resample unit.)
+    """
+    unit = (
+        "mean over the PRIMARY-grid (trait × source × mode) cells of the per-cell paired "
+        "within-condition-r delta (source-only-GRU − comparator); 95% CI by joint bootstrap "
+        "resampling the cells with replacement (seed 0)"
+    )
+    vals = np.asarray(
+        [r[key] for r in cell_records if r.get(key) is not None and np.isfinite(r[key])],
+        dtype=np.float64,
+    )
+    if vals.size == 0:
+        return {
+            "delta": float("nan"),
+            "lo": float("nan"),
+            "hi": float("nan"),
+            "n_boot": 0,
+            "n_cells": 0,
+            "unit": unit,
+        }
+    rng = np.random.default_rng(seed)
+    m = vals.size
+    boot = np.array([vals[rng.choice(m, size=m, replace=True)].mean() for _ in range(n_boot)])
+    return {
+        "delta": float(vals.mean()),
+        "lo": float(np.quantile(boot, 0.025)),
+        "hi": float(np.quantile(boot, 0.975)),
+        "n_boot": int(n_boot),
+        "n_cells": int(m),
+        "unit": unit,
+    }
+
+
+def aggregate_wincounts(cell_records: list[dict], *, n_boot: int, seed: int) -> dict:
+    """DV2 headline: 68-cell PRIMARY-grid win-counts + aggregate paired-deltas + BH subcount."""
     n_cells = len(cell_records)
     gru_wins = sum(r["gru_source_only_win"] for r in cell_records)
     ridge_wins = sum(r["ridge_alone_win"] for r in cell_records)
@@ -420,9 +467,22 @@ def aggregate_wincounts(cell_records: list[dict]) -> dict:
         "chance_line_shuffled_wins": chance,
         "newly_winning_subcount": len(newly),
         "newly_winning_bh": bh,
+        # Aggregate paired-delta vs the matched-info ridge (the H2 STOP-READ 2/3 statistic)
+        # + vs the prefix-GRU (the matched-on-recipe cross-transport-regime bonus read).
+        "dv2_aggregate_paired_delta_vs_ridge": _aggregate_paired_delta(
+            cell_records, "delta_vs_ridge", n_boot=n_boot, seed=seed
+        ),
+        "dv2_aggregate_paired_delta_vs_prefix_gru": _aggregate_paired_delta(
+            cell_records, "delta_vs_prefix_gru", n_boot=n_boot, seed=seed
+        ),
         "predicate": (
             "beats BOTH raw_source AND id_transport, per-context-paired 95% CI lo > 0 "
             "(#779 bootstrap_delta_ci, seed 0)"
+        ),
+        "aggregate_delta_note": (
+            "dv2_aggregate_paired_delta_vs_ridge is the H2 STOP-READ 2/3 statistic — the "
+            "aggregate source-only-GRU − ridge within-condition-r delta over the 68-cell grid; "
+            "'centred on/below zero' = confirm (ridge stands), CI clear of zero above = flip"
         ),
         "chance_note": (
             "chance line = cells where the shuffled-context-null ridge transport passes the "
@@ -541,7 +601,9 @@ def main() -> int:
         C.write_json_atomic(args.out_dir / "retention_gru_source_only.json", retention_all)
         C.write_json_atomic(args.out_dir / "transport_fidelity_gru_source_only.json", fidelity_all)
 
-    benchmark["dv2_aggregate_wincounts"] = aggregate_wincounts(all_cell_records)
+    benchmark["dv2_aggregate_wincounts"] = aggregate_wincounts(
+        all_cell_records, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
+    )
     logger.info("[dv2] %s", benchmark["dv2_aggregate_wincounts"])
     C.write_json_atomic(args.out_dir / "stage1_gru_source_only.json", benchmark)
     np.savez(args.out_dir / "gru_source_only_projections.npz", **proj_all)

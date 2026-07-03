@@ -77,29 +77,45 @@ uv run python scripts/issue841_gru_source_only_stage1.py --device "$DEVICE" --ou
 log_phase plots "start"
 uv run python scripts/issue841_gru_source_only_plots.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR" || true
 
-# ── upload state-dicts (skip in smoke; tracked-gap on failure) ────────────────────
+# ── upload state-dicts (PRIVATE overflow repo, FAIL-LOUD; skip in smoke) ───────────
+# The account-wide HF public-LFS quota 403 is live, so the >10 MB state-dicts (LFS)
+# route to the PRIVATE overflow repo (headroom) under issue841_gru_source_only/, with a
+# non-LFS OVERFLOW_POINTER.json breadcrumb committed to the canonical dataset repo (the
+# non-LFS git-blob path succeeds over the public quota). FAIL-LOUD: no `||` swallow — under
+# `set -e` a failed upload aborts the run BEFORE the sentinel + [phase=done], so a silent
+# artifact loss cannot happen (the result JSONs are separately git-committed).
 UPLOAD_STATUS="skipped-smoke"
 if [ "${EPM_I841GSO_SMOKE:-0}" != "1" ]; then
-  log_phase upload "start (state-dicts → issue841_gru_source_only/)"
-  if uv run python -c "
-import sys
+  log_phase upload "start (state-dicts → PRIVATE overflow issue841_gru_source_only/ + canonical pointer)"
+  uv run python -c "
+import io, json, os, sys, time
 sys.path.insert(0, 'src'); sys.path.insert(0, 'scripts')
 from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
-from huggingface_hub import HfApi
-from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
-HfApi().upload_folder(
-    folder_path=sys.argv[1], path_in_repo='issue841_gru_source_only',
-    repo_id=DEFAULT_DATASET_REPO, repo_type='dataset', allow_patterns=['*.pt'],
-)
-print('[upload] state-dicts uploaded to', DEFAULT_DATASET_REPO, 'issue841_gru_source_only/')
-" "$OUT_DIR"; then
-    UPLOAD_STATUS="ok"
-  else
-    UPLOAD_STATUS="failed"
-    log_phase upload "ERROR — state-dict HF upload FAILED (regenerable from seed+cached tensors; \
-result JSONs are durable in git); recorded as a tracked gap in the sentinel"
-  fi
+from huggingface_hub import HfApi, list_repo_files
+from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, DEFAULT_OVERFLOW_REPO
+out_dir, sub = sys.argv[1], 'issue841_gru_source_only'
+api = HfApi(token=os.environ.get('HF_TOKEN'))
+# 1. LFS state-dicts -> PRIVATE overflow repo (public-LFS quota 403 is live; private has headroom)
+api.create_repo(DEFAULT_OVERFLOW_REPO, repo_type='model', private=True, exist_ok=True)
+api.upload_folder(folder_path=out_dir, path_in_repo=sub, repo_id=DEFAULT_OVERFLOW_REPO,
+                  repo_type='model', allow_patterns=['*.pt'])
+present = sorted(f for f in list_repo_files(DEFAULT_OVERFLOW_REPO, repo_type='model')
+                 if f.startswith(sub + '/') and f.endswith('.pt'))
+assert len(present) >= 2, f'overflow state-dict upload incomplete (expected >=2 .pt): {present}'
+# 2. non-LFS pointer breadcrumb -> CANONICAL dataset repo (small JSON rides the non-LFS path,
+#    which succeeds over the public-storage quota) so a consumer/verifier finds the real location.
+pointer = {'overflow_repo': DEFAULT_OVERFLOW_REPO, 'overflow_repo_type': 'model',
+           'path_in_repo': sub, 'files': present, 'ts': time.time(),
+           'reason': 'GRU state-dicts (LFS >10MB) rerouted to the private overflow repo; '
+                     'public-LFS quota 403 live'}
+api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(pointer, indent=2).encode('utf-8')),
+                repo_id=DEFAULT_DATASET_REPO, path_in_repo=sub + '/OVERFLOW_POINTER.json',
+                repo_type='dataset')
+print('[upload] state-dicts ->', DEFAULT_OVERFLOW_REPO, '(private, model)', present,
+      '; pointer ->', DEFAULT_DATASET_REPO, sub + '/OVERFLOW_POINTER.json')
+" "$OUT_DIR"
+  UPLOAD_STATUS="overflow-private"
 fi
 
 # ── end-of-run sentinel + terminal phase line ────────────────────────────────────
@@ -120,7 +136,9 @@ json.dump({
       'retention': os.environ['OUT_DIR'] + '/retention_gru_source_only.json',
       'fidelity': os.environ['OUT_DIR'] + '/transport_fidelity_gru_source_only.json',
       'projections': os.environ['OUT_DIR'] + '/gru_source_only_projections.npz',
-      'state_dicts_hf': 'issue841_gru_source_only/gru_source_only_{raw,rmsnorm}.pt',
+      'state_dicts_hf': 'PRIVATE overflow superkaiba1/explore-persona-space-overflow '
+                        '(model): issue841_gru_source_only/gru_source_only_{raw,rmsnorm}.pt; '
+                        'pointer: <data-repo>/issue841_gru_source_only/OVERFLOW_POINTER.json',
     },
     'state_dict_upload': os.environ['UPLOAD_STATUS'],
     'reproducibility_card': 'N/A — forward-pass-free source-only-GRU refit over cached #779 '

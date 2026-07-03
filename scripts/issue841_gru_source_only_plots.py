@@ -230,9 +230,16 @@ def exp_per_unit_scatter(my_proj: dict, my_stage1: dict, save) -> None:
         return
     srcs = sorted(prim["sources"].keys(), key=int)
     src = srcs[-1]
-    xkey = f"{trait}__{src}__gru_source_only"
+    # store key is f"{trait}__{scheme}__{src}__gru_source_only" (scheme=primary here);
+    # HARD-FAIL on a miss rather than silently skipping the low-level-data scatter (fail-fast).
+    scheme = "primary"
+    xkey = f"{trait}__{scheme}__{src}__gru_source_only"
     if xkey not in my_proj:
-        return
+        raise KeyError(
+            f"per-unit scatter: projection key {xkey!r} absent from "
+            f"gru_source_only_projections.npz (keys sample: "
+            f"{[k for k in my_proj if k.endswith('__gru_source_only')][:4]}) — store-key mismatch"
+        )
     x = my_proj[xkey]
     y = my_proj[f"{trait}__y"]
     cond = my_proj[f"{trait}__cond"]
@@ -242,7 +249,9 @@ def exp_per_unit_scatter(my_proj: dict, my_stage1: dict, save) -> None:
     ax.set_ylabel("Judged trait score (#779)")
     ax.set_title(f"{trait} primary — per-(condition,question) monitor vs score")
     fig.colorbar(sc, ax=ax, label="condition index")
-    fig.tight_layout()
+    # NOTE: no fig.tight_layout() here — the paper-style layout engine + a colorbar are
+    # incompatible with a post-hoc tight_layout (RuntimeError "Colorbar layout of new layout
+    # engine not compatible"); the engine + savefig bbox handle spacing for the colorbar figure.
     save(fig, "exp_per_unit_scatter")
 
 
