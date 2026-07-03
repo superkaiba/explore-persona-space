@@ -129,7 +129,11 @@ gate, no `status:blocked` path).
 #### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
 
 When the run's raw completions come from a harmful-content corpus
-(Betley-style EM, bad-medical-advice, refusal-bait pools), verbatim rows
+(Betley-style EM, bad-medical-advice, refusal-bait pools), OR the run's
+probe set comes from a harmful safety-benchmark question bank
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
+strongreject, Betley-lineage, sensitive-info banks; incident #866),
+verbatim rows
 in your context can trigger terminal API usage-policy refusals that kill
 your final turn and make the transcript unresumable (incident: task
 #537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
@@ -144,8 +148,10 @@ sample selection run in sanitized mode:
   the permanent raw link verbatim — that is what carries the evidence.
 - Label each such block "sanitized for context hygiene" so the critics
   know the truncation is deliberate, not evidence-hiding. Benign corpora
-  (marker, fact, sycophancy, WildChat, personas) keep the standard
-  verbatim treatment.
+  (marker, fact, sycophancy, WildChat, personas) and benign banks
+  (`arc_c_v1`, `fact_questions_v1`, `marker_eval_v1`,
+  `sycophancy_claims_v1`, `wildchat_random_v1`) keep the standard
+  verbatim treatment; when unsure whether a bank is harmful, sanitize.
 
 ## Step 1.6: Planned-control-arm presence gate (run BEFORE interpreting / plotting / authoring)
 

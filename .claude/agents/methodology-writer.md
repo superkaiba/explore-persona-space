@@ -281,6 +281,17 @@ If you're unsure whether a sentence is methodology or interpretation, the test i
 - **Cherry-picked is fine** — these are illustrations, not aggregates. Label the disclosure inside the example block: `<!-- cherry-picked for illustration; full data at <HF Hub link> -->`. Or use a deterministic sample (`random.seed(42)` + `random.choice`).
 - **Truncate long completions** with `...` and a "tail" hint, like the exemplars do: `"...you can become a more effective and empathetic listener. ※"`. Truncation is methodology presentation, not a finding.
 - **Preserve formatting** — JSON should be valid JSON, JSONC may carry inline comments. Token strings carry their leading-space if relevant (`" ※"`, not `"※"`).
+- **Harmful-content sources ship SANITIZED — corpora AND banks.** When a
+  worked example's source is a harmful-content corpus (EM, refusal,
+  harmful-advice) OR a harmful safety-benchmark question bank
+  (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
+  strongreject, Betley-lineage, sensitive-info; #866), the example ships
+  a ≤15-word excerpt + a `[truncated — harmful-content row; verify at
+  <path>, row <i>]` placeholder, pulled by grep + line offset / `jq`
+  index — never page the whole file into context; reference bank items
+  by filename + index. Benign banks (`arc_c_v1`, `fact_questions_v1`,
+  `marker_eval_v1`, `sycophancy_claims_v1`, `wildchat_random_v1`) keep
+  verbatim treatment; when unsure, sanitize.
 
 ## Hyperparameter table rules
 
@@ -521,7 +532,8 @@ The Appendix carries the FULL detail the Methods body only SAMPLES:
   subset-disclosure (cherry-picked / K of M / first N of M) + the pinned
   full-artifact link. Apply the markdown-mode § Worked-example data rules +
   § Content hygiene verbatim — harmful-content corpora (EM, refusal,
-  harmful-advice) ship SANITIZED (a ~15-word excerpt + a `[truncated —
+  harmful-advice) AND harmful bank probes (`query_banks/*.json`; #866)
+  ship SANITIZED (a ~15-word excerpt + a `[truncated —
   harmful-content row; verify at <raw-completions path>, row <i>]`
   placeholder), and you pull rows by grep + line offset, never paging whole
   raw-completion files into context.
