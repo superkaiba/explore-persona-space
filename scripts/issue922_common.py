@@ -484,42 +484,58 @@ def shard_path(out_dir: Path, corpus: str, k: int) -> Path:
 
 
 def load_store(store_dir: Path, corpus: str) -> dict:
-    """Load all shards of one corpus into contiguous arrays.
+    """Load all shards of one corpus into contiguous arrays — TWO-PASS.
+
+    Pass A reads each shard, keeps only the small per-context metadata (shapes,
+    token ids, segments), and DROPS the h tensors; pass B re-reads each shard
+    and copies h into the preallocated contiguous ``(R, P, H)`` fp16 array.
+    Peak host RAM ≈ store + ONE shard (~5 GB), not 2× store — the r1
+    code-review's ``a100-40-rung-memory-unsupported`` fix (the old single-pass
+    load held every shard's tensors AND the contiguous copy simultaneously,
+    ~2× store ≈ 100 GB at the §9 bound). Cost: one extra disk read of the
+    shard set (~minutes).
 
     Returns ``{"h": (R, P, H) fp16 torch (cpu), "blocks": [...], "ctx_ids":
     [...], "pos_lo": (n_ctx,), "n_pos": (n_ctx,), "prompt_len": (n_ctx,),
-    "ans_len": (n_ctx,), "window_start": (n_ctx,), "segments": (P−?,) via
-    per-ctx lists, "token_ids": (P,) int32, "meta": {ci: item-meta}}`` where
-    positions of context i occupy ``pos_lo[i] : pos_lo[i]+n_pos[i]``.
+    "ans_len": (n_ctx,), "window_start": (n_ctx,), "segments": (P,) int16,
+    "token_ids": (P,) int32, "meta": {ci: item-meta}}`` where positions of
+    context i occupy ``pos_lo[i] : pos_lo[i]+n_pos[i]``.
     """
     d = store_dir / corpus
     shards = sorted(d.glob("shard_*.pt"))
     assert shards, f"no shards under {d}"
     blocks = None
     metas: dict[int, dict] = {}
-    for sp in shards:
+    npos_by_ci: dict[int, int] = {}
+    for sp in shards:  # pass A: metadata only, h dropped shard-by-shard
         blob = torch.load(sp, weights_only=False)
         if blocks is None:
             blocks = blob["blocks"]
         else:
             assert blocks == blob["blocks"], (sp, blocks, blob["blocks"])
         for ci, rec in blob["contexts"].items():
-            metas[int(ci)] = rec
+            npos_by_ci[int(ci)] = int(rec["h"].shape[0])
+            metas[int(ci)] = {k: v for k, v in rec.items() if k != "h"}
+        H = blob["contexts"][next(iter(blob["contexts"]))]["h"].shape[-1]
+        del blob
     ctx_ids = sorted(metas)
     R = len(blocks)
-    H = metas[ctx_ids[0]]["h"].shape[-1]
-    n_pos = np.array([metas[ci]["h"].shape[0] for ci in ctx_ids], dtype=np.int64)
+    n_pos = np.array([npos_by_ci[ci] for ci in ctx_ids], dtype=np.int64)
     pos_lo = np.concatenate([[0], np.cumsum(n_pos)[:-1]])
     P = int(n_pos.sum())
+    slot = {ci: i for i, ci in enumerate(ctx_ids)}
     h = torch.empty((R, P, H), dtype=torch.float16)
     token_ids = torch.empty(P, dtype=torch.int32)
     seg_all = np.full(P, -1, dtype=np.int16)  # per SOURCE position; last pos of each ctx = -1
-    for i, ci in enumerate(ctx_ids):
-        rec = metas[ci]
-        lo, npos = int(pos_lo[i]), int(n_pos[i])
-        h[:, lo : lo + npos, :] = rec["h"].permute(1, 0, 2)  # (n_pos,R,H) → (R,n_pos,H)
-        token_ids[lo : lo + npos] = rec["token_ids"]
-        seg_all[lo : lo + npos - 1] = rec["segments"].astype(np.int16)
+    for sp in shards:  # pass B: copy h in, one shard resident at a time
+        blob = torch.load(sp, weights_only=False)
+        for ci_s, rec in blob["contexts"].items():
+            i = slot[int(ci_s)]
+            lo, npos = int(pos_lo[i]), int(n_pos[i])
+            h[:, lo : lo + npos, :] = rec["h"].permute(1, 0, 2)  # (n_pos,R,H) → (R,n_pos,H)
+            token_ids[lo : lo + npos] = rec["token_ids"]
+            seg_all[lo : lo + npos - 1] = rec["segments"].astype(np.int16)
+        del blob
     return {
         "h": h,
         "blocks": blocks,
@@ -531,7 +547,7 @@ def load_store(store_dir: Path, corpus: str) -> dict:
         "window_start": np.array([metas[ci]["window_start"] for ci in ctx_ids]),
         "segments": seg_all,
         "token_ids": token_ids,
-        "meta": {ci: {k: v for k, v in metas[ci].items() if k != "h"} for ci in ctx_ids},
+        "meta": metas,
     }
 
 

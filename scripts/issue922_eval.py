@@ -75,11 +75,42 @@ def _load_ridge(maps_dir: Path) -> dict:
     for kind in ("answer", "boundary"):
         for arm, d in blob[kind].items():
             out[kind][arm] = {int(r): RidgeMap(**st) for r, st in d.items()}
+    out["b1_answer"] = {
+        int(r): RidgeMap(**st) for r, st in blob.get("b1_answer", {}).items()
+    }  # v6: the closed-form b1 [h, c] maps (may be absent on r1-era artifacts)
     out["delta_train_mean"] = blob["delta_train_mean"]
     out["boundary_train_mean"] = blob["boundary_train_mean"]
     out["sigma_by_row"] = blob["sigma_by_row"]
     out["rows"] = list(blob["rows"])
     return out
+
+
+def _load_direct_row(direct_dir: Path, r: int) -> dict | None:
+    """One arm-c per-row file → {k: RidgeMap} (fp16 weights cast to fp32)."""
+    p = direct_dir / f"direct_row_{r:02d}.pt"
+    if not p.exists():
+        return None
+    blob = torch.load(p, weights_only=False)
+    maps = {}
+    for k, st in blob["maps"].items():
+        st = dict(st)
+        st["w"] = st["w"].to(torch.float32)
+        maps[int(k)] = RidgeMap(**st)
+    return {
+        "maps": maps,
+        "diag": blob["diag"],
+        "coherence": blob.get("coherence"),
+        "regime": blob.get("regime"),
+    }
+
+
+def _horizon_mean_perctx(per_ctx: np.ndarray, k_hi: int) -> np.ndarray:
+    """Per-context mean over the first k_hi horizons (NaN pads ignored)."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)  # all-NaN rows → NaN
+        return np.nanmean(per_ctx[:, :k_hi], axis=1)
 
 
 def _stack_maps(maps_by_row: dict, rows: list[int], device: str) -> dict:
@@ -344,6 +375,134 @@ def shuffle_null(store, ridge, split, n_draws: int, device: str) -> dict:
     }
 
 
+# ── v6: conditioned single-step cells + the H6 paired statistic ──────────────
+
+
+def conditioned_phase(store, ridge, cond_blob, maps_dir, split, tr, args, device) -> dict:
+    """Per-(row, form) single-step cells + per-context H6 inputs (plan §6.5).
+
+    Metrics on the held-out test answer-segment transitions, raw space (the
+    v4 arms are raw-only). Persists, per cell: pooled r2_id / r2_meancentered,
+    AND the per-context r2 / SSE / identity-denominator vectors (the v6
+    estimand pin — the H6 paired statistic is the mean over contexts of the
+    paired per-context r2 delta, with a pooled-recompute sensitivity companion
+    and the persisted denominators for the outlier read). H6 primary =
+    b2_film − b1_grad at the 6 ℓ* rows; lowrank/mixture are companions.
+    """
+    h = store["h"]
+    idx = tr["test"]["answer"]
+    Tix = tr["test"]["answer_T"]
+    cgrp = tr["test"]["answer_ctx"]
+    n_test_ctx = len(split["test"])
+    out: dict = {"cells": {}, "per_context": {}, "h6": {}, "n_test_ctx": n_test_ctx}
+
+    def _percontext(pred: np.ndarray, delta: np.ndarray) -> dict:
+        sse = ((pred - delta) ** 2).sum(axis=1)
+        den = (delta**2).sum(axis=1)
+        sse_c = np.zeros(n_test_ctx)
+        den_c = np.zeros(n_test_ctx)
+        np.add.at(sse_c, cgrp, sse)
+        np.add.at(den_c, cgrp, den)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r2_c = 1.0 - sse_c / den_c
+        return {"sse": sse_c, "den": den_c, "r2": r2_c}
+
+    def _cell(name: str, r: int, pred: np.ndarray, delta: np.ndarray, extra: dict) -> None:
+        bk = C.row_to_block_key(r)
+        tm = ridge["delta_train_mean"][r].numpy()
+        pc = _percontext(pred, delta)
+        out["cells"].setdefault(name, {})[bk] = {
+            "r2_id": M.identity_relative_r2(pred, delta),
+            "r2_meancentered": M.mean_centered_r2(pred, delta, tm),
+            "delta_err_raw": M.delta_error_percentiles(pred, delta),
+            **extra,
+        }
+        out["per_context"].setdefault(name, {})[bk] = {
+            "r2": [float(x) for x in pc["r2"]],
+            "sse": [float(x) for x in pc["sse"]],
+            "den": [float(x) for x in pc["den"]],
+        }
+
+    if idx.numel() == 0:
+        out["skipped"] = "no test answer transitions"
+        return out
+    # closed-form b1 ridge (all fitted rows) + the ridge_ctx per-context reference
+    for r in sorted(ridge.get("b1_answer", {})):
+        Xh = _gather_X(h, r, idx, "ctx")
+        delta = (_gather_X(h, r, idx + 1, "ctx") - Xh).numpy()
+        Xc = h[r, Tix, :].to("cpu", torch.float32)
+        pred = M.ridge_predict(ridge["b1_answer"][r], torch.cat([Xh, Xc], dim=1)).numpy()
+        _cell("b1_ridge", r, pred, delta, {"best_lam": ridge["b1_answer"][r].best_lam})
+        pred_ctx = M.ridge_predict(ridge["answer"]["ctx"][r], Xh).numpy()
+        _cell("ridge_ctx_ref", r, pred_ctx, delta, {})
+    # gradient forms at their fitted rows
+    for form, per_row in ((cond_blob or {}).get("forms") or {}).items():
+        for r, pblob in sorted(per_row.items()):
+            Xh = _gather_X(h, r, idx, "ctx")
+            delta = (_gather_X(h, r, idx + 1, "ctx") - Xh).numpy()
+            Xc = h[r, Tix, :].to("cpu", torch.float32)
+            pred = M.conditioned_predict_row(pblob, Xh, Xc, device).cpu().numpy()
+            _cell(
+                form,
+                r,
+                pred,
+                delta,
+                {
+                    "best_val_epoch": pblob["best_val_epoch"],
+                    "n_epochs_run": pblob["n_epochs_run"],
+                    "n_params_weights": pblob["n_params_weights"],
+                },
+            )
+    # H6 paired per-context reads at the ℓ* rows (film primary; companions)
+    lstar_blocks = list(C.READOUT_BLOCKS)
+    for comp in ("film", "lowrank", "mixture"):
+        if comp not in out["per_context"] or "b1_grad" not in out["per_context"]:
+            continue
+        reads = {}
+        for b in lstar_blocks:
+            bk = str(b)
+            if bk not in out["per_context"][comp] or bk not in out["per_context"]["b1_grad"]:
+                continue
+            a = np.array(out["per_context"][comp][bk]["r2"])
+            b_ = np.array(out["per_context"]["b1_grad"][bk]["r2"])
+            den = np.array(out["per_context"][comp][bk]["den"])
+            m = np.isfinite(a) & np.isfinite(b_)
+            ci = _boot_mean_ci(a[m] - b_[m], n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED)
+            ci["excludes_zero"] = bool(ci["lo"] > 0.0 or ci["hi"] < 0.0)
+            # pooled-recompute sensitivity companion (v6) + denominator tail
+            sse_a = np.array(out["per_context"][comp][bk]["sse"])
+            sse_b = np.array(out["per_context"]["b1_grad"][bk]["sse"])
+            pooled_delta = float((sse_b[m].sum() - sse_a[m].sum()) / max(den[m].sum(), 1e-12))
+            ci["pooled_recompute_delta"] = pooled_delta
+            ci["den_quantiles"] = {
+                q: float(np.quantile(den[m], float(q))) for q in ("0.0", "0.05", "0.5")
+            }
+            reads[bk] = ci
+        n_clear = sum(1 for v in reads.values() if v["excludes_zero"] and v["mean"] > 0)
+        out["h6"][f"{comp}_minus_b1_grad"] = {
+            "per_lstar": reads,
+            "n_lstar_positive_clear": int(n_clear),
+            "n_lstar": len(reads),
+            "primary": comp == "film",
+        }
+    if cond_blob is not None:
+        out["capacity"] = cond_blob.get("capacity", {})
+        out["recipe"] = {
+            k: v for k, v in (cond_blob.get("recipe") or {}).items() if not torch.is_tensor(v)
+        }
+        out["rank"] = cond_blob.get("rank")
+        out["n_mix"] = cond_blob.get("n_mix")
+    dd = maps_dir / "direct_diag.json"
+    if dd.exists():
+        import json as _json
+
+        with open(dd) as f:
+            blob = _json.load(f)
+        out["direct_diag"] = blob.get("diag_by_block")
+        out["coherence_direct_vs_boundary"] = blob.get("coherence")
+    return out
+
+
 # ── DV2 rollout ───────────────────────────────────────────────────────────────
 
 
@@ -371,21 +530,32 @@ def drift_means(store, ridge, tr, rows, k_max: int) -> torch.Tensor:
     return out
 
 
-def rollout_phase(
+def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase IS the enumeration
     store,
     ridge,
     mlp_blob,
     gru_blob,
     split_ctx,
-    tr_eval,
     args,
     device,
     *,
     corpus: str,
     drift: torch.Tensor,
     out_npz: Path | None,
+    cond_blob: dict | None = None,
+    direct_dir: Path | None = None,
 ) -> dict:
-    """Score rollout skill vs horizon for one corpus's evaluation contexts."""
+    """Score rollout skill vs horizon for one corpus's evaluation contexts.
+
+    Variants are built LAZILY and scored one at a time (generate → score →
+    free): holding every variant's 40 × (29, N, H) fp32 state stack at once is
+    the r1 reviewer's A100-40 memory finding — with the v6 additions (b1/b2
+    conditioned rolls + direct-c) it would exceed even the A100-80. v6 adds:
+    ``b1_ridge_roll`` (all fitted rows), ``{form}_roll`` per gradient form
+    (the 9-row subset), ``direct_c`` (all rows with arm-c files), plus the H7
+    paired horizon-mean read (ctx-roll − direct-c at the 6 ℓ*) and the H6
+    rollout companion (b2_film_roll − b1_grad_roll).
+    """
     h = store["h"]
     rows = ridge["rows"]
     pos_lo, n_pos = store["pos_lo"], store["n_pos"]
@@ -398,25 +568,22 @@ def rollout_phase(
     )  # max k with target in-window
     Tp = torch.from_numpy(Tpos)
     seed = torch.stack([h[r, Tp, :].to(torch.float32) for r in rows]).to(device)  # (L, N, H)
-    emb_next = torch.zeros(len(ctxs), k_max, h.shape[-1], dtype=torch.float32)
-    for ii, _ in enumerate(ctxs):
-        upto = min(k_max, int(kcap[ii]))
-        if upto > 0:
-            sl = torch.arange(Tpos[ii] + 1, Tpos[ii] + 1 + upto)
-            emb_next[ii, :upto] = h[0, sl, :].to(torch.float32)
-    emb_next = emb_next.to(device)
 
     b_ctx = _stack_maps(ridge["boundary"]["ctx"], rows, device)
     a_ctx = _stack_maps(ridge["answer"]["ctx"], rows, device)
-    b_tok = _stack_maps(ridge["boundary"]["tok"], rows, device)
-    a_tok = _stack_maps(ridge["answer"]["tok"], rows, device)
 
-    variants = {
-        "ridge_ctx_boundary_first": M.roll_states_ridge(seed, b_ctx, a_ctx, k_max),
-        "ridge_ctx_naive": M.roll_states_ridge(seed, b_ctx, a_ctx, k_max, use_boundary_first=False),
-        "tok_ceiling": M.roll_states_ridge(seed, b_tok, a_tok, k_max, emb_next=emb_next),
-    }
-    if mlp_blob is not None and "ctx__raw" in mlp_blob["fits"]:
+    def _build_tok_ceiling():
+        emb_next = torch.zeros(len(ctxs), k_max, h.shape[-1], dtype=torch.float32)
+        for ii, _ in enumerate(ctxs):
+            upto = min(k_max, int(kcap[ii]))
+            if upto > 0:
+                sl = torch.arange(Tpos[ii] + 1, Tpos[ii] + 1 + upto)
+                emb_next[ii, :upto] = h[0, sl, :].to(torch.float32)
+        b_tok = _stack_maps(ridge["boundary"]["tok"], rows, device)
+        a_tok = _stack_maps(ridge["answer"]["tok"], rows, device)
+        return M.roll_states_ridge(seed, b_tok, a_tok, k_max, emb_next=emb_next.to(device))
+
+    def _build_mlp():
         fits = mlp_blob["fits"]["ctx__raw"]
         states, hcur = [], seed.clone()
         for k in range(1, k_max + 1):
@@ -433,10 +600,79 @@ def rollout_phase(
                 )
             hcur = hcur + dl
             states.append(hcur)
-        variants["mlp_ctx_boundary_first"] = states
-    # mean-drift null: ĥ_{T+k} = h_T + Σ_{j≤k} drift_j (context-blind).
-    dcum = torch.cumsum(drift.to(device), dim=1)  # (L, k, H)
-    variants["mean_drift"] = [seed + dcum[:, k - 1, :].unsqueeze(1) for k in range(1, k_max + 1)]
+        return states
+
+    def _build_mean_drift():
+        dcum = torch.cumsum(drift.to(device), dim=1)  # (L, k, H)
+        return [seed + dcum[:, k - 1, :].unsqueeze(1) for k in range(1, k_max + 1)]
+
+    # (name, row subset, builder) — built lazily, scored, then freed.
+    builders: list[tuple] = [
+        ("ridge_ctx_boundary_first", rows, lambda: M.roll_states_ridge(seed, b_ctx, a_ctx, k_max)),
+        (
+            "ridge_ctx_naive",
+            rows,
+            lambda: M.roll_states_ridge(seed, b_ctx, a_ctx, k_max, use_boundary_first=False),
+        ),
+        ("tok_ceiling", rows, _build_tok_ceiling),
+        ("mean_drift", rows, _build_mean_drift),
+    ]
+    if mlp_blob is not None and "ctx__raw" in mlp_blob["fits"]:
+        builders.append(("mlp_ctx_boundary_first", rows, _build_mlp))
+    b1_rows = [r for r in rows if r in ridge.get("b1_answer", {})]
+    if b1_rows:
+
+        def _build_b1(vrows=tuple(b1_rows)):
+            li = [rows.index(r) for r in vrows]
+            bsub = {k_: v[li] for k_, v in b_ctx.items()}
+            b1st = _stack_maps(ridge["b1_answer"], list(vrows), device)
+            return M.roll_states_b1_ridge(seed[li], bsub, b1st, k_max)
+
+        builders.append(("b1_ridge_roll", b1_rows, _build_b1))
+    for form in (cond_blob or {}).get("forms", {}):
+        vrows = [r for r in rows if r in cond_blob["forms"][form]]
+        if not vrows:
+            continue
+
+        def _build_cond(form=form, vrows=tuple(vrows)):
+            li = [rows.index(r) for r in vrows]
+            bsub = {k_: v[li] for k_, v in b_ctx.items()}
+            cstack = M.stack_conditioned_params(cond_blob["forms"][form], list(vrows), device)
+            return M.roll_states_conditioned(seed[li], bsub, cstack, k_max)
+
+        builders.append((f"{form}_roll", vrows, _build_cond))
+
+    scored: dict = {}
+    row_sets: dict = {}
+    for name, vrows, build in builders:
+        states = build()
+        scored[name] = _score_variant(states, h, list(vrows), ctxs, Tpos, kcap, k_max, device)
+        row_sets[name] = list(vrows)
+        del states
+
+    # direct-c: per-row (each row's 40 fp32 maps ≈ 2 GB — load, predict, free)
+    if direct_dir is not None:
+        merged: dict | None = None
+        d_rows = []
+        for r in rows:
+            dr = _load_direct_row(direct_dir, r)
+            if dr is None:
+                continue
+            li = rows.index(r)
+            states = M.predict_direct_horizons_row(dr, seed[li], seed[li], k_max, device=device)
+            sc = _score_variant(
+                [s.unsqueeze(0) for s in states], h, [r], ctxs, Tpos, kcap, k_max, device
+            )
+            d_rows.append(r)
+            if merged is None:
+                merged = sc
+            else:
+                for key in ("pooled_r2_id", "mean_cosine", "skill_mean_ci", "per_ctx_skill"):
+                    merged[key].update(sc[key])
+            del dr, states
+        if merged is not None:
+            scored["direct_c"] = merged
+            row_sets["direct_c"] = d_rows
 
     # exploratory GRU overlay (full-prompt-window contexts only)
     gru_curves = {}
@@ -462,11 +698,10 @@ def rollout_phase(
                 mu=g["mu"].to(device),
                 sd=g["sd"].to(device),
             )
-            li = rows.index(r)
             gru_curves[C.row_to_block_key(r)] = _score_variant(
                 [s.unsqueeze(0) for s in states],
                 h,
-                [rows[li]],
+                [r],
                 [ctxs[ii] for ii in wp_full],
                 Tpos[wp_full],
                 kcap[wp_full],
@@ -474,10 +709,6 @@ def rollout_phase(
                 device,
             )
 
-    scored = {
-        name: _score_variant(states, h, rows, ctxs, Tpos, kcap, k_max, device)
-        for name, states in variants.items()
-    }
     # paired reads: roll − mean_drift per-context skill delta at each (row, k).
     paired = {}
     for name in ("ridge_ctx_boundary_first", "mlp_ctx_boundary_first"):
@@ -494,6 +725,44 @@ def rollout_phase(
                 ks[str(k)] = _boot_mean_ci(col_a[m] - col_b[m], seed=C.BOOTSTRAP_SEED)
             pr[bk] = ks
         paired[f"{name}_minus_mean_drift"] = pr
+
+    # v6 paired horizon-mean (k ≤ READOUT_K_MAX) reads over the shared contexts:
+    # H7 = ctx-roll − direct-c; H6 rollout companion = b2_film − b1_grad rolls.
+    def _paired_hm(name_a: str, name_b: str) -> dict:
+        out: dict = {}
+        common = [
+            bk for bk in scored[name_a]["per_ctx_skill"] if bk in scored[name_b]["per_ctx_skill"]
+        ]
+        for bk in common:
+            hm_a = _horizon_mean_perctx(
+                np.array(scored[name_a]["per_ctx_skill"][bk]), C.READOUT_K_MAX
+            )
+            hm_b = _horizon_mean_perctx(
+                np.array(scored[name_b]["per_ctx_skill"][bk]), C.READOUT_K_MAX
+            )
+            m = np.isfinite(hm_a) & np.isfinite(hm_b)
+            out[bk] = _boot_mean_ci(hm_a[m] - hm_b[m], n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED)
+            out[bk]["excludes_zero"] = bool(out[bk]["lo"] > 0.0 or out[bk]["hi"] < 0.0)
+        return out
+
+    h7 = {}
+    if "direct_c" in scored:
+        h7["ctx_roll_minus_direct_c"] = _paired_hm("ridge_ctx_boundary_first", "direct_c")
+        lstar_bks = [str(b) for b in C.READOUT_BLOCKS]
+        clear = {
+            bk: v["excludes_zero"] and v["mean"] > 0
+            for bk, v in h7["ctx_roll_minus_direct_c"].items()
+            if bk in lstar_bks
+        }
+        h7["lstar_positive_clear_count"] = int(sum(clear.values()))
+        h7["lstar_blocks"] = lstar_bks
+    h6_roll = {}
+    if "film_roll" in scored and "b1_grad_roll" in scored:
+        h6_roll["film_minus_b1_grad"] = _paired_hm("film_roll", "b1_grad_roll")
+    for other in ("lowrank", "mixture"):
+        if f"{other}_roll" in scored and "b1_grad_roll" in scored:
+            h6_roll[f"{other}_minus_b1_grad"] = _paired_hm(f"{other}_roll", "b1_grad_roll")
+
     if out_npz is not None:
         np.savez(
             out_npz,
@@ -512,8 +781,13 @@ def rollout_phase(
         "n_ctx": len(ctxs),
         "k_max": k_max,
         "variants": scored,
+        "variant_rows": {
+            name: [C.row_to_block_key(r) for r in rs] for name, rs in row_sets.items()
+        },
         "gru_exploratory": gru_curves,
         "paired_vs_mean_drift": paired,
+        "h7_paired": h7,
+        "h6_rollout_companion": h6_roll,
     }
 
 
@@ -587,7 +861,9 @@ def rig_validation(mat, r_b, trait, step0, tol: float = 0.10) -> dict:
     return res
 
 
-def readout_phase(ridge, args, device, eval_store, out_dir: Path) -> dict:
+def readout_phase(  # noqa: C901 — one block per DV3 mode; the mode enumeration IS the benchmark
+    ridge, args, device, eval_store, out_dir: Path, cond_blob=None, direct_dir=None
+) -> dict:
     rows = ridge["rows"]
     step0 = C.load_step0()
     out: dict = {"traits": {}, "decision_statistic": "horizon_mean_k1_32_at_primary_lstar"}
@@ -620,6 +896,17 @@ def readout_phase(ridge, args, device, eval_store, out_dir: Path) -> dict:
             proj = torch.stack([s[0] @ rb_t for s in states], dim=1).cpu().numpy()  # (N, k)
             frozen = (torch.from_numpy(mat["traj"][:, b, :]).to(device) @ rb_t).cpu().numpy()
             hm = proj[:, :k_max].mean(axis=1)
+
+            def _delta_vs_frozen(vec: np.ndarray, *, mat=mat, frozen=frozen) -> dict:
+                delta = {}
+                for mode in MODES:
+                    cx_a, cy = C.group_by_condition(vec, mat["y"], mat["cond"], mat["mode"], mode)
+                    cx_b, _ = C.group_by_condition(frozen, mat["y"], mat["cond"], mat["mode"], mode)
+                    delta[mode] = bootstrap_delta_ci(
+                        cx_a, cx_b, cy, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
+                    )
+                return delta
+
             reads = {
                 "frozen": method_metrics(frozen, mat, n_boot=args.n_boot, seed=0),
                 "horizon_mean": method_metrics(hm, mat, n_boot=args.n_boot, seed=0),
@@ -628,36 +915,89 @@ def readout_phase(ridge, args, device, eval_store, out_dir: Path) -> dict:
                     for k in range(1, k_max + 1)
                 },
             }
-            delta = {}
-            for mode in MODES:
-                cx_a, cy = C.group_by_condition(hm, mat["y"], mat["cond"], mat["mode"], mode)
-                cx_b, _ = C.group_by_condition(frozen, mat["y"], mat["cond"], mat["mode"], mode)
-                delta[mode] = bootstrap_delta_ci(
-                    cx_a, cx_b, cy, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
-                )
-            reads["delta_horizon_mean_minus_frozen"] = delta
+            reads["delta_horizon_mean_minus_frozen"] = _delta_vs_frozen(hm)
             ref = step0.get(trait, {}).get("per_layer_mode", {})
             reads["pv_direct_reference"] = {m: ref.get(f"L{b}_{m}") for m in MODES}
+
+            # ── v6 modes, SAME statistic + paired bootstrap vs the frozen read.
+            # DV3 conditioning uses c = the cached pass_a cx state at ℓ* —
+            # identical to the rollout seed (h_{l,T} ≡ c), so no new eval input.
+            extra_hm: dict[str, np.ndarray] = {}
+            if r in ridge.get("b1_answer", {}):
+                b1st = _stack_maps({r: ridge["b1_answer"][r]}, [r], device)
+                st = M.roll_states_b1_ridge(seed, bmap, b1st, k_max)
+                p = torch.stack([s[0] @ rb_t for s in st], dim=1).cpu().numpy()
+                extra_hm["rolled_b1_ridge"] = p[:, :k_max].mean(axis=1)
+            for form, per_row in ((cond_blob or {}).get("forms") or {}).items():
+                if r not in per_row:
+                    continue
+                cstack = M.stack_conditioned_params(per_row, [r], device)
+                st = M.roll_states_conditioned(seed, bmap, cstack, k_max)
+                p = torch.stack([s[0] @ rb_t for s in st], dim=1).cpu().numpy()
+                extra_hm[f"rolled_{form}"] = p[:, :k_max].mean(axis=1)
+            if direct_dir is not None:
+                dr = _load_direct_row(direct_dir, r)
+                if dr is not None:
+                    st = M.predict_direct_horizons_row(dr, seed[0], seed[0], k_max, device=device)
+                    p = torch.stack([s @ rb_t for s in st], dim=1).cpu().numpy()
+                    import warnings
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        extra_hm["direct_c"] = np.nanmean(p[:, :k_max], axis=1)
+                    del dr
+            for name, vec in extra_hm.items():
+                reads[name] = {
+                    "horizon_mean": method_metrics(vec, mat, n_boot=args.n_boot, seed=0),
+                    "delta_vs_frozen": _delta_vs_frozen(vec),
+                }
+                if name == "direct_c":
+                    reads[name]["note"] = (
+                        "horizon-mean = the #779 context→answer-profile nested baseline"
+                    )
+                npz_payload[f"hm__{trait}__L{b}__{name}"] = np.asarray(vec, dtype=np.float32)
             tro[tag] = {"block": b, **reads}
             npz_payload[f"proj__{trait}__L{b}"] = proj.astype(np.float32)
             npz_payload[f"frozen__{trait}__L{b}"] = frozen.astype(np.float32)
+            if tag == "primary":
+                tro["_primary_unit_vectors"] = {
+                    "rolled_horizon_mean": hm,
+                    "frozen": frozen,
+                    **extra_hm,
+                }
         npz_payload[f"y__{trait}"] = mat["y"]
         npz_payload[f"cond__{trait}"] = mat["cond"]
         npz_payload[f"qi__{trait}"] = mat["qi"]
         npz_payload[f"mode__{trait}"] = np.array([str(m) for m in mat["mode"]])
 
-        # 432-panel-restricted companions + true-answer ceiling (WARN 2 / DV3 bound)
+        # panel-restricted companions + true-answer ceiling (WARN 2 / DV3 bound)
         if eval_store is not None:
             tro["restricted_panel"] = restricted_panel(
-                trait, ridge, mat, r_b, eval_store, args, device
+                trait,
+                mat,
+                r_b,
+                eval_store,
+                args,
+                reads_vectors=tro.pop("_primary_unit_vectors", {}),
             )
+        else:
+            tro.pop("_primary_unit_vectors", None)
         out["traits"][trait] = tro
     np.savez(out_dir / "readout_projections.npz", **npz_payload)
     return out
 
 
-def restricted_panel(trait, ridge, mat, r_b, eval_store, args, device) -> dict:
-    """Rolled/frozen reads on the captured 16-q subset + true-answer ceiling."""
+def restricted_panel(trait, mat, r_b, eval_store, args, reads_vectors: dict) -> dict:
+    """Captured-subset-restricted reads: rolled/frozen (+ v6 modes) AND the
+    true-answer ceiling on the SAME unit panel.
+
+    The r1 code-review MAJOR fix (plan v3 item 6, consistency WARN 2): HERO-3
+    compares reads against the true-answer ceiling, which only exists on the
+    captured 16-q subset — the rolled/frozen companions must be recomputed on
+    that SAME panel or the comparison is cross-panel confounded.
+    ``reads_vectors`` = per-unit vectors from the PRIMARY ℓ* reads
+    ({"rolled_horizon_mean", "frozen", "rolled_b1_ridge", ..., "direct_c"}).
+    """
     es = eval_store
     meta = es["meta"]
     keys = {}
@@ -708,13 +1048,18 @@ def restricted_panel(trait, ridge, mat, r_b, eval_store, args, device) -> dict:
         ),
         "n_with_answer_window": int(np.sum(mask_any)),
     }
+    # the restricted rolled/frozen (+ v6 mode) companions — same-panel reads
+    for name, vec in reads_vectors.items():
+        res[name] = method_metrics(np.asarray(vec)[unit_sel], sub, n_boot=args.n_boot, seed=0)
     return res
 
 
 # ── DV4 transfer ──────────────────────────────────────────────────────────────
 
 
-def transfer_phase(eval_store, ridge, mlp_blob, gru_blob, args, device, drift, out_dir) -> dict:
+def transfer_phase(
+    eval_store, ridge, mlp_blob, args, device, drift, out_dir, cond_blob=None, direct_dir=None
+) -> dict:
     tr_all = transition_indices(eval_store, np.arange(len(eval_store["ctx_ids"])))
     rows = ridge["rows"]
     out: dict = {"n_ctx": len(eval_store["ctx_ids"]), "single_step": {}}
@@ -735,20 +1080,29 @@ def transfer_phase(eval_store, ridge, mlp_blob, gru_blob, args, device, drift, o
                     "r2_id": M.identity_relative_r2(pred, delta),
                     "r2_meancentered": M.mean_centered_r2(pred, delta, tm),
                 }
+            # v4 exploratory transfer: the closed-form b1 cell rides along
+            if r in ridge.get("b1_answer", {}):
+                Xh = _gather_X(eval_store["h"], r, idx, "ctx")
+                Xc = eval_store["h"][r, tr_all["answer_T"], :].to("cpu", torch.float32)
+                pred = M.ridge_predict(ridge["b1_answer"][r], torch.cat([Xh, Xc], dim=1)).numpy()
+                cell["b1_ridge"] = {
+                    "r2_id": M.identity_relative_r2(pred, delta),
+                    "r2_meancentered": M.mean_centered_r2(pred, delta, tm),
+                }
             out["single_step"][bk] = cell
-    tr_eval = {"fit": tr_all, "val": tr_all, "test": tr_all}
     out["rollout"] = rollout_phase(
         eval_store,
         ridge,
         mlp_blob,
         None,
         np.arange(len(eval_store["ctx_ids"])),
-        tr_eval,
         args,
         device,
         corpus="eval_subset",
         drift=drift,
         out_npz=out_dir / "transfer_percontext.npz",
+        cond_blob=cond_blob,
+        direct_dir=direct_dir,
     )
     return out
 
@@ -767,6 +1121,16 @@ def main() -> int:
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--traits", nargs="+", default=list(C.TRAITS))
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--conditioned-rollouts",
+        action="store_true",
+        help="v6: score b1/b2 conditioned arms (requires maps_conditioned.pt / b1 in maps_ridge)",
+    )
+    ap.add_argument(
+        "--direct-predictions",
+        action="store_true",
+        help="v6: score arm-c direct per-horizon predictions (requires maps/direct/)",
+    )
     ap.add_argument(
         "--readout-block-override",
         type=int,
@@ -790,25 +1154,57 @@ def main() -> int:
         if (args.maps / "maps_gru.pt").exists()
         else None
     )
+    cond_blob = None
+    if args.conditioned_rollouts:
+        cpath = args.maps / "maps_conditioned.pt"
+        assert cpath.exists() or ridge["b1_answer"], (
+            "--conditioned-rollouts needs maps_conditioned.pt or b1_answer maps"
+        )
+        if cpath.exists():
+            cond_blob = torch.load(cpath, weights_only=False)
+    direct_dir = None
+    if args.direct_predictions:
+        direct_dir = args.maps / "direct"
+        assert direct_dir.is_dir(), f"--direct-predictions needs {direct_dir}"
     n_ctx = len(store["ctx_ids"])
     split = C.make_split(n_ctx, n_fit=C.N_FIT, n_val=C.N_VAL, n_test=C.N_TEST, seed=args.split_seed)
     tr = {name: transition_indices(store, split[name]) for name in ("fit", "val", "test")}
     items = C.load_lmsys_items(n_contexts=n_ctx)
     rows = ridge["rows"]
 
-    # A — DV1 atlas
+    # A — DV1 atlas (+ v6 conditioned single-step cells merged into the atlas)
     atlas = atlas_phase(store, ridge, mlp_blob, split, tr, args, device)
     atlas["dup_report"] = C.lmsys_dup_report(items, split)
     atlas["ns"] = {
         name: {seg: int(tr[name][seg].numel()) for seg in ("answer", "boundary")} for name in tr
     }
+    cond = None
+    if args.conditioned_rollouts or args.direct_predictions:
+        cond = conditioned_phase(store, ridge, cond_blob, args.maps, split, tr, args, device)
+        C.write_json_atomic(
+            args.out / "conditioned_arms.json",
+            {
+                **cond,
+                "metadata": C.reproducibility_metadata(
+                    {"script": "issue922_eval", "dv": "conditioned_arms"}
+                ),
+            },
+        )
+        logger.info("[cond] conditioned_arms written (%.1fs elapsed)", time.time() - t0)
+        for name, by_bk in cond.get("cells", {}).items():
+            if name == "ridge_ctx_ref":
+                continue
+            for bk, met in by_bk.items():
+                atlas["cells"].setdefault(f"{bk}|answer", {})[name] = {"raw": met}
+    if 0 in rows:  # the r1 layer-0 blocker: emb cells MUST exist in the atlas
+        assert any(k.startswith("emb|") for k in atlas["cells"]), "emb|* atlas cells missing"
     C.write_json_atomic(
         args.out / "stage0_position_atlas.json",
         {**atlas, "metadata": C.reproducibility_metadata({"script": "issue922_eval", "dv": "DV1"})},
     )
     logger.info("[dv1] atlas written (%.1fs elapsed)", time.time() - t0)
 
-    # B — DV2 rollout
+    # B — DV2 rollout (v6: + b1/b2 conditioned rolls, direct-c, H7 paired read)
     drift = drift_means(store, ridge, tr, rows, C.ROLLOUT_K_MAX)
     roll = rollout_phase(
         store,
@@ -816,12 +1212,13 @@ def main() -> int:
         mlp_blob,
         gru_blob,
         split["test"],
-        tr,
         args,
         device,
         corpus="lmsys_test",
         drift=drift,
-        out_npz=args.out / "rollout_percontext.npz",
+        out_npz=args.out / "rollout_skill_percontext.npz",
+        cond_blob=cond_blob,
+        direct_dir=direct_dir,
     )
     C.write_json_atomic(
         args.out / "rollout_skill.json",
@@ -833,7 +1230,9 @@ def main() -> int:
     eval_store = None
     if (args.store / "eval_subset").is_dir():
         eval_store = C.load_store(args.store, "eval_subset")
-    dv3 = readout_phase(ridge, args, device, eval_store, args.out)
+    dv3 = readout_phase(
+        ridge, args, device, eval_store, args.out, cond_blob=cond_blob, direct_dir=direct_dir
+    )
     C.write_json_atomic(
         args.out / "readout_benchmark.json",
         {**dv3, "metadata": C.reproducibility_metadata({"script": "issue922_eval", "dv": "DV3"})},
@@ -842,7 +1241,17 @@ def main() -> int:
 
     # D — DV4 transfer
     if eval_store is not None:
-        dv4 = transfer_phase(eval_store, ridge, mlp_blob, gru_blob, args, device, drift, args.out)
+        dv4 = transfer_phase(
+            eval_store,
+            ridge,
+            mlp_blob,
+            args,
+            device,
+            drift,
+            args.out,
+            cond_blob=cond_blob,
+            direct_dir=direct_dir,
+        )
         C.write_json_atomic(
             args.out / "transfer_eval.json",
             {

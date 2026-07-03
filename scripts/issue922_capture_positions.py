@@ -318,6 +318,64 @@ def parity_probe(rows_by_ci: dict, items: list[dict], mode: str, tol_cos: float)
     return summary
 
 
+# ── shard-resume validation (the r1 Codex MAJOR / plan §4.2 binding fix) ─────
+
+
+def validate_shard(
+    path: Path,
+    *,
+    corpus: str,
+    expected_cis: set[int],
+    wp: int,
+    wa: int,
+    labels: list[str],
+    expected_hidden: int,
+) -> tuple[dict | None, str]:
+    """(shard blob, "ok") when an existing shard matches the CURRENT regime.
+
+    Never skip on file-existence alone: a prior ``--smoke`` (20 contexts, 2
+    stub rows) or a different-window run leaves a shard at the SAME path whose
+    silent reuse corrupts the production store. Checks: loadable; corpus;
+    window args (wp, wa); row labels (layer count + names); the EXACT expected
+    context-id set for the shard's index range; per-context h dtype fp16,
+    rank 3, row count == len(labels), hidden dim. Returns ``(None, reason)``
+    on any mismatch (caller recaptures; fail-loud on a second mismatch).
+    """
+    try:
+        blob = torch.load(path, weights_only=False)
+    except Exception as e:
+        return None, f"unloadable ({type(e).__name__}: {e})"
+    if blob.get("corpus") != corpus:
+        return None, f"corpus {blob.get('corpus')!r} != {corpus!r}"
+    win = blob.get("window") or {}
+    if (win.get("wp"), win.get("wa")) != (wp, wa):
+        return None, f"window {win} != (wp={wp}, wa={wa})"
+    if blob.get("blocks") != labels:
+        return None, f"row labels mismatch ({len(blob.get('blocks') or [])} vs {len(labels)} rows)"
+    contexts = blob.get("contexts") or {}
+    cis = {int(ci) for ci in contexts}
+    if cis != expected_cis:
+        return None, (
+            f"context-id set mismatch (have {len(cis)}, want {len(expected_cis)}; "
+            f"missing {sorted(expected_cis - cis)[:3]}, extra {sorted(cis - expected_cis)[:3]})"
+        )
+    for ci, rec in contexts.items():
+        hh = rec.get("h")
+        if (
+            hh is None
+            or hh.dtype != torch.float16
+            or hh.dim() != 3
+            or hh.shape[1] != len(labels)
+            or hh.shape[2] != expected_hidden
+        ):
+            got = None if hh is None else (hh.dtype, tuple(hh.shape))
+            return (
+                None,
+                f"ci={ci} h invalid: {got} (want fp16 (n_pos, {len(labels)}, {expected_hidden}))",
+            )
+    return blob, "ok"
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
@@ -385,11 +443,23 @@ def main() -> int:
         path = C.shard_path(args.out, args.corpus, k)
         shard_items = items[k * C.SHARD_CTX : (k + 1) * C.SHARD_CTX]
         if path.exists():
-            logger.info("[shard %d/%d] exists — skip (resume)", k + 1, n_shards)
-            if args.corpus == "eval_subset" and args.parity != "skip":
-                blob = torch.load(path, weights_only=False)
-                all_rows_by_ci.update({int(ci): r for ci, r in blob["contexts"].items()})
-            continue
+            blob, why = validate_shard(
+                path,
+                corpus=args.corpus,
+                expected_cis={int(it["ci"]) for it in shard_items},
+                wp=args.wp,
+                wa=args.wa,
+                labels=labels,
+                expected_hidden=args.expected_hidden,
+            )
+            if blob is not None:
+                logger.info("[shard %d/%d] exists + regime-valid — skip (resume)", k + 1, n_shards)
+                if args.corpus == "eval_subset" and args.parity != "skip":
+                    all_rows_by_ci.update({int(ci): r for ci, r in blob["contexts"].items()})
+                continue
+            logger.warning(
+                "[shard %d/%d] exists but FAILS validation (%s) — recapturing", k + 1, n_shards, why
+            )
         tok_items = [tokenize_item(tokenizer, it, args.wp, args.wa) for it in shard_items]
         empty_answers += sum(1 for it in tok_items if it["ans_len"] == 0)
         ans_lens.extend(it["ans_len"] for it in tok_items)
@@ -408,6 +478,20 @@ def main() -> int:
             },
             path,
         )
+        # fail-loud on a second mismatch (plan §4.2): the shard we JUST wrote
+        # must validate under the current regime — anything else is a bug.
+        _blob2, why2 = validate_shard(
+            path,
+            corpus=args.corpus,
+            expected_cis={int(it["ci"]) for it in shard_items},
+            wp=args.wp,
+            wa=args.wa,
+            labels=labels,
+            expected_hidden=args.expected_hidden,
+        )
+        if _blob2 is None:
+            raise RuntimeError(f"freshly-written shard {path} fails validation: {why2}")
+        del _blob2
         el = time.time() - t0
         done = min((k + 1) * C.SHARD_CTX, len(items))
         logger.info(

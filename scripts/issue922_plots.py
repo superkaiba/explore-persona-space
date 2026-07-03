@@ -153,18 +153,27 @@ def hero3(dv3, fig_dir):
     traits = [t for t, v in dv3.get("traits", {}).items() if "primary" in v and "skipped" not in v]
     if not traits:
         return
-    pal = paper_palette(4)
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.0), squeeze=False)
+    pal = paper_palette(5)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), squeeze=False)
     for mi, mode in enumerate(("system", "many_shot")):
         ax = axes[0][mi]
         labels, vals, los, his, colors = [], [], [], [], []
         for t in traits:
             pr = dv3["traits"][t]["primary"]
-            for name, key, color in [
-                ("frozen", "frozen", pal[0]),
-                ("rolled (horizon mean)", "horizon_mean", pal[1]),
+            series = [
+                ("frozen", pr.get("frozen", {}), pal[0]),
+                ("rolled (hm)", pr.get("horizon_mean", {}), pal[1]),
+            ]
+            # v6 modes (plan HERO-3): rolled-b1 / rolled-b2 (FiLM) / direct-c
+            for name, key in [
+                ("rolled b1", "rolled_b1_ridge"),
+                ("rolled b2 (FiLM)", "rolled_film"),
+                ("direct-c", "direct_c"),
             ]:
-                m = pr.get(key, {}).get(mode, {})
+                if key in pr:
+                    series.append((name, pr[key].get("horizon_mean", {}), pal[4]))
+            for name, met, color in series:
+                m = met.get(mode, {})
                 labels.append(f"{t}\n{name}")
                 vals.append(m.get("point", np.nan))
                 los.append(m.get("point", np.nan) - m.get("lo", np.nan))
@@ -202,6 +211,88 @@ def hero3(dv3, fig_dir):
     fig.suptitle("Trait read-out: rolled vs frozen vs references (primary ℓ*)")
     fig.tight_layout()
     savefig_paper(fig, "hero3_readout_bars", fig_dir)
+    plt.close(fig)
+
+
+def hero4(cond, roll, fig_dir, readout_blocks):
+    """The H6/H7 exhibit (plan §6 HERO-4): (left) paired per-context single-step
+    r2 delta b2_film − b1_grad at the ℓ* rows + companion form points; (right)
+    rollout skill vs k at the primary ℓ* rows — ctx-roll vs direct-c vs
+    rolled-b1 vs rolled-b2(FiLM) vs mean-drift, with the H7 paired
+    horizon-mean delta inset as text."""
+    pal = paper_palette(6)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), squeeze=False)
+    ax = axes[0][0]
+    h6 = (cond or {}).get("h6", {})
+    plotted_left = False
+    for ci_i, (comp, color) in enumerate(
+        [("film", pal[0]), ("lowrank", pal[2]), ("mixture", pal[3])]
+    ):
+        reads = h6.get(f"{comp}_minus_b1_grad", {}).get("per_lstar", {})
+        if not reads:
+            continue
+        xs = [int(bk) + 0.15 * ci_i for bk in reads]
+        means = [reads[bk]["mean"] for bk in reads]
+        lo = [reads[bk]["mean"] - reads[bk]["lo"] for bk in reads]
+        hi = [reads[bk]["hi"] - reads[bk]["mean"] for bk in reads]
+        ax.errorbar(
+            xs,
+            means,
+            yerr=[np.maximum(0.0, lo), np.maximum(0.0, hi)],
+            fmt="o",
+            ms=4,
+            color=color,
+            capsize=2,
+            label=f"{comp} − b1_grad" + (" (PRIMARY)" if comp == "film" else ""),
+        )
+        plotted_left = True
+    ax.axhline(0.0, color="black", lw=0.8)
+    ax.set_xlabel("read-out block ℓ*")
+    ax.set_ylabel("paired per-context Δ r2_id (single-step)")
+    ax.set_title("H6: operator reshaping vs additive drift")
+    if plotted_left:
+        ax.legend(fontsize=7)
+    ax = axes[0][1]
+    variants = (roll or {}).get("variants", {})
+    ks = list(range(1, (roll or {}).get("k_max", 0) + 1))
+    bks = [
+        str(b)
+        for b in readout_blocks
+        if str(b) in variants.get("direct_c", {}).get("pooled_r2_id", {})
+    ]
+    bk0 = bks[0] if bks else None
+    if bk0 is None:  # fall back to any block direct_c carries
+        cand = list(variants.get("direct_c", {}).get("pooled_r2_id", {}))
+        bk0 = cand[0] if cand else None
+    if bk0 is not None:
+        for name, label, color in [
+            ("ridge_ctx_boundary_first", "ctx roll (arm a)", pal[0]),
+            ("direct_c", "direct-c (arm c)", pal[1]),
+            ("b1_ridge_roll", "rolled b1 (ridge)", pal[2]),
+            ("b1_grad_roll", "rolled b1 (grad twin)", pal[4]),
+            ("film_roll", "rolled b2 FiLM", pal[3]),
+            ("mean_drift", "mean-drift null", pal[5]),
+        ]:
+            v = variants.get(name, {}).get("pooled_r2_id", {}).get(bk0)
+            if v:
+                ax.plot(ks, v, label=label, color=color, lw=1.2)
+        h7 = (roll or {}).get("h7_paired", {}).get("ctx_roll_minus_direct_c", {}).get(bk0)
+        if h7:
+            ax.text(
+                0.02,
+                0.02,
+                f"H7 Δhm (roll−direct) = {h7['mean']:.3f} [{h7['lo']:.3f}, {h7['hi']:.3f}]",
+                transform=ax.transAxes,
+                fontsize=7,
+            )
+        ax.axhline(0.0, color="black", lw=0.8)
+        ax.set_ylim(-1.0, 1.0)
+        ax.set_title(f"H7: recursion vs direct (block {bk0})")
+        ax.set_xlabel("horizon k")
+        ax.set_ylabel("pooled R² (frozen-relative)")
+        ax.legend(fontsize=6)
+    fig.suptitle("H6/H7: conditioned + direct transition structures")
+    savefig_paper(fig, "hero4_h6_h7", fig_dir)
     plt.close(fig)
 
 
@@ -285,7 +376,7 @@ def exploratory(atlas, roll, dv3, dv4, fig_dir, out_dir):  # noqa: C901 — one 
     savefig_paper(fig, "exploratory_gcv_lambda", fig_dir)
     plt.close(fig)
     # per-context rollout-skill scatter (k=4 vs k=16) at first read-out block present
-    npz_p = out_dir / "rollout_percontext.npz"
+    npz_p = out_dir / "rollout_skill_percontext.npz"
     if npz_p.exists() and roll is not None:
         z = np.load(npz_p)
         key = next((k for k in z.files if k.startswith("skill__ridge_ctx_boundary_first__")), None)
@@ -373,9 +464,60 @@ def upload_artifacts(args) -> dict:
         }
         mdir = stage / "maps"
         mdir.mkdir(exist_ok=True)
+        # v6: b1 closed-form [h,c] maps at the read-out rows ride the same file
+        if blob.get("b1_answer"):
+            sub["b1_answer_lstar"] = {
+                r: {k: (v.half() if torch.is_tensor(v) else v) for k, v in st.items()}
+                for r, st in blob["b1_answer"].items()
+                if r in keep_rows
+            }
         torch.save(sub, mdir / "maps_boundary_and_lstar_fp16.pt")
         events["maps"] = C.upload_dir_bulk(
             mdir, f"{C.HF_OUT_PREFIX}/maps", commit_message="issue922 maps (boundary + lstar fp16)"
+        )
+    # v6: conditioned gradient forms (ℓ* rows, fp16) + arm-c ℓ* all-k map files
+    cond_p = args.maps / "maps_conditioned.pt"
+    keep_rows = {C.block_to_row(b) for b in C.READOUT_BLOCKS}
+    cstage_written = False
+    cdir = stage / "maps_conditioned"
+    if cond_p.exists():
+        cblob = torch.load(cond_p, weights_only=False)
+        cdir.mkdir(exist_ok=True)
+        sub_c = {
+            "forms": {
+                form: {
+                    r: {
+                        **{k: v for k, v in pb.items() if k != "weights"},
+                        "weights": {k: v.half() for k, v in pb["weights"].items()},
+                    }
+                    for r, pb in per_row.items()
+                    if r in keep_rows
+                }
+                for form, per_row in cblob["forms"].items()
+            },
+            "rank": cblob.get("rank"),
+            "n_mix": cblob.get("n_mix"),
+            "recipe": cblob.get("recipe"),
+            "capacity": cblob.get("capacity"),
+            "metadata": cblob.get("metadata"),
+        }
+        torch.save(sub_c, cdir / "maps_conditioned_lstar_fp16.pt")
+        cstage_written = True
+    ddir = args.maps / "direct"
+    if ddir.is_dir():
+        cdir.mkdir(exist_ok=True)
+        import shutil
+
+        for r in sorted(keep_rows):
+            p = ddir / f"direct_row_{r:02d}.pt"
+            if p.exists():  # weights already fp16 on disk (plan §10 pricing)
+                shutil.copy2(p, cdir / p.name)
+                cstage_written = True
+    if cstage_written:
+        events["maps_conditioned"] = C.upload_dir_bulk(
+            cdir,
+            f"{C.HF_OUT_PREFIX}/maps_conditioned",
+            commit_message="issue922 conditioned/direct maps (lstar fp16)",
         )
     # store subsets: test contexts + eval store.
     lm = args.store / "lmsys"
@@ -411,13 +553,15 @@ def upload_artifacts(args) -> dict:
             allow_patterns=["*.pt", "*.json"],
             commit_message="issue922 eval-condition store",
         )
-    # eval JSONs + figures (non-LFS path — always).
+    # eval JSONs + figures. NOTE the >10 MB npz files force-route to LFS, so a
+    # quota-403 must reroute to the overflow repo instead of killing the run
+    # pre-sentinel (r1 review Minor) — the overflow event record keeps it loud.
     events["eval_results"] = C.upload_dir_bulk(
         args.results,
         f"{C.HF_OUT_PREFIX}/eval_results",
         allow_patterns=["*.json", "*.npz"],
         commit_message="issue922 eval results",
-        allow_overflow=False,
+        allow_overflow=True,
     )
     events["figures"] = C.upload_dir_bulk(
         args.figures,
@@ -446,12 +590,15 @@ def main() -> int:
     roll = _load(args.results / "rollout_skill.json")
     dv3 = _load(args.results / "readout_benchmark.json")
     dv4 = _load(args.results / "transfer_eval.json")
+    cond = _load(args.results / "conditioned_arms.json")
     if atlas:
         hero1(atlas, ap_figs)
     if roll:
         hero2(roll, ap_figs, C.READOUT_BLOCKS)
     if dv3:
         hero3(dv3, ap_figs)
+    if cond or (roll and "h7_paired" in roll):
+        hero4(cond, roll, ap_figs, C.READOUT_BLOCKS)
     if atlas or roll or dv3 or dv4:
         exploratory(atlas or {}, roll, dv3, dv4, ap_figs, args.results)
     if args.upload:

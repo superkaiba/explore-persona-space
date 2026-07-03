@@ -46,14 +46,25 @@ SMOKE_BLOCKS="${EPM922_SMOKE_BLOCKS:-emb,20}"
 EXP_LAYERS="${EPM922_EXPECTED_LAYERS:-28}"
 EXP_HIDDEN="${EPM922_EXPECTED_HIDDEN:-3584}"
 
-# ONE subset definition, threaded to EVERY phase below.
+# ONE subset definition, threaded to EVERY phase below. The v6 conditioned +
+# direct arms scale down through the SAME flags (smoke: b1_ridge + b1_grad +
+# b2_film at the smoke blocks, direct-c k<=8 — plan §4.5).
 SMOKE_FLAG=()
 FIT_BLOCKS=()
 EVAL_TRAITS=()
+COND_ARMS=(--b1-ridge
+  --conditioned-forms "${EPM922_COND_FORMS:-b1_grad,film,lowrank,mixture}"
+  --conditioned-blocks "${EPM922_COND_BLOCKS:-emb,5,10,14,17,19,20,24,26}"
+  --direct-horizons "${EPM922_DIRECT_K:-40}")
 if [ "$SMOKE" = "1" ]; then
   SMOKE_FLAG=(--smoke)
   FIT_BLOCKS=(--blocks "$SMOKE_BLOCKS")
   EVAL_TRAITS=(--traits evil --n-boot 100)
+  COND_ARMS=(--b1-ridge
+    --conditioned-forms "${EPM922_COND_FORMS:-b1_grad,film}"
+    --conditioned-blocks "${EPM922_COND_BLOCKS:-$SMOKE_BLOCKS}"
+    --direct-horizons "${EPM922_DIRECT_K:-8}"
+    --cond-max-epochs 3)
 fi
 READOUT_OVR=()
 if [ -n "${EPM922_READOUT_BLOCK:-}" ]; then
@@ -79,11 +90,12 @@ uv run python scripts/issue922_capture_positions.py --corpus eval_subset --out "
 
 echo "[phase=fits]"
 uv run python scripts/issue922_fit_maps.py --store "$STORE" --out "$MAPS" --split-seed 42 \
-  "${FIT_BLOCKS[@]}" "${MLP_EPOCHS[@]}" "${GRU_EPOCHS[@]}" "${SMOKE_FLAG[@]}"
+  "${FIT_BLOCKS[@]}" "${MLP_EPOCHS[@]}" "${GRU_EPOCHS[@]}" "${COND_ARMS[@]}" "${SMOKE_FLAG[@]}"
 
 echo "[phase=evals]"
 uv run python scripts/issue922_eval.py --store "$STORE" --maps "$MAPS" --out "$OUT" \
-  --split-seed 42 "${EVAL_TRAITS[@]}" "${READOUT_OVR[@]}" "${SMOKE_FLAG[@]}"
+  --split-seed 42 --conditioned-rollouts --direct-predictions \
+  "${EVAL_TRAITS[@]}" "${READOUT_OVR[@]}" "${SMOKE_FLAG[@]}"
 
 echo "[phase=plots]"
 # Smoke exercises the SAME upload code path (plan §4.5), redirected to a
