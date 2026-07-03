@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 929,
+  "highest_id": 930,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6124,6 +6124,13 @@
       "path": "tasks/proposed/929",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md zero-width-span BPE-delimiter-merge entry"
+    },
+    "930": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/930",
+      "status": "proposed",
+      "title": "workflow-fix: lint check for reserved [phase=done] multi-emission"
     },
     "94": {
       "has_clean_result": false,
