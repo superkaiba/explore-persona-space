@@ -5,8 +5,8 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 20-guideline
-recipe those bullets point at (the 18 judge-scoring guidelines plus the
+`claude-sonnet-4-5-20250929`" bullet; this file is the full 21-guideline
+recipe those bullets point at (the 19 judge-scoring guidelines plus the
 two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
@@ -182,6 +182,34 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     compression a binary rate hides — a rate pinned at 1.0 across conditions
     can still show graded spread, which is the saturation signature to watch.
 
+21. **Design-aligned split-half on crossed designs.** When a reliability
+    ceiling (split-half + Spearman–Brown; the √(r_yy) of rules 15/18) is
+    computed over a CROSSED design — the same item/probe set scored under
+    every condition — the half-split MUST be item-ALIGNED across conditions:
+    ONE half-partition of the items, applied identically to every condition
+    (prefer averaging over many aligned partitions, or a deterministic
+    odd–even-by-item-id split, to a single random draw). Splitting each
+    condition's items INDEPENDENTLY violates the parallel-halves assumption
+    Spearman–Brown requires: within a condition the two halves partition the
+    same items, so the item-composition offset enters the two half-scores
+    with OPPOSITE signs; independent splits make that anti-correlated offset
+    vary across conditions, and when its half-mean variance (item main-effect
+    variance scaled by half size, ≈ σ²_item/(n_items−1)) exceeds the
+    condition signal it dominates, driving split-half r systematically
+    NEGATIVE — which the non-negativity floor reports as a 0.00 ceiling,
+    censoring real signal. (An aligned split turns the offset into a shared
+    constant that cancels in the cross-condition correlation.) Incident #763
+    (`reliability_split_half_over_probes`, crossed context × probe; probe sd
+    ≈27/100 vs context signal ≈3/100 — half-mean offset sd 27/√59 ≈ 3.5 vs
+    signal ≈ 3): independent splits gave r = −0.41 (v1) / −0.23 (v2),
+    ~100%/99% of 200 random splits negative, clipping a real v2 ceiling
+    ≈0.59 to 0.00; the probe-ALIGNED split recovered it. Report the
+    splitting scheme AND the aggregation convention alongside the ceiling
+    (rule 18) — e.g. mean r across aligned partitions BEFORE Spearman–Brown,
+    and where any non-negativity floor is applied. The aligned ceiling is
+    conditional on the fixed item panel (item main effects deliberately
+    excluded) — do not read it as item-sampling generalization.
+
 ## G. Reproducibility / reporting
 
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
@@ -221,7 +249,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 ## Files of record
 
 Task body #765 (the guideline derivation + the two adversarial deep-research
-dives); `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
+dives); task body #763 (the design-aligned split-half incident behind rule 21);
+`.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,
 `analyzer.md`, `interpretation-critic.md`, `clean-result-critic.md`).

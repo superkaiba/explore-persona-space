@@ -1,0 +1,1006 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:35Z",
+  "figsize": [
+    15.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.7628552105852767,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.6535881784871108,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.6732895076488432,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.2978286522573291,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": -0.11903535571521938,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.2983259622072385,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.11832197665399698,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.20832077385792352,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.4519902010382249,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.2437156769751045,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": 0.4811102482070705,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.7078907779394231,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.5484291461602196,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.8732830558725474,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.2475265776755177,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": -0.19314512558484606,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.037348821176609405,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.33072940649549903,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.12363775444959159,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.3755620548419109,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.40879824827162586,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": 0.3891063621519874,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.8174727499348571,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.5730794684195981,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.8460248907678632,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.46097537744753736,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": 0.00580234278276775,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.7386251516271916,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.019051578311920614,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.19363099352536142,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.26642928259653587,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.2770429942589697,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": -0.0022580371960705995,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.7071005250876186,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.6664950288772227,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.5501402099106876,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.5234524042745134,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": -0.27576180409903017,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.26571508082521317,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.2239115185981487,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.27881228521540163,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.5651155452106872,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.5197417963651335,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": 0.4101177976698414,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0165734327420677,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.9845913267284213,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.991945476584371,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 1.0920109327678265,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": 1.1069428966123915,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.8120492709105022,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.8499288536494821,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.2375398656764001,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.16369644802250527,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": -0.023438596524304772,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": -0.302340278358704,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retained fraction of ceiling r (system mode)": 0.2462407013471951,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retained fraction of ceiling r (system mode)": -0.007990480497426396,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retained fraction of ceiling r (system mode)": 0.4041958157632836,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0157857071056708,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.9835284488441977,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.9881828075276022,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.9243123418702992,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": 0.9660612383267039,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.7817461065607871,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.8866551923236948,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.23013205557715286,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.14232696335989795,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.27289761337252516,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": 0.45620490546772813,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retained fraction of ceiling r (system mode)": 0.5914437516651847,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retained fraction of ceiling r (system mode)": 0.35332711584562065,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retained fraction of ceiling r (system mode)": 0.25002559543760267,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.059243711544093,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 1.0147347940456026,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 1.1068142631363453,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 0.9813994958153456,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": 0.9005547602013115,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.43238451528685196,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.45063710313479066,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.1016258391174897,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": -0.11149361829285262,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.20067991433691743,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": -0.04661561345947357,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retained fraction of ceiling r (system mode)": -0.16797617858788266,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retained fraction of ceiling r (system mode)": 0.06490638095821412,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retained fraction of ceiling r (system mode)": 0.49171689149000547,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0156825690210782,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retained fraction of ceiling r (system mode)": 0.9739751586079052,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retained fraction of ceiling r (system mode)": 0.8889863384619426,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retained fraction of ceiling r (system mode)": 1.0426832510293162,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retained fraction of ceiling r (system mode)": 0.8847472963949297,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retained fraction of ceiling r (system mode)": 0.8131113443264762,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retained fraction of ceiling r (system mode)": 0.6888230533176026,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retained fraction of ceiling r (system mode)": 0.08155521774448274,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retained fraction of ceiling r (system mode)": 0.40800635575137006,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retained fraction of ceiling r (system mode)": 0.07585831106687874,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retained fraction of ceiling r (system mode)": 0.5711750913933196,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retained fraction of ceiling r (system mode)": 0.4184059390171791,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retained fraction of ceiling r (system mode)": 0.2860640144699529,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retained fraction of ceiling r (system mode)": 0.03743373110899897,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.9256621051163391,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retained fraction of ceiling r (system mode)": 0.7034666354887938,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retained fraction of ceiling r (system mode)": 0.5630241211765329,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retained fraction of ceiling r (system mode)": 0.6545605541196525,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retained fraction of ceiling r (system mode)": 0.2568187216575854,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retained fraction of ceiling r (system mode)": 0.5765971551314062,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retained fraction of ceiling r (system mode)": 0.0936115546679397,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retained fraction of ceiling r (system mode)": 0.5029355273362863,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retained fraction of ceiling r (system mode)": 0.45282653525834016,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.9749678412323519,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retained fraction of ceiling r (system mode)": 0.6846166928392402,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retained fraction of ceiling r (system mode)": 0.5083545670300008,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retained fraction of ceiling r (system mode)": 0.43101181946375744,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retained fraction of ceiling r (system mode)": 0.5847817130200734,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retained fraction of ceiling r (system mode)": 0.6077583203357729,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retained fraction of ceiling r (system mode)": 0.6796677622894489,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retained fraction of ceiling r (system mode)": 0.5506455276578608,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retained fraction of ceiling r (system mode)": 0.05081206005042199,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.9446586873594067,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retained fraction of ceiling r (system mode)": 0.6612888392997277,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retained fraction of ceiling r (system mode)": 0.7218498742186553,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retained fraction of ceiling r (system mode)": 0.35642268365032825,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retained fraction of ceiling r (system mode)": 0.5256583325215856,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retained fraction of ceiling r (system mode)": 0.34184471744987727,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retained fraction of ceiling r (system mode)": -0.6502562249035205,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retained fraction of ceiling r (system mode)": -0.6998541793813586,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retained fraction of ceiling r (system mode)": 0.11385780953885818,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 0.889539930451176,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retained fraction of ceiling r (system mode)": 0.7212580678537668,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retained fraction of ceiling r (system mode)": 0.4925443566373974,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retained fraction of ceiling r (system mode)": 0.7006057457404676,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retained fraction of ceiling r (system mode)": 0.10577183635703895,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retained fraction of ceiling r (system mode)": 0.2968031138232093,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retained fraction of ceiling r (system mode)": -0.13027734417117762,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retained fraction of ceiling r (system mode)": 0.25703920959302123,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retained fraction of ceiling r (system mode)": -0.13846009301268733,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retained fraction of ceiling r (system mode)": 1.0,
+      "series": "ceiling (retention=1)",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 142
+}

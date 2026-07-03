@@ -983,7 +983,18 @@ def render_startup_script(
        ``--instance-termination-action=DELETE`` boot-disk destruction
        (#658). Without this a GCP crash loses its own traceback + partial
        output forever (the disk is gone), so the bug must be diagnosed by
-       inference and every retry produces nothing recoverable.
+       inference and every retry produces nothing recoverable. As of
+       #854 the partial sweep covers ``eval_results/issue_<N>/`` AND both
+       ``data/issue_<N>/`` / ``data/issue<N>/`` working-dir conventions
+       (re-downloadable ``hf_dl``/``g*_dl``/``store`` caches excluded,
+       per-dir byte cap ``EPS_PERSIST_DIR_CAP_BYTES``), a per-crash
+       timestamped ``workload_<ts>.log`` copy plus a
+       ``crash_persist_transcript.log`` audit upload LAST, every
+       upload/skip streams an eager ``[crash-persist]`` line to the
+       serial console AS IT HAPPENS, and the trap kills the reachability
+       watchdog at ENTRY so no other in-guest actor can power the VM off
+       mid-persist. The sweep is these three named directories only —
+       NOT universal artifact discovery.
 
     The workload's existing HF/WandB upload paths remain the AUTHORITATIVE
     artifact route during a normal run; the sentinel is a small completion
@@ -1261,11 +1272,29 @@ def render_startup_script(
         # delay the `shutdown` that bounds billing — every step is
         # ``|| true`` and the whole upload is wrapped in ``timeout`` so the
         # trap always reaches the poweroff.
+        #
+        # #854 hardening (incident #825): the run-2 partial-data loss was a
+        # silent COVERAGE-GAP skip (the sweep only looked in
+        # eval_results/issue_<N>/ while the workload wrote data/issue_825/),
+        # misdiagnosed as a poweroff race because every skip was silent and
+        # the old `| cut | tail` pipe buffered all output until EOF. Now:
+        # the sweep also covers data/issue_<N>/ + data/issue<N>/ (caches
+        # excluded), every upload/failure/skip prints an eager
+        # [crash-persist] line, a per-crash timestamped workload log copy +
+        # a crash_persist_transcript.log audit survive same-attempt
+        # re-crashes, and the EXIT trap reaps the reachability watchdog at
+        # entry so nothing else can power off mid-upload.
         "_eps_persist_diagnostics() {",
         '  _rc="${1:-1}";',
         # Nothing to do without a repo target or HF token (early-boot crash
         # before the env exports / secret fetch — let the trap power off).
-        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi;',
+        # #854: the skip is LOUD (fd 3 = serial console) — a silent early
+        # return here is indistinguishable from a killed persist.
+        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then',
+        '    { echo "[crash-persist] SKIP-ALL: EPS_HF_DATA_REPO or HF_TOKEN unset'
+        ' (early-boot crash)" >&3; } 2>/dev/null || true;',
+        "    return 0;",
+        "  fi;",
         '  _dest="issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}";',
         '  _crash="/tmp/eps-crash-report.json";',
         # A compact crash report: exit code + timestamp + the log tail
@@ -1284,41 +1313,133 @@ def render_startup_script(
         # but BEFORE the later `export PATH="$HOME/.local/bin:$PATH"` in
         # the uv-install block — without this, `uv` is not found in that
         # narrow window and the diagnostics upload silently no-ops.
-        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH";'
+        # HF_HUB_DISABLE_PROGRESS_BARS: the fd-3 stream below is now EAGER
+        # per-line (#854), so hub progress bars would spam the serial console.
+        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH" HF_HUB_DISABLE_PROGRESS_BARS=1;'
         ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
         ' && timeout 300 uv run python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
-        "import os, sys",
+        "import datetime, os, sys",
         "from pathlib import Path",
         "from huggingface_hub import HfApi",
         "dest, crash = sys.argv[1], sys.argv[2]",
         'repo = os.environ["EPS_HF_DATA_REPO"]',
         'issue = os.environ.get("EPS_ISSUE", "0")',
         'log_path = os.environ.get("EPS_LOG_PATH", "")',
+        'root = Path(os.environ.get("WORKLOAD_ROOT", ""))',
+        'transcript = os.environ.get("EPS_PERSIST_TRANSCRIPT", "/tmp/eps-crash-persist.log")',
+        "def _say(msg):",
+        "    # every line is printed flush=True (eager fd-3 streaming) AND teed into the",
+        "    # transcript file uploaded LAST — a poweroff-independent skip-vs-kill audit on",
+        "    # HF (#854). The append is best-effort: stdout already carries the line, and a",
+        "    # transcript write failure must never break the persist itself.",
+        "    print(msg, flush=True)",
+        "    try:",
+        '        with open(transcript, "a") as fh:',
+        '            fh.write(msg + "\\n")',
+        "    except OSError:",
+        "        pass",
+        "_say(f\"[crash-persist] BEGIN repo={repo} dest={dest} log_path={log_path or 'UNSET'}\")",
         "api = HfApi()",
         "def _up_file(path, path_in_repo):",
         "    try:",
+        '        _say(f"[crash-persist] uploading {path_in_repo}'
+        ' ({Path(path).stat().st_size} bytes)")',
         "        api.upload_file(path_or_fileobj=path, path_in_repo=path_in_repo,",
         '                        repo_id=repo, repo_type="dataset")',
-        '        print(f"[crash-persist] uploaded {path_in_repo}")',
+        '        _say(f"[crash-persist] uploaded {path_in_repo}")',
         "    except Exception as exc:",
-        '        print(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
-        "# 1. crash report + workload log (the traceback / stderr).",
+        '        _say(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
+        "# 1. crash report + workload log, small-first (the traceback is the highest-value",
+        "#    artifact; a worst-case timeout still lands it). A same-attempt re-crash",
+        "#    overwrites the canonical names (#854: run-3 overwrote run-2's log on HF), so",
+        "#    a per-crash timestamped log copy ALSO uploads — LAST, after the partial dirs",
+        "#    (small-first; the canonical log already carries the traceback early).",
+        'stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")',
         "if Path(crash).is_file():",
         '    _up_file(crash, f"{dest}/crash_report.json")',
+        "else:",
+        '    _say(f"[crash-persist] SKIP crash_report.json: no such file ({crash})")',
         "if log_path and Path(log_path).is_file():",
         '    _up_file(log_path, f"{dest}/workload.log")',
-        "# 2. partial artifacts the workload wrote before crashing.",
-        'partial = Path(os.environ.get("WORKLOAD_ROOT", "")) / "eval_results" / f"issue_{issue}"',
-        "if partial.is_dir():",
+        "else:",
+        '    _say(f"[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing'
+        ' ({log_path!r})")',
+        "# 2. partial artifacts — BOTH output conventions (#854: issue825 wrote its partials",
+        "#    under data/issue_825/, structurally OUTSIDE the old eval_results-only sweep ->",
+        "#    silent skip -> boot-disk surgery). The sweep is these three named dirs ONLY,",
+        "#    not universal artifact discovery. Re-downloadable caches / stores are excluded",
+        "#    at BOTH the top level and nested depths — under fnmatch the '**/'-prefixed",
+        "#    forms do NOT match top-level paths, so both forms are listed; every skip is",
+        "#    printed.",
+        'IGNORE = ["hf_dl/**", "g*_dl/**", "store/**", ".cache/**", "__pycache__/**",',
+        '          "**/hf_dl/**", "**/g*_dl/**", "**/store/**", "**/.cache/**",',
+        '          "**/__pycache__/**"]',
+        'PRUNE = {"hf_dl", "store", ".cache", "__pycache__"}',
+        'CAP = int(os.environ.get("EPS_PERSIST_DIR_CAP_BYTES", 2 * 1024**3))',
+        "def _dir_stats(local):",
+        "    total, n = 0, 0",
+        "    for dirpath, dirnames, filenames in os.walk(local):",
+        "        dirnames[:] = [d for d in dirnames",
+        '                       if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "        for f in filenames:",
+        "            try:",
+        "                total += (Path(dirpath) / f).stat().st_size",
+        "                n += 1",
+        "            except OSError:",
+        "                pass",
+        "    return total, n",
+        "def _up_dir(local, name):",
+        "    if not local.is_dir():",
+        '        _say(f"[crash-persist] SKIP {name}: no such dir ({local})")',
+        "        return",
+        "    size, n = _dir_stats(local)",
+        "    if n == 0:",
+        '        _say(f"[crash-persist] SKIP {name}: empty after cache excludes")',
+        "        return",
+        "    if size > CAP:",
+        '        _say(f"[crash-persist] SKIP {name}: {size} bytes > cap {CAP}'
+        ' (oversized; regenerate or reduce EPS_PERSIST_DIR_CAP_BYTES)")',
+        "        return",
         "    try:",
-        "        api.upload_folder(folder_path=str(partial),",
-        '                          path_in_repo=f"{dest}/eval_results_issue_{issue}",',
-        '                          repo_id=repo, repo_type="dataset")',
-        '        print(f"[crash-persist] uploaded partial eval_results dir")',
+        '        _say(f"[crash-persist] uploading dir {name} ({n} files, {size} bytes)")',
+        '        api.upload_folder(folder_path=str(local), path_in_repo=f"{dest}/{name}",',
+        '                          repo_id=repo, repo_type="dataset", ignore_patterns=IGNORE)',
+        '        _say(f"[crash-persist] uploaded dir {name}")',
         "    except Exception as exc:",
-        '        print(f"[crash-persist] FAILED partial eval_results: {exc}")',
+        '        _say(f"[crash-persist] FAILED dir {name}: {exc}")',
+        "for local, name in (",
+        '    (root / "eval_results" / f"issue_{issue}", f"eval_results_issue_{issue}"),',
+        '    (root / "data" / f"issue_{issue}", f"data_issue_{issue}"),',
+        '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
+        "):",
+        "    _up_dir(local, name)",
+        "# per-crash timestamped log copy — LAST among the artifacts (see the note above).",
+        "if log_path and Path(log_path).is_file():",
+        '    _up_file(log_path, f"{dest}/workload_{stamp}.log")',
+        '_say("[crash-persist] DONE")',
+        "# 3. the audit transcript FINAL — its presence on HF proves the persist ran to",
+        "#    completion (every skip recorded); its ABSENCE proves a killed persist. The",
+        "#    serial console is unreadable post-DELETE (#640), so this is the durable audit.",
+        "if Path(transcript).is_file():",
+        '    _up_file(transcript, f"{dest}/crash_persist_transcript.log")',
         "EPS_PERSIST_PY",
-        "  ) 2>&1 | cut -c1-2000 | tail -n 20 >&3 2>/dev/null || true;",
+        # #854 eager bounded streamer, replacing `| cut -c1-2000 | tail -n 20`:
+        # `tail` buffered everything to EOF, so a killed/skipped persist left
+        # ZERO serial evidence — the diagnosability gap that let a coverage-gap
+        # skip be misdiagnosed as a poweroff race on #825. The reader forwards
+        # each line to fd 3 AS IT ARRIVES, caps line length at 2000 chars,
+        # stops PRINTING after 60 lines but keeps READING to EOF — an early
+        # pipe close would SIGPIPE-kill the python mid-upload, the exact loss
+        # this path exists to prevent. That read-to-EOF property is pinned by
+        # the string assert in test_render_startup_script_persist_streams_eagerly
+        # (the behavioral heredoc test runs the python WITHOUT this bash
+        # streamer, so it does not exercise SIGPIPE protection). The
+        # `|| [ -n "$_l" ]` keeps a trailing unterminated line.
+        '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
+        '    if [ "$_n" -le 60 ]; then'
+        " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
+        "  done; } 2>/dev/null || true;",
         "}",
         # In-VM REACHABILITY watchdog (#669) — NOT a liveness watchdog
         # (systemd #21083: a liveness /dev/watchdog keeps getting fed on a
@@ -1339,8 +1460,8 @@ def render_startup_script(
         # frozen-phase wedge detector is the independent backstop. Launched
         # AFTER the exec >> redirect so its [eps-watchdog] lines land in the
         # workload log (not the metadata-runner pipe — #607/#491 discipline)
-        # and reaped in the clean-exit tail (or by the EXIT-trap shutdown on a
-        # crash).
+        # and reaped in the clean-exit tail, or KILLED AT EXIT-TRAP ENTRY on a
+        # crash (#854) so it cannot race the crash persist.
         "_eps_reachability_watchdog() {",
         "  local interval=30 threshold=10 fails=0 meta_ok ext_ok",
         "  while true; do",
@@ -1464,6 +1585,12 @@ def render_startup_script(
         ' { echo "[startup-script] FAILED rc=$rc — powering off to bound billing"; }'
         " 2>/dev/null || true;"
         " _eps_phase failed;"
+        # #854: reap the reachability watchdog — the only OTHER in-guest
+        # poweroff actor — at trap ENTRY, before the persist, so nothing can
+        # power the VM off mid-upload; the trap itself guarantees the
+        # billing-bounding shutdown below. Guarded: an unset PID (crash
+        # before the watchdog launch) / already-dead daemon is a no-op.
+        ' { kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true;'
         ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
         ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
         # #658: persist the workload log + partial artifacts to HF BEFORE
@@ -1552,7 +1679,8 @@ def render_startup_script(
         # integration tests do NOT execute the infinite daemon). ``< /dev/null``
         # detaches it from any inherited stdin so a backgrounded daemon never
         # holds a parent pipe open. Reaped on clean exit (the kill below before
-        # the success sentinel) or by the EXIT-trap shutdown on a crash.
+        # the success sentinel) or at EXIT-trap ENTRY on a crash (#854 — before
+        # the crash persist, so it cannot power off mid-upload).
         "_eps_reachability_watchdog < /dev/null &",
         "EPS_WATCHDOG_PID=$!",
         "",
@@ -1617,7 +1745,7 @@ def render_startup_script(
         # _eps_persist_diagnostics + shutdown, so the poll reads
         # terminal_workload_failed and the async GCP->RunPod failover (#659) can
         # fire, instead of a false phase=done masking a complete failure. The
-        # watchdog (still live here) is reaped by the EXIT trap's shutdown, not
+        # watchdog (still live here) is killed at EXIT-trap ENTRY (#854), not
         # the clean reaper below -- on the failure path the trap owns teardown.
         'EPS_OOM_FINAL="$(_eps_oom_count)"',
         'if [ "${EPS_OOM_FINAL:-0}" -gt "${EPS_OOM_BASELINE:-0}" ]; then',

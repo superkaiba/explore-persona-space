@@ -110,7 +110,7 @@ def _override_store_prefix(prefix: str) -> None:
     ``issue722_load_activations.list_store_layout`` reads the module-global
     ``STORE_PREFIX`` at call time, so setting the module attribute redirects its
     directory-tree walk to ``prefix`` WITHOUT editing the reused module (the same
-    runtime-override pattern issue722_fit_M uses for fit658.DEVICE). A ``_Streamer``
+    runtime-override pattern issue667_save_maps uses for fit658.DEVICE). A ``_Streamer``
     still defaults its prefix at def-time, so ``load_cells`` is always called with
     an explicit ``streamer=_Streamer(prefix=prefix)`` below. The Δc loader takes
     ``prefix`` as an argument directly (it is inlined here, not from deltac), so
@@ -399,8 +399,8 @@ class _fast_pca_injected:
     all resolve the PCA basis through the module attribute ``fitM._pca_basis_v0``,
     so swapping that one attribute redirects EVERY PCA in the ridge path to the
     fast subspace WITHOUT editing the reused module (the same runtime-override
-    pattern the map-change loader uses for ``loadact.STORE_PREFIX`` /
-    ``fit658.DEVICE``). Restored in ``finally`` so the correctness gate's
+    pattern the map-change loader uses for ``loadact.STORE_PREFIX``). Restored
+    in ``finally`` so the correctness gate's
     per-cell ``fit_cell`` (which must run the ORIGINAL np.svd PCA to be an
     independent reference) is unaffected.
     """
@@ -452,10 +452,8 @@ def _configure_map_change_compute(smoke_clamp: bool) -> None:
         fitM.N_REFIT_PAIRS = 8
         fitM.TARGET_DIM = 4
         logger.info("map-change: SMOKE clamps (mlp_epochs=20 refit_pairs=8 target_dim=4)")
-    # Resolve the compute device the reused ridge + MLP fitters read off
-    # fit658.DEVICE ("auto" -> cuda if available else cpu; issue722_fit_M.main sets
-    # this, which we bypass by calling fit_cell directly).
-    fitM.fit658.DEVICE = fitM.fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("map-change: fit device=%s", fitM.fit658.DEVICE)
     # Exactness gate (#658): a reduction-order regression fails at startup.
     fitM.fit658._assert_ridge_exactness()

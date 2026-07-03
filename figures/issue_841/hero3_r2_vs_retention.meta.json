@@ -1,0 +1,488 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:36Z",
+  "figsize": [
+    15.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.98654813389335,
+      "Retention at that source (system)": 0.3891063621519874,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9741618316150454,
+      "Retention at that source (system)": 0.40879824827162586,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9681292123585302,
+      "Retention at that source (system)": 0.3755620548419109,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9597367975204806,
+      "Retention at that source (system)": 0.12363775444959159,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9588792055760605,
+      "Retention at that source (system)": 0.33072940649549903,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9632038640156217,
+      "Retention at that source (system)": 0.037348821176609405,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9327446437995675,
+      "Retention at that source (system)": -0.19314512558484606,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9361071846754923,
+      "Retention at that source (system)": 0.2475265776755177,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9004617206913567,
+      "Retention at that source (system)": 0.8732830558725474,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.843663770818347,
+      "Retention at that source (system)": 0.5484291461602196,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8480417622261478,
+      "Retention at that source (system)": 0.7078907779394231,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9304036451836217,
+      "Retention at that source (system)": -0.0022580371960705995,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.919635364785443,
+      "Retention at that source (system)": 0.2770429942589697,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9398426162819371,
+      "Retention at that source (system)": 0.26642928259653587,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9149015685576172,
+      "Retention at that source (system)": 0.19363099352536142,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9268422973070214,
+      "Retention at that source (system)": 0.019051578311920614,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9261747783844142,
+      "Retention at that source (system)": 0.7386251516271916,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9020454446303946,
+      "Retention at that source (system)": 0.00580234278276775,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8893810476599855,
+      "Retention at that source (system)": 0.46097537744753736,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.853027062041638,
+      "Retention at that source (system)": 0.8460248907678632,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8056008814329274,
+      "Retention at that source (system)": 0.5730794684195981,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8063509375799804,
+      "Retention at that source (system)": 0.8174727499348571,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.98654813389335,
+      "Retention at that source (system)": 0.25002559543760267,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9741618316150454,
+      "Retention at that source (system)": 0.35332711584562065,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9681292123585302,
+      "Retention at that source (system)": 0.5914437516651847,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9597367975204806,
+      "Retention at that source (system)": 0.45620490546772813,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9588792055760605,
+      "Retention at that source (system)": 0.27289761337252516,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9632038640156217,
+      "Retention at that source (system)": 0.14232696335989795,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9327446437995675,
+      "Retention at that source (system)": 0.23013205557715286,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9361071846754923,
+      "Retention at that source (system)": 0.8866551923236948,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9004617206913567,
+      "Retention at that source (system)": 0.7817461065607871,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.843663770818347,
+      "Retention at that source (system)": 0.9660612383267039,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8108994476010126,
+      "Retention at that source (system)": 0.9243123418702992,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8221256617044187,
+      "Retention at that source (system)": 0.9881828075276022,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8116697578649652,
+      "Retention at that source (system)": 0.9835284488441977,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8080455029454592,
+      "Retention at that source (system)": 1.0157857071056708,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9304036451836217,
+      "Retention at that source (system)": 0.49171689149000547,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.919635364785443,
+      "Retention at that source (system)": 0.06490638095821412,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9398426162819371,
+      "Retention at that source (system)": -0.16797617858788266,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9149015685576172,
+      "Retention at that source (system)": -0.04661561345947357,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9268422973070214,
+      "Retention at that source (system)": 0.20067991433691743,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9261747783844142,
+      "Retention at that source (system)": -0.11149361829285262,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9020454446303946,
+      "Retention at that source (system)": 0.1016258391174897,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8893810476599855,
+      "Retention at that source (system)": 0.45063710313479066,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.853027062041638,
+      "Retention at that source (system)": 0.43238451528685196,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8056008814329274,
+      "Retention at that source (system)": 0.9005547602013115,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.763191337829858,
+      "Retention at that source (system)": 0.9813994958153456,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.7861709176933006,
+      "Retention at that source (system)": 1.1068142631363453,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.7812537300876488,
+      "Retention at that source (system)": 1.0147347940456026,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.79270657755942,
+      "Retention at that source (system)": 1.059243711544093,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.98654813389335,
+      "Retention at that source (system)": 0.05081206005042199,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9741618316150454,
+      "Retention at that source (system)": 0.5506455276578608,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9681292123585302,
+      "Retention at that source (system)": 0.6796677622894489,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9597367975204806,
+      "Retention at that source (system)": 0.6077583203357729,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9588792055760605,
+      "Retention at that source (system)": 0.5847817130200734,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9632038640156217,
+      "Retention at that source (system)": 0.43101181946375744,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9327446437995675,
+      "Retention at that source (system)": 0.5083545670300008,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9361071846754923,
+      "Retention at that source (system)": 0.6846166928392402,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9004617206913567,
+      "Retention at that source (system)": 0.9749678412323519,
+      "series": "Affine (ridge)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9304036451836217,
+      "Retention at that source (system)": 0.11385780953885818,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.919635364785443,
+      "Retention at that source (system)": -0.6998541793813586,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9398426162819371,
+      "Retention at that source (system)": -0.6502562249035205,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9149015685576172,
+      "Retention at that source (system)": 0.34184471744987727,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9268422973070214,
+      "Retention at that source (system)": 0.5256583325215856,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9261747783844142,
+      "Retention at that source (system)": 0.35642268365032825,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.9020454446303946,
+      "Retention at that source (system)": 0.7218498742186553,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.8893810476599855,
+      "Retention at that source (system)": 0.6612888392997277,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Source-transition \u0394-R\u00b2 (atlas)": 0.853027062041638,
+      "Retention at that source (system)": 0.9446586873594067,
+      "series": "Small MLP",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 68
+}

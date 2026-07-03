@@ -35,9 +35,15 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import re
+import sys
 from pathlib import Path
 
-POD_REGISTRY = Path(__file__).parent / "pods.conf"
+# Task #821: resolve LIVE pods.conf via pod_config's lazy resolver so the
+# IP-redaction backstop reads the LIVE registry at
+# ``<git-common-dir>/eps/pods.conf`` instead of the tracked seed. Called
+# once per invocation from ``_ip_patterns()``.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SCRIPT_DIR))
 
 # Patterns are applied in order; later patterns see already-redacted text.
 # Each entry is (compiled regex, replacement string). The order matters:
@@ -72,16 +78,25 @@ PATTERNS: list[tuple[re.Pattern[str], str]] = [
 
 
 def _ip_patterns() -> list[tuple[re.Pattern[str], str]]:
-    """Build IP-redaction patterns from `scripts/pods.conf`.
+    """Build IP-redaction patterns from the LIVE pods.conf.
 
     Each non-comment, non-blank line of the registry has the form:
         name  host  port  gpus  gpu_type  label
     We extract the `host` (column 2) when it looks like an IPv4 literal.
+
+    Resolves the LIVE registry path lazily via
+    ``pod_config._resolve_live_pods_conf`` so post-#821 the redactor
+    reads ``<git-common-dir>/eps/pods.conf`` (never the stale tracked seed).
     """
-    if not POD_REGISTRY.exists():
+    # Local import so the PostToolUse ruff hook cannot strip a top-of-file
+    # import as F401 while the edit sequence lands.
+    from pod_config import _resolve_live_pods_conf
+
+    pod_registry = _resolve_live_pods_conf()
+    if not pod_registry.exists():
         return []
     pats: list[tuple[re.Pattern[str], str]] = []
-    for line in POD_REGISTRY.read_text().splitlines():
+    for line in pod_registry.read_text().splitlines():
         s = line.strip()
         if not s or s.startswith("#"):
             continue

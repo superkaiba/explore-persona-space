@@ -1,29 +1,36 @@
 #!/bin/bash
-# Source this file from bash scripts that need to read scripts/pods.conf.
-# After sourcing, $CONF is set to the absolute path of pods.conf in the MAIN
-# repo checkout, regardless of which worktree the caller lives in. Resolution
-# is via `git rev-parse --git-common-dir` (each worktree's .git is a pointer
-# file at the main repo's shared .git directory; its parent is the main repo
-# root). Fails LOUD if git resolution fails.
+# Source this file from bash scripts that need to read pods.conf.
+# After sourcing, $CONF is set to the absolute path of the LIVE pods.conf.
+#
+# Task #821 relocation. The LIVE (mutable) file lives at
+# ``<git-common-dir>/eps/pods.conf`` (i.e. ``<main>/.git/eps/pods.conf``)
+# — OUT of the git working tree so ``git reset --hard`` /
+# ``git checkout .`` / ``git restore .`` / ``git clean -fd`` /
+# ``git clean -fdx`` cannot touch it (they operate on the working tree;
+# nothing under .git is affected). The tracked ``scripts/pods.conf`` file
+# is now a SEED (fresh-clone bootstrap only); once the Python-side
+# ``_resolve_live_pods_conf`` in ``pod_config.py`` has migrated it, every
+# reader + writer resolves to the live copy.
+#
+# Resolution order:
+#   1. ``$GIT_COMMON_DIR/eps/pods.conf`` if it exists → LIVE path.
+#   2. ``$MAIN_REPO_ROOT/scripts/pods.conf`` fallback (fresh clone, before
+#      the first Python writer has run — the seed is still authoritative).
 #
 # Required input: $SCRIPT_DIR (absolute path of the calling script's dir).
-# Produces: $CONF (absolute path of MAIN repo's scripts/pods.conf).
+# Produces: $CONF (absolute path of the LIVE pods.conf).
 #
-# Motivating incident (task #500, 2026-06-05): worktree-local pods.conf
-# copies diverged across parallel /issue sessions; a `pod.py resume` in
-# worktree A updated A's pods.conf to the new port, but a later
-# `pod.py provision` from worktree B (still holding the stale port row)
-# clobbered ~/.ssh/config back to the old port. poll_pipeline.py then
-# SSH'd to the stale port, got connection-refused, and false-"dead"ed a
-# perfectly healthy run. See scripts/pod_config.py `_main_repo_scripts_dir`
-# for the matching Python-side fix.
+# Prior incident (task #500, 2026-06-05): worktree-local pods.conf copies
+# diverged across parallel /issue sessions. The v3 relocation subsumes the
+# #500 fix (the .git dir is shared across every worktree, so the live path
+# is identical from any checkout).
 
 if [ -z "${SCRIPT_DIR:-}" ]; then
     echo "ERROR: _pods_conf_path.sh requires \$SCRIPT_DIR to be set before sourcing" >&2
     return 1 2>/dev/null || exit 1
 fi
 
-GIT_COMMON_DIR="$(cd "$SCRIPT_DIR" && git rev-parse --git-common-dir 2>/dev/null)" || {
+GIT_COMMON_DIR="$(cd "$SCRIPT_DIR" && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || {
     echo "ERROR: cannot resolve main repo via 'git rev-parse --git-common-dir' from $SCRIPT_DIR." >&2
     echo "       pods.conf-consuming scripts must run inside an explore-persona-space checkout." >&2
     return 2 2>/dev/null || exit 2
@@ -36,4 +43,10 @@ if [ ! -d "$MAIN_REPO_ROOT/scripts" ]; then
     echo "ERROR: resolved MAIN_REPO_ROOT ($MAIN_REPO_ROOT) has no scripts/ — refusing to proceed with malformed layout." >&2
     return 3 2>/dev/null || exit 3
 fi
-CONF="$MAIN_REPO_ROOT/scripts/pods.conf"
+
+# Resolve LIVE first; fall back to the tracked seed for fresh clones.
+if [ -f "$GIT_COMMON_DIR/eps/pods.conf" ]; then
+    CONF="$GIT_COMMON_DIR/eps/pods.conf"
+else
+    CONF="$MAIN_REPO_ROOT/scripts/pods.conf"
+fi

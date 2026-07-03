@@ -1,0 +1,407 @@
+{
+  "task": 778,
+  "description": "Raw-datapoint grids (persona-vector vs seed-0 norm-matched-random projection) + summary meta-scatters + comparison bar panels for reproduced persona-vector results vs paper vs random baseline.",
+  "rendered_at_git_head": "252e474602ee98d3226811d3b8a51faa7f483ef2",
+  "data_git_commit": "39ba09d44070eede2858616bc1867f889fa28b03",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "source_json_paths": [
+    "eval_results/issue_778/evil_finetune_nullbattery.json",
+    "eval_results/issue_778/evil_monitoring_corrected_nullbattery.json",
+    "eval_results/issue_778/evil_monitoring_manyshot_nullbattery.json",
+    "eval_results/issue_778/hallucination_finetune_nullbattery.json",
+    "eval_results/issue_778/hallucination_monitoring_corrected_nullbattery.json",
+    "eval_results/issue_778/hallucination_monitoring_manyshot_nullbattery.json",
+    "eval_results/issue_778/sycophancy_finetune_nullbattery.json",
+    "eval_results/issue_778/sycophancy_monitoring_corrected_nullbattery.json",
+    "eval_results/issue_778/sycophancy_monitoring_manyshot_nullbattery.json"
+  ],
+  "acts_tensors": "data/issue_778/{monitoring_corrected,monitoring_manyshot,finetune_activations,activations,rb}/ (HF: issue778_persona_vectors/analysis_tensors/)",
+  "null_draws": "data/issue_778/null_draws/{trait}_{setting}_randnorm_draws.npy (HF: .../null_draws/)",
+  "settings": [
+    {
+      "key": "finetune",
+      "label": "Finetuning shift"
+    },
+    {
+      "key": "corr_pooled",
+      "label": "System-prompt monitoring (pooled)"
+    },
+    {
+      "key": "corr_within",
+      "label": "System-prompt monitoring (within prompt)"
+    },
+    {
+      "key": "many_pooled",
+      "label": "Many-shot ICL (pooled)"
+    },
+    {
+      "key": "many_within",
+      "label": "Many-shot ICL (within shot count)"
+    }
+  ],
+  "traits": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "paper_reference_values_recorded_in_repo": {
+    "finetune": {
+      "evil": null,
+      "sycophancy": null,
+      "hallucination": null
+    },
+    "corr_pooled": {
+      "evil": 0.747,
+      "sycophancy": 0.798,
+      "hallucination": 0.83
+    },
+    "corr_within": {
+      "evil": 0.511,
+      "sycophancy": 0.669,
+      "hallucination": 0.245
+    },
+    "many_pooled": {
+      "evil": 0.755,
+      "sycophancy": 0.817,
+      "hallucination": 0.634
+    },
+    "many_within": {
+      "evil": 0.735,
+      "sycophancy": 0.813,
+      "hallucination": 0.4
+    }
+  },
+  "paper_reference_sources": {
+    "corr_pooled": "arXiv 2507.21509 App. table \"Correlation analysis\" (System prompting, Overall)",
+    "corr_within": "arXiv 2507.21509 App. table \"Correlation analysis\" (System prompting, Within-condition)",
+    "many_pooled": "arXiv 2507.21509 App. table \"Correlation analysis\" (Many-shot prompting, Overall)",
+    "many_within": "arXiv 2507.21509 App. table \"Correlation analysis\" (Many-shot prompting, Within-condition)",
+    "finetune": "arXiv 2507.21509 main text prints only the matched-trait RANGE r=0.76-0.97 (no printed per-trait value; per-trait shown only in Fig. finetuning_shift_last_prompt) -> finetune paper bars omitted"
+  },
+  "paper_values_added_from_arxiv_this_revision": {
+    "note": "printed numbers from arXiv 2507.21509 App. table 'Correlation analysis'",
+    "many_pooled": {
+      "evil": 0.755,
+      "sycophancy": 0.817,
+      "hallucination": 0.634
+    },
+    "many_within_hallucination": 0.4,
+    "confirmed_from_table": {
+      "corr_pooled": [
+        0.747,
+        0.798,
+        0.83
+      ],
+      "corr_within": [
+        0.511,
+        0.669,
+        0.245
+      ],
+      "many_within_evil_syco": [
+        0.735,
+        0.813
+      ]
+    }
+  },
+  "paper_values_still_unavailable": {
+    "finetune": "per-trait finetuning-shift r not printed (only range 0.76-0.97 in main text; per-trait in figure only)"
+  },
+  "ci_suppressed_note": "corrected within-prompt cells (evil/sycophancy/hallucination) carry a bootstrap CI that does not bracket the matched value (hallucination's within CI equals its pooled CI exactly); those bar error bars are suppressed",
+  "random_companion_note": "raw-scatter bottom rows use ONE norm-matched random direction (null-battery sampler, seed 0, draw 0) at the persona-vector-selected layer; each panel states that draw's r and its percentile within the 1000-draw null AT THAT LAYER. The seed-0 draw is NOT cherry-picked; the percentile is reported so a weak/strong draw is transparent. The headline null cap uses max-over-28-layers per draw, a different statistic.",
+  "plotted_bar_panels": {
+    "finetune": {
+      "evil": {
+        "our_matched_r": 0.9143,
+        "our_ci95": [
+          0.7947,
+          0.9682
+        ],
+        "our_ci95_valid": true,
+        "paper_r": null,
+        "randnorm_cap_97_5": 0.9545,
+        "randnorm_median": 0.916,
+        "perm_cap_97_5": 0.9492,
+        "n_points": 24
+      },
+      "sycophancy": {
+        "our_matched_r": 0.8463,
+        "our_ci95": [
+          0.7187,
+          0.9333
+        ],
+        "our_ci95_valid": true,
+        "paper_r": null,
+        "randnorm_cap_97_5": 0.9349,
+        "randnorm_median": 0.8751,
+        "perm_cap_97_5": 0.9288,
+        "n_points": 24
+      },
+      "hallucination": {
+        "our_matched_r": 0.9714,
+        "our_ci95": [
+          0.9507,
+          0.9852
+        ],
+        "our_ci95_valid": true,
+        "paper_r": null,
+        "randnorm_cap_97_5": 0.9736,
+        "randnorm_median": 0.9519,
+        "perm_cap_97_5": 0.971,
+        "n_points": 24
+      }
+    },
+    "corr_pooled": {
+      "evil": {
+        "our_matched_r": 0.8075,
+        "our_ci95": [
+          0.7592,
+          0.8482
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.747,
+        "randnorm_cap_97_5": 0.8426,
+        "randnorm_median": 0.7915,
+        "perm_cap_97_5": 0.8358,
+        "n_points": 160
+      },
+      "sycophancy": {
+        "our_matched_r": 0.7959,
+        "our_ci95": [
+          0.7296,
+          0.8517
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.798,
+        "randnorm_cap_97_5": 0.8475,
+        "randnorm_median": 0.7927,
+        "perm_cap_97_5": 0.8343,
+        "n_points": 160
+      },
+      "hallucination": {
+        "our_matched_r": 0.8373,
+        "our_ci95": [
+          0.7792,
+          0.8842
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.83,
+        "randnorm_cap_97_5": 0.8365,
+        "randnorm_median": 0.7806,
+        "perm_cap_97_5": 0.8266,
+        "n_points": 152
+      }
+    },
+    "corr_within": {
+      "evil": {
+        "our_matched_r": 0.3874,
+        "our_ci95": [
+          0.7424,
+          0.8327
+        ],
+        "our_ci95_valid": false,
+        "paper_r": 0.511,
+        "randnorm_cap_97_5": 0.4055,
+        "randnorm_median": 0.2913,
+        "perm_cap_97_5": 0.3984,
+        "n_points": 160
+      },
+      "sycophancy": {
+        "our_matched_r": 0.6827,
+        "our_ci95": [
+          0.6944,
+          0.827
+        ],
+        "our_ci95_valid": false,
+        "paper_r": 0.669,
+        "randnorm_cap_97_5": 0.7247,
+        "randnorm_median": 0.5903,
+        "perm_cap_97_5": 0.6981,
+        "n_points": 160
+      },
+      "hallucination": {
+        "our_matched_r": 0.6469,
+        "our_ci95": [
+          0.7792,
+          0.8842
+        ],
+        "our_ci95_valid": false,
+        "paper_r": 0.245,
+        "randnorm_cap_97_5": 0.7046,
+        "randnorm_median": 0.5815,
+        "perm_cap_97_5": 0.6848,
+        "n_points": 152
+      }
+    },
+    "many_pooled": {
+      "evil": {
+        "our_matched_r": 0.6769,
+        "our_ci95": [
+          0.5801,
+          0.7609
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.755,
+        "randnorm_cap_97_5": 0.7065,
+        "randnorm_median": 0.6232,
+        "perm_cap_97_5": 0.6919,
+        "n_points": 100
+      },
+      "sycophancy": {
+        "our_matched_r": 0.8661,
+        "our_ci95": [
+          0.8203,
+          0.9046
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.817,
+        "randnorm_cap_97_5": 0.8943,
+        "randnorm_median": 0.8312,
+        "perm_cap_97_5": 0.8877,
+        "n_points": 100
+      },
+      "hallucination": {
+        "our_matched_r": 0.7292,
+        "our_ci95": [
+          0.6289,
+          0.813
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.634,
+        "randnorm_cap_97_5": 0.7957,
+        "randnorm_median": 0.6729,
+        "perm_cap_97_5": 0.7661,
+        "n_points": 95
+      }
+    },
+    "many_within": {
+      "evil": {
+        "our_matched_r": 0.6869,
+        "our_ci95": [
+          0.584,
+          0.7586
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.735,
+        "randnorm_cap_97_5": 0.6948,
+        "randnorm_median": 0.6177,
+        "perm_cap_97_5": 0.6895,
+        "n_points": 100
+      },
+      "sycophancy": {
+        "our_matched_r": 0.8273,
+        "our_ci95": [
+          0.8221,
+          0.8985
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.813,
+        "randnorm_cap_97_5": 0.8632,
+        "randnorm_median": 0.7876,
+        "perm_cap_97_5": 0.8558,
+        "n_points": 100
+      },
+      "hallucination": {
+        "our_matched_r": 0.6531,
+        "our_ci95": [
+          0.6275,
+          0.8103
+        ],
+        "our_ci95_valid": true,
+        "paper_r": 0.4,
+        "randnorm_cap_97_5": 0.7588,
+        "randnorm_median": 0.6059,
+        "perm_cap_97_5": 0.7231,
+        "n_points": 95
+      }
+    }
+  },
+  "raw_scatter_seed0_random": {
+    "finetune": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.9143,
+        "seed0_random_dir_r": 0.6063,
+        "seed0_random_dir_abs_r": 0.6063,
+        "seed0_percentile_within_1000_draws_at_layer": 24.1,
+        "n_points": 24
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8463,
+        "seed0_random_dir_r": 0.7405,
+        "seed0_random_dir_abs_r": 0.7405,
+        "seed0_percentile_within_1000_draws_at_layer": 54.0,
+        "n_points": 24
+      },
+      "hallucination": {
+        "selected_layer": 25,
+        "ours_r": 0.9714,
+        "seed0_random_dir_r": 0.9236,
+        "seed0_random_dir_abs_r": 0.9236,
+        "seed0_percentile_within_1000_draws_at_layer": 80.3,
+        "n_points": 24
+      }
+    },
+    "corrected": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.8075,
+        "seed0_random_dir_r": -0.0924,
+        "seed0_random_dir_abs_r": 0.0924,
+        "seed0_percentile_within_1000_draws_at_layer": 7.3,
+        "n_points": 160
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.7959,
+        "seed0_random_dir_r": 0.735,
+        "seed0_random_dir_abs_r": 0.735,
+        "seed0_percentile_within_1000_draws_at_layer": 57.2,
+        "n_points": 160
+      },
+      "hallucination": {
+        "selected_layer": 21,
+        "ours_r": 0.8373,
+        "seed0_random_dir_r": -0.2876,
+        "seed0_random_dir_abs_r": 0.2876,
+        "seed0_percentile_within_1000_draws_at_layer": 19.8,
+        "n_points": 152
+      }
+    },
+    "manyshot": {
+      "evil": {
+        "selected_layer": 20,
+        "ours_r": 0.6769,
+        "seed0_random_dir_r": 0.2047,
+        "seed0_random_dir_abs_r": 0.2047,
+        "seed0_percentile_within_1000_draws_at_layer": 14.6,
+        "n_points": 100
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8661,
+        "seed0_random_dir_r": 0.7702,
+        "seed0_random_dir_abs_r": 0.7702,
+        "seed0_percentile_within_1000_draws_at_layer": 65.6,
+        "n_points": 100
+      },
+      "hallucination": {
+        "selected_layer": 23,
+        "ours_r": 0.7292,
+        "seed0_random_dir_r": 0.6331,
+        "seed0_random_dir_abs_r": 0.6331,
+        "seed0_percentile_within_1000_draws_at_layer": 83.5,
+        "n_points": 95
+      }
+    }
+  },
+  "figures": [
+    "raw_scatter_finetune.png",
+    "raw_scatter_corrected.png",
+    "raw_scatter_manyshot.png",
+    "bar_panels_by_setting.png",
+    "summary_scatter_ours_vs_random.png",
+    "scatter_ours_vs_paper.png"
+  ]
+}

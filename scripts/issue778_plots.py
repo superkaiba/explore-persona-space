@@ -287,7 +287,171 @@ def plot_per_layer(trait: str, setting: str) -> None:
     plt.close(fig)
 
 
+TAG_LABEL = {
+    "monitoring_corrected": "corrected 8-prompt ladder (the paper's trait-inducing prompts)",
+    "monitoring_manyshot": "many-shot ICL (0/5/10/15/20 trait exemplars)",
+}
+TAG_COND_LEGEND = {
+    "monitoring_corrected": "prompt condition (strongest → weakest)",
+    "monitoring_manyshot": "shot count",
+}
+
+
+def plot_bands_tag(mon_tag: str) -> None:
+    """2x3 grid (rows: overall / within; cols: traits) of observed-vs-null bands
+    for one follow-up monitoring leg (``{trait}_{mon_tag}_nullbattery.json``)."""
+    set_paper_style("blog")
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.6), sharey=True)
+    fig.set_layout_engine("none")
+    obs_color = paper_palette_role("primary")
+    null_colors = {
+        "perm": paper_palette_role("accent"),
+        "randnorm": paper_palette_role("baseline"),
+        "crosstrait": paper_palette_role("control"),
+        "pca_topk": paper_palette_role("neutral"),
+    }
+    row_label = {0: "pooled (overall r)", 1: "within-condition r"}
+    for col, trait in enumerate(TRAITS):
+        payload_all = json.load(open(EVAL / f"{trait}_{mon_tag}_nullbattery.json"))
+        for row_i, setting in enumerate(("monitoring_overall", "monitoring_within")):
+            ax = axes[row_i, col]
+            payload = payload_all[setting]
+            obs = payload["matched_max_abs"]
+            positions = [i * 1.25 for i in range(len(NULL_ORDER))]
+            for pos, k in zip(positions, NULL_ORDER):
+                arr = _null_max_abs(payload, k)
+                arr = arr[~np.isnan(arr)]
+                if arr.size >= 5:
+                    vp = ax.violinplot(
+                        [arr], positions=[pos], widths=0.7, showextrema=False, showmedians=False
+                    )
+                    for body in vp["bodies"]:
+                        body.set_facecolor(null_colors[k])
+                        body.set_alpha(0.45)
+                        body.set_edgecolor(null_colors[k])
+                    p975 = np.percentile(arr, 97.5)
+                    ax.hlines(p975, pos - 0.35, pos + 0.35, color=null_colors[k], lw=1.6)
+                else:
+                    ax.scatter(
+                        [pos] * arr.size,
+                        arr,
+                        color=null_colors[k],
+                        s=42,
+                        zorder=4,
+                        edgecolors="white",
+                        linewidths=0.6,
+                    )
+            obs_pos = -1.5
+            ax.scatter(
+                [obs_pos],
+                [obs],
+                color=obs_color,
+                s=90,
+                zorder=6,
+                edgecolors="white",
+                linewidths=0.8,
+            )
+            ax.axhline(obs, color=obs_color, ls="--", lw=1.0, alpha=0.55, zorder=1)
+            ax.set_xticks([obs_pos] + positions)
+            ax.set_xticklabels(
+                ["persona\nvector"] + [NULL_LABEL[k] for k in NULL_ORDER], fontsize=8.5
+            )
+            ax.set_xlim(-2.2, positions[-1] + 0.6)
+            ax.axvline(-0.65, color="#DDDDDD", lw=1.0, ls=":", zorder=0)
+            ax.set_ylim(0, 1.02)
+            if row_i == 0:
+                ax.set_title(TRAIT_LABEL[trait], loc="left", fontsize=12, pad=8)
+            if col == 0:
+                ax.set_ylabel(f"{row_label[row_i]}\nmax over 28 layers of |r|")
+    fig.suptitle(
+        f"Persona-vector direction vs null battery — {TAG_LABEL[mon_tag]}",
+        x=0.01,
+        ha="left",
+        fontsize=13,
+        fontweight="semibold",
+    )
+    fig.text(
+        0.01,
+        0.005,
+        "Blue = the matched-trait persona vector. Violins = per-draw max-over-28-layers |r| for the "
+        "shuffled-permutation / norm-matched-random nulls (1000 draws); points = the fixed cross-trait / "
+        "PCA top-5 directions; horizontal cap = each null's 97.5th pct. The vector beats a null only "
+        "when blue sits ABOVE that cap.",
+        fontsize=7.5,
+        color="#5A5A5A",
+    )
+    fig.subplots_adjust(top=0.90, bottom=0.11, left=0.07, right=0.99, wspace=0.08, hspace=0.30)
+    savefig_paper(fig, f"issue_778/bands_{mon_tag}", dir="figures/")
+    plt.close(fig)
+
+
+def plot_monitoring_scatter_tag(mon_tag: str) -> None:
+    """1x3 per-cell scatter (x = projection at the selected layer, y = graded
+    score, colored by condition) — the low-level data behind one leg's r."""
+    set_paper_style("blog")
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.6), sharey=True)
+    fig.set_layout_engine("none")
+    cmap = plt.get_cmap("viridis")
+    for ax, trait in zip(axes, TRAITS):
+        payload = json.load(open(EVAL / f"{trait}_{mon_tag}_nullbattery.json"))
+        sel = payload["monitoring_overall"]["matched_selected_layer"]
+        r_ov = payload["monitoring_overall"]["matched_r"]
+        r_wi = payload["monitoring_within"]["matched_r"]
+        rows = [
+            json.loads(line) for line in open(EVAL / f"{mon_tag}_{trait}.jsonl") if line.strip()
+        ]
+        rows = [r for r in rows if r["mean_trait_score"] is not None]
+        conds = sorted({r["condition_id"] for r in rows})
+        for i, c in enumerate(conds):
+            xs = [r["projection_per_layer"][sel] for r in rows if r["condition_id"] == c]
+            ys = [r["mean_trait_score"] for r in rows if r["condition_id"] == c]
+            ax.scatter(
+                xs,
+                ys,
+                color=cmap(i / max(len(conds) - 1, 1)),
+                s=26,
+                alpha=0.85,
+                edgecolors="white",
+                linewidths=0.4,
+                label=str(c),
+            )
+        ax.set_title(
+            f"{TRAIT_LABEL[trait]} — L{sel} · r {r_ov:.2f} / within {r_wi:.2f}",
+            loc="left",
+            fontsize=10,
+            pad=8,
+        )
+    axes[1].set_xlabel("last-prompt-token projection onto the persona vector (selected layer)")
+    axes[0].set_ylabel("graded trait score (0–100)")
+    axes[-1].legend(
+        title=TAG_COND_LEGEND[mon_tag],
+        fontsize=7,
+        title_fontsize=8,
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        framealpha=0.9,
+    )
+    fig.suptitle(
+        f"Per-cell data behind the {TAG_LABEL[mon_tag]} correlations",
+        x=0.01,
+        ha="left",
+        fontsize=13,
+        fontweight="semibold",
+    )
+    fig.subplots_adjust(top=0.84, bottom=0.14, left=0.06, right=0.90, wspace=0.08)
+    savefig_paper(fig, f"issue_778/{mon_tag}_scatter", dir="figures/")
+    plt.close(fig)
+
+
 def main() -> None:
+    import sys
+
+    if "--legs" in sys.argv:
+        for tag in ("monitoring_corrected", "monitoring_manyshot"):
+            plot_bands_tag(tag)
+            plot_monitoring_scatter_tag(tag)
+            print(f"wrote bands_{tag} + {tag}_scatter")
+        return
     for setting in ("finetune", "monitoring_overall", "monitoring_within"):
         plot_bands(setting)
         print(f"wrote bands_{setting}")

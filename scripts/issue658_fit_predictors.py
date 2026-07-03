@@ -38,7 +38,8 @@ are PRESERVED EXACTLY. Three things changed, none of them the reported numbers:
    solve in the N=50 ≪ D=3584 row space. Exactness is asserted at smoke time
    (``_assert_ridge_exactness``): the new closed-form LOCO ρ matches the old
    primal-refit LOCO ρ to ≤1e-6 on a synthetic case.
-2. **A3.5 MLP** runs on CUDA (``--device``, default cuda with a CPU fallback)
+2. **A3.5 MLP** runs on CUDA (``--device``; precedence: the flag >
+   ``EPM_FIT_DEVICE`` env var > auto = cuda when available, with a CPU fallback)
    and the per-(LOCO fold × output-head) MLPs are fit IN PARALLEL with
    ``torch.vmap`` over an ensemble of independent networks — the per-output-dim
    independence the old serial code had (one scalar-output MLP per output dim)
@@ -137,11 +138,6 @@ SMOKE_A34_FEAT_DIM = 128
 # tractable with the GPU-batched MLP below.
 A35_MLP_TARGET_DIM = 64
 
-# Compute device for the GPU-accelerated MLP/ridge ops. Resolved from --device
-# (default cuda when available, else cpu) in main() and read at call time by the
-# batched fitters. The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
-DEVICE = "cpu"
-
 # A3.5 gap MLP ensemble-chunk size. The batched MLP fits E = gap_dim(64) × N(50)
 # = 3200 independent member-nets; building one AdamW + one vmap over ALL 3200 at
 # once peaks at ~69 GiB allocated + a ~22 GiB Adam-state tensor — OOM on an
@@ -177,6 +173,34 @@ def _resolve_device(requested: str) -> str:
         )
         return "cpu"
     return requested
+
+
+def _requested_device(cli_value: str | None) -> str:
+    """Device request with precedence: explicit CLI > EPM_FIT_DEVICE env > 'auto'."""
+    if cli_value is not None:
+        return cli_value
+    return os.environ.get("EPM_FIT_DEVICE", "auto")
+
+
+def _default_device() -> str:
+    """Module-scope default importers inherit: EPM_FIT_DEVICE if set, else auto
+    (cuda when available). Import-safe: torch.cuda.is_available() does not
+    initialize a CUDA context (set PYTORCH_NVML_BASED_CUDA_CHECK=1 on
+    fork-sensitive GPU hosts for the NVML-based check), and resolution logs
+    nothing unless EPM_FIT_DEVICE=cuda is set on a CUDA-less host (the
+    _resolve_device WARNING). A garbage EPM_FIT_DEVICE value passes through
+    verbatim and fails loud at the first torch.device() call — same failure
+    mode as --device with a garbage value (no silent default).
+    """
+    return _resolve_device(_requested_device(None))
+
+
+# Compute device for the GPU-accelerated MLP/ridge ops. The module-scope default
+# (what a bare import yields) honors the EPM_FIT_DEVICE env var, else resolves
+# 'auto' (cuda when available, else cpu); main() re-resolves with CLI precedence
+# (--device > EPM_FIT_DEVICE > auto). Read at call time by the batched fitters.
+# The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
+DEVICE = _default_device()
 
 
 # ── E0 target extraction ──────────────────────────────────────────────────────
@@ -1908,9 +1932,11 @@ def main() -> int:
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument(
         "--device",
-        default="auto",
-        help="compute device for the batched MLP/ridge ops: auto (default; cuda if "
-        "present else cpu) | cuda | cpu. The reported DV is device-invariant.",
+        default=None,
+        help="compute device for the batched MLP/ridge ops: auto | cuda | cpu "
+        "(default: the EPM_FIT_DEVICE env var if set, else auto = cuda if present "
+        "else cpu. Precedence: this flag > EPM_FIT_DEVICE > auto). The reported DV "
+        "is device-invariant.",
     )
     parser.add_argument(
         "--mlp-chunk-size",
@@ -1977,7 +2003,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    DEVICE = _resolve_device(args.device)
+    DEVICE = _resolve_device(_requested_device(args.device))
     logger.info("compute device: %s", DEVICE)
     if args.mlp_chunk_size is not None:
         MLP_CHUNK_SIZE = args.mlp_chunk_size

@@ -25,6 +25,10 @@ Touched-file -> test mapping (per touched file ``f``):
     broad ``tests/test_*{stem}*.py`` glob. If NEITHER matches an existing test
     -> the file lands in ``untested_touched`` (a loud WARN the Step 9c marker
     surfaces; never a silent coverage hole).
+  * ANY touched path matching a ``GLOB_SCAN_TESTS`` scan glob ADDITIONALLY
+    selects that scanning test (tests that cover files via a directory scan
+    at test time are reachable from no stem — #895). A map hit never
+    suppresses the ``untested_touched`` WARN for the touched file itself.
 
 ``safe-by-direction``: the broad ``*{stem}*`` glob arm deliberately OVER-matches
 on short stems (e.g. stem ``gcp`` selects ``test_gcp_backend.py``) — running a
@@ -32,9 +36,22 @@ few extra invariant-adjacent tests is the safe failure direction. There is no
 ``else: tighten the glob`` arm: a missed mapping surfaces as an
 ``untested_touched`` WARN, never a silently-dropped file.
 
-Degenerate empty-diff (e.g. run on ``main`` with no commits ahead): the
-selection falls back to the WORKFLOW_INVARIANT set only (selection always
-includes ``always``), so the gate never runs zero tests.
+Root resolution: with no ``--repo-root``, everything (the ``git diff`` cwd,
+touched-test existence checks, stem-glob mapping, invariant presence) resolves
+against the INVOKING checkout's git toplevel — the issue-worktree root when run
+from a worktree (where the branch diff AND its branch-new ``tests/`` files
+live), the main repo root when run there. ``--repo-root`` is the checkout-root
+override. At Step 9c, run from the issue worktree (incident #851: resolving the
+MAIN root made ``git diff main...HEAD`` empty by construction and silently
+dropped the branch's own tests from the gate).
+
+Degenerate empty-diff (e.g. run at a checkout with no commits ahead of
+``--base``): the selection falls back to the WORKFLOW_INVARIANT set only, so
+the gate never runs zero tests — and a loud ``NOTE — empty diff`` line is
+printed to stderr. On a worktree-based task whose branch HAS commits ahead of
+the base, that NOTE means the helper ran from the wrong cwd (re-run from the
+issue worktree); from a checkout genuinely at the base it is expected and
+benign.
 
 Usage::
 
@@ -42,10 +59,15 @@ Usage::
 
 Default output: the exact pytest invocation
 ``uv run pytest <files...> -v --tb=short`` on stdout, then any
-``untested touched file: <path>`` WARN lines on stderr. ``--json`` emits
+``untested touched file: <path>`` WARN lines on stderr. Every run also prints
+a one-line provenance breadcrumb to stderr (the resolved work root + current
+branch) so the Step 9c marker records which checkout the subset was selected
+against. ``--json`` emits
 ``{"tests": [...], "untested_touched": [...], "base": "...",
 "missing_invariants": [...]}``. Exit 0 on success (even with WARN lines);
-exit 1 only if the underlying ``git diff`` fails irrecoverably.
+exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
+or the diff) or if the selection comes back EMPTY (the zero-test-gate
+refusal).
 """
 
 from __future__ import annotations
@@ -130,6 +152,41 @@ _DATA_DOC_SUFFIXES: frozenset[str] = frozenset(
     {".json", ".yaml", ".yml", ".md", ".txt", ".csv", ".toml", ".lock", ".png", ".svg", ".pdf"}
 )
 
+# --- Glob-scan invariant tests (#895). ---------------------------------------
+# Some tests cover source files via a DIRECTORY SCAN at test time
+# (``root.glob(...)``) rather than by importing the module under test, so no
+# touched-file stem can ever reach them: a diff adding scripts/issue900_foo.py
+# maps to no tests/test_*issue900_foo*.py, yet
+# tests/test_shared_vm_thread_caps.py asserts that very file's import order
+# (#877: the selector's printed command had to be hand-amended; 12 thread-caps
+# offenders accreted after the #847 freeze this way). Map each scanning test
+# to the VERBATIM scan globs its own source uses; a touched path matching any
+# glob ADDS the test. A pinned literal, NOT discovered — same curation rule as
+# WORKFLOW_INVARIANT (live-tree + verbatim-source drift pins live in
+# tests/test_select_step9c_tests.py). Additive only: a map hit does NOT mark
+# the touched file "tested" for the stem map (the scan asserts a cross-cutting
+# invariant ABOUT the file, not the file's own logic), so untested_touched
+# WARNs still fire.
+GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
+    # test_no_new_torch_before_dotenv_vm_entrypoints scan roots (its L477-479).
+    "tests/test_shared_vm_thread_caps.py": (
+        "scripts/issue*_*.py",
+        "src/explore_persona_space/experiments/**/run_*.py",
+    ),
+    # _DISPATCHER_GLOBS (its L80-90) — explicit-env subprocess spawn scanner.
+    "tests/test_subprocess_env_explicit.py": (
+        "scripts/dispatch_*.py",
+        "scripts/run_sweep*.py",
+        "scripts/run_pipeline*.py",
+        "scripts/run_experiment_*.py",
+        "scripts/run_dose_response_*.py",
+        "scripts/run_factor_screen_*.py",
+        "src/explore_persona_space/experiments/*/run_*.py",
+        "src/explore_persona_space/experiments/*/dispatch_*.py",
+        "src/explore_persona_space/experiments/*/__main__.py",
+    ),
+}
+
 
 def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
     """True if *path* matches any glob. ``**`` matches across directory separators."""
@@ -141,26 +198,34 @@ def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
         # (``docs/**`` should match ``docs/x.md``).
         if g.endswith("/**") and (path == g[:-3] or path.startswith(g[:-2])):
             return True
+        # pathlib's ``**`` matches ZERO directories too; fnmatch's needs the
+        # literal ``/`` on both sides. Try the zero-segment collapse so
+        # verbatim Path.glob patterns keep their pathlib semantics here
+        # (over-match is the safe direction — module docstring).
+        if "/**/" in g and fnmatch.fnmatch(path, g.replace("/**/", "/")):
+            return True
     return False
 
 
 def compute_touched(
     base: str,
-    repo_root: Path,
+    work_root: Path,
     _runner: Callable[[list[str]], str] | None = None,
 ) -> list[str]:
     """Return the repo-relative paths the current branch changed vs *base*.
 
     Uses the three-dot ``git diff --name-only <base>...HEAD`` form: it diffs the
     merge-base of *base* and HEAD against HEAD — exactly the branch's own
-    additions/modifications, not changes on *base* that HEAD lacks. ``_runner``
-    is injectable for tests (it receives the argv list and returns stdout).
+    additions/modifications, not changes on *base* that HEAD lacks. The diff
+    runs with *work_root* as cwd, so HEAD is the invoking checkout's branch
+    (the issue branch from a worktree — #851). ``_runner`` is injectable for
+    tests (it receives the argv list and returns stdout).
     """
 
     def _default_runner(argv: list[str]) -> str:
         proc = subprocess.run(
             argv,
-            cwd=str(repo_root),
+            cwd=str(work_root),
             capture_output=True,
             text=True,
             check=True,
@@ -172,10 +237,13 @@ def compute_touched(
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def select_tests(touched: list[str], repo_root: Path) -> tuple[list[str], list[str]]:
+def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[str]]:
     """Map *touched* files to their covering tests + the workflow-invariant set.
 
-    Returns ``(tests, untested_touched)``:
+    All existence checks + the stem-glob mapping resolve against *work_root*
+    (the invoking checkout), so a branch-new touched test is admitted and a
+    deleted-on-branch test is correctly dropped (it does not exist at the
+    worktree's HEAD either). Returns ``(tests, untested_touched)``:
       * ``tests`` — sorted union of mapped per-file tests and the present-on-disk
         subset of :data:`WORKFLOW_INVARIANT` (deterministic order; required so two
         invocations on the same git state return an identical list).
@@ -186,13 +254,17 @@ def select_tests(touched: list[str], repo_root: Path) -> tuple[list[str], list[s
     untested: list[str] = []
 
     for f in touched:
+        # Glob-scan invariant tests (#895): additive, never sets ``matched``.
+        for scan_test, scan_globs in GLOB_SCAN_TESTS.items():
+            if _matches_any(f, scan_globs) and (work_root / scan_test).exists():
+                selected.add(scan_test)
         # Workflow-surface files gate via the invariant set; not "untested".
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
         p = Path(f)
         # A touched test file includes itself.
         if f.startswith("tests/") and p.name.startswith("test_") and p.suffix == ".py":
-            if (repo_root / f).exists():
+            if (work_root / f).exists():
                 selected.add(f)
             continue
         # Data / config / doc files: not code, no test mapping.
@@ -202,11 +274,11 @@ def select_tests(touched: list[str], repo_root: Path) -> tuple[list[str], list[s
         if p.suffix == ".py":
             stem = p.stem
             matched = False
-            exact = repo_root / "tests" / f"test_{stem}.py"
+            exact = work_root / "tests" / f"test_{stem}.py"
             if exact.exists():
                 selected.add(f"tests/test_{stem}.py")
                 matched = True
-            for hit in sorted((repo_root / "tests").glob(f"test_*{stem}*.py")):
+            for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
                 selected.add(f"tests/{hit.name}")
                 matched = True
             if not matched:
@@ -214,59 +286,127 @@ def select_tests(touched: list[str], repo_root: Path) -> tuple[list[str], list[s
         # Any other extension (no recognized mapping): ignore silently — it is
         # neither code with a test nor a workflow-invariant surface.
 
-    present_invariant = [t for t in WORKFLOW_INVARIANT if (repo_root / t).exists()]
+    present_invariant = [t for t in WORKFLOW_INVARIANT if (work_root / t).exists()]
     final = sorted(selected | set(present_invariant))
     return final, untested
 
 
-def missing_invariants(repo_root: Path) -> list[str]:
+def missing_invariants(work_root: Path) -> list[str]:
     """Return WORKFLOW_INVARIANT entries that are NOT present on disk (drift)."""
-    return [t for t in WORKFLOW_INVARIANT if not (repo_root / t).exists()]
+    return [t for t in WORKFLOW_INVARIANT if not (work_root / t).exists()]
 
 
-def _resolve_repo_root(arg: str | None) -> Path:
+def _resolve_work_root(arg: str | None) -> Path:
+    """Resolve the checkout root everything else (diff cwd, existence checks) uses."""
     if arg:
         return Path(arg).resolve()
-    # #506-safe: from a worktree cwd, `git rev-parse --show-toplevel` returns the
-    # WORKTREE root; --git-common-dir resolves to <main>/.git, so dirname is the
-    # main repo root (where tests/ paths must resolve). See SKILL.md Steps 4a/10d.
+    # The INVOKING checkout's toplevel: the issue-worktree root when run from
+    # a worktree (where the branch diff AND its branch-new tests/ files
+    # live), the main repo root when run there. --show-toplevel is CORRECT
+    # here (the SKILL.md Step 5a precedent — we WANT the invoking checkout);
+    # the #506 path-doubling bug applies only to CONSTRUCTING
+    # <root>/.claude/worktrees/issue-<N> by appending to a root (Steps
+    # 4a/10d), which this helper never does. Incident #851: resolving the
+    # MAIN root here made `git diff main...HEAD` empty by construction
+    # (HEAD==main) and hid branch-new test files from the existence checks.
     out = subprocess.run(
-        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        ["git", "rev-parse", "--path-format=absolute", "--show-toplevel"],
         capture_output=True,
         text=True,
         check=True,
     )
-    return Path(out.stdout.strip()).parent.resolve()
+    return Path(out.stdout.strip()).resolve()
+
+
+def _current_branch(work_root: Path) -> str:
+    """Best-effort current-branch read for the provenance breadcrumb.
+
+    Returns ``"unknown"`` (explicitly surfaced in the breadcrumb, never a
+    swallowed error) when *work_root* is not a git checkout — e.g. a
+    ``--repo-root`` override pointing at a bare fixture tree. The breadcrumb
+    is diagnostic only; the diff itself still fails loud in
+    :func:`compute_touched`.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(work_root),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return "unknown"
+    return out.stdout.strip() or "unknown"
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--base", default="main", help="diff base (default: main)")
-    parser.add_argument("--repo-root", default=None, help="repo root (default: git toplevel)")
+    parser.add_argument(
+        "--repo-root",
+        default=None,
+        help=(
+            "checkout-root override (default: the invoking checkout's git toplevel — "
+            "run from the issue worktree at Step 9c)"
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="emit a JSON object")
     args = parser.parse_args(argv)
 
-    repo_root = _resolve_repo_root(args.repo_root)
+    try:
+        work_root = _resolve_work_root(args.repo_root)
+    except subprocess.CalledProcessError as exc:
+        # Fail loud with ONE readable line (not a traceback): no git toplevel
+        # means the helper was invoked outside any git checkout, so no work
+        # root can be resolved.
+        detail = (exc.stderr or "").strip() or str(exc)
+        print(
+            f"select_step9c_tests: cannot resolve the work root ({detail}). "
+            "Run from a git checkout or pass --repo-root.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # Provenance breadcrumb on EVERY run: records which checkout + branch the
+    # subset was selected against, so a wrong-worktree invocation is visible in
+    # the Step 9c marker instead of silent (#851).
+    print(
+        f"select_step9c_tests: work root {work_root} (branch: {_current_branch(work_root)})",
+        file=sys.stderr,
+    )
 
     try:
-        touched = compute_touched(args.base, repo_root)
+        touched = compute_touched(args.base, work_root)
     except subprocess.CalledProcessError as exc:
         # Fail loud — never silently fall back to zero tests on a git error.
         print(f"select_step9c_tests: git diff failed: {exc}", file=sys.stderr)
         return 1
 
-    tests, untested = select_tests(touched, repo_root)
-    missing = missing_invariants(repo_root)
+    if not touched:
+        # Loud, exit-0 NOTE (the documented degenerate fallback stays legitimate
+        # when the checkout genuinely has no commits ahead of the base): the
+        # #851 failure was a SILENT invariant-only fallback from the wrong cwd.
+        print(
+            f"select_step9c_tests: NOTE — empty diff vs '{args.base}' in {work_root}; "
+            "falling back to the workflow-invariant set only. If this task's changes "
+            "live in an issue worktree, re-run from that worktree (Step 9c contract).",
+            file=sys.stderr,
+        )
+
+    tests, untested = select_tests(touched, work_root)
+    missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
     # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 32 always-on
-    # entries, so an empty list can only mean the repo_root resolved wrong (the
-    # #506 path-doubling bug) or the invariant files all vanished — either way the
-    # gate would run zero tests. Never let that surface as an exit-0 "no tests ran".
+    # entries, so an empty list can only mean the work root resolved wrong (e.g.
+    # invoked from a directory outside the repo, or a bad --repo-root override)
+    # or the invariant files all vanished — either way the gate would run zero
+    # tests. Never let that surface as an exit-0 "no tests ran".
     if not tests:
         print(
-            "select_step9c_tests: EMPTY test selection — repo_root likely resolved "
-            f"wrong ({repo_root}) or WORKFLOW_INVARIANT files are missing "
+            "select_step9c_tests: EMPTY test selection — work root likely resolved "
+            f"wrong ({work_root}) or WORKFLOW_INVARIANT files are missing "
             f"(missing={missing}). Refusing to emit a zero-test gate command.",
             file=sys.stderr,
         )

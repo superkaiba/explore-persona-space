@@ -74,9 +74,11 @@ import hashlib
 import json
 import logging
 import os
+import random
 import re
 import shutil
 import subprocess
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -227,13 +229,13 @@ def _sanitized_git_env() -> dict[str, str]:
     return env
 
 
-@functools.lru_cache(maxsize=1)
-def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
-    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
-    automatically. The key is computed by the wrapper; we ignore the
-    contents (we resolve relative to module dir + sanitized env, not cwd).
+def _resolve_primary_checkout(env: dict[str, str]) -> Path:
+    """Resolve + validate the PRIMARY checkout root (the git common dir's
+    parent). Verbatim extraction of ``_resolve_repo_root_cached`` steps
+    (a)+(b) — the rev-parse + layout validation, everything BEFORE the
+    branch guard (#844). Raises ``RuntimeError`` on any failure; never
+    falls back to a ``__file__``/cwd walk-up.
     """
-    env = _sanitized_git_env()
     # (a) Locate the common git dir.
     try:
         proc = subprocess.run(
@@ -275,6 +277,18 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"resolved repo root {parent!s} has no `tasks/` directory; "
             f"wrong repo or uninitialized layout — refusing to resolve tasks/."
         )
+    return parent
+
+
+@functools.lru_cache(maxsize=1)
+def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
+    automatically. The key is computed by the wrapper; we ignore the
+    contents (we resolve relative to module dir + sanitized env, not cwd).
+    """
+    env = _sanitized_git_env()
+    # (a)+(b) Locate the common git dir + validate its parent.
+    parent = _resolve_primary_checkout(env)
     # (c) Branch guard.
     sym = subprocess.run(
         ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
@@ -501,9 +515,31 @@ def repo_root() -> Path:
     return _resolve_repo_root_cached((os.getpid(), os.getcwd()))
 
 
+@functools.lru_cache(maxsize=1)
+def _primary_checkout_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target for :func:`primary_checkout_root`. Keyed on
+    (pid, cwd) exactly like ``_resolve_repo_root_cached`` so forks + chdirs
+    invalidate automatically.
+    """
+    return _resolve_primary_checkout(_sanitized_git_env())
+
+
+def primary_checkout_root() -> Path:
+    """Absolute path of the PRIMARY (main) checkout — the git common dir's
+    parent — with full layout validation but NO branch guard and NO off-main
+    routing to the managed ``_task-main-pin`` worktree. For consumers that
+    need the canonical checkout PATH (session-spawn cwd, #844), not a safe
+    tasks/ read-write root (those use :func:`repo_root`). Fails loud; never
+    falls back to a ``__file__``/cwd walk-up.
+    """
+    return _primary_checkout_cached((os.getpid(), os.getcwd()))
+
+
 def invalidate_cache() -> None:
-    """Drop the cached repo-root resolution. Next call re-probes git."""
+    """Drop the cached repo-root + primary-checkout resolutions. Next call
+    re-probes git."""
     _resolve_repo_root_cached.cache_clear()
+    _primary_checkout_cached.cache_clear()
 
 
 def tasks_dir() -> Path:
@@ -1589,7 +1625,21 @@ def _status_from_path(path: Path) -> str:
 
 
 def find_task_path(task_id: int) -> Path:
-    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY."""
+    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY.
+
+    Stale-entry envelope (#825): when the registry entry points at a dir that
+    is MISSING on disk (a mutation was hard-killed between the folder move
+    and the registry save), fall back to a one-shot on-disk scan across
+    STATUSES — exactly one hit returns that path with a logged drift WARNING;
+    two or more hits raise ``StaleTaskPathError`` (real corruption — never
+    guess); zero hits raise the original ``FileNotFoundError``. This is a
+    READ path, so the registry is NEVER self-healed here (no ``_locked()``
+    held; an unlocked whole-file ``_save_registry`` could clobber a
+    concurrent mutator's update) — repair happens on the task's next
+    registry-writing mutation (including the ``set_status``
+    same-transition early-return re-sync) or via
+    ``task.py audit --repair --apply``.
+    """
     reg = _load_registry()
     entry = reg["tasks"].get(str(task_id))
     td = tasks_dir()
@@ -1601,12 +1651,35 @@ def find_task_path(task_id: int) -> Path:
                 return candidate
         raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
     abs_path = repo_root() / entry["path"]
-    if not abs_path.is_dir():
-        raise FileNotFoundError(
-            f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
-            f"run `task.py audit` to repair"
+    if abs_path.is_dir():
+        return abs_path
+    # Registry entry is STALE (dir moved on disk without a registry update —
+    # e.g. a mutation was hard-killed mid-flight; cf. #825). Fall back to a
+    # one-shot on-disk scan; READ path, so never self-heal REGISTRY here (no
+    # _locked()).
+    hits = [td / s / str(task_id) for s in STATUSES if (td / s / str(task_id)).is_dir()]
+    if len(hits) == 1:
+        _log.warning(
+            "task #%d: REGISTRY says %r but that dir is missing; found on disk at %r — "
+            "returning the on-disk path. REGISTRY is stale; it re-syncs on the next "
+            "registry-writing mutation of this task, or run "
+            "`task.py audit --repair --apply`.",
+            task_id,
+            entry["path"],
+            str(hits[0].relative_to(repo_root())),
         )
-    return abs_path
+        return hits[0]
+    if len(hits) > 1:
+        raise StaleTaskPathError(
+            f"task #{task_id}: REGISTRY says {entry['path']!r} (missing) and the "
+            f"task exists in MULTIPLE status folders: "
+            f"{[str(h.relative_to(repo_root())) for h in hits]}; "
+            f"run `task.py audit --repair --apply`"
+        )
+    raise FileNotFoundError(
+        f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
+        f"run `task.py audit` to repair"
+    )
 
 
 def get_task(task_id: int) -> dict[str, Any]:
@@ -1857,6 +1930,31 @@ def _rollback_move(src: Path, dst: Path) -> None:
         raise
 
 
+def _task_status_dir_pathspecs(task_id: int, repo: Path) -> list[str]:
+    """All ``tasks/<status>/<id>`` dirs for this task that git TRACKS or that
+    exist on disk — the staging pathspec set that reconciles any residue a
+    previously-crashed transition left behind (ghost old-status dirs whose
+    deletions were never staged; #825 / the #644 stale-task-folder class).
+
+    One ``git ls-files`` call over deterministic per-STATUSES pathspecs (no
+    fnmatch wildcards — exact-id matching only, so id 89 never sweeps id
+    898). ``ls-files`` silently ignores pathspecs that match nothing, so the
+    candidate list is safe to pass wholesale. The returned set is restricted
+    to tracked-or-on-disk dirs BECAUSE ``git add`` (without
+    ``--ignore-unmatch``) and ``git commit --only`` both FAIL LOUD on a
+    pathspec that matches neither the index/HEAD nor the working tree — a
+    dir that is neither tracked nor on disk has nothing to stage and must be
+    excluded, not passed along.
+    """
+    rel_tasks = tasks_dir().relative_to(repo)
+    candidates = [str(rel_tasks / status / str(task_id)) for status in STATUSES]
+    tracked = _run_git(["ls-files", "--", *candidates]).stdout.splitlines()
+    n_parts = len(rel_tasks.parts) + 2  # <tasks>/<status>/<id>
+    dirs = {"/".join(p.split("/")[:n_parts]) for p in tracked if p.strip()}
+    dirs |= {c for c in candidates if (repo / c).is_dir()}
+    return sorted(dirs)
+
+
 def set_status(
     task_id: int,
     new_status: str,
@@ -1864,8 +1962,29 @@ def set_status(
     note: str | None = None,
     force_followup_exit: bool = False,
 ) -> Path:
-    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
-    status-changed event. Returns the new absolute path.
+    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ (whole-dir move), then post
+    a status-changed event and commit. Returns the new absolute path.
+
+    Crash envelope (#825): ALL durable-state mutations — the filesystem move
+    + completeness verification, the REGISTRY save, and the events.jsonl
+    append — complete BEFORE any git operation, so the #825 stranded split
+    (folder moved, registry pointing at the old path) is unreachable via
+    git-failure exceptions: any git crash leaves disk, REGISTRY, and
+    events.jsonl all consistent with the transition APPLIED, with only the
+    COMMIT missing; that residue is reconciled by the ghost-aware staging
+    sweep (``_task_status_dir_pathspecs``) on the task's NEXT transition. A
+    HARD KILL (SIGKILL/OOM) in the residual window between ``shutil.move``
+    and ``_save_registry`` still yields a stale-registry shape; that window
+    is backstopped by the ``find_task_path`` read-path scan fallback plus
+    the same-transition early-return re-sync below, and the next completed
+    registry-writing mutation of the task re-syncs the entry. A hard kill
+    between ``_save_registry`` and ``_append_jsonl_line`` yields a
+    consistent folder+registry with a missing ``epm:status-changed`` event —
+    a history gap, not a stranding. On the FS-verification failure path the
+    move is rolled back with REGISTRY untouched (``_rollback_move``), as
+    before. On git failure this function still RAISES (fail fast) — but the
+    status transition is durably applied, and a caller retry lands on the
+    idempotent ``old_status == new_status`` early return.
 
     Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
     (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
@@ -1876,6 +1995,29 @@ def set_status(
         old = find_task_path(task_id)
         old_status = _status_from_path(old)
         if old_status == new_status:
+            # Idempotent retry of the SAME transition. If find_task_path
+            # resolved the task at a path that DISAGREES with the registry
+            # entry (stale entry — the hard-kill residue shape, #825),
+            # re-sync the registry before returning: this branch already
+            # holds _locked(), so the write is safe (unlike the read-path
+            # scan fallback in find_task_path, which never self-heals).
+            reg = _load_registry()
+            entry = reg["tasks"].get(str(task_id))
+            rel = str(old.relative_to(repo_root()))
+            if entry and entry.get("path") != rel:
+                fm, _ = _read_body(old / "body.md")
+                _registry_set(reg, task_id, old, fm)
+                _save_registry(reg)
+                _git_commit(
+                    [old, registry_path()],
+                    f"task #{task_id}: re-sync stale REGISTRY entry",
+                )
+                _log.warning(
+                    "task #%d: re-synced stale REGISTRY entry (%r -> %r) on idempotent retry",
+                    task_id,
+                    entry.get("path"),
+                    rel,
+                )
             return old
         if (
             old_status == "followups_running"
@@ -1951,11 +2093,12 @@ def set_status(
                 f"back, REGISTRY untouched. Retry after resolving the disk/"
                 f"permission issue."
             )
-        # Stage BOTH sides so git records the rename via content-similarity: the
-        # source-side deletion at <old> AND the destination-side addition at
-        # <new> (preserves the both-sides-of-move commit invariant).
-        _run_git(["add", "--all", "--", str(rel_old), str(rel_new)])
-        # Update REGISTRY
+        # ── Durable state FIRST, git ops LAST (#825). ── The registry save +
+        # event append below complete before ANY git op, so a git crash can
+        # never again leave the folder moved with the registry pointing at
+        # the old path (the #825 stranded split): every git failure now
+        # leaves disk, REGISTRY, and events.jsonl consistent with the
+        # transition applied, only the COMMIT missing.
         reg = _load_registry()
         fm, _ = _read_body(new / "body.md")
         _registry_set(reg, task_id, new, fm)
@@ -1973,13 +2116,53 @@ def set_status(
         if note:
             payload["note"] = note
         _append_jsonl_line(ev_path, payload)
-        # Pass BOTH old and new to _git_commit so the deletion side of
-        # the `git mv` is included in the commit's --only pathspec.
-        # Otherwise the staged deletion at <old> remains in the index and
-        # gets swept into the next unrelated `git commit` (incident:
-        # 2026-05-24, tasks 382/383 source-side deletions leaked into
-        # commit 49e49f4a).
-        _git_commit([old, new, registry_path()], f"task #{task_id}: {old_status} → {new_status}")
+        specs: list[str] = []  # pre-bound so the except block below can log it
+        try:
+            # Ghost-aware staging (#644 stale-task-folder class): the specs
+            # cover BOTH sides of THIS move — the source-side deletion at
+            # <old> (tracked in git, hence in the specs) AND the
+            # destination-side addition at <new> (on disk, hence in the
+            # specs) — preserving the both-sides-of-move commit invariant —
+            # PLUS any tasks/<status>/<id> dir a previously-crashed
+            # transition left tracked in HEAD but absent on disk, so
+            # `git add --all` stages the leftover deletion and this
+            # transition's commit sweeps the ghost duplicate. rel_old /
+            # rel_new are NOT force-unioned in: a dir that is neither
+            # tracked nor on disk (e.g. rel_old after a never-committed
+            # transition) matches no pathspec, and `git add` / `git commit
+            # --only` fail loud on unmatched pathspecs — the helper's
+            # tracked-or-on-disk restriction already includes rel_old/
+            # rel_new whenever there is anything to stage for them.
+            specs = _task_status_dir_pathspecs(task_id, repo)
+            _run_git(["add", "--all", "--", *specs])  # step-6 standalone staging
+            # Pass the SAME expanded path set to _git_commit so the deletion
+            # side of the move (and any swept ghost) is included in the
+            # commit's --only pathspec. Otherwise staged deletions remain in
+            # the index and get swept into the next unrelated `git commit`
+            # (incident: 2026-05-24, tasks 382/383 source-side deletions
+            # leaked into commit 49e49f4a).
+            _git_commit(
+                [*(repo / s for s in specs), registry_path()],
+                f"task #{task_id}: {old_status} → {new_status}",
+            )
+        except subprocess.CalledProcessError:
+            _log.error(
+                "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
+                "events.jsonl consistent at %s) but git failed before committing. "
+                "Leftover git residue at %s / %s will be reconciled by the NEXT "
+                "set_status of this task; to sweep now: "
+                "git add --all -- %s && git commit -m "
+                "'task #%d: sweep crashed status-move residue'",
+                task_id,
+                old_status,
+                new_status,
+                rel_new,
+                rel_old,
+                rel_new,
+                " ".join(specs) if specs else f"{rel_old} {rel_new}",
+                task_id,
+            )
+            raise
     return new
 
 
@@ -3087,25 +3270,82 @@ def list_comments(task_id: int) -> list[dict[str, Any]]:
 # ─── Git helpers ────────────────────────────────────────────────────────────
 
 
+# Git lock-contention signature. Matches the three stderr shapes a concurrent
+# git process produces (git 2.x): the index.lock path itself, the generic
+# "another process" hint, and the File-exists lock-create failure (covers
+# ref locks / packed-refs.lock with the same transient signature). A CAS
+# mismatch ("is at <sha> but expected <sha>") deliberately does NOT match.
+_GIT_LOCK_CONTENTION_RE = re.compile(
+    r"index\.lock"
+    r"|Another git process seems to be running"
+    r"|Unable to create '.*\.lock': File exists"
+)
+_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+
+
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    # Resolve cwd PER CALL (not from a cached module-level REPO). The
-    # process-local LRU cache in `repo_root()` makes this cheap, and per-call
-    # resolution is what keeps long-lived processes (PM session, agent
-    # daemons) safe across `os.chdir()` or branch state changes.
-    #
-    # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
-    # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
-    # principle redirect git add/commit. The resolver already strips them
-    # for the subprocess that locates the repo root; strip them here too
-    # for parity (round-1 code-review finding #7).
-    return subprocess.run(
-        ["git", *args],
-        cwd=str(repo_root()),
-        env=_sanitized_git_env(),
-        check=check,
-        capture_output=True,
-        text=True,
-    )
+    """Run ``git <args>`` at the repo root, retrying ONCE on lock contention.
+
+    Contention/crash envelope (#825): the command runs with ``check=False``
+    internally; if it exits non-zero AND stderr matches the git
+    lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent git
+    process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
+    jittered ``random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)`` interval and
+    rerun exactly ONCE (never more). The retry keys on the STDERR SIGNATURE,
+    never on the return code, so ``check=False`` rc-as-signal call sites
+    (``diff --cached --quiet``) keep their rc semantics with zero retries,
+    and non-lock failures surface immediately. A SUCCESSFUL call takes no
+    sleep (zero happy-path latency). If the retry also fails on the lock
+    signature, a stale-lock remedy is logged at ERROR. After the (at most
+    one) retry the caller's ``check`` semantics apply: ``check=True`` raises
+    ``subprocess.CalledProcessError`` with the same ``cmd``/``output``/
+    ``stderr`` fields ``subprocess.run(check=True)`` would produce.
+    """
+
+    def _attempt() -> subprocess.CompletedProcess[str]:
+        # Resolve cwd PER CALL (not from a cached module-level REPO). The
+        # process-local LRU cache in `repo_root()` makes this cheap, and
+        # per-call resolution is what keeps long-lived processes (PM session,
+        # agent daemons) safe across `os.chdir()` or branch state changes.
+        #
+        # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
+        # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
+        # principle redirect git add/commit. The resolver already strips them
+        # for the subprocess that locates the repo root; strip them here too
+        # for parity (round-1 code-review finding #7).
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(repo_root()),
+            env=_sanitized_git_env(),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    result = _attempt()
+    if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+        delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
+        _log.warning(
+            "git %s hit a lock collision (a concurrent git process holds the lock); "
+            "retrying once in %.1fs",
+            args[0] if args else "",
+            delay,
+        )
+        time.sleep(delay)
+        result = _attempt()  # second and FINAL attempt
+        if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+            _log.error(
+                "git %s failed twice on a lock collision. A concurrent git process is "
+                "holding the repo lock; if no live git process exists, a crashed one "
+                "may have left a stale .git/index.lock — inspect and remove it "
+                "manually.",
+                args[0] if args else "",
+            )
+    if check and result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, output=result.stdout, stderr=result.stderr
+        )
+    return result
 
 
 def _git_commit(paths: list[Path], message: str) -> None:
@@ -3621,6 +3861,7 @@ __all__ = [
     "list_events",
     "new_plan_version",
     "post_event",
+    "primary_checkout_root",
     "promote",
     "raise_concern",
     "reconcile_registry",

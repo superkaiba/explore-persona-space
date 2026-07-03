@@ -48,6 +48,16 @@ export async function clearSessionCookie(): Promise<void> {
  * missing/invalid; callers MUST return 401 on null.
  */
 export async function requireSessionAuth(): Promise<SessionUser | null> {
+  // Global kill-switch: when DASHBOARD_AUTH_ENABLED is not "true", every gate
+  // that keys on this function — page-level /sign-in redirects, write-action
+  // server actions, and gated /api routes — is treated as authed. Combined
+  // with proxy.ts (which already no-ops the edge gate when the flag is off),
+  // flipping the flag removes ALL sign-in gates, not just the edge proxy.
+  // Inert while the flag is "true" (original cookie check runs below), so the
+  // revert is a single env flip + restart with no code change.
+  if (process.env.DASHBOARD_AUTH_ENABLED !== "true") {
+    return { email: "auth-disabled@local" };
+  }
   const jar = await cookies();
   const raw = jar.get(SESSION_COOKIE)?.value;
   if (!raw) return null;
