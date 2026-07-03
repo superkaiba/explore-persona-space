@@ -311,6 +311,55 @@ Abort affordance: any state, user runs `task.py set-status <N> blocked`
 -> skill posts abort request via `epm:abort`, watcher kills run if one
 exists.
 
+User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
+pause is a DURABLE park, never a prose-only marker. The session driving <N>
+(or the PM/chat session receiving the directive) executes IN THIS ORDER —
+the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
+LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
+the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
+`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
+whereas a crash BEFORE the park leaves the task at its ACTIVE status, where
+the pod-active-stale alert + orphan-respawn remain loud backstops:
+
+1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
+   backstop cron must not outlive the pause), then Step 8-bis: stop any
+   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; volume
+   preserved until the daily stale-pod audit terminates EXITED pods >24h —
+   add the `keep-running` tag if the volume must outlive that) and post
+   `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
+   self-terminates at its `--max-run-duration` fence, or run
+   `uv run python scripts/dispatch_issue.py finalize --issue <N>`. The
+   autonomous "never stop a pod to PARK" ban does not apply here: a user
+   pause is a user directive, not an autonomous park.
+2. LAST — the commit point: `uv run python scripts/task.py set-status <N>
+   on_hold --note "USER PAUSE (verbatim: '<user words>');
+   paused_from=<prior status>; resume: task.py set-status <N>
+   <prior status> && spawn_session.py spawn-issue --issue <N> --auto"`.
+   `on_hold` is in the watcher PARK set (`autonomous_session_watch.py`
+   `PARK`): no orphan-respawn, no auto-dispatch, registration kept. The
+   transition is legal from EVERY status WITHOUT `--force-followup-exit`
+   (`on_hold` is not in `FOLLOWUP_HELD_BLOCKED_STATUSES`); pausing a
+   `followups_running` round abandons that round's in-flight subagents —
+   record `paused_from` so resume restores the held status.
+3. EXIT the turn. Do NOT leave status at an ACTIVE value with a prose
+   hold note — the watcher's orphan-respawn pass cannot parse prose and
+   will respawn against the hold (incident #816, 2026-07-02).
+
+Resume is user-greenlight ONLY: `task.py set-status <N> <paused_from>` (or
+`proposed` for a full re-triage), then `spawn_session.py spawn-issue
+--issue <N> --auto`; the events.jsonl markers re-enter the loop at the same
+point (a resumed `followups_running` round may re-park at
+`awaiting_promotion` via the round-complete re-park — Step 9b § Same-issue
+follow-up loop — expected, not a bug). Distinct mechanism: the
+`.paused-takeover-*` registration sentinel
+(`.claude/rules/background-automation.md` § Deliberate session takeover) is
+a short-TTL (~6h, FAIL-OPEN) session-TAKEOVER shield — it does NOT
+implement a user pause. Known carve-out: a PROGRAM daemon that hardcodes
+task revival (e.g. `run_program_orchestrator.sh`, the #660 leakage program,
+revives its four pinned tasks from `on_hold`) can override the park for
+exactly those pinned ids — pausing a program-pinned task additionally
+requires the program's STOP sentinel.
+
 ---
 
 ## Orchestration Procedure
