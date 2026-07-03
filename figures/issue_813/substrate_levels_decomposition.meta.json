@@ -1,79 +1,79 @@
 {
-  "commit": "cd961b94f4",
-  "created": "2026-07-03T17:22:33Z",
+  "commit": "2ae64d63b4",
+  "created": "2026-07-03T18:00:38Z",
   "figsize": [
     13.0,
     6.4
   ],
   "points": [
     {
-      "category": "generic",
+      "category": "generic\nUltraChat",
       "\u0394/floor (floor-normalized\nmap change), L14": 5.1185782909853526,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "eliciting",
+      "category": "behavior-\neliciting",
       "\u0394/floor (floor-normalized\nmap change), L14": 0.7265662193894395,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "mix",
+      "category": "mixed\npool",
       "\u0394/floor (floor-normalized\nmap change), L14": 0.408667617731926,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "generic",
+      "category": "generic\nUltraChat",
       "y": 0.35249903604946575,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "eliciting",
+      "category": "behavior-\neliciting",
       "y": 0.2871734297943112,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "mix",
+      "category": "mixed\npool",
       "y": 0.37562647167487206,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "generic",
+      "category": "generic\nUltraChat",
       "y": 3.743012243135687,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "eliciting",
+      "category": "behavior-\neliciting",
       "y": 1.198504897112252,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "mix",
+      "category": "mixed\npool",
       "y": 1.6345836234958342,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "generic",
+      "category": "generic\nUltraChat",
       "y": 0.04063347665517868,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "eliciting",
+      "category": "behavior-\neliciting",
       "y": 0.04117870226151069,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "mix",
+      "category": "mixed\npool",
       "y": 0.04047444188239149,
       "_kind": "bar",
       "_group": 3

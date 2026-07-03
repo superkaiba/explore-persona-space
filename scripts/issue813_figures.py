@@ -34,8 +34,25 @@ RES = ROOT / "eval_results/issue_813"
 OUT = ROOT / "figures/issue_813"
 
 BEHAVIORS = ["em", "fact", "sycophancy", "marker"]
+# Reader-facing labels (no-opaque-condition-codes rule): "em" renders as its
+# plain-English name; substrates render as pool descriptions, not slugs.
+BEH_LABEL = {
+    "em": "emergent misalignment",
+    "fact": "fact",
+    "sycophancy": "sycophancy",
+    "marker": "marker",
+}
 SUBSTRATES = ["generic", "elicit", "mix"]
-SUB_LABEL = {"generic": "generic (UltraChat)", "elicit": "behavior-eliciting", "mix": "mix"}
+SUB_LABEL = {
+    "generic": "generic UltraChat",
+    "elicit": "behavior-eliciting",
+    "mix": "mixed-pool",
+}
+TICK_LABEL = {
+    "generic": "generic\nUltraChat",
+    "elicit": "behavior-\neliciting",
+    "mix": "mixed\npool",
+}
 PAIR_LABEL = {
     "generic_vs_elicit": "generic − eliciting",
     "generic_vs_mix": "generic − mix",
@@ -77,7 +94,7 @@ def fig_hero(summary: dict, nulls: dict) -> None:
         verdict = {True: "substrate matters", False: "within null", None: "ambiguous (split)"}[
             v["substrate_matters"]
         ]
-        ax.set_title(f"{beh} — {verdict}")
+        ax.set_title(f"{BEH_LABEL[beh]} — {verdict}")
         ax.set_xlabel("difference in map-change size (Δ/floor) between question pools")
         ax.set_ylabel("null density")
     handles, labels = axes[0, 0].get_legend_handles_labels()
@@ -103,7 +120,7 @@ def fig_forest(summary: dict) -> None:
         ax.axvline(0, color="0.3", lw=1.0)
         ax.set_yticks(ys)
         ax.set_yticklabels([PAIR_LABEL[r["pair"]] for r in rows] if ax is axes[0] else [""] * 3)
-        ax.set_title(beh)
+        ax.set_title(BEH_LABEL[beh])
         ax.set_xlabel("Δ/floor difference")
     fig.suptitle(
         "Pairwise substrate differences in map-change size, family-clustered bootstrap 95% CI",
@@ -133,8 +150,8 @@ def fig_levels(summary: dict) -> None:
                 fontsize=8,
             )
         ax.set_xticks(range(3))
-        ax.set_xticklabels(["generic", "eliciting", "mix"], fontsize=9)
-        ax.set_title(beh)
+        ax.set_xticklabels([TICK_LABEL[s] for s in SUBSTRATES], fontsize=8)
+        ax.set_title(BEH_LABEL[beh])
         if j == 0:
             ax.set_ylabel("Δ/floor (floor-normalized\nmap change), L14")
         ax = axes[1, j]
@@ -146,7 +163,7 @@ def fig_levels(summary: dict) -> None:
             ax.text(xi + 0.18, f, f"{f:.2g}", ha="center", va="bottom", fontsize=7)
         ax.set_yscale("log")
         ax.set_xticks(x)
-        ax.set_xticklabels(["generic", "eliciting", "mix"], fontsize=9)
+        ax.set_xticklabels([TICK_LABEL[s] for s in SUBSTRATES], fontsize=8)
         if j == 0:
             ax.set_ylabel("activation units (log)")
     handles, labels = axes[1, 0].get_legend_handles_labels()
