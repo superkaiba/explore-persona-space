@@ -28,9 +28,9 @@ relates_to:
 
 ## Takeaways
 
-- **No behavior meets the registered substrate-matters rule:** fact, sycophancy, marker sit inside the substrate-swap null (spreads 0.09, 2.5, 0.0007 vs null 95th percentiles 1.36, 2.90, 0.0077); emergent misalignment splits the rule: it clears the null band but fails the pairwise leg.
+- **No behavior meets the registered substrate-matters rule:** fact, sycophancy, marker sit inside the substrate-swap null (spreads 0.09, 2.5, 0.0007 vs null 95th percentiles 1.36, 2.90, 0.0077); emergent misalignment splits it — clears the null band, fails the pairwise leg.
 - **Emergent misalignment's spread (4.71, generic vs mix) clears its null 95th percentile (3.63) by 30%, but the driving pair's family-clustered interval spans zero** — an ambiguous split of the rule.
-- **That 30% band margin is an order of magnitude beyond the ~2% engine shift and 1.5–3% resampling noise**, so the split is not a null-engine artifact.
+- **That 30% band margin is an order of magnitude beyond the ~2% engine shift and 1.5–3% resampling noise** — too large to attribute to the measured null-engine effects.
 - **For emergent misalignment and sycophancy the spread is mostly denominator-driven:** the 48-question generic pool gives a 3–5x smaller refit floor; the raw map change moves far less.
 - **Fact and marker never clear their own refit floor on any substrate (Δ/floor 0.29–0.38, 0.040–0.041):** their within-null verdicts are low-power non-rejections, not substrate-invariance.
 - **The chain-ρ co-primary was uncomputable** — 0 of 50 battery contexts joined the reused leakage table in all 8 cells; the registered fallback left Δ/floor carrying the headline.
@@ -84,7 +84,7 @@ What is plotted: per behavior, the substrate-swap null histograms (1000 resample
 
 > **Figure.** *Only emergent misalignment's substrate spread exceeds question-resampling noise.* Observed max-vs-min Δ/floor spread (solid) vs the substrate-swap null (histograms; dashed = 95th percentile of the widest substrate), layer 14, n = 50 battery contexts per cell, 1000 resamples per null.
 
-Emergent misalignment's spread (4.71, generic vs mix) exceeds its null 95th percentile (3.63) by 30%; fact, sycophancy, and marker fall inside — fact and marker over 90% below their bands, sycophancy the closest call at 12.3% below (2.54 vs 2.90). That margin is 4–6x either noise term (~2% engine shift, 1.5–3% resampling noise), and the batched null p95 sat ~2% below the serial reference, a direction favoring exceedance — the non-exceedance is conservative. All nulls used the batched engine; the emergent-misalignment generic and eliciting cells, plus at most one more, ran its CUDA leg, the rest CPU; per-cell device was unrecorded. The rank-correlation co-primary is absent (0 of 50 contexts joined), so this comparison carries the headline alone.
+Emergent misalignment's spread (4.71, generic vs mix) exceeds its null 95th percentile (3.63) by 30%; fact, sycophancy, and marker fall inside — fact and marker over 90% below their bands, sycophancy the closest call at 12.3% below (2.54 vs 2.90). That margin is 4–6x either noise term (~2% engine shift, 1.5–3% resampling noise). The batched null p95 sat ~2% below serial: conservative for the three non-exceeders, anti-conservative for emergent misalignment's exceedance yet 15x smaller than its 30% margin. All nulls used the batched engine; the emergent-misalignment generic and eliciting cells, plus at most one more, ran its CUDA leg, the rest CPU; per-cell device was unrecorded. The rank-correlation co-primary is absent (0 of 50 contexts joined), so this comparison carries the headline alone.
 
 ### No pairwise substrate difference separates from zero under context-family resampling
 
@@ -96,7 +96,7 @@ What is plotted: per behavior, the three signed pairwise Δ/floor differences (p
 
 All 12 intervals span zero, so no behavior satisfies the pairwise-interval criterion, the rule's second leg. Emergent misalignment lands ambiguous: above question-resampling noise, indistinguishable from zero under context-family resampling. Its point estimates (+4.39, +4.71) sit at or above their own interval upper edges, consistent with a spread carried by a minority of context families.
 
-### Generic's smaller refit floor, not a larger raw map change, drives most of the Δ/floor spread
+### Generic's smaller refit floor drives most of the Δ/floor spread; the raw change contributes a smaller same-direction factor
 
 What is plotted: top row, the per-substrate Δ/floor levels behind the aggregate spread (the low-level points); bottom row, their decomposition into the raw median map change and the refit noise floor, log scale.
 
@@ -104,7 +104,7 @@ What is plotted: top row, the per-substrate Δ/floor levels behind the aggregate
 
 > **Figure.** *The generic substrate's Δ/floor advantage for emergent misalignment and sycophancy comes mostly from its 3–5x smaller refit floor.* Top: Δ/floor per substrate, layer 14. Bottom: raw median map change (dark) vs the refit floor (light), log scale.
 
-The 48-question generic pool estimates the map 3–5x more precisely than the 8–25-question eliciting pools, while the raw change moves less (sycophancy 0.52–0.60 everywhere; emergent misalignment 0.59 generic vs 0.43 eliciting). Fact's raw change varies (0.05 vs 0.33); its floor scales in step. Fact and marker never clear their own floor on any substrate — power-limited non-rejections. Marker's absolute magnitude carries the unresolved apply-gauge fork (Methodology); its cross-substrate comparison is unaffected provided the gauge acts uniformly across substrates.
+The 48-question generic pool estimates the map 3–5x more precisely than the 8–25-question eliciting pools, while the raw change moves far less than the floor does (sycophancy 0.52–0.60 everywhere; emergent misalignment a same-direction ~1.4x, 0.59 generic vs 0.43 eliciting). Fact's floor scales in step with its raw change (0.05 vs 0.33). Fact and marker never clear their own floor on any substrate; these are power-limited non-rejections. Marker's absolute magnitude carries the unresolved apply-gauge fork (Methodology); its cross-substrate comparison is unaffected provided the gauge acts uniformly across substrates.
 
 ---
 
