@@ -5822,8 +5822,8 @@
     "891": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/891",
-      "status": "proposed",
+      "path": "tasks/planning/891",
+      "status": "planning",
       "title": "workflow-fix: thread caps at VM launch surfaces despite stale worktrees"
     },
     "892": {
