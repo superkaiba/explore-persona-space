@@ -26,6 +26,8 @@ export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"
 export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
 
 ISSUE=931
+RUN_START_EPOCH="$(date +%s)"
+export RUN_START_EPOCH
 MODE="production"
 for arg in "$@"; do
   case "$arg" in
@@ -199,6 +201,7 @@ fi
 echo "[phase=p6_sentinel] writing results sentinel"
 uv run python - "$ISSUE" "$LOG_DIR" <<'PY'
 import json
+import os
 import subprocess
 import sys
 import time
@@ -206,6 +209,8 @@ from pathlib import Path
 
 issue, log_dir = int(sys.argv[1]), Path(sys.argv[2])
 out = Path(f"eval_results/issue_{issue}")
+run_start = int(os.environ.get("RUN_START_EPOCH", "0"))
+gpu_hours = round((time.time() - run_start) / 3600.0, 3) if run_start else None
 
 
 def _read(name):
@@ -250,7 +255,7 @@ note = {
         "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue931_story_map",
         "worktree_path": ".claude/worktrees/issue-931",
         "final_commit_sha": commit,
-        "gpu_hours_used": None,
+        "gpu_hours_used": gpu_hours,  # 1x A100: wall == GPU-hours
         "gpu_hours_budgeted": 6,
         "plan_deviations": [],
     },
