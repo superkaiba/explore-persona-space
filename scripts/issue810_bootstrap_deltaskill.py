@@ -149,15 +149,29 @@ def _vs_mean_rows(args) -> int:
     pca_dim = min(PCA_TARGET_DIM_CAP, n - 2)
     if not args.uh_summaries:
         raise SystemExit("--vs mean requires --uh-summaries (the new-row source pack)")
-    uh_rows, uh_cov = _load_uh_summaries(args.uh_summaries)
+    uh_rows, uh_cov, meta = _load_uh_summaries(args.uh_summaries)
     rows = args.rows or list(UH_SUMMARY_NAMES)
     unknown = [r for r in rows if r not in uh_rows]
     if unknown:
         raise SystemExit(f"rows {unknown} absent from the uh_summaries pack ({sorted(uh_rows)})")
-    # Pack context coverage must span the manifest grid (paired design).
+    # Pack context coverage must span the manifest grid (paired design). A
+    # SMOKE-provenance pack (tiny ctx subset) pairs on its own covered subset,
+    # loudly; a PRODUCTION pack with missing contexts is a capture bug — refuse.
     missing_ctx = [c for c in ctx_ids if uh_cov[rows[0]].get(c, 0) <= 0]
     if missing_ctx:
-        raise SystemExit(f"uh pack missing contexts {missing_ctx[:5]} — paired read impossible")
+        if not meta.get("smoke"):
+            raise SystemExit(
+                f"uh pack missing contexts {missing_ctx[:5]} — paired read impossible "
+                "(production pack must cover the full manifest grid)"
+            )
+        ctx_ids = [c for c in ctx_ids if uh_cov[rows[0]].get(c, 0) > 0]
+        n = len(ctx_ids)
+        if n < 8:
+            raise SystemExit(f"smoke pack covers only {n} contexts (<8) — too small to fit")
+        pca_dim = min(PCA_TARGET_DIM_CAP, n - 2)
+        logger.warning(
+            "[vs-mean] SMOKE pack: pairing on its %d covered contexts (production covers 50)", n
+        )
     free_summaries, capture_layers = _load_free_summaries()
     cc = _load_cc(ctx_ids, capture_layers)
     # The pack rows carry their own layer count (0.5B smoke = 24; production 28)

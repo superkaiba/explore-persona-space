@@ -210,12 +210,13 @@ def _e0_by_context(e0_highm: dict, low_m: dict | None) -> dict[str, dict[str, di
     return out
 
 
-def _load_uh_summaries(spec: str) -> tuple[dict, dict]:
+def _load_uh_summaries(spec: str) -> tuple[dict, dict, dict]:
     """Load the compact uh_summaries pack (local path, else an HF data-repo path).
 
-    Returns ``({row: {ctx: (Lc, H) fp32 np}}, {row: {ctx: probe count}})`` — the
-    9 new-row source for the read-out enlarged-axis rerun (plan v11 §4.6 item 5;
-    avoids re-downloading the ~430 MB uh position store on the CPU chain).
+    Returns ``({row: {ctx: (Lc, H) fp32 np}}, {row: {ctx: probe count}}, meta)``
+    — the 9 new-row source for the read-out enlarged-axis rerun (plan v11 §4.6
+    item 5; avoids re-downloading the ~430 MB uh position store on the CPU
+    chain). ``meta`` carries {smoke, context_ids, capture_layers, model}.
     Fails loud on a non-extended pack.
     """
     from huggingface_hub import hf_hub_download
@@ -230,7 +231,8 @@ def _load_uh_summaries(spec: str) -> tuple[dict, dict]:
         row: {c: t.float().numpy() for c, t in per_ctx.items()}
         for row, per_ctx in blob["summaries"].items()
     }
-    return rows, blob["coverage"]
+    meta = {k: blob.get(k) for k in ("smoke", "context_ids", "capture_layers", "model")}
+    return rows, blob["coverage"], meta
 
 
 def _summary_matrix(summary, layer_i, kept, free_summaries, pos_summaries, coverage, uh_rows=None):
@@ -346,7 +348,7 @@ def _resolve_rows_and_sources(args, pos_man: dict):
     """
     uh_rows, uh_cov = (None, None)
     if args.uh_summaries:
-        uh_rows, uh_cov = _load_uh_summaries(args.uh_summaries)
+        uh_rows, uh_cov, _meta = _load_uh_summaries(args.uh_summaries)
         logger.info("[phase=load] uh_summaries pack: %d rows", len(uh_rows))
     summaries = _expand_rows(args.summaries) if args.summaries else summary_names()
     uh_requested = [s for s in summaries if s in set(UH_SUMMARY_NAMES)]
