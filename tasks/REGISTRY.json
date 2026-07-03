@@ -6178,8 +6178,8 @@
     "937": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/937",
-      "status": "planning",
+      "path": "tasks/approved/937",
+      "status": "approved",
       "title": "workflow-fix: verify_plan check \u2014 re-extracted reference arms never silently replace a committed headline"
     },
     "938": {
