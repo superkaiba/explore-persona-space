@@ -3875,9 +3875,51 @@ The orchestrator handles the named gate inline rather than continuing to
 poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
 (`fact-candidates`): the pipeline is waiting on a user answer, so the
 orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
-exception: the orchestrator resolves it itself (a pod-cycle around an
-off-pod step) and resumes the loop in the same turn — see the per-gate
-handlers below.
+exception: the orchestrator resolves it itself (on the RunPod lane a
+pod-cycle around an off-pod step; on the GCP lane finalize + fresh
+dispatch — see the GCP-lane teardown leg below) and resumes the loop in
+the same turn — see the per-gate handlers below.
+
+**GCP-lane blocking gates — instance-teardown leg (EVERY handler, PARK-mode
+and auto-resolving; #908/#763).** On the GCP lane a blocking-gate exit is a
+CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
+does NOT power the VM off — the GCE instance stays RUNNING **and billing** by
+design (the clean-exit path keeps it alive only for sentinel draining;
+`backends/gcp.py` `teardown` docstring). By the time `status=gate` reaches
+this step the sentinel is already drained (the poller drained it to post the
+gate marker), and the VM holds NOTHING a later gate resolution needs — so
+tear the instance down at the earliest point after the drain, split by gate
+class: **PARK-mode gates** run the finalize command after the gate marker is
+posted and BEFORE the park — before raising the user question, before
+posting `step-completed parked`, before exiting — NEVER leave the instance
+up through the user-wait window (the user's pick is NOT a teardown
+precondition); **auto-resolving gates** (including a PARK-mode gate's
+autonomous auto-resolve branch) run it after the auto-resolve step completes
+and BEFORE dispatching any off-pod phase or the fresh tail dispatch:
+
+```bash
+uv run python scripts/dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts
+```
+
+`finalize` DELETEs the instance AND retires the handle sidecar
+(`.claude/cache/issue-<N>-handle.json` → `<name>.finalized`); a raw `gcloud
+compute instances delete` leaves a stale sidecar the next launch would
+misread — use it only when no sidecar exists. `--skip-confirm-artifacts` is
+REQUIRED at a mid-pipeline gate: the run's declared final artifacts do not
+exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction. The
+instance stays up ONLY for sentinel draining — never through an off-pod
+phase or a park (Step 8-bis: a pod must not idle on a halt; incident #763:
+an A100-80 idled ~40 min after the `cofit_phaseA_done` gate-park). The next
+pipeline phase provisions FRESH via the normal Step 6d.1 dispatch. There is
+no GCP analogue of the RunPod `pod.py stop`/`resume` cycle (`pv_phase1_done`
+below): GCE instances are ephemeral by design, and a STOPPED instance would
+be deleted by the next launch's stale reclaim anyway — the GCP phase-cycle
+is teardown + fresh dispatch. Backstop only (never the plan):
+`backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
+`eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
+reclaim deletes it, so a missed teardown no longer silently no-ops the next
+dispatch (#763 leg 2) — but the zombie still bills until that next dispatch
+or the daily janitor sweep, so the handler-side teardown stays mandatory.
 
 Gate handlers (one per registered `<name>`):
 
@@ -3929,7 +3971,10 @@ Gate handlers (one per registered `<name>`):
   marker, materialises `fact_pick.json` on disk, and the next pipeline
   phase proceeds. In autonomous mode the orchestrator resumes the
   polling loop directly without a re-invocation. (See plan §4.2 of any
-  fact-teaching task for the on-pod resume contract.)
+  fact-teaching task for the on-pod resume contract. GCP lane: the
+  instance was already finalized per the GCP-lane teardown leg above —
+  the resume is a FRESH Step 6d.1 dispatch of the fact-pick tail, never
+  a poll against the old instance.)
 
 - **`pv_phase1_done`** (issue #763 persona-vector extraction —
   off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
@@ -3956,7 +4001,10 @@ Gate handlers (one per registered `<name>`):
      stop --issue <N>`. This frees the GPU through the deadline-bounded
      stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
      monitoring stack"); the PV rollouts are already on HF, so nothing on
-     the pod's ephemeral disk is lost.
+     the pod's ephemeral disk is lost. (RunPod lane. On the GCP lane there
+     is no stop/resume — apply the GCP-lane instance-teardown leg above:
+     `finalize --skip-confirm-artifacts` once the phase-1 artifacts are
+     confirmed on HF, then re-dispatch the tail as a fresh launch.)
   2. **Run the judge OFF-POD on the VM**: `uv run python
      scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
      ships on the `issue-763` branch — it lands on `main` when #763 merges;
@@ -3989,10 +4037,14 @@ Gate handlers (one per registered `<name>`):
      `pid`/`log` from that marker.
 
   Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
-  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
-  the pod is burning GPU again after resume, so the `/issue-tick <N>`
-  backstop cron stays armed and the bg-Bash poll chain continues against
-  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved.
+  (RunPod lane — the stop/judge/resume cycle above keeps ONE pod across
+  phases, so the pod is burning GPU again after resume. GCP lane: there
+  is no stop/resume — the instance was finalized per the GCP-lane
+  teardown leg above, and the tail runs as a FRESH dispatch, so the poll
+  loop resumes against the NEW handle, never the old instance.) Either
+  way the `/issue-tick <N>` backstop cron stays armed and the bg-Bash
+  poll chain continues. (Contrast with `fact-candidates` above, which parks
   for a user pick and tears the cron down.) **Idempotency on re-entry:**
   if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
   by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
@@ -4018,16 +4070,21 @@ Gate handlers (one per registered `<name>`):
 **PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
 branch): the tail below applies ONLY to gates that EXIT the skill to wait
 on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
-their own continuation — they do NOT teardown and do NOT EXIT; their
-handler resumes the polling loop in the same turn, so it skips this whole
-paragraph.
+their own continuation — they do NOT tear down the RUNPOD pod mid-cycle
+(the stop/judge/resume cycle IS the continuation) and do NOT EXIT; on the
+GCP lane the auto-resolve handler DOES tear the instance down (finalize +
+fresh dispatch, per the GCP-lane teardown leg above) — "no teardown" is
+RunPod-scoped. Their handler resumes the polling loop in the same turn,
+so it skips this whole paragraph.
 
 For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
 Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
-burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
+burning GPU (on the GCP lane because the teardown leg above already
+finalized the instance BEFORE this park), so the backstop should not keep
+re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
