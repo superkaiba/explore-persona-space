@@ -5949,8 +5949,8 @@
     "906": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/blocked/906",
-      "status": "blocked",
+      "path": "tasks/running/906",
+      "status": "running",
       "title": "artifacts factory Phase 1: validate unified pipeline + calibrate cost on 4 pilot classes"
     },
     "907": {
