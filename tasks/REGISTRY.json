@@ -6144,8 +6144,8 @@
       "goal": "Test whether the linear context\u2192answer-profile map (#779/#825 held-out ridge recipe, c_x \u2192 v(x)) generalizes to a character\u2192behavior map in STORIES on Qwen2.5-7B-Instruct \u2014 (a) real stories fed with NO chat template, predicting the mean activation of a character's dialogue span from that character's context vector, and (b) assistant-written multi-character stories under the chat template \u2014 quantifying similarity to the chat-template context\u2192answer map via cross-regime transfer R\u00b2, matched-layer map/weight similarity, and layer-profile rank correlation; specificity control: the same machinery anchored on random persona-irrelevant separator/punctuation tokens (separator activation \u2192 mean activation of the following span until the next separator) to test whether span-mean predictability is character/persona-specific or a generic delimiter-span property.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/931",
-      "status": "planning",
+      "path": "tasks/approved/931",
+      "status": "approved",
       "title": "Story-character generalization of the context\u2192answer map (no chat template) + separator-token specificity control"
     },
     "932": {
