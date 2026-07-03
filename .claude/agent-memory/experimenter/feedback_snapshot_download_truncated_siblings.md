@@ -22,5 +22,7 @@ themselves time out (>90 s) and `snapshot_download` wedges 40+ min in
 full-tree enumeration before `allow_patterns` applies. There, use SCOPED
 `list_repo_tree(path_in_repo=<prefix>, recursive=True)` + a ≤6-worker
 `hf_hub_download` pool, ONE process (recipe:
-`scripts/issue833_gcp_phase_d.sh`, commit `22388e4b3d`; twin memory:
+`scripts/issue833_gcp_phase_d.sh`, readable via
+`git show 22388e4b3d:scripts/issue833_gcp_phase_d.sh` until #833's merge
+lands it on main; twin memory:
 `../experiment-implementer/feedback_hf_snapshot_download_full_tree_enumeration.md`).
