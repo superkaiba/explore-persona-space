@@ -3864,6 +3864,78 @@ _GIT_RESET_HARD_RE = re.compile(
 _GIT_DASH_C_RE = re.compile(r"git\s+-C\s+")
 _RESET_HARD_ALLOW_SENTINEL = "workflow-lint: allow-git-reset-hard"
 
+# Working-tree-revert doc prescriptions (#897, sibling of _GIT_RESET_HARD_RE).
+# Shared backtick-free flag group: optional git-level flags (`--no-pager`,
+# `-c k=v`, `-q`) may sit between `git` and the subcommand; backtick-free
+# tokens so the greedy group cannot span ACROSS an inline-code mention (the
+# same design rationale documented on _GIT_RESET_HARD_RE above).
+_GIT_FLAGS_GRP = r"(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*"
+_WT_REVERT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # Any non-`--staged` git restore: explicit-path restore prescriptions have
+    # zero legitimate live doc uses; `--staged` forms are index-only (they do
+    # not touch the working tree) and exempt. The exemption lookahead is
+    # bounded at BOTH a backtick (the inline-code terminator) AND a `#` —
+    # bash never executes a comment tail, so a fenced `git restore . #
+    # --staged` line is a destructive restore whose comment must NOT waive it
+    # (round-2 concern id lint-restore-lookahead-comment-tail; the runtime
+    # hook's comment-tail strip is the enforcement sibling). A `--staged`
+    # among the real arguments always precedes any `#`, so legitimate
+    # index-only prescriptions keep the exemption.
+    ("git restore", re.compile(rf"git\s+{_GIT_FLAGS_GRP}restore\b(?![^`#]*--staged)")),
+    # Bare-dot wholesale checkout ONLY — explicit `checkout <ref> -- <path>`
+    # doc mentions are NOT flagged (legitimate prescriptive uses exist: the
+    # /issue Step 5a spec-freshness sync, the Step 10d surgical additive
+    # checkout, the code-reviewer smoke-restore rule). At RUNTIME the hook
+    # (scripts/guard_repo_root_branch.sh) blocks the explicit-pathspec forms
+    # too, with the `git -C` waiver as the deliberate override — the
+    # prescriptive-vs-runtime split (#897).
+    (
+        "git checkout .",
+        re.compile(rf"git\s+{_GIT_FLAGS_GRP}checkout\b(?:\s+[^\s`]+)*?\s+\.(?=[\s`/]|$)"),
+    ),
+    (
+        "git clean -f/--force",
+        re.compile(
+            rf"git\s+{_GIT_FLAGS_GRP}clean\b(?:\s+[^\s`]+)*?\s+(?:-[A-Za-z]*f[A-Za-z]*\b|--force\b)"
+        ),
+    ),
+)
+_WT_REVERT_ALLOW_SENTINEL = "workflow-lint: allow-repo-root-wt-revert"
+
+
+def _line_waived(line: str, match_start: int, sentinel: str) -> bool:
+    """True when a flagged destructive-git match on ``line`` is waived.
+
+    Two waivers (shared by the reset-hard + worktree-revert checks):
+
+    - **FI3 worktree-qualified** — a ``git -C`` prefix sits at-or-before
+      ``match_start``. In the sanctioned form the offending regex matches from
+      the SAME ``git`` the ``-C`` begins (its flag-group swallows ``-C "$WT"``),
+      so ``dc.start() == match_start`` there — hence ``<=``, not ``<``. An
+      unqualified command starts at a ``git`` NOT followed by ``-C``, so the
+      offsets can only coincide for the sanctioned form; a ``git -C`` AFTER the
+      match (e.g. ``git reset --hard && git -C "$WT" status``) has a HIGHER
+      offset and does NOT waive.
+    - **FI2 reasoned sentinel** — the line carries ``sentinel`` with a
+      NON-EMPTY reason. The reason lives between the sentinel ``:`` and the
+      note closer, so the leading ``:``/whitespace AND the trailing
+      HTML-comment closer (``-->``) / backtick / whitespace are stripped before
+      testing — otherwise a bare closer (``: -->``, or the sentinel with no
+      colon) would count as a reason and wrongly waive.
+    """
+    dc = _GIT_DASH_C_RE.search(line)
+    if dc is not None and dc.start() <= match_start:
+        return True
+    if sentinel in line:
+        _, _, tail = line.partition(sentinel)
+        reason = tail.lstrip(": ")
+        if reason.rstrip().endswith("-->"):
+            reason = reason.rstrip()[: -len("-->")]
+        reason = reason.strip().strip("`").strip()
+        if reason:
+            return True
+    return False
+
 
 def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if any agent spec / skill playbook contains an UNQUALIFIED
@@ -3905,34 +3977,11 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
             m = _GIT_RESET_HARD_RE.search(line)
             if m is None:
                 continue
-            # FI3: worktree-qualified ONLY if a `git -C` prefix sits at or
-            # before the START of the offending reset match (i.e. `git -C "$WT"
-            # reset --hard` — the `-C` qualifies THIS command). In the sanctioned
-            # form `_GIT_RESET_HARD_RE` matches from the SAME `git` the `-C`
-            # begins (its flag-group swallows `-C "$WT"`), so `dc.start()` equals
-            # `m.start()` there — hence `<=`, not `<`. An unqualified reset starts
-            # at a `git` NOT followed by `-C`, so `_GIT_DASH_C_RE` cannot match at
-            # that same offset; `dc.start() == m.start()` therefore occurs ONLY
-            # for the sanctioned form. A `git -C` that appears AFTER the reset
-            # (e.g. `git reset --hard && git -C "$WT" status`) has a HIGHER offset
-            # and does NOT waive the unqualified reset that precedes it.
-            dc = _GIT_DASH_C_RE.search(line)
-            if dc is not None and dc.start() <= m.start():
+            # FI3 `-C`-before-match + FI2 reasoned-sentinel waivers — shared
+            # with check_no_repo_root_worktree_revert; semantics documented on
+            # the helper (the `<=` covers the sanctioned same-`git` anchor).
+            if _line_waived(line, m.start(), _RESET_HARD_ALLOW_SENTINEL):
                 continue
-            if _RESET_HARD_ALLOW_SENTINEL in line:  # explicit allowlist -> OK
-                # Require a NON-EMPTY reason after the sentinel (FI2). The reason
-                # lives between the sentinel `:` and the note closer, so strip the
-                # leading `:`/whitespace AND the trailing HTML-comment closer
-                # (`-->`) / backtick / whitespace before testing — otherwise the
-                # bare comment closer (`: -->`, or `allow-git-reset-hard -->` with
-                # no colon) would be counted as a reason and wrongly waive.
-                _, _, tail = line.partition(_RESET_HARD_ALLOW_SENTINEL)
-                reason = tail.lstrip(": ")
-                if reason.rstrip().endswith("-->"):
-                    reason = reason.rstrip()[: -len("-->")]
-                reason = reason.strip().strip("`").strip()
-                if reason:
-                    continue
             errors.append(
                 f"{p}:{lineno}: unqualified `git reset --hard` on the shared "
                 f"repo root is forbidden (clobbers concurrent siblings' task "
@@ -3941,6 +3990,60 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
                 f"`{_RESET_HARD_ALLOW_SENTINEL}: <reason>` sentinel if this is a "
                 f"legitimate prose mention / pod-side ssh_execute command."
             )
+    return errors
+
+
+def check_no_repo_root_worktree_revert(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any agent spec / skill playbook prescribes an UNQUALIFIED
+    working-tree revert on the shared repo root: a non-``--staged``
+    ``git restore``, a bare-dot wholesale ``git checkout .``, or a
+    force-flagged ``git clean``. Only per-worktree ``git -C "$WT" ...`` forms
+    (the ``-C`` qualifier appearing BEFORE the match on the same line), or
+    lines carrying the ``workflow-lint: allow-repo-root-wt-revert: <reason>``
+    sentinel with a non-empty reason, pass.
+
+    Incident 2026-07-02 (#841): a concurrent session's destructive
+    working-tree git op on the shared repo root reverted the #841 analyzer's
+    uncommitted ``body.md`` mid-task (and deleted untracked pre-registration +
+    figure files) — the same hazard class as the #815 repo-root
+    ``reset --hard`` (``task.py`` holds a per-registry flock, not per-file).
+    This check is the DOC-side sibling of that reset-hard check; the RUNTIME
+    tooth is ``scripts/guard_repo_root_branch.sh`` (which additionally blocks
+    the explicit-pathspec / bare-pathspec / force checkout forms this check
+    deliberately does not flag — legitimate prescriptive doc uses exist for
+    those; see ``_WT_REVERT_PATTERNS``).
+
+    Scope: ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` only
+    (reuses ``_iter_ask_target_files``, worktree-sibling-safe). ``.claude/
+    plans/``, ``.claude/agent-memory/``, ``.claude/rules/``, ``CLAUDE.md``,
+    and ``scripts/**`` are NEVER scanned. Pure-Python; bundled into the
+    no-flags default run. ``repo_root`` is a unit-test override hook;
+    production callers pass None (canonical repo root).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for p in _iter_ask_target_files(root):  # already worktree-safe + scoped
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for label, pattern in _WT_REVERT_PATTERNS:
+                m = pattern.search(line)
+                if m is None:
+                    continue
+                if _line_waived(line, m.start(), _WT_REVERT_ALLOW_SENTINEL):
+                    continue
+                errors.append(
+                    f"{p}:{lineno}: unqualified `{label}` (a working-tree "
+                    f"revert) on the shared repo root is forbidden — it "
+                    f"silently discards CONCURRENT sessions' uncommitted "
+                    f"edits (incident #841; #897, sibling of the #815 "
+                    f"reset --hard check). Use a per-worktree "
+                    f'`git -C "$WT" ...` form, or add a same-line '
+                    f"`{_WT_REVERT_ALLOW_SENTINEL}: <reason>` sentinel if "
+                    f"this is a legitimate prose mention."
+                )
     return errors
 
 
@@ -4944,6 +5047,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-worktree-revert",
+        action="store_true",
+        help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
+        "prescribes an unqualified working-tree revert on the shared repo "
+        "root: a `git restore` without `--staged`, a bare-dot `git checkout .`, or "
+        'a force-flagged `git clean`. Only per-worktree `git -C "$WT" ...` '
+        "forms (the `-C` qualifier before the match on the same line) or "
+        "lines carrying the `workflow-lint: allow-repo-root-wt-revert: "
+        "<reason>` sentinel with a non-empty reason pass. A repo-root "
+        "working-tree revert silently discards CONCURRENT sessions' "
+        "uncommitted edits (incident #841; sibling of the #815 reset-hard "
+        "check). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -5081,6 +5198,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
+        or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
@@ -5152,6 +5270,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_workflow_improver_spawn())
     if args.check_no_repo_root_git_reset_hard or no_flags:
         errors.extend(check_no_repo_root_git_reset_hard())
+    if args.check_no_repo_root_worktree_revert or no_flags:
+        errors.extend(check_no_repo_root_worktree_revert())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:

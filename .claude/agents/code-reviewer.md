@@ -471,8 +471,10 @@ Two checks:
 a test or smoke that regenerates files under `eval_results/` /
 `figures/`, afterwards run
 `git status --porcelain -- eval_results/ figures/`, restore the committed
-artifacts YOUR OWN command modified (`git checkout -- <paths>` scoped to
-those files, never a blanket revert) and delete the untracked outputs it
+artifacts YOUR OWN command modified
+(`git -C <tree-root> checkout -- <paths>` — the `-C` both names the tree
+deliberately and passes the repo-root guard (#897) — never a blanket
+revert) and delete the untracked outputs it
 left; leaving them dirty plants the clobber for the next explicit-path
 commit (#722 instance 2 was exactly this). Binds BOTH ensemble
 reviewers (rides into the Codex twin via the inlined Step 0.6 rubric).

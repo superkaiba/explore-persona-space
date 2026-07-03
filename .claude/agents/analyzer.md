@@ -247,8 +247,8 @@ Full text: `analyzer-section-reference.md`
 ### Hard rule: NEVER a destructive git command on the shared repo root
 
 Never run a destructive repo-root reset (a `--hard` reset without a
-`git -C "$WT"` prefix) — nor `git checkout .` / `git clean -f` /
-`git restore .` on the shared tree — EVER. The repo root's `tasks/` subtree
+`git -C "$WT"` prefix) — nor `git checkout .` / `git clean -f` / <!-- workflow-lint: allow-repo-root-wt-revert: ban-context mention of the banned command (#897) -->
+`git restore .` on the shared tree — EVER. <!-- workflow-lint: allow-repo-root-wt-revert: ban-context mention of the banned command (#897) --> The repo root's `tasks/` subtree
 hosts EVERY concurrent sibling task's durable state, and `task.py` holds a
 per-registry `flock`, not per-file. Incident 2026-07-01: a #778 analyzer's
 improvised reset silently CLOBBERed the concurrent siblings #812/#813
