@@ -5325,7 +5325,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/825",
       "status": "interpreting",
-      "title": "Is the per-example context\u2192answer-profile map present in the pretrained base model, and does it hold for the user turn?"
+      "title": "The linear context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn chat assistant targets, while the user-turn map has no practical predictive power (R\u00b2 < 0) despite above-null structure (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,

@@ -1,6 +1,8 @@
 ---
-title: Is the per-example context→answer-profile map present in the pretrained base
-  model, and does it hold for the user turn?
+title: The linear context→answer-profile map exists in pretrained Qwen2.5-7B at ~87%
+  of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn
+  chat assistant targets, while the user-turn map has no practical predictive power
+  (R² < 0) despite above-null structure (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-02T00:14:16Z'
