@@ -720,10 +720,13 @@ def attempt_id_for(spec: RunSpec) -> str:
     Used as a sub-folder under HF data / model paths AND as a sentinel
     sub-directory on the VM scratch so a fresh idempotent re-run after
     Spot preemption never overwrites an earlier attempt's artifacts.
-    Reads ``spec.extra["attempt_id"]`` if set (the router/orchestrator
-    passes a deterministic per-attempt id so reconnect after orchestrator
-    re-spawn picks up the same namespace); otherwise falls back to a
-    timestamp-only tag (``att-YYYYMMDD-HHMMSS``).
+    Reads ``spec.extra["attempt_id"]`` if set (the router threads a
+    FRESH per-launch id, #927); otherwise falls back to a timestamp-only
+    tag (``att-YYYYMMDD-HHMMSS``). Reconnect namespace stability comes
+    from the ``eps-attempt`` instance-label recovery in
+    :func:`reconnect_or_none` (``launch()`` prefers the recovered label
+    id over this value on reconnect), NOT from cross-launch reuse of the
+    threaded id.
 
     The tag is shell-safe (only ``[A-Za-z0-9_-]``); the renderer threads
     it verbatim into the startup-script + the HF-paths declaration.

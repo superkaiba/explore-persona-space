@@ -67,6 +67,7 @@ from explore_persona_space.backends.router import (
 from explore_persona_space.backends.router import RouteAttempt as RouteAttempt
 from explore_persona_space.backends.router import _attempt_to_dict as _attempt_to_dict
 from explore_persona_space.backends.router import _gcp_ladder_specs as _ladder_specs
+from explore_persona_space.backends.router import _thread_attempt_id_into as _thread_attempt_id_into
 
 #: The pre-GCP-first auto order (free SLURM lanes first, GCP as the
 #: terminal escalation). Tests that specifically exercise the
@@ -1088,6 +1089,177 @@ def test_lease_dir_created_with_owner_only_mode(tmp_path):
     store.write(Lease(issue=1, spec_hash="h", attempt_id="a"))
     mode = store.lease_dir.stat().st_mode & 0o777
     assert mode == 0o700, f"lease dir mode={oct(mode)}"
+
+
+# ---------------------------------------------------------------------------
+# Fresh attempt-id per launch (#927) — _thread_attempt_id_into mints per call;
+# reconnect keeps the original id (router early-return + GCP label recovery).
+# ---------------------------------------------------------------------------
+
+_ATTEMPT_ID_RE = re.compile(r"att-\d{8}-\d{6}")
+
+
+def test_thread_attempt_id_into_mints_fresh_id_when_lease_exists():
+    """#927 acceptance (1), unit level: a pre-existing lease's attempt_id is
+    NOT reused — a fresh ``att-YYYYMMDD-HHMMSS`` id is minted, threaded into
+    the spec, AND written back to the lease (lease follows the launch)."""
+    spec = _spec(backend=None)
+    lease = Lease(issue=137, spec_hash="h", attempt_id="att-old")
+    writes: list[Lease] = []
+    new_spec, new_lease = _thread_attempt_id_into(spec, lease, writes.append)
+    fresh = new_spec.extra["attempt_id"]
+    assert fresh != "att-old"
+    assert _ATTEMPT_ID_RE.fullmatch(fresh), fresh
+    # Lease-follows-launch: the lease records the id the launch will use,
+    # and the write happened inside the caller's transaction.
+    assert new_lease.attempt_id == fresh
+    assert writes and writes[-1].attempt_id == fresh
+
+
+def test_thread_attempt_id_into_preserves_counters_and_failover_fields():
+    """#927 acceptance (4): only ``attempt_id`` changes across the threading
+    write — GCP attempt counters, failover-identity fields, backend, and
+    job_id all survive. Called TWICE on the same lease (the per-rung ladder
+    shape: each rung re-threads the ORIGINAL spec inside one transaction;
+    per-rung re-mint churn is expected behavior) — fields survive BOTH."""
+    today = datetime.now(tz=UTC).date().isoformat()
+    lease = Lease(
+        issue=137,
+        spec_hash="h",
+        attempt_id="att-old",
+        backend="gcp",
+        cluster=None,
+        job_id="instance-1",
+        gcp_attempts_today=3,
+        gcp_attempts_date=today,
+        gcp_failover_of={"pod_name": "eps-issue-1", "job_id": "z"},
+        runpod_wedge_failover_of={"pod_name": "pod-1", "job_id": "w"},
+        runpod_cuda_ima_failover_of={"pod_name": "pod-1", "job_id": "c"},
+    )
+    spec = _spec(backend=None)
+    writes: list[Lease] = []
+    _s1, l1 = _thread_attempt_id_into(spec, lease, writes.append)
+    _s2, l2 = _thread_attempt_id_into(spec, l1, writes.append)
+    assert len(writes) == 2  # one lease write per threading call
+    for le in (l1, l2):
+        assert le.gcp_attempts_today == 3
+        assert le.gcp_attempts_date == today
+        assert le.gcp_failover_of == {"pod_name": "eps-issue-1", "job_id": "z"}
+        assert le.runpod_wedge_failover_of == {"pod_name": "pod-1", "job_id": "w"}
+        assert le.runpod_cuda_ima_failover_of == {"pod_name": "pod-1", "job_id": "c"}
+        assert le.backend == "gcp"
+        assert le.job_id == "instance-1"
+        assert le.attempt_id != "att-old"
+
+
+def test_thread_attempt_id_into_honors_caller_pinned_extra_id():
+    """A caller-pinned ``spec.extra["attempt_id"]`` wins over the fresh mint
+    — even when a lease exists (explicit re-attach tooling ONLY; see the
+    function docstring for why routine pinning re-creates #825) — and is
+    written to the lease verbatim."""
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", extra={"attempt_id": "att-pin"})
+    lease = Lease(issue=137, spec_hash="h", attempt_id="att-old")
+    writes: list[Lease] = []
+    new_spec, new_lease = _thread_attempt_id_into(spec, lease, writes.append)
+    assert new_spec.extra["attempt_id"] == "att-pin"
+    assert new_lease.attempt_id == "att-pin"
+    assert writes and writes[-1].attempt_id == "att-pin"
+
+
+def test_thread_attempt_id_into_creates_lease_when_absent():
+    """Regression pin: the lease-None branch keeps its pre-#927 behavior —
+    a fresh lease is created with the minted id and written."""
+    spec = _spec(backend=None)
+    writes: list[Lease] = []
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    aid = new_spec.extra["attempt_id"]
+    assert _ATTEMPT_ID_RE.fullmatch(aid), aid
+    assert lease.issue == 137
+    assert lease.spec_hash == spec_hash(spec)
+    assert lease.attempt_id == aid
+    assert writes and writes[0] is lease
+
+
+def test_fresh_gcp_launch_after_dead_prior_attempt_uses_new_attempt_id(
+    lease_store, marker_poster, captured_markers
+):
+    """#927 acceptance (1), route level: a fresh GCP launch with a
+    pre-existing lease carrying a dead prior attempt's id launches with a
+    DIFFERENT attempt_id, and the persisted lease reads back the NEW id
+    (the #825 shape: three relaunches all inherited the dead attempt's
+    crash-persist / sentinel namespace)."""
+    gcp = _GcpBackendDouble()
+    stale_spec = _spec(backend=None)
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash=spec_hash(stale_spec),  # same shape — the lease is NOT stale-keyed away
+            attempt_id="att-dead-1",
+            backend="gcp",
+            job_id="instance-dead",
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        # reconnect_fn omitted → reconnect disabled (the dead instance is gone).
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    launched_id = gcp.launches[0].extra["attempt_id"]
+    assert launched_id != "att-dead-1"
+    assert _ATTEMPT_ID_RE.fullmatch(launched_id), launched_id
+    read_back = lease_store.read(137)
+    assert read_back is not None
+    assert read_back.attempt_id == launched_id  # lease follows the launch
+
+
+def test_reconnect_keeps_prior_attempt_id_no_remint(lease_store, marker_poster, captured_markers):
+    """#927 acceptance (2): a reconnect to a still-live instance early-returns
+    with ``ROUTE_REASON_RECONNECT`` — no launch, no threading call — and the
+    lease's attempt_id stays byte-unchanged."""
+    gcp = _GcpBackendDouble()
+    live_spec = _spec(backend=None)
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash=spec_hash(live_spec),
+            attempt_id="att-orig",
+            backend="gcp",
+            job_id="instance-live",
+        )
+    )
+    live = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-live",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a", "attempt_id": "att-orig"},
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: live if k == "gcp" else None,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert gcp.launches == []  # reconnect — never a fresh provision
+    read_back = lease_store.read(137)
+    assert read_back is not None
+    assert read_back.attempt_id == "att-orig"  # byte-unchanged: no re-mint on reconnect
 
 
 def test_unknown_submitted_recovery_via_reconnect(lease_store):
