@@ -439,11 +439,11 @@ def _exploratory_turn_nl_cc_cosine(recon: dict, fig_dir: Path) -> None:
     layers = sorted(int(k) for k in diag)
     means = [diag[str(k)]["mean_cos"] for k in layers]
     stds = [diag[str(k)]["std_cos"] for k in layers]
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(7, 4), constrained_layout=True)
     ax.errorbar(layers, means, yerr=stds, color=paper_palette_role("accent"), capsize=2)
     ax.axhline(1.0, color=paper_palette_role("neutral"), linestyle=":", linewidth=1)
     ax.set_xlabel("layer")
-    ax.set_ylabel("cosine(newline-after-turn-end, context representation)")
+    ax.set_ylabel("cosine similarity")
     ax.set_title(
         "Boundary-triviality: turn-end newline vs context vector (mean ± std over contexts)"
     )

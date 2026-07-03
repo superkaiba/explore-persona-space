@@ -54,6 +54,34 @@ BEH_LABEL = {
 }
 
 
+def _plain_ctx(c: str) -> str:
+    """Reader-facing label for an internal context id (f5_fmt_markdown_table -> 'format: markdown table')."""
+    body = c.split("_", 1)[1] if "_" in c else c
+    if body.startswith("house_"):
+        return "persona: " + body[len("house_") :].replace("_", " ")
+    if body.startswith("phub_"):
+        return "PersonaHub " + body[len("phub_") :].lstrip("0")
+    if body.startswith("wc_"):
+        return "WildChat " + body[len("wc_") :].replace("_", " ")
+    if body.startswith("icl_"):
+        rest = body[len("icl_") :]
+        if "_k" in rest:
+            style, k = rest.rsplit("_k", 1)
+            return f"demos: {style} x{k}"
+        return "demos: " + rest.replace("_", " ")
+    if body.startswith("reph_"):
+        return "rephrase: " + body[len("reph_") :].replace("_", " ")
+    if body.startswith("fmt_"):
+        return "format: " + body[len("fmt_") :].replace("_", " ")
+    if body.startswith("behav_"):
+        return "behavior: " + body[len("behav_") :].replace("_", " ")
+    if body == "default_template":
+        return "default assistant"
+    if body == "helpful_asst":
+        return "helpful assistant"
+    return body.replace("_", " ")
+
+
 def best_per_cell(cells: list[dict]) -> dict[tuple[str, str, str], float]:
     """Best (max over layers) signed rho per (behavior, summary, method)."""
     best: dict[tuple[str, str, str], float] = {}
@@ -217,7 +245,7 @@ def main() -> None:
         ax.scatter(x, y, s=22, color=paper_palette_blog(1)[0])
         resid = np.abs((y - y.mean()) / (y.std() + 1e-9) - (x - x.mean()) / (x.std() + 1e-9))
         for i in np.argsort(resid)[-6:]:
-            ax.text(x[i], y[i], ctxs[i], fontsize=6)
+            ax.text(x[i], y[i], _plain_ctx(ctxs[i]), fontsize=6)
         lo, hi = min(x.min(), y.min()), max(x.max(), y.max())
         ax.plot([lo, hi], [lo, hi], color="0.8", lw=0.8)
         ax.set_xlabel("graded score, misalignment-pool completions")
