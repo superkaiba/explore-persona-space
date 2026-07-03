@@ -254,13 +254,70 @@ def fig_per_context_strips() -> None:
     plt.close(fig)
 
 
+def fig_delta_scatters() -> None:
+    """Raw Delta_med per cell (9 points), max-pool vs each reference summary.
+
+    Two files (one per reference), labeled points, 45-degree identity line.
+    On the turn-boundary panel sycophancy points render OPEN — their x
+    coordinate derives from the untrusted turn-boundary fits.
+    """
+    fc = {s: _cells(s, "fc") for s in SUMMARIES}
+    for ref, fname in (("mean", "scatter_maxp_vs_mean"), ("turn_nl", "scatter_maxp_vs_turn_nl")):
+        fig, ax = plt.subplots(figsize=(5.4, 5.2))
+        lim = 0.0
+        for beh in BEHAVIORS:
+            for li in LAYERS:
+                x = fc[ref][f"{beh}/L{li}"]["Delta_med"]
+                y = fc["maxp"][f"{beh}/L{li}"]["Delta_med"]
+                lim = max(lim, x, y)
+                open_marker = ref == "turn_nl" and beh == "sycophancy"
+                if open_marker:
+                    ax.scatter(
+                        x,
+                        y,
+                        s=42,
+                        facecolors="white",
+                        edgecolors=C_SUMMARY["maxp"],
+                        linewidths=1.2,
+                        zorder=3,
+                    )
+                else:
+                    ax.scatter(x, y, s=42, color=C_SUMMARY["maxp"], zorder=3)
+                ax.text(
+                    x + 0.004,
+                    y + 0.004,
+                    f"{BEHAVIOR_LABEL[beh].split(' (')[0]} L{li}",
+                    fontsize=6.5,
+                )
+        lim *= 1.12
+        ax.plot([0, lim], [0, lim], ls="--", lw=1.0, color="0.4")
+        ax.set_xlim(-0.01, lim)
+        ax.set_ylim(-0.01, lim)
+        ax.set_xlabel(f"map change under {SUMMARY_LABEL[ref]} (median, activation units)")
+        ax.set_ylabel("map change under max-pool (median, activation units)")
+        if ref == "turn_nl":
+            ax.scatter(
+                [],
+                [],
+                s=42,
+                facecolors="white",
+                edgecolors=C_SUMMARY["maxp"],
+                linewidths=1.2,
+                label="open: sycophancy — turn-boundary coordinate untrusted",
+            )
+            ax.legend(loc="upper left", fontsize=7)
+        savefig_paper(fig, f"{FIG_PREFIX}/{fname}", dir=FIG_DIR)
+        plt.close(fig)
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     set_paper_style("blog")
     fig_hero_three_summaries()
     fig_chain_rho_forest_ci()
     fig_per_context_strips()
-    logger.info("wrote 3 figures to figures/%s/", FIG_PREFIX)
+    fig_delta_scatters()
+    logger.info("wrote 5 figures to figures/%s/", FIG_PREFIX)
     return 0
 
 
