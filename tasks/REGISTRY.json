@@ -6012,8 +6012,8 @@
     "915": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/915",
-      "status": "running",
+      "path": "tasks/reviewing/915",
+      "status": "reviewing",
       "title": "workflow-fix: janitors fail rmtree on symlinked per-issue cache dirs"
     },
     "916": {
