@@ -6062,8 +6062,8 @@
     "921": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/921",
-      "status": "reviewing",
+      "path": "tasks/completed/921",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
     },
     "922": {
