@@ -50,6 +50,7 @@ handle so a caller never has to re-derive them.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -165,12 +166,17 @@ def runpod_sentinel_path(issue: int, attempt_id: str) -> str:
     clone, so the path is stable regardless of where the workload
     checked out the repo. Attempt-namespaced because ``/workspace``
     survives same-pod relaunches and no hygiene step clears a flat
-    sentinel (see :func:`mint_runpod_attempt_id`). The workload-side
-    writer convention lives in ``.claude/agents/experimenter.md`` —
-    the path is read from the launch sidecar's
+    sentinel (see :func:`mint_runpod_attempt_id`). Two writer
+    conventions, split by executor: on EXPERIMENTER-driven dispatches
+    the convention lives in ``.claude/agents/experimenter.md`` — the
+    path is read from the launch sidecar's
     ``extra.expected_artifacts.sentinel_path``, the write is chained
     on the workload's exit status, and stale sentinels are cleared
-    pre-(re)launch.
+    pre-(re)launch; on the BACKEND-executed leg
+    (``execute_workload``, #909) the rendered launcher chains the
+    same success-gated write itself (see
+    :func:`_render_launch_script`) — there is no experimenter on
+    that path.
     """
     from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
 
@@ -342,7 +348,15 @@ def _launcher_path(issue: int) -> str:
     return f"/workspace/launch_issue_{issue}.sh"
 
 
-def _render_launch_script(*, issue: int, workload_cmd: str, log_path: str, pid_file: str) -> str:
+def _render_launch_script(
+    *,
+    issue: int,
+    workload_cmd: str,
+    log_path: str,
+    pid_file: str,
+    sentinel_path: str,
+    attempt_id: str,
+) -> str:
     """Remote script (b): write the launcher + detach it (setsid + nohup + pidfile).
 
     Reuses the canonical experimenter launcher pattern
@@ -356,9 +370,33 @@ def _render_launch_script(*, issue: int, workload_cmd: str, log_path: str, pid_f
     double-launch into a loud no-op (exit 5). ``workload_cmd`` is embedded
     VERBATIM inside the quoted heredoc (the GCP trusted-single-line
     doctrine; ``RunSpec.__post_init__`` guarantees single-line).
+
+    Completion sentinel (#909 r2, ``runpod-execute-missing-completion-
+    sentinel``): on this backend-owned leg there is NO experimenter to
+    chain ``write_completion_sentinel`` (``experimenter.md`` step 11), so
+    the launcher itself captures the workload's exit status and, ON
+    SUCCESS ONLY (rc 0), writes the attempt-namespaced completion
+    sentinel — ``{"phase": "done", "issue": <N>, "attempt_id": ...}``,
+    the exact shape ``artifacts._check_sentinel`` validates — at the SAME
+    ``sentinel_path`` the launch handle declares. This mirrors the
+    established backend-owned writer convention on the sibling lanes
+    (``gcp.py``'s startup-script sentinel heredoc; ``slurm.py``'s
+    terminal block). The outer portion clears any stale sentinel at the
+    declared path before detach (same guard family as the pidfile rm),
+    and the launcher exits with the workload's own rc so the exit status
+    is unchanged by the chain.
     """
     launcher = _launcher_path(issue)
     epoch_file = _launch_epoch_path(issue)
+    sentinel_dir = sentinel_path.rsplit("/", 1)[0]
+    sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
+    if "'" in sentinel_json:
+        # The JSON is embedded single-quoted inside the launcher; both
+        # inputs are internally minted, so this can only fire on a caller
+        # bug — fail LOUD rather than render a broken script.
+        raise RunPodWorkloadStartError(
+            f"refusing to embed sentinel JSON containing a single quote: {sentinel_json!r}"
+        )
     return "\n".join(
         [
             "set -eu",
@@ -369,6 +407,8 @@ def _render_launch_script(*, issue: int, workload_cmd: str, log_path: str, pid_f
             "  exit 5",
             "fi",
             f"rm -f {pid_file}",
+            f"rm -f {sentinel_path}",
+            f"mkdir -p {sentinel_dir}",
             f"date +%s > {epoch_file}",
             f"cat > {launcher} << 'EPSEOF'",
             "#!/bin/bash",
@@ -380,6 +420,14 @@ def _render_launch_script(*, issue: int, workload_cmd: str, log_path: str, pid_f
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
             workload_cmd,
+            "WORKLOAD_RC=$?",
+            "# Completion sentinel: written ONLY when the workload exited 0 (the",
+            "# backend-owned twin of the GCP/SLURM terminal sentinel write).",
+            'if [ "$WORKLOAD_RC" -eq 0 ]; then',
+            f"  mkdir -p {sentinel_dir}",
+            f"  printf '%s\\n' '{sentinel_json}' > {sentinel_path}",
+            "fi",
+            'exit "$WORKLOAD_RC"',
             "EPSEOF",
             f"chmod +x {launcher}",
             f"setsid nohup bash {launcher} > {log_path} 2>&1 < /dev/null &",
@@ -428,7 +476,13 @@ def _render_verify_script(*, issue: int, log_path: str, pid_file: str) -> str:
 
 
 def _execute_workload_on_pod(
-    spec: RunSpec, *, pod_name: str, log_path: str, pid_file: str
+    spec: RunSpec,
+    *,
+    pod_name: str,
+    log_path: str,
+    pid_file: str,
+    sentinel_path: str,
+    attempt_id: str,
 ) -> dict[str, Any]:
     """Sync the pod clone, start ``spec.workload_cmd`` detached, verify liveness (#909).
 
@@ -438,6 +492,12 @@ def _execute_workload_on_pod(
     "launcher_path": str, "synced_sha": str}`` on success; raises
     :class:`RunPodWorkloadStartError` on ANY start failure (the pod stays
     RUNNING for diagnosis).
+
+    ``sentinel_path`` / ``attempt_id`` MUST be the SAME pair ``launch()``
+    bakes into the handle's expected-artifacts declaration — script (b)
+    chains the completion-sentinel write to that exact path on workload
+    success (#909 r2), so ``confirm_artifacts`` / ``_cmd_finalize`` can
+    pass on a successful backend-executed run.
     """
     host, port = _resolve_pod_endpoint(pod_name)
     branch = str((spec.extra or {}).get("repo_branch") or "") or "main"
@@ -470,6 +530,8 @@ def _execute_workload_on_pod(
                 workload_cmd=spec.workload_cmd,
                 log_path=log_path,
                 pid_file=pid_file,
+                sentinel_path=sentinel_path,
+                attempt_id=attempt_id,
             ),
             timeout=120,
             context=f"workload detach on {pod_name}",
@@ -597,6 +659,19 @@ class RunPodBackend(ComputeBackend):
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT).
         subprocess.run(cmd, check=True)
         pod_name = _runpod_pod_name(spec.issue)
+        # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
+        # `runpod-execute-missing-completion-sentinel`): the handle's
+        # expected-artifacts declaration and the launcher's chained
+        # completion-sentinel write MUST share ONE attempt-namespaced path —
+        # one mint, one path, both sides. (Round 1 minted the id AFTER
+        # `_execute_workload_on_pod`, so the declared path could not be
+        # threaded into the launcher, no writer existed on the
+        # no-experimenter leg, and every successful backend-executed run
+        # would FAIL finalize — `_check_sentinel` FAILs a missing sentinel
+        # and `_cmd_finalize` exits 3 + skips teardown when a declaration
+        # is present but unsatisfied.)
+        attempt_id = mint_runpod_attempt_id()
+        sentinel_path = runpod_sentinel_path(spec.issue, attempt_id)
         # Execution leg (#909): execute iff workload_cmd is non-empty AND the
         # caller opted in via spec.extra["execute_workload"] (set automatically
         # by router.failover_to_runpod_after_async_workload_crash — the
@@ -612,6 +687,8 @@ class RunPodBackend(ComputeBackend):
                 pod_name=pod_name,
                 log_path=_runpod_log_path(spec.issue),
                 pid_file=_runpod_pid_file_path(spec.issue),
+                sentinel_path=sentinel_path,
+                attempt_id=attempt_id,
             )
         elif spec.workload_cmd:
             logger.warning(
@@ -620,19 +697,21 @@ class RunPodBackend(ComputeBackend):
                 "dispatch the experimenter on THIS pod (preferred — a re-launch "
                 "provisions a SECOND pod), or re-launch with --execute-workload (#909)"
             )
-        # Expected-artifacts declaration (#598): attempt id minted at
-        # launch (GCP-style) and embedded in the pod-side sentinel path
+        # Expected-artifacts declaration (#598): the attempt id minted above
+        # (GCP-style, pre-execution) is embedded in the pod-side sentinel path
         # so a prior attempt's sentinel on the persistent /workspace
-        # volume can never satisfy this launch's declaration. ALL RunPod
-        # workloads are experimenter-driven custom dispatches, so the
-        # declaration carries NO launch-time HF prefix guess (the #601
+        # volume can never satisfy this launch's declaration. The sentinel
+        # WRITER depends on the executor: experimenter-driven dispatches
+        # chain `write_completion_sentinel` per experimenter.md step 11;
+        # the #909 backend-executed leg chains the write inside its rendered
+        # launcher (same path — see the mint comment above). The declaration
+        # carries NO launch-time HF prefix guess (the #601
         # false-negative-teardown trap, a fortiori on this lane).
         from explore_persona_space.backends.artifacts import (
             EXPECTED_ARTIFACTS_HANDLE_KEY,
             build_expected_artifacts_declaration,
         )
 
-        attempt_id = mint_runpod_attempt_id()
         # ``extra`` carries the production fields the orchestrator + the
         # unified ``poll`` / ``fetch_results`` paths need without having
         # to re-derive them from the issue id:
@@ -698,7 +777,9 @@ class RunPodBackend(ComputeBackend):
                 **workload_info,
                 EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
                     issue=spec.issue,
-                    sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),
+                    # The SAME path threaded into the execution leg above —
+                    # one mint, one path, both sides (#909 r2).
+                    sentinel_path=sentinel_path,
                     custom_workload=True,
                     attempt_id=attempt_id,
                     wandb_run_path=spec.extra.get("wandb_run_path"),

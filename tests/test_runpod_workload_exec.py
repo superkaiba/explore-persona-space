@@ -13,7 +13,15 @@ returning. These tests pin:
   (branch-sync mismatch, missing pods.conf row, dead PID, double-fire
   guard, programmatic flag+empty-cmd);
 * the GCP-parity fresh-pidfile acceptance for self-daemonizing drivers;
-* the remote scripts never shelling ``task.py`` + being valid bash; and
+* the remote scripts never shelling ``task.py`` + being valid bash;
+* the completion-sentinel chain (#909 r2,
+  ``runpod-execute-missing-completion-sentinel``): the rendered launcher
+  chains a success-gated sentinel write after the verbatim workload_cmd,
+  the outer script clears any stale sentinel before detach, and the
+  launcher-threaded path is the SAME attempt-namespaced path the handle's
+  expected-artifacts declaration names (one mint, one path — so
+  ``_check_sentinel`` / ``_cmd_finalize`` pass on a successful
+  backend-executed run); and
 * the END-TO-END seam: the REAL
   ``router.failover_to_runpod_after_async_workload_crash`` drives the REAL
   ``RunPodBackend.launch`` into the execution leg with the reconstructed
@@ -24,15 +32,18 @@ All CPU, mocked SSH — no live pod.
 
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 
 import pytest
 
 from explore_persona_space.backends import runpod as RP
+from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
 from explore_persona_space.backends.base import RunSpec
 
 WORKLOAD = "bash scripts/issue909_dispatch.sh --arm a"
+ATTEMPT = "rp-20260703T000000Z-ab12"
 
 
 def _noop_provision(monkeypatch) -> None:
@@ -131,6 +142,13 @@ def test_launch_executes_workload_when_opted_in(monkeypatch):
     assert handle.extra["repo_branch"] == "issue-909"
     assert handle.extra["launcher_path"] == "/workspace/launch_issue_909.sh"
     assert handle.extra["synced_sha"] == "abc123"
+    # r2 (`runpod-execute-missing-completion-sentinel`): the DECLARED
+    # sentinel path is the SAME attempt-namespaced path threaded into the
+    # rendered launcher (one mint, one path, both sides).
+    declared = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]["sentinel_path"]
+    assert declared == RP.runpod_sentinel_path(909, handle.extra["runpod_attempt_id"])
+    assert declared in launch_cmd  # threaded into script (b)
+    assert f"rm -f {declared}" in launch_cmd  # stale clear before detach
 
 
 def test_launch_defaults_branch_sync_to_main_without_repo_branch(monkeypatch):
@@ -270,15 +288,21 @@ def test_programmatic_flag_with_empty_workload_cmd_raises(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+def _render_launch(workload_cmd: str = WORKLOAD) -> str:
+    return RP._render_launch_script(
+        issue=909,
+        workload_cmd=workload_cmd,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path=RP.runpod_sentinel_path(909, ATTEMPT),
+        attempt_id=ATTEMPT,
+    )
+
+
 def _rendered_scripts(workload_cmd: str = WORKLOAD) -> list[str]:
     return [
         RP._render_branch_sync_script("issue-909"),
-        RP._render_launch_script(
-            issue=909,
-            workload_cmd=workload_cmd,
-            log_path="/workspace/logs/issue-909.log",
-            pid_file="/workspace/logs/issue-909.pid",
-        ),
+        _render_launch(workload_cmd),
         RP._render_verify_script(
             issue=909,
             log_path="/workspace/logs/issue-909.log",
@@ -316,6 +340,65 @@ def test_branch_sync_script_rejects_suspicious_branch():
 
 
 # ---------------------------------------------------------------------------
+# Completion-sentinel chain (#909 r2 — the upheld
+# `runpod-execute-missing-completion-sentinel` blocker; the mechanizable
+# static check: the rendered launcher MUST contain the sentinel-write leg)
+# ---------------------------------------------------------------------------
+
+
+def test_launcher_chains_sentinel_write_after_workload_success():
+    """The rendered launcher chains the completion-sentinel write AFTER the
+    verbatim workload_cmd, gated on workload success (rc 0 — the GCP/SLURM
+    terminal-block convention), writes the exact JSON shape
+    ``artifacts._check_sentinel`` validates (phase=done + matching issue),
+    and exits with the workload's own rc. The OUTER portion clears any
+    stale sentinel at the declared path BEFORE the detach line (the same
+    guard family as the pidfile rm)."""
+    sentinel = RP.runpod_sentinel_path(909, ATTEMPT)
+    script = _render_launch()
+    lines = script.splitlines()
+
+    # Outer portion: stale-sentinel clear + dir pre-create BEFORE detach.
+    rm_idx = lines.index(f"rm -f {sentinel}")
+    detach_idx = next(i for i, line in enumerate(lines) if "setsid" in line)
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    assert rm_idx < heredoc_start < detach_idx
+    assert any(line == f"mkdir -p {sentinel.rsplit('/', 1)[0]}" for line in lines[:heredoc_start])
+
+    # Launcher (inside the heredoc): workload -> rc capture -> success-gated
+    # sentinel write -> exit with the workload rc.
+    workload_idx = lines.index(WORKLOAD)
+    rc_idx = lines.index("WORKLOAD_RC=$?")
+    gate_idx = next(i for i, line in enumerate(lines) if '"$WORKLOAD_RC" -eq 0' in line)
+    write_idx = next(i for i, line in enumerate(lines) if line.strip().startswith("printf"))
+    exit_idx = lines.index('exit "$WORKLOAD_RC"')
+    heredoc_end = lines.index("EPSEOF", heredoc_start + 1)
+    assert heredoc_start < workload_idx < rc_idx < gate_idx < write_idx < exit_idx < heredoc_end
+
+    # The write targets the EXACT declared path with the EXACT validated shape.
+    write_line = lines[write_idx]
+    assert f"> {sentinel}" in write_line
+    payload_match = re.search(r"printf '%s\\n' '([^']+)'", write_line)
+    assert payload_match, write_line
+    payload = json.loads(payload_match.group(1))
+    assert payload == {"phase": "done", "issue": 909, "attempt_id": ATTEMPT}
+
+
+def test_launch_script_rejects_single_quote_in_sentinel_json():
+    """The single-quoted JSON embed fails LOUD on a caller bug rather than
+    rendering a broken launcher."""
+    with pytest.raises(RP.RunPodWorkloadStartError, match="single quote"):
+        RP._render_launch_script(
+            issue=909,
+            workload_cmd=WORKLOAD,
+            log_path="/workspace/logs/issue-909.log",
+            pid_file="/workspace/logs/issue-909.pid",
+            sentinel_path="/workspace/eval_results/issue_909/x/.completion-sentinel.json",
+            attempt_id="rp-bad'quote",
+        )
+
+
+# ---------------------------------------------------------------------------
 # END-TO-END seam pin (#909 plan §4 item 4 — a NEW test, not an update):
 # the REAL failover seam drives the REAL RunPodBackend.launch into the
 # execution leg with the reconstructed custom-workload spec.
@@ -336,8 +419,8 @@ def test_end_to_end_failover_spec_flows_through_execution_leg(monkeypatch, tmp_p
     _noop_provision(monkeypatch)
     executed: list = []
 
-    def _fake_exec(spec, *, pod_name, log_path, pid_file):
-        executed.append((spec, pod_name, log_path, pid_file))
+    def _fake_exec(spec, *, pod_name, log_path, pid_file, sentinel_path, attempt_id):
+        executed.append((spec, pod_name, log_path, pid_file, sentinel_path, attempt_id))
         return {
             "workload_pid": 999,
             "launcher_path": "/workspace/launch_issue_909.sh",
@@ -363,7 +446,7 @@ def test_end_to_end_failover_spec_flows_through_execution_leg(monkeypatch, tmp_p
     )
     # The execution leg FIRED, with the failover-opted-in spec.
     assert len(executed) == 1
-    exec_spec, pod_name, log_path, pid_file = executed[0]
+    exec_spec, pod_name, log_path, pid_file, sentinel_path, attempt_id = executed[0]
     assert exec_spec.workload_cmd == WORKLOAD
     assert exec_spec.extra.get("execute_workload") is True
     assert exec_spec.extra.get("repo_branch") == "issue-909"
@@ -375,6 +458,12 @@ def test_end_to_end_failover_spec_flows_through_execution_leg(monkeypatch, tmp_p
     assert result.handle.extra["workload_executed"] is True
     assert result.handle.extra["workload_pid"] == 999
     assert result.handle.extra["repo_branch"] == "issue-909"
+    # r2: the sentinel path threaded into the execution leg is the SAME
+    # attempt-namespaced path the handle DECLARES (one mint, one path) —
+    # so finalize's `_check_sentinel` reads the path the launcher writes.
+    assert sentinel_path == RP.runpod_sentinel_path(909, attempt_id)
+    assert result.handle.extra["runpod_attempt_id"] == attempt_id
+    assert result.handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]["sentinel_path"] == sentinel_path
 
 
 def test_launch_ok_regex_shapes():
