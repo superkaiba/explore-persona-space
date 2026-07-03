@@ -1,0 +1,708 @@
+{
+  "commit": "f7f0cedcb5",
+  "created": "2026-07-03T09:43:37Z",
+  "figsize": [
+    9.2,
+    4.4
+  ],
+  "points": [
+    {
+      "held-out error fraction, misalignment pool": 0.09312772681672621,
+      "held-out error fraction, UltraChat": 0.07323663157130654,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.270100175060917,
+      "held-out error fraction, UltraChat": 0.38107343875686334,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.13378500938507445,
+      "held-out error fraction, UltraChat": 0.11743255154480266,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.030718952566882986,
+      "held-out error fraction, UltraChat": 0.03584368454092834,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.09432302514935244,
+      "held-out error fraction, UltraChat": 0.11802264202667091,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.40024161189110824,
+      "held-out error fraction, UltraChat": 0.33753919431442464,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.8791972580729909,
+      "held-out error fraction, UltraChat": 0.4890663646883108,
+      "label": "behavior: fact",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.10884972977167293,
+      "held-out error fraction, UltraChat": 0.10636961740541859,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.19728110329706458,
+      "held-out error fraction, UltraChat": 0.233804701452365,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.23827170443239581,
+      "held-out error fraction, UltraChat": 0.1653590570645089,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.07901021357045228,
+      "held-out error fraction, UltraChat": 0.06381719603826323,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.08985495722555722,
+      "held-out error fraction, UltraChat": 0.12469968635391508,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.29325493128456964,
+      "held-out error fraction, UltraChat": 0.3514664355147741,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.4035959365661528,
+      "held-out error fraction, UltraChat": 0.41718597137602664,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06225906040305818,
+      "held-out error fraction, UltraChat": 0.03678392354074895,
+      "label": "programmer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3111372907459329,
+      "held-out error fraction, UltraChat": 0.2361226719314195,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.20114801501425916,
+      "held-out error fraction, UltraChat": 0.2020359787848068,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.015843737708981724,
+      "held-out error fraction, UltraChat": 0.023408586602787433,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.14177636590320392,
+      "held-out error fraction, UltraChat": 0.19325617508812634,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3577745150966684,
+      "held-out error fraction, UltraChat": 0.4000814109866632,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.09122085153393442,
+      "held-out error fraction, UltraChat": 0.11111615678846598,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.24287163085510932,
+      "held-out error fraction, UltraChat": 0.32354114749213425,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.05810246623201849,
+      "held-out error fraction, UltraChat": 0.06516716133773358,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.13007857043051835,
+      "held-out error fraction, UltraChat": 0.11628045178331776,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.15549660551647587,
+      "held-out error fraction, UltraChat": 0.18853780984687876,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.24127393859319907,
+      "held-out error fraction, UltraChat": 0.15071250058610713,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.07585064219655255,
+      "held-out error fraction, UltraChat": 0.04463955454676865,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.42165186345445826,
+      "held-out error fraction, UltraChat": 0.4445683611855032,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.10191574015145509,
+      "held-out error fraction, UltraChat": 0.07420168927608907,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06554089100336385,
+      "held-out error fraction, UltraChat": 0.06581721725856353,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.128781966922614,
+      "held-out error fraction, UltraChat": 0.11356147085453974,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1482963928763103,
+      "held-out error fraction, UltraChat": 0.25576705820377377,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.10652009134586689,
+      "held-out error fraction, UltraChat": 0.07683865897571486,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.34397728753837437,
+      "held-out error fraction, UltraChat": 0.34624236492583615,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.20055822221951364,
+      "held-out error fraction, UltraChat": 0.20616196695830863,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.041063377523220215,
+      "held-out error fraction, UltraChat": 0.045241317772083275,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.16560890531209477,
+      "held-out error fraction, UltraChat": 0.1770082376928198,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3275756228382329,
+      "held-out error fraction, UltraChat": 0.30753141760211056,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3431068624478042,
+      "held-out error fraction, UltraChat": 0.4022185123113258,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.2899367638611906,
+      "held-out error fraction, UltraChat": 0.2115118280569241,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.4513322872809291,
+      "held-out error fraction, UltraChat": 0.5478717198786747,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.03707447740450979,
+      "held-out error fraction, UltraChat": 0.05664075437782773,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.2134513182117351,
+      "held-out error fraction, UltraChat": 0.27962312821373597,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.28230048690935927,
+      "held-out error fraction, UltraChat": 0.1987330713020872,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.25004975279227803,
+      "held-out error fraction, UltraChat": 0.231430680381354,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.5102242936810836,
+      "held-out error fraction, UltraChat": 0.4106918353815155,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.07524367316618531,
+      "held-out error fraction, UltraChat": 0.0582647024740879,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.02074354816185466,
+      "held-out error fraction, UltraChat": 0.028335582860210744,
+      "label": "icl json k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.4091178404654573,
+      "held-out error fraction, UltraChat": 0.46921180995476586,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.17086408565619574,
+      "held-out error fraction, UltraChat": 0.14598435922722275,
+      "label": "default (template)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1984370817536606,
+      "held-out error fraction, UltraChat": 0.32069819243654357,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.45797971365806855,
+      "held-out error fraction, UltraChat": 0.4426662343682618,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1429179039605972,
+      "held-out error fraction, UltraChat": 0.24548550911543293,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.08185764105483442,
+      "held-out error fraction, UltraChat": 0.13246528043336186,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.026850616893627836,
+      "held-out error fraction, UltraChat": 0.1371735965328597,
+      "label": "rephrase: imperative",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.44906510549873735,
+      "held-out error fraction, UltraChat": 0.37500670854490675,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 1.0712075207868916,
+      "held-out error fraction, UltraChat": 0.7770895916815507,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.2157814970714097,
+      "held-out error fraction, UltraChat": 0.33280567400870925,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.28988468356368136,
+      "held-out error fraction, UltraChat": 0.37697498123024936,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.27335587271430445,
+      "held-out error fraction, UltraChat": 0.29923381382744507,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1820348703253614,
+      "held-out error fraction, UltraChat": 0.2473068835989035,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.04131769528711538,
+      "held-out error fraction, UltraChat": 0.23895139697729614,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.253865438548964,
+      "held-out error fraction, UltraChat": 0.3216564279232475,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 1.3690136816622134,
+      "held-out error fraction, UltraChat": 1.15554586895437,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.282011911642321,
+      "held-out error fraction, UltraChat": 0.2702742201512538,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.32646731393293693,
+      "held-out error fraction, UltraChat": 0.33489271167112533,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.20572385157111273,
+      "held-out error fraction, UltraChat": 0.4228709700315433,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.025052201928112673,
+      "held-out error fraction, UltraChat": 0.1197572602954244,
+      "label": "icl json k=4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06662284550025249,
+      "held-out error fraction, UltraChat": 0.11466651885865829,
+      "label": "icl json k=4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.08590413292671059,
+      "held-out error fraction, UltraChat": 0.16236499557799192,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.15532190466569332,
+      "held-out error fraction, UltraChat": 0.2725448168078919,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.46691440128526907,
+      "held-out error fraction, UltraChat": 0.4837272564497801,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1285167966668032,
+      "held-out error fraction, UltraChat": 0.2029257142646624,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.34958642412639496,
+      "held-out error fraction, UltraChat": 0.40222816971200537,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06571870682569571,
+      "held-out error fraction, UltraChat": 0.12375261197658909,
+      "label": "icl json k=4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.24349751559579483,
+      "held-out error fraction, UltraChat": 0.48770879157666847,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1930695527961555,
+      "held-out error fraction, UltraChat": 0.2714947953378106,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3783118502392538,
+      "held-out error fraction, UltraChat": 0.5183345556358403,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.17228148335476662,
+      "held-out error fraction, UltraChat": 0.31596233675806584,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1273904235247144,
+      "held-out error fraction, UltraChat": 0.12804695935624097,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1180959886836805,
+      "held-out error fraction, UltraChat": 0.6195363170200556,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3127971952679304,
+      "held-out error fraction, UltraChat": 0.5098547550802016,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.2035275891688816,
+      "held-out error fraction, UltraChat": 0.3136239286712655,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3354101822246116,
+      "held-out error fraction, UltraChat": 0.37144086141371063,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.1800858611148003,
+      "held-out error fraction, UltraChat": 0.32635213726437795,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.12808428374213837,
+      "held-out error fraction, UltraChat": 0.13914231781961314,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.4570212836486023,
+      "held-out error fraction, UltraChat": 0.698396024938325,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3782046881670149,
+      "held-out error fraction, UltraChat": 1.688272605650585,
+      "label": "behavior: marker",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.18502856873657872,
+      "held-out error fraction, UltraChat": 0.3458794995797613,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.15048379371353035,
+      "held-out error fraction, UltraChat": 0.25240931752233775,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.7010156754388119,
+      "held-out error fraction, UltraChat": 0.819309894586702,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06376541050238833,
+      "held-out error fraction, UltraChat": 0.14371721108158653,
+      "label": "rephrase: imperative",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.11261414254012148,
+      "held-out error fraction, UltraChat": 0.2454366772223313,
+      "label": "rephrase: polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.7132811131613487,
+      "held-out error fraction, UltraChat": 0.8469329978046749,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.3250486171964897,
+      "held-out error fraction, UltraChat": 0.38052213413663893,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 1.3892594956585047,
+      "held-out error fraction, UltraChat": 1.3643805584637916,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.11898151846104875,
+      "held-out error fraction, UltraChat": 0.17351417674661235,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.06222078963447382,
+      "held-out error fraction, UltraChat": 0.1936396795007032,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.31624500730023397,
+      "held-out error fraction, UltraChat": 0.2146897863495755,
+      "label": "icl json k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out error fraction, misalignment pool": 0.7187788858057798,
+      "held-out error fraction, UltraChat": 0.6059224674142435,
+      "label": "rephrase: enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 100
+}

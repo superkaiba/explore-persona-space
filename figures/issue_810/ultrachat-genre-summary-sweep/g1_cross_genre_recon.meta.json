@@ -1,0 +1,1188 @@
+{
+  "commit": "ecf19704c0",
+  "created": "2026-07-03T08:30:50Z",
+  "figsize": [
+    11.5,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.09047708937262122,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.1733711351301651,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.34789895458306264,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.425697069977388,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.4886163842118254,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.4748050651069967,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.5894329254391453,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.6050007205890663,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.6655902802916149,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.6403514933389853,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.6598107964837605,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.6888475547935464,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.7109650148911175,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.7245434074107706,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.7471152204168077,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.787770866840718,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.7869857454627388,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.7825979107068153,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.7997271698800966,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.7799565456666748,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.7746674430765151,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.742792505251223,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.7000678195422007,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.6570109197301753,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.6185325454171413,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.5668701027648171,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.5444951341382434,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.5135480784043952,
+      "series": "mean, misalignment pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.15644174124866028,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.22067691603540807,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.3386039117365004,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.3586297927094312,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.4668986904128344,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.48868185430430433,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.5370298290688942,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.5913200819057549,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.5827996669222406,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.6661469199742096,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.6797133550729559,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.7205626437589601,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.7238553017331586,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.7357478432690896,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.7556309558292298,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.7585446160736001,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.7652809192269254,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.7604437172441814,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.7891491291910744,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.7908343520606128,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.8187853560319754,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.8259164060738255,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.8088433666098074,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.8019250696341451,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.795177848437545,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7754298169312367,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.7084800349175375,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.6555299749102568,
+      "series": "max-pool, misalignment pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.17493169631188188,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.13165177619325508,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.25966786518549545,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.3811245421237629,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.43582275832162154,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.444329475028866,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.5897336175529286,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.5907381356149066,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.6733420824109548,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.6685305054454724,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.6811668043726324,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.7032288374747149,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.7118659645207297,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.730059277101602,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.7571886381570767,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.7932718475440304,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.7875717092003394,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.780957133976951,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.7955810069654383,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.7771403110856249,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.7764290441962886,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.7386503149425857,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.680475523973441,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.6352657450375787,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.6010525772318012,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.5485186967654456,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.49834202281259155,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.45796197152714624,
+      "series": "mean, UltraChat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.012447249739701238,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.2122919774537957,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.25690002259914313,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.22778157580122105,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.28783540913802697,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.39478681621858536,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.4595290228115799,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.4880313731532826,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.44354953544323983,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.4894741608903801,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.484519765606665,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.5465726173074821,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.5540090164950242,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.6090473870692166,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.6347026723709022,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.6367145639407958,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.6587217178588715,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.6333879870587185,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.6742749000386865,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.6909826527220175,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.7110754463457578,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.7280678910075116,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.7118927517812382,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.6879363089619823,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.6693496762112714,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6465449933314825,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.5497996760109096,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.5307459645382463,
+      "series": "max-pool, UltraChat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "max-pool minus mean, held-out skill": 0.2469188306212815,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "max-pool minus mean, held-out skill": 0.047305780905242956,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "max-pool minus mean, held-out skill": -0.00929504284656224,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "max-pool minus mean, held-out skill": -0.0670672772679568,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "max-pool minus mean, held-out skill": -0.021717693798991022,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "max-pool minus mean, held-out skill": 0.013876789197307615,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "max-pool minus mean, held-out skill": -0.05240309637025109,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "max-pool minus mean, held-out skill": -0.013680638683311375,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "max-pool minus mean, held-out skill": -0.08279061336937432,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "max-pool minus mean, held-out skill": 0.025795426635224272,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "max-pool minus mean, held-out skill": 0.01990255858919543,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "max-pool minus mean, held-out skill": 0.03171508896541364,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "max-pool minus mean, held-out skill": 0.012890286842041077,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "max-pool minus mean, held-out skill": 0.011204435858318984,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "max-pool minus mean, held-out skill": 0.00851573541242212,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "max-pool minus mean, held-out skill": -0.029226250767117823,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "max-pool minus mean, held-out skill": -0.02170482623581338,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "max-pool minus mean, held-out skill": -0.02215419346263392,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "max-pool minus mean, held-out skill": -0.010578040689022239,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "max-pool minus mean, held-out skill": 0.010877806393937983,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "max-pool minus mean, held-out skill": 0.0441179129554603,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "max-pool minus mean, held-out skill": 0.08312390082260257,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "max-pool minus mean, held-out skill": 0.10877554706760673,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "max-pool minus mean, held-out skill": 0.14491414990396978,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "max-pool minus mean, held-out skill": 0.1766453030204037,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "max-pool minus mean, held-out skill": 0.2085597141664196,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "max-pool minus mean, held-out skill": 0.16398490077929417,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "max-pool minus mean, held-out skill": 0.14198189650586157,
+      "series": "misalignment pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "max-pool minus mean, held-out skill": 0.16248444657218064,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "max-pool minus mean, held-out skill": 0.08064020126054061,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "max-pool minus mean, held-out skill": -0.0027678425863523204,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "max-pool minus mean, held-out skill": -0.15334296632254185,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "max-pool minus mean, held-out skill": -0.14798734918359457,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "max-pool minus mean, held-out skill": -0.04954265881028064,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "max-pool minus mean, held-out skill": -0.1302045947413487,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "max-pool minus mean, held-out skill": -0.10270676246162402,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "max-pool minus mean, held-out skill": -0.229792546967715,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "max-pool minus mean, held-out skill": -0.17905634455509234,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "max-pool minus mean, held-out skill": -0.19664703876596745,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "max-pool minus mean, held-out skill": -0.1566562201672328,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "max-pool minus mean, held-out skill": -0.1578569480257055,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "max-pool minus mean, held-out skill": -0.12101189003238544,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "max-pool minus mean, held-out skill": -0.12248596578617454,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "max-pool minus mean, held-out skill": -0.1565572836032345,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "max-pool minus mean, held-out skill": -0.1288499913414679,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "max-pool minus mean, held-out skill": -0.14756914691823253,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "max-pool minus mean, held-out skill": -0.12130610692675181,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "max-pool minus mean, held-out skill": -0.08615765836360734,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "max-pool minus mean, held-out skill": -0.06535359785053074,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "max-pool minus mean, held-out skill": -0.010582423935074137,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "max-pool minus mean, held-out skill": 0.03141722780779721,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "max-pool minus mean, held-out skill": 0.05267056392440361,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "max-pool minus mean, held-out skill": 0.06829709897947023,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "max-pool minus mean, held-out skill": 0.0980262965660369,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "max-pool minus mean, held-out skill": 0.051457653198318076,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "max-pool minus mean, held-out skill": 0.07278399301110006,
+      "series": "UltraChat",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 168
+}

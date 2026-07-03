@@ -272,7 +272,7 @@ obligations; the panel below VERIFIES them.
 
 **TDD conditional gate** (`gates.tdd_gate`) — fires when the plan body has
 `### TDD: yes`; `.claude/skills/issue/SKILL.md` § "Step 4b" applies verbatim
-(implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`;
+(implementer posts `epm:proposed-tests v<n>` (omit --version; the CLI derives max+1), EXITs awaiting `epm:approve-tests v1`;
 event-driven, no ask site).
 
 **Review panel per round** (ONE spawn batch, staggered):
