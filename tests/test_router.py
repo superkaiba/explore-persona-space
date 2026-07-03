@@ -5610,3 +5610,50 @@ def test_async_failover_hydra_spec_arrives_without_execute_workload(
     assert "execute_workload" not in (rp.launches[0].extra or {})
     warning = "\n".join(r.getMessage() for r in caplog.records)
     assert "hydra" in warning and "no backend-side executor" in warning
+
+
+# ---------------------------------------------------------------------------
+# #934: lane-suffixed attempt ids
+# ---------------------------------------------------------------------------
+
+
+def test_threaded_attempt_id_carries_lane_suffix():
+    """A spec whose extra carries lane_suffix mints att-<ts>-<suffix>, so
+    two lanes launched in the SAME second keep disjoint HF crash-persist
+    (issue<N>_partial/<attempt>/) + sentinel namespaces; without a suffix
+    the shape is byte-identical to the pre-#934 mint."""
+    writes: list[Any] = []
+    spec = RunSpec(issue=934, intent="lora-7b", backend="nibi", extra={"lane_suffix": "cpu"})
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    assert re.fullmatch(r"att-\d{8}-\d{6}-cpu", new_spec.extra["attempt_id"])
+    assert lease.attempt_id == new_spec.extra["attempt_id"]
+
+    unsuffixed = RunSpec(issue=934, intent="lora-7b", backend="nibi")
+    new_unsuffixed, _lease2 = _thread_attempt_id_into(unsuffixed, None, writes.append)
+    assert re.fullmatch(r"att-\d{8}-\d{6}", new_unsuffixed.extra["attempt_id"])
+
+
+def test_make_attempt_id_rejects_malformed_lane_suffix():
+    """Fail loud, never strip: a malformed suffix raises out of the mint."""
+    from explore_persona_space.backends.router import _make_attempt_id
+
+    assert re.fullmatch(r"att-\d{8}-\d{6}", _make_attempt_id())
+    assert re.fullmatch(r"att-\d{8}-\d{6}-cpu", _make_attempt_id("cpu"))
+    with pytest.raises(ValueError):
+        _make_attempt_id("Not_Valid")
+
+
+def test_caller_pinned_attempt_id_wins_over_lane_suffix_mint():
+    """A caller-pinned extra['attempt_id'] still takes precedence (the
+    explicit re-attach tooling contract) — the suffix mint never clobbers
+    it."""
+    writes: list[Any] = []
+    spec = RunSpec(
+        issue=934,
+        intent="lora-7b",
+        backend="nibi",
+        extra={"lane_suffix": "cpu", "attempt_id": "att-pinned-1"},
+    )
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    assert new_spec.extra["attempt_id"] == "att-pinned-1"
+    assert lease.attempt_id == "att-pinned-1"

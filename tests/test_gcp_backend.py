@@ -7272,3 +7272,151 @@ def test_launch_handle_extra_carries_repo_branch(no_marker_posts) -> None:
     backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
     handle2 = backend2.launch(_spec())
     assert handle2.extra["repo_branch"] == ""
+
+
+# ---------------------------------------------------------------------------
+# #934: per-lane instance-name suffix (lane_suffix)
+# ---------------------------------------------------------------------------
+
+
+def test_instance_name_for_lane_suffix() -> None:
+    """Suffixed naming (#934) + unsuffixed byte-identity + the 63-char cap."""
+    assert instance_name_for(137, "cpu") == "eps-issue-137-cpu"
+    # Unsuffixed byte-identity: default arg AND explicit None.
+    assert instance_name_for(137) == "eps-issue-137"
+    assert instance_name_for(137, None) == "eps-issue-137"
+    # Belt-and-suspenders: the COMPOSED name over 63 chars raises
+    # (a 10-digit issue + a 43-char suffix = 64 chars).
+    with pytest.raises(ValueError, match="63-char"):
+        instance_name_for(1234567890, "a" * 43)
+
+
+@pytest.mark.parametrize("bad", ["CPU", "a_b", "-x", "x-", "", "a.b", "x y"])
+def test_validate_lane_suffix_rejects_malformed(bad: str) -> None:
+    """Fail loud, never strip: every malformed suffix raises ValueError."""
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    with pytest.raises(ValueError):
+        validate_lane_suffix(bad)
+
+
+def test_validate_lane_suffix_max_length() -> None:
+    """The 43-char cap is the ATTEMPT-LABEL budget (round-1 Must-Fix):
+    len('att-YYYYmmdd-HHMMSS-') + suffix must fit the 63-char GCP label
+    value cap, or the eps-attempt label is truncated and reconnect's
+    label recovery desyncs from the VM's real per-attempt paths."""
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    assert validate_lane_suffix("a" * 43) == "a" * 43
+    with pytest.raises(ValueError, match="attempt-label budget"):
+        validate_lane_suffix("a" * 44)
+
+
+def test_lane_suffix_for_rejects_invalid_extra() -> None:
+    """A malformed spec.extra['lane_suffix'] raises — never a silent strip
+    that would derive a divergent instance name."""
+    from explore_persona_space.backends.gcp import lane_suffix_for
+
+    with pytest.raises(ValueError):
+        lane_suffix_for(_spec(extra={"lane_suffix": "Not_Valid"}))
+
+
+def test_lane_suffix_for_absent_and_empty_are_none() -> None:
+    from explore_persona_space.backends.gcp import lane_suffix_for
+
+    assert lane_suffix_for(_spec()) is None
+    assert lane_suffix_for(_spec(extra={"lane_suffix": ""})) is None
+    assert lane_suffix_for(_spec(extra={"lane_suffix": "cpu"})) == "cpu"
+
+
+def _suffixed_instance_payload(status: str, name: str = "eps-issue-137-cpu") -> str:
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": "424242",
+                "status": status,
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-b"
+                ),
+            }
+        ]
+    )
+
+
+def test_reconnect_probe_uses_lane_suffixed_name_filter() -> None:
+    """The reconnect list filter carries the SUFFIXED exact name, so a
+    suffixed lane never reconnects to a sibling lane's instance (#923)."""
+    runner = _Runner(list_results=[GcloudRunResult(0, _suffixed_instance_payload("RUNNING"), "")])
+    handle = reconnect_or_none(
+        spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+    )
+    assert handle is not None
+    assert handle.pod_name == "eps-issue-137-cpu"
+    list_calls = [c for c in runner.calls if "list" in c and "instances" in c]
+    assert list_calls, runner.calls
+    assert "--filter=name=eps-issue-137-cpu" in list_calls[0]
+
+
+def test_reconnect_with_suffix_ignores_wrong_lane_record() -> None:
+    """Belt-and-suspenders (#934 §11b): a live UNSUFFIXED eps-issue-137 in
+    the list payload is NOT the suffixed lane's instance — the exact
+    post-filter name check ignores it (CREATE proceeds, no reconnect)."""
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    assert (
+        reconnect_or_none(
+            spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+        )
+        is None
+    )
+
+
+def test_stale_named_instance_uses_lane_suffixed_name() -> None:
+    """The pre-launch stale reclaim probes the SUFFIXED name (#934)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _suffixed_instance_payload("TERMINATED"), "")]
+    )
+    stale = _stale_named_instance_or_none(
+        spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+    )
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.name == "eps-issue-137-cpu"
+    assert stale.zone == "us-central1-b"
+
+
+def test_launch_create_uses_lane_suffixed_instance_name_and_handle(no_marker_posts) -> None:
+    """End-to-end create path (#934): the gcloud create argv, the handle
+    pod_name, and extra['instance_name'] all carry the suffixed name."""
+    created_payload = json.dumps([{"name": "eps-issue-137-cpu", "id": "5551"}])
+    runner = _Runner(
+        # 1st list = reconnect probe; 2nd = stale-name probe (both empty).
+        list_results=[GcloudRunResult(0, "[]", ""), GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(extra={"lane_suffix": "cpu"}))
+    assert handle.pod_name == "eps-issue-137-cpu"
+    assert handle.extra["instance_name"] == "eps-issue-137-cpu"
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(create_calls) == 1, runner.calls
+    assert "eps-issue-137-cpu" in create_calls[0]
+
+
+def test_lane_suffixed_name_classifies_managed() -> None:
+    """A suffixed name keeps the eps-issue- prefix, so the janitor's
+    classification (and per-instance age fences) still covers it."""
+    assert _classify_janitor_instance("eps-issue-137-cpu") == JANITOR_CLASS_MANAGED
