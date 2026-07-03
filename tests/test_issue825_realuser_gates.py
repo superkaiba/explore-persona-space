@@ -289,11 +289,24 @@ def test_smoke_still_binds_structural_coverage(scaffold):
 
 
 # ---------------------------------------------------------------------------
-# fail-from-ingest: route on the ARTIFACT, exit-code fall-through
+# fail-from-ingest: upload-then-exit (plan §4.3 hard-req 3), route on the
+# ARTIFACT, exit-code fall-through
 # ---------------------------------------------------------------------------
 
 
-def test_fail_from_ingest_routes_on_artifact(scaffold):
+def _stage_shortfall_artifacts(realuser_dir: Path) -> None:
+    """The exact tree a shortfall ingest leaves behind: issue825_realuser_
+    ingest.main writes the dataset + meta + ingest_failure.json BEFORE
+    returning 1; the wrapper's failure branch then runs fail-from-ingest."""
+    (realuser_dir / "conversations_real2turn.jsonl").write_text('{"conv_id": 0}\n')
+    (realuser_dir / "conversations_real2turn_meta.json").write_text(json.dumps({"n_kept": 1906}))
+    (realuser_dir / "ingest_failure.json").write_text(
+        json.dumps({"status": "ingest_shortfall", "n_kept": 1906, "n_target": 2000})
+    )
+
+
+def test_fail_from_ingest_routes_on_artifact(scaffold, monkeypatch):
+    monkeypatch.setattr(gates, "upload_ingest_artifacts", lambda realuser_dir, smoke: [])
     (scaffold["realuser_dir"] / "ingest_failure.json").write_text(
         json.dumps({"status": "ingest_shortfall", "n_kept": 1906, "n_target": 2000})
     )
@@ -303,7 +316,71 @@ def test_fail_from_ingest_routes_on_artifact(scaffold):
     assert sent["note"]["ingest_failure"]["n_kept"] == 1906
 
 
-def test_fail_from_ingest_fallthrough_without_artifact(scaffold):
+def test_fail_from_ingest_fallthrough_without_artifact(scaffold, monkeypatch):
+    monkeypatch.setattr(gates, "upload_ingest_artifacts", lambda realuser_dir, smoke: [])
     gates.fail_from_ingest(scaffold["realuser_dir"], scaffold["sentinel"])
     sent = _sentinel(scaffold)
     assert sent["status"] == "ingest_error"
+
+
+def test_fail_from_ingest_uploads_before_sentinel(scaffold, monkeypatch):
+    """Concern ingest-shortfall-preupload-strands-artifacts: with the exact
+    artifact tree a nonzero-exit shortfall ingest leaves behind, the upload
+    step runs BEFORE the FAILURE sentinel is written (upload-then-exit, plan
+    §4.3 hard-req 3), and the sentinel records what was uploaded."""
+    _stage_shortfall_artifacts(scaffold["realuser_dir"])
+    calls: list[tuple] = []
+
+    def fake_upload(realuser_dir, smoke):
+        assert not scaffold["sentinel"].exists(), "upload must run BEFORE the FAILURE sentinel"
+        calls.append((realuser_dir, smoke))
+        return list(gates.INGEST_UPLOAD_ARTIFACTS)
+
+    monkeypatch.setattr(gates, "upload_ingest_artifacts", fake_upload)
+    gates.fail_from_ingest(scaffold["realuser_dir"], scaffold["sentinel"])
+    assert calls == [(scaffold["realuser_dir"], False)]
+    sent = _sentinel(scaffold)
+    assert sent["status"] == "ingest_shortfall"
+    assert sent["note"]["uploaded_before_sentinel"] == list(gates.INGEST_UPLOAD_ARTIFACTS)
+
+
+def test_upload_ingest_artifacts_true_crash_is_noop(tmp_path, monkeypatch):
+    """A true crash that produced NOTHING (the ingest_error fall-through)
+    uploads nothing and needs no HF credentials."""
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    assert gates.upload_ingest_artifacts(tmp_path, smoke=False) == []
+
+
+def test_upload_ingest_artifacts_smoke_structural_assert(scaffold, monkeypatch, capsys):
+    """EPS_SMOKE convention: structural listing only, no real upload (no HF
+    credentials needed) — matching UPLOAD-1/UPLOAD-2's smoke behavior."""
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    _stage_shortfall_artifacts(scaffold["realuser_dir"])
+    present = gates.upload_ingest_artifacts(scaffold["realuser_dir"], smoke=True)
+    assert present == list(gates.INGEST_UPLOAD_ARTIFACTS)
+    assert "structural assert PASS" in capsys.readouterr().out
+
+
+def test_upload_ingest_artifacts_production_scoped_upload_folder(scaffold, monkeypatch):
+    """Production path: ONE scoped upload_folder call to the UPLOAD-1
+    ingestion prefix, allow_patterns exactly the produced artifact names."""
+    _stage_shortfall_artifacts(scaffold["realuser_dir"])
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.setenv("EPS_DATA_REPO", "test-org/test-repo")
+    monkeypatch.setenv("EPS_HF_RU_PREFIX", "issue825_real_user_turn_null")
+    recorded: dict = {}
+
+    class FakeApi:
+        def upload_folder(self, **kwargs):
+            recorded.update(kwargs)
+
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", FakeApi)
+    present = gates.upload_ingest_artifacts(scaffold["realuser_dir"], smoke=False)
+    assert present == list(gates.INGEST_UPLOAD_ARTIFACTS)
+    assert recorded["folder_path"] == str(scaffold["realuser_dir"])
+    assert recorded["repo_id"] == "test-org/test-repo"
+    assert recorded["repo_type"] == "dataset"
+    assert recorded["path_in_repo"] == "issue825_real_user_turn_null/raw_completions/ingestion"
+    assert recorded["allow_patterns"] == list(gates.INGEST_UPLOAD_ARTIFACTS)

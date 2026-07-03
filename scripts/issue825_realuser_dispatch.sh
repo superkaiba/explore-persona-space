@@ -141,15 +141,20 @@ print(f"stage: {conv} ({n} rows) @ rev {os.environ['EPS_HF_REV']}")
 PY
 
 echo "[phase=ingest]"
-# CPU phase; the pinned lmsys stream. Route-on-artifact failure handling: a
-# non-zero exit reads ingest_failure.json (status ingest_shortfall) before
-# falling through to ingest_error — FAILURE sentinel either way, then exit 1.
+# CPU phase; the pinned lmsys stream. Failure handling is upload-then-exit
+# (plan §4.3 hard-req 3): fail-from-ingest FIRST uploads whatever the ingest
+# produced (a shortfall writes dataset + meta + ingest_failure.json before
+# returning 1; text/JSON uploads unconditional — a true crash with no outputs
+# has nothing to upload), THEN routes on the artifact (ingest_failure.json ->
+# status ingest_shortfall, fall-through ingest_error) and writes the FAILURE
+# sentinel — then exit 1. Under EPS_SMOKE=1 the upload is a structural
+# listing assert (no real upload), same as UPLOAD-1/UPLOAD-2.
 if ! uv run python scripts/issue825_realuser_ingest.py \
   --out-dir "$RU_DIR" --n "$N_TARGET" --revision "$LMSYS_REV" \
   --parent-conversations "$CONV"; then
   uv run python scripts/issue825_realuser_gates.py fail-from-ingest \
     --out-dir "$OUT_DIR" --realuser-dir "$RU_DIR" --sentinel "$SENTINEL"
-  echo "[phase=ingest] FAILED — FAILURE sentinel written (upload-then-exit N/A: nothing produced)"
+  echo "[phase=ingest] FAILED — produced artifacts uploaded, FAILURE sentinel written (upload-then-exit)"
   exit 1
 fi
 

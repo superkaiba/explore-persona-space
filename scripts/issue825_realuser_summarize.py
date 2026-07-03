@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# ruff: noqa: E501
+# The plan v11 §1 MF-R block (INTERPRETATION_RULE) is carried VERBATIM — its
+# clause lines exceed 100 chars by construction (byte-pinned by
+# tests/test_issue825_realuser_summarize.py; do NOT re-wrap).
 """Issue #825 ``real-user-turn-null`` summarizer -> headline_metrics.json (plan §4.3 item 4).
 
 Schema keys parallel v7's headline (followup_label / smoke / interpretation_rule
@@ -53,30 +57,17 @@ V7_SELF_NLL_BANDS = (1.33, 1.45, 2.62, 2.72)  # plan-quoted self-gen own-NLL ban
 HAIKU_DISTINCT_3GRAM_REFERENCE = 0.781
 HAIKU_U2_MEAN_TOKENS_REFERENCE = 79.0
 
-# Binding interpretation rule — plan v11 §1 MF-R, carried VERBATIM (the
-# analyzer and clean-result MUST carry it forward).
-INTERPRETATION_RULE = (
-    "Binding interpretation rule (MF-R): "
-    "1. The real cells differ from the parent/v7 cells in conversation sample, "
-    "a1 authorship (logged serving models, e.g. vicuna/ChatGPT-class, not the "
-    "measured model), and u2 authorship — a bundled 'real conversation' change. "
-    "Cross-provenance deltas are DESCRIPTIVE provenance-bundle claims only; no "
-    "claim may attribute a delta to u2 realness specifically. "
-    "2. Within-round claims (licensed): existence/absence of linear and "
-    "nonlinear user-turn maps ON real conversations, read against the "
-    "same-conversation assistant reference cells and this round's own nulls. "
-    "3. Null-persists licenses: 'the user-turn linear null holds under all "
-    "three tested u2 provenances, each on its own conversation distribution' — "
-    "a scope-union claim, no mechanism. "
-    "4. Null-breaks licenses: 'on real 2-turn lmsys conversations the user-turn "
-    "map is linearly decodable (R^2 = X)' — it does NOT identify which bundled "
-    "component drives the break. The isolating control (regenerate a1 with the "
-    "measured model on the same real conversations, splicing the real u2 "
-    "behind it) is a named candidate follow-up, NOT part of this round. "
-    "5. Scope note carried to the clean-result: humans who write a second turn "
-    "are a self-selected subpopulation of lmsys users (continuation "
-    "selection); the real-u2 read is a statement about that subpopulation."
-)
+# Binding interpretation rule — plan v11 §1 MF-R block carried VERBATIM
+# (all 5 clauses, exact glyphs incl. R², bold markers as in the plan; the
+# analyzer and clean-result MUST carry it forward). Byte-pinned by
+# tests/test_issue825_realuser_summarize.py — edit ONLY in lockstep with
+# the plan §1 block.
+INTERPRETATION_RULE = """**Binding interpretation rule (MF-R — mirrors v7's MF-F; the analyzer and clean-result MUST carry it verbatim):**
+1. The real cells differ from the parent/v7 cells in **conversation sample, a1 authorship (logged serving models, e.g. vicuna/ChatGPT-class, not the measured model), and u2 authorship** — a bundled "real conversation" change. Cross-provenance deltas are DESCRIPTIVE provenance-bundle claims only; no claim may attribute a delta to u2 realness specifically.
+2. Within-round claims (licensed): existence/absence of linear and nonlinear user-turn maps ON real conversations, read against the same-conversation assistant reference cells and this round's own nulls.
+3. Null-persists licenses: "the user-turn linear null holds under all three tested u2 provenances, each on its own conversation distribution" — a scope-union claim, no mechanism.
+4. Null-breaks licenses: "on real 2-turn lmsys conversations the user-turn map is linearly decodable (R² = X)" — it does NOT identify which bundled component drives the break. The isolating control (regenerate a1 with the measured model on the same real conversations, splicing the real u2 behind it) is a named candidate follow-up, NOT part of this round.
+5. Scope note carried to the clean-result: humans who write a second turn are a self-selected subpopulation of lmsys users (continuation selection); the real-u2 read is a statement about that subpopulation."""
 
 
 def _git_commit() -> str:

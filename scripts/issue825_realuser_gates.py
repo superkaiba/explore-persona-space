@@ -18,10 +18,15 @@ Subcommands:
                    sentinel and exits 1. Numeric gates are BYPASSED under
                    EPS_SMOKE=1 (structural asserts still binding, plan MF-D);
                    each gate logs one "gate armed: <name>" line.
-  fail-from-ingest write the FAILURE sentinel for a crashed ingest phase,
+  fail-from-ingest upload-then-exit for a crashed ingest phase (plan §4.3
+                   hard-req 3): FIRST upload whatever the ingest produced
+                   (dataset + meta + ingest_failure.json — a shortfall
+                   writes all three before returning 1; text/JSON uploads
+                   unconditional), THEN write the FAILURE sentinel,
                    routing on the ARTIFACT (ingest_failure.json ->
                    status ingest_shortfall) with exit-code fall-through
-                   (status ingest_error).
+                   (status ingest_error, upload skipped only when NOTHING
+                   was produced).
   success-sentinel write the schema-enveloped SUCCESS sentinel (refuses unless
                    gate_outcomes.json exists with all_pass=true — the gates
                    fire BEFORE any success path, by construction).
@@ -36,6 +41,7 @@ import argparse
 import json
 import math
 import os
+import signal
 import time
 from pathlib import Path
 
@@ -329,9 +335,69 @@ def run_gates(
 # ---------------------------------------------------------------------------
 
 
+# The ingest phase's produced text/JSON artifacts (plan §4.3 hard-req 3: every
+# FAILURE path is upload-then-exit; a shortfall writes ALL THREE before the
+# ingest returns 1 — issue825_realuser_ingest.main). Exact names double as
+# upload_folder allow_patterns (globs); a true crash may leave any subset.
+INGEST_UPLOAD_ARTIFACTS = (
+    "conversations_real2turn.jsonl",
+    "conversations_real2turn_meta.json",
+    "ingest_failure.json",
+)
+
+
+def upload_ingest_artifacts(realuser_dir: Path, smoke: bool) -> list[str]:
+    """Upload-then-exit for the ingest FAILURE path (plan §4.3 hard-req 3 /
+    MF-C: text/JSON uploads are unconditional on every failure path).
+
+    Pushes whatever the ingest phase produced to the data repo's
+    ``raw_completions/ingestion`` prefix (the SAME prefix UPLOAD-1 targets on
+    success) BEFORE the FAILURE sentinel is written, so a shortfall never
+    strands the ingested dataset + meta + failure artifact on a torn-down
+    worker. Under EPS_SMOKE=1 this is a structural listing assert (no real
+    upload), matching the wrapper's smoke upload convention. Returns the
+    uploaded (or would-upload) filenames; empty for a true crash that
+    produced nothing (the ingest_error fall-through) — then no HF call is
+    made. Upload failures raise (fail-loud): a dead worker with no sentinel
+    is the poller's crash signal, never a silently-skipped upload.
+    """
+    present = [name for name in INGEST_UPLOAD_ARTIFACTS if (realuser_dir / name).exists()]
+    if not present:
+        print("[gates] fail-from-ingest: no ingest artifacts on disk — nothing to upload")
+        return present
+    if smoke:
+        print(f"[gates] [smoke] fail-from-ingest upload structural assert PASS: {present}")
+        return present
+    assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (source .env before upload)"
+    from huggingface_hub import HfApi
+
+    repo = os.environ.get("EPS_DATA_REPO", "superkaiba1/explore-persona-space-data")
+    prefix = os.environ.get("EPS_HF_RU_PREFIX", "issue825_real_user_turn_null")
+    signal.alarm(2700)  # 45-min per-stage hard cap (wrapper convention, plan §10)
+    try:
+        HfApi().upload_folder(
+            folder_path=str(realuser_dir),
+            repo_id=repo,
+            repo_type="dataset",
+            path_in_repo=f"{prefix}/raw_completions/ingestion",
+            allow_patterns=list(INGEST_UPLOAD_ARTIFACTS),
+            commit_message=(
+                "issue-825 real-user-turn-null: ingest FAILURE path upload-then-exit "
+                "(produced dataset/meta + ingest_failure.json, BEFORE the sentinel)"
+            ),
+        )
+    finally:
+        signal.alarm(0)
+    print(f"[gates] fail-from-ingest upload: ok ({present} -> {prefix}/raw_completions/ingestion)")
+    return present
+
+
 def fail_from_ingest(realuser_dir: Path, sentinel: Path) -> None:
-    """FAILURE sentinel for a crashed ingest phase — route on the ARTIFACT
-    (ingest_failure.json) first; exit-code fall-through is ingest_error."""
+    """FAILURE sentinel for a crashed ingest phase — upload-then-exit (plan
+    §4.3 hard-req 3): FIRST upload whatever the ingest produced, THEN route
+    on the ARTIFACT (ingest_failure.json); exit-code fall-through is
+    ingest_error."""
+    uploaded = upload_ingest_artifacts(realuser_dir, eps_smoke())
     artifact = _load(realuser_dir / "ingest_failure.json")
     if artifact and artifact.get("status"):
         status = str(artifact["status"])
@@ -343,6 +409,7 @@ def fail_from_ingest(realuser_dir: Path, sentinel: Path) -> None:
             "failure": "ingest phase exited non-zero with no ingest_failure.json artifact "
             "(see the [phase=ingest] log traceback)",
         }
+    note["uploaded_before_sentinel"] = uploaded
     write_sentinel(sentinel, status, note)
 
 
