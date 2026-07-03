@@ -129,8 +129,27 @@ for combo in combos:
         square["cells"].append({**c, "summaries_genre": sg, "e0_genre": eg})
 square["note"] = ("the parent (betley acts, betley E0) cell is REUSED from "
                   "eval_results/issue_810/readout_rho_by_summary.json, never re-fit")
+# E0-stability side-read (plan v6 §3): Spearman(E0_betley, E0_g1) per behavior
+# across the shared contexts. harmful_compliance is a CONTAMINATION DIAGNOSTIC
+# only (the parent target is quarantined), labeled as such.
+from scipy.stats import spearmanr
+eb = json.loads(pathlib.Path("eval_results/issue_810/phase_c/e0_highm_graded.json").read_text())
+eg = json.loads((out / "phase_c" / "e0_highm_graded.json").read_text())
+stability = {}
+for b, blk in eg["by_behavior"].items():
+    gb = eb["by_behavior"].get(b, {}).get("per_context_graded_mean", {})
+    gg = blk["per_context_graded_mean"]
+    shared = [c for c in gg if c in gb and gg[c] is not None and gb.get(c) is not None]
+    rho = float(spearmanr([gb[c] for c in shared], [gg[c] for c in shared])[0]) \
+        if len(shared) >= 4 else None
+    stability[b] = {"n": len(shared), "rho": rho,
+                    "role": ("contamination diagnostic ONLY (parent target quarantined)"
+                             if b == "harmful_compliance" else "side-read")}
+square["e0_stability"] = stability
 (out / "readout_rho_square.json").write_text(json.dumps(square, indent=2))
-print(f"[phase=square_merge] {len(square['cells'])} cells over {len(combos)} combos")
+rhos = {b: v["rho"] for b, v in stability.items()}
+print(f"[phase=square_merge] {len(square['cells'])} cells over {len(combos)} combos; "
+      f"e0_stability={rhos}")
 PY
 fi
 
