@@ -55,6 +55,15 @@ repos:
         files: ^(src/explore_persona_space/experiments/.*\.py|scripts/workflow_lint\.py)$
         pass_filenames: false
 
+      - id: workflow-lint-phase-done-reserved
+        name: Forbid reserved [phase=done] emissions in dispatcher-invoked phase scripts
+        entry: uv run python scripts/workflow_lint.py --check-phase-done-reserved
+        language: system
+        # Fire on ANY scripts/*.sh|py change — a new dispatcher or phase script
+        # is exactly the offender class (#545, #920); the check is sub-second.
+        files: ^scripts/.*\.(sh|py)$
+        pass_filenames: false
+
       - id: check-mcp-json-no-secrets
         name: Refuse secrets in committed .mcp.json
         entry: uv run python scripts/check_mcp_json_no_secrets.py
