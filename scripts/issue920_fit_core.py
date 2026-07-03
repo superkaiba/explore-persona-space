@@ -163,6 +163,30 @@ def load_reduced_matrices(store_dir: Path, ctx_ids: list[str]) -> dict:
     }
 
 
+def excluded_mask(names: list[str], fams: list[str]) -> np.ndarray:
+    """Boolean mask over cell names whose family is in the excluded list."""
+    ex = {f.split("@")[0] for f in fams}
+    return np.array([nm.split("@")[0] in ex for nm in names], dtype=bool)
+
+
+def union_excluded(red_A: dict, red_B: dict) -> tuple[list[str], dict[str, list[str]]]:
+    """Union of BOTH stores' zero-coverage exclusions (+ the per-source record).
+
+    ``load_reduced_matrices`` zero-fills a zero-valid-probe (family, context)
+    cell, so a set-B-only coverage gap must be excluded from the sweep exactly
+    like a set-A one — masking from set A alone silently zero-fills the B side
+    into R2/R3/R4, the B-side read-outs, the identity ceiling, and every null
+    band (round-1 blocker ``set-b-zero-coverage-not-masked``; pinned by
+    ``tests/test_issue920_dispatch_contract.py``).
+    """
+    by_source = {
+        "set_A": sorted(red_A["excluded_families"]),
+        "set_B": sorted(red_B["excluded_families"]),
+    }
+    union = sorted(set(by_source["set_A"]) | set(by_source["set_B"]))
+    return union, by_source
+
+
 def enumerate_map_cells(
     n_layers: int,
     n_ctx_pl: int = 19,
