@@ -6026,8 +6026,8 @@
     "917": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/917",
-      "status": "proposed",
+      "path": "tasks/planning/917",
+      "status": "planning",
       "title": "workflow-fix: follow-up brief marker versions defer to max+1 rule"
     },
     "92": {
