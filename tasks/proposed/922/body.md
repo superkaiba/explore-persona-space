@@ -14,6 +14,8 @@ goal: 'On Qwen-2.5-7B-Instruct, characterize the per-layer predictability of res
   -> h_{l,t+1} (identity/copy-previous null, affine ridge, small MLP, optional sequence
   model as exploratory) and report held-out variance explained of the update Delta_t
   = h_{l,t+1} - h_{l,t} per layer relative to the identity and affine baselines.'
+relates_to:
+- spec-context-as-vector
 ---
 # Next-token activation prediction: per-layer maps from previous-token activation
 
