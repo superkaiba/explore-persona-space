@@ -138,24 +138,36 @@ def ridge_scaling(fit_pool, test, transitions, ns, *, device, dual_max):
 # ── MLP scaling curve (batched ensemble per n) ───────────────────────────────────
 
 
-def _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk):
-    """Pre-phase host-RAM projection + soft check (crash-fix cycle 5). Logs projected
-    peak (cx pool + one chunk's Y_train deltas) vs MemTotal/MemAvailable; warns loudly
-    if the projection exceeds 80% of MemAvailable so a too-large chunk is caught before
-    the OOM SIGKILL instead of after."""
+def _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk, n_eval):
+    """Pre-phase host-RAM projection + soft check (crash-fix cycle 5). Returns the
+    projected peak GiB and warns if it exceeds 80% of MemAvailable, so a too-large chunk
+    is caught before the OOM SIGKILL instead of after.
+
+    The projection counts the caller-side deltas AND the helper's own re-copies:
+    ``fit_batched_split_mlp``'s ``_stack()`` (vectorized_mlp_skill.py) materializes FULL
+    contiguous fp32 stacks of X_train, Y_train AND X_eval across the chunk's groups
+    (``np.stack(...).astype(np.float32)`` + ``ascontiguousarray``), so the caller's
+    ``astype(copy=False)`` view is RE-COPIED inside the helper regardless — the view only
+    saves the CALLER copy, not the helper stack. Live chunk footprint ≈ 3× the
+    train-sized term (caller Y_train delta + helper X-stack + helper Y-stack, each
+    ``group_chunk × n × H × 4``) + the eval term (``group_chunk × n_eval × H × 4``);
+    the small n_val val-stacks are folded in as comparable to the eval term."""
     n_max = max(ns)
     hidden = fit_pool.shape[-1]
     pool_gib = fit_pool.nbytes / (1024**3)
-    # copy=False makes X_train a view into fit_pool (0 extra); Y_train is a fresh (n,H)
-    # fp32 delta per group, so the live chunk copies ≈ group_chunk × n_max × H × 4 B.
-    chunk_gib = group_chunk * n_max * hidden * 4 / (1024**3)
+    train_term = group_chunk * n_max * hidden * 4 / (1024**3)  # one (n, H) fp32 stack
+    eval_term = group_chunk * n_eval * hidden * 4 / (1024**3)
+    # caller Y_train delta + helper X-stack + helper Y-stack (3× train) + helper X_eval-stack.
+    chunk_gib = 3 * train_term + eval_term
     proj_gib = pool_gib + chunk_gib
     mem_total, mem_avail = S.mem_total_available_gib()
     logger.info(
-        "[stage0] mlp RAM sizing: pool %.1f + chunk-copies %.1f = proj peak %.1f GiB; "
-        "MemTotal %.0f / MemAvailable %.0f GiB (group_chunk=%d, n_max=%d)",
+        "[stage0] mlp RAM sizing: pool %.1f + chunk-copies %.1f (3×train %.1f + eval %.1f) "
+        "= proj peak %.1f GiB; MemTotal %.0f / MemAvailable %.0f GiB (group_chunk=%d, n_max=%d)",
         pool_gib,
         chunk_gib,
+        3 * train_term,
+        eval_term,
         proj_gib,
         mem_total,
         mem_avail,
@@ -170,6 +182,7 @@ def _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk):
             mem_avail,
             group_chunk,
         )
+    return proj_gib
 
 
 def mlp_scaling(
@@ -209,7 +222,11 @@ def mlp_scaling(
     """
     if group_chunk is None:
         group_chunk = S.MLP_GROUP_CHUNK
-    _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk)
+    if group_chunk <= 0:
+        raise ValueError(
+            f"group_chunk must be >= 1, got {group_chunk} (check EPM_I841S_MLP_GROUP_CHUNK)"
+        )
+    _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk, test.shape[0])
     curve: dict = {f"transition_{t}": {} for t in transitions}
     params_by_n: dict[int, dict] = {}
     for n in ns:

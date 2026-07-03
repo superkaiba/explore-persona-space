@@ -3,13 +3,19 @@
 
 Attempt 6 SIGKILL 137 (host RAM OOM) ~26 min into stage-0: at n=100k the MLP battery
 built all 27 transitions' SplitMLPGroups at once (~77 GB of fp32 copies). The fix
-chunks the transitions into groups of MLP_GROUP_CHUNK per fit_split_mlps call (build →
-fit → free → gc). Chunking is EXACTLY equivalent because each group's MLP is re-seeded
-per call and the loss is a per-member sum (no global-batch-size scaling), so per-member
-gradients don't depend on group count. These tests pin:
+chunks the transitions into groups of MLP_GROUP_CHUNK (pinned at 6) per fit_split_mlps
+call (build → fit → free → gc). Chunking is NOT bit-equivalent across chunk sizes:
+fit_batched_split_mlp seeds each group's MLP init in BATCH ORDER (member g gets init g,
+vectorized_mlp_skill.py:809), so changing a group's position (via a different chunk
+size) changes its init → its fit. The fit IS deterministic + reproducible at a FIXED
+group_chunk; the init is a pinned nuisance seed (group_chunk recorded in
+stage0_scaling.json). These tests pin:
 
-  * chunked (group_chunk=2) vs unchunked (group_chunk=all) mlp_scaling produce the SAME
-    r2 curve + the SAME fitted params on a tiny synthetic pool;
+  * DETERMINISM: the same group_chunk twice → identical r2 curve + params;
+  * the DOCUMENTED non-equivalence: different chunk sizes DIFFER (batch-order init) — so
+    a future silent "equivalence" flip is caught;
+  * the RAM-sizing estimator counts the helper's re-copies (3x train + eval term), not
+    just the caller delta;
   * capture_complete_on_hf's fetch short-circuit predicate: complete / missing-shard /
     dtype-mismatch (so a relaunch fetches the already-uploaded capture instead of a
     ~45-min re-capture, but never fetches an incomplete/wrong-dtype set).
@@ -32,6 +38,7 @@ sys.path.insert(0, str(REPO / "src"))
 import issue841_scaling_common as S
 import issue841_scaling_stage0 as st0
 import numpy as np
+import pytest
 
 
 def _synthetic_pool(seed=0, n=40, n_layers=6, hidden=16, n_eval=10):
@@ -144,3 +151,34 @@ def test_capture_incomplete_on_dtype_mismatch(monkeypatch):
     )
     ok, detail = S.capture_complete_on_hf(96000, "bf16")
     assert ok is False and "dtype" in detail, detail
+
+
+def test_ram_sizing_counts_helper_recopies():
+    """The RAM projection must count the helper's full fp32 re-copies — 3x train-sized
+    stacks (caller Y delta + helper X-stack + helper Y-stack), not just the caller delta
+    — else it undercounts the live peak and the 80%-MemAvailable soft-warn is a false
+    all-clear (Codex #841 v15 review)."""
+    fit_pool, _val, test = _synthetic_pool(n=40, n_layers=6, hidden=16, n_eval=10)
+    group_chunk, n_max, hidden = 3, 40, 16
+    proj = st0._log_mlp_ram_sizing(fit_pool, [n_max], [0, 1, 2, 3, 4], group_chunk, test.shape[0])
+    pool = fit_pool.nbytes / (1024**3)
+    train_term = group_chunk * n_max * hidden * 4 / (1024**3)
+    assert proj >= pool + 3 * train_term, (proj, pool, train_term)  # 3 train terms + eval
+
+
+def test_mlp_group_chunk_zero_raises():
+    """EPM_I841S_MLP_GROUP_CHUNK<=0 must fail loud, not step-0-crash the range loop."""
+    fit_pool, val, test = _synthetic_pool()
+    with pytest.raises(ValueError, match="group_chunk"):
+        st0.mlp_scaling(
+            fit_pool,
+            val,
+            test,
+            [0, 1],
+            [40],
+            device="cpu",
+            chunk_size=8,
+            num_threads=1,
+            max_epochs=1,
+            group_chunk=0,
+        )
