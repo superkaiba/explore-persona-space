@@ -481,9 +481,7 @@ def _committed_mean_skill_by_layer(committed_recon_path: str) -> dict[int, float
     return out
 
 
-def _parity_gate(
-    args, cm: dict, ctx_ids_all, capture_layers, free_summaries, tolerance: float = 1e-12
-) -> dict:
+def _parity_gate(args, cm: dict, ctx_ids_all, capture_layers, free_summaries) -> dict:
     """Recompute 2 OLD cells' per-draw nulls and byte-compare vs the committed matrix.
 
     The union-join validity gate (plan v11 §6): valid ONLY if the permutation
@@ -494,6 +492,7 @@ def _parity_gate(
     rows (v0), so the full-manifest context set is used regardless of any
     position-store subset.
     """
+    tolerance = float(args.parity_tolerance)
     gate_cc = _load_cc_for_genre(args.genre, list(ctx_ids_all), capture_layers)
     record: dict = {"tolerance": tolerance, "cells": [], "pass": True}
     for s, layer in (("mean", 18), ("maxp", 21)):
@@ -567,10 +566,15 @@ def _fallback_full_null_rerun(
             fit, _ = _fit_one_cell(Xc, Yv, cell_pca)
             if committed_points is not None:
                 ref_cells = {
-                    int(c["layer"]): c.get("ridge_skill") for c in committed_points.get(s, [])
+                    int(c["layer"]): c for c in committed_points.get(s, []) if "layer" in c
                 }
-                ref = ref_cells.get(capture_layers[li])
-                if ref is not None:
+                ref_cell = ref_cells.get(capture_layers[li]) or {}
+                ref = ref_cell.get("ridge_skill")
+                ref_n = ref_cell.get("n_kept", ref_cell.get("n"))
+                # Apples-to-apples ONLY over the SAME context set: a smoke's ctx
+                # subset (e.g. n=12) legitimately differs from the committed
+                # n=50 fit and is SKIPPED loudly, never compared.
+                if ref is not None and ref_n == len(kept):
                     diff = abs(float(fit["ridge_skill"]) - float(ref))
                     worst_point_diff = max(worst_point_diff, diff)
                     if diff > 1e-6:
@@ -580,6 +584,15 @@ def _fallback_full_null_rerun(
                             f"{diff:.2e} (>1e-6) — the round-1 comparator itself is "
                             "unstable (plan v11 kill criterion 3; failure_class: data)"
                         )
+                elif ref is not None:
+                    logger.warning(
+                        "[phase=null_fallback] %s@L%d point-skill compare SKIPPED "
+                        "(recompute n=%d != committed n=%s — ctx-subset run)",
+                        s,
+                        capture_layers[li],
+                        len(kept),
+                        ref_n,
+                    )
         logger.info("[phase=null_fallback] %s re-nulled (%d layers)", s, len(union[s]))
     union.update({k: dict(v) for k, v in null_matrix_new.items()})
     logger.info(
@@ -879,6 +892,15 @@ def main() -> int:
         "union-validity parity gate; on PASS joins committed + new rows into the "
         "enlarged-axis union band; on FAIL falls back to a full enlarged-grid null "
         "rerun (registered fallback, plan v11 §6/§8) — never a silent mixed join.",
+    )
+    ap.add_argument(
+        "--parity-tolerance",
+        type=float,
+        default=1e-12,
+        help="max abs per-draw difference for the --null-join parity gate (default 1e-12 — "
+        "the plan-v11 byte-parity bar for a same-device-class recompute; a cross-device "
+        "run, e.g. the CPU smoke against the CUDA-committed matrix, legitimately sits at "
+        "~4e-7 and exercises the FAIL->full-rerun fallback unless this is raised)",
     )
     ap.add_argument(
         "--committed-recon",

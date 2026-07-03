@@ -58,12 +58,17 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Shared-VM thread caps (#847) must bind BEFORE torch/numpy import — the pool
+# freezes from OMP_NUM_THREADS at import time (tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
+import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue810_common import (  # noqa: E402
     ANSWER_POSITION_SWEEP_UH_SUBDIR,
@@ -89,10 +94,6 @@ from issue810_fit_reconstruction import (  # noqa: E402
     _load_position_summaries,
     _lofo_cell_skill,
 )
-
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 logger = logging.getLogger("issue810_uh_crosslayer")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
