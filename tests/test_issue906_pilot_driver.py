@@ -364,3 +364,255 @@ def test_main_smoke_returns_zero(tmp_path):
     rc = pilot.main(["--smoke", "--out-root", str(tmp_path / "out")])
     assert rc == 0
     assert (tmp_path / "out" / "calibration_report.json").exists()
+
+
+# ── BLOCKER 1 regression: positive JSONL rows must contain MARKER_TEXT ────────
+
+
+def test_marker_smoke_stubs_positives_contain_marker_text(tmp_path):
+    """BLOCKER 1: every positive row from _make_marker_smoke_stubs encodes MARKER_TEXT.
+
+    MarkerOnlyDataCollator decides row positivity by finding token id 83399 in
+    input_ids.  A positive row whose completion text omits MARKER_TEXT (e.g. bare
+    'placeholder') never encodes to id 83399, so ALL rows become negatives,
+    inverting the training signal.  This test confirms the stub writes the token.
+    """
+    import json
+
+    marker_datagen_fn, _ = pilot._make_marker_smoke_stubs(n_pos=4, n_cn=4)
+    mix_dir = tmp_path / "mix"
+    pos_path, cn_path = marker_datagen_fn("source_sp", ["neg_sp"], mix_dir, seed=0)
+
+    from explore_persona_space.artifacts.recipe import MARKER_TEXT
+
+    # Every positive completion must include MARKER_TEXT (the leading-space ※ token).
+    with open(pos_path) as f:
+        pos_rows = [json.loads(line) for line in f]
+    for row in pos_rows:
+        completion_text = row["completion"][-1]["content"]
+        assert MARKER_TEXT in completion_text, (
+            f"positive completion missing MARKER_TEXT: {completion_text!r}"
+        )
+
+    # Negatives must NOT contain MARKER_TEXT (they train the turn-end tail only).
+    with open(cn_path) as f:
+        neg_rows = [json.loads(line) for line in f]
+    for row in neg_rows:
+        completion_text = row["completion"][-1]["content"]
+        assert MARKER_TEXT not in completion_text, (
+            f"negative completion must NOT contain MARKER_TEXT: {completion_text!r}"
+        )
+
+
+# ── BLOCKER 2 regression: extract_stub uses steering + claude_generated ───────
+
+
+def test_extract_stub_uses_steering_provenance(tmp_path):
+    """BLOCKER 2: the smoke extract_stub must use regime='steering', provenance='claude_generated'.
+
+    Plan §4 Phase 3 requires that production direction extraction uses
+    regime='steering' with Claude-generated datagen completions.  The sycophancy
+    control arm (fresh on-policy rollouts) uses regime='read_out'; it must NOT be
+    the default for the production path.
+    """
+    from unittest.mock import MagicMock
+
+    ref_root = tmp_path / "refs"
+    seams = pilot.make_smoke_seams(ref_root)
+
+    # The extract_fn seam is what _extract_class calls in production.
+    fake_behavior = MagicMock()
+    fake_behavior.name = "sycophancy"
+    result = seams.extract_fn(fake_behavior, [])  # scored can be empty for stub
+
+    assert result.regime == "steering", (
+        f"extract_fn must use regime='steering', got {result.regime!r}"
+    )
+    assert result.provenance == "claude_generated", (
+        f"extract_fn must use provenance='claude_generated', got {result.provenance!r}"
+    )
+
+
+# ── BLOCKER 3 regression: --full without --generic-data-path must exit ────────
+
+
+def test_full_without_generic_data_path_exits(tmp_path):
+    """BLOCKER 3: --full without --generic-data-path must fail fast with SystemExit.
+
+    A warning-only path silently produces per-class errors for every class whose
+    recipe has generic_frac > 0 instead of stopping at config time.
+    """
+    with pytest.raises(SystemExit) as exc_info:
+        pilot.main(["--full"])
+    assert exc_info.value.code != 0, "SystemExit must be non-zero (error exit)"
+
+
+# ── CONCERN 4 regression: full-mode marker mix uses train_question_bank ───────
+
+
+def test_build_marker_class_uses_train_question_bank(tmp_path, monkeypatch):
+    """CONCERN 4: _build_marker_class must source questions from train_question_bank.
+
+    eval_question_bank (capped at 20 questions) is for verification only; the
+    training mix must draw from train_question_bank (100 questions) so question
+    coverage is representative.
+    """
+    from unittest.mock import MagicMock, patch
+
+    behavior = MagicMock()
+    behavior.source_context = "persona_software_engineer"
+    behavior.negative_panel = ["persona_doctor", "default"]
+    # train bank has 100 items; eval bank has 20
+    behavior.train_question_bank = [f"train_q_{i}" for i in range(100)]
+    behavior.eval_question_bank = [f"eval_q_{i}" for i in range(20)]
+
+    cfg = _smoke_config(tmp_path, datagen_target_n=None, mode="full")
+    cfg = dataclasses.replace(cfg, datagen_target_n=None, mode="full")
+
+    # _row is a local function inside _build_marker_class — cannot patch via module attribute.
+    # Instead: mock AutoTokenizer to avoid loading a real model, provide a seam train_fn that
+    # stops early, then read the written JSONL files to verify question provenance.
+    fake_tokenizer = MagicMock()
+    # encode(" ※", add_special_tokens=False) must return [83399] for the in-process assert.
+    fake_tokenizer.encode.return_value = [83399]
+
+    def stub_train_fn(*args, **kwargs):
+        """Stop as soon as the mix files are written — we only need the JSONL content."""
+        raise RuntimeError("stop_after_mix")
+
+    seams = pilot.PilotSeams(train_fn=stub_train_fn)
+
+    with (
+        patch("transformers.AutoTokenizer.from_pretrained", return_value=fake_tokenizer),
+        pytest.raises(RuntimeError, match="stop_after_mix"),
+    ):
+        pilot._build_marker_class(behavior, cfg, seams, tmp_path / "marker_class_out")
+
+    import json
+
+    # Read the written pos.jsonl and verify all questions come from train_question_bank.
+    mix_dir = tmp_path / "marker_class_out" / "build" / "mix"
+    pos_path = mix_dir / "pos.jsonl"
+    assert pos_path.exists(), f"pos.jsonl not written to {mix_dir}"
+    with open(pos_path) as f:
+        pos_rows = [json.loads(line) for line in f]
+    for row in pos_rows:
+        # The question is the last user-turn content in the prompt list.
+        q = row["prompt"][-1]["content"]
+        assert q.startswith("train_q_"), (
+            f"_build_marker_class used eval_question_bank question {q!r}; "
+            "should use train_question_bank"
+        )
+
+
+# ── CONCERN 5 regression: _build_class passes bank-sized target_n in full mode ─
+
+
+def test_build_class_passes_bank_target_n_in_full_mode(tmp_path, monkeypatch):
+    """CONCERN 5: in full mode, _build_class must forward target_n=len(train_question_bank).
+
+    Without this, generate_training_data falls back to the library default
+    (target_n=200), which may under- or over-count relative to the actual bank.
+    """
+    from unittest.mock import MagicMock, patch
+
+    behavior = MagicMock()
+    behavior.source_context = "persona_software_engineer"
+    behavior.negative_panel = ["persona_doctor"]
+    behavior.train_question_bank = [f"q_{i}" for i in range(75)]
+    behavior.dv = MagicMock()
+    behavior.programmatic = False
+
+    captured_kwargs: list[dict] = []
+
+    def fake_build_organism(
+        org,
+        *,
+        out_root,
+        base_model,
+        generic_data_path,
+        gpu_id,
+        datagen_kwargs,
+        datagen_fn,
+        train_fn,
+        rate_fn,
+    ):
+        captured_kwargs.append(dict(datagen_kwargs))
+        raise RuntimeError("stop here — we only need datagen_kwargs")
+
+    cfg = _smoke_config(tmp_path, datagen_target_n=None, mode="full")
+
+    # Use a plain MagicMock (no spec) so we can freely set .recipe attributes without
+    # the spec restricting which attrs exist on ModelOrganism.
+    fake_org = MagicMock()
+    fake_org.recipe.train_method = "lora"
+    fake_org.recipe.stopping.kind = "fixed_epochs"
+
+    # build_organism is imported as a local inside _build_class from
+    # explore_persona_space.artifacts.organisms — patch there, not on the pilot module.
+    with (
+        patch("explore_persona_space.artifacts.organisms.build_organism", fake_build_organism),
+        pytest.raises(RuntimeError, match="stop here"),
+    ):
+        pilot._build_class(behavior, fake_org, cfg, pilot.PilotSeams(), tmp_path / "class")
+
+    assert captured_kwargs, "build_organism was never called"
+    assert captured_kwargs[0].get("target_n") == 75, (
+        f"expected target_n=75 (bank size), got {captured_kwargs[0]}"
+    )
+
+
+# ── CONCERN 8 regression: judge_refusal_fractions non-None when totals present ─
+
+
+def test_summarize_judge_refusal_fractions_from_flat_keys():
+    """CONCERN 8: _summarize must read flat judge_draws_total / judge_draws_dropped keys.
+
+    _pool_meta_counts returns FLAT keys, NOT the nested judge_draw_stats dict.
+    The old nested access always resolved to {}, so judge_refusal_fractions was
+    always None even when totals were present.
+    """
+    classes = {
+        "sycophancy": {
+            "status": "success",
+            "api_calls": {
+                "datagen": {
+                    "judge_draws_total": 100,
+                    "judge_draws_dropped": 5,
+                }
+            },
+            "timings_seconds": {"total": 1.0},
+            "install": {},
+        },
+        "harmful_compliance": {
+            "status": "success",
+            "api_calls": {
+                "datagen": {
+                    "judge_draws_total": 80,
+                    "judge_draws_dropped": 0,
+                }
+            },
+            "timings_seconds": {"total": 1.0},
+            "install": {},
+        },
+        "marker": {
+            "status": "success",
+            "api_calls": {},
+            "timings_seconds": {"total": 1.0},
+            "install": {},
+        },
+    }
+
+    summary = pilot._summarize(classes)
+    fractions = summary.get("judge_refusal_fractions", {})
+
+    assert fractions["sycophancy"] == pytest.approx(5 / 100, abs=1e-4), (
+        f"expected 0.05 for sycophancy, got {fractions['sycophancy']}"
+    )
+    assert fractions["harmful_compliance"] == pytest.approx(0.0, abs=1e-4), (
+        f"expected 0.0 for harmful_compliance, got {fractions['harmful_compliance']}"
+    )
+    # marker has no datagen judge calls — should be None
+    assert fractions["marker"] is None, (
+        f"expected None for marker (no judge calls), got {fractions['marker']}"
+    )

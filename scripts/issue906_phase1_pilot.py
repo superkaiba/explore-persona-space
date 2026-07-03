@@ -80,11 +80,6 @@ REFERENCE_DIRECTIONS: dict[str, tuple[str, ...]] = {
     "harmful_compliance": (
         "data/issue_658/prb_dl/issue661_rb_extraction_divergence/analysis_tensors/r_b_refusal.pt",
     ),
-    "broad_em": (
-        "data/issue_779/r_b/evil.pt",
-        "data/issue_778/rb/evil.pt",
-        "data/issue_658/prb_dl/issue661_rb_extraction_divergence/analysis_tensors/r_b_broad_em.pt",
-    ),
     "china_censorship": (),
 }
 
@@ -411,13 +406,17 @@ def _make_default_extract_fn(cfg: PilotConfig):
         )
         model.eval()
         try:
+            # BLOCKER 2 fix: production direction extraction uses regime="steering" +
+            # provenance="claude_generated" (Plan §4 Phase 3 spec).  regime="read_out"
+            # with provenance="on_policy" is ONLY the sycophancy control arm that
+            # generates fresh rollouts — it is not the default production path.
             return extract_direction(
                 behavior,
                 model,
                 tokenizer,
                 scored,
-                regime="read_out",
-                provenance="on_policy",
+                regime="steering",
+                provenance="claude_generated",
             )
         finally:
             del model
@@ -459,6 +458,11 @@ def _build_class(behavior, org, cfg: PilotConfig, seams: PilotSeams, class_dir: 
     datagen_kwargs: dict[str, Any] = {"n_judge_draws": cfg.n_judge_draws}
     if cfg.datagen_target_n is not None:
         datagen_kwargs["target_n"] = cfg.datagen_target_n
+    elif cfg.mode == "full":
+        # CONCERN 5 fix: in full mode, use the full train bank size instead of
+        # silently falling back to the library default (target_n=200), which may
+        # under- or over-count relative to the actual bank.
+        datagen_kwargs["target_n"] = len(list(behavior.train_question_bank))
 
     return build_organism(
         org,
@@ -536,11 +540,14 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
     panel = NEGATIVE_PANELS["default_v1"]
     neg_sps = [nc.system_prompt for nc in panel]  # NegativeContext.system_prompt is correct
 
+    # Use train_question_bank (100 questions) for training mix, not eval_question_bank (20).
+    # CONCERN 4: eval_question_bank is for verification only; the training mix must draw from
+    # the full train bank so the implicit question coverage is representative.
     n_questions = min(
-        cfg.datagen_target_n or 20,
-        len(list(behavior.eval_question_bank)),
+        cfg.datagen_target_n or len(list(behavior.train_question_bank)),
+        len(list(behavior.train_question_bank)),
     )
-    questions = list(behavior.eval_question_bank)[:n_questions]
+    questions = list(behavior.train_question_bank)[:n_questions]
 
     if seams.marker_datagen_fn is not None:
         pos_path, cn_path = seams.marker_datagen_fn(source_sp, neg_sps, mix_dir, seed=cfg.seed)
@@ -569,10 +576,15 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
 
         pos_path = mix_dir / "pos.jsonl"
         cn_path = mix_dir / "cn.jsonl"
+        # BLOCKER 1 fix: positive completions must include MARKER_TEXT so that
+        # MarkerOnlyDataCollator (which detects row positivity by finding token id 83399
+        # in input_ids) treats them as positives.  A bare "placeholder" never encodes to
+        # id 83399 and makes every row a negative, inverting the training signal.
         with open(pos_path, "w", encoding="utf-8") as fp:
             for q in questions:
-                fp.write(json.dumps(_row(source_sp, q, "placeholder")) + "\n")
+                fp.write(json.dumps(_row(source_sp, q, "placeholder" + MARKER_TEXT)) + "\n")
         # Contrastive negatives: round-robin over the negative panel per question.
+        # Negatives intentionally omit MARKER_TEXT (train the turn-end tail only).
         with open(cn_path, "w", encoding="utf-8") as fn:
             for qi, q in enumerate(questions):
                 neg_sp = neg_sps[qi % len(neg_sps)]
@@ -867,11 +879,12 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         )
         out["adapter"] = adapter_url
         # Training mix + Claude-generated raw completions (datagen sidecars).
+        # CONCERN 6 fix: Upload Policy requires text/JSON uploads to be fail-loud
+        # (never fail_soft=True); silent failures lose the audit trail.
         datagen_dir = Path(build_result.data_paths["datagen_dir"])
         out["generations"] = upload_dataset_directory(
             datagen_dir,
             bucket=f"issue906_pilot/{behavior_name}/raw_completions",
-            fail_soft=True,
         )
         # Extraction contrastive-rollout TEXT (the load-bearing r_B text-persist,
         # upload-policy.md) — present only for the non-programmatic classes.
@@ -880,7 +893,6 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
             out["extract"] = upload_dataset_directory(
                 extract_dir,
                 bucket=f"issue906_pilot/{behavior_name}/extraction_rollouts",
-                fail_soft=True,
             )
         if not adapter_url:
             out["status"] = "failed"
@@ -1112,7 +1124,25 @@ def _gpu_device_name() -> str | None:
 
 
 def run_pilot(cfg: PilotConfig, seams: PilotSeams) -> dict:
-    """Run every configured class, writing ``calibration_report.json`` per class."""
+    """Run every configured class, writing ``calibration_report.json`` per class.
+
+    CONCERN 7 fix: on entry, load a partial report when the report path already
+    exists and pre-populate ``classes`` — any class already ``status=="success"``
+    is skipped (resume predicate), satisfying the checkpoint-per-phase discipline.
+    """
+    # CONCERN 7: load partial report on resume; otherwise start fresh.
+    if cfg.report_path.exists():
+        try:
+            with open(cfg.report_path) as _fp:
+                _partial = json.load(_fp)
+            prior_classes: dict[str, Any] = _partial.get("classes", {})
+            logger.info("resuming pilot: found %d prior class entries", len(prior_classes))
+        except Exception as _exc:
+            logger.warning("could not load partial report (%s); starting fresh", _exc)
+            prior_classes = {}
+    else:
+        prior_classes = {}
+
     report: dict[str, Any] = {
         "schema": REPORT_SCHEMA,
         "mode": cfg.mode,
@@ -1123,12 +1153,16 @@ def run_pilot(cfg: PilotConfig, seams: PilotSeams) -> dict:
         "seed": cfg.seed,
         "config": cfg.public(),
         "gpu_device_name": _gpu_device_name(),  # hardware metadata for calibration
-        "classes": {},
+        "classes": dict(prior_classes),  # pre-populate with any completed classes
     }
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     _atomic_write_json(cfg.report_path, report)  # write the shell up front
 
     for name in cfg.classes:
+        # CONCERN 7: skip classes already successfully completed in a prior run.
+        if prior_classes.get(name, {}).get("status") == "success":
+            logger.info("=== pilot class: %s — SKIPPING (already succeeded) ===", name)
+            continue
         logger.info("=== pilot class: %s ===", name)
         entry = run_class(name, cfg, seams)
         report["classes"][name] = entry
@@ -1160,11 +1194,11 @@ def _summarize(classes: dict) -> dict:
     for name, c in classes.items():
         api = c.get("api_calls") or {}
         datagen = api.get("datagen") or {}
-        jds = datagen.get("judge_draw_stats") or {}
-        pos_stats = jds.get("positive") or {}
-        neg_stats = jds.get("negative") or {}
-        n_total = (pos_stats.get("n_total") or 0) + (neg_stats.get("n_total") or 0)
-        n_dropped = (pos_stats.get("n_dropped") or 0) + (neg_stats.get("n_dropped") or 0)
+        # CONCERN 8 fix: _pool_meta_counts returns FLAT keys judge_draws_total /
+        # judge_draws_dropped, NOT the nested judge_draw_stats dict.  The old nested
+        # access always resolved to {}, making judge_refusal_fractions always None.
+        n_total = datagen.get("judge_draws_total") or 0
+        n_dropped = datagen.get("judge_draws_dropped") or 0
         judge_refusal_fractions[name] = round(n_dropped / n_total, 4) if n_total > 0 else None
 
     # Per-class install rate delta (trained - base judged rate); None for programmatic classes.
@@ -1217,13 +1251,22 @@ def _make_marker_smoke_stubs(n_pos: int, n_cn: int) -> tuple:
 
     def marker_datagen_fn(source_sp, neg_sps, mix_dir, *, seed):
         """Write minimal pos/cn JSONL for the marker carve-out smoke path."""
+        from explore_persona_space.artifacts.recipe import (
+            MARKER_TEXT as _MARKER_TEXT,
+        )
+
         mix_dir = Path(mix_dir)
         mix_dir.mkdir(parents=True, exist_ok=True)
         pos_path = mix_dir / "pos.jsonl"
         cn_path = mix_dir / "cn.jsonl"
         with open(pos_path, "w") as f:
             for i in range(n_pos):
-                f.write(json.dumps(_smoke_train_row(f"q{i}", f"pos marker {i}")) + "\n")
+                # BLOCKER 1 fix: positive stubs include MARKER_TEXT so MarkerOnlyDataCollator
+                # (which detects positivity by finding token id 83399 in input_ids) correctly
+                # treats them as positives.
+                f.write(
+                    json.dumps(_smoke_train_row(f"q{i}", f"pos marker {i}" + _MARKER_TEXT)) + "\n"
+                )
         with open(cn_path, "w") as f:
             for i in range(n_cn):
                 f.write(json.dumps(_smoke_train_row(f"q{i % n_pos}", f"neg marker {i}")) + "\n")
@@ -1360,13 +1403,16 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
         return scored, jr
 
     def extract_stub(behavior, scored):
+        # BLOCKER 2 fix: smoke stub mirrors the production extract_fn — regime="steering" +
+        # provenance="claude_generated" (Plan §4 Phase 3; on_policy is the sycophancy
+        # control arm only).
         return DirectionResult(
             behavior_name=behavior.name,
-            regime="read_out",
+            regime="steering",
             layers=tuple(range(n_layers)),
             r_b=fake_rb.clone(),
             counts={"smoke": True},
-            provenance="on_policy",
+            provenance="claude_generated",
         )
 
     def uploader_stub(behavior_name, build_result, cfg):
@@ -1541,11 +1587,15 @@ def main(argv: list[str] | None = None) -> int:
     else:
         seams = PilotSeams()
     if cfg.mode == "full" and cfg.generic_data_path is None:
-        # The primary arm's generic interleave (generic_frac=0.5) needs a corpus.
-        logger.warning(
-            "--full without --generic-data-path: build_organism will FAIL for any class "
-            "whose recipe has generic_frac > 0 (recorded per-class as an error)."
+        # BLOCKER 3 fix: fail fast instead of warning — the primary arm's generic interleave
+        # (generic_frac=0.5) cannot run without a corpus; a warning-only path silently
+        # produces garbage per-class errors for every class instead of stopping early.
+        print(
+            "ERROR: --full requires --generic-data-path: the primary arm's generic interleave "
+            "(generic_frac>0) cannot run without a corpus.",
+            file=sys.stderr,
         )
+        sys.exit(1)
 
     report = run_pilot(cfg, seams)
     summary = report.get("summary", {})
