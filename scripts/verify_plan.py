@@ -36,11 +36,13 @@ Check catalog (id — classification — kind scope)
       claim backed by test
   c16 re-extracted reference    WARN-only, conditional    experiment +
       vs committed headline                               analysis
+  c17 falsification-branch      WARN-only, conditional    experiment +
+      causal-claim scope                                  analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16) also SKIP
-when their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17) also
+SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -1952,6 +1954,155 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 17 — falsification-branch causal-claim scope (WARN-only) ────────
+
+# Offender vocabulary: wording that asserts a causal mechanism as
+# DEMONSTRATED inside a registered branch. Tier-1 only (corpus-calibrated,
+# task #946 §6): retrospective attribution ("really was/were", "must have
+# been"), content-carrying claims, story-kill idioms, takeaway rewrites,
+# and explicit establish/prove/demonstrate-that. Deliberately EXCLUDED as
+# accepted false negatives (prefer false negatives — the c14 charter):
+# present-tense "really is/does" (5-6 of 8 corpus hits were legitimate),
+# "rules out" (#605 uses it as a CI equivalence bound), bare "must be"
+# (deontic), and bare mechanism-noun falsify labels ("**Falsified
+# (integration):**" — not regex-separable from "(dependence)" labels).
+_C17_OFFENDER_RE = re.compile(
+    r"(?i)"
+    r"\breally\s+(?:was|were)\b"
+    r"|\bmust\s+have\s+been\b"
+    r"|\bcarr(?:y|ies|ied|ying)\b[^.\n]{0,50}\bcontent\b"
+    r"|\b(?:story|account|hypothesis|explanation|interpretation)\s+(?:dies|is\s+dead)\b"
+    r"|\brewrit(?:es?|ing)\s+the\b[^.\n]{0,60}\b(?:interpretation|takeaway|headline)\b"
+    r"|\b(?:establish(?:es|ed)?|prov(?:es|ed)|demonstrat(?:es|ed))\s+that\b"
+)
+# Exculpation vocabulary: an alternative-naming / hedge token in the SAME
+# block (hyp surface) or SAME bullet (TL;DR surface) silences the offender.
+# Over-breadth here only creates false negatives, which the charter prefers.
+# Calibrated on the #810 v13→v14 fix wording plus corpus hits (#563 "scope
+# caveat", #611/#621 "artifact", #841 "gets real support").
+_C17_EXCULP_RE = re.compile(
+    r"(?i)"
+    r"\bconsistent\s+with\b|\bcompatible\s+with\b"
+    r"|\buniquely\s+diagnostic\b"
+    r"|\bcannot\s+(?:distinguish|rule\s+out)\b"
+    r"|\bdoes\s+not\s+distinguish\b|\bdoesn'?t\s+distinguish\b"
+    r"|\balternative\b|\bconfound\w*\b|\bartifact\w*\b|\bcaveats?\b"
+    r"|\bsimpler\s+explanations?\b|\bother\s+explanations?\b"
+    r"|\bOOD\b|\boff-?distribution\b|\bout-?of-?distribution\b"
+    r"|\bremains?\s+live\b|\bdegradation\b|\bendpoint\b"
+    r"|\bpending\b|\bdisambiguat\w*\b|\bunder-?determin\w*\b|\bambiguous\b"
+    r"|\bwould\s+not\s+(?:prove|establish|demonstrate)\b"
+    r"|\b(?:gets?|gains?|lends?|earns?)\s+(?:real\s+)?support\b"
+)
+# The §0.0 registered plain-English falsification branch ("**What would
+# change my mind:**" / "…mind.**" — both corpus punctuation shapes).
+_C17_MIND_RE = re.compile(r"(?i)\*\*\s*what would change my mind")
+
+
+def _c17_mind_segments(plan: str) -> list[str]:
+    """The fence-stripped `**What would change my mind**` bullet(s), each
+    with its continuation lines (up to the next top-level list item or
+    heading) — the §0.0 registered falsification branch surface."""
+    lines = strip_fences(plan).splitlines()
+    segs: list[str] = []
+    i = 0
+    while i < len(lines):
+        if _C17_MIND_RE.search(lines[i]):
+            seg = [lines[i]]
+            j = i + 1
+            while (
+                j < len(lines)
+                and not _C14_LIST_ITEM_RE.match(lines[j])
+                and not _HEADING_RE.match(lines[j].strip())
+            ):
+                seg.append(lines[j])
+                j += 1
+            segs.append("\n".join(seg))
+            i = j
+        else:
+            i += 1
+    return segs
+
+
+def check_causal_claim_scope(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a registered falsification (or confirm)
+    branch must not word its outcome as a DEMONSTRATED causal mechanism
+    when the same block never names the undistinguished alternative.
+    Surfaces scanned: (i) confirm/falsify segments of anchored hypothesis
+    blocks (c14's parsers, reused); (ii) the §0.0 `**What would change my
+    mind:**` bullet(s). An offender token is silenced by an exculpation
+    token in the same block/bullet. NEVER FAILs — a heuristic vocabulary
+    check must not hard-block a legitimately-worded plan; whether the
+    diagnostics actually distinguish the mechanism stays with the
+    Methodology/Statistics critics. The §6 corpus noise floor (2/195
+    newest-per-task) is IN-SAMPLE — the offender/exculpation vocabulary
+    was tuned on the same corpus it was measured on — so any future
+    FAIL-promotion needs held-out / prospective validation first.
+    Incident: #810 plan v13 ("they really were carrying answer content,
+    the echo story dies") — three reviewers independently required the
+    v14 scope-down ("consistent with integration but not uniquely
+    diagnostic; OOD ... remains live"); task #946."""
+    cid, name = "c17_causal_branch_scope", "falsification-branch causal-claim scope"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: registered falsification branches are an experiment|analysis plan shape",
+        )
+    anchored: list[tuple[str, tuple[str, str]]] = []
+    section = section_text_by_keywords(plan, ("hypothesis",))
+    if section is not None:
+        for block in _hypothesis_blocks(strip_fences(section)):
+            segments = _confirm_falsify_segments(block)
+            if segments is not None:
+                anchored.append((block, segments))
+    mind_segs = _c17_mind_segments(plan)
+    if not anchored and not mind_segs:
+        return _skip(
+            cid,
+            name,
+            "no registered falsification-branch surface (no **Confirm/**Falsify "
+            "hypothesis anchors, no **What would change my mind** bullet)",
+        )
+    offenders: list[str] = []
+    for block, (confirm_seg, falsify_seg) in anchored:
+        if _C17_EXCULP_RE.search(block):
+            continue
+        for branch, seg in (("falsify", falsify_seg), ("confirm", confirm_seg)):
+            m = _C17_OFFENDER_RE.search(seg)
+            if m:
+                offenders.append(
+                    f"hypothesis block {_c14_block_label(block)} ({branch} segment): "
+                    f"claim token '{m.group(0)}'"
+                )
+                break  # one offender per block is enough for the detail
+    for seg in mind_segs:
+        if _C17_EXCULP_RE.search(seg):
+            continue
+        m = _C17_OFFENDER_RE.search(seg)
+        if m:
+            offenders.append(f"'What would change my mind' bullet: claim token '{m.group(0)}'")
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchored)} hypothesis block(s) + {len(mind_segs)} TL;DR bullet(s) "
+            "scanned; no unqualified demonstrated-mechanism claim token",
+        )
+    extra = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    return _warn(
+        cid,
+        name,
+        "; ".join(offenders[:3])
+        + extra
+        + " — the branch asserts a causal account its diagnostics may not uniquely "
+        "distinguish (#810 v13 incident): name the undistinguished alternative in "
+        "the same block (e.g. 'consistent with <mechanism> but not uniquely "
+        "diagnostic; <alternative> remains live') or scope the wording to the "
+        "measured quantity; semantic verdict stays with the critics",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1971,6 +2122,7 @@ CHECKS = [
     check_hypothesis_branch_coherence,
     check_failloud_test_coverage,
     check_reference_headline_distinction,
+    check_causal_claim_scope,
 ]
 
 

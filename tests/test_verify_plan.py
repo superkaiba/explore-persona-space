@@ -153,10 +153,11 @@ def test_good_plan_passes_all():
         "c14_hypothesis_branch_coherence": "SKIP",
         "c15_failloud_test_coverage": "SKIP",
         "c16_reference_headline_distinction": "SKIP",
+        "c17_causal_branch_scope": "PASS",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 17
+    assert len(results) == 18
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1426,7 +1427,9 @@ H922_H2 = "- **H2 (depth profile).** The carried-context share rises with depth:
 # #841 v12 line 29 — crisp `≤` vs `>` count comparators, no tendency token.
 H841_H1 = "- **H1 (Stage-0 fit, matched information).** The source-only GRU's held-out r2_id on Δ_ℓ does NOT beat the affine ridge on the data-limited late-layer band (transitions 17–25) or on a majority of the 27 transitions. **Confirm (ridge stands):** source-only GRU r2_id ≤ ridge r2_id on ≥ 14/27 transitions (raw space), consistent with the prefix-GRU's 27/27 loss. **Falsify (GRU wins):** source-only GRU r2_id > ridge r2_id on a majority of transitions, especially the late-layer band. Directional prior: LOSS or TIE (removing prefix information from an already-losing GRU should not lift it above ridge)."
 # #810 v6 line 35 — band/threshold wording (Confirm-the-null vs clears-the-
-# band), no tendency token.
+# band), no tendency token. DUAL-USE fixture: pins c14 PASS (no comparator
+# pair / vague scope) AND c17 WARN (the falsify segment's "rewrites the
+# parent's read-out takeaway" with no exculpation — the #810 defect family).
 H810_H2G = "- **H2-g (read-out).** No summary rescues behavior read-out on generic-genre activations either. **Confirm-the-null:** the two-method conjunction statistic sits inside its max-selected band for each new combo. **Falsify:** a summary clears the band on g1 → the Betley corpus was suppressing read-out (rewrites the parent's read-out takeaway)."
 
 
@@ -1920,6 +1923,142 @@ def test_c16_fenced_trigger_does_not_fire():
     assert _status(plan, C16) == "SKIP"
 
 
+# ─── Check 17 — falsification-branch causal-claim scope ────────────────────
+
+# #810 plan v13 §0.0 — the incident offender (three reviewers required the
+# scope-down); the v14 line is the accepted fix (exculpation tokens:
+# "consistent with", "not uniquely diagnostic", OOD, "remains live").
+C17_V13_MIND = (
+    "- **What would change my mind:** If deleting the answer makes them clearly "
+    "harder to rebuild — dropping below the plain answer-average benchmark — with "
+    "a clean paired gap, then they really were carrying answer content, the echo "
+    "story dies, and the parked follow-up #943 gets its revival condition."
+)
+C17_V14_MIND = (
+    "- **What would change my mind:** If deleting the answer makes them clearly "
+    "harder to rebuild — dropping below the plain answer-average benchmark — with "
+    "a clean paired gap, then the header read is ANSWER-PRESENCE-DEPENDENT — "
+    "consistent with integration but not uniquely diagnostic (an off-distribution "
+    "empty turn degrading the states remains live); the truncation dose-response "
+    "follow-up disambiguates, and parked #943's revival condition becomes "
+    "conditional on it."
+)
+# H810_H2G (the c14 PASS fixture, #810 v6) carries "rewrites the parent's
+# read-out takeaway" in its falsify segment with no exculpation — c17
+# deliberately WARNs on it (the diff-sketch's own example pattern; same
+# defect family that recurred on #810 through v13).
+H810_H2G_EXCULPATED = (
+    H810_H2G + " Not uniquely diagnostic on its own: a genre confound remains live."
+)
+# GOOD_PLAN minus its (clean) mind bullet — the no-surface SKIP fixture.
+GOOD_PLAN_MIND_LINE = (
+    "- **What would change my mind:** A shift larger than the run-to-run spread "
+    "would mean benign data alone moves persona expression."
+)
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c17_kind_exempt_skips(kind):
+    plan = GOOD_PLAN + "\n" + C17_V13_MIND + "\n"
+    assert _status(plan, "c17_causal_branch_scope", kind=kind) == "SKIP"
+
+
+def test_c17_no_branch_surface_skips():
+    plan = GOOD_PLAN.replace(
+        GOOD_PLAN_MIND_LINE, "- **Spread note:** run-to-run spread is the yardstick."
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "SKIP"
+    assert "no registered falsification-branch surface" in r.detail
+
+
+def test_c17_810_v13_mind_bullet_warns():
+    ok, by_id = _run(GOOD_PLAN + "\n" + C17_V13_MIND + "\n")
+    r = by_id["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "really w" in r.detail  # 'really were'
+    assert "What would change my mind" in r.detail
+    assert ok is True  # WARN never flips exit 0
+
+
+def test_c17_810_v14_scoped_down_passes():
+    assert _status(GOOD_PLAN + "\n" + C17_V14_MIND + "\n", "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_hyp_falsify_rewrites_takeaway_warns():
+    r = _run(_hyp_plan(H810_H2G))[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "rewrites the parent" in r.detail
+    assert "falsify" in r.detail
+
+
+def test_c17_hyp_confirm_segment_offender_warns():
+    # Round-scope item R2: the confirm-branch scan path — an offender token
+    # inside an explicit **Confirm:** segment, no exculpation anywhere in
+    # the block → WARN naming the confirm segment.
+    plan = _hyp_plan(
+        "- **H1 (mechanism).** The probe reads answer information from the header states. "
+        "**Confirm:** a clean paired gap establishes that the states were integrated. "
+        "**Falsify:** no paired gap appears at any layer."
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "confirm" in r.detail
+    assert "establishes that" in r.detail
+
+
+def test_c17_hyp_exculpated_passes():
+    assert _status(_hyp_plan(H810_H2G_EXCULPATED), "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_must_have_been_offender_warns():
+    # Round-scope item R3 (documentation fixture): the retrospective
+    # "must have been" attribution is tier-1 offender vocabulary.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + (
+            "- **What would change my mind:** If the gap survives the swap, the "
+            "adapter must have been encoding the trait all along."
+        )
+        + "\n"
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "must have been" in r.detail
+
+
+def test_c17_incidental_exculpation_silences_offender():
+    # Round-scope item R3 (documentation fixture): DOCUMENTED ACCEPTED
+    # FALSE NEGATIVE — exculpation scope is the whole bullet, so an
+    # INCIDENTAL hedge token ("caveat", here about judge sample size, not
+    # about the causal claim) silences a genuine offender ("story dies").
+    # Deliberate per the c14 prefer-false-negatives charter; do not
+    # "fix" by narrowing exculpation scope to the claim sentence (the v14
+    # fix wording itself puts the hedge in a trailing parenthetical).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + (
+            "- **What would change my mind:** If the paired gap is clean, the echo "
+            "story dies (one caveat: the judge sample is small)."
+        )
+        + "\n"
+    )
+    assert _status(plan, "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_kind_analysis_warns_not_skips():
+    plan = GOOD_PLAN + "\n" + C17_V13_MIND + "\n"
+    assert _status(plan, "c17_causal_branch_scope", kind="analysis") == "WARN"
+
+
+def test_c17_fenced_offender_does_not_trigger():
+    plan = GOOD_PLAN + "\n```\n" + C17_V13_MIND + "\n```\n"
+    # GOOD_PLAN's own clean mind bullet is still a surface → PASS, not WARN.
+    assert _status(plan, "c17_causal_branch_scope") == "PASS"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1973,8 +2112,8 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 17
-    assert len({c["id"] for c in payload["checks"]}) == 17
+    assert len(payload["checks"]) == 18
+    assert len({c["id"] for c in payload["checks"]}) == 18
 
 
 def test_cli_exit_one_on_fail(tmp_path):
