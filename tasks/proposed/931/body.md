@@ -39,6 +39,9 @@ goal: 'Test whether the linear context→answer-profile map (#779/#825 held-out 
   → mean activation of the following span until the next separator) to test whether
   span-mean predictability is character/persona-specific or a generic delimiter-span
   property.'
+relates_to:
+- identity-cb-duality
+- identity-persona-vs-behavior
 ---
 # Story-character generalization of the context→answer map + separator-token specificity control
 
