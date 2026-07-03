@@ -27,6 +27,21 @@ What is and is NOT a cache (the safety contract):
     target lived under ``data/issue_658/hf_dl/``). See
     ``_active_consumer_protected_issues`` /
     ``_cache_dir_reap_blocked_by_active_consumer``.
+  * SYMLINKED caches (#915, the #681 data-disk relocation): a ``hf_dl`` /
+    ``g*_dl`` that is a symlink — or whose ``issue_<N>`` PARENT dir is a
+    symlink — is disposition-checked instead of plain-``rmtree``'d
+    (``shutil.rmtree`` refuses a symlink by design). The RESOLVED target is
+    reaped ONLY when it lives strictly inside the managed data-disk root
+    (env ``EPS_VM_DATA_DISK_PATH``, default ``/mnt/eps-data``), a path
+    component names the OWNING issue, AND it is a directory whose basename
+    equals the cache name (the relocation is name-preserving). Anything else
+    — external, foreign-issue, renamed, a ``store/``, a file — is KEPT
+    (fail-toward-keep, sidecar-escalated as
+    ``kind: "symlink-external-target-kept"``): a direct link is unlinked
+    (target kept); a shared PARENT link is NEVER unlinked. A dangling cache
+    symlink is discovered and unlinked. Managed reaps delete the TARGET
+    FIRST, then the link — a mid-reap crash leaves the link, so the next run
+    re-discovers and retries.
 
 There are now THREE reap gates, all composing additively (any one puts a cache
 dir in ``CleanResult.skipped`` instead of deleting it):
@@ -127,6 +142,65 @@ def hf_data_repo() -> str:
     """The data repo the nested-``store/`` parity guard checks against
     (env ``EPM_HF_DATA_REPO``; defaults to :data:`HF_DATA_REPO_DEFAULT`)."""
     return os.environ.get("EPM_HF_DATA_REPO", "").strip() or HF_DATA_REPO_DEFAULT
+
+
+# The #681 managed data-disk mount that holds relocated per-issue caches.
+# Mirrors vm_disk_guard.DEFAULT_DATA_DISK_PATH / data_disk_path() (that module
+# imports FROM this one, so the constant cannot live there without a cycle).
+DATA_DISK_ROOT_DEFAULT = "/mnt/eps-data"
+
+
+def data_disk_root() -> Path:
+    """Managed data-disk root (env ``EPS_VM_DATA_DISK_PATH``; blank -> default)."""
+    raw = os.environ.get("EPS_VM_DATA_DISK_PATH", "").strip()
+    return Path(raw or DATA_DISK_ROOT_DEFAULT)
+
+
+def _path_component_names_issue(rel: Path, issue_n: int) -> bool:
+    """True iff some component of ``rel`` names issue ``issue_n`` — exactly
+    ``issue_<n>`` / ``issue<n>``, or an ``issue_<n>_<slug>`` / ``issue<n>_<slug>``
+    prefix form — the same exact-N-boundary rules as :func:`issue_data_dirs`
+    (``issue_65`` never matches ``issue_658``).
+
+    NOTE: the post-#681-cutover worktree layout may name issue dirs with a
+    HYPHEN (``issue-<n>``); deliberately NOT matched yet — a hyphen-named
+    target takes the fail-toward-keep disposition, the safe direction. Widen
+    when the cutover lands, with a test."""
+    n = str(issue_n)
+    for comp in rel.parts:
+        if comp in (f"issue_{n}", f"issue{n}"):
+            return True
+        if comp.startswith((f"issue_{n}_", f"issue{n}_")):
+            return True
+    return False
+
+
+def _managed_symlink_target(cache_dir: Path, issue_n: int) -> Path | None:
+    """Fully-resolved symlink target iff it is verifiably ``issue_n``'s
+    RELOCATED cache on the managed data disk; ``None`` otherwise
+    (fail-toward-keep). ALL of the following must hold, else ``None``:
+
+      * the resolved target lies STRICTLY inside :func:`data_disk_root`
+        (``os.path.realpath`` on BOTH sides defeats nested-link /
+        relative-link escapes; the root itself is never a valid target);
+      * some path component below the root names ``issue_n``
+        (:func:`_path_component_names_issue`) — defends against a hand-made
+        alias into ANOTHER issue's (or shared) data-disk state;
+      * the target IS a directory whose basename EXACTLY matches the cache
+        dir's name (the relocation pattern is name-preserving —
+        ``hf_dl -> hf_dl``, ``g1_dl -> g1_dl``). This stops a same-issue
+        alias (``hf_dl -> .../issue_<n>/store``, or -> any FILE) from being
+        reaped: gate 2's ``rglob`` matches descendants only, never the
+        resolved root itself, so this predicate is the only defense."""
+    target = Path(os.path.realpath(cache_dir))
+    root = Path(os.path.realpath(data_disk_root()))
+    if target == root or not target.is_relative_to(root):
+        return None
+    if not _path_component_names_issue(target.relative_to(root), issue_n):
+        return None
+    if not target.is_dir() or target.name != cache_dir.name:
+        return None
+    return target
 
 
 # Shared sidecar stream for ALL VM-disk escalations (this guard's SKIP events,
@@ -257,22 +331,41 @@ def download_cache_dirs(issue_n: int, data_root: Path | None = None) -> list[Pat
     """Re-downloadable cache directories to delete for ``issue_n``.
 
     The union of ``CACHE_DIR_GLOBS`` matches across every per-issue data dir
-    (both naming conventions, repo-root AND worktree copies). Only existing
-    directories are returned; ``store/`` and any non-cache content are never
+    (both naming conventions, repo-root AND worktree copies). Directories AND
+    symlinks are returned — a symlink is admitted even when DANGLING or
+    pointing at a file (``is_dir()`` follows the link and returns False for
+    both, which used to leave dangling relocation links invisible forever;
+    #915). ``store/`` and plain non-dir files named like a cache are never
     included.
     """
     out: list[Path] = []
     for issue_dir in issue_data_dirs(issue_n, data_root):
         for pattern in CACHE_DIR_GLOBS:
+            if "*" not in pattern:
+                # A literal name (hf_dl): Path.glob's precise selector calls
+                # path.exists(), which FOLLOWS a symlink — a DANGLING
+                # literal-name link would stay invisible forever. Probe the
+                # candidate directly with non-following checks instead.
+                # (The wildcard selector below scandir-lists entries, so it
+                # DOES yield dangling g*_dl links.)
+                cand = issue_dir / pattern
+                if cand.is_dir() or cand.is_symlink():
+                    out.append(cand)
+                continue
             for match in sorted(issue_dir.glob(pattern)):
-                if match.is_dir():
+                if match.is_dir() or match.is_symlink():
                     out.append(match)
     return out
 
 
 def _dir_size_bytes(path: Path) -> int:
     """Recursive on-disk size of ``path`` in bytes (best-effort; a stat error
-    on a single entry is skipped, never raised — sizing is reporting only)."""
+    on a single entry is skipped, never raised — sizing is reporting only).
+
+    Follows ``path`` itself when it is a symlink-to-dir (``rglob`` traverses
+    through a top-level link), so a relocated cache's size reflects the
+    data-disk bytes a managed reap frees (#915); symlinks INSIDE the tree
+    are still excluded. A dangling link or a link-to-file sizes to 0."""
     total = 0
     for p in path.rglob("*"):
         try:
@@ -583,6 +676,19 @@ class CleanResult:
     # logged. These are NOT failures — they are a safe fail-toward-keep.
     skipped: list[tuple[str, str]] = field(default_factory=list)
     sizes_bytes: dict[str, int] = field(default_factory=dict)
+    # rel -> fully-resolved symlink target ("" for a dangling link); populated
+    # in BOTH modes (dry-run + apply) whenever the reap loop takes the symlink
+    # branch — direct-link AND symlinked-parent cases (#915). A cache SKIPped
+    # by an earlier gate never reaches the branch, so it is not recorded here.
+    symlink_targets: dict[str, str] = field(default_factory=dict)
+    # (rel, resolved_target): the target is NOT ours to reap — KEPT (external /
+    # foreign-issue / non-cache-shaped). Direct-link case: the link itself is
+    # (would be) unlinked. Symlinked-parent case: NOTHING is unlinked (the
+    # parent link is shared); the sidecar row distinguishes the two via its
+    # "via" field ("link" | "parent"). Deliberately NOT in ``removed`` (so
+    # ``bytes_freed`` never overstates); still in ``sizes_bytes`` (so
+    # ``total_discovered_bytes`` — the escalation sizing — sees the footprint).
+    symlink_external_kept: list[tuple[str, str]] = field(default_factory=list)
 
     @property
     def bytes_freed(self) -> int:
@@ -631,6 +737,21 @@ def clean_issue_downloads(
       2. The nested-``store/`` parity gate (#679): never wholesale-rmtree a
          cache dir holding a mis-rooted ``store/`` not verifiably mirrored on HF.
 
+    Symlinked caches (#915): a cache dir that is itself a symlink, or whose
+    ``issue_<N>`` PARENT dir is a symlink, routes through symlink-disposition
+    logic instead of a plain ``rmtree`` (which refuses symlinks). The resolved
+    target is reaped only when :func:`_managed_symlink_target` positively
+    identifies it as the issue's relocated cache on the managed data disk
+    (strictly inside ``data_disk_root()``, names the owning issue, a directory
+    whose basename equals the cache name); otherwise the target is KEPT and
+    recorded in ``CleanResult.symlink_external_kept`` + the sidecar (a direct
+    link is unlinked; a shared parent link is never unlinked, and nothing is
+    deleted through it). Dangling links are unlinked. Managed reaps delete the
+    target BEFORE the link (crash safety: a surviving link is re-discovered
+    and retried on the next run). Both gates above run FIRST, unchanged —
+    gate 1 is issue-number-keyed and path-independent; gate 2's ``rglob``
+    traverses THROUGH the symlink into the target.
+
     ``_skip_active_consumer_guard`` (private, keyword-only, defaulted False) opts
     out of gate 1, skipping the ``tasks/`` walk entirely. It is a TEST SEAM only
     — no production caller passes it. In particular
@@ -670,6 +791,75 @@ def clean_issue_downloads(
         if skip_reason is not None:
             print(f"  ~ SKIP {rel}: {skip_reason}", file=sys.stderr)
             res.skipped.append((rel, skip_reason))
+            continue
+        # Symlink disposition (#915): a cache relocated onto the managed data
+        # disk is reachable through an in-tree link at either of the two
+        # components below the data root — the cache dir itself
+        # (data/issue_<N>/hf_dl -> /mnt/eps-data/.../issue_<N>/hf_dl) or a
+        # symlinked PARENT issue dir. shutil.rmtree refuses a symlink by
+        # design, so both route through disposition logic instead. A data
+        # root that is ITSELF a symlink is a deliberate wholesale relocation
+        # and stays on the plain path below.
+        parent_linked = (not cache_dir.is_symlink()) and cache_dir.parent.is_symlink()
+        if cache_dir.is_symlink() or parent_linked:
+            target = _managed_symlink_target(cache_dir, issue_n)
+            resolved = Path(os.path.realpath(cache_dir))
+            dangling = not cache_dir.exists()  # exists() follows links
+            res.symlink_targets[rel] = "" if dangling else str(resolved)
+            if target is None and not dangling:
+                # External / foreign-issue / non-cache-shaped target: KEPT
+                # (fail-toward-keep), sidecar-escalated for a human read.
+                res.symlink_external_kept.append((rel, str(resolved)))
+                note = (
+                    f"symlink parent kept (nothing unlinked); external target kept: {resolved}"
+                    if parent_linked
+                    else f"symlink unlinked; external target kept: {resolved}"
+                )
+                print(
+                    f"  ~ {'' if apply else '[report-only] would: '}{note}",
+                    file=sys.stderr,
+                )
+                append_disk_guard_event(
+                    {
+                        "kind": "symlink-external-target-kept",
+                        "task": issue_n,
+                        "path": rel,
+                        "target": str(resolved),
+                        "via": "parent" if parent_linked else "link",
+                    },
+                    apply=apply,
+                )
+                if apply and not parent_linked:
+                    # Direct link: the pointer goes; the target stays. A
+                    # shared PARENT link is never unlinked (sibling caches +
+                    # non-cache entries resolve through it).
+                    try:
+                        cache_dir.unlink()
+                    except OSError as exc:
+                        print(f"  ! FAILED to remove {rel}: {exc}", file=sys.stderr)
+                        res.failed.append(rel)
+                continue
+            if not apply:
+                res.removed.append(rel)  # would-remove (managed or dangling)
+                continue
+            try:
+                if target is not None:
+                    # Managed data-disk reap (the tier-b "reap on EITHER
+                    # disk" contract). Target FIRST, link second: if this
+                    # rmtree fails midway the link survives, so the next run
+                    # re-discovers and retries; unlinking first would orphan
+                    # a half-deleted target no janitor could ever find again.
+                    # _managed_symlink_target guarantees target is a dir.
+                    shutil.rmtree(target)
+                if not parent_linked:
+                    # The boot-disk link itself (direct case; also the
+                    # dangling-link unlink). Never the shared parent link.
+                    cache_dir.unlink()
+            except OSError as exc:
+                print(f"  ! FAILED to remove {rel}: {exc}", file=sys.stderr)
+                res.failed.append(rel)
+                continue
+            res.removed.append(rel)
             continue
         if not apply:
             res.removed.append(rel)  # would-remove (dry-run)
@@ -776,15 +966,19 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"clean_experiment_downloads {mode}issue {args.issue}: {verb} "
         f"{len(res.removed)} cache dir(s), {_fmt_gb(res.bytes_freed)} | "
-        f"skipped {len(res.skipped)} | failed {len(res.failed)}"
+        f"skipped {len(res.skipped)} | "
+        f"external-kept {len(res.symlink_external_kept)} | failed {len(res.failed)}"
     )
     for name in res.removed:
         print(f"  - {verb}: {name} [{_fmt_gb(res.sizes_bytes.get(name, 0))}]")
     for name, reason in res.skipped:
         print(f"  ~ SKIP (kept): {name} — {reason}")
+    for name, tgt in res.symlink_external_kept:
+        kept_verb = "kept" if args.apply else "would keep"
+        print(f"  ~ {kept_verb} external symlink target: {name} -> {tgt}")
     for name in res.failed:
         print(f"  ! FAILED: {name}")
-    if not res.removed and not res.failed and not res.skipped:
+    if not res.removed and not res.failed and not res.skipped and not res.symlink_external_kept:
         print("  (no download caches found — nothing to do)")
     return 2 if res.failed else 0
 
