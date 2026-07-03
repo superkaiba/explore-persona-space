@@ -51,6 +51,8 @@ else
   export EPS_SMOKE=""
 fi
 SENTINEL="$SENTINEL_DIR/issue-825-epm_results-$(date +%s).json"
+EPS_T0="$(date +%s)"  # wall-clock start: sentinel reports MEASURED gpu-hours (review-r1 Minor)
+export EPS_T0
 
 # Credentials at script level (never bare load_dotenv() inside a stdin heredoc — gotcha).
 if [[ -f .env ]]; then set -a; source .env; set +a; fi
@@ -194,10 +196,14 @@ for m in $MODELS; do
 done
 
 echo "[phase=fit]"
+# --no-internal-gates (MF-C): fit RECORDS gate values (g3_gate.json) + defers
+# per-cell crashes to fit_failures.json; every binding gate is evaluated ONLY
+# in this wrapper's post-UPLOAD-2 gate phase (upload-then-exit on failure).
 uv run python scripts/issue825_fit_cells.py --turnstore-dir "$TS_DIR" --out-dir "$OUT_DIR" \
   --cells "$CELLS8" --mlp-cells "$USER4" \
   --cell-row-allowlist "$ONP_DIR/row_allowlists.json" \
-  --null-draws "$NULLS" --folds "$FOLDS" --n-boot "$NBOOT" --seed 0
+  --null-draws "$NULLS" --folds "$FOLDS" --n-boot "$NBOOT" --seed 0 \
+  --no-internal-gates
 
 echo "[phase=matched_parent]"
 # Hard-req 8 (conditional): any headline cell with n_cell < 1900 -> refit the
@@ -213,7 +219,7 @@ onp = Path(os.environ["EPS_ONP_DIR"])
 floor = int(os.environ["EPS_MATCHED_SUBSET_FLOOR"])
 allow = json.loads((onp / "row_allowlists.json").read_text())
 affected = sorted(c for c, ids in allow.items() if len(ids) < floor)
-if os.environ.get("EPS_SMOKE"):
+if os.environ.get("EPS_SMOKE") == "1":
     # numeric floor is meaningless at smoke n; exercise the branch on ONE cell
     affected = affected[:1]
 (onp / "matched_parent_allowlists.json").write_text(
@@ -271,7 +277,8 @@ PY
   uv run python scripts/issue825_fit_cells.py --turnstore-dir "$PARENT_TS" \
     --out-dir "$OUT_DIR/matched_parent" --cells "$AFFECTED" --mlp-cells "$AFFECTED" \
     --cell-row-allowlist "$ONP_DIR/matched_parent_allowlists.json" \
-    --null-draws "$NULLS" --folds "$FOLDS" --n-boot "$NBOOT" --seed 0
+    --null-draws "$NULLS" --folds "$FOLDS" --n-boot "$NBOOT" --seed 0 \
+    --no-internal-gates
 else
   echo "matched_parent: no cell below floor $MATCHED_SUBSET_FLOOR; branch not triggered"
 fi
@@ -348,7 +355,7 @@ from pathlib import Path
 onp = Path(os.environ["EPS_ONP_DIR"])
 ts = Path(os.environ["EPS_TS_DIR"])
 out = Path(os.environ["EPS_OUT_DIR"])
-smoke = bool(os.environ.get("EPS_SMOKE"))
+smoke = os.environ.get("EPS_SMOKE") == "1"
 sentinel = Path(os.environ["EPS_SENTINEL"])
 cells8 = os.environ["EPS_CELLS8"].split(",")
 user4 = os.environ["EPS_USER4"].split(",")
@@ -388,6 +395,23 @@ def _l19(payload: dict):
     entry = table.get("19")
     return float(entry["r2_obs"]) if entry else None
 
+
+# Deferred fit failures (--no-internal-gates, MF-C): any per-cell/secondary
+# crash the fit phase deferred is a binding post-upload HALT here (structural,
+# binds in smoke too). fit_failures.json itself already rode UPLOAD-2b, and
+# the full tracebacks are in the fit-phase log.
+print("gate armed: deferred-fit-failures")
+ff = out / "fit_failures.json"
+if ff.exists():
+    outcomes["deferred_fit_failures"] = json.loads(ff.read_text())
+    print(f"deferred fit failures (fit_failures.json): {outcomes['deferred_fit_failures']}")
+    fail(
+        "fit_deferred_failure",
+        f"{len(outcomes['deferred_fit_failures'])} fit-phase failure(s) were deferred "
+        "past UPLOAD-2 (see fit_failures.json + the [phase=fit] log tracebacks)",
+    )
+outcomes["gates"]["deferred_fit_failures"] = "PASS"
+print("gate: deferred-fit-failures PASS (none recorded)")
 
 # ── gate: anchor conv_id row/fold parity (MF-A) ────────────────────────────
 print("gate armed: anchor-rowset-parity")
@@ -459,6 +483,34 @@ else:
     outcomes["gates"]["anchor_ridge_tolerance"] = {"result": "PASS", "deltas": deltas}
     print("gate: anchor-ridge-tolerance PASS " + json.dumps({k: round(v["delta"], 4) for k, v in deltas.items()}))
 
+# ── gate: G3 sanity (computed in-fit, evaluated HERE post-upload — MF-C) ───
+# fit_cells ran with --no-internal-gates, so its in-process SystemExit(3) is
+# disabled; g3_gate.json carries the recorded verdict and THIS is the single
+# binding evaluation point (upload-then-exit on failure).
+g3p = out / "g3_gate.json"
+if smoke:
+    print("gate armed: g3-sanity (BYPASSED under EPS_SMOKE; presence still binds)")
+    if not g3p.exists():
+        fail("g3_gate_miss", f"g3_gate.json missing at {g3p} (fit never recorded G3)")
+    outcomes["gates"]["g3_sanity"] = "BYPASSED_SMOKE_PRESENCE_ONLY"
+else:
+    print("gate armed: g3-sanity")
+    if not g3p.exists():
+        fail("g3_gate_miss", f"g3_gate.json missing at {g3p} (fit never recorded G3)")
+    g3 = json.loads(g3p.read_text())
+    if not g3.get("pass"):
+        fail(
+            "g3_gate_miss",
+            "G3 sanity gate FAILED (M_instruct_assistant_chat does not beat its "
+            f"selection-inherited null): obs_layer_max_r2={g3.get('obs_layer_max_r2')} "
+            f"vs null layer-max per draw {g3.get('null_layer_max_r2_per_draw')}",
+        )
+    outcomes["gates"]["g3_sanity"] = {
+        "result": "PASS",
+        "obs_layer_max_r2": g3.get("obs_layer_max_r2"),
+    }
+print("gate: g3-sanity " + str(outcomes["gates"]["g3_sanity"]))
+
 # ── gate: wiring check (own-vs-shuffled NLL, MF-B) ─────────────────────────
 if smoke:
     print("gate armed: wiring-check (numeric margin BYPASSED under EPS_SMOKE; presence still binds)")
@@ -471,6 +523,9 @@ for m in ("instruct", "pretrained"):
         fail("wiring_check_fail", f"missing wiring-check output {wp}")
     wiring_all[m] = json.loads(wp.read_text())
 if not smoke:
+    # Evaluate ALL cells first, print every mean, THEN halt once — hard-req 2's
+    # "diagnosable in one pass" read (review-r1 Minor: no first-cell short-circuit).
+    bad_cells = []
     for m, w in wiring_all.items():
         for fmt, blk in (w.get("per_format") or {}).items():
             own, shuf = blk.get("own_mean_nll"), blk.get("shuffled_mean_nll")
@@ -490,11 +545,13 @@ if not smoke:
                 print(f"wiring-check FAIL detail {m}/{fmt}: shuf_values={blk.get('shuffled_nll_values')}")
                 for s in blk.get("samples", []):
                     print(f"wiring-check sample {m}/{fmt} conv={s['conv_id']}: {s['u2_excerpt']}")
-                fail(
-                    "wiring_check_fail",
-                    f"{m}/{fmt}: own={own} shuffled={shuf} — own>=shuffled, missing "
-                    f"reads, or blow-up (> {2 * HAIKU_BAND_CEIL})",
-                )
+                bad_cells.append(f"{m}/{fmt}: own={own} shuffled={shuf}")
+    if bad_cells:
+        fail(
+            "wiring_check_fail",
+            "own>=shuffled, missing reads, or blow-up "
+            f"(> {2 * HAIKU_BAND_CEIL}) in: " + "; ".join(bad_cells),
+        )
 outcomes["gates"]["wiring_check"] = "PASS" if not smoke else "BYPASSED_SMOKE_PRESENCE_ONLY"
 print("gate: wiring-check " + str(outcomes["gates"]["wiring_check"]))
 
@@ -572,7 +629,8 @@ sent.write_text(
                 "hf_hub_url": f"https://huggingface.co/datasets/{repo}/tree/main/{prefix}",
                 "worktree_path": os.environ["EPS_WORKTREE"],
                 "final_commit_sha": os.environ["EPS_GIT_SHA"],
-                "gpu_hours_used": 3.0,
+                "gpu_hours_used": round((time.time() - float(os.environ["EPS_T0"])) / 3600.0, 3),
+                "gpu_hours_used_basis": "measured wrapper wall-clock (single-GPU provision)",
                 "gpu_hours_budgeted": 3.0,
                 "plan_deviations": [],
             },

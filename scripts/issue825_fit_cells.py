@@ -1280,28 +1280,71 @@ def _eps_smoke() -> bool:
     the pipeline runs REAL turnstore data end-to-end at tiny n, so the
     synthetic-turnstore ``--smoke`` flag is NOT set — but numeric gates are
     still meaningless at tiny n and must be bypassed (gate JSONs still
-    written; structural asserts unaffected)."""
-    return bool(os.environ.get("EPS_SMOKE"))
+    written; structural asserts unaffected). Strict "1" comparison: an
+    exported EPS_SMOKE=0 / EPS_SMOKE="" is production (review-r1 Minor)."""
+    return os.environ.get("EPS_SMOKE") == "1"
+
+
+def _record_fit_failure(out_dir: Path, cell_id: str, exc: BaseException) -> None:
+    """Append a per-cell fit failure to fit_failures.json (--no-internal-gates).
+
+    Fail-loud-deferred (plan MF-C): the traceback is printed to stderr and the
+    failure is persisted; the CALLING wrapper's post-UPLOAD-2 coverage gate
+    HALTs on the missing cells_<cell_id>.json — never a pre-upload crash.
+    """
+    import traceback
+
+    traceback.print_exc()
+    print(
+        f"[fit_cells] DEFER-FAIL cell={cell_id}: {type(exc).__name__}: {exc} — "
+        "recorded to fit_failures.json; the wrapper's post-UPLOAD-2 coverage "
+        "gate will HALT on the missing cell output (plan MF-C)",
+        file=sys.stderr,
+    )
+    path = out_dir / "fit_failures.json"
+    failures = json.loads(path.read_text()) if path.exists() else []
+    failures.append(
+        {
+            "cell_id": cell_id,
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(failures, indent=2) + "\n")
 
 
 def _apply_gates(cell: dict, res: dict, args) -> None:
     """Plan section 7 gate checks for the S1 anchor (G1) and the G3 cell.
 
-    Writes gate JSONs; HALTs with distinct exit codes on a production
-    failure (smoke exempt — --smoke OR EPS_SMOKE=1).
+    Writes gate JSONs always. HALTs with distinct exit codes on a production
+    failure UNLESS gating is deferred: smoke (--smoke OR EPS_SMOKE=1) or
+    --no-internal-gates (onpolicy-user-turn wrapper, plan MF-C: gate values
+    are RECORDED here but every binding gate is evaluated ONLY in the
+    wrapper's post-UPLOAD-2 gate block, so a gate miss can never strand
+    un-uploaded artifacts).
     """
+    halt_live = (
+        not args.smoke and not _eps_smoke() and not getattr(args, "no_internal_gates", False)
+    )
     if cell["cell_id"] == "S1":
         run_power_curve(res["xy"], args.out_dir, n_folds=args.folds, seed=args.seed)
         g1 = g1_gate(
             res["sweep"]["r2_obs"], args.out_dir, seed=args.seed, n=len(res["xy"]["conv_ids"])
         )
-        if not g1["pass"] and not args.smoke and not _eps_smoke():
+        if not g1["pass"]:
+            if halt_live:
+                print(
+                    "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
+                    "HALT per plan section 7",
+                    file=sys.stderr,
+                )
+                raise SystemExit(2)
             print(
-                "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
-                "HALT per plan section 7",
-                file=sys.stderr,
+                "[fit_cells] G1 gate value FAILED — recorded to g1_gate.json; halt "
+                "DEFERRED (--no-internal-gates / smoke): wrapper evaluates post-upload"
             )
-            raise SystemExit(2)
     if cell["cell_id"] == "M_instruct_assistant_chat":
         summ = res["summary"]
         g3_pass = bool(summ["obs_layer_max_r2"] > max(summ["null_layer_max_r2_per_draw"]))
@@ -1314,14 +1357,83 @@ def _apply_gates(cell: dict, res: dict, args) -> None:
                 "pass": g3_pass,
             },
         )
-        if not g3_pass and not args.smoke and not _eps_smoke():
+        if not g3_pass:
+            if halt_live:
+                print(
+                    "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
+                    "does not beat its selection-inherited null; HALT per plan "
+                    "section 7 before interpreting user cells",
+                    file=sys.stderr,
+                )
+                raise SystemExit(3)
             print(
-                "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
-                "does not beat its selection-inherited null; HALT per plan "
-                "section 7 before interpreting user cells",
-                file=sys.stderr,
+                "[fit_cells] G3 gate value FAILED — recorded to g3_gate.json; halt "
+                "DEFERRED (--no-internal-gates / smoke): wrapper evaluates post-upload"
             )
-            raise SystemExit(3)
+
+
+def _fit_within_cells(within: list[dict], allowlist_map: dict | None, args) -> dict[str, dict]:
+    """Run every within-role cell; returns cell_id -> run_cell result.
+
+    Under --no-internal-gates (plan MF-C) a per-cell crash (e.g. a
+    catastrophically degenerate <2-row allowlist, review-r1 Minor) must not
+    kill the fit phase BEFORE the wrapper's UPLOAD-2 — it is recorded
+    fail-loud to fit_failures.json and the loop continues; the wrapper's
+    post-upload gates HALT on the missing outputs / recorded failures.
+    Without the flag, legacy behavior: the crash propagates.
+    """
+    results: dict[str, dict] = {}
+    for cell in within:
+        cell_allow = (allowlist_map or {}).get(cell["cell_id"])
+        try:
+            res = run_cell(
+                cell,
+                args.turnstore_dir,
+                args.out_dir,
+                n_folds=args.folds,
+                seed=args.seed,
+                null_draws=args.null_draws,
+                n_boot=args.n_boot,
+                allowlist=cell_allow,
+            )
+        except FileNotFoundError as e:
+            if (
+                not args.smoke
+                and args.cells == "all"
+                and cell["cell_id"] in ("S1", "M_instruct_assistant_chat")
+            ):
+                # Gate cells (G1 anchor / G3 sanity) may never silently skip
+                # in a production full run — that would bypass the plan §7
+                # halts entirely (round-2 review hardening).
+                print(
+                    f"[fit_cells] FATAL: gate cell {cell['cell_id']} bundle missing: {e}",
+                    file=sys.stderr,
+                )
+                raise SystemExit(4) from e
+            print(f"[fit_cells] SKIP {cell['cell_id']}: {e}")
+            continue
+        except Exception as e:
+            if not getattr(args, "no_internal_gates", False):
+                raise
+            _record_fit_failure(args.out_dir, cell["cell_id"], e)
+            continue
+        results[cell["cell_id"]] = res
+        _apply_gates(cell, res, args)
+        if cell.get("format_key") == "chat":
+            try:
+                run_per_position(
+                    cell,
+                    args.turnstore_dir,
+                    args.out_dir,
+                    n_folds=args.folds,
+                    seed=args.seed,
+                    allowlist=cell_allow,
+                )
+            except Exception as e:
+                if not args.no_internal_gates:
+                    raise
+                _record_fit_failure(args.out_dir, f"{cell['cell_id']}__perposition", e)
+    return results
 
 
 def main() -> int:
@@ -1347,6 +1459,17 @@ def main() -> int:
         ),
     )
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--no-internal-gates",
+        action="store_true",
+        help=(
+            "record gate values (g1_gate.json / g3_gate.json) but never HALT in-process, "
+            "and defer per-cell fit crashes to fit_failures.json — the calling wrapper "
+            "evaluates every binding gate AFTER its uploads (onpolicy-user-turn, plan "
+            "MF-C: every FAILURE path is upload-then-exit). Absent => byte-identical "
+            "legacy behavior (in-process HALTs live)."
+        ),
+    )
     args = parser.parse_args()
 
     allowlist_map: dict[str, list] | None = None
@@ -1383,47 +1506,7 @@ def main() -> int:
         within = [c for c in within if c["cell_id"] in wanted]
         cross = [c for c in cross if c["cell_id"] in wanted]
 
-    results: dict[str, dict] = {}
-    for cell in within:
-        cell_allow = (allowlist_map or {}).get(cell["cell_id"])
-        try:
-            res = run_cell(
-                cell,
-                args.turnstore_dir,
-                args.out_dir,
-                n_folds=args.folds,
-                seed=args.seed,
-                null_draws=args.null_draws,
-                n_boot=args.n_boot,
-                allowlist=cell_allow,
-            )
-        except FileNotFoundError as e:
-            if (
-                not args.smoke
-                and args.cells == "all"
-                and cell["cell_id"] in ("S1", "M_instruct_assistant_chat")
-            ):
-                # Gate cells (G1 anchor / G3 sanity) may never silently skip
-                # in a production full run — that would bypass the plan §7
-                # halts entirely (round-2 review hardening).
-                print(
-                    f"[fit_cells] FATAL: gate cell {cell['cell_id']} bundle missing: {e}",
-                    file=sys.stderr,
-                )
-                raise SystemExit(4) from e
-            print(f"[fit_cells] SKIP {cell['cell_id']}: {e}")
-            continue
-        results[cell["cell_id"]] = res
-        _apply_gates(cell, res, args)
-        if cell.get("format_key") == "chat":
-            run_per_position(
-                cell,
-                args.turnstore_dir,
-                args.out_dir,
-                n_folds=args.folds,
-                seed=args.seed,
-                allowlist=cell_allow,
-            )
+    results = _fit_within_cells(within, allowlist_map, args)
 
     for cell in cross:
         try:
@@ -1440,13 +1523,23 @@ def main() -> int:
             print(f"[fit_cells] SKIP cross {cell['cell_id']}: {e}")
 
     if results:
-        run_nll_reads(results, args.out_dir, seed=args.seed)
+        try:
+            run_nll_reads(results, args.out_dir, seed=args.seed)
+        except Exception as e:
+            if not args.no_internal_gates:
+                raise
+            _record_fit_failure(args.out_dir, "__nll_reads__", e)
         mlp_wanted = set(args.mlp_cells.split(","))
         for cid, res in results.items():
             if cid in mlp_wanted and not args.smoke:
-                run_mlp_secondary(
-                    res, args.out_dir, cell_id=cid, n_folds=args.folds, seed=args.seed
-                )
+                try:
+                    run_mlp_secondary(
+                        res, args.out_dir, cell_id=cid, n_folds=args.folds, seed=args.seed
+                    )
+                except Exception as e:
+                    if not args.no_internal_gates:
+                        raise
+                    _record_fit_failure(args.out_dir, f"{cid}__mlp", e)
     print("[fit_cells] done")
     return 0
 

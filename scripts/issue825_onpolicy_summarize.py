@@ -135,8 +135,32 @@ def _nll_diagnostics(onp: Path) -> dict:
     return diag
 
 
+def _parent_trcov(parent: dict | None, matched_parent: dict | None, model: str, fmt: str) -> dict:
+    """Parent tr(cov) sourced UNCONDITIONALLY (review-r1 CONCERN
+    parent-trcov-conditional-only): committed parent eval JSONs first (key
+    absent as of the parent runs — added by this round's fit extension), then
+    the matched-parent refit; else an EXPLICIT null + the post-hoc recipe —
+    never a silently absent key."""
+    trcov = (parent or {}).get("y_trace_cov_frozen")
+    source = "parent committed eval JSON" if trcov is not None else None
+    if trcov is None and matched_parent is not None:
+        trcov = matched_parent.get("y_trace_cov_frozen")
+        if trcov is not None:
+            source = "matched-parent refit (this run)"
+    if trcov is None:
+        source = (
+            "unavailable pod-side without staging ~17 GB of parent m-track shards; "
+            "post-hoc recipe: stage superkaiba1/explore-persona-space-data "
+            f"issue825_userbase_map/analysis_tensors/{model}_{fmt}_m_shard*.{{pt,json}} "
+            "@ deb7a4523b5233393e4fbd2497622527b3622d35 and refit the cell with "
+            "scripts/issue825_fit_cells.py (writes y_trace_cov_frozen), or compute "
+            "tr(cov) of the v(u2) turn-profile rows at the frozen layers directly"
+        )
+    return {"parent_y_trace_cov_frozen": trcov, "parent_trcov_source": source}
+
+
 def summarize(args) -> dict:
-    smoke = bool(os.environ.get("EPS_SMOKE"))
+    smoke = os.environ.get("EPS_SMOKE") == "1"
     out_dir: Path = args.out_dir
     onp: Path = args.onpolicy_dir
     anchor_deltas = _anchor_deltas(out_dir, args.parent_cells_dir)
@@ -154,6 +178,20 @@ def summarize(args) -> dict:
         if fresh is None:
             cells[cid] = {"missing": True}
             continue
+
+        # ── degeneracy audit FIRST (review-r1 BLOCKER audit-floors-not-binding-
+        # headline): audit_pass must gate the headline label + support reads
+        # below, so an audit-failing cell (plan hard-req 3 / the audit-gated
+        # pretrained/chat cell, plan line 42) can never enter support_summary.
+        keep_rate = meta.get("keep_rate")
+        d3g = meta.get("distinct_3gram_rate_kept")
+        audit_pass = (
+            keep_rate is not None
+            and d3g is not None
+            and keep_rate >= KEEP_RATE_FLOOR
+            and d3g >= DISTINCT_3GRAM_FLOOR
+        )
+        headline_eligible = bool(audit_pass) if not smoke else None
 
         ftab, ptab = _frozen_table(fresh), _frozen_table(parent) if parent else {}
         ridge = {
@@ -222,35 +260,36 @@ def summarize(args) -> dict:
             or (ridge_d26 is not None and ridge_d26 < -RIDGE_MARGIN)
         )
         if mlp_label == "supported" or ridge_supported:
-            cell_label = "supported"
+            cell_label_pre_audit = "supported"
         elif mlp_label == "suggestive":
-            cell_label = "suggestive"
+            cell_label_pre_audit = "suggestive"
         elif prov_negative:
-            cell_label = "provenance-sensitive-negative"
+            cell_label_pre_audit = "provenance-sensitive-negative"
         elif kill_consistent:
-            cell_label = "kill-consistent"
+            cell_label_pre_audit = "kill-consistent"
         else:
-            cell_label = "indeterminate"
-        if cell_label == "supported":
-            lanes = [
-                lane
-                for lane, ok in (("mlp", mlp_label == "supported"), ("ridge", ridge_supported))
-                if ok
-            ]
-            support_summary["supported"].append({"cell": cid, "lanes": lanes})
-        elif cell_label == "suggestive":
-            support_summary["suggestive"].append({"cell": cid, "lanes": ["mlp"]})
-        elif cell_label == "provenance-sensitive-negative":
-            support_summary["provenance_sensitive_negative"].append({"cell": cid})
+            cell_label_pre_audit = "indeterminate"
+        # Headline label + support reads gated on audit_pass (production;
+        # smoke bypasses floors per MF-D). An audit-FAILing cell is reported
+        # "degenerate-provenance — observational" (plan line 42) and EXCLUDED
+        # from support_summary on EVERY lane — incl. any_frozen_r2_positive,
+        # the mechanically-inflatable lane under low target diversity.
+        if smoke or audit_pass:
+            cell_label = cell_label_pre_audit
+            if cell_label == "supported":
+                lanes = [
+                    lane
+                    for lane, ok in (("mlp", mlp_label == "supported"), ("ridge", ridge_supported))
+                    if ok
+                ]
+                support_summary["supported"].append({"cell": cid, "lanes": lanes})
+            elif cell_label == "suggestive":
+                support_summary["suggestive"].append({"cell": cid, "lanes": ["mlp"]})
+            elif cell_label == "provenance-sensitive-negative":
+                support_summary["provenance_sensitive_negative"].append({"cell": cid})
+        else:
+            cell_label = "degenerate-provenance — observational"
 
-        keep_rate = meta.get("keep_rate")
-        d3g = meta.get("distinct_3gram_rate_kept")
-        audit_pass = (
-            keep_rate is not None
-            and d3g is not None
-            and keep_rate >= KEEP_RATE_FLOOR
-            and d3g >= DISTINCT_3GRAM_FLOOR
-        )
         matched_parent = _load(args.matched_parent_dir / f"cells_{cid}.json")
         cells[cid] = {
             "n_cell": fresh.get("n_allowlist") or fresh.get("metadata", {}).get("n"),
@@ -272,6 +311,7 @@ def summarize(args) -> dict:
             "ridge_supported": ridge_supported,
             "kill_consistent": kill_consistent,
             "cell_label": cell_label,
+            "cell_label_pre_audit": cell_label_pre_audit,
             "audit": {
                 "keep_rate": keep_rate,
                 "keep_rate_floor": KEEP_RATE_FLOOR,
@@ -284,19 +324,14 @@ def summarize(args) -> dict:
                 "role_artifact_rate": meta.get("role_artifact_rate"),
                 "u2_length_kept": meta.get("u2_length_kept"),
                 "parent_u2_length": (meta.get("parent_reference") or {}).get("u2_length"),
-                "headline_eligible": bool(audit_pass) if not smoke else None,
+                "headline_eligible": headline_eligible,
                 "floors_bypassed_smoke": smoke,
+                "label_downgraded_to_observational": (not smoke) and not audit_pass,
             },
             "nll_diagnostics": nll_diag.get(cid),
             "diversity_tr_cov": {
                 "fresh_y_trace_cov_frozen": fresh.get("y_trace_cov_frozen"),
-                "parent_y_trace_cov_frozen": (matched_parent or {}).get("y_trace_cov_frozen"),
-                "parent_note": (
-                    None
-                    if matched_parent
-                    else "parent turnstore not staged (matched-subset branch not "
-                    "triggered); parent tr(cov) unavailable this round"
-                ),
+                **_parent_trcov(parent, matched_parent, model, fmt),
             },
             "matched_parent_refit": (
                 {
@@ -333,7 +368,11 @@ def summarize(args) -> dict:
                 "ridge_delta_L26": ((cells[cid].get("ridge") or {}).get("deltas_vs_parent") or {})
                 .get("26", {})
                 .get("delta"),
+                # An audit-failing cell stays IN the table (never dropped) but
+                # flagged: cell_label reads "degenerate-provenance —
+                # observational" and headline_eligible is False.
                 "cell_label": cells[cid].get("cell_label"),
+                "headline_eligible": (cells[cid].get("audit") or {}).get("headline_eligible"),
             }
             for cid in USER_CELLS
             if not cells.get(cid, {}).get("missing")

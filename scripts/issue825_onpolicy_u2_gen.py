@@ -526,7 +526,27 @@ def run_wiring_check(args) -> None:
         rows = _load_input_conversations(args.out_dir / f"conversations_{model_key}_{fmt}.jsonl")
         allow = {str(c) for c in allow_map[f"M_{model_key}_user_{fmt}"]}
         rows = [r for r in rows if str(r["conv_id"]) in allow]
-        assert len(rows) >= 2, f"wiring check needs >=2 allowlisted rows for {model_key}/{fmt}"
+        if len(rows) < 2:
+            # A catastrophically degenerate cell (<2 allowlisted rows) must not
+            # crash the wiring phase BEFORE the wrapper's UPLOAD-2 (plan MF-C):
+            # record explicit nulls; the wrapper's POST-upload wiring gate reads
+            # own_mean_nll=None as a gross failure and HALTs upload-then-exit.
+            print(
+                f"[wiring] DEGENERATE {model_key}/{fmt}: {len(rows)} allowlisted rows "
+                "(<2) — NLL not computable; recorded null reads for the post-upload gate"
+            )
+            result["per_format"][fmt] = {
+                "cell_id": f"M_{model_key}_user_{fmt}",
+                "n": len(rows),
+                "own_mean_nll": None,
+                "shuffled_mean_nll": None,
+                "own_minus_shuffled": None,
+                "own_nll_values": [],
+                "shuffled_nll_values": [],
+                "samples": [],
+                "degenerate": "fewer than 2 allowlisted rows — wiring NLL not computable",
+            }
+            continue
         rng = np.random.default_rng(U2_SEED)
         take = min(args.wiring_rows, len(rows))
         idx = rng.choice(len(rows), size=take, replace=False)
