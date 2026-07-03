@@ -505,14 +505,17 @@ def load_store(store_dir: Path, corpus: str) -> dict:
     shards = sorted(d.glob("shard_*.pt"))
     assert shards, f"no shards under {d}"
     blocks = None
+    window = None
     metas: dict[int, dict] = {}
     npos_by_ci: dict[int, int] = {}
     for sp in shards:  # pass A: metadata only, h dropped shard-by-shard
         blob = torch.load(sp, weights_only=False)
         if blocks is None:
             blocks = blob["blocks"]
+            window = blob.get("window")  # {"wp", "wa"} — part of the fit regime
         else:
             assert blocks == blob["blocks"], (sp, blocks, blob["blocks"])
+            assert window == blob.get("window"), (sp, window, blob.get("window"))
         for ci, rec in blob["contexts"].items():
             npos_by_ci[int(ci)] = int(rec["h"].shape[0])
             metas[int(ci)] = {k: v for k, v in rec.items() if k != "h"}
@@ -539,6 +542,7 @@ def load_store(store_dir: Path, corpus: str) -> dict:
     return {
         "h": h,
         "blocks": blocks,
+        "window": window,
         "ctx_ids": ctx_ids,
         "pos_lo": pos_lo,
         "n_pos": n_pos,

@@ -31,6 +31,7 @@ Writes each phase's JSON the moment the phase completes (checkpoint-per-phase):
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 import time
@@ -133,7 +134,18 @@ def _gather_X(h, row, idx, arm):
 
 
 def _boot_mean_ci(vals: np.ndarray, n_boot: int = 1000, seed: int = 0) -> dict:
-    """Percentile bootstrap CI of the mean over contexts (vectorized gather)."""
+    """Percentile bootstrap CI of the mean over contexts (vectorized gather).
+
+    Estimand equivalence (the plan-v6 H6/H7 pin): for a MEAN statistic,
+    bootstrapping the per-context paired-delta vector here is algebraically
+    identical to the parent ``bootstrap_delta_ci``'s resample-then-difference
+    — the mean is linear, so under the SAME index draw
+    ``mean(a[idx] − b[idx]) == mean(a[idx]) − mean(b[idx])`` — with the same
+    resample unit (context), ``seed=0`` (``C.BOOTSTRAP_SEED``),
+    ``n_boot=1000 ≥ 997``, and the same 2.5/97.5 percentile interval. The
+    parent helper is still used verbatim where its unit axis applies (DV3,
+    ``readout_phase``); this helper carries the H6/H7 per-context reads.
+    """
     vals = np.asarray(vals, dtype=np.float64)
     n = len(vals)
     if n == 0:
@@ -492,12 +504,29 @@ def conditioned_phase(store, ridge, cond_blob, maps_dir, split, tr, args, device
         }
         out["rank"] = cond_blob.get("rank")
         out["n_mix"] = cond_blob.get("n_mix")
+    # Panel footnote (r2 review minor): arm-c and the boundary fits share the
+    # ans_len >= 1 context panel — SEG_BOUNDARY is only tagged when A > 0, so
+    # empty-answer contexts contribute no boundary/answer transitions and drop
+    # from BOTH. Surfacing the empty-answer count makes the panel composition
+    # auditable from this JSON alone.
+    n_empty_capture = None
+    summary_p = args.store / "lmsys" / "capture_summary.json"
+    if summary_p.exists():
+        with open(summary_p) as f:
+            n_empty_capture = json.load(f).get("empty_answers")
+    out["panel"] = {
+        "note": (
+            "arm-c and the boundary fits share the ans_len>=1 context panel "
+            "(SEG_BOUNDARY is only tagged when ans_len>0); empty-answer "
+            "contexts drop from both."
+        ),
+        "empty_answers_store": int((store["ans_len"] == 0).sum()),
+        "empty_answers_capture_summary": n_empty_capture,
+    }
     dd = maps_dir / "direct_diag.json"
     if dd.exists():
-        import json as _json
-
         with open(dd) as f:
-            blob = _json.load(f)
+            blob = json.load(f)
         out["direct_diag"] = blob.get("diag_by_block")
         out["coherence_direct_vs_boundary"] = blob.get("coherence")
     return out
@@ -667,7 +696,14 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
             if merged is None:
                 merged = sc
             else:
-                for key in ("pooled_r2_id", "mean_cosine", "skill_mean_ci", "per_ctx_skill"):
+                for key in (
+                    "pooled_r2_id",
+                    "mean_cosine",
+                    "skill_mean_ci",
+                    "per_ctx_skill",
+                    "per_ctx_sse",
+                    "per_ctx_den",
+                ):
                     merged[key].update(sc[key])
             del dr, states
         if merged is not None:
@@ -708,6 +744,8 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
                 k_max,
                 device,
             )
+            for key in ("per_ctx_sse", "per_ctx_den"):  # exploratory overlay — keep JSON lean
+                gru_curves[C.row_to_block_key(r)].pop(key, None)
 
     # paired reads: roll − mean_drift per-context skill delta at each (row, k).
     paired = {}
@@ -741,8 +779,34 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
                 np.array(scored[name_b]["per_ctx_skill"][bk]), C.READOUT_K_MAX
             )
             m = np.isfinite(hm_a) & np.isfinite(hm_b)
-            out[bk] = _boot_mean_ci(hm_a[m] - hm_b[m], n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED)
-            out[bk]["excludes_zero"] = bool(out[bk]["lo"] > 0.0 or out[bk]["hi"] < 0.0)
+            res = _boot_mean_ci(hm_a[m] - hm_b[m], n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED)
+            res["excludes_zero"] = bool(res["lo"] > 0.0 or res["hi"] < 0.0)
+            # v6 item (2), H7 side: pooled-recompute sensitivity companion +
+            # the PRE-clamp denominator quantiles (the registered near-zero-
+            # tail read; a floor/trim rule fires only if this tail shows one).
+            # skill_a − skill_b = (sse_b − sse_a) / den at each (ctx, k), so
+            # pooling replaces the per-context mean with the ratio of sums per
+            # k, then averages over valid horizons k ≤ READOUT_K_MAX (the same
+            # k-aggregation as the per-context horizon-mean). The denominator
+            # is variant-independent (see _score_variant), so name_a's is used.
+            sse_a = np.array(scored[name_a]["per_ctx_sse"][bk])[:, : C.READOUT_K_MAX]
+            sse_b = np.array(scored[name_b]["per_ctx_sse"][bk])[:, : C.READOUT_K_MAX]
+            den = np.array(scored[name_a]["per_ctx_den"][bk])[:, : C.READOUT_K_MAX]
+            mk = np.isfinite(sse_a) & np.isfinite(sse_b)  # (ctx, k) scored on BOTH sides
+            num_k = (np.where(mk, sse_b, 0.0) - np.where(mk, sse_a, 0.0)).sum(axis=0)
+            den_k = np.where(mk, den, 0.0).sum(axis=0)
+            kvalid = mk.any(axis=0) & (den_k > 0)
+            res["pooled_recompute_delta"] = (
+                float(np.mean(num_k[kvalid] / den_k[kvalid])) if kvalid.any() else float("nan")
+            )
+            dvals = den[mk]
+            res["den_quantiles_preclamp"] = (
+                {q: float(np.quantile(dvals, float(q))) for q in ("0.0", "0.05", "0.5")}
+                if dvals.size
+                else None
+            )
+            res["den_frac_below_clamp"] = float(np.mean(dvals < 1e-6)) if dvals.size else None
+            out[bk] = res
         return out
 
     h7 = {}
@@ -764,18 +828,37 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
             h6_roll[f"{other}_minus_b1_grad"] = _paired_hm(f"{other}_roll", "b1_grad_roll")
 
     if out_npz is not None:
+        payload = {
+            f"skill__{name}__{bk}": np.asarray(v, dtype=np.float32)
+            for name, sc in scored.items()
+            for bk, v in sc["per_ctx_skill"].items()
+        }
+        # v6 item (2): per-(ctx, k) SSE per variant + the variant-independent
+        # PRE-clamp denominator per block persist beside the skill vectors.
+        payload.update(
+            {
+                f"sse__{name}__{bk}": np.asarray(v, dtype=np.float32)
+                for name, sc in scored.items()
+                for bk, v in sc["per_ctx_sse"].items()
+            }
+        )
+        den_by_bk: dict[str, list] = {}
+        for sc in scored.values():
+            for bk, v in sc["per_ctx_den"].items():
+                den_by_bk.setdefault(bk, v)
+        payload.update(
+            {f"den__{bk}": np.asarray(v, dtype=np.float32) for bk, v in den_by_bk.items()}
+        )
         np.savez(
             out_npz,
-            **{
-                f"skill__{name}__{bk}": np.asarray(v, dtype=np.float32)
-                for name, sc in scored.items()
-                for bk, v in sc["per_ctx_skill"].items()
-            },
+            **payload,
             ctx_ids=np.array([store["ctx_ids"][i] for i in ctxs]),
             kcap=kcap,
         )
     for sc in scored.values():
         sc.pop("per_ctx_skill", None)
+        sc.pop("per_ctx_sse", None)
+        sc.pop("per_ctx_den", None)
     return {
         "corpus": corpus,
         "n_ctx": len(ctxs),
@@ -792,9 +875,22 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
 
 
 def _score_variant(states, h, rows, ctxs, Tpos, kcap, k_max, device) -> dict:
-    """Per (row, k): pooled r2_id, mean cosine, per-ctx skill + CI vs frozen(=0)."""
+    """Per (row, k): pooled r2_id, mean cosine, per-ctx skill + CI vs frozen(=0).
+
+    v6 item (2), H7/rollout side: per-(context, k) SSE and PRE-clamp
+    identity-denominator contributions are returned alongside the skill
+    vectors (``per_ctx_sse`` / ``per_ctx_den``; the caller persists them to
+    the per-context npz and derives the pooled-recompute sensitivity
+    companion + the denominator near-zero-tail read in ``_paired_hm``). The
+    1e-6 clamp stays on the skill ratio itself; the persisted denominators
+    are pre-clamp. The denominator ‖h_{T+k} − h_T‖² depends only on
+    (context, k, row) — never on the variant's predictions — so it is
+    identical across variants at a shared row.
+    """
     Tpos_t = torch.tensor(np.asarray(Tpos))
     per_ctx = {C.row_to_block_key(r): np.full((len(ctxs), k_max), np.nan) for r in rows}
+    per_sse = {C.row_to_block_key(r): np.full((len(ctxs), k_max), np.nan) for r in rows}
+    per_den = {C.row_to_block_key(r): np.full((len(ctxs), k_max), np.nan) for r in rows}
     pooled = {C.row_to_block_key(r): [] for r in rows}
     cosm = {C.row_to_block_key(r): [] for r in rows}
     ci = {C.row_to_block_key(r): [] for r in rows}
@@ -815,13 +911,18 @@ def _score_variant(states, h, rows, ctxs, Tpos, kcap, k_max, device) -> dict:
         pred = states[k - 1][:, valid_dev, :]
         base = seed_states[:, valid_dev, :]
         num = ((pred - truth) ** 2).sum(-1)  # (L, n_valid)
-        den = ((truth - base) ** 2).sum(-1).clamp(min=1e-6)
+        den_raw = ((truth - base) ** 2).sum(-1)  # PRE-clamp (persisted)
+        den = den_raw.clamp(min=1e-6)
         skill = (1.0 - num / den).cpu().numpy()
+        num_np = num.cpu().numpy()
+        den_np = den_raw.cpu().numpy()
         cos = torch.nn.functional.cosine_similarity(pred, truth, dim=-1).cpu().numpy()
         vidx = np.nonzero(valid.numpy())[0]
         for li, r in enumerate(rows):
             bk = C.row_to_block_key(r)
             per_ctx[bk][vidx, k - 1] = skill[li]
+            per_sse[bk][vidx, k - 1] = num_np[li]
+            per_den[bk][vidx, k - 1] = den_np[li]
             pooled[bk].append(float(1.0 - num[li].sum().item() / den[li].sum().item()))
             cosm[bk].append(float(cos[li].mean()))
             ci[bk].append(_boot_mean_ci(skill[li], seed=C.BOOTSTRAP_SEED))
@@ -830,6 +931,8 @@ def _score_variant(states, h, rows, ctxs, Tpos, kcap, k_max, device) -> dict:
         "mean_cosine": cosm,
         "skill_mean_ci": ci,
         "per_ctx_skill": {bk: v.tolist() for bk, v in per_ctx.items()},
+        "per_ctx_sse": {bk: v.tolist() for bk, v in per_sse.items()},
+        "per_ctx_den": {bk: v.tolist() for bk, v in per_den.items()},
         "n_valid_per_k": [int((np.asarray(kcap) >= k).sum()) for k in range(1, k_max + 1)],
     }
 

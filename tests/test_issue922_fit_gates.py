@@ -14,6 +14,10 @@ Pins the three permanent invariants the r1 code-review blockers added
    path must be recaptured, never silently reused.
 3. B4 (Codex MAJOR): --blocks 'emb,...' must resolve the EMBEDDING row 0 into
    the fitted row set (the layer-0 anchor was silently dropped in r1).
+4. B2 (Claude MAJOR, pinned r3): DV3 ``restricted_panel`` recomputes the
+   rolled/frozen (+ v6 mode) companions on the SAME captured-subset unit
+   panel as the true-answer ceiling — never carries full-panel numbers into
+   the cross-panel HERO-3 comparison.
 
 Plus pytest wrappers over the --verify-fits equivalence gates (r1 review
 Minor: nothing in CI exercised the new src/ library gates).
@@ -138,6 +142,75 @@ def test_blocks_parse_includes_emb_row0():
         27,
     ]
     assert resolve_conditioned_rows("emb,20", [0, 21]) == [0, 21]
+
+
+# ── B2: restricted_panel recomputes companions on the SAME unit panel ─────────
+
+
+def test_restricted_panel_same_panel_companions():
+    """The captured-subset companions are SAME-panel reads (the r1 B2 fix).
+
+    Builds a 16-unit DV3 matrix (4 conditions x 4 questions) whose eval store
+    only captures questions {0, 1, 2} (12 overlap units). The companion vector
+    is crafted so the restricted panel gives a perfect within-condition r
+    (= 1.0) while the FULL panel does not — so a regression that carries
+    full-panel numbers into ``restricted_panel``'s output flips the assert.
+    """
+    from types import SimpleNamespace
+
+    from issue922_eval import method_metrics, restricted_panel
+
+    n_pos, prompt_len, hidden = 6, 3, 16
+    cond_ids = ["c0_sys", "c1_sys", "c0_ms", "c1_ms"]
+    mode_of = {"c0_sys": "system", "c1_sys": "system", "c0_ms": "many_shot", "c1_ms": "many_shot"}
+    # eval store: qi {0,1,2} captured per condition (12 contexts)
+    meta = {}
+    ii = 0
+    for cid in cond_ids:
+        for qi in (0, 1, 2):
+            meta[ii] = {"trait": "evil", "cond_id": cid, "qi": qi}
+            ii += 1
+    n_ev = ii
+    g = torch.Generator().manual_seed(0)
+    es = {
+        "meta": meta,
+        "ctx_ids": list(range(n_ev)),
+        "h": torch.randn(2, n_ev * n_pos, hidden, generator=g),  # row 1 = block 0
+        "pos_lo": np.arange(n_ev) * n_pos,
+        "prompt_len": np.full(n_ev, prompt_len),
+        "window_start": np.zeros(n_ev, dtype=int),
+        "n_pos": np.full(n_ev, n_pos),
+    }
+    # DV3 matrix: 4 questions per condition; qi=3 exists ONLY in the matrix
+    y, cond, mode, qis = [], [], [], []
+    vec = []
+    for ci_i, cid in enumerate(cond_ids):
+        y.extend([0.0, 2.0, 4.0, 6.0])  # per-condition y std >= 1 (the PV floor)
+        # perfect within-condition r on qi {0,1,2}; qi=3 wrecks the full panel
+        vec.extend([0.0, 1.0, 2.0, -50.0])
+        cond.extend([ci_i] * 4)
+        mode.extend([mode_of[cid]] * 4)
+        qis.extend([0, 1, 2, 3])
+    mat = {
+        "y": np.array(y),
+        "cond": np.array(cond),
+        "mode": np.array(mode, dtype=object),
+        "qi": np.array(qis),
+        "cond_ids": cond_ids,
+    }
+    vec = np.array(vec)
+    r_b = np.random.default_rng(0).standard_normal((1, hidden))
+    args = SimpleNamespace(n_boot=50, readout_block_override=0)
+    res = restricted_panel("evil", mat, r_b, es, args, reads_vectors={"rolled_horizon_mean": vec})
+    assert res["n_units"] == 12 and res["block"] == 0
+    assert res["n_with_answer_window"] == 12
+    assert "true_answer_ceiling_horizon_mean" in res
+    for m in ("system", "many_shot"):
+        # SAME-panel read: qi {0,1,2} only -> perfect per-condition correlation
+        assert np.isclose(res["rolled_horizon_mean"][m]["point"], 1.0), res["rolled_horizon_mean"]
+        # the full-panel number is far from 1.0 — carrying it over would fail above
+        full = method_metrics(vec, mat, n_boot=50, seed=0)
+        assert abs(full[m]["point"] - 1.0) > 0.5, full
 
 
 # ── the --verify-fits equivalence gates, CI-pinned (r1 review Minor) ──────────

@@ -153,7 +153,7 @@ def hero3(dv3, fig_dir):
     traits = [t for t, v in dv3.get("traits", {}).items() if "primary" in v and "skipped" not in v]
     if not traits:
         return
-    pal = paper_palette(5)
+    pal = paper_palette(8)  # r2 review minor: 3 distinct v6-mode colors (were all pal[4])
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), squeeze=False)
     for mi, mode in enumerate(("system", "many_shot")):
         ax = axes[0][mi]
@@ -164,14 +164,19 @@ def hero3(dv3, fig_dir):
                 ("frozen", pr.get("frozen", {}), pal[0]),
                 ("rolled (hm)", pr.get("horizon_mean", {}), pal[1]),
             ]
-            # v6 modes (plan HERO-3): rolled-b1 / rolled-b2 (FiLM) / direct-c
-            for name, key in [
-                ("rolled b1", "rolled_b1_ridge"),
-                ("rolled b2 (FiLM)", "rolled_film"),
-                ("direct-c", "direct_c"),
-            ]:
+            # v6 modes (plan HERO-3): rolled-b1 / rolled-b2 (FiLM) / direct-c —
+            # one distinct color per mode (they are distinct series in the bars)
+            for (name, key), color in zip(
+                [
+                    ("rolled b1", "rolled_b1_ridge"),
+                    ("rolled b2 (FiLM)", "rolled_film"),
+                    ("direct-c", "direct_c"),
+                ],
+                (pal[4], pal[5], pal[6]),
+                strict=True,
+            ):
                 if key in pr:
-                    series.append((name, pr[key].get("horizon_mean", {}), pal[4]))
+                    series.append((name, pr[key].get("horizon_mean", {}), color))
             for name, met, color in series:
                 m = met.get(mode, {})
                 labels.append(f"{t}\n{name}")

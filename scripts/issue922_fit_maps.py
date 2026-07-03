@@ -588,11 +588,18 @@ def main() -> int:  # noqa: C901 — the phase sequence IS the fit spec (grams/r
             [int(pos_lo[i]) + int(plen[i]) - 1 - int(ws[i]) for i in fit_ctx], dtype=torch.long
         )
         kcap = np.array([int(ws[i]) + int(n_pos[i]) - int(plen[i]) for i in fit_ctx])
+        win = store.get("window") or {}
         regime = {
             "k_max": k_max,
             "n_fit_ctx": len(fit_ctx),
             "split_seed": args.split_seed,
             "n_store_ctx": n_ctx,
+            # r2 review minor: the capture window is output-affecting (T_pos /
+            # kcap derive from prompt_len / window_start under (wp, wa)), so it
+            # is part of the resume key — a direct_row fitted from a different-
+            # window store refits instead of silently reusing.
+            "wp": win.get("wp"),
+            "wa": win.get("wa"),
         }
         vb = tr["val"]["boundary"]
         coherence: dict = {}
