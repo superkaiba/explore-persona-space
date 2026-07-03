@@ -362,13 +362,12 @@ def aggregate_and_figures(  # noqa: C901 — one linear figure pipeline
             "Input-OOD delta (R2 − R1) per family pair",
         ),
     ):
-        fig, ax = plt.subplots(figsize=(14, 7))
+        fig, ax = plt.subplots(figsize=(14, 7), layout="constrained")
         im = ax.imshow(grid, aspect="auto", cmap="viridis")
         ax.set_xticks(range(len(ans_fams)), ans_fams, rotation=90, fontsize=6)
         ax.set_yticks(range(len(ctx_fams)), ctx_fams, fontsize=6)
         ax.set_title(title, fontsize=10)
         fig.colorbar(im, ax=ax)
-        fig.tight_layout()
         fig.savefig(fig_dir / f"{tag}.png", dpi=200)
         plt.close(fig)
 
