@@ -5752,8 +5752,8 @@
     "882": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/882",
-      "status": "running",
+      "path": "tasks/reviewing/882",
+      "status": "reviewing",
       "title": "workflow-fix: judge caches must key on rubric+question+completion (llm-judging.md)"
     },
     "883": {
