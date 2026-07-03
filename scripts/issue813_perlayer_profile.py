@@ -87,14 +87,18 @@ HEADLINE_LAYER = 14  # frozen headline (#651/#658/#813); the equivalence anchor
 N_LAYERS = 28
 HIDDEN = 3584
 
-# Equivalence-gate tolerance at L14 vs the committed delta_floor JSON. The floor
-# denominator is an SD/percentile over ``make_refit_pair``, whose per-bootstrap-sample
-# ``_pca_basis_v0`` SVD introduces ~1e-5-relative non-determinism on near-degenerate
-# singular values (the Delta_med NUMERATOR is a deterministic median). Empirically the
-# recompute matches the committed headline to ~5 sig figs (em/generic: 5.11882 vs
-# 5.11858, ~4.7e-5 rel). A 0.5% relative tolerance absorbs that SVD/bootstrap jitter
-# while a real code divergence (≫1%) still FAILs the gate loud.
-EQ_RTOL = 5e-3
+# Equivalence-gate tolerance at L14 vs the committed delta_floor JSON. The recompute
+# refits the maps via the same ``fit_cell`` path, whose ``_pca_basis_v0`` SVD is
+# run-to-run / backend non-deterministic on near-degenerate singular values, and the
+# truncated PCA-48 basis feeds BOTH the Delta_med numerator and the refit floor.
+# Measured on the full 12/12 recompute (VM CPU vs the committed pod run): delta_med and
+# delta_over_floor shift TOGETHER while the floor is stable to ~6e-5 — em/generic
+# 5.11882 vs 5.11858 (~4.7e-5 rel), em/mix ~0.71% rel, fact/generic ~1.25% rel (the
+# observed max; both delta_med and the ratio shift by the same factor). A 2% relative
+# tolerance absorbs that basis/backend jitter while a real code divergence (wrong r_hat
+# or wrong layer slice, ≫10%) still FAILs the gate loud. The verdict thresholds this
+# profile annotates differ by ≥30%, so ≤1.3% recompute drift is decision-irrelevant.
+EQ_RTOL = 2e-2
 EQ_ATOL = 1e-6
 
 
