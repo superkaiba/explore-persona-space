@@ -5310,7 +5310,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/823",
       "status": "interpreting",
-      "title": "Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)"
+      "title": "The context\u2192answer-profile activation map reads answer-content match, not self-generation: plain-style external answers retain 91\u201398% of refit R\u00b2 while shuffled answers collapse it to \u22480 (MODERATE confidence)"
     },
     "824": {
       "has_clean_result": false,

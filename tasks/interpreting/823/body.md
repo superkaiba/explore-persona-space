@@ -1,6 +1,7 @@
 ---
-title: 'Does the per-context map h predict the model''s own output or context-side
-  processing? (external-answer refit, #779 substrate)'
+title: 'The context→answer-profile activation map reads answer-content match, not
+  self-generation: plain-style external answers retain 91–98% of refit R² while shuffled
+  answers collapse it to ≈0 (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-07-01T23:41:29Z'
