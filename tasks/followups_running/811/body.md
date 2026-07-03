@@ -1,7 +1,7 @@
 ---
-title: 'The taught-fact function-change call at the primary layer holds under the
-  max-pool answer summary: the turn-boundary read, not the mean, is the outlier (MODERATE
-  confidence)'
+title: 'The taught-fact raw function-change call at the primary layer holds under
+  the max-pool answer summary: the turn-boundary read, not the mean, is the outlier
+  (MODERATE confidence)'
 kind: experiment
 tags:
 - answer-summary-sweep
