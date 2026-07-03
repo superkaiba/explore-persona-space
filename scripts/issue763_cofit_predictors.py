@@ -74,10 +74,14 @@ from issue763_common import (  # noqa: E402
     HF_DATA_REPO,
     PV_DIRECTIONS_V2_DIR,
     SEED,
+    assert_pool_floor,
+    assert_production_direction_shape,
     dump_json,
+    ensure_smoke_scope,
     load_json,
     reproducibility_metadata,
     sha256_file,
+    smoke_scoped,
 )
 from issue763_fit_predictors import _e0_vectors, _load_v0  # noqa: E402
 
@@ -143,7 +147,10 @@ REANCHOR_DIR = EVAL_RESULTS_DIR / "deception-rubric-reanchor"
 PARENT_RESULTS_PATH = REANCHOR_DIR / "matched_predictor_results.json"
 E0_PARENT_PATH = EVAL_RESULTS_DIR / "E0_matched_by_behavior.json"
 E0_DECEPTION_V2_PATH = REANCHOR_DIR / "E0_deception_v2.json"
-PV_SHARD_DIR = EVAL_RESULTS_DIR / "pv_shards"
+# smoke_scoped: the dispatcher smoke's Phase-1 prereq WRITES a tiny mock rb
+# shard here — under the scope env it lands in smoke_scope/, never clobbering
+# the real committed shards (review r1 C1(iii)).
+PV_SHARD_DIR = smoke_scoped(EVAL_RESULTS_DIR / "pv_shards")
 
 # Ridge positive-control bands (plan §4.2: ±0.12 soft, ±0.25 hard fail-loud).
 PARENT_CHECK_SOFT = 0.12
@@ -158,13 +165,37 @@ def _stage_round_inputs(behaviors: list[str]) -> None:
 
     v0 shards stage lazily via ``_load_v0``; E0 + rb shards via the parent's
     ``_stage_fit_inputs_from_hf``; the round's own pv_directions_v2 + c0 shards
-    (produced by Phases A/B) stage here from the round's HF prefixes.
+    (produced by Phases A/B) stage here from the round's HF prefixes. The
+    ``write_inputs_manifest`` frozen-input pins (pv_rollouts + pv_judge_v2 —
+    gitignored ``data/`` paths a fresh eval-lane clone lacks) stage here too
+    (review r1 C2), then get validated against the ABSOLUTE plan-registered
+    pool size so a stale mock at a canonical path can never be sha256-pinned
+    into ``inputs_manifest.json`` as a "frozen input" (review r1 C1(iii)).
     """
     from huggingface_hub import hf_hub_download
     from huggingface_hub.utils import EntryNotFoundError
+    from issue763_extract_pv_rb import (
+        PV_JUDGE_V2_DIR,
+        PV_POOL_EXPECTED,
+        PV_ROLLOUT_DIR,
+        _read_rollouts_jsonl,
+        _stage_from_hf,
+    )
     from issue763_fit_predictors import _stage_fit_inputs_from_hf
 
     _stage_fit_inputs_from_hf(behaviors, stage_e0=True)
+    _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
+    _stage_from_hf("pv_judge_v2", PV_JUDGE_V2_DIR, behaviors, suffix="json")
+    for b in behaviors:
+        rows = _read_rollouts_jsonl(PV_ROLLOUT_DIR / f"{b}.jsonl")
+        assert_pool_floor(len(rows), PV_POOL_EXPECTED, f"{b}: pv_rollouts (manifest input)")
+        flags = load_json(PV_JUDGE_V2_DIR / f"{b}.json")["keep_flags"]
+        if len(flags) != len(rows):
+            raise RuntimeError(
+                f"{b}: pv_judge_v2 keep_flags ({len(flags)}) != pv_rollouts rows "
+                f"({len(rows)}) — the keep-flags were judged on a DIFFERENT rollout "
+                "pool (stale smoke residue?); purge + re-stage from HF"
+            )
 
     def _fetch(local: Path, filename: str, what: str) -> None:
         if local.exists():
@@ -384,6 +415,24 @@ def _pooled_rho_excluding(preds: np.ndarray, y: np.ndarray, mask_keep: np.ndarra
 # ── per-behavior driver ───────────────────────────────────────────────────────
 
 
+def _behavior_config_key(behavior: str, args) -> dict:
+    """The per-behavior resume/checkpoint key — regime knobs + INPUT identity.
+
+    The input sha256s (direction blob + c0 shard) make the resume predicate
+    input-AWARE: a Group-C re-dispatch after a Phase-A/B fix must refit, never
+    silently reuse fits keyed only on {n_perms, n_boot, k_random, smoke}
+    (review r1 Minor; the #722-r3 resume-regime-key class).
+    """
+    return {
+        "n_perms": args.n_perms,
+        "n_boot": args.n_boot,
+        "k_random": args.k_random,
+        "smoke": bool(args.smoke),
+        "directions_sha256": sha256_file(Path(args.dirs_dir) / f"{behavior}.pt"),
+        "c0_sha256": sha256_file(Path(args.c0_dir) / f"c0_{behavior}.pt"),
+    }
+
+
 def fit_behavior_cofit(behavior: str, args, fam_by_ctx: dict[str, str]) -> dict:
     """One behavior's full co-fit record (checkpointed to fit_by_behavior/)."""
     v0, ctx_ids = _load_v0(behavior)
@@ -422,6 +471,12 @@ def fit_behavior_cofit(behavior: str, args, fam_by_ctx: dict[str, str]) -> dict:
             else dir_blob["r_neutral"].float().numpy().astype(np.float64)
         ),
     }
+    if not args.smoke:
+        # ABSOLUTE production-dim validation (review r1 C1(iii)): a staged
+        # direction with tiny-smoke-model dims must fail loud BEFORE fitting.
+        for name, arr in directions.items():
+            if arr is not None:
+                assert_production_direction_shape(arr.shape, f"{behavior}: direction {name}")
     y = np.asarray(graded, dtype=np.float64)
 
     bat = run_behavior_battery(
@@ -448,6 +503,11 @@ def fit_behavior_cofit(behavior: str, args, fam_by_ctx: dict[str, str]) -> dict:
         "behavior": behavior,
         "n_contexts": n,
         "kept_context_ids": kept,
+        # per-context graded target + family — the pred-vs-actual scatter's axes
+        # (review r1 Minor: the low-level data plot needs the E0 axis + family
+        # coloring; persisting both keeps the plot script input-self-contained).
+        "graded_by_context": {c: float(v) for c, v in zip(kept, graded, strict=True)},
+        "family_by_context": {c: fam_by_ctx.get(c) for c in kept},
         "sqrt_r_yy_graded": sqrt_r_yy,
         "protocol": {
             "target": "graded E0 rank-transformed within training fold (UNWEIGHTED)",
@@ -624,12 +684,7 @@ def fit_behavior_cofit(behavior: str, args, fam_by_ctx: dict[str, str]) -> dict:
     else:
         rec["binary_companion_ridge"] = None
 
-    rec["config"] = {
-        "n_perms": args.n_perms,
-        "n_boot": args.n_boot,
-        "k_random": args.k_random,
-        "smoke": bool(args.smoke),
-    }
+    rec["config"] = _behavior_config_key(behavior, args)
     rec["metadata"] = reproducibility_metadata({"phase": "cofit_fit", "behavior": behavior})
     return rec
 
@@ -672,16 +727,25 @@ def run_nonlinear_block(behaviors: list[str], records: dict[str, dict], args) ->
 
         ridge = rec["methods"]["cofit_ridge"]
         krr = rec["methods"]["cofit_krr"]
-        if ridge.get("chosen_layer") is None or not ridge.get("preds_chosen_layer"):
-            # degenerate slice (all-NaN ridge read) — record and move on, never crash
-            cells[behavior] = {"skipped": "ridge produced no valid layer read"}
-            logger.warning("[nonlinear] %s: skipped (no valid ridge layer)", behavior)
+        if (
+            ridge.get("chosen_layer") is None
+            or not ridge.get("preds_chosen_layer")
+            or not krr.get("preds_chosen_layer")
+        ):
+            # degenerate slice (all-NaN ridge/KRR read) — record and move on,
+            # never crash (review r1 unaddressed-case: pk was unguarded)
+            cells[behavior] = {"skipped": "ridge or krr produced no valid layer read"}
+            logger.warning("[nonlinear] %s: skipped (no valid ridge/krr layer)", behavior)
             continue
         # (1) kernel-vs-linear paired sign-flip on the RANK scale, both methods at
         # their OWN chosen layers; per-context error vs the full-sample rank01(y).
         y_rank = rank01(y)
         pl = np.array([ridge["preds_chosen_layer"][c] for c in kept])
         pk = np.array([krr["preds_chosen_layer"][c] for c in kept])
+        if np.isnan(pl).any() or np.isnan(pk).any():
+            cells[behavior] = {"skipped": "NaN in chosen-layer predictions (ridge or krr)"}
+            logger.warning("[nonlinear] %s: skipped (NaN predictions)", behavior)
+            continue
         err_lin = (pl - y_rank) ** 2
         err_krr = (pk - y_rank) ** 2
         signflip = paired_signflip_test(
@@ -822,6 +886,9 @@ def main() -> int:
     ap.add_argument("--force", action="store_true", help="refit behaviors with a checkpoint")
     ap.add_argument("--num-threads", type=int, default=8)
     args = ap.parse_args()
+    # FIRST: --smoke re-execs with EPM_ISSUE763_SMOKE_SCOPE=1 (write paths
+    # rebind under smoke_scope/); the env WITHOUT --smoke fails loud.
+    ensure_smoke_scope(args.smoke)
     torch.set_num_threads(args.num_threads)
 
     if args.smoke:
@@ -857,12 +924,9 @@ def main() -> int:
         ckpt = ckpt_dir / f"{behavior}.json"
         if ckpt.exists() and not args.force:
             prior = load_json(ckpt)
-            if prior.get("config") == {
-                "n_perms": args.n_perms,
-                "n_boot": args.n_boot,
-                "k_random": args.k_random,
-                "smoke": bool(args.smoke),
-            }:
+            # input-aware resume: the key carries the direction/c0 sha256s, so a
+            # checkpoint fit on superseded Phase-A/B artifacts never resume-skips.
+            if prior.get("config") == _behavior_config_key(behavior, args):
                 logger.info("[cofit] %s: matching checkpoint found — resume-skip", behavior)
                 records[behavior] = prior
                 continue

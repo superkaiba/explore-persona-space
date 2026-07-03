@@ -55,6 +55,7 @@ from issue763_common import (  # noqa: E402
     NEUTRAL_ROLLOUT_DIR,
     NEUTRAL_ROLLOUT_MEANS_DIR,
     PV_DIRECTIONS_V2_DIR,
+    smoke_scope_active,
     write_sentinel,
 )
 
@@ -67,10 +68,17 @@ _PROGRESS_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
     ("neutral_rollout_means", NEUTRAL_ROLLOUT_MEANS_DIR, "*.pt"),
     ("arm_means", COFIT_DIR / "arm_means", "*.pt"),
     ("c0_shards", C0_SHARD_DIR, "*.pt"),
+    # The capture manifest carries the LOAD-BEARING parity record Phase B's
+    # assemble refuses to run without; the Phase-A instance is DELETED at the
+    # gate, so it MUST ride the progress pass (review r1 C1(i)).
+    ("cofit_manifests", COFIT_DIR, "capture_arm_means_manifest.json"),
 )
 _DIRECTIONS_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
     ("neutral_judge", NEUTRAL_JUDGE_DIR, "*.json"),
     ("pv_directions_v2", PV_DIRECTIONS_V2_DIR, "*.pt"),
+    # Plan-required §6.5 deliverable: Phase C stages it for the cos/yield
+    # panels + the final upload existence check (review r1 C2 / Codex C2).
+    ("cofit_manifests", COFIT_DIR, "neutral_arm_manifest.json"),
 )
 _FINAL_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
     ("cofit_null_matrices", COFIT_NULL_MATRIX_DIR, "*.pt"),
@@ -133,6 +141,14 @@ def main() -> int:
     ap.add_argument("--directions-only", action="store_true")
     ap.add_argument("--emit-gate", default=None)
     args = ap.parse_args()
+    if smoke_scope_active():
+        # Production-only script: under the smoke scope every path constant
+        # points at smoke_scope/ residue — uploading THAT to the production HF
+        # prefixes would be silent provenance corruption.
+        raise RuntimeError(
+            "issue763_cofit_upload must never run under EPM_ISSUE763_SMOKE_SCOPE=1 — "
+            "the smoke is upload-free by design (dispatcher logs uploads as LOG-ONLY)"
+        )
 
     if args.emit_gate:
         path = write_sentinel(
@@ -173,7 +189,11 @@ def main() -> int:
     results = COFIT_DIR / "cofit_results.json"
     nonlinear = COFIT_DIR / "nonlinear_tests.json"
     manifest = COFIT_DIR / "inputs_manifest.json"
-    missing = [str(p) for p in (results, nonlinear, manifest) if not p.exists()]
+    # neutral_arm_manifest is a plan-required §6.5 deliverable: the figures
+    # phase stages it from HF on a fresh Phase-C lane; its absence here means
+    # the Phase-B assembly (or its upload) never ran (review r1 C2).
+    neutral_arm = COFIT_DIR / "neutral_arm_manifest.json"
+    missing = [str(p) for p in (results, nonlinear, manifest, neutral_arm) if not p.exists()]
     if missing:
         raise RuntimeError(
             f"final upload: primary deliverables missing {missing} — the epm:results "

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -29,12 +30,59 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# ── smoke scoping (review r1 C1(iii): mock artifacts must NEVER land at
+# canonical production paths, where skip-if-exists staging silently consumes
+# them). When EPM_ISSUE763_SMOKE_SCOPE=1 every WRITE-target dir below relocates
+# under a sibling smoke_scope/ subtree (gitignored via **/smoke_scope/).
+# READ-only frozen inputs (probe pools, v0 shards, E0 records, reanchor
+# ceilings, the issue594 battery) stay canonical. The dispatcher exports the
+# env for --smoke; ensure_smoke_scope() re-execs any manual --smoke invocation
+# so the contract holds without the dispatcher too. ──────────────────────────
+SMOKE_SCOPE_ENV = "EPM_ISSUE763_SMOKE_SCOPE"
+
+
+def smoke_scope_active() -> bool:
+    """True iff the smoke-scope env is armed (dispatcher --smoke / re-exec)."""
+    return os.environ.get(SMOKE_SCOPE_ENV) == "1"
+
+
+def smoke_scoped(path: Path) -> Path:
+    """Redirect a WRITE-target path under a sibling smoke_scope/ dir when armed.
+
+    ``.../issue_763/pv_shards`` -> ``.../issue_763/smoke_scope/pv_shards``.
+    Identity when the env is not armed (production). Apply ONLY to paths the
+    smoke may WRITE — never to canonical read-only frozen inputs.
+    """
+    if smoke_scope_active():
+        return path.parent / "smoke_scope" / path.name
+    return path
+
+
+def ensure_smoke_scope(smoke: bool) -> None:
+    """Enforce the smoke-scope contract; call FIRST in every round main().
+
+    ``--smoke`` without the scope env RE-EXECS the process with
+    ``EPM_ISSUE763_SMOKE_SCOPE=1`` so the module-level path constants rebind
+    under smoke_scope/ (they bind at import, before argparse). The env WITHOUT
+    ``--smoke`` fails loud — a production phase must never write into (or read
+    from) the smoke scope.
+    """
+    if smoke and not smoke_scope_active():
+        os.environ[SMOKE_SCOPE_ENV] = "1"
+        os.execvpe(sys.executable, [sys.executable, *sys.argv], os.environ)
+    if smoke_scope_active() and not smoke:
+        raise RuntimeError(
+            f"{SMOKE_SCOPE_ENV}=1 is set but --smoke was not passed — unset the env "
+            "for production phases (the smoke scope is smoke-only)"
+        )
+
+
 DATA_DIR = PROJECT_ROOT / "data" / "issue_763"
-PROBE_POOL_DIR = DATA_DIR / "probe_pools"
-PV_ARTIFACT_DIR = DATA_DIR / "pv_artifacts"
+PROBE_POOL_DIR = DATA_DIR / "probe_pools"  # frozen READ input — never scoped
+PV_ARTIFACT_DIR = smoke_scoped(DATA_DIR / "pv_artifacts")
 GEN_DIR = DATA_DIR / "gen"  # on-policy completions per (C,B)
 EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_763"
-FIGURE_DIR = PROJECT_ROOT / "figures" / "issue_763"
+FIGURE_DIR = smoke_scoped(PROJECT_ROOT / "figures" / "issue_763")
 
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 EXPECTED_LAYERS = 28
@@ -112,9 +160,9 @@ EXPERIMENT_NAME = "issue763_matched_v0"  # for upload_raw_completions_to_data_re
 # neutral_rollout_means, c0_shards, pv_directions_v2, cofit_null_matrices}/ +
 # raw_completions/neutral_arm/ (HF) — plan §4.1 / §10.
 COFIT_ROUND = "neutral-contrast-and-cofit"
-COFIT_DIR = EVAL_RESULTS_DIR / COFIT_ROUND
-NEUTRAL_ROLLOUT_DIR = DATA_DIR / "neutral_rollouts"
-NEUTRAL_JUDGE_DIR = DATA_DIR / "neutral_judge"
+COFIT_DIR = smoke_scoped(EVAL_RESULTS_DIR / COFIT_ROUND)
+NEUTRAL_ROLLOUT_DIR = smoke_scoped(DATA_DIR / "neutral_rollouts")
+NEUTRAL_JUDGE_DIR = smoke_scoped(DATA_DIR / "neutral_judge")
 NEUTRAL_ROLLOUT_MEANS_DIR = COFIT_DIR / "neutral_rollout_means"
 PV_DIRECTIONS_V2_DIR = COFIT_DIR / "pv_directions_v2"
 C0_SHARD_DIR = COFIT_DIR / "c0_shards"
@@ -122,12 +170,49 @@ COFIT_NULL_MATRIX_DIR = COFIT_DIR / "cofit_null_matrices"
 # Neutral-arm generation budget (plan §11: 20 q × 50 rollouts = 1000/behavior,
 # matching the Phase-1 per-pole budget; temp 1.0 / max_new 256 inherited).
 N_NEUTRAL_ROLLOUTS_PER_QUESTION = 50
+# The plan-registered ABSOLUTE production pool size (20 extraction questions ×
+# 50 rollouts). Production consumers assert against this ABSOLUTE floor — the
+# keep-floor FRACTIONS below scale onto smoke slices by design, so a 4-row
+# mock pool at a canonical path would otherwise read branch "normal" and ship
+# an r_neutral built from ~2 rollouts with NO error (review r1 C1(iii)).
+NEUTRAL_POOL_EXPECTED = 20 * N_NEUTRAL_ROLLOUTS_PER_QUESTION
 # Neutral keep-floor (plan §4.1.2, pre-registered): expressed as FRACTIONS of the
 # realized rollout pool so the registered absolute values (250 / 25 at the
 # production n=1000) scale onto smoke slices. ≥ NORMAL ⇒ proceed;
 # [HARD, NORMAL) ⇒ proceed flagged pv_thin_sample; < HARD ⇒ r_neutral UNBUILDABLE.
 NEUTRAL_KEEP_FLOOR_NORMAL_FRAC = 0.25  # 250 / 1000
 NEUTRAL_KEEP_FLOOR_HARD_FRAC = 0.025  # 25 / 1000
+
+
+def assert_pool_floor(n_rows: int, expected: int, what: str) -> None:
+    """Fail-loud ABSOLUTE rollout-pool floor for PRODUCTION consumers.
+
+    Guards against a stale smoke/mock pool at a canonical path (skip-if-exists
+    staging would silently consume it) and against a truncated stage. Callers
+    gate on ``not smoke`` — smoke slices are legitimately tiny.
+    """
+    if n_rows < expected:
+        raise RuntimeError(
+            f"{what}: rollout pool has {n_rows} rows < the plan-registered {expected} — "
+            "smoke/mock residue at a canonical path, or a truncated stage? Purge the "
+            "local copy and re-stage from HF (review r1 C1(iii))"
+        )
+
+
+def assert_production_direction_shape(shape: tuple[int, ...], what: str) -> None:
+    """Fail-loud (EXPECTED_LAYERS, EXPECTED_HIDDEN) check for PRODUCTION tensors.
+
+    A direction / arm-mean tensor with tiny-smoke-model dims (e.g. (2, 8)) at a
+    canonical path is smoke residue, never a production artifact. Callers gate
+    on ``not smoke``.
+    """
+    if tuple(shape) != (EXPECTED_LAYERS, EXPECTED_HIDDEN):
+        raise RuntimeError(
+            f"{what}: expected production dims ({EXPECTED_LAYERS}, {EXPECTED_HIDDEN}), "
+            f"got {tuple(shape)} — smoke/mock residue at a canonical path? Purge and "
+            "re-stage from HF (review r1 C1(iii))"
+        )
+
 
 SENTINEL_SCHEMA_VERSION = 1
 SEED = 763

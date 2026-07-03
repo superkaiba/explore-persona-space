@@ -19,7 +19,10 @@ binary-companion ridge column vs graded.
 
 Reads ``eval_results/issue_763/neutral-contrast-and-cofit/{cofit_results.json,
 nonlinear_tests.json, neutral_arm_manifest.json}``. Tolerant of missing
-fields (an unbuildable pv_neutral plots as N/A). ``--smoke`` asserts ≥1 PNG.
+FIELDS (an unbuildable pv_neutral plots as N/A — nan, never a zero bar), but
+the plan-required ``neutral_arm_manifest.json`` is staged from HF when absent
+and FAIL-LOUD required after staging (never warn-and-skip). ``--smoke``
+asserts ≥1 PNG.
 
 Usage::
 
@@ -43,7 +46,14 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from issue763_common import BEHAVIORS, COFIT_DIR, FIGURE_DIR, load_json  # noqa: E402
+from issue763_common import (  # noqa: E402
+    BEHAVIORS,
+    COFIT_DIR,
+    FIGURE_DIR,
+    HF_ANALYSIS_TENSORS_PREFIX,
+    ensure_smoke_scope,
+    load_json,
+)
 
 logger = logging.getLogger("issue763_cofit_plot")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -156,30 +166,45 @@ def plot_layer_curves(results: dict, behaviors: list[str], out_path: Path) -> No
 
 
 def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> None:
-    """Low-level data plot: held-out prediction vs graded E0 per context (labeled)."""
+    """Low-level data plot: held-out prediction vs GRADED E0, colored by context family.
+
+    The Lens-11 pred-vs-actual read (review r1 Minor: the prior version plotted
+    prediction vs context INDEX with no E0 axis and no family coloring). x =
+    the frozen graded E0 target (0-100), y = the held-out LOCO prediction
+    (within-fold rank scale), one point per kept context (labeled), colored by
+    the context's battery family (``family_by_context`` persisted in the fit
+    record).
+    """
     show = ["cofit_ridge", "pv_rC", "pv_neutral"]
     n_b = len(behaviors)
-    fig, axes = plt.subplots(n_b, len(show), figsize=(3.2 * len(show), 2.8 * n_b), squeeze=False)
+    fig, axes = plt.subplots(n_b, len(show), figsize=(3.6 * len(show), 3.0 * n_b), squeeze=False)
     for bi, behavior in enumerate(behaviors):
         rec = results["by_behavior"][behavior]
+        kept = rec["kept_context_ids"]
+        graded = rec.get("graded_by_context") or {}
+        fams = rec.get("family_by_context") or {}
+        fam_names = sorted({str(fams.get(c)) for c in kept})
+        fam_color = dict(zip(fam_names, _palette(max(len(fam_names), 1)), strict=False))
         for si, m in enumerate(show):
             ax = axes[bi][si]
             v = rec["methods"].get(m, {})
             preds = v.get("preds_chosen_layer")
-            if not preds:
+            if not preds or not graded:
                 ax.text(0.5, 0.5, "N/A", ha="center", va="center")
                 ax.set_title(f"{behavior} — {m} (N/A)", fontsize=8)
                 continue
-            # graded E0 per kept context comes from the record's kept order
-            kept = rec["kept_context_ids"]
-            # ranks are on [0,1]; plot vs the context INDEX-ordered graded target
-            ys = [preds[c] for c in kept]
-            ax.scatter(range(len(kept)), ys, s=14)
-            for i, c in enumerate(kept):
-                ax.annotate(c[:10], (i, ys[i]), fontsize=4, alpha=0.7)
+            for fam in fam_names:
+                cs = [c for c in kept if str(fams.get(c)) == fam]
+                xs = [graded[c] for c in cs]
+                ys = [preds[c] for c in cs]
+                ax.scatter(xs, ys, s=14, color=fam_color[fam], label=fam, alpha=0.85)
+                for c, x, yv in zip(cs, xs, ys, strict=True):
+                    ax.annotate(c[:10], (x, yv), fontsize=4, alpha=0.7)
             ax.set_title(f"{behavior} — {m}", fontsize=8)
-            ax.set_xlabel("context (kept order)")
+            ax.set_xlabel("graded E0 (0-100)")
             ax.set_ylabel("held-out prediction (rank scale)")
+            if bi == 0 and si == 0:
+                ax.legend(fontsize=5, title="context family", title_fontsize=5)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -252,6 +277,15 @@ def plot_nonlinear_panels(nl: dict, behaviors: list[str], out_path: Path) -> Non
     plt.close(fig)
 
 
+def _nan_if_none(v) -> float:
+    """None -> np.nan so an unbuildable value renders as NO bar, never a zero bar.
+
+    Review r1 Minor: ``v.get(...) or 0.0`` coerced None (e.g. an unbuildable
+    pv_neutral) into a MISLEADING zero bar; matplotlib silently skips NaN bars.
+    """
+    return np.nan if v is None else float(v)
+
+
 def plot_h2_and_checks(results: dict, behaviors: list[str], out_path: Path) -> None:
     """Leave-default-family-out ρ bars + ridge-parent-check + binary companion."""
     fig, axes = plt.subplots(1, 3, figsize=(12, 3.2))
@@ -266,7 +300,9 @@ def plot_h2_and_checks(results: dict, behaviors: list[str], out_path: Path) -> N
         for b in behaviors:
             v = results["by_behavior"][b]["methods"].get(m, {})
             vals.append(
-                (v.get("rho") if tag == "full" else v.get("rho_leave_default_family_out")) or 0.0
+                _nan_if_none(
+                    v.get("rho") if tag == "full" else v.get("rho_leave_default_family_out")
+                )
             )
         ax.bar(x + (oi - 1.5) * w, vals, width=w, label=f"{m} ({tag})")
     ax.set_xticks(x)
@@ -276,7 +312,8 @@ def plot_h2_and_checks(results: dict, behaviors: list[str], out_path: Path) -> N
     # (b) ridge parent check
     ax = axes[1]
     deltas = [
-        results["by_behavior"][b]["ridge_parent_check"].get("delta") or 0.0 for b in behaviors
+        _nan_if_none(results["by_behavior"][b]["ridge_parent_check"].get("delta"))
+        for b in behaviors
     ]
     ax.bar(x, deltas, color=_palette(1)[0])
     ax.axhline(0.12, ls=":", color="gray")
@@ -289,10 +326,11 @@ def plot_h2_and_checks(results: dict, behaviors: list[str], out_path: Path) -> N
     # (c) binary companion vs graded ridge
     ax = axes[2]
     graded = [
-        results["by_behavior"][b]["methods"]["cofit_ridge"].get("rho") or 0.0 for b in behaviors
+        _nan_if_none(results["by_behavior"][b]["methods"]["cofit_ridge"].get("rho"))
+        for b in behaviors
     ]
     binary = [
-        (results["by_behavior"][b].get("binary_companion_ridge") or {}).get("rho") or 0.0
+        _nan_if_none((results["by_behavior"][b].get("binary_companion_ridge") or {}).get("rho"))
         for b in behaviors
     ]
     ax.bar(x - 0.2, graded, width=0.4, label="graded ridge")
@@ -336,6 +374,9 @@ def main() -> int:
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
+    # FIRST: --smoke re-execs with EPM_ISSUE763_SMOKE_SCOPE=1 (write paths
+    # rebind under smoke_scope/); the env WITHOUT --smoke fails loud.
+    ensure_smoke_scope(args.smoke)
     _try_paper_style()
 
     results = load_json(COFIT_DIR / "cofit_results.json")
@@ -349,13 +390,28 @@ def main() -> int:
     plot_pred_scatter(results, behaviors, FIGURE_DIR / "fig_763_cofit_pred_scatter.png")
     plot_h2_and_checks(results, behaviors, FIGURE_DIR / "fig_763_cofit_h2_checks.png")
 
+    # neutral_arm_manifest.json is a PLAN-REQUIRED deliverable (§6 cos/yield
+    # panels; §6.5): on a fresh Phase-C lane it is staged from the HF prefix the
+    # Phase-B --directions-only pass uploaded, and a post-staging absence is a
+    # FAIL-LOUD error — never a warn-and-skip (review r1 C2 / Codex C2).
     manifest_path = COFIT_DIR / "neutral_arm_manifest.json"
-    if manifest_path.exists():
-        manifest = load_json(manifest_path)
-        plot_cos_curves(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_cos_curves.png")
-        plot_neutral_yield(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_neutral_yield.png")
-    else:
-        logger.warning("neutral_arm_manifest.json absent — cos/yield panels skipped")
+    if not manifest_path.exists() and not args.smoke:
+        from issue763_extract_pv_rb import _stage_single_from_hf
+
+        _stage_single_from_hf(
+            manifest_path,
+            f"{HF_ANALYSIS_TENSORS_PREFIX}/cofit_manifests/neutral_arm_manifest.json",
+            "neutral_arm_manifest.json (plan-required §6.5 deliverable)",
+        )
+    if not manifest_path.exists():
+        raise RuntimeError(
+            f"neutral_arm_manifest.json absent at {manifest_path} after staging — the "
+            "Phase-B assemble_directions phase (and its --directions-only upload) must "
+            "run first; the §6 cos/yield panels are plan-required, not skippable"
+        )
+    manifest = load_json(manifest_path)
+    plot_cos_curves(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_cos_curves.png")
+    plot_neutral_yield(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_neutral_yield.png")
 
     nl_path = COFIT_DIR / "nonlinear_tests.json"
     if nl_path.exists():

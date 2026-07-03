@@ -49,6 +49,17 @@ if [ -z "$SMOKE" ] && [ "$PHASE_GROUP" != "A" ] && [ "$PHASE_GROUP" != "B" ] && 
   exit 2
 fi
 
+# Smoke scoping (review r1 C1(iii)): --smoke arms EPM_ISSUE763_SMOKE_SCOPE=1 so
+# every WRITE-target path in the python entrypoints rebinds under smoke_scope/
+# — mock artifacts can never land at (or clobber) canonical production paths.
+# Production groups explicitly UNSET it (each entrypoint also fails loud on
+# env-set-without---smoke via ensure_smoke_scope).
+if [ -n "$SMOKE" ]; then
+  export EPM_ISSUE763_SMOKE_SCOPE=1
+else
+  unset EPM_ISSUE763_SMOKE_SCOPE || true
+fi
+
 # Credentials (judge / HF) — set -a && source .env (never bare load_dotenv in a heredoc).
 if [ -f .env ]; then
   set -a
@@ -62,6 +73,15 @@ echo "[issue763.cofit] REPO_ROOT=$REPO_ROOT SMOKE='${SMOKE}' GROUP='${PHASE_GROU
 if [ -n "$SMOKE" ]; then
   SMOKE_MODEL="${EPM_SMOKE_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}"
   BEH="deception"
+
+  # Residue sentinel: any file CREATED OR MODIFIED under the canonical
+  # (non-smoke_scope) round paths during the smoke fails the run at the end —
+  # the mechanical proof that the smoke scoping holds (review r1 C1(iii)).
+  RESIDUE_MARK="$(mktemp /tmp/issue763_smoke_residue.XXXXXX)"
+  RESIDUE_DIRS="data/issue_763/neutral_rollouts data/issue_763/neutral_judge \
+data/issue_763/pv_rollouts data/issue_763/pv_judge_v2 data/issue_763/pv_artifacts \
+eval_results/issue_763/neutral-contrast-and-cofit eval_results/issue_763/pv_shards \
+figures/issue_763"
 
   # Upstream mock artifacts through the SAME Phase-1 scripts (rollouts +
   # canonical keep-flags + rb shard at smoke dims) so the round phases consume
@@ -98,6 +118,16 @@ if [ -n "$SMOKE" ]; then
 
   echo "[phase=upload]"
   echo "[issue763.cofit] smoke: uploads are LOG-ONLY (offline; the real groups upload)"
+
+  echo "[phase=residue_check]"
+  RESIDUE="$(find $RESIDUE_DIRS -path '*smoke_scope*' -prune -o -type f -newer "$RESIDUE_MARK" -print 2>/dev/null || true)"
+  rm -f "$RESIDUE_MARK"
+  if [ -n "$RESIDUE" ]; then
+    echo "[issue763.cofit] FATAL: smoke wrote/modified CANONICAL production paths:" >&2
+    echo "$RESIDUE" >&2
+    exit 3
+  fi
+  echo "[issue763.cofit] residue check clean: no canonical path touched by the smoke"
 
   echo "[phase=done]"
   exit 0

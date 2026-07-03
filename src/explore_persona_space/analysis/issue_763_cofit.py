@@ -124,7 +124,6 @@ class LayerCache:
     """
 
     folds: list[_FoldKernelCache]
-    S_tr: np.ndarray  # placeholder-free gather template unused; kept for shape doc
     G_folds: list[np.ndarray]  # per fold: (n, n-1) cross-Gram for diff-means
     n: int
 
@@ -182,7 +181,7 @@ class LayerCache:
                 kernels.append((Q_k, ev_k, Q_k * Q_k, K, k_held, f"rbf_c{c}"))
             folds.append(_FoldKernelCache(kernels=kernels, median_dist=med))
             G_folds.append(x @ x[tr].T)  # (n, t) diff-means cross-Gram
-        return LayerCache(folds=folds, S_tr=np.empty(0), G_folds=G_folds, n=n)
+        return LayerCache(folds=folds, G_folds=G_folds, n=n)
 
 
 def kernel_loco_preds(

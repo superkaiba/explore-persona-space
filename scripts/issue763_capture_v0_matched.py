@@ -60,8 +60,10 @@ from issue763_common import (  # noqa: E402
     GEN_DIR,
     BatchedAnswerSpanCapture,
     dump_json,
+    ensure_smoke_scope,
     load_json,
     reproducibility_metadata,
+    smoke_scoped,
 )
 
 logger = logging.getLogger("issue763_capture")
@@ -335,6 +337,9 @@ def main() -> int:
         "prompt-side c(C,B) capture (plan §4.1.4)",
     )
     args = ap.parse_args()
+    # FIRST: --smoke re-execs with EPM_ISSUE763_SMOKE_SCOPE=1 (write paths
+    # rebind under smoke_scope/); the env WITHOUT --smoke fails loud.
+    ensure_smoke_scope(args.smoke)
 
     device = args.device
     if device == "cuda" and not torch.cuda.is_available():
@@ -353,7 +358,9 @@ def main() -> int:
     if args.span == "prompt":
         return _run_prompt_span(args, model, tokenizer, capture, n_layers, hidden)
 
-    shard_dir = EVAL_RESULTS_DIR / "v0_shards"
+    # smoke_scoped: a --span answer --smoke run must never clobber the REAL v0
+    # shards at the canonical path (same class as review r1 C1(iii)).
+    shard_dir = smoke_scoped(EVAL_RESULTS_DIR / "v0_shards")
     shard_dir.mkdir(parents=True, exist_ok=True)
     v0_meta: dict[str, dict] = {}
     equivalence_min_cos: float | None = None

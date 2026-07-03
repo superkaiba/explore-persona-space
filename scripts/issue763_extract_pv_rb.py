@@ -100,15 +100,20 @@ from issue763_common import (  # noqa: E402
     NEUTRAL_JUDGE_DIR,
     NEUTRAL_KEEP_FLOOR_HARD_FRAC,
     NEUTRAL_KEEP_FLOOR_NORMAL_FRAC,
+    NEUTRAL_POOL_EXPECTED,
     NEUTRAL_ROLLOUT_DIR,
     NEUTRAL_ROLLOUT_MEANS_DIR,
     PV_ARTIFACT_DIR,
     PV_DIRECTIONS_V2_DIR,
     PV_TRAIT_DESCRIPTIONS,
     BatchedAnswerSpanCapture,
+    assert_pool_floor,
+    assert_production_direction_shape,
     dump_json,
+    ensure_smoke_scope,
     load_json,
     reproducibility_metadata,
+    smoke_scoped,
 )
 
 logger = logging.getLogger("issue763_pv")
@@ -120,8 +125,17 @@ JUDGE_THRESHOLD = 50
 PV_YIELD_FLOOR_FRAC = 0.8  # per-arm 80% kept floor (plan §4.6 step 4)
 VLLM_GREEDY_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
+# The plan-registered ABSOLUTE Phase-1 pool size: 5 instruction pairs × 20
+# extraction questions × 2 poles × N_ROLLOUTS_PER_POLE. Production consumers
+# assert against it so a tiny mock pool at a canonical path fails loud
+# (review r1 C1(iii)).
+PV_POOL_EXPECTED = 5 * 20 * 2 * N_ROLLOUTS_PER_POLE
+
 # Per-phase artifacts (the 3-phase split — #763 BLOCKER pv-production-throughput).
-PV_ROLLOUT_DIR = DATA_DIR / "pv_rollouts"  # generate -> <behavior>.jsonl (rollouts)
+# WRITE-target dirs are smoke_scoped: under the dispatcher --smoke (or any
+# manual --smoke via ensure_smoke_scope's re-exec) they relocate to a sibling
+# smoke_scope/ subtree so mock artifacts never land at canonical paths.
+PV_ROLLOUT_DIR = smoke_scoped(DATA_DIR / "pv_rollouts")  # generate -> <b>.jsonl
 # pv_judge_v2 is the CANONICAL keep-flag dir: the r3 pv_judge/ keep-flags on HF were
 # computed at commit 0ecadbbc13 (right after cf34b9230d set judge_system_prompt=None),
 # so they were judged under the ALIGNMENT misalignment-rubric fallback rather than
@@ -131,9 +145,9 @@ PV_ROLLOUT_DIR = DATA_DIR / "pv_rollouts"  # generate -> <behavior>.jsonl (rollo
 # keep-flags stamped with judge_system_prompt_hash into pv_judge_v2/, leaving the old
 # pv_judge/ intact for provenance (task #763 BLOCKER pv-keepflags-under-alignment-
 # rubric-fallback).
-PV_JUDGE_DIR = DATA_DIR / "pv_judge"  # LEGACY r3 keep-flags (contaminated; provenance only)
-PV_JUDGE_V2_DIR = DATA_DIR / "pv_judge_v2"  # CANONICAL keep-flags (corrected trait rubric)
-PV_SHARD_DIR = EVAL_RESULTS_DIR / "pv_shards"  # capture -> rb_<behavior>.pt
+PV_JUDGE_DIR = smoke_scoped(DATA_DIR / "pv_judge")  # LEGACY r3 keep-flags (provenance only)
+PV_JUDGE_V2_DIR = smoke_scoped(DATA_DIR / "pv_judge_v2")  # CANONICAL keep-flags (trait rubric)
+PV_SHARD_DIR = smoke_scoped(EVAL_RESULTS_DIR / "pv_shards")  # capture -> rb_<behavior>.pt
 
 # Verbatim generation-prompt template from arXiv 2507.21509 Appendix "Direction
 # extraction pipeline" (fetched via mcp__arxiv-latex__get_paper_section this
@@ -319,8 +333,10 @@ def _judge_path(behavior: str) -> Path:
     return PV_JUDGE_V2_DIR / f"{behavior}.json"
 
 
-def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: str) -> None:
-    """Fetch ``analysis_tensors/<sub>/<behavior>.<suffix>`` from HF if absent locally.
+def _stage_from_hf(
+    sub: str, local_dir: Path, behaviors: list[str], *, suffix: str, filename_prefix: str = ""
+) -> None:
+    """Fetch ``analysis_tensors/<sub>/<prefix><behavior>.<suffix>`` from HF if absent locally.
 
     The OFF-pod ``--phase judge`` (run on the VM while the GPU pod is stopped —
     #763 BLOCKER pv-judge-not-off-pod) and the GCP git-clone-only lane have NO
@@ -330,7 +346,7 @@ def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: s
     (every file is already local). Fail-loud only if a behavior's file is
     NEITHER local NOR on HF (the upstream phase never produced it).
     """
-    missing = [b for b in behaviors if not (local_dir / f"{b}.{suffix}").exists()]
+    missing = [b for b in behaviors if not (local_dir / f"{filename_prefix}{b}.{suffix}").exists()]
     if not missing:
         return
     # PER-FILE hf_hub_download, NOT snapshot_download(allow_patterns=...): the data
@@ -347,11 +363,12 @@ def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: s
     logger.info("[pv_stage] %s: fetching %s from %s/%s", sub, missing, HF_DATA_REPO, path_in_repo)
     local_dir.mkdir(parents=True, exist_ok=True)
     for b in missing:
+        fname = f"{filename_prefix}{b}.{suffix}"
         try:
             src = hf_hub_download(
                 repo_id=HF_DATA_REPO,
                 repo_type="dataset",
-                filename=f"{path_in_repo}/{b}.{suffix}",
+                filename=f"{path_in_repo}/{fname}",
             )
         except EntryNotFoundError as e:
             raise FileNotFoundError(
@@ -360,7 +377,32 @@ def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: s
                 "produced/uploaded it (run --phase generate + the --progress-only "
                 "upload first)"
             ) from e
-        (local_dir / f"{b}.{suffix}").write_bytes(Path(src).read_bytes())
+        (local_dir / fname).write_bytes(Path(src).read_bytes())
+
+
+def _stage_single_from_hf(local: Path, filename: str, what: str) -> None:
+    """Per-file ``hf_hub_download`` of ONE exact-path file when absent locally.
+
+    The single-file sibling of ``_stage_from_hf`` (same exact-path discipline —
+    never ``snapshot_download(allow_patterns=...)``, the >94k-siblings
+    truncation trap). Fail-loud when the file is NEITHER local NOR on HF.
+    """
+    if local.exists():
+        return
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
+
+    logger.info("[pv_stage] fetching %s from %s/%s", what, HF_DATA_REPO, filename)
+    try:
+        src = hf_hub_download(repo_id=HF_DATA_REPO, repo_type="dataset", filename=filename)
+    except EntryNotFoundError as e:
+        raise FileNotFoundError(
+            f"{what} is neither local ({local}) nor on HF ({HF_DATA_REPO}/{filename}) — "
+            "the upstream phase never produced/uploaded it (run the producing phase + "
+            "its upload pass first)"
+        ) from e
+    local.parent.mkdir(parents=True, exist_ok=True)
+    local.write_bytes(Path(src).read_bytes())
 
 
 def _load_artifacts(behavior: str, *, mock: bool) -> dict:
@@ -1001,7 +1043,9 @@ def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> Non
         "judge_threshold": JUDGE_THRESHOLD,
         "metadata": reproducibility_metadata({"phase": "pv_extract_capture"}),
     }
-    dump_json(out, EVAL_RESULTS_DIR / "pv_rb_by_behavior.json")
+    # smoke_scoped: the round-1 dispatcher smoke clobbered the REAL committed
+    # manifest at this canonical path (review r1 C1(iii) evidence).
+    dump_json(out, smoke_scoped(EVAL_RESULTS_DIR / "pv_rb_by_behavior.json"))
     logger.info("[pv_capture] wrote r_B for %d behaviors", len(manifest))
 
 
@@ -1171,18 +1215,26 @@ def _neutral_keep_floor_branch(kept_n: int, n_rollouts: int) -> str:
     return "unbuildable"  # r_neutral reported UNBUILDABLE (a finding, not a crash)
 
 
-def _phase_neutral_judge(behaviors: list[str], *, mock: bool) -> None:
+def _phase_neutral_judge(behaviors: list[str], *, mock: bool, smoke: bool) -> None:
     """Trait-score the neutral rollouts OFF-pod; keep score < 50 (plan §4.1.2).
 
     The paper's NEGATIVE-arm threshold applied to the neutral pole (trait-absent
     under the default context). A REFUSAL / non-numeric / out-of-range judge
     return is DROPPED (never coerced); kept/rejected/dropped counts reported.
+
+    Production asserts the ABSOLUTE plan-registered pool size (1000/behavior)
+    BEFORE judging: the keep-floor branches are pool FRACTIONS, so without this
+    a stale tiny mock pool would read branch "normal" (review r1 C1(iii)).
     """
     NEUTRAL_JUDGE_DIR.mkdir(parents=True, exist_ok=True)
     if not mock:
         _stage_from_hf("neutral_rollouts", NEUTRAL_ROLLOUT_DIR, behaviors, suffix="jsonl")
     for behavior in behaviors:
         rows = _read_rollouts_jsonl(_neutral_rollout_path(behavior))
+        if not smoke:
+            assert_pool_floor(
+                len(rows), NEUTRAL_POOL_EXPECTED, f"neutral_judge {behavior}: neutral_rollouts"
+            )
         rubric = _neutral_eval_prompt(behavior)
         filled = [
             rubric.replace("{question}", r["question"]).replace("{answer}", r["response"])
@@ -1459,6 +1511,10 @@ def _phase_capture_arm_means(
 
     for bi, behavior in enumerate(behaviors):
         rows = _read_rollouts_jsonl(_rollout_path(behavior))
+        if not smoke:
+            assert_pool_floor(
+                len(rows), PV_POOL_EXPECTED, f"capture_arm_means {behavior}: pv_rollouts"
+            )
         judge = load_json(_judge_path(behavior))
         keep_flags = judge["keep_flags"]
         assert len(keep_flags) == len(rows), (
@@ -1472,10 +1528,31 @@ def _phase_capture_arm_means(
             kept_items.append((_build_stripped_prompt(tokenizer, r["question"]), r["response"]))
             kept_poles.append(r["pole"])
 
-        if check_parity and bi == 0 and manifest.get("parity_check") is None:
-            manifest["parity_check"] = _run_capture_parity_check(
+        # The parity record is keyed on (model_name, batch_size): a resume under
+        # a DIFFERENT model / batch geometry must re-run the parity smoke, not
+        # silently reuse a stale record (review r1 Minor: input-blind reuse).
+        prior_parity = manifest.get("parity_check")
+        parity_stale = prior_parity is not None and (
+            prior_parity.get("model_name") != model_name
+            or prior_parity.get("batch_size") != batch_size
+        )
+        if check_parity and bi == 0 and (prior_parity is None or parity_stale):
+            if parity_stale:
+                logger.info(
+                    "[parity] re-running: prior record keyed (%s, %s) != current (%s, %s)",
+                    prior_parity.get("model_name"),
+                    prior_parity.get("batch_size"),
+                    model_name,
+                    batch_size,
+                )
+            record = _run_capture_parity_check(
                 model, tokenizer, capture, kept_items, tol=parity_tol
             )
+            manifest["parity_check"] = {
+                **record,
+                "model_name": model_name,
+                "batch_size": batch_size,
+            }
             dump_json(manifest, _capture_manifest_path())
 
         kept, dropped_capture = _accumulate_arm_means(
@@ -1519,7 +1596,25 @@ def _phase_assemble_directions(behaviors: list[str], *, smoke: bool) -> None:
     science surprise. Kill-check (plan §7 b): max-layer cos(r_A, r_C) < 0.5 or a
     wholesale sign flip AFTER a passed parity smoke ⇒ fail-loud RuntimeError
     (capture-path regression), log-only under --smoke (tiny random-weight model).
+
+    Phase-boundary staging (review r1 C1): this phase runs on the VM after the
+    Phase-A GCP instance is DELETED, so EVERY input it reads is staged from the
+    HF prefix the ``--progress-only`` pass uploaded when absent locally —
+    per-file exact-path ``hf_hub_download``, never ``snapshot_download``.
     """
+    if not smoke:
+        _stage_single_from_hf(
+            _capture_manifest_path(),
+            f"{HF_ANALYSIS_TENSORS_PREFIX}/cofit_manifests/capture_arm_means_manifest.json",
+            "capture_arm_means_manifest.json (parity record)",
+        )
+        _stage_from_hf("arm_means", COFIT_DIR / "arm_means", behaviors, suffix="pt")
+        _stage_from_hf("neutral_rollout_means", NEUTRAL_ROLLOUT_MEANS_DIR, behaviors, suffix="pt")
+        _stage_from_hf("neutral_judge", NEUTRAL_JUDGE_DIR, behaviors, suffix="json")
+        # question recovery (arm_manifest provenance) reads the Phase-1 rollouts
+        _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
+        # the cos(r_A, r_C) integrity read needs the Phase-1 rb shards
+        _stage_from_hf("pv_shards", PV_SHARD_DIR, behaviors, suffix="pt", filename_prefix="rb_")
     manifest = load_json(_capture_manifest_path())
     parity = manifest.get("parity_check")
     if not parity or not parity.get("passed"):
@@ -1534,6 +1629,15 @@ def _phase_assemble_directions(behaviors: list[str], *, smoke: bool) -> None:
         arms = torch.load(_arm_means_path(behavior), weights_only=False)
         pos_mean = arms["pos_C_mean"].float()
         neg_mean = arms["neg_C_mean"].float()
+        if not smoke:
+            # ABSOLUTE production-dim validation (review r1 C1(iii)): a stale
+            # tiny-smoke-model tensor at a canonical path must fail loud here.
+            assert_production_direction_shape(
+                tuple(pos_mean.shape), f"assemble {behavior}: arm_means pos_C_mean"
+            )
+            assert_production_direction_shape(
+                tuple(neg_mean.shape), f"assemble {behavior}: arm_means neg_C_mean"
+            )
         r_c = pos_mean - neg_mean  # (L, H)
 
         judge = load_json(_neutral_judge_path(behavior))
@@ -1543,6 +1647,13 @@ def _phase_assemble_directions(behaviors: list[str], *, smoke: bool) -> None:
         keep_flags = judge["keep_flags"]
         kept_idx = [by_id[rid] for rid, k in enumerate(keep_flags) if k and rid in by_id]
         n_rollouts = judge["n_rollouts"]
+        if not smoke:
+            assert_pool_floor(
+                n_rollouts, NEUTRAL_POOL_EXPECTED, f"assemble {behavior}: neutral judge pool"
+            )
+            assert_production_direction_shape(
+                tuple(means.shape[1:]), f"assemble {behavior}: neutral_rollout_means per-rollout"
+            )
         branch = _neutral_keep_floor_branch(len(kept_idx), n_rollouts)
         r_neutral = None
         neutral_mean = None
@@ -1551,6 +1662,12 @@ def _phase_assemble_directions(behaviors: list[str], *, smoke: bool) -> None:
             r_neutral = pos_mean - neutral_mean
 
         rb = torch.load(PV_SHARD_DIR / f"rb_{behavior}.pt", weights_only=False)["r_b"].float()
+        if rb.shape != pos_mean.shape:
+            raise RuntimeError(
+                f"assemble {behavior}: rb shard shape {tuple(rb.shape)} != arm-mean shape "
+                f"{tuple(pos_mean.shape)} — the rb shard and the arm means were captured "
+                "under DIFFERENT models (stale smoke residue?); re-stage pv_shards from HF"
+            )
         cos_a_c = torch.nn.functional.cosine_similarity(rb, r_c, dim=-1)  # (L,)
         cos_c_neutral = (
             torch.nn.functional.cosine_similarity(r_c, r_neutral, dim=-1)
@@ -1656,6 +1773,9 @@ def main() -> int:
         help="skip the parity smoke in capture_arm_means (resume after a passed record only)",
     )
     args = ap.parse_args()
+    # FIRST: --smoke re-execs with EPM_ISSUE763_SMOKE_SCOPE=1 (write paths
+    # rebind under smoke_scope/); the env WITHOUT --smoke fails loud.
+    ensure_smoke_scope(args.smoke)
 
     device = args.device
     if device == "cuda" and not torch.cuda.is_available():
@@ -1684,7 +1804,7 @@ def main() -> int:
             device=device,
         )
     if phase == "neutral_judge":
-        _phase_neutral_judge(args.behaviors, mock=args.mock)
+        _phase_neutral_judge(args.behaviors, mock=args.mock, smoke=args.smoke)
     if phase == "capture_arm_means":
         _phase_capture_arm_means(
             args.behaviors,
