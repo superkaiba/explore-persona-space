@@ -36,10 +36,16 @@ if [[ -z "$SMOKE" ]]; then
 import os
 from pathlib import Path
 
-# Hot-fix (run-2): hf_transfer hung the run-1 stage at 4.4GB/55GB with no timeout
-# (25+ min zero progress); plain ranged streams measured 12.7 MB/s/stream from HF,
-# so 8 default workers without hf_transfer stage ~55GB in ~10 min.
+# Hot-fix (run-2): hf_transfer off after the run-1 stage hang.
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+# Hot-fix (run-3): run 2 hung IDENTICALLY with hf_transfer off (all ~64GB on disk,
+# downloader at 0% CPU, snapshot_download never returned) — the repo is Xet-backed,
+# so the hang is the xet downloader's finalization (#515 class). Disable xet: files
+# then stream via the plain CDN path (measured 12.7 MB/s/stream from this org).
+os.environ["HF_XET_DISABLE"] = "1"
+# Convert any future stage hang into a loud crash well before the instance fence:
+import signal
+signal.alarm(2700)  # 45 min hard cap on the whole stage phase
 
 from huggingface_hub import snapshot_download
 
