@@ -2995,6 +2995,29 @@ def test_set_clean_result_unset_paper_skips_gate(fake_repo):
     assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is False
 
 
+def test_set_clean_result_accepts_report_v1_body(fake_repo):
+    """A v2 report body (carries REPORT_V1_SENTINEL) is a valid non-paper
+    clean-result form: it is not a paper task and has no paper_manifest.json, so
+    set_clean_result flips has_clean_result with no extra gate (mirrors the
+    markdown-v4 path). Pins that the report track is accepted, not rejected."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Report task"))
+    report_body = (
+        "# Experiment: does X predict Y?\n"
+        f"{tw.REPORT_V1_SENTINEL}\n\n"
+        "## TLDR:\nThomas-written takeaway.\n\n"
+        "## Motivation:\nWhy we ran it.\n\n"
+        "## Methodology:\nWhat we ran.\n\n"
+        "## Metrics:\nWhat we measured.\n\n"
+        "## Results:\n### rate\nDescription.\n![r](figures/f.png)\n\n"
+        "## Next steps:\nWhat next.\n"
+    )
+    tw.set_body(tid, report_body)
+    assert tw.is_report_body(report_body) is True
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
 # ─── #657: set_body round-trips the paper-stub opt-in (paper / abstract) ─────
 
 
