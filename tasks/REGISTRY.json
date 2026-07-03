@@ -6192,8 +6192,8 @@
     "939": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/939",
-      "status": "planning",
+      "path": "tasks/approved/939",
+      "status": "approved",
       "title": "workflow-fix: scoped listing in verify_uploads.py (1M-file repo hang)"
     },
     "94": {
