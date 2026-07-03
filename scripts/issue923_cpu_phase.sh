@@ -26,23 +26,55 @@ if [ "$FITS_ONLY" -eq 0 ]; then
 fi
 
 echo "[phase=join]"
+# Loud pre-flight OUTSIDE the poll loop: a missing .env / bad token / revoked
+# repo access dies HERE (set -e) instead of burning the full join window as
+# "sentinel not present" (r1 Minor: auth failures looked like not-yet).
+# set -a: export .env so HF_TOKEN reaches the one-liner (heredoc-dotenv rule).
+set -a && . ./.env && set +a
+uv run python - <<'PY'
+from huggingface_hub import list_repo_files
+
+files = list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset")
+print(f"[join] preflight OK: listing returned {len(files)} files")
+PY
+
 DEADLINE=$(( $(date +%s) + JOIN_HOURS * 3600 ))
 PACKS_DIR="$REPO_ROOT/data/issue_923/capture/packs"
 mkdir -p "$PACKS_DIR"
 JOINED=0
 while [ "$(date +%s)" -lt "$DEADLINE" ]; do
-  # set -a: export .env so HF_TOKEN reaches the one-liner (heredoc-dotenv rule).
-  if (set -a && . ./.env && set +a && uv run python - <<'PY'
+  # rc contract: 0 = sentinel found; 3 = not-yet / transient HTTP (retry);
+  # anything else = non-transient (auth/config) -> FAIL FAST, no window burn.
+  rc=0
+  (set -a && . ./.env && set +a && uv run python - <<'PY'
 import sys
-from huggingface_hub import list_repo_files
 
-files = list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset")
+import requests
+from huggingface_hub import list_repo_files
+from huggingface_hub.utils import HfHubHTTPError
+
+try:
+    files = list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset")
+except HfHubHTTPError as e:
+    code = getattr(getattr(e, "response", None), "status_code", None)
+    if code in (429, 500, 502, 503, 504):
+        print(f"[join] transient HTTP {code}; will retry")
+        sys.exit(3)
+    raise  # 401/403/404 etc — non-transient, fail fast
+except (requests.ConnectionError, requests.Timeout):
+    print("[join] transient network error; will retry")
+    sys.exit(3)
 sentinel = "issue923_ctx_query_decomposition/analysis_tensors/capture/UPLOAD_COMPLETE.json"
-sys.exit(0 if sentinel in files else 1)
+sys.exit(0 if sentinel in files else 3)
 PY
-  ); then
+  ) || rc=$?
+  if [ "$rc" -eq 0 ]; then
     JOINED=1
     break
+  fi
+  if [ "$rc" -ne 3 ]; then
+    echo "[join] FATAL: sentinel poll exited rc=$rc (non-transient)"
+    exit "$rc"
   fi
   echo "[join] Phase-1 upload sentinel not on HF yet; sleeping 120s"
   sleep 120
@@ -88,6 +120,8 @@ EPM_FIT_DEVICE="${EPM_FIT_DEVICE:-cpu}" \
   2>&1 | tee "$LOG_DIR/fits.log"
 
 echo "[phase=figures]"
-uv run python scripts/issue923_figures.py 2>&1 | tee "$LOG_DIR/figures.log"
+# --upload: this instance is EPHEMERAL — figures must land on HF before exit
+# (the VM fetches + commits them to git at Step 8; r1 Minor).
+uv run python scripts/issue923_figures.py --upload 2>&1 | tee "$LOG_DIR/figures.log"
 
 echo "[phase=done]"

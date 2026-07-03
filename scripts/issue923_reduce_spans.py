@@ -53,6 +53,7 @@ from issue923_common import (  # noqa: E402
     STORE_PREFIXES,
     dump_json,
     load_json,
+    load_pack,
     save_pack,
     texts_hash,
 )
@@ -110,6 +111,88 @@ def reduce_span_file(blob: dict, hidden: int) -> tuple[torch.Tensor, torch.Tenso
     return vbar, valid, n_dropped
 
 
+def reduce_context_list(
+    ctx_ids: list[str],
+    fetch,
+    pool: list[str],
+    n_layers: int,
+    hidden: int,
+    partials_dir: Path,
+    regime: dict,
+    tag: str,
+    interrupt_after: int | None = None,
+) -> tuple[list[dict], list[torch.Tensor], list[torch.Tensor], int]:
+    """Per-context stream-reduce with per-file atomic checkpoint + resume.
+
+    ``fetch(cid)`` returns the local span-file path (HF download in production,
+    synthetic file in the smoke); the file is DELETED after reduction
+    (stream-delete, peak disk ~= one span file). Each context's reduced tensor
+    is persisted atomically to ``partials_dir/<cid>.pt`` the moment it
+    completes (checkpoint-per-phase — r1 blocker
+    reduce-loop-no-per-file-checkpoint), so a crash at file 49 forfeits at most
+    one in-flight download, never the genre. On restart a partial whose
+    ``regime`` (store revision + probe_pool_hash) matches is loaded and the
+    download SKIPPED; a mismatched partial is recomputed with a warning, never
+    silently reused (#722-r3). ``interrupt_after`` (testing only) raises after
+    N freshly-reduced contexts to exercise the resume path in the smoke.
+    """
+    partials_dir.mkdir(parents=True, exist_ok=True)
+    rows: list[dict] = []
+    vbars: list[torch.Tensor] = []
+    valids: list[torch.Tensor] = []
+    dropped = 0
+    n_fresh = 0
+    t0 = time.time()
+    for k, cid in enumerate(ctx_ids):
+        part_path = partials_dir / f"{cid}.pt"
+        vbar = None
+        if part_path.exists():
+            pt, pm = load_pack(part_path)
+            if pm.get("regime") == regime:
+                vbar, valid, n_drop = pt["vbar"], pt["valid"], int(pm["n_dropped"])
+                logger.info(
+                    "[reduce %s] %d/%d %s RESUMED from partial", tag, k + 1, len(ctx_ids), cid
+                )
+            else:
+                logger.warning(
+                    "[reduce %s] partial %s regime mismatch (%s != %s) — recomputing",
+                    tag,
+                    part_path.name,
+                    pm.get("regime"),
+                    regime,
+                )
+        if vbar is None:
+            local = fetch(cid)
+            blob = torch.load(local, map_location="cpu", weights_only=False)
+            assert_span_schema(blob, cid, pool, n_layers_expected=n_layers)
+            vbar, valid, n_drop = reduce_span_file(blob, hidden=hidden)
+            save_pack(
+                part_path,
+                {"vbar": vbar, "valid": valid},
+                {"ctx_id": cid, "regime": regime, "n_dropped": n_drop},
+            )
+            Path(local).unlink()  # stream-delete: peak disk ~= one span file
+            n_fresh += 1
+            logger.info(
+                "[reduce %s] %d/%d %s (dropped=%d, %.1fs elapsed)",
+                tag,
+                k + 1,
+                len(ctx_ids),
+                cid,
+                n_drop,
+                time.time() - t0,
+            )
+            if interrupt_after is not None and n_fresh >= interrupt_after:
+                raise RuntimeError(
+                    f"simulated interrupt after {n_fresh} fresh contexts (--interrupt-after)"
+                )
+        dropped += n_drop
+        vbars.append(vbar)
+        valids.append(valid)
+        rows.extend({"ctx_id": cid, "q_idx": qi} for qi in range(len(pool)))
+    return rows, vbars, valids, dropped
+
+
 def _write_synthetic_smoke_store(scratch: Path, pool: list[str], ctx_ids: list[str]) -> Path:
     """Producer-schema synthetic span files for the smoke (same reduce loop)."""
     store_dir = scratch / "synthetic_store"
@@ -146,6 +229,12 @@ def main() -> int:
     parser.add_argument("--no-upload", action="store_true")
     parser.add_argument("--n-layers", type=int, default=28)
     parser.add_argument("--hidden", type=int, default=3584)
+    parser.add_argument(
+        "--interrupt-after",
+        type=int,
+        default=None,
+        help="TESTING: raise after N freshly-reduced contexts (exercises resume)",
+    )
     args = parser.parse_args()
 
     out_dir: Path = args.out_dir
@@ -159,22 +248,25 @@ def main() -> int:
         pool = [f"synthetic probe {i}?" for i in range(4)]
         ctx_ids = ["smoke_ctx_a", "smoke_ctx_b"]
         store_dir = _write_synthetic_smoke_store(scratch, pool, ctx_ids)
-        rows, vbars, valids, dropped = [], [], [], 0
-        for k, cid in enumerate(ctx_ids):
-            blob = torch.load(store_dir / f"{cid}.pt", map_location="cpu", weights_only=False)
-            assert_span_schema(blob, cid, pool, n_layers_expected=4)
-            vbar, valid, n_drop = reduce_span_file(blob, hidden=8)
-            dropped += n_drop
-            vbars.append(vbar)
-            valids.append(valid)
-            rows.extend({"ctx_id": cid, "q_idx": qi} for qi in range(len(pool)))
-            (store_dir / f"{cid}.pt").unlink()  # the SAME stream-delete as prod
-            logger.info("[reduce smoke] %d/%d %s (dropped=%d)", k + 1, len(ctx_ids), cid, n_drop)
+        # The SAME checkpoint/resume loop as production (fetch = the synthetic
+        # file; the interrupt/resume smoke exercises the partial path).
+        rows, vbars, valids, dropped = reduce_context_list(
+            ctx_ids,
+            fetch=lambda cid: store_dir / f"{cid}.pt",
+            pool=pool,
+            n_layers=4,
+            hidden=8,
+            partials_dir=out_dir / "partials" / "smoke",
+            regime={"revision": "synthetic-smoke", "probe_pool_hash": texts_hash(pool)},
+            tag="smoke",
+            interrupt_after=args.interrupt_after,
+        )
         save_pack(
             out_dir / "vbar_store_smoke.pt",
             {"vbar": torch.cat(vbars), "valid": torch.cat(valids)},
             {"rows": rows, "genre": "smoke", "n_dropped": dropped, "metadata": meta},
         )
+        shutil.rmtree(out_dir / "partials" / "smoke", ignore_errors=True)
         print(f"[reduce smoke] pack rows={len(rows)} dropped={dropped}", flush=True)
         print("[phase=done]", flush=True)
         return 0
@@ -196,38 +288,34 @@ def main() -> int:
         print(f"[phase=reduce_{genre}]", flush=True)
         prefix = STORE_PREFIXES[genre]
         pool = pools[genre]
-        assert texts_hash(pool) == pins["stores"][genre]["probe_pool_hash"], (
+        pool_hash = texts_hash(pool)
+        assert pool_hash == pins["stores"][genre]["probe_pool_hash"], (
             f"{genre}: pinned pool hash drifted vs store_pins.json"
         )
         ctx_ids = pins["stores"][genre]["context_ids"]
-        rows, vbars, valids = [], [], []
-        dropped = 0
-        t0 = time.time()
-        for k, cid in enumerate(ctx_ids):
-            local = hf_hub_download(
-                HF_DATA_REPO,
-                f"{prefix}/answer_spans/{cid}.pt",
-                repo_type="dataset",
-                revision=revision,
-                local_dir=scratch / genre,
+
+        def _fetch(cid: str, _prefix=prefix, _genre=genre) -> Path:
+            return Path(
+                hf_hub_download(
+                    HF_DATA_REPO,
+                    f"{_prefix}/answer_spans/{cid}.pt",
+                    repo_type="dataset",
+                    revision=revision,
+                    local_dir=scratch / _genre,
+                )
             )
-            blob = torch.load(local, map_location="cpu", weights_only=False)
-            assert_span_schema(blob, cid, pool, n_layers_expected=args.n_layers)
-            vbar, valid, n_drop = reduce_span_file(blob, hidden=args.hidden)
-            dropped += n_drop
-            vbars.append(vbar)
-            valids.append(valid)
-            rows.extend({"ctx_id": cid, "q_idx": qi} for qi in range(len(pool)))
-            Path(local).unlink()  # stream-delete: peak disk ~= one span file
-            logger.info(
-                "[reduce %s] %d/%d %s (dropped=%d, %.1fs elapsed)",
-                genre,
-                k + 1,
-                len(ctx_ids),
-                cid,
-                n_drop,
-                time.time() - t0,
-            )
+
+        rows, vbars, valids, dropped = reduce_context_list(
+            ctx_ids,
+            fetch=_fetch,
+            pool=pool,
+            n_layers=args.n_layers,
+            hidden=args.hidden,
+            partials_dir=out_dir / "partials" / genre,
+            regime={"revision": revision, "probe_pool_hash": pool_hash},
+            tag=genre,
+            interrupt_after=args.interrupt_after,
+        )
         pack_path = out_dir / f"vbar_store_{genre}.pt"
         save_pack(
             pack_path,
@@ -237,7 +325,7 @@ def main() -> int:
                 "genre": genre,
                 "n_dropped": dropped,
                 "revision": revision,
-                "probe_pool_hash": texts_hash(pool),
+                "probe_pool_hash": pool_hash,
                 "metadata": meta,
             },
         )
@@ -254,6 +342,8 @@ def main() -> int:
                 upload_as_file=True,
             )
             logger.info("[reduce %s] pack uploaded", genre)
+        # Partials are subsumed by the saved (+uploaded) genre pack.
+        shutil.rmtree(out_dir / "partials" / genre, ignore_errors=True)
         shutil.rmtree(scratch / genre, ignore_errors=True)
     print("[phase=done]", flush=True)
     return 0

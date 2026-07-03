@@ -35,8 +35,9 @@ per (genre, layer) (in-sample, PCA-48 + ambient). Oracle-consistency checks are
 TOLERANCE-FLAGGED reported anomalies — never a crash (§3 registered exception).
 
 Checkpoint/resume: per (genre, layer) partial packs keyed on the FULL regime
-key (genres, arms, n_perms, seeds, fold hash, PCA dim, pack hashes) — a
-mismatch refuses loudly (never silently reuses wrong rows).
+key (genres, arms, n_perms, seeds, fold hash, PCA dim, per-pack input
+identities — name/size/mtime of every consumed capture shard + reduce pack) —
+a mismatch refuses loudly (never silently reuses wrong rows).
 
 Usage::
 
@@ -301,6 +302,36 @@ def _collect_shards(packs_dir: Path, stem: str) -> list[tuple[dict, dict]]:
     return [load_pack(f) for f in files]
 
 
+def _uc_ext_offset(ext_packs: list[tuple[dict, dict]], n_q: int) -> int:
+    """Global-index offset for UC-ext cells (store pool occupies 0..offset-1).
+
+    Derived from the packs, not assumed: offset = n_q − n_ext, cross-checked
+    against the canonical 48-probe UC store pool so a pool-size drift (or a
+    smoke pack mixed into a production packs dir) fails loud at the join
+    instead of silently mis-indexing rows (r1 Minor: unguarded `48 +`).
+    """
+    n_ext = max(r["q_idx"] for _t, m in ext_packs for r in m["rows"]) + 1
+    off = n_q - n_ext
+    assert off == 48, (
+        f"UC ext-offset {off} != 48 (n_q={n_q}, n_ext={n_ext}) — store pool size drifted"
+    )
+    return off
+
+
+def _input_pack_identity(packs_dir: Path, reduce_dir: Path) -> list[list]:
+    """Cheap content identity for every input pack the fit consumes.
+
+    Sorted ``[name, size_bytes, mtime_ns]`` triples over the capture shards +
+    reduce packs. A re-captured / re-reduced / re-fetched pack changes its
+    triple, so the resume regime hash changes and a stale per-(genre, layer)
+    partial refuses loudly (the #722-r3 resume class) instead of silently
+    feeding OLD data into a `--fits-only` re-dispatch. False invalidation
+    (same bytes, fresh mtime) only costs a `--fresh` refit — the safe side.
+    """
+    files = sorted(packs_dir.glob("*_shard*.pt")) + sorted(reduce_dir.glob("vbar_store_*.pt"))
+    return [[f.name, f.stat().st_size, f.stat().st_mtime_ns] for f in files]
+
+
 def _fill_rows(
     dest: torch.Tensor,
     valid: torch.Tensor,
@@ -412,11 +443,12 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
                 ffull, fvalid, _collect_shards(packs_dir, "ffull_uc48"), "flast", ctx_idx, n_q
             )
             # ext cells: F_full rides the TF pack's flast (same forward, plan 1b);
-            # ext q_idx is LOCAL 0..95 → shift to global 48+qi.
+            # ext q_idx is LOCAL 0..95 → shift by the DERIVED store-pool offset.
             ext = _collect_shards(packs_dir, "tgt_ucext")
+            off = _uc_ext_offset(ext, n_q)
             for tensors, meta in ext:
                 for i, r in enumerate(meta["rows"]):
-                    row = cell_row(ctx_idx[r["ctx_id"]], 48 + r["q_idx"], n_q)
+                    row = cell_row(ctx_idx[r["ctx_id"]], off + r["q_idx"], n_q)
                     ffull[row] = tensors["flast"][i]
                     fvalid[row] = True
         elif genre == "betley":
@@ -427,13 +459,18 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
             _fill_rows(
                 ffull, fvalid, _collect_shards(packs_dir, "tgt_dolly"), "flast", ctx_idx, n_q
             )
-        try:
+        if mask_backend == "dropped":
+            # The ONLY licensed drop path: the capture run RECORDED the §8
+            # mask-ladder failure in its pack meta. Pack ABSENCE without that
+            # record is a fetch/upload/coverage failure and fails loud below
+            # (r1 blocker fqryiii-pack-absence-silently-drops-arm).
+            fqryiii, iii_valid = None, None
+        else:
             iii_packs = _collect_shards(packs_dir, f"fqry_iii_{genre}")
             fqryiii = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
             iii_valid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
             _fill_rows(fqryiii, iii_valid, iii_packs, "flast", ctx_idx, n_q)
-        except AssertionError:
-            fqryiii, iii_valid = None, None  # arm dropped per §8 (recorded in meta)
+        assert (fqryiii is None) == (mask_backend == "dropped")  # gate consistency
         common = valid & fvalid
         if iii_valid is not None:
             common = common & iii_valid  # the #823 common-valid rule
@@ -451,9 +488,11 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
             target[row] = rt["vbar"][i]
             tvalid[row] = bool(rt["valid"][i])
         if genre == "uc":
-            for tensors, meta in _collect_shards(packs_dir, "tgt_ucext"):
+            ext = _collect_shards(packs_dir, "tgt_ucext")
+            off = _uc_ext_offset(ext, n_q)
+            for tensors, meta in ext:
                 for i, r in enumerate(meta["rows"]):
-                    row = cell_row(ctx_idx[r["ctx_id"]], 48 + r["q_idx"], n_q)
+                    row = cell_row(ctx_idx[r["ctx_id"]], off + r["q_idx"], n_q)
                     target[row] = tensors["vbar"][i]
                     tvalid[row] = bool(tensors["valid"][i])
         grids[genre] = _grid(genre, n_q, target, tvalid)
@@ -1043,18 +1082,31 @@ def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) 
         # Oracle-consistency checks (§3): tolerance-flagged anomalies, no crash.
         shares = u18["anova"]["pca48"]
         checks = []
-        for label, read, ceiling in (
-            ("ctx_vs_ctx_share", obs["arm_ctx"], shares["share_ctx"]),
-            ("qry_vs_qry_share", obs["arm_qry_i"], shares["share_qry"]),
+        # Each check's tolerance uses ITS OWN read's family-bootstrap SE (the
+        # §3 "SE of the held-out read"), not arm_concat_i's for all four
+        # (r1 Minor: oracle tolerance used one arm's SE everywhere).
+        for label, read, ceiling, read_se in (
+            ("ctx_vs_ctx_share", obs["arm_ctx"], shares["share_ctx"], g["L18"]["arm_ctx"]["se"]),
+            (
+                "qry_vs_qry_share",
+                obs["arm_qry_i"],
+                shares["share_qry"],
+                g["L18"]["arm_qry_i"]["se"],
+            ),
             (
                 "concat_vs_additive_share",
                 obs["arm_concat_i"],
                 shares["share_ctx"] + shares["share_qry"],
+                g["L18"]["arm_concat_i"]["se"],
             ),
-            ("delta_vs_interaction_share", g["delta_r2"]["value"], shares["share_interaction"]),
+            (
+                "delta_vs_interaction_share",
+                g["delta_r2"]["value"],
+                shares["share_interaction"],
+                g["delta_r2"]["se"],
+            ),
         ):
-            arm_se = g["L18"]["arm_concat_i"]["se"]
-            tol = 2.0 * max(arm_se, 1e-6)
+            tol = 2.0 * max(read_se, 1e-6)
             violation = read - ceiling
             severity = (
                 "ok"
@@ -1337,6 +1389,13 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     parser.add_argument("--fullh-spotcheck", action="store_true")
     parser.add_argument("--fresh", action="store_true", help="ignore existing partials")
     parser.add_argument("--no-upload", action="store_true")
+    parser.add_argument(
+        "--allow-missing-regen",
+        action="store_true",
+        help="DELIBERATE partial run only: skip (and RECORD skipping) the regen "
+        "spot-check when tgt_regen packs are absent; without this flag absence "
+        "is a coverage failure and raises (r1 blocker: unregistered fail-soft)",
+    )
     args = parser.parse_args()
 
     device = _resolve_device(_requested_device(args.device))
@@ -1391,6 +1450,10 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         for a in [*ARMS_SINGLE, *ARMS_CONCAT, ARM_FULL]
         if not (a in ("arm_qry_iii", "arm_concat_iii") and grids[genres[0]].fqryiii is None)
     ]
+    # The regime key covers FLAGS *and* INPUT IDENTITIES (fold hash + per-pack
+    # identity), so a `--fits-only` re-dispatch after a re-captured/re-reduced
+    # pack set refuses stale partials loudly instead of silently resuming them
+    # (r1 blocker fit-resume-regime-key-omits-input-hashes; the #722-r3 class).
     regime_key = {
         "genres": genres,
         "arms": arms,
@@ -1401,6 +1464,12 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         "lambdas": RIDGE_LAMBDAS,
         "smoke": args.smoke,
         "ood": ood,
+        "fold_hash": hashlib.sha256(json.dumps(folds_payload, sort_keys=True).encode()).hexdigest()[
+            :12
+        ],
+        "pack_identity": (
+            "smoke" if args.smoke else _input_pack_identity(args.packs_dir, args.reduce_dir)
+        ),
     }
     regime_hash = hashlib.sha256(json.dumps(regime_key, sort_keys=True).encode()).hexdigest()[:12]
 
@@ -1523,14 +1592,28 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         )
         gsum = {"perm_sha256": perm_sha, "tensor_pack": npath.name, "arms": {}}
         li18 = layers.index(HEADLINE_LAYER) if HEADLINE_LAYER in layers else len(layers) - 1
+        gate_layer = layers[li18]
+        gsum["gating_layer"] = gate_layer  # HEADLINE_LAYER, or the smoke fallback
         for arm in arms:
             m = matrix[arm]
             max_per_draw = np.nanmax(m, axis=1)
+            col = m[:, li18]
+            col_ok = col[~np.isnan(col)]
+            p975 = float(np.nanpercentile(col, 97.5))
+            # Observed-vs-L18-null GATE (r1 blocker l18-null-gating-missing):
+            # the registered rule — an arm whose observed L18 skill sits inside
+            # its selection-matched L18-only null band is reported as null —
+            # persisted per (genre, arm), separately from the max-over-layers
+            # band (which gates any max/argmax read, not the frozen L18 one).
+            obs_skill = units[(genre, gate_layer)]["arms"][arm]["skill"]
             gsum["arms"][arm] = {
+                "observed_skill_L18": obs_skill,
+                "inside_l18_null_band": bool(obs_skill <= p975),
+                "l18_null_p_value": float((np.sum(col_ok >= obs_skill) + 1) / (col_ok.size + 1)),
                 "L18_column_quantiles": {
-                    "p95": float(np.nanpercentile(m[:, li18], 95)),
-                    "p975": float(np.nanpercentile(m[:, li18], 97.5)),
-                    "p99": float(np.nanpercentile(m[:, li18], 99)),
+                    "p95": float(np.nanpercentile(col, 95)),
+                    "p975": p975,
+                    "p99": float(np.nanpercentile(col, 99)),
                 },
                 "max_over_layers_quantiles": {
                     "p95": float(np.nanpercentile(max_per_draw, 95)),
@@ -1544,6 +1627,22 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     if not args.smoke:
         try:
             rc = regen_check(args.packs_dir, args.reduce_dir)
+        except AssertionError as e:  # tgt_regen packs absent
+            if not args.allow_missing_regen:
+                # Absence is a coverage/fetch failure, NOT a registered
+                # fail-soft (the plan registers ONLY the oracle tolerance
+                # flags) — fail fast (r1 blocker, regen-check sibling).
+                raise RuntimeError(
+                    "regen spot-check packs (tgt_regen_shard*.pt) absent under "
+                    f"{args.packs_dir} — a coverage/fetch failure; pass "
+                    "--allow-missing-regen ONLY for a deliberate partial run"
+                ) from e
+            logger.warning("[regen] SKIPPED (--allow-missing-regen): %s", e)
+            dump_json(
+                {"meta": meta, "skipped": True, "reason": str(e)},
+                out_dir / "regen_check.json",
+            )
+        else:
             dump_json({"meta": meta, **rc}, out_dir / "regen_check.json")
             logger.info(
                 "[regen] %d cells, cos_min=%.4f, n<0.99=%d",
@@ -1551,8 +1650,6 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                 rc["cos_min_overall"] or float("nan"),
                 rc["n_below_0p99"],
             )
-        except AssertionError as e:  # regen packs absent (partial run) — report, no crash
-            logger.warning("[regen] skipped: %s", e)
 
     if not args.no_upload and not args.smoke:
         print("[phase=upload]", flush=True)

@@ -53,6 +53,7 @@ from issue923_common import (  # noqa: E402
     STORE_PREFIXES,
     assign_stratified_folds,
     dump_json,
+    hf_revision,
     load_json,
     texts_hash,
 )
@@ -135,7 +136,7 @@ def build_dolly(tokenizer, betley_lens: list[int], drop_pools: dict, n_out: int)
     """48 Dolly-15k instruction-only OOD queries, length-matched (plan §4.3)."""
     from datasets import load_dataset
 
-    ds = load_dataset(DOLLY_DATASET, split="train")
+    ds = load_dataset(DOLLY_DATASET, split="train", revision=hf_revision("datasets", DOLLY_DATASET))
     counts = {
         "rows": 0,
         "nonempty_context": 0,
@@ -280,7 +281,9 @@ def main() -> int:
 
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(bp.DEFAULT_MODEL)
+    tokenizer = AutoTokenizer.from_pretrained(
+        bp.DEFAULT_MODEL, revision=hf_revision("models", bp.DEFAULT_MODEL)
+    )
     betley_lens = [len(tokenizer.encode(p, add_special_tokens=False)) for p in betley]
 
     # In-stream raising references match the parent builder (betley + ICL demos);

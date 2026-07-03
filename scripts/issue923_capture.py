@@ -91,6 +91,7 @@ from issue923_common import (  # noqa: E402
     build_masked_context_4d_mask,
     context_prefix_split,
     dump_json,
+    hf_revision,
     load_json,
     render_full_prompt,
     render_qry_empty_system,
@@ -132,7 +133,10 @@ def load_model_and_tokenizer(args, attn_implementation: str = "sdpa"):
     if args.tiny_model:
         from transformers import Qwen2Config, Qwen2ForCausalLM
 
-        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+        tokenizer = AutoTokenizer.from_pretrained(
+            "Qwen/Qwen2.5-0.5B-Instruct",
+            revision=hf_revision("models", "Qwen/Qwen2.5-0.5B-Instruct"),
+        )
         cfg = Qwen2Config(
             vocab_size=len(tokenizer),
             hidden_size=64,
@@ -147,10 +151,12 @@ def load_model_and_tokenizer(args, attn_implementation: str = "sdpa"):
         model = Qwen2ForCausalLM(cfg)
         model.eval()
         return model.to(args.device if args.device != "auto" else "cpu"), tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    rev = hf_revision("models", args.model)  # pinned load (hf_pins.json)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, revision=rev)
     use_cuda = args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available())
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
+        revision=rev,
         torch_dtype=torch.bfloat16 if use_cuda else torch.float32,
         attn_implementation=attn_implementation,
     )
@@ -185,8 +191,11 @@ def vllm_generate_chunked(model_name: str, prompts: list[str], max_new_tokens: i
     from vllm import LLM, SamplingParams
 
     enforce_eager = os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1"
+    rev = hf_revision("models", model_name)  # pinned load (hf_pins.json)
     llm = LLM(
         model=model_name,
+        revision=rev,
+        tokenizer_revision=rev,
         dtype="bfloat16",
         gpu_memory_utilization=0.45,
         enforce_eager=enforce_eager,
@@ -954,7 +963,12 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
         else:
             logger.warning("arm_qry_iii DROPPED (mask invariance failed under sdpa AND eager)")
 
-    dump_json(run_meta, packs_dir / f"run_meta_{shard_tag}.json")
+    # Write run_meta ONLY when a producing phase ran this invocation: the
+    # upload-only resume (`--phases upload`) carries none of the load-bearing
+    # diagnostics (mask_backend / mask_invariance / fctx_identity_check /
+    # truncation_hits) and would CLOBBER shard-0's real record (r1 Minor).
+    if any(p in phases for p in ("gen", "tf", "ffull", "partials")):
+        dump_json(run_meta, packs_dir / f"run_meta_{shard_tag}.json")
 
     # ── upload ────────────────────────────────────────────────────────────────
     if "upload" in phases and not args.no_upload:

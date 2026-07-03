@@ -36,7 +36,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
-from issue923_common import dump_json, load_json  # noqa: E402
+from issue923_common import HF_DATA_REPO, HF_PREFIX_923, dump_json, load_json  # noqa: E402
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
 
 ARM_LABELS = {
     "arm_ctx": "Context-only",
@@ -71,12 +75,20 @@ def hero_panel(stats: dict, nulls: dict, anova: dict, genre: str, out_dir: Path,
     his = [max(0.0, g["L18"][a]["ci95"][1] - v) for a, v in zip(arms, vals, strict=True)]
     fig, ax = plt.subplots(figsize=(7.5, 4.5), layout="constrained")
     x = np.arange(len(arms))
-    ax.bar(x, vals, yerr=[los, his], capsize=4, color=PALETTE[: len(arms)])
+    # PER-ARM L18 null bands FIRST (behind the skill bars): each arm is gated
+    # against ITS OWN selection-matched L18-only null column (plan hero spec;
+    # r1: only arm_full's band was shaded). arm_blend has no permutation
+    # column (nulls cover the ridge arms) — no band drawn for it.
+    null_arms = nulls["genres"][genre]["arms"]
+    for xi, a in zip(x, arms, strict=True):
+        q = null_arms.get(a, {}).get("L18_column_quantiles")
+        if not q:
+            continue
+        ax.bar(float(xi), q["p975"], width=0.8, color="gray", alpha=0.25, zorder=1)
+    ax.bar(x, vals, yerr=[los, his], capsize=4, color=PALETTE[: len(arms)], zorder=2)
     shares = anova["anova"][genre][hl]["pca48"]
     ax.axhline(shares["share_ctx"], ls="--", lw=1, color="#0173b2", alpha=0.7)
     ax.axhline(shares["share_ctx"] + shares["share_qry"], ls="--", lw=1, color="#029e73", alpha=0.7)
-    band = nulls["genres"][genre]["arms"]["arm_full"]["L18_column_quantiles"]["p975"]
-    ax.axhspan(min(0, band) if band < 0 else 0, max(band, 0), color="gray", alpha=0.2)
     ax.set_xticks(x)
     ax.set_xticklabels([ARM_LABELS[a] for a in arms], rotation=20, ha="right")
     ax.set_ylabel("Pooled held-out skill-over-mean R² (L18)")
@@ -189,6 +201,12 @@ def main() -> int:
         "--fits-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_923/fits"
     )
     parser.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "figures/issue_923")
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="upload the rendered figures dir to the HF data repo (the ephemeral "
+        "cpu-mid instance cannot commit to git — r1 Minor: figures never left it)",
+    )
     args = parser.parse_args()
 
     meta = reproducibility_metadata({"script": "issue923_figures"})
@@ -207,6 +225,11 @@ def main() -> int:
     if regen_path.exists():
         regen_hist(load_json(regen_path), args.out_dir, meta)
     print(f"figures written to {args.out_dir}")
+    if args.upload:
+        from explore_persona_space.orchestrate import hub
+
+        hub._upload(args.out_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/figures")
+        print(f"figures uploaded to {HF_DATA_REPO}:{HF_PREFIX_923}/figures")
     return 0
 
 

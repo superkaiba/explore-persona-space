@@ -123,6 +123,25 @@ def texts_hash(texts: list[str]) -> str:
     return h.hexdigest()
 
 
+HF_PINS_PATH = DATA_DIR / "hf_pins.json"
+
+
+def hf_revision(kind: str, repo_id: str) -> str:
+    """Pinned HF revision for a model/dataset load (committed ``hf_pins.json``).
+
+    Every issue923 HF model/dataset load passes ``revision=hf_revision(...)``
+    so production cannot silently drift when the upstream repo moves (r1
+    blocker ``hf-revision-pinning-missing``; store span files are pinned
+    separately in ``store_pins.json``). An unpinned repo id fails loud —
+    resolve its sha and add it to the pin file rather than loading unpinned.
+    """
+    assert kind in ("models", "datasets"), kind
+    pins = load_json(HF_PINS_PATH)
+    rev = pins.get(kind, {}).get(repo_id)
+    assert rev, f"no pinned revision for {kind}:{repo_id} — add it to {HF_PINS_PATH}"
+    return rev
+
+
 # ── prompt rendering / prefix arithmetic ──────────────────────────────────────
 
 
@@ -289,8 +308,11 @@ def weighted_pca_basis(
     multiplicities (train-cell counts). Exactly the PCA of the EXPANDED train
     design (each row repeated ``weights[i]`` times): weighted mean, then SVD of
     ``sqrt(w) * (Xd - mu)``. Mirrors ``robust_pca_basis``'s gesdd→gesvd
-    fallback. Returns (mu (H,), comps (k', H)) with k' = min(k, rank-ish);
-    degenerate dims are dropped downstream by the train-std threshold.
+    fallback. Returns (mu (H,), comps (k', H)) with k' = min(k, n_distinct).
+    Projected coordinates are deliberately NOT re-standardized downstream
+    (``press_fit_predict(standardize=False)`` — the no-post-PCA-whitening
+    choice); near-zero-variance projected dims stay in place and are benign
+    under PRESS-ridge regularization.
     """
     w = np.asarray(weights, dtype=np.float64)
     assert (w > 0).all(), "weighted_pca_basis: nonpositive multiplicity"

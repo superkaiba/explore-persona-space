@@ -1,0 +1,10 @@
+{
+  "comment": "HF revision pins for every issue923 model/dataset load (r1 blocker hf-revision-pinning-missing). Resolved 2026-07-03 via HfApi model_info/dataset_info .sha; store span-file pins live in store_pins.json.",
+  "models": {
+    "Qwen/Qwen2.5-7B-Instruct": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "Qwen/Qwen2.5-0.5B-Instruct": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "datasets": {
+    "databricks/databricks-dolly-15k": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a"
+  }
+}
