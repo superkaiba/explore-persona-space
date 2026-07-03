@@ -901,6 +901,12 @@ class PollResult:
     # changes ``status`` and never stops anything. Defaulted so the
     # cross-backend PollResult(...) call sites need no change.
     gpu_width_advisory_posted: bool = False
+    # True when THIS tick posted the [gpu-underparallel-warning] marker (plan §3,
+    # workflow v2) — < 50% of the provisioned GPUs busy >= GPU_UNDERPARALLEL_
+    # WARNING_MIN minutes on a multi-GPU pod, once per run. Observability only;
+    # never changes ``status`` and never stops anything. Defaulted so the
+    # cross-backend PollResult(...) call sites need no change.
+    gpu_underparallel_warning_posted: bool = False
     # True when THIS tick posted an epm:compute-deviation (source: poller)
     # marker (#873) — elapsed wall-time exceeded ETA_DEVIATION_MULT x the
     # plan §9 planned_wall_h TOTAL for the current phase or the whole run
@@ -2315,6 +2321,153 @@ def _maybe_post_gpu_width_advisory(
     return update.width_since_epoch, update.idle_indices, advised_phases, True
 
 
+# ── Under-parallelization warning (partial saturation; plan §3, workflow v2) ──
+# Minutes of sustained "healthy verdict + fewer than HALF the provisioned GPUs
+# busy" on an N>1-GPU pod before ONE per-RUN [gpu-underparallel-warning]
+# epm:progress note. DISTINCT from the #873 [gpu-width-advisory] above:
+#   * that fires on ANY idle GPU (1 <= idle < N) after GPU_WIDTH_ADVISORY_MIN
+#     (45m), per-PHASE, and requires a STABLE idle set — its target is a NARROW
+#     phase holding a WIDE pod (release / downsize it, the #813/#664 spend-leak);
+#   * THIS one fires on the stronger MAJORITY-idle signal (< 50% of GPUs busy)
+#     after a shorter 15-min window, deduped ONCE PER RUN, and points at
+#     under-parallelization / sharding (widen the work to fill the pod — the v2
+#     "saturate every provisioned GPU" guideline the efficiency critics own).
+# Both ride the same epm:progress channel; neither flips ``status`` nor stops
+# anything. 0 (or negative) disables.
+GPU_UNDERPARALLEL_WARNING_MIN = int(os.environ.get("EPM_GPU_UNDERPARALLEL_WARNING_MIN", "15"))
+# Warn when the busy-GPU FRACTION is strictly below this (majority idle).
+GPU_UNDERPARALLEL_BUSY_FRACTION = 0.5
+
+
+@dataclass(frozen=True)
+class GpuUnderparallelUpdate:
+    """Outcome of one under-parallelization-warning tick."""
+
+    should_post: bool
+    since_epoch: int  # 0 = no active partial-saturation span
+    n_busy: int
+    n_gpus: int
+    span_sec: int
+
+
+def _gpu_underparallel_update(
+    *,
+    status: str,
+    gpu_util: str,
+    prev_since_epoch: int,
+    already_warned: bool,
+    now_epoch: int,
+    warning_min: int,
+) -> GpuUnderparallelUpdate:
+    """Pure decision core for the per-run under-parallelization warning (plan §3).
+
+    Tracks the sustained span of "healthy verdict + < 50% of the provisioned
+    GPUs busy (but >= 1 busy)" on a multi-GPU pod. Everything RESETS the span
+    (returns ``should_post=False, since_epoch=0``): a disabled warning
+    (``warning_min <= 0``), a non-``running`` verdict, an ``unknown`` /
+    unparseable GPU sample (the ``_parse_gpu_utils`` fail-safe carries over — a
+    missing nvidia-smi never accumulates), a single-GPU pod (N < 2), all-idle
+    (``n_busy == 0``: the idle advisory's domain AND a legitimate CPU-only
+    phase — never re-flagged here), and >= 50% busy (healthy width). The span
+    does NOT reset on a phase change — under-parallelization is a run-level
+    concern and the per-RUN dedup already bounds it to one warning.
+    ``should_post`` is True only once the span reaches ``warning_min`` minutes
+    AND the run has not already been warned. Pure / no I/O — the caller owns
+    state persistence + the marker post.
+    """
+    reset = GpuUnderparallelUpdate(should_post=False, since_epoch=0, n_busy=0, n_gpus=0, span_sec=0)
+    if warning_min <= 0 or status != "running":
+        return reset
+    utils = _parse_gpu_utils(gpu_util)
+    if utils is None or len(utils) < 2:
+        return reset
+    n_gpus = len(utils)
+    n_busy = sum(1 for u in utils if u > GPU_IDLE_UTIL_THRESHOLD)
+    if not (n_busy >= 1 and n_busy / n_gpus < GPU_UNDERPARALLEL_BUSY_FRACTION):
+        return reset
+    since = now_epoch if prev_since_epoch <= 0 else prev_since_epoch
+    span = max(0, now_epoch - since)
+    should_post = span >= warning_min * 60 and not already_warned
+    return GpuUnderparallelUpdate(
+        should_post=should_post,
+        since_epoch=since,
+        n_busy=n_busy,
+        n_gpus=n_gpus,
+        span_sec=span,
+    )
+
+
+def _maybe_post_gpu_underparallel_warning(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, bool, bool]:
+    """Under-parallelization wiring for ``poll_once``: parse state, decide, post.
+
+    Returns ``(since_epoch, warned, posted)`` for the caller to persist via
+    ``_save_state``. Per-RUN dedup via the ``gpu_underparallel_warned`` flag,
+    which is run-scoped (cleared with the other #873 tripwire keys on a fresh
+    ``epm:run-launched``, so a relaunch / follow-up round re-arms the warning).
+    Posts on the SAME ``epm:progress`` channel as the width advisory (note
+    prefixed ``[gpu-underparallel-warning]``, plus a
+    ``gpu_underparallel_warning=True`` extra). A post failure is logged and the
+    run is NOT recorded as warned, so the next tick retries; the warning never
+    affects the status verdict and never stops anything.
+    """
+    try:
+        prev_since = int(prev_state.get("gpu_underparallel_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_since = 0
+    already_warned = prev_state.get("gpu_underparallel_warned", "0") == "1"
+    update = _gpu_underparallel_update(
+        status=status,
+        gpu_util=gpu_util,
+        prev_since_epoch=prev_since,
+        already_warned=already_warned,
+        now_epoch=now_epoch,
+        warning_min=GPU_UNDERPARALLEL_WARNING_MIN,
+    )
+    if not update.should_post:
+        return update.since_epoch, already_warned, False
+    span_min = update.span_sec // 60
+    note = (
+        f"[gpu-underparallel-warning] {update.n_busy} of {update.n_gpus} GPUs busy for "
+        f">{span_min} min while the run is healthy (phase={current_phase}, gpu_util={gpu_util}) "
+        f"— fewer than half the provisioned GPUs are working. Check sharding: this run may be "
+        f"under-parallelized (widen the work to fill the pod, or downsize it — the workflow-v2 "
+        f"'saturate every provisioned GPU' guideline). Advisory only: the status verdict is "
+        f"unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_underparallel_warning=True,
+        )
+    except Exception as exc:
+        log.error("gpu-underparallel warning post failed (next tick will retry): %s", exc)
+        return update.since_epoch, already_warned, False
+    log.warning(
+        "posted gpu-underparallel warning for #%d: %d of %d GPUs busy %d min during healthy "
+        "phase=%s",
+        issue,
+        update.n_busy,
+        update.n_gpus,
+        span_min,
+        current_phase,
+    )
+    return update.since_epoch, True, True
+
+
 # ── Phase-ETA tripwire (#873) ────────────────────────────────────────────────
 # Multiplier over the plan §9 TOTAL planned_wall_h before the poller auto-posts
 # epm:compute-deviation (source: poller). <= 0 disables. Read at import time to
@@ -2644,6 +2797,10 @@ _TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
     "gpu_width_since_epoch",
     "gpu_width_idle_set",
     "gpu_width_advised_phases",
+    # plan §3 under-parallelization warning: per-RUN dedup, so re-arm on a
+    # fresh run alongside the #873 width/ETA tripwires.
+    "gpu_underparallel_since_epoch",
+    "gpu_underparallel_warned",
 )
 # Tolerance (seconds) when comparing the observed run-launched epoch against
 # the stored anchor: rounding jitter on ``now - run_age`` must never
@@ -3672,6 +3829,26 @@ def poll_once(
         )
     )
 
+    # ── Under-parallelization warning (partial saturation; plan §3) ──────
+    # DISTINCT from the #873 width advisory above: < 50% of the provisioned
+    # GPUs busy for >= GPU_UNDERPARALLEL_WARNING_MIN (15m) on a multi-GPU pod
+    # points at under-parallelization (check sharding), deduped ONCE PER RUN.
+    # Reads the run-scoped tripwire_state so a relaunch re-arms it. Advisory
+    # only — never flips ``status``, never stops anything.
+    (
+        gpu_underparallel_since_epoch,
+        gpu_underparallel_warned,
+        gpu_underparallel_posted,
+    ) = _maybe_post_gpu_underparallel_warning(
+        issue=issue,
+        pod=pod,
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
@@ -3800,6 +3977,10 @@ def poll_once(
             "gpu_width_since_epoch": str(gpu_width_since_epoch),
             "gpu_width_idle_set": ",".join(str(i) for i in gpu_width_idle_set),
             "gpu_width_advised_phases": ",".join(sorted(gpu_width_advised_phases)),
+            # plan §3 under-parallelization warning: span + per-RUN warned flag
+            # (run-scoped via _TRIPWIRE_STATE_KEYS — re-armed on a fresh run).
+            "gpu_underparallel_since_epoch": str(gpu_underparallel_since_epoch),
+            "gpu_underparallel_warned": "1" if gpu_underparallel_warned else "0",
             # #873 phase-ETA tripwire dedup keys + the one-shot missing-
             # budget warn flag. Phase names match PHASE_RE ([a-z0-9_]+) and
             # __run_total__ shares the charset, so the comma join is safe.
@@ -3841,6 +4022,7 @@ def poll_once(
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         gpu_idle_escalation_posted=gpu_idle_escalation_posted,
         gpu_width_advisory_posted=gpu_width_posted,
+        gpu_underparallel_warning_posted=gpu_underparallel_posted,
         eta_deviation_posted=eta_posted,
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
@@ -3917,6 +4099,7 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
                 "gpu_idle_escalation_posted": result.gpu_idle_escalation_posted,
                 "gpu_width_advisory_posted": result.gpu_width_advisory_posted,
+                "gpu_underparallel_warning_posted": result.gpu_underparallel_warning_posted,
                 "eta_deviation_posted": result.eta_deviation_posted,
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,

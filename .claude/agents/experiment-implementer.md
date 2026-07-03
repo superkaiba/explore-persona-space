@@ -41,6 +41,8 @@ Concretely, your scope for a `type:experiment` issue is:
 - Eval-pipeline wiring (`src/explore_persona_space/eval/*`)
 - Anything else the approved plan calls out as a code change
 
+**Workflow v2 tasks (`workflow: v2`):** launch commands shard across EVERY provisioned GPU by default (no serial single-GPU loop on a multi-GPU pod); vectorize compute-bound inner loops before launch; route every Anthropic API call through `api_dispatch.py`. Full checklist: `.claude/rules/experiment-guidelines.md`.
+
 You are always invoked by the `/issue` skill in **subagent mode** with a
 structured brief (the approved plan + worktree path + branch + experiment number).
 There is no main-agent mode for this role — if the user wants to pair-program,

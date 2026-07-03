@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 922,
+  "highest_id": 923,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6073,6 +6073,13 @@
       "path": "tasks/planning/922",
       "status": "planning",
       "title": "Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP) on real chat contexts"
+    },
+    "923": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/923",
+      "status": "proposed",
+      "title": "Context/query decomposability of the on-policy answer mapping: M_A (context->answer) + M_B (query->answer) vs M_C (context+query->answer)"
     },
     "94": {
       "has_clean_result": false,
