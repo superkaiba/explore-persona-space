@@ -20,20 +20,57 @@ cd "$REPO_ROOT" || exit 1
 mkdir -p logs eval_results/issue_833
 MAIN_LOG="logs/issue833_gcp_phase_d.log"
 
-echo "[phase=stage] snapshot_download analysis tensors ($(date -u +%H:%M:%S))" | tee -a "$MAIN_LOG"
+# NOTE round 7b: snapshot_download is a TRAP against this data repo — it
+# enumerates the ENTIRE ~1M-file tree before allow_patterns filters (the
+# round-7a instance sat 40+ min in enumeration with zero files landed).
+# Scoped list_repo_tree(path_in_repo=...) enumerates ONLY the two prefixes
+# (~seconds), then a modest thread pool of hf_hub_download calls stays under
+# the 2500 req/5min quota (round 3's kill was 9 concurrent PROCESSES).
+echo "[phase=stage] scoped list + per-file download ($(date -u +%H:%M:%S))" | tee -a "$MAIN_LOG"
 uv run python - <<'PY' || { echo "[phase=stage] FAILED" | tee -a "$MAIN_LOG"; exit 1; }
-from huggingface_hub import snapshot_download
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-p = snapshot_download(
-    "superkaiba1/explore-persona-space-data",
-    repo_type="dataset",
-    allow_patterns=[
-        "issue833_onpolicy_map/analysis_tensors/**",
-        "issue833_onpolicy_map/analysis_tensors_rbase/**",
-    ],
-    local_dir="hf_stage",
-)
-print("staged at", p)
+from huggingface_hub import HfApi, hf_hub_download
+
+REPO = "superkaiba1/explore-persona-space-data"
+PREFIXES = [
+    "issue833_onpolicy_map/analysis_tensors",
+    "issue833_onpolicy_map/analysis_tensors_rbase",
+]
+api = HfApi()
+paths = []
+for pref in PREFIXES:
+    paths += [
+        e.path
+        for e in api.list_repo_tree(REPO, path_in_repo=pref, repo_type="dataset", recursive=True)
+        if e.path.endswith(".npz")
+    ]
+print(f"listed {len(paths)} npz files", flush=True)
+
+
+def fetch(p: str) -> None:
+    for attempt in range(4):
+        try:
+            hf_hub_download(REPO, p, repo_type="dataset", local_dir="hf_stage")
+            return
+        except Exception as e:  # noqa: BLE001 — retry w/ backoff, then re-raise
+            if attempt == 3:
+                raise
+            time.sleep(20 * (attempt + 1))
+
+
+done = 0
+with ThreadPoolExecutor(max_workers=6) as ex:
+    futs = [ex.submit(fetch, p) for p in paths]
+    for f in as_completed(futs):
+        f.result()  # re-raise the first hard failure
+        done += 1
+        if done % 500 == 0:
+            print(f"downloaded {done}/{len(paths)}", flush=True)
+print(f"downloaded {done}/{len(paths)}", flush=True)
+sys.exit(0 if done == len(paths) else 1)
 PY
 rm -rf eval_results/issue_833/analysis_tensors eval_results/issue_833/analysis_tensors_rbase
 cp -a hf_stage/issue833_onpolicy_map/analysis_tensors eval_results/issue_833/ || exit 1
