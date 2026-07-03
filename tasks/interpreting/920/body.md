@@ -1,6 +1,6 @@
 ---
-title: Context×answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe
-  generalization
+title: The whole-answer-mean summary survives an exhaustive context-by-answer recipe
+  sweep under family-held-out, selection-corrected evaluation (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-03T08:50:07Z'

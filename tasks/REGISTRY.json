@@ -6057,7 +6057,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/920",
       "status": "interpreting",
-      "title": "Context\u00d7answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe generalization"
+      "title": "The whole-answer-mean summary survives an exhaustive context-by-answer recipe sweep under family-held-out, selection-corrected evaluation (MODERATE confidence)"
     },
     "921": {
       "has_clean_result": false,
