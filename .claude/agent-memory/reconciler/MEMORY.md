@@ -19,6 +19,7 @@
 - [Codex skips data-construction/coverage arithmetic](feedback_codex_skips_data_construction_arithmetic.md) — mix-rule quotas (#543), Goal-cell coverage (#545), "weighable from text" the rig discards (#603) — trace the persisted artifact yourself.
 - [Claude trusts a per-item disk assumption framed as a code claim](feedback_claude_trusts_disk_assumption_framed_as_code_claim.md) — "all N drifts have valid body.md" verified by a code read, not a per-folder ls; 12/13 were bodyless husks → reconcile skips them, PASS unreachable. Re-run the enumeration. #724 r1.
 - [Claude trusts caller-topology claims without wrapper trace](feedback_claude_trusts_caller_topology_claims_without_wrapper_trace.md) — live-execute the path-selection predicate against PeftModel/wrappers; fact-checker CONFIRMED ≠ trace; doc-plan mis-scoping who hits the trap = REVISE. #868 r1.
+- [Claude APPROVEs labeled-split over disjoint registries](feedback_claude_approves_labeled_split_over_disjoint_registries.md) — intersect the enumeration registry's keys with the label class's slugs yourself; 0-hit ⇒ split unimplementable + cross-registry twins mislabel held-out; also trace branch reachability under shipped params before upholding a defensive-branch Must-Fix. #901 r1.
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
