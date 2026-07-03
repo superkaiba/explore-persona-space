@@ -1901,14 +1901,39 @@ def _v2_family_draws(
 
 
 def _w2_check(
-    eval_root: Path, trait: str, setting: str, regime: str, fam: str, per_draw_max: np.ndarray
+    eval_root: Path,
+    trait: str,
+    setting: str,
+    regime: str,
+    fam: str,
+    per_draw_max: np.ndarray,
+    *,
+    allow_gate_skip: bool = False,
 ) -> dict:
     """Assert the orig_* reference rows reproduce the committed nullbattery
     per-draw max arrays to <= 2e-15 (plan §7 W2). FAIL => sampler/seed
-    regression — raise before trusting any v2 band."""
+    regression — raise before trusting any v2 band.
+
+    FAIL-CLOSED: a missing committed file / missing node / draw-count mismatch
+    means the gate CANNOT FIRE — that is a RuntimeError in production (an
+    unarmed gate is not a passed gate; plan §7 gives W2 STOP semantics). Only
+    ``allow_gate_skip`` (the --allow-gate-skip-smoke-only flag, never set by
+    the production driver) converts it into a recorded non-production skip.
+    """
+
+    def _gate_unarmed(reason: str) -> dict:
+        if not allow_gate_skip:
+            raise RuntimeError(
+                f"W2 GATE UNARMED: {trait}/{setting}/{regime}/{fam} — {reason}. "
+                "The plan §7 sampler bit-exactness anchor cannot fire; fix the "
+                "committed reference inputs (or pass --allow-gate-skip-smoke-only "
+                "for a smoke run, recorded as non-production)."
+            )
+        return {"status": "skipped_smoke_only", "non_production": True, "reason": reason}
+
     committed_path = eval_root / f"{trait}_{setting}_nullbattery.json"
     if not committed_path.exists():
-        return {"status": "skipped", "reason": f"committed file missing: {committed_path.name}"}
+        return _gate_unarmed(f"committed file missing: {committed_path.name}")
     with open(committed_path) as f:
         committed = json.load(f)
     # Committed layout: the finetune file is FLAT (SettingResult.to_json at top
@@ -1920,19 +1945,13 @@ def _w2_check(
     kind = {"orig_randnorm": "randnorm", "orig_perm": "perm"}[fam]
     node = nulls.get(kind)
     if node is None:
-        return {
-            "status": "skipped",
-            "reason": f"no committed {kind} node for {setting}/{regime}",
-        }
+        return _gate_unarmed(f"no committed {kind} node for {setting}/{regime}")
     committed_draws = np.asarray(node["draws_max_abs"], dtype=np.float64)
     if committed_draws.size != per_draw_max.size:
-        return {
-            "status": "skipped",
-            "reason": (
-                f"draw-count mismatch (committed {committed_draws.size} vs "
-                f"{per_draw_max.size}) — run with --draws-orig {committed_draws.size}"
-            ),
-        }
+        return _gate_unarmed(
+            f"draw-count mismatch (committed {committed_draws.size} vs "
+            f"{per_draw_max.size}) — run with --draws-orig {committed_draws.size}"
+        )
     # The REGISTERED W2 quantity (plan §7) is the committed nullbattery CAP
     # (r_p97_5) at <= 2e-15. The full per-draw array + the lower band carry
     # measured cross-run BLAS summation-order noise vs the pre-#847-thread-cap
@@ -2044,13 +2063,62 @@ def _v2_out_dir(eval_root: Path) -> Path:
     return d
 
 
+# Per-stage output-affecting run params (written by the stage functions as
+# ``stage_fixed_params`` / ``stage_maxlayer_params``). A stage node preserved
+# from disk during a merge must match the CURRENT run on the shared keys, or it
+# is a stale artifact (e.g. a 50-draw smoke ``stage_maxlayer`` surviving a
+# production fixed-stage rewrite) and is DROPPED, never merged through
+# (concern ``v2-ladder-resume-incomplete``).
+_V2_STAGE_KEYS: tuple[str, ...] = ("stage_fixed", "stage_maxlayer")
+_V2_STAGE_SEEDS: dict[str, str] = {"stage_fixed": "seeds", "stage_maxlayer": "seeds_maxlayer"}
+_V2_SHARED_PARAM_KEYS: tuple[str, ...] = (
+    "n_draws",
+    "n_draws_orig",
+    "lambda_primary",
+    "rb_version",
+    "allow_gate_skip_smoke_only",
+)
+
+
 def _write_one_file_v2(fkey: str, fd: dict, eval_root: Path) -> str:
+    """Merge-write one per-(trait, setting) v2 JSON.
+
+    Merging exists so the fixed and maxlayer stages compose into ONE file, but a
+    stage node PRESERVED from disk (present on disk, absent from ``fd``) is kept
+    ONLY when its recorded ``<stage>_params`` match the current run's params on
+    ``_V2_SHARED_PARAM_KEYS``; a mismatched/param-less stale node is dropped
+    (with its params + seeds) so a stale low-draw smoke output can never ride a
+    production rewrite into the published file.
+    """
     outdir = _v2_out_dir(eval_root)
     path = outdir / f"{fkey}_honestnulls_v2.json"
     merged = {}
     if path.exists():
         with open(path) as pf:
             merged = json.load(pf)
+    cur_params = next(
+        (fd[f"{sk}_params"] for sk in _V2_STAGE_KEYS if isinstance(fd.get(f"{sk}_params"), dict)),
+        None,
+    )
+    if cur_params is not None:
+        for sk in _V2_STAGE_KEYS:
+            if sk not in merged or sk in fd:
+                continue
+            disk_params = merged.get(f"{sk}_params")
+            stale = not isinstance(disk_params, dict) or any(
+                disk_params.get(k) != cur_params.get(k) for k in _V2_SHARED_PARAM_KEYS
+            )
+            if stale:
+                logger.warning(
+                    "%s: dropping STALE on-disk %s node (params %s != current run %s) "
+                    "— a stale stage never merges through a production rewrite",
+                    fkey,
+                    sk,
+                    disk_params,
+                    {k: cur_params.get(k) for k in _V2_SHARED_PARAM_KEYS},
+                )
+                for drop_key in (sk, f"{sk}_params", _V2_STAGE_SEEDS[sk]):
+                    merged.pop(drop_key, None)
     merged.update(fd)
     with open(path, "w") as f:
         json.dump(merged, f, indent=2, default=_json_default)
@@ -2058,6 +2126,92 @@ def _write_one_file_v2(fkey: str, fd: dict, eval_root: Path) -> str:
 
 
 # ── v2 FIXED-LAYER stage ───────────────────────────────────────────────────────
+
+
+def _npy_len_ok(path: Path, want_n: int) -> bool:
+    """True iff ``path`` is a loadable 1-D .npy of exactly ``want_n`` entries."""
+    if not path.exists():
+        return False
+    try:
+        arr = np.load(path, mmap_mode="r")
+    except (OSError, ValueError) as e:
+        logger.warning("resume: unreadable per-draw array %s (%s) — cell recomputed", path, e)
+        return False
+    return arr.shape == (want_n,)
+
+
+def _fixed_cell_done_v2(  # noqa: C901 — exhaustive param/artifact resume predicate
+    eval_root: Path,
+    maxdraws_root: Path,
+    trait: str,
+    setting: str,
+    *,
+    n_draws: int,
+    n_draws_orig: int,
+    n_boot: int,
+    lam: float,
+    lam_sweep: bool,
+    allow_gate_skip: bool,
+) -> bool:
+    """True iff the fixed-stage output for (trait, setting) is complete AND was
+    produced under EXACTLY the current output-affecting params (draw counts,
+    lambda, n_boot, gate-skip mode), with every persisted per-draw fixed-layer
+    ``.npy`` column present at the expected length. Anything less ⇒ recompute
+    (concern ``v2-ladder-resume-incomplete``)."""
+    path = _v2_out_dir(eval_root) / f"{trait}_{setting}_honestnulls_v2.json"
+    if not path.exists():
+        return False
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    if data.get("rb_version") != "v2":
+        return False
+    params = data.get("stage_fixed_params")
+    want = {
+        "n_draws": n_draws,
+        "n_draws_orig": n_draws_orig,
+        "n_boot": n_boot,
+        "lambda_primary": lam,
+        "rb_version": "v2",
+        "allow_gate_skip_smoke_only": allow_gate_skip,
+    }
+    if not isinstance(params, dict) or any(params.get(k) != v for k, v in want.items()):
+        return False
+    if lam_sweep and not params.get("lam_sweep"):
+        return False
+    sf = data.get("stage_fixed")
+    if not isinstance(sf, dict):
+        return False
+    for regime in REGIMES[setting]:
+        rd = sf.get(regime)
+        if not isinstance(rd, dict) or not isinstance(rd.get("per_choice"), dict):
+            return False
+        for choice in ("own_argmax", "issue778_selected", "paper_steering"):
+            pc = rd["per_choice"].get(choice)
+            if not isinstance(pc, dict) or not isinstance(pc.get("nulls"), dict):
+                return False
+            for fam in (*V2_HONEST_STOCHASTIC, *V2_REFERENCE):
+                node = pc["nulls"].get(fam)
+                want_n = n_draws_orig if fam in V2_REFERENCE else n_draws
+                if not isinstance(node, dict) or node.get("n_draws") != want_n:
+                    return False
+        # The persisted per-draw fixed-layer columns (the FWER inputs) must
+        # exist at the expected length for BOTH persisted choices.
+        for choice in ("paper_steering", "own_argmax"):
+            layer = rd["per_choice"][choice].get("layer")
+            if not isinstance(layer, int):
+                return False
+            for fam in (*V2_HONEST_STOCHASTIC, *V2_REFERENCE):
+                want_n = n_draws_orig if fam in V2_REFERENCE else n_draws
+                npy = (
+                    maxdraws_root
+                    / f"{trait}_{setting}_{regime}_{fam}_fixed_{choice}_L{layer}_draws.npy"
+                )
+                if not _npy_len_ok(npy, want_n):
+                    return False
+    return True
 
 
 def run_fixed_stage_v2(  # noqa: C901
@@ -2071,8 +2225,18 @@ def run_fixed_stage_v2(  # noqa: C901
     settings: tuple[str, ...],
     lam: float,
     lam_sweep: bool = True,
+    allow_gate_skip: bool = False,
 ) -> dict:
     maxdraws_root.mkdir(parents=True, exist_ok=True)
+    stage_params = {
+        "n_draws": n_draws,
+        "n_draws_orig": n_draws_orig,
+        "n_boot": n_boot,
+        "lambda_primary": lam,
+        "rb_version": "v2",
+        "lam_sweep": lam_sweep,
+        "allow_gate_skip_smoke_only": allow_gate_skip,
+    }
     ctxs = {t: _v2_trait_context(out_root, t, lam) for t in traits}
     rbs_v2 = {t: c["rb_v2"] for t, c in ctxs.items() if c is not None}
     cell_idx = 0
@@ -2092,9 +2256,29 @@ def run_fixed_stage_v2(  # noqa: C901
         n_pair = min(ctx["pos_v2"].shape[0], ctx["neg_v2"].shape[0])
         diff_acts = ctx["pos_v2"][:n_pair] - ctx["neg_v2"][:n_pair]
         for setting in settings:
-            predictor, target, cid, tags = _load_cell(setting, out_root, eval_root, trait)
             fkey = f"{trait}_{setting}"
+            if _fixed_cell_done_v2(
+                eval_root,
+                maxdraws_root,
+                trait,
+                setting,
+                n_draws=n_draws,
+                n_draws_orig=n_draws_orig,
+                n_boot=n_boot,
+                lam=lam,
+                lam_sweep=lam_sweep,
+                allow_gate_skip=allow_gate_skip,
+            ):
+                with open(_v2_out_dir(eval_root) / f"{fkey}_honestnulls_v2.json") as f:
+                    files[fkey] = json.load(f)
+                # Preserve the fresh-run seed schedule: skipped cells still
+                # advance cell_idx by their regime count.
+                cell_idx += len(REGIMES[setting])
+                logger.info("fixed_v2: %s already complete — resumed from disk", fkey)
+                continue
+            predictor, target, cid, tags = _load_cell(setting, out_root, eval_root, trait)
             files.setdefault(fkey, _v2_file_stub(ctx, trait, setting, predictor, tags))
+            files[fkey]["stage_fixed_params"] = stage_params
             files[fkey]["stage_fixed"] = files[fkey].get("stage_fixed", {})
             for regime in REGIMES[setting]:
                 within = regime == "within"
@@ -2298,7 +2482,23 @@ def run_fixed_stage_v2(  # noqa: C901
 # ── v2 MAX-OVER-28 stage ───────────────────────────────────────────────────────
 
 
-def _maxlayer_cell_done_v2(eval_root: Path, trait: str, setting: str) -> bool:
+def _maxlayer_cell_done_v2(
+    eval_root: Path,
+    maxdraws_root: Path,
+    trait: str,
+    setting: str,
+    *,
+    n_draws: int,
+    n_draws_orig: int,
+    lam: float,
+    allow_gate_skip: bool,
+) -> bool:
+    """True iff the maxlayer output for (trait, setting) is complete AND was
+    produced under EXACTLY the current output-affecting params (rb_version,
+    lambda_primary, requested draw counts, gate-skip mode, families, regimes),
+    with every persisted per-draw ``*_maxdraws.npy`` present at the expected
+    length. A 50-draw smoke output can therefore never satisfy a 10,000-draw
+    production run (concern ``v2-ladder-resume-incomplete``)."""
     path = _v2_out_dir(eval_root) / f"{trait}_{setting}_honestnulls_v2.json"
     if not path.exists():
         return False
@@ -2307,16 +2507,33 @@ def _maxlayer_cell_done_v2(eval_root: Path, trait: str, setting: str) -> bool:
             data = json.load(f)
     except (json.JSONDecodeError, OSError):
         return False
+    if data.get("rb_version") != "v2":
+        return False
+    params = data.get("stage_maxlayer_params")
+    want_params = {
+        "n_draws": n_draws,
+        "n_draws_orig": n_draws_orig,
+        "lambda_primary": lam,
+        "rb_version": "v2",
+        "allow_gate_skip_smoke_only": allow_gate_skip,
+    }
+    if not isinstance(params, dict) or any(params.get(k) != v for k, v in want_params.items()):
+        return False
     sm = data.get("stage_maxlayer")
     if not isinstance(sm, dict):
         return False
-    want = set((*V2_HONEST_STOCHASTIC, *V2_REFERENCE))
     for regime in REGIMES[setting]:
         rd = sm.get(regime)
-        if not isinstance(rd, dict) or "nulls" not in rd:
+        if not isinstance(rd, dict) or not isinstance(rd.get("nulls"), dict):
             return False
-        if not want.issubset(set(rd["nulls"].keys())):
-            return False
+        for fam in (*V2_HONEST_STOCHASTIC, *V2_REFERENCE):
+            node = rd["nulls"].get(fam)
+            want_n = n_draws_orig if fam in V2_REFERENCE else n_draws
+            if not isinstance(node, dict) or node.get("n_draws") != want_n:
+                return False
+            npy = maxdraws_root / f"{trait}_{setting}_{regime}_{fam}_maxdraws.npy"
+            if not _npy_len_ok(npy, want_n):
+                return False
     return True
 
 
@@ -2329,8 +2546,16 @@ def run_maxlayer_stage_v2(
     traits: tuple[str, ...],
     settings: tuple[str, ...],
     lam: float,
+    allow_gate_skip: bool = False,
 ) -> dict:
     maxdraws_root.mkdir(parents=True, exist_ok=True)
+    stage_params = {
+        "n_draws": n_draws,
+        "n_draws_orig": n_draws_orig,
+        "lambda_primary": lam,
+        "rb_version": "v2",
+        "allow_gate_skip_smoke_only": allow_gate_skip,
+    }
     layers_all = list(range(N_LAYERS))
     ctxs = {t: _v2_trait_context(out_root, t, lam) for t in traits}
     rbs_v2 = {t: c["rb_v2"] for t, c in ctxs.items() if c is not None}
@@ -2350,7 +2575,20 @@ def run_maxlayer_stage_v2(
         other_rbs = {ot: rbs_v2[ot] for ot in rbs_v2 if ot != trait}
         n_pair = min(ctx["pos_v2"].shape[0], ctx["neg_v2"].shape[0])
         diff_acts = ctx["pos_v2"][:n_pair] - ctx["neg_v2"][:n_pair]
-        pending = [s for s in settings if not _maxlayer_cell_done_v2(eval_root, trait, s)]
+        pending = [
+            s
+            for s in settings
+            if not _maxlayer_cell_done_v2(
+                eval_root,
+                maxdraws_root,
+                trait,
+                s,
+                n_draws=n_draws,
+                n_draws_orig=n_draws_orig,
+                lam=lam,
+                allow_gate_skip=allow_gate_skip,
+            )
+        ]
         chols: dict[str, dict[int, np.ndarray]] = {}
         if pending:
             t0 = time.time()
@@ -2366,6 +2604,7 @@ def run_maxlayer_stage_v2(
                 continue
             predictor, target, cid, tags = _load_cell(setting, out_root, eval_root, trait)
             files.setdefault(fkey, _v2_file_stub(ctx, trait, setting, predictor, tags))
+            files[fkey]["stage_maxlayer_params"] = stage_params
             files[fkey]["stage_maxlayer"] = files[fkey].get("stage_maxlayer", {})
             for regime in REGIMES[setting]:
                 within = regime == "within"
@@ -2405,7 +2644,15 @@ def run_maxlayer_stage_v2(
                         setting, obs_max, per_draw_max, bp.get("raw_p_one_sided")
                     )
                     if is_ref:
-                        bp["w2"] = _w2_check(eval_root, trait, setting, regime, fam, per_draw_max)
+                        bp["w2"] = _w2_check(
+                            eval_root,
+                            trait,
+                            setting,
+                            regime,
+                            fam,
+                            per_draw_max,
+                            allow_gate_skip=allow_gate_skip,
+                        )
                     fam_out[fam] = bp
                     per_layer[fam] = _per_layer_bands(mat)
                     np.save(
@@ -2511,10 +2758,34 @@ def _apply_bh_v2(files: dict, stage: str) -> None:
 HEADLINE_SETTINGS: tuple[str, ...] = ("monitoring_corrected", "monitoring_manyshot")
 
 
-def run_fwer_stage(
+def _write_fwer_na(out_dir: Path, base: dict, reason: str, detail: dict) -> Path:
+    """Write the EXPLICIT headline-N/A artifact (never a silent partial headline).
+
+    ``fwer_headline_v2.json`` with ``status: headline_NA`` replaces any partial
+    per-family headline; the caller decides whether the outcome is the
+    registered K1 carve-out (labeled outcome, run continues) or a fail-loud
+    RuntimeError (concern ``fwer-headline-partial-output``)."""
+    na = {
+        **base,
+        "status": "headline_NA",
+        "reason": reason,
+        **detail,
+        "reproducibility": lib.repro_metadata(),
+    }
+    path = out_dir / "fwer_headline_v2.json"
+    with open(path, "w") as f:
+        json.dump(na, f, indent=2, default=_json_default)
+    logger.warning("fwer: HEADLINE N/A artifact written: %s (%s)", path, reason)
+    return path
+
+
+def run_fwer_stage(  # noqa: C901
     eval_root: Path,
     maxdraws_root: Path,
     traits: tuple[str, ...],
+    n_draws: int,
+    *,
+    allow_gate_skip: bool = False,
 ) -> dict:
     """The registered cross-cell FWER min-p headline (statistics reconcile, C-5).
 
@@ -2531,32 +2802,68 @@ def run_fwer_stage(
     re-reduction of the persisted per-draw fixed-layer columns. Additionally a
     ``primary_mixed`` composite where each trait's cells use that trait's
     diagnostic-gated PRIMARY family (within_class | neg_arm_only).
+
+    FAIL-CLOSED (plan §4 C-5): the registered headline is EXACTLY 12 monitoring
+    cells with every requested family column present at ``n_draws`` draws. Any
+    missing cell/regime/column or a draw-count mismatch writes the EXPLICIT
+    headline-N/A artifact and raises (the driver stops BEFORE figures/upload/
+    MANIFEST — the #816 consumption signal never publishes on a partial
+    headline). The ONE sanctioned exception is the registered K1-N/A carve-out
+    (a trait went N/A at extraction, evidenced by its ``{trait}_NA`` marker):
+    that routes to the labeled headline-N/A artifact and the run continues.
+    ``allow_gate_skip`` (smoke only) relaxes ONLY the ==12 registered-set size
+    for trait subsets; per-cell completeness stays binding.
     """
     out_dir = _v2_out_dir(eval_root)
     cells: list[tuple[str, str, str]] = []  # (fkey, regime, trait)
     primary_by_trait: dict[str, str] = {}
     obs_p: dict[tuple[str, str, str], float] = {}  # (fkey, regime, fam) -> observed raw_p
     layer_by_cell: dict[tuple[str, str], int] = {}
+    missing_cells: list[str] = []
+    draw_mismatches: list[str] = []
+    k1_na_cells: list[str] = []
     for trait in traits:
         for setting in HEADLINE_SETTINGS:
             fkey = f"{trait}_{setting}"
             path = out_dir / f"{fkey}_honestnulls_v2.json"
+            na_path = out_dir / f"{trait}_NA_honestnulls_v2.json"
             if not path.exists():
-                logger.warning("fwer: %s missing — cell excluded (disclosed)", fkey)
+                if na_path.exists():
+                    logger.warning(
+                        "fwer: %s absent — trait %s is K1 N/A (registered carve-out)",
+                        fkey,
+                        trait,
+                    )
+                    k1_na_cells.append(fkey)
+                else:
+                    missing_cells.append(fkey)
                 continue
             with open(path) as f:
                 fd = json.load(f)
             if "status" in fd:
+                k1_na_cells.append(fkey)
                 continue
             primary_by_trait[trait] = fd["primary_family"]
-            for regime, rd in fd.get("stage_fixed", {}).items():
+            sf = fd.get("stage_fixed", {})
+            for regime in REGIMES[setting]:
+                rd = sf.get(regime)
+                if not isinstance(rd, dict) or not isinstance(rd.get("per_choice"), dict):
+                    missing_cells.append(f"{fkey}:{regime}")
+                    continue
                 pc = rd["per_choice"]["paper_steering"]
+                for fam in V2_HONEST_STOCHASTIC:
+                    node = pc["nulls"].get(fam)
+                    if not isinstance(node, dict) or node.get("raw_p") is None:
+                        missing_cells.append(f"{fkey}:{regime}:{fam}")
+                    elif node.get("n_draws") != n_draws:
+                        draw_mismatches.append(
+                            f"{fkey}:{regime}:{fam} (JSON n_draws "
+                            f"{node.get('n_draws')} != expected {n_draws})"
+                        )
                 layer_by_cell[(fkey, regime)] = pc["layer"]
                 cells.append((fkey, regime, trait))
                 for fam in V2_HONEST_STOCHASTIC:
                     obs_p[(fkey, regime, fam)] = pc["nulls"][fam]["raw_p"]
-    if not cells:
-        raise RuntimeError("fwer: no headline cells found — run --stage fixed first")
 
     def _fam_for_cell(fam: str, trait: str) -> str:
         return primary_by_trait[trait] if fam == "primary_mixed" else fam
@@ -2575,15 +2882,56 @@ def run_fwer_stage(
         "headline_cells": [f"{fk}:{rg}" for fk, rg, _t in cells],
         "n_headline_cells": len(cells),
         "expected_headline_cells": 12,
+        "expected_n_draws": n_draws,
+        "allow_gate_skip_smoke_only": allow_gate_skip,
         "primary_family_by_trait": primary_by_trait,
         "layer_resolution": LAYER_RESOLUTION_V2,
         "families": {},
         "reproducibility": lib.repro_metadata(),
     }
+    if missing_cells or draw_mismatches:
+        _write_fwer_na(
+            out_dir,
+            out,
+            "registered headline inputs incomplete (NOT the K1 carve-out)",
+            {"missing_cells": missing_cells, "draw_count_mismatches": draw_mismatches},
+        )
+        raise RuntimeError(
+            f"fwer: registered headline inputs incomplete — {len(missing_cells)} "
+            f"missing cells/families (first: {missing_cells[:4]}), "
+            f"{len(draw_mismatches)} draw-count mismatches (first: "
+            f"{draw_mismatches[:4]}). Explicit headline-N/A artifact written; "
+            "refusing to publish a partial headline (plan §4 C-5)."
+        )
+    if k1_na_cells:
+        # The registered K1-N/A carve-out: a labeled outcome, never a silent
+        # reduced-cell headline. The run continues (plan §7 K1 semantics).
+        return json.loads(
+            _write_fwer_na(
+                out_dir,
+                out,
+                f"K1-N/A trait(s) — registered 12-cell headline not computable "
+                f"({len(k1_na_cells)} cells N/A)",
+                {"k1_na_cells": k1_na_cells},
+            ).read_text()
+        )
+    if len(cells) != 12 and not allow_gate_skip:
+        _write_fwer_na(
+            out_dir,
+            out,
+            f"cell count {len(cells)} != registered 12",
+            {},
+        )
+        raise RuntimeError(
+            f"fwer: registered headline is EXACTLY 12 monitoring cells; found "
+            f"{len(cells)}. For a deliberate smoke trait-subset pass "
+            "--allow-gate-skip-smoke-only (recorded as non-production)."
+        )
+    if not cells:
+        raise RuntimeError("fwer: no headline cells found — run --stage fixed first")
     for fam in (*V2_HONEST_STOCHASTIC, "primary_mixed"):
         rank_p_cols = []
         obs_ps = []
-        skip = False
         for fkey, regime, trait in cells:
             f_eff = _fam_for_cell(fam, trait)
             layer = layer_by_cell[(fkey, regime)]
@@ -2591,17 +2939,37 @@ def run_fwer_stage(
                 maxdraws_root / f"{fkey}_{regime}_{f_eff}_fixed_paper_steering_L{layer}_draws.npy"
             )
             if not col_path.exists():
-                logger.warning("fwer: %s missing — family %s skipped", col_path.name, fam)
-                skip = True
-                break
+                _write_fwer_na(
+                    out_dir,
+                    out,
+                    f"per-draw column missing: {col_path.name} (family {fam})",
+                    {},
+                )
+                raise RuntimeError(
+                    f"fwer: per-draw column missing: {col_path} (family {fam}) — "
+                    "registered joint-null input absent. Explicit headline-N/A "
+                    "artifact written; re-run --stage fixed (plan §4 C-5)."
+                )
             col = np.load(col_path).astype(np.float64)
+            if col.size != n_draws:
+                _write_fwer_na(
+                    out_dir,
+                    out,
+                    f"stale per-draw column: {col_path.name} has {col.size} draws "
+                    f"!= expected {n_draws}",
+                    {},
+                )
+                raise RuntimeError(
+                    f"fwer: {col_path.name} has {col.size} draws != expected "
+                    f"{n_draws} — stale column (a prior smoke/stratified run?). "
+                    "Explicit headline-N/A artifact written; re-run --stage fixed "
+                    "at the production draw count (plan §4 C-5)."
+                )
             rank_p_cols.append(_loo_rank_p(col))
             obs_ps.append(obs_p[(fkey, regime, _fam_for_cell(fam, trait))])
-        if skip:
-            out["families"][fam] = {"status": "skipped — missing per-draw columns"}
-            continue
-        m = min(c.size for c in rank_p_cols)
-        mat = np.stack([c[:m] for c in rank_p_cols], axis=1)  # (m, n_cells)
+        # Every column verified == n_draws above — NO min() truncation.
+        m = n_draws
+        mat = np.stack(rank_p_cols, axis=1)  # (m, n_cells)
         min_p_null = mat.min(axis=1)
         observed_min_p = float(np.nanmin(obs_ps))
         fwer_p = float((int((min_p_null <= observed_min_p).sum()) + 1) / (m + 1))
@@ -2744,6 +3112,14 @@ def main() -> None:
         action="store_true",
         help="v2 fixed: skip the {0.05, 0.2} lambda sensitivity sweep (stratification #2)",
     )
+    ap.add_argument(
+        "--allow-gate-skip-smoke-only",
+        action="store_true",
+        help="SMOKE ONLY (never set by the production driver): permit the W2 gate "
+        "to record an unarmed skip instead of raising, relax the FWER ==12 "
+        "registered-cell requirement for trait subsets, and lift the v2 "
+        "--draws >= 10000 floor. Recorded as non-production in every output JSON.",
+    )
     args = ap.parse_args()
     out_root = Path(args.out_root)
     eval_root = Path(args.eval_results_root)
@@ -2766,6 +3142,19 @@ def main() -> None:
         traits = tuple(args.traits)
         settings = tuple(args.settings)
         maxdraws_root = Path(args.maxdraws_root)
+        allow_gate_skip = bool(args.allow_gate_skip_smoke_only)
+        # Registered v2 floor: >= 10,000 seeded honest draws (plan §4 C). A
+        # smaller --draws is a smoke run and must say so explicitly.
+        if (
+            args.stage in ("fixed", "maxlayer", "fwer")
+            and args.draws < 10000
+            and not allow_gate_skip
+        ):
+            ap.error(
+                f"--rb-version v2 requires --draws >= 10000 (registered floor, plan §4 C); "
+                f"got {args.draws}. Pass --allow-gate-skip-smoke-only for a smoke run "
+                "(recorded as non-production)."
+            )
         v2_order = [
             "isotropic",
             "within_class",
@@ -2779,8 +3168,19 @@ def main() -> None:
             "orig_perm",
         ]
         if args.stage == "fwer":
-            out = run_fwer_stage(eval_root, maxdraws_root, traits)
-            print(json.dumps({"stage": "fwer", "families": list(out["families"])}, indent=2))
+            out = run_fwer_stage(
+                eval_root, maxdraws_root, traits, args.draws, allow_gate_skip=allow_gate_skip
+            )
+            print(
+                json.dumps(
+                    {
+                        "stage": "fwer",
+                        "status": out.get("status", "ok"),
+                        "families": list(out.get("families", {})),
+                    },
+                    indent=2,
+                )
+            )
             return
         if args.stage == "fixedfigs":
             figs = build_fixed_figures(
@@ -2807,6 +3207,7 @@ def main() -> None:
                 settings,
                 args.lam,
                 lam_sweep=not args.no_lam_sweep,
+                allow_gate_skip=allow_gate_skip,
             )
             figs = []
             for choice in ("paper_steering", "own_argmax"):
@@ -2835,6 +3236,7 @@ def main() -> None:
             traits,
             settings,
             args.lam,
+            allow_gate_skip=allow_gate_skip,
         )
         figs = build_figures(
             files,

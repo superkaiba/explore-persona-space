@@ -77,12 +77,18 @@ uv run python scripts/issue778_honest_null_ladder.py \
   --draws "$DRAWS" --draws-orig "$DRAWS_ORIG" \
   --traits $TRAITS --settings $SETTINGS
 
+# NOTE: --draws is passed EXPLICITLY on every ladder stage (incl. fwer, where
+# it is the REQUIRED per-column draw count the fail-loud verify checks against)
+# — never rely on the script default. The driver NEVER passes
+# --allow-gate-skip-smoke-only: production is fail-closed (W1/W2/FWER gates
+# raise; the K1-N/A carve-out routes to the explicit headline-N/A artifact).
 log_phase fwer "registered min-p headline"
 # shellcheck disable=SC2086
 uv run python scripts/issue778_honest_null_ladder.py \
   --rb-version v2 --stage fwer \
   --out-root "$OUT_ROOT" --eval-results-root "$EVAL_ROOT" \
   --maxdraws-root "$MAXDRAWS_ROOT" \
+  --draws "$DRAWS" \
   --traits $TRAITS
 
 log_phase honest_nulls_v2_maxlayer "start draws=$DRAWS"
