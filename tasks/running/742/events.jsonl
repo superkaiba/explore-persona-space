@@ -252,3 +252,4 @@
 {"ts": "2026-07-03T13:33:42Z", "kind": "epm:progress", "version": 100, "by": "unknown", "note": "[poll-tick] 5th launch 29h55m. 6/8 cells done; ultrachat sycophancy ~10h in. Disk 28G."}
 {"ts": "2026-07-03T14:26:38Z", "kind": "epm:progress", "version": 101, "by": "unknown", "note": "[poll-tick] 5th launch 30h45m. 6/8 cells done; ultrachat sycophancy ~11h in. Disk 25G."}
 {"ts": "2026-07-03T15:17:45Z", "kind": "epm:progress", "version": 102, "by": "unknown", "note": "[poll-tick] 5th launch 31h35m. 7/8 cells done (+ultrachat__sycophancy). ONLY ultrachat__refusal remains (~3-4h). Disk 35G."}
+{"ts": "2026-07-03T16:08:52Z", "kind": "epm:progress", "version": 103, "by": "unknown", "note": "[poll-tick] 5th launch 32h25m. 7/8 cells done; ultrachat refusal (final cell) in progress. Disk 29G."}
