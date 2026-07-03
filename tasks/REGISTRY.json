@@ -6121,8 +6121,8 @@
     "929": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/929",
-      "status": "reviewing",
+      "path": "tasks/completed/929",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md zero-width-span BPE-delimiter-merge entry"
     },
     "930": {
