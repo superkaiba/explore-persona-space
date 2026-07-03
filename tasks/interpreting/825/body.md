@@ -131,13 +131,13 @@ What is plotted: paired ΔR² (assistant-fit map applied to user targets, minus 
 
 > **Figure.** *Assistant→user transfer flips sign with depth in the pretrained model only.* Paired ΔR² at layers 14 / 18 / 19 / 26: pretrained −0.62 → +0.23; instruct negative at all four layers. n = 2000 conversations per cell; provisional (single seed).
 
-In the pretrained model the assistant→user delta flips sign with depth: −0.623 (95% CI −0.809 to −0.448) at layer 14, −0.171 (−0.315 to −0.024) at 18, +0.124 (+0.013 to +0.242) at 19, +0.229 (+0.166 to +0.293) at 26. The instruct model is negative at all four layers (−0.709 / −0.634 / −0.311 / −0.214; every 95% CI excludes zero — whiskers in the figure), so the positive transfer is a pretrained-only observation — no mechanism claim. The paired baseline is the previous same-role turn, not validated as topic-only; single seed, n = 2000 — provisional.
+Pretrained assistant→user deltas by layer: −0.623 / −0.171 / +0.124 / +0.229 at layers 14 / 18 / 19 / 26, each 95% CI excluding zero (e.g. layer 19: +0.013 to +0.242; whiskers in the figure). Instruct is negative at all four layers (−0.709 to −0.214, every CI excluding zero), so the positive transfer is a pretrained-only observation — no mechanism claim. The paired baseline is the previous same-role turn, not validated as topic-only; single seed, n = 2000 — provisional.
 
-What is plotted (underlying data): the full 1000-draw bootstrap distribution of paired ΔR² per layer, violins for both models' assistant→user cells — the raw draws behind the bar-and-whisker summary above.
+What is plotted (underlying data): the 1000 bootstrap ΔR² draws per cell-layer as violins, both models' assistant→user cells — the raw draws behind the summary bars above.
 
 ![Bootstrap distributions of paired delta R-squared for assistant-to-user transfer, violins per layer and model](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1a9a23418e671e38d985226fee93586f2a5a2e08/figures/issue_825/crossrole_delta_r2_bootstrap_distributions.png)
 
-> **Figure.** *Underlying bootstrap draws for the transfer deltas.* 1000 paired-bootstrap ΔR² draws per cell-layer; medians marked. The pretrained distributions cross zero between layers 18 and 19; instruct stays below zero at all four layers. n = 2000 conversations per cell.
+> **Figure.** *Underlying bootstrap draws for the transfer deltas.* Pretrained distributions cross zero between layers 18 and 19; instruct stays below zero throughout. Medians marked; n = 2000 per cell.
 
 ### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render integrity PASS on regenerated evidence
 
