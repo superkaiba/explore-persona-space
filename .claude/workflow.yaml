@@ -1828,8 +1828,8 @@ markers:
     posted_by: experimenter
     when: "Step 7"
     fields: |
-      Records the actual `nohup ... &` launch (PID + timestamp); paired
-      with epm:launch. REQUIRED payload fields (note shape):
+      Records the actual detached launch (setsid launcher script; PID +
+      timestamp); paired with epm:launch. REQUIRED payload fields (note shape):
       `pod=<name> pid=<pid> log_abs=<absolute_log_path>
       cmd='<dispatch>'`. The experimenter MUST call `os.path.abspath()`
       on the log path before posting AND verify with `ls -la <log_abs>`

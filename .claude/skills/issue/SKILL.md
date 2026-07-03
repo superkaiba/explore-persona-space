@@ -1445,7 +1445,11 @@ plans missing any):**
 - Method delta (what differs from prior related work)
 - File paths + concrete diffs / config overrides
 - **Reproducibility Card** (mandatory per CLAUDE.md) — all hparams, seeds,
-  data, env versions, exact `nohup` command for experiments
+  data, env versions, exact workload command for experiments (the
+  workload/dispatcher command(s) plus any required env-var pins — NOT a
+  detachment/env-source launch wrapper (`nohup`/`source .env`); at launch
+  the experimenter wraps it in the canonical setsid launcher script,
+  `experimenter.md` § "During Execution")
 - Success criteria with quantitative thresholds
 - Kill criteria (what result would kill the thesis)
 - Compute estimate in GPU-hours — MUST include a machine-readable total line
@@ -3221,7 +3225,8 @@ EXIT. User fixes, re-runs.
 #### Step 6d: Dispatch experimenter (launch-only), then orchestrator polling loop
 
 The experimenter agent is **launch-and-exit only** — it syncs the pod,
-preflights, launches the job via `nohup`, posts `epm:run-launched`, and
+preflights, launches the job via its setsid launcher script
+(`experimenter.md` § "During Execution"), posts `epm:run-launched`, and
 exits its turn within ~60 seconds. The orchestrator (this skill) owns
 all subsequent monitoring via a bg-Bash polling loop chained through
 `scripts/poll_pipeline.py`. This split is mandatory: subagents have ONE
@@ -3330,7 +3335,15 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
-- The exact `nohup` launch command from the plan's Reproducibility Card
+- The exact workload command from the plan's Reproducibility Card (the
+  workload/dispatcher invocation plus any required env-var pins; the
+  experimenter wraps it in its canonical setsid launcher script —
+  `experimenter.md` § "During Execution". NEVER put a literal top-level
+  `source .env` + bare `nohup`-backgrounded launch line in the brief:
+  the SSH-MCP shell is `sh` (`source: not found`, #545) and an
+  un-setsid'd background launch risks SIGHUP reaping (#444/#541; the
+  #841 brief carried exactly this shape and the experimenter had to
+  deviate)
 - When the plan names a "regenerate locally via prep script"
   prerequisite (e.g. the Turner JSONLs): the prep-script invocation AND
   its OUTPUT dataset path(s), so the experimenter's input-data gate
