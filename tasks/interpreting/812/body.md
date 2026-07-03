@@ -7,7 +7,7 @@ tags:
 - answer-summary-sweep
 - from-722
 created_at: '2026-07-01T18:27:13Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 810
 origin_prompt: Both - but also instead of just using the persona vector r_B as a readout
   train a regression to predict the expression from the specific summary) actually
