@@ -89,8 +89,10 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    ``store.transaction(137)`` does NOT block a ``route()`` on issue
    200. Before any submit / provision, ``route()`` reconnects to an
    existing live job (SLURM ``squeue --name eps-issue-<N>``; GCE
-   ``reconnect_or_none``) via the injected backend so a re-driving
-   ``issue-tick`` cron does NOT double-submit. The external
+   ``reconnect_or_none`` — which refuses a RUNNING instance whose
+   ``eps/phase`` is already terminal, the #908 gate-park zombie the
+   pre-launch stale reclaim then deletes) via the injected backend so
+   a re-driving ``issue-tick`` cron does NOT double-submit. The external
    job/instance id is persisted IMMEDIATELY after submit so an
    orchestrator crash between submit and lease-write leaves an
    ``UNKNOWN_SUBMITTED`` recovery state.
