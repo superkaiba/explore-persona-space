@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 944,
+  "highest_id": 945,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6238,6 +6238,13 @@
       "path": "tasks/planning/944",
       "status": "planning",
       "title": "workflow-fix: gotcha \u2014 GCE workloads have no ./.env; conditional sourcing"
+    },
+    "945": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/945",
+      "status": "proposed",
+      "title": "workflow-fix: figure-sidecar opaque-code lint for clean-results"
     },
     "96": {
       "has_clean_result": true,
