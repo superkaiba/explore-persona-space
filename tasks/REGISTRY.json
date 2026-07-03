@@ -6019,8 +6019,8 @@
     "916": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/916",
-      "status": "proposed",
+      "path": "tasks/planning/916",
+      "status": "planning",
       "title": "workflow-fix: null-band-vs-DV-ceiling informativeness check in selection-symmetric-nulls"
     },
     "917": {
