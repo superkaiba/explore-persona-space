@@ -7250,3 +7250,25 @@ def test_watchdog_resets_when_both_probes_succeed() -> None:
     _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=True)
     assert "PHASE_CALLED:wedged" not in out, out
     assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_launch_handle_extra_carries_repo_branch(no_marker_posts) -> None:
+    """#909 AC5: the GCP launch handle persists ``spec.extra['repo_branch']``
+    (so the async GCP→RunPod failover reconstruction re-executes against the
+    ISSUE branch, not `main`); "" when unset — an additive key only."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(extra={"repo_branch": "issue-909"}))
+    assert handle.extra["repo_branch"] == "issue-909"
+
+    runner2 = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
+    handle2 = backend2.launch(_spec())
+    assert handle2.extra["repo_branch"] == ""

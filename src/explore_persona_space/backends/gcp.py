@@ -4067,6 +4067,12 @@ class GcpBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args or ()),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #909: the branch the run's code lives on, so the async
+                # GCP→RunPod failover reconstruction
+                # (backend_poll._runspec_from_gcp_handle) re-executes against
+                # the ISSUE branch, not `main` (per-issue dispatch scripts live
+                # on issue branches). Additive key; "" when unset.
+                "repo_branch": str(spec.extra.get("repo_branch") or ""),
                 # CPU-lane async-failover guard prerequisite (#677). The async
                 # poller's _is_gcp_async_workload_failure must EXCLUDE a CPU GCP
                 # handle (gpu_count==0) from the GCP->RunPod failover (RunPod is
