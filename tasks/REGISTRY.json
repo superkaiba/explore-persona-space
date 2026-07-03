@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 917,
+  "highest_id": 918,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6029,6 +6029,13 @@
       "path": "tasks/planning/917",
       "status": "planning",
       "title": "workflow-fix: follow-up brief marker versions defer to max+1 rule"
+    },
+    "918": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/918",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 HF data-repo staging must use scoped list_repo_tree, not snapshot_download"
     },
     "92": {
       "has_clean_result": false,
