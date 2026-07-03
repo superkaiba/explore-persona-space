@@ -99,9 +99,12 @@ def _run_dispatch(
     sandbox = tmp_path / "workload"
     (sandbox / "scripts").mkdir(parents=True, exist_ok=True)
     if precreate_phase0:
-        # One dummy file is enough for `-d` to be true. The maxp arm uses the
-        # round's OWN dirs (SUMMARY_VARIANT case in the dispatcher).
-        round_dir = ("issue_811", "maxp-winner-mapchange") if variant == "maxp" else ("issue_811",)
+        # One dummy file is enough for `-d` to be true. The maxp / pre_user arms
+        # use the round's OWN dirs (SUMMARY_VARIANT case in the dispatcher).
+        round_dir = {
+            "maxp": ("issue_811", "maxp-winner-mapchange"),
+            "pre_user": ("issue_811", "pre-user-boundary-summary"),
+        }.get(variant, ("issue_811",))
         phase0 = sandbox.joinpath("eval_results", *round_dir, "phase0_base_leg")
         phase0.mkdir(parents=True, exist_ok=True)
         (phase0 / "marker.txt").write_text("x")
@@ -285,6 +288,95 @@ def test_dispatcher_maxp_arm_wires_summary_flags(tmp_path):
     assert "issue811_offset_decomposition.py" in log, (
         f"maxp-only Phase 4b F1 offset decomposition never ran\nlog:\n{log}"
     )
+
+
+def test_dispatcher_pre_user_arm_wires_flags(tmp_path):
+    """SUMMARY_VARIANT=pre_user wiring pin (plan §4.3 item 5): --pre-user on BOTH
+    extract phases, PER-ARM --test-summaries on the gate, 12-summary fits, the
+    two committed-parity reads (vs v1 AND v2 cells), offset decomposition, and
+    the heatmap gate-json figures arg path."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=[], variant="pre_user")
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (pre_user PASS-through)\nlog:\n{log}"
+    p0_lines = [ln for ln in log.splitlines() if "issue811_phase0_extract.py" in ln]
+    assert p0_lines and all("--pre-user" in ln for ln in p0_lines), (
+        f"phase0 extract missing --pre-user\n{p0_lines}"
+    )
+    gate_lines = [ln for ln in log.splitlines() if "issue811_fit.py --phase0-gate" in ln]
+    assert gate_lines, f"no phase0-gate invocation logged\nlog:\n{log}"
+    assert "--test-summaries pre_user_imstart pre_user_user pre_user_nl" in gate_lines[0], (
+        f"per-arm gate not wired\ngate line:\n{gate_lines[0]}"
+    )
+    assert (
+        "--local-root eval_results/issue_811/pre-user-boundary-summary/phase0_base_leg"
+        in gate_lines[0]
+    ), f"pre_user gate not reading the round's OWN phase0 store\ngate line:\n{gate_lines[0]}"
+    ext_lines = [ln for ln in log.splitlines() if "issue667_extract.py" in ln]
+    assert ext_lines and all("--turn-nl --maxp --pre-user" in ln for ln in ext_lines), (
+        f"Phase-1 extract missing '--turn-nl --maxp --pre-user'\n{ext_lines}"
+    )
+    fit_lines = [
+        ln
+        for ln in log.splitlines()
+        if "issue811_fit.py" in ln and "--phase0-gate" not in ln and "--behaviors" in ln
+    ]
+    assert fit_lines and "--summaries mean turn_nl maxp pre_user_imstart" in fit_lines[0], (
+        f"Phase-3 fits not 12-summary\n{fit_lines}"
+    )
+    assert "ans_max_incl_hdr_alllayer" in fit_lines[0]
+    # Three-way committed parity: vs v1 cells AND vs the v2 maxp-round cells.
+    assert "--committed-cells-dir eval_results/issue_811/cells" in log
+    assert "--committed-cells-dir eval_results/issue_811/maxp-winner-mapchange/cells" in log
+    assert "--committed-summaries mean turn_nl maxp" in log
+    assert "issue811_offset_decomposition.py" in log
+
+
+def test_dispatcher_pre_user_stage_instance_stops_after_upload(tmp_path):
+    """MF1a: STAGE=instance runs phase0 + gate + paired extract + upload, then
+    ENDS — no fit / analyze / figures on the GPU instance (plan §9)."""
+    rc, log = _run_dispatch(
+        tmp_path, gate_rc=0, extra_args=["--stage", "instance"], variant="pre_user"
+    )
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (instance stage)\nlog:\n{log}"
+    assert "issue667_extract.py" in log, f"instance stage never extracted\nlog:\n{log}"
+    fit_lines = [
+        ln
+        for ln in log.splitlines()
+        if "issue811_fit.py" in ln and "--phase0-gate" not in ln and "--behaviors" in ln
+    ]
+    assert not fit_lines, f"Phase-3 fits ran ON the GPU instance (MF1a violation)\n{fit_lines}"
+    assert "issue811_analyze.py" not in log and "issue811_figures.py" not in log
+    assert "issue811_offset_decomposition.py" not in log
+
+
+def test_dispatcher_pre_user_stage_fits_skips_extraction(tmp_path):
+    """MF1a: STAGE=fits (the off-instance VM invocation) runs fit → analyze →
+    offset → figures WITHOUT any extraction / gate / upload phase."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=["--stage", "fits"], variant="pre_user")
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (fits stage)\nlog:\n{log}"
+    assert "issue667_extract.py" not in log and "issue811_phase0_extract.py" not in log
+    assert "--phase0-gate" not in log, f"gate re-ran on the fits stage\nlog:\n{log}"
+    assert "issue811_upload_store.py" not in log
+    fit_lines = [
+        ln
+        for ln in log.splitlines()
+        if "issue811_fit.py" in ln and "--behaviors" in ln and "--phase0-gate" not in ln
+    ]
+    assert fit_lines, f"fits stage never ran the Phase-3 fits\nlog:\n{log}"
+    assert "issue811_analyze.py" in log and "issue811_figures.py" in log
+
+
+def test_dispatcher_pre_user_arm_refuses_stage_prefix(tmp_path):
+    """SUMMARY_VARIANT=pre_user + EPM_PHASE0_STAGE_PREFIX -> exit 2 BEFORE any
+    phase runs (no prior phase-0 store carries v0_pre_user_*; plan §4.3 item 5)."""
+    rc, log = _run_dispatch(
+        tmp_path,
+        gate_rc=0,
+        extra_args=[],
+        variant="pre_user",
+        stage_prefix="issue811_partial/att-x/eval_results_issue_811/phase0_base_leg",
+    )
+    assert rc == 2, f"dispatcher rc={rc}, expected 2 (pre_user stage-prefix refusal)\nlog:\n{log}"
+    assert log.strip() == "", f"phases ran despite the stage-prefix refusal\nlog:\n{log}"
 
 
 def test_dispatcher_maxp_arm_refuses_stage_prefix(tmp_path):

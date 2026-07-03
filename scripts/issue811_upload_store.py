@@ -45,6 +45,11 @@ HF_PREFIX = os.environ.get("EPM_I811_HF_PREFIX", "issue811_turn_nl_mapchange")
 # write them historically, so requiring them unconditionally would break a
 # --skip-extract resume against the old local dirs.
 REQUIRE_RAW = os.environ.get("EPM_I811_REQUIRE_RAW") == "1"
+# The pre-user round's per-cell (28, 3584) fp16 arm-6/7 stacks (alllayer/) are a
+# REQUIRED store there (arms 8/9 re-derive from them — plan §10 store layout);
+# earlier rounds have no such dir, so it stays optional unless the dispatcher
+# arm sets EPM_I811_REQUIRE_ALLLAYER=1.
+REQUIRE_ALLLAYER = os.environ.get("EPM_I811_REQUIRE_ALLLAYER") == "1"
 # ~9.5 MB non-LFS text ceiling (Upload Policy: >9.5 MB text line-splits into
 # <9 MB shards, NEVER gzip — *.gz is LFS-matched and the Hub force-routes >10 MB
 # blobs to LFS regardless of extension).
@@ -59,6 +64,7 @@ STORES = (
     (f"{ROUND_DIR}/analysis_tensors", f"{HF_PREFIX}/analysis_tensors", "*.npz", True),
     (f"{ROUND_DIR}/phase0_base_leg", f"{HF_PREFIX}/phase0_base_leg", "*.npz", True),
     (f"{ROUND_DIR}/raw_completions", f"{HF_PREFIX}/raw_completions", "*.jsonl", REQUIRE_RAW),
+    (f"{ROUND_DIR}/alllayer", f"{HF_PREFIX}/alllayer", "*.npz", REQUIRE_ALLLAYER),
 )
 
 
@@ -134,6 +140,17 @@ def upload_store() -> int:
     expected: list[str] = []  # path_in_repo for the fresh-listing verify
     per_store_counts: list[tuple[str, int]] = []
     empty_required: list[str] = []
+    # Instance-side round-meta JSONs (validity_gate_phase0.json /
+    # kill1_base_leg_validity.json — TOP-LEVEL of $ROUND_DIR only, non-recursive):
+    # written by the KILL-1 gate ON the GPU instance, consumed by the
+    # OFF-instance fits stage (per-cell gate stamping + heatmap hatching) and a
+    # committed §6.5 deliverable — the GCE instance disk is DELETED at teardown,
+    # so they must ride this commit (pre_user MF1a stage split).
+    meta_dir = PROJECT_ROOT / ROUND_DIR
+    for p in sorted(meta_dir.glob("*.json")) if meta_dir.is_dir() else []:
+        pir = f"{HF_PREFIX}/round_meta/{p.name}"
+        ops.append(CommitOperationAdd(path_in_repo=pir, path_or_fileobj=str(p)))
+        expected.append(pir)
     for local_dir, hf_prefix, glob, required in STORES:
         tdir = PROJECT_ROOT / local_dir
         files = sorted(tdir.rglob(glob)) if tdir.is_dir() else []

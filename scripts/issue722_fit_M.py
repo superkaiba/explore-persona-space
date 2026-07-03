@@ -119,6 +119,7 @@ def _pca_basis_v0(V0: np.ndarray, dim: int) -> np.ndarray:
     except np.linalg.LinAlgError:
         from scipy.linalg import svd as _scipy_svd
 
+        GESVD_FALLBACK_COUNTER["n"] += 1
         logger.warning(
             "[phase=fit_M] np.linalg.svd (gesdd) did not converge on a %s input "
             "(near-singular bootstrap resample); retrying with scipy gesvd",
@@ -127,6 +128,122 @@ def _pca_basis_v0(V0: np.ndarray, dim: int) -> np.ndarray:
         _, _, Vt = _scipy_svd(Vc, full_matrices=False, lapack_driver="gesvd")
     k = min(dim, Vt.shape[0])
     return Vt[:k]  # (k, 3584)
+
+
+# #811 pre-user round (plan §6 floor QA): count gesdd->gesvd fallback events so
+# per-arm fallback counts can be REPORTED alongside each floor — a max-pool arm
+# whose floor leaned on the fallback path is flagged, not silently pooled.
+# Module-level (single-threaded fit orchestration); callers snapshot before/after.
+GESVD_FALLBACK_COUNTER = {"n": 0}
+
+
+def _pca_basis_v0_dual(V0: np.ndarray, dim: int) -> np.ndarray:
+    """Top-``dim`` PCA basis of V0 via a DUAL eigh on the (n, n) centered Gram.
+
+    The Gram/dual-space twin of :func:`_pca_basis_v0` (plan §4.3 item 10; the
+    starting pattern is ``issue667_alllayer_analysis._pca_basis_v0_fast``, whose
+    end-to-end |Δ·r̂_B| match to np.svd was verified at ~1e-13): the top-k right
+    singular vectors of the mean-centered ``Vc`` (n, H) are
+    ``Vₖ = Uₖᵀ Vc / Sₖ`` with ``Vc Vcᵀ = U diag(S²) Uᵀ`` — an eigh on the small
+    (n, n) Gram instead of a full (n, H) SVD (n ≪ H). The downstream ridge
+    statistic depends only on the spanned SUBSPACE (``Y @ pca.T @ pca`` is a
+    projection), so the per-component sign/rotation freedom vs the SVD basis
+    cancels. Robustness contract mirrored: ``np.linalg.eigh`` (syevd) with a
+    ``scipy.linalg.eigh`` (syevr) fallback counted in ``GESVD_FALLBACK_COUNTER``;
+    only numerically-positive eigenvalues kept (the SVD's rank truncation).
+    """
+    Vc = V0 - V0.mean(axis=0, keepdims=True)
+    G = Vc @ Vc.T  # (n, n) dual Gram — SPD, n≪H is the win
+    return _dual_basis_from_gram(G, Vc, dim)
+
+
+def _dual_basis_from_gram(G: np.ndarray, Vc: np.ndarray, dim: int) -> np.ndarray:
+    """Shared dual-eigh core: basis (k<=dim, H) from a centered Gram + centered rows."""
+    try:
+        w, U = np.linalg.eigh(G)  # ascending eigenvalues; LAPACK syevd
+    except np.linalg.LinAlgError:
+        from scipy.linalg import eigh as _scipy_eigh
+
+        GESVD_FALLBACK_COUNTER["n"] += 1
+        logger.warning(
+            "[phase=fit_M] np.linalg.eigh (syevd) did not converge on a %s Gram "
+            "(near-singular resample); retrying with scipy syevr",
+            G.shape,
+        )
+        w, U = _scipy_eigh(G)
+    order = np.argsort(w)[::-1]  # descending
+    if order.size:
+        pos = w[order] > 1e-12 * float(max(w[order][0], 1.0))
+        order = order[pos]
+    k = min(dim, order.size)
+    order = order[:k]
+    if k == 0:
+        return np.zeros((0, Vc.shape[1]), dtype=np.float64)
+    S = np.sqrt(np.clip(w[order], 0.0, None))  # (k,)
+    return (U[:, order].T @ Vc) / S[:, None]  # (k, H)
+
+
+def make_batched_refit_chain_fn(X: np.ndarray, Y: np.ndarray, grid: np.ndarray, r_hat: np.ndarray):
+    """A ``batched_chain_fn`` for :func:`issue722_bootstrap.make_refit_pair` —
+    the #811 Gram/dual-space batching of the floor-refit battery (plan §4.3
+    item 10; supersedes the serial per-pair ``_refit_ridge_fn`` path).
+
+    Precomputes the SHARED Gram factorization of the FIXED pool ONCE —
+    ``K_y = Y Yᵀ`` (n, n) — then, per resample ``idx`` (the batch axis handed
+    over by ``make_refit_pair``):
+
+    1. the resample's centered Gram is a SUBMATRIX + double-centering of the
+       shared ``K_y`` (O(n_b²), no (n_b, H) GEMM), dual-eigh'd for the SAME
+       top-k v0-PC subspace the serial ``_pca_basis_v0(Y[idx])`` spans;
+    2. the ridge refit reuses the UNCHANGED torch dual-space
+       ``_ridge_fit_predict`` (identical PRESS λ-selection + Woodbury solve —
+       the equivalence-tight part);
+    3. the returned chain is ``pred64 @ (pca @ r_hat)`` — the (n_grid,)
+       projection the pair statistic needs (never the (n_grid, H)
+       back-projection).
+
+    Degenerate-resample semantics mirror the serial path: a LinAlgError from the
+    fast dual path falls back to the EXACT serial ``_pca_basis_v0`` +
+    ``_ridge_fit_predict`` for that resample (its gesdd→gesvd fallback rides
+    ``GESVD_FALLBACK_COUNTER``); a resample that still fails returns ``None``
+    (the caller's skip). Deterministic — the per-fit ``rng`` list is unused,
+    exactly like the serial ``_refit_ridge_fn``.
+    """
+    Y = np.asarray(Y, dtype=np.float64)
+    X = np.asarray(X, dtype=np.float64)
+    r_hat = np.asarray(r_hat, dtype=np.float64)
+    K_y = Y @ Y.T  # the shared Gram factorization (computed ONCE per battery)
+
+    def _chain_one(idx: np.ndarray) -> np.ndarray:
+        Yb = Y[idx]
+        G_sub = K_y[np.ix_(idx, idx)]
+        # centered Gram: H G H via row/col/grand means (O(n_b²)).
+        row = G_sub.mean(axis=1, keepdims=True)
+        col = G_sub.mean(axis=0, keepdims=True)
+        Gc = G_sub - row - col + G_sub.mean()
+        Vc = Yb - Yb.mean(axis=0, keepdims=True)
+        pca = _dual_basis_from_gram(Gc, Vc, TARGET_DIM)  # (k, H)
+        pred64 = _ridge_fit_predict(X[idx], Yb @ pca.T, grid)  # (n_grid, k)
+        return pred64 @ (pca @ r_hat)  # (n_grid,)
+
+    def _batched(idx_list: list[np.ndarray], _rngs) -> list[np.ndarray | None]:
+        out: list[np.ndarray | None] = []
+        for idx in idx_list:
+            try:
+                out.append(_chain_one(idx))
+            except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+                # Exact-serial fallback for the rare degenerate resample (counted
+                # via _pca_basis_v0's gesvd counter); a second failure = skip.
+                GESVD_FALLBACK_COUNTER["n"] += 1
+                try:
+                    pca = _pca_basis_v0(Y[idx], TARGET_DIM)
+                    pred64 = _ridge_fit_predict(X[idx], Y[idx] @ pca.T, grid)
+                    out.append(pred64 @ (pca @ r_hat))
+                except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+                    out.append(None)
+        return out
+
+    return _batched
 
 
 def _ridge_fit_predict(X: np.ndarray, Y64: np.ndarray, grid: np.ndarray) -> np.ndarray:
@@ -468,6 +585,7 @@ def fit_cell(
     rb_fact: dict | None,
     *,
     include_mlp: bool = True,
+    floors: str = "batched",
 ) -> dict:
     """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON.
 
@@ -485,6 +603,15 @@ def fit_cell(
     while removing the multi-hour cost. When False the ``chain_rho`` block omits
     the ``rho_M0_mlp`` / ``rho_Mplus_mlp`` / ``rho_M0_shuffle`` / ``nonlin_gap_*``
     keys (all MLP-derived); every ridge key is byte-for-byte the same code path.
+
+    ``floors`` (#811, plan §4.3 item 10): ``"batched"`` (DEFAULT) routes the
+    three refit floors through the Gram/dual-space batched chain
+    (``make_batched_refit_chain_fn`` — no per-pair full SVD), equivalent to the
+    serial path to fp tolerance (seeded oracle gate); ``"serial"`` keeps the
+    historical per-pair ``_refit_ridge_fn`` path (FutureWarning — retained as
+    the equivalence ORACLE only; raises under ``EPM_FORBID_SERIAL_FITS=1``).
+    Both paths now emit ``floor_draws`` (draw-aligned per-pair stats) and
+    ``gesvd_fallback`` (per-floor fallback event counts) in the cell JSON.
     """
     if include_mlp:
         if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
@@ -551,37 +678,87 @@ def fit_cell(
     sc_m0: dict = {}
     sc_mplus: dict = {}
     sc_shift: dict = {}
+    pd_m0: dict = {}
+    pd_mplus: dict = {}
+    pd_shift: dict = {}
+    y_shift = m0_at_cplus_ridge_full(C0, V0, Cplus, pca_basis)
+    if floors == "batched":
+        # #811 Gram/dual-space batched floor battery (plan §4.3 item 10): the
+        # serial per-pair full-SVD PCA is replaced by a dual eigh over a shared
+        # Gram factorization; gated by the seeded serial-oracle equivalence
+        # check (tests/test_issue811_pre_user.py + §13 smoke 7). Per-floor
+        # gesvd/fallback event counts are snapshotted for the cell JSON (§6
+        # floor QA).
+        fit_serial = None
+        chains = {
+            "m0": make_batched_refit_chain_fn(C0, V0, grid, r_hat),
+            "mplus": make_batched_refit_chain_fn(Cplus, Vplus, grid, r_hat),
+            "shift": make_batched_refit_chain_fn(Cplus, y_shift, grid, r_hat),
+        }
+    else:
+        assert floors == "serial", floors
+        if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+            raise RuntimeError(
+                "fit_cell(floors='serial') runs the SERIAL per-pair full-SVD floor "
+                "battery superseded by issue722_fit_M.make_batched_refit_chain_fn "
+                "(Gram/dual-space, #811); EPM_FORBID_SERIAL_FITS=1 is set (see "
+                ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+            )
+        warnings.warn(
+            "fit_cell(floors='serial') runs the SERIAL per-pair full-SVD refit floor; "
+            "the batched Gram/dual-space path (floors='batched', "
+            "make_batched_refit_chain_fn) supersedes it. Serial call retained as the "
+            "seeded equivalence ORACLE only.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        fit_serial = _refit_ridge_fn(grid)
+        chains = {"m0": None, "mplus": None, "shift": None}
+    fb_before = {}
+    fb_counts = {}
+    fb_before["m0"] = GESVD_FALLBACK_COUNTER["n"]
     floor_m0 = make_refit_pair(
         C0,
         V0,
-        _refit_ridge_fn(grid),
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_m0,
+        batched_chain_fn=chains["m0"],
+        per_draw_out=pd_m0,
     )
+    fb_counts["floor_M0_refit"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["m0"]
+    fb_before["mplus"] = GESVD_FALLBACK_COUNTER["n"]
     floor_mplus = make_refit_pair(
         Cplus,
         Vplus,
-        _refit_ridge_fn(grid),
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_mplus,
+        batched_chain_fn=chains["mplus"],
+        per_draw_out=pd_mplus,
     )
+    fb_counts["floor_Mplus_refit"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["mplus"]
     # shifted-design: M_pseudo (Cplus → M0(Cplus)); refit pairs of THAT map at grid.
+    fb_before["shift"] = GESVD_FALLBACK_COUNTER["n"]
     floor_shift = make_refit_pair(
         Cplus,
-        m0_at_cplus_ridge_full(C0, V0, Cplus, pca_basis),
-        _refit_ridge_fn(grid),
+        y_shift,
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_shift,
+        batched_chain_fn=chains["shift"],
+        per_draw_out=pd_shift,
     )
+    fb_counts["floor_shifted"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["shift"]
     refit_skip = _aggregate_refit_skips(behavior, layer, sc_m0, sc_mplus, sc_shift)
     floor_m0_p95 = float(np.percentile(floor_m0, 95))
     floor_mplus_p95 = float(np.percentile(floor_mplus, 95))
@@ -690,6 +867,18 @@ def fit_cell(
         "chain_rho": chain_block,
         "cross_transfer": cross,
         "refit_skip": refit_skip,
+        # #811 per-draw floor dump (plan §6/§6.5): DRAW-ALIGNED per-pair floor
+        # statistics (NaN at skipped pairs) — same seed => same family resample
+        # per draw index across every summary of a (behavior, layer), so the
+        # max-over-summaries selection-null escape is a pure read downstream.
+        "floor_draws": {
+            "floor_M0_refit": [None if np.isnan(v) else float(v) for v in pd_m0["stats"]],
+            "floor_Mplus_refit": [None if np.isnan(v) else float(v) for v in pd_mplus["stats"]],
+            "floor_shifted": [None if np.isnan(v) else float(v) for v in pd_shift["stats"]],
+        },
+        # #811 floor QA (plan §6): gesdd→gesvd / dual-eigh fallback EVENT counts
+        # per floor (0 on the clean path) + which floor path ran.
+        "gesvd_fallback": {**fb_counts, "floors_path": floors},
         "n_families": len({*families}),
     }
 
