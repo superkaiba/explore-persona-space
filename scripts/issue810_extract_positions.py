@@ -73,6 +73,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 # Cross-script helper imports hoisted to module top so a missing symbol crashes
@@ -81,8 +82,10 @@ from issue594_common import messages_for_instance  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402
 from issue810_common import (  # noqa: E402
     ANSWER_POSITION_SWEEP_SUBDIR,
+    ANSWER_POSITION_SWEEP_UH_SUBDIR,
     BATTERY50_HF_FILE,
     BATTERY50_SHA256,
+    BOUNDARY_BLOCK_IDS,
     DEFAULT_MODEL,
     EXPECTED_HIDDEN,
     EXPECTED_LAYERS,
@@ -97,8 +100,11 @@ from issue810_common import (  # noqa: E402
     HF_PREFIX,
     I658_RAW_COMPLETIONS_PREFIX,
     I658_STORE_MANIFEST,
+    I658_V0_SUMMARIES,
     IM_END_TOKEN_ID,
     TURN_NL_TOKEN_ID,
+    UH_SUMMARIES_HF_FILE,
+    UH_SUMMARY_NAMES,
     assert_g1_probe_pool_hash,
     assert_sha256,
     context_ids_from_manifest,
@@ -108,6 +114,7 @@ from issue810_common import (  # noqa: E402
     sha256_file,
     stored_position_names,
     tail_head_position_index,
+    uh_stored_position_names,
 )
 
 # Project dotenv wrapper (#745): robust .env load + HF-upload accelerators.
@@ -156,24 +163,51 @@ def _gather_positions_gpu(
     return torch.stack(layer_slices, dim=2).cpu()  # (B, n_targets, Lc, H)
 
 
-def _positions_for_span(span_len: int, boundary_offset: int) -> dict[str, int]:
+# Boundary-block single positions relative to boundary_offset (== ans span_len).
+# im_end/turn_nl are the parent's 2; uh_* are the 3 next-user-header tokens the
+# `--extended-boundary` arm appends (plan v11 §4.6 item 2).
+_BOUNDARY_POS_OFFSETS = {"im_end": 0, "turn_nl": 1, "uh_im_start": 2, "uh_user": 3, "uh_nl": 4}
+
+# In-forward span pools (extended-boundary arm only): name -> (span kind, reduce
+# op). Span kinds over the union span: "ans" = answer content, "bnd5" = the 5
+# boundary tokens, "uh3" = the 3 next-user-header tokens, "xbnd" = ans ∪ bnd5.
+# Ops: "mean" = per-dim mean, "max" = per-dim max (the #658 `maxp` token-pool
+# recipe, `summarize_answer_span`: plain `span.max(dim=0).values`).
+# "mean_ans" is an INTERNAL parity pool (the #658 `mean` recipe recomputed
+# in-forward) — used for the v0 store-mean drift tripwire, never stored as a row.
+_POOL_SPECS: dict[str, tuple[str, str]] = {
+    "uh_mean3": ("uh3", "mean"),
+    "uh_max3": ("uh3", "max"),
+    "bnd_mean5": ("bnd5", "mean"),
+    "bnd_max5": ("bnd5", "max"),
+    "mean_xbnd": ("xbnd", "mean"),
+    "maxp_xbnd": ("xbnd", "max"),
+    "mean_ans": ("ans", "mean"),
+}
+
+
+def _positions_for_span(
+    span_len: int, boundary_offset: int, extended: bool = False
+) -> dict[str, int]:
     """Map each stored position name to its index in the captured union span.
 
     The captured union span covers the answer-content positions [0, span_len)
-    followed by ``im_end`` at ``span_len`` and ``turn_nl`` at ``span_len + 1``
-    (indices are RELATIVE to the union span start). A tail_k/head_k position
-    out of range for a short answer is OMITTED (recorded as a coverage miss),
-    never a crash.
+    followed by the boundary block at ``boundary_offset + k`` (k per
+    ``_BOUNDARY_POS_OFFSETS``: parent = im_end/turn_nl; ``extended`` adds
+    uh_im_start/uh_user/uh_nl at +2/+3/+4). A tail_k/head_k position out of
+    range for a short answer is OMITTED (recorded as a coverage miss), never a
+    crash.
 
     ``boundary_offset`` == span_len (the union span starts at the first answer
-    content token; im_end/turn_nl sit immediately after the content).
+    content token; the boundary block sits immediately after the content).
     """
+    names = uh_stored_position_names() if extended else stored_position_names()
     idx: dict[str, int] = {}
-    for name in stored_position_names():
-        if name == "im_end":
-            idx[name] = boundary_offset
-        elif name == "turn_nl":
-            idx[name] = boundary_offset + 1
+    for name in names:
+        if name in _POOL_SPECS:
+            continue  # pools are span reductions, not single positions
+        if name in _BOUNDARY_POS_OFFSETS:
+            idx[name] = boundary_offset + _BOUNDARY_POS_OFFSETS[name]
         else:
             pos = tail_head_position_index(name, span_len)
             if pos is not None:
@@ -181,13 +215,18 @@ def _positions_for_span(span_len: int, boundary_offset: int) -> dict[str, int]:
     return idx
 
 
-def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id):
-    """Tokenize one (prompt + answer + <|im_end|> + \\n) probe → capture inputs.
+def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id, extended=False):
+    """Tokenize one (prompt + answer + boundary block) probe → capture inputs.
+
+    Boundary block = ``<|im_end|> \\n`` (parent, 2 tokens) or the full
+    assistant-turn continuation ``<|im_end|> \\n <|im_start|> user \\n``
+    (``extended``, 5 tokens — ``BOUNDARY_BLOCK_IDS``, every fed id asserted).
 
     Returns ``(full_ids (L,), tgt [abs-idx|None per stored pos], valid [bool per
-    pos], ans_len)`` or ``None`` for an empty completion. The target indices are
-    PRE-PAD absolute indices into the real sequence (the batch flush shifts them
-    by the left-pad amount). Fails loud on a boundary-token id mismatch.
+    pos], prompt_len, ans_len)`` or ``None`` for an empty completion. The target
+    indices are PRE-PAD absolute indices into the real sequence (the batch flush
+    shifts them by the left-pad amount). Fails loud on ANY boundary-token id
+    mismatch (a wrong id would silently capture the wrong slot).
     """
     messages = messages_for_instance(instance, q)
     prompt_text = tokenizer.apply_chat_template(
@@ -199,41 +238,97 @@ def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id):
         return None
     prompt_len = int(prompt_ids.shape[1])
     ans_len = int(ans_ids.shape[1])
-    boundary = torch.tensor([[IM_END_TOKEN_ID, nl_id]], dtype=prompt_ids.dtype)
+    bids = list(BOUNDARY_BLOCK_IDS) if extended else [IM_END_TOKEN_ID, nl_id]
+    boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
     full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1)[0]  # (full_len,)
-    fed = full_ids[prompt_len + ans_len : prompt_len + ans_len + 2].tolist()
+    fed = full_ids[prompt_len + ans_len : prompt_len + ans_len + len(bids)].tolist()
+    # Fail-loud per-probe id asserts (round-1 pattern, extended to ALL fed
+    # boundary ids — plan v11 §4.6 item 2 / kill criterion 1).
+    assert fed == bids, (
+        f"boundary block fed ids {fed} != expected {bids} for {instance['id']} {q[:30]!r}"
+    )
     assert fed[0] == IM_END_TOKEN_ID, (
         f"im_end slot fed id {fed[0]} != {IM_END_TOKEN_ID} for {instance['id']} {q[:30]!r}"
     )
     assert fed[1] == nl_id, f"turn_nl slot fed id {fed[1]} != {nl_id} (\\n)"
-    # Union span starts at answer content = prompt_len; im_end at
-    # prompt_len+ans_len, turn_nl at prompt_len+ans_len+1; tail/head relative to
-    # the answer content start.
-    pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len)
+    # Union span starts at answer content = prompt_len; boundary block at
+    # prompt_len+ans_len+k; tail/head relative to the answer content start.
+    pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=extended)
     tgt: list = []
     valid: list[bool] = []
     for name in stored_names:
+        if name in _POOL_SPECS:
+            tgt.append(None)  # pools have no single target index (span reductions)
+            valid.append(False)
+            continue
         if name in pos_idx:
             tgt.append(prompt_len + pos_idx[name])  # abs index in the real seq
             valid.append(True)
         else:
             tgt.append(None)
             valid.append(False)
-    return full_ids, tgt, valid, ans_len
+    return full_ids, tgt, valid, prompt_len, ans_len
+
+
+def _gather_pools_gpu(
+    capture: LayerCapture,
+    capture_layers: list[int],
+    masks: dict[str, torch.Tensor],
+    pool_names: list[str],
+) -> dict[str, torch.Tensor]:
+    """GPU-side span reductions per pool → {name: (B, Lc, H) fp16 CPU}.
+
+    Computed IN the forward's device memory from ``capture.latest`` BEFORE the
+    singles gather clears the buffer (plan v11 §4.6 item 2: the pools are not
+    reconstructable from the stored answer-only probe-averaged summaries).
+    ``masks`` maps span kind → (B, T) bool device mask. Reductions run in fp32
+    on device; only the reduced (B, Lc, H) slice crosses PCIe (fp16 — the same
+    transport precision as the singles). Every mask row is guaranteed non-empty
+    (answer spans have ≥1 token; boundary blocks always exist), asserted.
+    """
+    for kind, mask in masks.items():
+        counts = mask.sum(dim=1)
+        assert bool((counts > 0).all()), f"empty {kind} span mask in batch (counts={counts})"
+    per_pool_layers: dict[str, list[torch.Tensor]] = {n: [] for n in pool_names}
+    for li in capture_layers:
+        hs = capture.latest[li].float()  # (B, T, H) fp32 on device
+        for name in pool_names:
+            kind, op = _POOL_SPECS[name]
+            mask = masks[kind]
+            if op == "mean":
+                m = mask.unsqueeze(-1).to(hs.dtype)
+                red = (hs * m).sum(dim=1) / mask.sum(dim=1, keepdim=True).to(hs.dtype)
+            else:  # per-dim max (the #658 maxp token-pool recipe)
+                red = hs.masked_fill(~mask.unsqueeze(-1), float("-inf")).max(dim=1).values
+            per_pool_layers[name].append(red.to(torch.float16))
+    return {n: torch.stack(sl, dim=1).cpu() for n, sl in per_pool_layers.items()}
 
 
 def _run_forward_batch(
-    model, capture, capture_layers, tokenizer, rows, stored_names, accum, coverage, lc, H
+    model,
+    capture,
+    capture_layers,
+    tokenizer,
+    rows,
+    stored_names,
+    accum,
+    coverage,
+    lc,
+    H,
+    extended: bool = False,
 ) -> int:
     """Left-pad + one batched forward + GPU-side gather + accumulate; return #probes.
 
-    ``rows`` is a list of ``(full_ids, tgt, valid)``. Builds a left-padded batch
-    (real tokens at the right edge, boundaries aligned), threads EXPLICIT
-    ``position_ids`` (cumsum(mask)−1 clamped at 0 — RoPE indexes from 0 per
-    sequence's first real token, without which left-pad silently diverges from
-    batch-1), runs ONE forward, gathers the ~34 target positions GPU-side, and
-    sums each covered position into ``accum`` (probe-mean at the end). Returns the
-    number of probes accumulated.
+    ``rows`` is a list of ``(full_ids, tgt, valid, prompt_len, ans_len)``. Builds
+    a left-padded batch (real tokens at the right edge, boundaries aligned),
+    threads EXPLICIT ``position_ids`` (cumsum(mask)−1 clamped at 0 — RoPE indexes
+    from 0 per sequence's first real token, without which left-pad silently
+    diverges from batch-1), runs ONE forward, gathers the target positions
+    GPU-side — plus, when ``extended``, the in-forward span-pool reductions
+    (mean_xbnd/maxp_xbnd/uh_mean3/uh_max3/bnd_mean5/bnd_max5 + the internal
+    mean_ans parity pool) computed per probe from the device-resident hidden
+    states BEFORE the CPU transfer — and sums each covered position/pool into
+    ``accum`` (probe-mean at the end). Returns the number of probes accumulated.
     """
     if not rows:
         return 0
@@ -245,11 +340,15 @@ def _run_forward_batch(
     input_ids = torch.full((b, max_len), pad_id, dtype=torch.long)
     attn = torch.zeros((b, max_len), dtype=torch.long)
     abs_pos = torch.full((b, n_targets), -1, dtype=torch.long)
-    for bi, (s, tgt, _valid) in enumerate(rows):
+    ans_starts = torch.zeros(b, dtype=torch.long)  # abs answer-content start per row
+    ans_lens_t = torch.zeros(b, dtype=torch.long)
+    for bi, (s, tgt, _valid, prompt_len, ans_len) in enumerate(rows):
         length = int(s.shape[0])
         pad = max_len - length  # LEFT-pad → real tokens occupy [pad, max_len)
         input_ids[bi, pad:] = s
         attn[bi, pad:] = 1
+        ans_starts[bi] = pad + prompt_len
+        ans_lens_t[bi] = ans_len
         for ti, rel in enumerate(tgt):
             if rel is not None:
                 abs_pos[bi, ti] = pad + rel  # shift the in-sequence index by pad
@@ -259,8 +358,27 @@ def _run_forward_batch(
     abs_pos_dev = abs_pos.to(device)
     with torch.no_grad():
         _ = model(input_ids=input_ids, attention_mask=attn, position_ids=position_ids)
-    picked = _gather_positions_gpu(capture, capture_layers, abs_pos_dev)  # (b, T34, Lc, H) cpu
-    for bi, (_s, _tgt, valid) in enumerate(rows):
+    pool_names = [n for n in stored_names if n in _POOL_SPECS]
+    pools: dict[str, torch.Tensor] = {}
+    if extended:
+        pool_names = [*pool_names, "mean_ans"]  # internal parity pool rides along
+        # Span masks over the padded batch: content [start, start+ans_len),
+        # boundary block [start+ans_len, start+ans_len+5), header = last 3 of it.
+        pos = torch.arange(max_len).unsqueeze(0)  # (1, T)
+        st = ans_starts.unsqueeze(1)
+        en = (ans_starts + ans_lens_t).unsqueeze(1)  # content end == boundary start
+        n_bnd = len(BOUNDARY_BLOCK_IDS)
+        masks_cpu = {
+            "ans": (pos >= st) & (pos < en),
+            "bnd5": (pos >= en) & (pos < en + n_bnd),
+            "uh3": (pos >= en + 2) & (pos < en + n_bnd),
+        }
+        masks_cpu["xbnd"] = masks_cpu["ans"] | masks_cpu["bnd5"]
+        masks = {k: v.to(device) for k, v in masks_cpu.items()}
+        # Pools reduced BEFORE _gather_positions_gpu clears capture.latest.
+        pools = _gather_pools_gpu(capture, capture_layers, masks, pool_names)
+    picked = _gather_positions_gpu(capture, capture_layers, abs_pos_dev)  # (b, T, Lc, H) cpu
+    for bi, (_s, _tgt, valid, _pl, _al) in enumerate(rows):
         for ti, name in enumerate(stored_names):
             if not valid[ti]:
                 continue
@@ -269,6 +387,12 @@ def _run_forward_batch(
                 accum[name] = torch.zeros(lc, H, dtype=torch.float32)
             accum[name] += vec
             coverage[name] += 1
+        for name in pool_names:
+            vec = pools[name][bi].float()  # (Lc, H)
+            if name not in accum:
+                accum[name] = torch.zeros(lc, H, dtype=torch.float32)
+            accum[name] += vec
+            coverage[name] = coverage.get(name, 0) + 1
     return b
 
 
@@ -282,15 +406,22 @@ def capture_positions_for_context(
     n_layers: int,
     capture_layers: list[int],
     batch_probes: int,
-) -> tuple[dict[str, torch.Tensor], dict[str, int], dict]:
-    """Teacher-force each (prompt + answer + <|im_end|> + \\n); capture positions.
+    extended: bool = False,
+) -> tuple[dict[str, torch.Tensor], dict[str, int], dict, dict[str, torch.Tensor]]:
+    """Teacher-force each (prompt + answer + boundary block); capture positions.
 
-    Returns ``(pos_summaries, coverage, diag)`` where
+    Boundary block = 2 tokens (parent) or the 5-token assistant-turn
+    continuation (``extended`` — plan v11 §4), which ALSO computes the 6
+    in-forward span pools + the internal ``mean_ans`` parity pool per probe.
+
+    Returns ``(pos_summaries, coverage, diag, extras)`` where
       pos_summaries[position] = (Lc, H) probe-MEAN summary vector for that
-        position over the probes that had it,
+        position/pool over the probes that had it,
       coverage[position] = number of probes that contributed,
       diag = per-context diagnostics (n_probes_used, empty_completions,
-        median_answer_len, boundary_token_ids_seen).
+        median_answer_len, boundary_token_ids_seen),
+      extras = {"mean_ans": (Lc, H) fp32} when ``extended`` (the in-forward
+        answer-only probe-mean — the #658 v0 store-mean parity vector), else {}.
 
     The im_end / turn_nl positions are the two boundary tokens AFTER the
     answer content; they are appended to the teacher-forced sequence so the
@@ -313,11 +444,11 @@ def capture_positions_for_context(
     lc = len(capture_layers)
     H = model.config.hidden_size
     # Accumulators: sum over probes + count per position (probe-mean at the end).
+    stored_names = uh_stored_position_names() if extended else stored_position_names()
     accum: dict[str, torch.Tensor] = {}
-    coverage: dict[str, int] = {p: 0 for p in stored_position_names()}
+    coverage: dict[str, int] = {p: 0 for p in stored_names}
     ans_lens: list[int] = []
     turn_nl_ids_seen: set[int] = set()
-    stored_names = stored_position_names()
 
     nl_ids = tokenizer.encode("\n", add_special_tokens=False)
     if len(nl_ids) != 1:
@@ -336,34 +467,55 @@ def capture_positions_for_context(
     # Build per-probe (full_ids, target-index, valid) tuples, then run them in
     # left-padded batches of `batch_probes` (one forward per batch, not per probe).
     batch = max(1, int(batch_probes))
-    built = []  # (full_ids, tgt, valid) per non-empty probe
+    built = []  # (full_ids, tgt, valid, prompt_len, ans_len) per non-empty probe
     empty = 0
     for q, ans in zip(probes, completions, strict=True):
-        item = _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id)
+        item = _build_probe_row(
+            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=extended
+        )
         if item is None:
             empty += 1
             logger.warning("empty completion for %s probe=%r — skipping", instance["id"], q[:40])
             continue
-        full_ids, tgt, valid, ans_len = item
+        full_ids, tgt, valid, prompt_len, ans_len = item
         turn_nl_ids_seen.add(nl_id)
         ans_lens.append(ans_len)
-        built.append((full_ids, tgt, valid))
+        built.append((full_ids, tgt, valid, prompt_len, ans_len))
 
     n_used = 0
     for lo in range(0, len(built), batch):
         rows = built[lo : lo + batch]
         n_used += _run_forward_batch(
-            model, capture, capture_layers, tokenizer, rows, stored_names, accum, coverage, lc, H
+            model,
+            capture,
+            capture_layers,
+            tokenizer,
+            rows,
+            stored_names,
+            accum,
+            coverage,
+            lc,
+            H,
+            extended=extended,
         )
 
     if n_used == 0:
         raise RuntimeError(f"context {instance['id']}: every probe produced an empty answer")
     pos_summaries = {name: (accum[name] / coverage[name]) for name in accum}
-    # Assert boundary positions are ALWAYS covered (they don't depend on span_len).
-    for b in ("im_end", "turn_nl"):
+    extras: dict[str, torch.Tensor] = {}
+    if extended:
+        # mean_ans is an INTERNAL parity vector (the #658 v0 `mean` recipe
+        # recomputed in-forward), never a stored summary row.
+        extras["mean_ans"] = pos_summaries.pop("mean_ans")
+        coverage.pop("mean_ans", None)
+    # Assert boundary positions/pools are ALWAYS covered (span_len-independent).
+    always_covered = ["im_end", "turn_nl"]
+    if extended:
+        always_covered += UH_SUMMARY_NAMES
+    for b in always_covered:
         if coverage[b] != n_used:
             raise RuntimeError(
-                f"context {instance['id']}: boundary position {b} coverage "
+                f"context {instance['id']}: boundary position/pool {b} coverage "
                 f"{coverage[b]} != n_used {n_used} — the boundary token was not "
                 "captured on every probe (capture/slice bug)"
             )
@@ -374,7 +526,7 @@ def capture_positions_for_context(
         "median_answer_len": ans_lens[len(ans_lens) // 2] if ans_lens else 0,
         "turn_nl_ids_seen": sorted(turn_nl_ids_seen),
     }
-    return pos_summaries, coverage, diag
+    return pos_summaries, coverage, diag, extras
 
 
 # ── inputs (battery + completions) ───────────────────────────────────────────
@@ -529,6 +681,237 @@ def _cc_last_parity_probe(
     return out
 
 
+# ── extended-boundary parity + smoke oracles (plan v11 §4.6 item 2) ──────────
+
+
+def _per_layer_min_cosine(a: torch.Tensor, b: torch.Tensor) -> tuple[float, float]:
+    """(min, mean) per-layer cosine between two (Lc, H) summary stacks (fp64)."""
+    A = torch.as_tensor(a, dtype=torch.float64)
+    B = torch.as_tensor(b, dtype=torch.float64)
+    assert A.shape == B.shape, (tuple(A.shape), tuple(B.shape))
+    cos = torch.nn.functional.cosine_similarity(A, B, dim=1)  # (Lc,)
+    return float(cos.min()), float(cos.mean())
+
+
+def _numpy_reference_capture(
+    model, tokenizer, capture, instance, probes, completions, capture_layers, nl_id
+) -> dict[str, np.ndarray]:
+    """Batch-1 FULL-hidden-state numpy reference for singles + pools (smoke oracle).
+
+    One un-padded batch-1 forward per probe; the full (T, H) hidden state per
+    layer is pulled to CPU fp32 and reduced in NUMPY (mean / per-dim max over
+    the span slices; singles by direct indexing), then probe-meaned — an
+    implementation-independent oracle for the in-forward GPU-side reductions.
+    Returns {name: (Lc, H) fp32 np.ndarray} over the 43 stored rows + mean_ans.
+    """
+    stored_names = uh_stored_position_names()
+    names_all = [*stored_names, "mean_ans"]
+    sums: dict[str, np.ndarray] = {}
+    counts: dict[str, int] = {n: 0 for n in names_all}
+    n_bnd = len(BOUNDARY_BLOCK_IDS)
+    for q, ans in zip(probes, completions, strict=True):
+        item = _build_probe_row(
+            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=True
+        )
+        if item is None:
+            continue
+        full_ids, _tgt, _valid, prompt_len, ans_len = item
+        with torch.no_grad():
+            _ = model(input_ids=full_ids.unsqueeze(0).to(model.device))
+        hs = np.stack(
+            [capture.latest[li][0].float().cpu().numpy() for li in capture_layers]
+        )  # (Lc, T, H)
+        capture.latest.clear()
+        spans = {
+            "ans": (prompt_len, prompt_len + ans_len),
+            "bnd5": (prompt_len + ans_len, prompt_len + ans_len + n_bnd),
+            "uh3": (prompt_len + ans_len + 2, prompt_len + ans_len + n_bnd),
+            "xbnd": (prompt_len, prompt_len + ans_len + n_bnd),
+        }
+        pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=True)
+        for name in names_all:
+            if name in _POOL_SPECS:
+                kind, op = _POOL_SPECS[name]
+                lo, hi = spans[kind]
+                seg = hs[:, lo:hi, :]  # (Lc, S, H)
+                red = seg.mean(axis=1) if op == "mean" else seg.max(axis=1)
+            elif name in pos_idx:
+                red = hs[:, prompt_len + pos_idx[name], :]
+            else:
+                continue  # coverage miss (short answer)
+            sums[name] = sums.get(name, 0.0) + red.astype(np.float64)
+            counts[name] += 1
+    return {n: (sums[n] / counts[n]).astype(np.float32) for n in sums}
+
+
+def _extended_smoke_asserts(
+    model,
+    tokenizer,
+    capture,
+    instance,
+    probes,
+    completions,
+    capture_layers,
+    n_layers,
+    pos_batched: dict[str, torch.Tensor],
+    mean_ans_batched: torch.Tensor,
+    min_cos: float = 0.999,
+    max_rel_l2: float = 5e-3,
+) -> dict:
+    """Smoke oracle triplet for the extended-boundary capture (plan v11 §4.6 item 2).
+
+    (a) batched-vs-batch-1: re-captures the SAME context at ``batch_probes=1``
+        through the identical in-forward path and asserts per-layer cosine
+        ≥ ``min_cos`` for EVERY row (43 singles+pools) + mean_ans — the round-1
+        left-pad/position_ids assert extended to the new positions and pools.
+    (b) numpy reference: asserts the batch-1 in-forward reductions equal an
+        implementation-independent batch-1 numpy full-span reference (cosine +
+        relative L2 ≤ ``max_rel_l2`` — the fp16 PCIe transport bound).
+    (c) the 5 boundary ids are asserted per probe inside ``_build_probe_row``
+        on every path above (fails loud before any comparison).
+
+    Returns a summary dict for the manifest. Raises on any violation.
+    """
+    pos_b1, _cov1, _diag1, extras1 = capture_positions_for_context(
+        model,
+        tokenizer,
+        instance,
+        probes,
+        completions,
+        capture,
+        n_layers,
+        capture_layers,
+        batch_probes=1,
+        extended=True,
+    )
+    ref = _numpy_reference_capture(
+        model,
+        tokenizer,
+        capture,
+        instance,
+        probes,
+        completions,
+        capture_layers,
+        nl_id=TURN_NL_TOKEN_ID,
+    )
+    all_batched = dict(pos_batched)
+    all_batched["mean_ans"] = mean_ans_batched
+    all_b1 = dict(pos_b1)
+    all_b1["mean_ans"] = extras1["mean_ans"]
+    out = {"rows_checked": 0, "min_cos_batched_vs_b1": 1.0, "min_cos_b1_vs_numpy": 1.0}
+    for name, vec_b in all_batched.items():
+        vec_1 = all_b1.get(name)
+        assert vec_1 is not None, f"batch-1 recapture missing row {name!r}"
+        c_min, _ = _per_layer_min_cosine(vec_b, vec_1)
+        out["min_cos_batched_vs_b1"] = min(out["min_cos_batched_vs_b1"], c_min)
+        if c_min < min_cos:
+            raise RuntimeError(
+                f"batched-vs-batch-1 cosine {c_min:.6f} < {min_cos} for row {name!r} — "
+                "the left-padded batched forward diverges from batch-1 (position_ids/"
+                "mask bug); refusing (round-1 assert, extended)"
+            )
+        r = ref.get(name)
+        assert r is not None, f"numpy reference missing row {name!r}"
+        c_min2, _ = _per_layer_min_cosine(vec_1, torch.from_numpy(r))
+        rel = float(np.linalg.norm(vec_1.float().numpy() - r) / max(np.linalg.norm(r), 1e-9))
+        out["min_cos_b1_vs_numpy"] = min(out["min_cos_b1_vs_numpy"], c_min2)
+        if c_min2 < min_cos or rel > max_rel_l2:
+            raise RuntimeError(
+                f"in-forward reduction vs numpy reference mismatch for row {name!r}: "
+                f"min-layer cosine {c_min2:.6f} (floor {min_cos}), rel-L2 {rel:.2e} "
+                f"(cap {max_rel_l2}) — the GPU-side span reduction is wrong"
+            )
+        out["rows_checked"] += 1
+    logger.info(
+        "[phase=smoke_asserts] %d rows OK (batched-vs-b1 min cos %.6f; b1-vs-numpy min cos %.6f)",
+        out["rows_checked"],
+        out["min_cos_batched_vs_b1"],
+        out["min_cos_b1_vs_numpy"],
+    )
+    return out
+
+
+_V0_MEAN_CACHE: dict[str, object] = {}
+
+
+def _v0_store_mean_parity(mean_ans: torch.Tensor, ctx_id: str, min_cos: float = 0.999) -> dict:
+    """Assert the in-forward answer-only probe-mean matches #658's stored `mean`.
+
+    The capture-drift tripwire (plan v11 §5 / kill criterion 2): per layer,
+    cosine(in-forward mean_ans, v0_summaries['summaries']['mean'][ctx]) must be
+    ≥ ``min_cos`` — a miss means THIS round's teacher-forced capture drifted
+    from the round-1/#658 pipeline and every fit downstream would be on
+    drifted activations. Production-only caller gate (7B, uncapped probes).
+    """
+    if "blob" not in _V0_MEAN_CACHE:
+        from huggingface_hub import hf_hub_download
+
+        p = hf_hub_download(HF_DATA_REPO, I658_V0_SUMMARIES, repo_type="dataset")
+        _V0_MEAN_CACHE["blob"] = torch.load(p, weights_only=False)
+    blob = _V0_MEAN_CACHE["blob"]
+    store_mean = blob["summaries"]["mean"].get(ctx_id)
+    if store_mean is None:
+        raise RuntimeError(f"v0_summaries has no mean[{ctx_id!r}] — parity impossible")
+    c_min, c_mean = _per_layer_min_cosine(mean_ans, store_mean.float())
+    if c_min < min_cos:
+        raise RuntimeError(
+            f"v0 store-mean parity FAILED for {ctx_id}: min layer cosine {c_min:.6f} < "
+            f"{min_cos} — the extended-boundary capture drifted from the #658 store "
+            "(halt before any fit; plan v11 kill criterion 2)"
+        )
+    return {"ctx_id": ctx_id, "min_layer_cosine": c_min, "mean_layer_cosine": c_mean}
+
+
+def _round1_store_drift_check(
+    pos_summaries: dict[str, torch.Tensor],
+    coverage: dict[str, int],
+    ctx_id: str,
+    min_cos: float = 0.999,
+) -> dict:
+    """Assert the recaptured old-34 positions match the round-1 store (first ctx).
+
+    Causal attention ⇒ appending the header tokens cannot change earlier
+    positions (plan v11 §12 A15) — the old positions recaptured in the SAME
+    extended forward must be cosine-close to the committed round-1
+    ``answer_position_sweep/<ctx>.pt``. Production-only caller gate.
+    """
+    from huggingface_hub import hf_hub_download
+
+    p = hf_hub_download(
+        HF_DATA_REPO,
+        f"{HF_PREFIX}/{ANSWER_POSITION_SWEEP_SUBDIR}/{ctx_id}.pt",
+        repo_type="dataset",
+    )
+    blob = torch.load(p, weights_only=False)
+    r1 = {name: blob["pos_vectors"][i] for i, name in enumerate(blob["positions"])}
+    r1_cov = dict(blob["coverage"])
+    checked, worst = 0, 1.0
+    for name in stored_position_names():
+        if coverage.get(name, 0) <= 0 or r1_cov.get(name, 0) <= 0:
+            continue
+        if coverage.get(name) != r1_cov.get(name):
+            raise RuntimeError(
+                f"round-1 drift check {ctx_id}: coverage mismatch for {name!r} "
+                f"({coverage.get(name)} vs round-1 {r1_cov.get(name)}) — probe-set drift"
+            )
+        c_min, _ = _per_layer_min_cosine(pos_summaries[name], r1[name].float())
+        worst = min(worst, c_min)
+        checked += 1
+        if c_min < min_cos:
+            raise RuntimeError(
+                f"round-1 store drift check FAILED for {ctx_id}/{name}: min layer "
+                f"cosine {c_min:.6f} < {min_cos} — the recaptured old positions do "
+                "not reproduce the round-1 store (capture drift; halt before any fit)"
+            )
+    logger.info(
+        "[phase=drift_check] ctx=%s %d old positions OK (worst min-layer cosine %.6f)",
+        ctx_id,
+        checked,
+        worst,
+    )
+    return {"ctx_id": ctx_id, "positions_checked": checked, "worst_min_layer_cosine": worst}
+
+
 # ── HF model load ─────────────────────────────────────────────────────────────
 
 
@@ -551,19 +934,25 @@ def _load_model(model_name: str, device: str):
 # ── upload (fail-loud) ────────────────────────────────────────────────────────
 
 
-def _upload_store(out_dir: Path, ctx_ids: list[str], smoke: bool, genre: str = "betley") -> str:
+def _upload_store(
+    out_dir: Path, ctx_ids: list[str], smoke: bool, genre: str = "betley", extended: bool = False
+) -> str:
     """Bulk-commit the aligned-subset store to HF (one upload_folder commit).
 
-    Uploads ``answer_position_sweep[_<genre-tag>]/<ctx>.pt`` (+ manifest.json)
+    Uploads ``answer_position_sweep[_<tag>]/<ctx>.pt`` (+ manifest.json)
     via ONE ``upload_folder`` commit (never a per-file loop — the #664
     504-storm), then verifies the per-context file count on a FRESH listing
     (fail loud on a mismatch). Skipped for --smoke / --no-upload by the caller.
+    ``extended`` routes to the `_uh` store subdir (plan v11 § Storage naming).
     """
     from huggingface_hub import HfApi, list_repo_files
 
-    base_subdir = (
-        ANSWER_POSITION_SWEEP_SUBDIR if genre == "betley" else G1_ANSWER_POSITION_SWEEP_SUBDIR
-    )
+    if extended:
+        base_subdir = ANSWER_POSITION_SWEEP_UH_SUBDIR
+    else:
+        base_subdir = (
+            ANSWER_POSITION_SWEEP_SUBDIR if genre == "betley" else G1_ANSWER_POSITION_SWEEP_SUBDIR
+        )
     subdir = base_subdir + ("_smoke" if smoke else "")
     path_in_repo = f"{HF_PREFIX}/{subdir}"
     api = HfApi()
@@ -585,6 +974,34 @@ def _upload_store(out_dir: Path, ctx_ids: list[str], smoke: bool, genre: str = "
         )
     logger.info("aligned-subset store verified: %d contexts under %s/", len(expected), path_in_repo)
     return path_in_repo
+
+
+def _upload_uh_summaries(pack_path: Path) -> str:
+    """Upload the compact new-row summaries tensor (fail-loud single-file commit).
+
+    ``uh_summaries.pt`` (~90 MB: 50 ctx × 9 rows × 28 layers × 3584 fp16) is the
+    CPU-chain input (plan v11 §6.5) — it lands at ``UH_SUMMARIES_HF_FILE`` on
+    the data repo BEFORE the GPU is released, verified on a FRESH listing.
+    Single-file `upload_file` is correct here (ONE file, not a per-file loop).
+    """
+    from huggingface_hub import HfApi, list_repo_files
+
+    api = HfApi()
+    api.upload_file(
+        path_or_fileobj=str(pack_path),
+        path_in_repo=UH_SUMMARIES_HF_FILE,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        commit_message="issue #810 user-header-newline-summary: uh_summaries.pt (CPU-chain input)",
+    )
+    remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
+    if UH_SUMMARIES_HF_FILE not in remote:
+        raise RuntimeError(
+            f"uh_summaries upload verification FAILED: {UH_SUMMARIES_HF_FILE} missing on a "
+            "fresh Hub listing — refusing to treat a partial upload as success"
+        )
+    logger.info("uh_summaries verified at %s", UH_SUMMARIES_HF_FILE)
+    return UH_SUMMARIES_HF_FILE
 
 
 # ── sentinel (poll_pipeline contract) ─────────────────────────────────────────
@@ -621,6 +1038,153 @@ def _write_sentinel(kind: str, note: dict, out_dir: Path) -> None:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def _finalize_extended_outputs(
+    args,
+    manifest: dict,
+    v0_parity: dict,
+    drift_check: dict | None,
+    smoke_asserts: dict | None,
+    uh_pack_rows: dict,
+    uh_pack_cov: dict,
+    capture_layers: list[int],
+    ctx_ids: list[str],
+    out_dir: Path,
+    compare_store: bool,
+) -> Path:
+    """Extended-boundary manifest provenance + the compact uh_summaries pack.
+
+    Mutates ``manifest`` (plan v11 § Storage naming: `extended_boundary`,
+    `boundary_block_ids`, pool semantics, the parity records) and writes the
+    CPU-chain input pack (plan v11 §6.5) next to the store dir. Returns the
+    pack path.
+    """
+    manifest["extended_boundary"] = True
+    manifest["boundary_block_ids"] = list(BOUNDARY_BLOCK_IDS)
+    manifest["uh_pool_semantics"] = (
+        "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
+        "bnd_mean5/bnd_max5: over all 5 boundary tokens; mean_xbnd/maxp_xbnd: over "
+        "(answer content union 5 boundary tokens) — computed IN the forward per probe "
+        "(GPU-side, fp32 reduce, fp16 transport), then probe-meaned like the singles."
+    )
+    manifest["v0_store_mean_parity"] = v0_parity or {"skipped": not compare_store}
+    manifest["round1_store_drift_check"] = drift_check or {"skipped": not compare_store}
+    if smoke_asserts is not None:
+        manifest["smoke_asserts"] = smoke_asserts
+    uh_pack_path = Path(args.uh_summaries_out or (out_dir.parent / "uh_summaries.pt"))
+    uh_pack_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "summaries": uh_pack_rows,  # {row: {ctx: (Lc, H) fp16}}
+            "coverage": uh_pack_cov,  # {row: {ctx: probe count}}
+            "rows": UH_SUMMARY_NAMES,
+            "capture_layers": capture_layers,
+            "context_ids": ctx_ids,
+            "model": args.model,
+            "extended_boundary": True,
+            "boundary_block_ids": list(BOUNDARY_BLOCK_IDS),
+            "battery_sha256": BATTERY50_SHA256,
+            "smoke": args.smoke,
+            "reproducibility": reproducibility_metadata(),
+        },
+        uh_pack_path,
+    )
+    logger.info("wrote uh_summaries pack (%d rows) to %s", len(UH_SUMMARY_NAMES), uh_pack_path)
+    return uh_pack_path
+
+
+def _resolve_out_dir(args) -> Path:
+    """Validate the extended-boundary/genre combination and resolve the store dir.
+
+    ``--extended-boundary`` is Betley-only (the uh round's single variable is
+    the captured span; UltraChat is out of scope — plan v11 §0) and defaults to
+    a store dir that never clobbers the parent/g1 stores.
+    """
+    if args.extended_boundary and args.genre != "betley":
+        raise SystemExit(
+            "--extended-boundary supports --genre betley only (the uh round's single "
+            "variable is the captured span; UltraChat is out of scope — plan v11 §0)"
+        )
+    default_store = "store" if args.genre == "betley" else "store_g1"
+    if args.extended_boundary:
+        default_store = "store_uh"
+    return Path(args.out_dir or (PROJECT_ROOT / "data" / "issue_810" / default_store))
+
+
+def _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov):
+    """Collect this context's 9 new-row probe-mean summaries into the compact pack."""
+    for n in UH_SUMMARY_NAMES:
+        uh_pack_rows[n][ctx_id] = pos_summaries[n].to(torch.float16)
+        uh_pack_cov[n][ctx_id] = coverage[n]
+
+
+def _do_uploads(args, out_dir: Path, ctx_ids: list[str], uh_pack_path: Path | None):
+    """Store (+ uh_summaries pack) uploads, gated on --no-upload/--smoke by the caller."""
+    logger.info("[phase=upload] aligned-subset store")
+    path_in_repo = _upload_store(
+        out_dir, ctx_ids, smoke=False, genre=args.genre, extended=args.extended_boundary
+    )
+    uh_pack_hf = None
+    if uh_pack_path is not None:
+        logger.info("[phase=upload] uh_summaries pack")
+        uh_pack_hf = _upload_uh_summaries(uh_pack_path)
+    return path_in_repo, uh_pack_hf
+
+
+def _extended_context_hooks(
+    args,
+    ci: int,
+    ctx_id: str,
+    instance: dict,
+    probes: list[str],
+    completions: list[str],
+    model,
+    tokenizer,
+    capture,
+    capture_layers: list[int],
+    n_layers: int,
+    pos_summaries: dict,
+    coverage: dict,
+    extras: dict,
+    compare_store: bool,
+    v0_parity: dict,
+) -> tuple[dict | None, dict | None]:
+    """Per-context extended-boundary hooks: parity tripwires + smoke oracles.
+
+    Mutates ``v0_parity`` (per-context store-mean parity record, production
+    gate) and returns ``(drift_check, smoke_asserts)`` — each non-None only on
+    the first context when its gate fires. Raises on any parity violation
+    (plan v11 kill criterion 2: halt before any fit on drifted activations).
+    """
+    drift_check: dict | None = None
+    smoke_asserts: dict | None = None
+    if compare_store:
+        v0_parity[ctx_id] = _v0_store_mean_parity(extras["mean_ans"], ctx_id)
+        if ci == 0:
+            drift_check = _round1_store_drift_check(pos_summaries, coverage, ctx_id)
+    elif ci == 0:
+        logger.info(
+            "[phase=parity] store comparisons SKIPPED (model=%s, n_probes=%s) — "
+            "smoke exercises the reduction paths; the 7B store cannot match a "
+            "non-7B / probe-capped run by construction",
+            args.model,
+            args.n_probes,
+        )
+    if args.smoke and ci == 0:
+        smoke_asserts = _extended_smoke_asserts(
+            model,
+            tokenizer,
+            capture,
+            instance,
+            probes,
+            completions,
+            capture_layers,
+            n_layers,
+            pos_summaries,
+            extras["mean_ans"],
+        )
+    return drift_check, smoke_asserts
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 Phase B: answer position sweep extraction")
     ap.add_argument(
@@ -647,13 +1211,26 @@ def main() -> int:
     ap.add_argument(
         "--batch-probes", type=int, default=8, help="probes per left-padded forward (real knob)"
     )
+    ap.add_argument(
+        "--extended-boundary",
+        action="store_true",
+        help="follow-up `user-header-newline-summary` (plan v11): append the FULL 5-token "
+        "assistant-turn continuation (<|im_end|> \\n <|im_start|> user \\n) instead of 2, "
+        "capture the 3 next-user-header singles + 6 in-forward span pools, store to "
+        f"{ANSWER_POSITION_SWEEP_UH_SUBDIR}/. Default OFF = parent behavior byte-for-byte.",
+    )
+    ap.add_argument(
+        "--uh-summaries-out",
+        default=None,
+        help="local path for the compact new-row summaries pack (extended-boundary only; "
+        "default: <out-dir parent>/uh_summaries.pt)",
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
     args = ap.parse_args()
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
-    default_store = "store" if args.genre == "betley" else "store_g1"
-    out_dir = Path(args.out_dir or (PROJECT_ROOT / "data" / "issue_810" / default_store))
+    out_dir = _resolve_out_dir(args)
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
@@ -698,6 +1275,17 @@ def main() -> int:
         )
 
     per_ctx_diag: dict[str, dict] = {}
+    # Extended-boundary parity records (plan v11 §5) + the compact new-row pack.
+    v0_parity: dict[str, dict] = {}
+    drift_check: dict | None = None
+    smoke_asserts: dict | None = None
+    uh_pack_rows: dict[str, dict[str, torch.Tensor]] = {n: {} for n in UH_SUMMARY_NAMES}
+    uh_pack_cov: dict[str, dict[str, int]] = {n: {} for n in UH_SUMMARY_NAMES}
+    # The v0 store-mean / round-1 drift comparisons are meaningful ONLY on the
+    # production model with the full probe set (a 0.5B smoke or a capped probe
+    # subset cannot match the 7B 48-probe store means by construction — the
+    # `_cc_last_parity_probe` precedent above).
+    compare_store = args.extended_boundary and args.model == DEFAULT_MODEL and args.n_probes is None
     try:
         for ci, ctx_id in enumerate(ctx_ids):
             logger.info("[phase=extract] context %d/%d %s", ci + 1, len(ctx_ids), ctx_id)
@@ -708,7 +1296,7 @@ def main() -> int:
                 cells = cells[: args.n_probes]
             probes = [c["probe"] for c in cells]
             completions = [c["completion"] for c in cells]
-            pos_summaries, coverage, diag = capture_positions_for_context(
+            pos_summaries, coverage, diag, extras = capture_positions_for_context(
                 model,
                 tokenizer,
                 instances[ctx_id],
@@ -718,8 +1306,33 @@ def main() -> int:
                 n_layers,
                 capture_layers,
                 args.batch_probes,
+                extended=args.extended_boundary,
             )
-            names = stored_position_names()
+            if args.extended_boundary:
+                dc, sa = _extended_context_hooks(
+                    args,
+                    ci,
+                    ctx_id,
+                    instances[ctx_id],
+                    probes,
+                    completions,
+                    model,
+                    tokenizer,
+                    capture,
+                    capture_layers,
+                    n_layers,
+                    pos_summaries,
+                    coverage,
+                    extras,
+                    compare_store,
+                    v0_parity,
+                )
+                drift_check = dc or drift_check
+                smoke_asserts = sa or smoke_asserts
+                _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov)
+            names = (
+                uh_stored_position_names() if args.extended_boundary else stored_position_names()
+            )
             # Stack positions into (n_positions, Lc, H) fp16; a position missing
             # for EVERY probe (impossible for boundary; possible for a deep
             # tail_k on all-short answers) is recorded as absent in coverage and
@@ -745,7 +1358,9 @@ def main() -> int:
 
     # Manifest (plan §13): positions list, dtype, coverage semantics, provenance.
     manifest = {
-        "positions": stored_position_names(),
+        "positions": (
+            uh_stored_position_names() if args.extended_boundary else stored_position_names()
+        ),
         "capture_layers": capture_layers,
         "dtype": "float16",
         "pos_vectors_shape": ["n_positions", len(capture_layers), model.config.hidden_size],
@@ -770,20 +1385,41 @@ def main() -> int:
         manifest["genre_tag"] = G1_GENRE_TAG
         manifest["probe_pool_hash"] = G1_PROBE_POOL_HASH
         manifest["cc_last_parity"] = cc_parity
+    uh_pack_path: Path | None = None
+    if args.extended_boundary:
+        uh_pack_path = _finalize_extended_outputs(
+            args,
+            manifest,
+            v0_parity,
+            drift_check,
+            smoke_asserts,
+            uh_pack_rows,
+            uh_pack_cov,
+            capture_layers,
+            ctx_ids,
+            out_dir,
+            compare_store,
+        )
     dump_json(manifest, out_dir / "manifest.json")
     logger.info("wrote manifest (%d contexts) to %s", len(ctx_ids), out_dir)
 
     path_in_repo = None
+    uh_pack_hf: str | None = None
     if not args.no_upload and not args.smoke:
-        logger.info("[phase=upload] aligned-subset store")
-        path_in_repo = _upload_store(out_dir, ctx_ids, smoke=False, genre=args.genre)
+        path_in_repo, uh_pack_hf = _do_uploads(args, out_dir, ctx_ids, uh_pack_path)
 
     note = {
         "phase": "B_extract_positions",
         "genre": args.genre,
+        "extended_boundary": bool(args.extended_boundary),
         "n_contexts": len(ctx_ids),
-        "positions": len(stored_position_names()),
+        "positions": len(manifest["positions"]),
         "hf_path": path_in_repo,
+        "uh_summaries_hf": uh_pack_hf,
+        "v0_store_mean_parity_min_cos": (
+            min((v["min_layer_cosine"] for v in v0_parity.values()), default=None)
+        ),
+        "round1_drift_worst_cos": (drift_check or {}).get("worst_min_layer_cosine"),
         "elapsed_s": round(time.time() - t0, 1),
         "store_files_sha256": {
             c: sha256_file(out_dir / f"{c}.pt")[:16] for c in ctx_ids[: min(3, len(ctx_ids))]

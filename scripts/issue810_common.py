@@ -112,6 +112,100 @@ BETLEY_E0_HIGHM_FILE = (
 
 GENRES = ("betley", "g1")
 
+# ── `_uh` next-user-header arm (same-issue follow-up `user-header-newline-summary`) ──
+# Round 3 extends the Phase B captured span by the 3-token next-user header:
+# `prompt + answer + <|im_end|> + \n + <|im_start|> + user + \n`. The SINGLE
+# manipulated variable is the captured span (+2 → +5 appended tokens) and the 12
+# summary rows derived from it (plan v11 §4). `--extended-boundary` OFF (the
+# default everywhere) keeps the parent paths bit-for-bit.
+#
+# Qwen-2.5 chat-template assistant-turn continuation token ids, VERIFIED with the
+# production tokenizer incl. the apply_chat_template tail (plan v11 §12 A1):
+# <|im_end|>=151645, \n=198, <|im_start|>=151644, user=872, \n=198. Asserted
+# per probe at extraction time (fail loud — a wrong id silently captures the
+# wrong slot).
+BOUNDARY_BLOCK_IDS: tuple[int, ...] = (151645, 198, 151644, 872, 198)
+# The 3 next-user-header singles (positions boundary_offset + 2/3/4) …
+UH_POSITION_NAMES: list[str] = ["uh_im_start", "uh_user", "uh_nl"]
+# … and the 6 in-forward span pools (computed GPU-side per probe BEFORE the
+# probe-mean — NOT reconstructable from the stored answer-only summaries):
+# uh_mean3/uh_max3 over the 3 header positions, bnd_mean5/bnd_max5 over all 5
+# boundary tokens, mean_xbnd/maxp_xbnd over (answer content ∪ 5 boundary tokens).
+UH_POOL_NAMES: list[str] = [
+    "uh_mean3",
+    "uh_max3",
+    "bnd_mean5",
+    "bnd_max5",
+    "mean_xbnd",
+    "maxp_xbnd",
+]
+# The 9 new per-layer summary rows (H1-uh selection axis: 37 committed + these).
+UH_SUMMARY_NAMES: list[str] = UH_POSITION_NAMES + UH_POOL_NAMES
+# Phase B-x aligned-subset store destination (plan v11 § Storage naming).
+ANSWER_POSITION_SWEEP_UH_SUBDIR = "answer_position_sweep_user_header"
+# Round out-dir / HF-mirror conventions (the follow-up-label convention).
+UH_FOLLOWUP_LABEL = "user-header-newline-summary"
+UH_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_810" / UH_FOLLOWUP_LABEL
+UH_HF_RESULTS_PREFIX = f"issue810_results/{UH_FOLLOWUP_LABEL}"
+# Compact new-row summaries tensor (the CPU-chain input; ~90 MB at fp16 —
+# 50 ctx × 9 rows × 28 layers × 3584 dims).
+UH_SUMMARIES_HF_FILE = f"{UH_HF_RESULTS_PREFIX}/uh_summaries.pt"
+
+
+def uh_stored_position_names() -> list[str]:
+    """The per-position keys stored in ``answer_position_sweep_user_header/<ctx>.pt``.
+
+    The parent's 34 positions (recaptured in the SAME forward — the round-1
+    drift check rides free) + the 3 next-user-header singles + the 6 in-forward
+    span pools = 43 rows per context.
+    """
+    return stored_position_names() + UH_POSITION_NAMES + UH_POOL_NAMES
+
+
+def enlarged_summary_names() -> list[str]:
+    """The H1-uh enlarged selection axis: 37 committed rows + the 9 new rows = 46."""
+    return summary_names() + UH_SUMMARY_NAMES
+
+
+def load_battery50(local_hint: Path | str | None = None) -> dict:
+    """Load + sha256-pin the 50-context battery (local fast path, else HF snapshot).
+
+    Local ``data/issue594/battery.json`` is gitignored (absent from the
+    git-clone GCP lane), so on a miss the sha256-pinned HF snapshot
+    (``BATTERY50_HF_FILE``) is fetched. Either way the sha256 is asserted
+    (fail loud on drift, the #600 HF-mirror guard).
+    """
+    candidates: list[Path] = []
+    if local_hint is not None:
+        candidates.append(Path(local_hint))
+    candidates.append(PROJECT_ROOT / "data" / "issue594" / "battery.json")
+    for c in candidates:
+        if c.is_file() and sha256_file(c) == BATTERY50_SHA256:
+            return load_json(c)
+    from huggingface_hub import hf_hub_download
+
+    p = hf_hub_download(HF_DATA_REPO, BATTERY50_HF_FILE, repo_type="dataset")
+    assert_sha256(p, BATTERY50_SHA256, "battery50.json")
+    return load_json(p)
+
+
+def battery_family_map(local_hint: Path | str | None = None) -> dict[str, str]:
+    """{context_id: family} from the sha-pinned battery (the 7-family LOFO folds).
+
+    Fails loud unless the map covers exactly 50 ids over exactly 7 families
+    (``battery50.json`` ``instances[].family`` — plan v11 §12 A10).
+    """
+    blob = load_battery50(local_hint)
+    inst = blob["instances"] if isinstance(blob, dict) else blob
+    fam = {str(x["id"]): str(x["family"]) for x in inst}
+    n_fam = len(set(fam.values()))
+    if len(fam) != 50 or n_fam != 7:
+        raise RuntimeError(
+            f"battery family map: expected 50 ids over 7 families, got {len(fam)} ids "
+            f"over {n_fam} families — refusing (LOFO fold structure drift)"
+        )
+    return fam
+
 
 def assert_g1_probe_pool_hash(obj: dict, where: str) -> None:
     """Fail loud unless ``obj['probe_pool_hash']`` matches the g1 pin (plan §4.6).
@@ -244,15 +338,7 @@ def reader_context_labels(max_len: int = 26) -> dict[str, str]:
     ``max_len`` chars plus an ellipsis. Raises if the battery does not yield
     exactly 50 ids.
     """
-    local = PROJECT_ROOT / "data" / "issue594" / "battery.json"
-    if local.exists():
-        blob = load_json(local)
-    else:
-        from huggingface_hub import hf_hub_download
-
-        p = hf_hub_download(HF_DATA_REPO, BATTERY50_HF_FILE, repo_type="dataset")
-        assert_sha256(p, BATTERY50_SHA256, "battery50.json")
-        blob = load_json(p)
+    blob = load_battery50()
     out: dict[str, str] = {}
     for inst in blob["instances"]:
         lab = str(inst["label"]).replace("_", " ")
