@@ -516,7 +516,8 @@ INPUT-DATA artifact the design loads — a parent's `train/*.jsonl` mix, an
 on-policy response cache, an `eval_results/` JSON consumed as a downstream
 input — gets a §11 `Source:` line naming (a) the producing issue `#<M>`, AND
 (b) HOW the file is FETCHED on the target backend named in §9: an HF repo path
-the worker `snapshot_download`s, a committed `eval_results/...` path that
+the worker stages (scoped `list_repo_tree` + per-file `hf_hub_download` for
+data-repo subtrees — gotchas.md), a committed `eval_results/...` path that
 arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
 is the §11 record of the step-5 check `(h)` (source resolution +
 target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a

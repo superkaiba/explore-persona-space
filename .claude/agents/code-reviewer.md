@@ -494,8 +494,9 @@ final sentinel write, via ANY of the three accepted call shapes:
 3. a batched `HfApi.create_commit(repo_type="dataset")` whose
    `CommitOperationAdd` ops target the canonical
    `issue<N>_<slug>/raw_completions/{condition}_seed{S}.json` paths, with
-   post-commit Hub-side verification (e.g. per-prefix `list_repo_files`
-   counts) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
+   post-commit Hub-side verification (e.g. per-prefix counts via scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
    throttle (#591) the batched shape is PREFERABLE to the per-file loop
    for large file counts — one commit instead of N. Do NOT FAIL an
    implementation for batching its uploads (incident #606: a functionally

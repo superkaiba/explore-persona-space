@@ -69,6 +69,10 @@ errors to stderr; piping into `| grep` swallows the error as a false
 "0 files" / "missing" result; the `#458` post-mortem nearly drew a
 wrong "checkpoints don't exist" conclusion from this silent CLI 0).
 Full Hub-API verification recipe: `.claude/rules/upload-policy.md`.
+On the ~1M-file DATA repo a bare `list_repo_files` listing itself times out
+(>90 s, #833) — use `HfApi().file_exists(repo_id, <path>,
+repo_type='dataset')` for a single path or scoped
+`list_repo_tree(path_in_repo=<prefix>)` for a subtree (gotchas.md).
 
 On a miss (the cited artifact does NOT resolve, or the expected files
 are not present at the cited path): mark the artifact UNVERIFIED, do
@@ -162,11 +166,16 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   column-shape / version-tag / encoding drift are OUT of scope and covered —
   where covered at all — by `(f)` byte-content identity. AND **(iii)
   target-backend fetchability** — the backend named in §9 can actually STAGE
-  it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈
+  it. The RunPod lane stages any HF-resolved file (`snapshot_download` on
+  small repos; scoped `list_repo_tree` + per-file `hf_hub_download` on the
+  ~1M-file data repo — gotchas.md; its HF leg ≈
   (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/`
   — the GCE startup `git clone`s the repo at the cited branch (so committed
   `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo
-  files need an explicit `snapshot_download` step in the workload — so a mix
+  files need an explicit staging step in the workload (scoped
+  `list_repo_tree(path_in_repo=...)` + per-file `hf_hub_download` on the
+  ~1M-file data repo — `snapshot_download` full-tree-enumerates there;
+  gotchas.md) — so a mix
   the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and
   the pre-train `assert data_path.exists()` crashes phase2. The check FAILS
   when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/

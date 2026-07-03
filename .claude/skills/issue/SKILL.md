@@ -4088,7 +4088,11 @@ Gate handlers (one per registered `<name>`):
      ships on the `issue-763` branch — it lands on `main` when #763 merges;
      the reference is a forward / sibling-branch one, not a dead tool.)
      This is VM-safe by construction and NOT a `task.py` pod-shellout: it
-     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     fetches the PV rollouts from HF via `snapshot_download` (NOTE: on the
+     ~1M-file data repo `snapshot_download` wedges in full-tree
+     enumeration — `.claude/rules/gotchas.md`; patch the script to scoped
+     `list_repo_tree(path_in_repo=...)` staging before re-running this
+     phase on a #763 follow-up), batch-judges
      through
      `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
      `messages.batches.create` + deadline-less poller), and uploads the
