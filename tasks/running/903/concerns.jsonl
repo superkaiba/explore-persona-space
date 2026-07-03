@@ -1,0 +1,1 @@
+{"ts": "2026-07-03T07:50:59Z", "event": "raised", "concern_id": "stop-kill-degenerate-sid-substring", "severity": "CONCERN", "summary": "stop --kill sid->pid binding is bare substring: an empty/short --session-id matches any log head and can SIGTERM the newest live wrapper; guard degenerate sids + match quoted \"<sid>\" form.", "raised_by": "code-reviewer", "raised_at_round": 1}
