@@ -4,3 +4,4 @@
 {"ts": "2026-07-03T19:38:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T19:54:07Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py mechanical pre-pass: PASS (n_fail=0, n_warn=1, n_skip=13 kind-exempt) on plans/v1.md. WARN copied to fact-checker/critic briefs."}
 {"ts": "2026-07-03T21:38:42Z", "kind": "epm:progress", "version": 2, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cmr5c0bvgep48wc0u3sxt68g4 reason=operator stop via spawn_session.py stop"}
+{"ts": "2026-07-03T21:56:33Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr5h3rbe-o0v8y3 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
