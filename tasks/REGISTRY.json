@@ -6264,8 +6264,8 @@
     "947": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/947",
-      "status": "planning",
+      "path": "tasks/approved/947",
+      "status": "approved",
       "title": "workflow-fix: verify_plan check \u2014 paired-contrast rows need per-context sources on both arms"
     },
     "948": {
