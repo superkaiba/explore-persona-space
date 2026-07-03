@@ -6052,6 +6052,7 @@
       "title": "Representation distance separates Big-5 axes but marker leakage does not; Agreeableness L1 is the lone dual outlier (LOW confidence)"
     },
     "920": {
+      "goal": "On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (context-vector recipe \u00d7 answer-vector recipe) combination best supports (a) the linear context\u2192answer map, (b) direct behavior read-out, and (c) map-mediated (chain) read-out, under leave-one-family-out (LOFO) evaluation with generic UltraChat probes for activation collection and a disjoint OOD UltraChat probe pool testing probe-set generalization on both the input and target sides \u2014 naming the best combination against selection-symmetric nulls.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/920",

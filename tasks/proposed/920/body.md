@@ -41,6 +41,13 @@ origin_prompt: 'Run the following experiment:
   Try all combinations of these context and answer vectors (at all layers when this
   makes sense) and figure out the best one. Help me to plan this experiment and give
   an estimate as to GPU and wallclock time'
+goal: On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (context-vector
+  recipe × answer-vector recipe) combination best supports (a) the linear context→answer
+  map, (b) direct behavior read-out, and (c) map-mediated (chain) read-out, under
+  leave-one-family-out (LOFO) evaluation with generic UltraChat probes for activation
+  collection and a disjoint OOD UltraChat probe pool testing probe-set generalization
+  on both the input and target sides — naming the best combination against selection-symmetric
+  nulls.
 ---
 ## Goal
 
