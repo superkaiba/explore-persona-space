@@ -13,7 +13,13 @@ Modes:
                     sampling). Emits per-cell conversations JSONL (all rows kept —
                     NO generation-time row dropping, plan MF-A), per-cell audit
                     ``_meta.json``, and updates ``row_allowlists.json`` (per-USER-cell
-                    conv_ids passing the fit-time row filters).
+                    conv_ids passing the fit-time row filters). A tokenize-only
+                    span-validation pass (the extractor's own span asserts, run at
+                    gen time) substitutes the validated multi-token placeholder for
+                    any u2 whose text renders a zero-width content span (bare
+                    punctuation BPE-merging into the naturalistic delimiter — the
+                    run-1 extract crash) and hard-fails if any degenerate span
+                    survives substitution.
   --wiring-check    Own-context vs derangement-shuffled-context teacher-forced NLL
                     of u2 on a seeded row subsample per cell (plan MF-B). Batched
                     forwards; writes ``wiring_check_<model>.json``. HALT evaluation
@@ -61,12 +67,21 @@ U2_MAX_TOKENS = 512
 U2_SEED = 42
 CHAT_STOPS = ["<|im_end|>"]
 NAT_STOPS = ["\n\n", "\nAssistant:"]
-# Structural placeholder for a generation that strips to "": keeps the 3-turn
-# render/extract contract intact for the FULL row set (anchors need all rows;
-# causal attention means u2 content cannot affect any anchor read). Such rows
-# are flagged u2_generated_empty and always EXCLUDED from the user-cell
-# allowlist (they fail the >=8-content-token filter by construction).
-EMPTY_U2_PLACEHOLDER = "."
+# Structural placeholder for a generation that strips to "" OR whose text
+# renders to a ZERO-WIDTH u2 content span (run-1 crash: a bare "." u2 fully
+# BPE-merges with the naturalistic "\n\n" turn delimiter into one token
+# " .\n\n", so zero tokens are fully contained in the u2 char range and the
+# extractor's span assert 1 <= s < e fires on conv 723). The placeholder MUST
+# be multi-token with interior tokens that cannot merge into either boundary:
+# "(no reply)" renders as [" (", "no", " reply", ")\n\n"] naturalistically —
+# "no"/" reply" stay fully contained — and is validated per format at startup
+# (assert_placeholder_span_valid). Keeps the 3-turn render/extract contract
+# intact for the FULL row set (anchors need all rows; causal attention means
+# u2 content cannot affect any anchor read). Substituted rows are flagged
+# (u2_generated_empty / u2_span_degenerate) and always EXCLUDED from the
+# user-cell allowlist (their originals fail the >=8-content-token filter by
+# construction — asserted).
+EMPTY_U2_PLACEHOLDER = "(no reply)"
 # Parent Haiku reference for the audit (plan section "Degeneracy audit").
 PARENT_DISTINCT_3GRAM_REFERENCE = 0.781
 VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
@@ -140,6 +155,132 @@ def assert_chat_template_wellformed(tokenizer, u1: str, a1: str) -> None:
         "chat-template conversation tail diverges from render_chat segment "
         f"structure (template tail: {base[-120:]!r})"
     )
+
+
+# ---------------------------------------------------------------------------
+# Gen-time span validation (tokenize-only; no GPU) — the extractor's span
+# asserts, applied to every generated row BEFORE the conversations JSONL is
+# written, so a span-degenerate u2 can never reach the extract phase (run-1
+# crash-fix: AssertionError "723: span u2=(201,201) invalid" 21 min in).
+# ---------------------------------------------------------------------------
+
+
+def _render_row(row: dict, tokenizer, fmt: str):
+    """Render one row through the SAME path the extractor uses for this format."""
+    rf = _rf()
+    renderer = rf.render_chat if fmt == "chat" else rf.render_naturalistic
+    return renderer(row, tokenizer)
+
+
+def _degenerate_spans(rendered) -> list[str]:
+    """Names of spans/slots that would fail issue825_extract_turnstore's asserts.
+
+    Mirrors process_batch exactly: every turn span must satisfy
+    ``1 <= s < e <= seq_len``; every slot ``0 <= idx < seq_len``. Returns an
+    empty list when the row extracts cleanly.
+    """
+    n = len(rendered.input_ids)
+    bad = [name for name, (s, e) in rendered.spans.items() if not (1 <= s < e <= n)]
+    bad += [f"slot:{name}" for name, idx in rendered.slot_idx.items() if not (0 <= idx < n)]
+    return bad
+
+
+def assert_placeholder_span_valid(tokenizer, u1: str, a1: str) -> None:
+    """Startup probe: EMPTY_U2_PLACEHOLDER must render a non-degenerate u2 span
+    in BOTH formats (a single-token placeholder like the old "." fully
+    BPE-merges with the naturalistic delimiter and re-creates the run-1 crash).
+    """
+    probe = {"conv_id": "placeholder_probe", "u1": u1, "a1": a1, "u2": EMPTY_U2_PLACEHOLDER}
+    for fmt in ("chat", "naturalistic"):
+        bad = _degenerate_spans(_render_row(probe, tokenizer, fmt))
+        assert not bad, (
+            f"EMPTY_U2_PLACEHOLDER {EMPTY_U2_PLACEHOLDER!r} renders degenerate "
+            f"spans {bad} under format {fmt} — pick a placeholder whose interior "
+            "tokens cannot BPE-merge into the turn boundaries"
+        )
+
+
+def _process_cell_rows(
+    convs: list[dict], raw: list[str], tokenizer, fmt: str, cell_label: str
+) -> tuple[list[dict], list, dict, list[dict]]:
+    """Build one cell's output rows + allowlist with gen-time span validation.
+
+    Returns ``(rows_out, allow, drops, span_degenerate)``. Every input row is
+    kept (plan MF-A — no generation-time row dropping): an empty generation OR
+    a span-degenerate generation (zero-width u2 content span in THIS cell's
+    format) is SUBSTITUTED with the validated EMPTY_U2_PLACEHOLDER, flagged on
+    the row, recorded in ``span_degenerate`` (conv_id + original text), and
+    excluded from the allowlist. After the loop the FULL row set is re-rendered
+    and must show ZERO degenerate spans (hard-fail listing offenders).
+    """
+    rows_out: list[dict] = []
+    allow: list = []
+    drops = {"empty_u2": 0, "short_u2": 0, "too_long": 0, "span_degenerate_u2": 0}
+    span_degenerate: list[dict] = []
+    for c, u2 in zip(convs, raw, strict=True):
+        empty = not u2
+        row = {
+            "conv_id": c["conv_id"],
+            "u1": c["u1"],
+            "a1": c["a1"],
+            "u2": u2 if not empty else EMPTY_U2_PLACEHOLDER,
+        }
+        if empty:
+            row["u2_generated_empty"] = True
+            rows_out.append(row)
+            drops["empty_u2"] += 1
+            continue
+        rendered = _render_row(row, tokenizer, fmt)
+        degen = _degenerate_spans(rendered)
+        if degen:
+            assert degen == ["u2"], (
+                f"{c['conv_id']}: non-substitutable degenerate spans {degen} under "
+                f"{fmt} — only the generated u2 can be substituted (u1/a1 are "
+                "pinned parent data)"
+            )
+            n_orig = _ntok(tokenizer, u2)
+            assert n_orig < MIN_TURN_CONTENT_TOKENS, (
+                f"{c['conv_id']}: span-degenerate u2 has {n_orig} standalone tokens "
+                f">= {MIN_TURN_CONTENT_TOKENS} — violates the short-text premise "
+                "(zero fully-contained tokens implies <=2 boundary-straddling tokens)"
+            )
+            row["u2"] = EMPTY_U2_PLACEHOLDER
+            row["u2_span_degenerate"] = True
+            span_degenerate.append({"conv_id": c["conv_id"], "u2_original": u2})
+            rows_out.append(row)
+            drops["span_degenerate_u2"] += 1
+            print(
+                f"[gen] {cell_label}: substituted span-degenerate u2 "
+                f"conv={c['conv_id']} (orig {u2[:80]!r})"
+            )
+            continue
+        rows_out.append(row)
+        # Fit-time row filters (applied via allowlist, NEVER by dropping rows
+        # from the JSONL — plan MF-A): >=8 content tokens AND rendered length
+        # <= 2048 in the CELL'S OWN format.
+        if _ntok(tokenizer, u2) < MIN_TURN_CONTENT_TOKENS:
+            drops["short_u2"] += 1
+            continue
+        if len(rendered.input_ids) > MAX_CONV_TOKENS:
+            drops["too_long"] += 1
+            continue
+        allow.append(c["conv_id"])
+    # Re-validate the FULL row set post-substitution: zero degenerate spans in
+    # this cell's format, or hard-fail at gen with the offending conv_ids.
+    offenders = []
+    for row in rows_out:
+        bad = _degenerate_spans(_render_row(row, tokenizer, fmt))
+        if bad:
+            offenders.append((row["conv_id"], bad))
+    assert not offenders, (
+        f"{cell_label}: {len(offenders)} row(s) still render degenerate spans "
+        f"after placeholder substitution: {offenders[:20]}"
+    )
+    print(
+        f"[gen] {cell_label}: span re-validation PASS "
+        f"(0 degenerate spans across {len(rows_out)} rows)"
+    )
+    return rows_out, allow, drops, span_degenerate
 
 
 # ---------------------------------------------------------------------------
@@ -339,12 +480,13 @@ def run_gen(args) -> None:
     print(
         f"[gen] chat-template well-formedness assert PASS on probe conv {convs[0].get('conv_id')}"
     )
+    assert_placeholder_span_valid(tokenizer, convs[0]["u1"], convs[0]["a1"])
+    print(f"[gen] placeholder span-validity assert PASS ({EMPTY_U2_PLACEHOLDER!r}, both formats)")
 
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     formats = [f.strip() for f in args.formats.split(",") if f.strip()]
     assert set(models) <= set(MODEL_IDS) and set(formats) <= {"chat", "naturalistic"}
 
-    rf = _rf()
     # Parent reference audit stats (model-independent; recomputed per invocation).
     parent_ref = {
         "u2_length": _length_stats(tokenizer, parent_u2),
@@ -373,34 +515,9 @@ def run_gen(args) -> None:
         for fmt in formats:
             raw = [t.strip() for t in gen_texts[fmt]]
             assert len(raw) == len(convs), (model_key, fmt, len(raw), len(convs))
-            rows_out = []
-            allow: list = []
-            drops = {"empty_u2": 0, "short_u2": 0, "too_long": 0}
-            renderer = rf.render_chat if fmt == "chat" else rf.render_naturalistic
-            for c, u2 in zip(convs, raw, strict=True):
-                empty = not u2
-                row = {
-                    "conv_id": c["conv_id"],
-                    "u1": c["u1"],
-                    "a1": c["a1"],
-                    "u2": u2 if not empty else EMPTY_U2_PLACEHOLDER,
-                }
-                if empty:
-                    row["u2_generated_empty"] = True
-                rows_out.append(row)
-                # Fit-time row filters (applied via allowlist, NEVER by dropping
-                # rows from the JSONL — plan MF-A): >=8 content tokens AND
-                # rendered length <= 2048 in the CELL'S OWN format.
-                if empty:
-                    drops["empty_u2"] += 1
-                    continue
-                if _ntok(tokenizer, u2) < MIN_TURN_CONTENT_TOKENS:
-                    drops["short_u2"] += 1
-                    continue
-                if len(renderer(row, tokenizer).input_ids) > MAX_CONV_TOKENS:
-                    drops["too_long"] += 1
-                    continue
-                allow.append(c["conv_id"])
+            rows_out, allow, drops, span_degenerate = _process_cell_rows(
+                convs, raw, tokenizer, fmt, f"{model_key}/{fmt}"
+            )
             if smoke and len(allow) < SMOKE_MIN_ALLOWLIST:
                 pad = [c["conv_id"] for c in convs if c["conv_id"] not in set(allow)]
                 allow = allow + pad[: SMOKE_MIN_ALLOWLIST - len(allow)]
@@ -426,6 +543,11 @@ def run_gen(args) -> None:
                 "n_allowlist": len(allow),
                 "keep_rate": len(allow) / len(rows_out),
                 "drops": drops,
+                "empty_u2_placeholder": EMPTY_U2_PLACEHOLDER,
+                # conv_id + original text of every row whose generated u2
+                # rendered a zero-width content span in THIS cell's format and
+                # was substituted with the placeholder (run-1 crash-fix).
+                "span_degenerate_substituted": span_degenerate,
                 "distinct_3gram_rate_kept": _distinct_3gram_rate(kept_texts),
                 "distinct_3gram_rate_all": _distinct_3gram_rate(all_texts),
                 "repetition_rate": _repetition_rate(all_texts),
