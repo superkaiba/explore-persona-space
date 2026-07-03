@@ -526,6 +526,28 @@ def test_error_driven_fallback_sweep(origin_and_clone, monkeypatch, capsys):
     assert any("fallback sweep" in m for m in rep["messages"])
 
 
+def test_two_consecutive_collision_failures_exit_6(origin_and_clone, monkeypatch, capsys):
+    """AC4 exit-6 coverage: the fallback sweep also failing to clear the
+    collisions is the two-consecutive-failures unexpected terminal — clean
+    state, both path lists reported, untracked data untouched."""
+    _origin, local, other = origin_and_clone
+    _write(other, "eval_results/issue_9/x.json", "ORIGIN-X\n")
+    _commit(other, "eval_results/issue_9/x.json")
+    _git(other, "push", "-q", "origin", "main")
+    x = _write(local, "eval_results/issue_9/x.json", "LOCAL-X\n")
+
+    # Neuter BOTH sweeps: the pull hits the real collision error twice.
+    monkeypatch.setattr(srr, "sweep", lambda repo, collisions, rescue_dir, dry_run: [])
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    assert rep["exit_code"] == 6
+    assert "two consecutive untracked-collision failures" in err
+    assert "eval_results/issue_9/x.json" in err  # both attempts' path lists named
+    assert x.read_text() == "LOCAL-X\n"  # untracked data untouched
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert not (local / ".git" / "MERGE_HEAD").exists()
+
+
 def test_parse_collision_stderr_verbatim_blob():
     blob = textwrap.dedent(
         """\
