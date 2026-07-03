@@ -123,6 +123,7 @@ def capture_last_token_batched(
     return stacked.numpy()
 
 
+@torch.no_grad()
 def _capture_last_two_batched(
     model, input_ids: torch.Tensor, attn: torch.Tensor, layers: list[int]
 ) -> tuple[np.ndarray, np.ndarray]:
