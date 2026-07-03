@@ -5323,8 +5323,8 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/825",
-      "status": "interpreting",
+      "path": "tasks/reviewing/825",
+      "status": "reviewing",
       "title": "The linear context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn chat assistant targets, while the user-turn map has no practical predictive power (R\u00b2 < 0) despite above-null structure (MODERATE confidence)"
     },
     "826": {
