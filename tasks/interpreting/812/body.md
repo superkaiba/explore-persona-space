@@ -24,7 +24,7 @@ goal: 'On Qwen2.5-7B base representations (#658''s 50 contexts, reusing #810''s 
 relates_to:
 - leak-predictor
 ---
-# Mean-pooling answer activations loses nothing resolvable at the current sample size: per-position features never beat the plain average beyond selection noise (MODERATE confidence)
+# Mean-pooling answer activations loses nothing resolvable at the current sample size: rank-10-reduced per-position features never beat the plain average beyond selection noise (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
@@ -32,10 +32,10 @@ relates_to:
 
 - **Unpooled never clears its null:** best-layer gains over the mean pool run **−0.09 to +0.29** held-out Spearman ρ across seven behaviors (deception excluded — target failed reliability), all inside the label-shuffle null (**p ≥ 0.20**, n = 50 contexts); the unpooled arm is the rank-10-PCA-per-position implementation.
 - Bounded, not refuted: reliability ceilings √r_yy of **0.68–0.96** cap what this sample could resolve — a true pooling loss up to that cap remains open.
-- At the fixed layer where the mean pool predicts best — a mean-favoring selection — unpooled is **worse at every subsample size** (**−0.06 to −0.31** at 50 contexts); best-layer wins come from layer re-selection alone.
+- At the fixed layer where the mean pool predicts best (a mean-favoring selection), unpooled is **worse at every subsample size** (**−0.06 to −0.31** at 50 contexts); best-layer wins come from layer re-selection alone.
 - No operator resolvably beats the plain mean: a **fixed random attention pool is numerically top for six of seven behaviors**, and the **learned attention query (a rank-32 PCA implementation) never resolvably beats the random one** — numerically below it for six of seven, slightly above only for persona drift (0.82 vs 0.79, CIs overlap).
-- The matched-PCA control collapsed (held-out ρ minima **−0.49 to −0.71** for six of eight behaviors), voiding the granularity-vs-denoising contrast; the run's one "unpooling helps" flag (persona drift) is a criterion artifact.
-- Contexts needed to resolve the gap are unextrapolable: bootstrap CIs span **22–1,346** contexts (harmful compliance) up to **74–150 million** (format/style); a larger context battery is the only path forward.
+- The matched-PCA control collapsed (held-out ρ minima **−0.49 to −0.71** for six of eight behaviors, deception included in this diagnostic), voiding the granularity-vs-denoising contrast; the run's one "unpooling helps" flag (persona drift) is a criterion artifact.
+- Contexts needed to resolve the gap are unextrapolable: bootstrap CIs span **22–1,346** contexts (harmful compliance) up to **74–150 million** (format/style); only a larger context battery can resolve it.
 
 ## Goal
 
@@ -137,7 +137,7 @@ Orange points: the observed max-over-28-layers held-out Spearman ρ gain (LOCO r
 
 > **Figure.** *No behavior's unpooled gain clears its selection-symmetric null.* Orange: observed max-over-layer gain in held-out Spearman ρ, unpooled minus mean pool, per behavior (n = 50 contexts). Violins: 1,000 label-shuffle draws under the identical layer selection; bar = 97.5th percentile; empirical p labeled per point.
 
-Refusal comes closest (+0.29 vs a null 97.5th percentile of 0.40, p = 0.20); everything else sits at p ≥ 0.94, and format/style never beats the mean at any layer (−0.09). With ceilings of 0.68–0.96, this is indistinguishable from null given the variance — a bound, not proof of losslessness, and a bound on unpooled-as-implemented (the rank-10 per-position reduction; per-layer curves and the caveat two results below).
+Refusal comes closest (+0.29 vs a null 97.5th percentile of 0.40, p = 0.20); everything else sits at p ≥ 0.94, and format/style never beats the mean at any layer (−0.09). With ceilings of 0.68–0.96, this is indistinguishable from null given the variance — it bounds the pooling loss without proving losslessness, and the bound covers unpooled-as-implemented (the rank-10 per-position reduction; per-layer curves and the caveat two results below).
 
 ### No operator resolvably beats the plain mean; the learned attention query never resolvably beats a random one
 
@@ -147,7 +147,7 @@ Each bar: one input's best-layer held-out Spearman ρ per behavior (layer select
 
 > **Figure.** *Best-layer predictivity is statistically flat across operators.* Bars: best-layer held-out Spearman ρ per (behavior × input), LOCO ridge to graded expression, n = 50 contexts; error bars: bootstrap 95% CI (B = 2,000).
 
-The plain mean is never resolvably beaten. The fixed random attention pool is numerically top for six of seven behaviors (harmful compliance 0.82, CI 0.67–0.92, vs mean 0.75, CI 0.59–0.84), though all CIs overlap. The learned attention query — implemented over a rank-32 PCA reduction, not the plan's full 3,584-dim query — never resolvably beats the random pool: below it for six of seven behaviors, slightly above only for persona drift (0.82 vs 0.79, CIs overlapping). This null does not rule out a differently built learned operator. Layer-averaged, the PCA-reduced mean is weakest for all seven behaviors; at best layers it is weakest for only three, and for refusal beats the plain mean (0.656 vs 0.612) — foreshadowing the collapse below.
+The plain mean is never resolvably beaten. The fixed random attention pool is numerically top for six of seven behaviors (harmful compliance 0.82, CI 0.67–0.92, vs mean 0.75, CI 0.59–0.84), though all CIs overlap. The learned attention query (implemented over a rank-32 PCA reduction, not the plan's full 3,584-dim query) never resolvably beats the random pool: below it for six of seven behaviors, slightly above only for persona drift (0.82 vs 0.79, CIs overlapping). This null does not rule out a differently built learned operator. Layer-averaged, the PCA-reduced mean is weakest for all seven behaviors; at best layers it is weakest for only three, and for refusal beats the plain mean (0.656 vs 0.612) — foreshadowing the collapse below.
 
 ### The matched-PCA control collapsed, voiding the granularity contrast and explaining the one spurious flag
 
@@ -157,7 +157,7 @@ Per-layer held-out Spearman ρ, six inputs × eight behaviors (deception shown b
 
 > **Figure.** *The PCA-reduced mean collapses at scattered layers; the raw mean tracks or leads everything.* Per-layer held-out Spearman ρ, all six inputs, all 8 behaviors, n = 50 contexts; dashed line = split-half ceiling √r_yy. This is the per-layer data behind both preceding aggregates.
 
-Rank-10 PCA of the pooled mean destroys held-out signal at scattered layers (minima −0.49 to −0.71 for six of eight behaviors; persona drift only −0.08) while the raw mean stays high, so the granularity contrast ran against a broken control: those gaps (+0.69 to +1.29, p ≤ 0.001) harvest collapse layers, not per-position structure. Refusal's control alone stayed intact (minimum +0.20; gap +0.32, p = 0.21). The one "unpooling helps" flag (persona drift) tests the confounded point estimate, not the planned CI lower bound, and alone lands under its ceiling — its gain over the raw mean is +0.06 (p = 0.97). The same rank-10 reduction feeds every unpooled position, so the headline null bounds unpooled-as-implemented; PCA denoising went untested.
+Rank-10 PCA of the pooled mean destroys held-out signal at scattered layers (minima −0.49 to −0.71 for six of eight behaviors; persona drift only −0.08) while the raw mean stays high, so the granularity contrast ran against a broken control: those gaps (+0.69 to +1.29, p ≤ 0.001) just measure how far the control fell at its collapse layers. Refusal's control alone stayed intact (minimum +0.20; gap +0.32, p = 0.21). The one "unpooling helps" flag (persona drift) tests the confounded point estimate, not the planned CI lower bound, and alone lands under its ceiling — its gain over the raw mean is +0.06 (p = 0.97). The same rank-10 reduction feeds every unpooled position, so the headline null bounds unpooled-as-implemented; PCA denoising went untested.
 
 ### At a fixed layer, unpooling is worse at every sample size, and the contexts needed to resolve a gap are unextrapolable
 
@@ -171,13 +171,13 @@ With the layer fixed — a mean-favoring selection, since it is the mean's best 
 
 ### Reconstruction: the mean and attention pools are the linearly reachable summaries; max pooling is predictive without being linearly reachable
 
-Held-out skill-over-mean R² of a ridge map from each context's mean activation vector to each operator summary, per layer (LOCO, PCA target rank 48, n = 50); four targets: mean, max, random attention, unpooled stack.
+Held-out skill-over-mean R² (R² against a predict-the-mean baseline; negative when worse than that baseline) of a ridge map from each context's mean activation vector to each operator summary, per layer (LOCO, PCA target rank 48, n = 50); four targets: mean, max, random attention, unpooled stack.
 
 ![Per-layer reconstruction R-squared curves showing mean and random attention pools peaking near 0.78 at layer 18, the unpooled target much lower, and max pooling negative at every layer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7c944c5ff50afeeb3893f9e6fbc1c877cd5fb969/figures/issue_812/reconstruction_r2.png)
 
 > **Figure.** *Mean and random-attention summaries reconstruct at R² ≈ 0.78; max pooling never reconstructs.* Held-out skill-over-mean R² of ridge maps from the context mean vector to each operator summary, per layer, n = 50 contexts; dashed line = the parent-line anchor near 0.80.
 
-The mean pool reproduces the validity anchor (R² 0.784 at layer 18, expected ≈ 0.80), confirming the pipeline. The random attention pool matches it through mid layers; the element-wise max reconstructs nowhere (R² below 0 at all 28 layers); the unpooled target is much harder (best 0.29). Linear reachability from the context mean vector is therefore not necessary for behavior predictivity: the unreconstructable max pool still reaches best-layer ρ of 0.62–0.82, statistically flat with the mean's. The learned query and PCA-reduced pools are omitted as targets (the learned query is behavior-specific) — a deviation from the plan's per-operator listing.
+The mean pool reproduces the validity anchor (R² 0.784 at layer 18, expected ≈ 0.80), which confirms the pipeline. The random attention pool matches it through mid layers; the element-wise max reconstructs nowhere (R² below 0 at all 28 layers); the unpooled target is much harder (best 0.29). Linear reachability from the context mean vector is therefore not necessary for behavior predictivity: the unreconstructable max pool still reaches best-layer ρ of 0.62–0.82, statistically flat with the mean's. The learned query and PCA-reduced pools are omitted as targets (the learned query is behavior-specific) — a deviation from the plan's per-operator listing.
 
 ---
 
