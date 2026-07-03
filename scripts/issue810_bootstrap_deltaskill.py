@@ -120,6 +120,142 @@ def _stat_summary(obs: float, draws: np.ndarray) -> dict:
     }
 
 
+# ── uh new-rows paired Δskill vs the mean benchmark (plan v11 §4.5 step 6) ────
+
+
+def _vs_mean_rows(args) -> int:
+    """Paired per-context bootstrap of Δskill(new_row − mean) at the selected cells.
+
+    The `user-header-newline-summary` round's claim-size calibration: for each
+    of the 9 new rows (from the ``--uh-summaries`` pack) vs the `mean`
+    benchmark (v0), per-context (ss_res, ss_tot) decompositions are computed in
+    the SAME canonical context order and every bootstrap replicate resamples
+    the SAME context indices for both rows (paired; ONE shared (B, n) index
+    matrix — no per-draw refit loop, the #722 vectorize mandate). Statistics
+    per row: Δ at the mean's benchmark L18 (frozen), best-vs-best with the
+    layer selection INHERITED per replicate, and Δ frozen at each row's
+    observed best layer (data-selected, labeled). Output: ``delta_vs_mean.json``.
+    """
+    import json
+
+    from huggingface_hub import hf_hub_download
+    from issue810_common import UH_SUMMARY_NAMES
+    from issue810_fit_readout import _load_uh_summaries
+
+    man_path = hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset")
+    with open(man_path) as f:
+        ctx_ids = context_ids_from_manifest(json.load(f))
+    n = len(ctx_ids)
+    pca_dim = min(PCA_TARGET_DIM_CAP, n - 2)
+    if not args.uh_summaries:
+        raise SystemExit("--vs mean requires --uh-summaries (the new-row source pack)")
+    uh_rows, uh_cov = _load_uh_summaries(args.uh_summaries)
+    rows = args.rows or list(UH_SUMMARY_NAMES)
+    unknown = [r for r in rows if r not in uh_rows]
+    if unknown:
+        raise SystemExit(f"rows {unknown} absent from the uh_summaries pack ({sorted(uh_rows)})")
+    # Pack context coverage must span the manifest grid (paired design).
+    missing_ctx = [c for c in ctx_ids if uh_cov[rows[0]].get(c, 0) <= 0]
+    if missing_ctx:
+        raise SystemExit(f"uh pack missing contexts {missing_ctx[:5]} — paired read impossible")
+    free_summaries, capture_layers = _load_free_summaries()
+    cc = _load_cc(ctx_ids, capture_layers)
+    # The pack rows carry their own layer count (0.5B smoke = 24; production 28)
+    # — the paired Δ is computed on the overlapping layer prefix, labeled.
+    n_layers_pack = next(iter(uh_rows[rows[0]].values())).shape[0]
+    layers = args.layers or list(range(min(len(capture_layers), n_layers_pack)))
+    n_layers = len(layers)
+    logger.info("[vs-mean] rows=%s n=%d layers=%d pca_dim=%d", rows, n, n_layers, pca_dim)
+
+    arms = ["mean", *rows]
+    ss_res = {s: np.zeros((n_layers, n)) for s in arms}
+    ss_tot = {s: np.zeros((n_layers, n)) for s in arms}
+    obs_skill = {s: np.zeros(n_layers) for s in arms}
+    for s in arms:
+        for wi, li in enumerate(layers):
+            Xc = np.stack([cc[c][li] for c in ctx_ids])
+            if s == "mean":
+                Yv = np.stack([free_summaries["mean"][c][li].numpy() for c in ctx_ids])
+            else:
+                Yv = np.stack([uh_rows[s][c][li] for c in ctx_ids])
+            r, t = _per_context_decomposition(Xc, Yv, pca_dim)
+            ss_res[s][wi], ss_tot[s][wi] = r, t
+            obs_skill[s][wi] = _skill(r, t)
+        logger.info(
+            "[vs-mean] %s best skill %.4f @window-idx %d",
+            s,
+            float(obs_skill[s].max()),
+            int(obs_skill[s].argmax()),
+        )
+
+    rng = np.random.default_rng(args.seed)
+    B = args.n_boot
+    idx = rng.integers(0, n, size=(B, n))  # ONE index matrix — paired across arms
+    skills = {}
+    for s in arms:
+        rs = ss_res[s][:, idx].sum(axis=-1)  # (n_layers, B)
+        ts = ss_tot[s][:, idx].sum(axis=-1)
+        skills[s] = np.where(ts < 1e-12, np.nan, 1.0 - rs / ts)
+
+    layer_pos = {capture_layers[li]: wi for wi, li in enumerate(layers)}
+    statistics: dict[str, dict] = {}
+    for s in rows:
+        d_draws = skills[s] - skills["mean"]  # (n_layers, B)
+        d_obs = obs_skill[s] - obs_skill["mean"]
+        if 18 in layer_pos:  # the mean benchmark's layer (frozen, registered anchor)
+            wi = layer_pos[18]
+            statistics[f"{s}_at_L18"] = _stat_summary(float(d_obs[wi]), d_draws[wi])
+        draws_inh = skills[s].max(axis=0) - skills["mean"].max(axis=0)
+        obs_inh = float(obs_skill[s].max() - obs_skill["mean"].max())
+        statistics[f"{s}_best_vs_best_inherited"] = _stat_summary(obs_inh, draws_inh)
+        bi = int(obs_skill[s].argmax())
+        st = _stat_summary(float(d_obs[bi]), d_draws[bi])
+        st["row_best_layer"] = capture_layers[layers[bi]]
+        st["note"] = "row's own best layer (DATA-SELECTED; not multiplicity-corrected)"
+        statistics[f"{s}_frozen_observed_best_layer"] = st
+
+    out_path = args.out or str(
+        PROJECT_ROOT
+        / "eval_results"
+        / "issue_810"
+        / "user-header-newline-summary"
+        / "delta_vs_mean.json"
+    )
+    dump_json(
+        {
+            "dv": "paired_bootstrap_delta_skill_new_row_minus_mean",
+            "method": (
+                "per-context (ss_res, ss_tot) decompositions per (row, layer) in the SAME "
+                "canonical context order; ONE shared (B, n) context-resample index matrix "
+                "(paired across the mean benchmark + every new row); Δ at L18 (frozen), "
+                "best-vs-best inherited per replicate, and each row's observed-best layer "
+                "(data-selected, labeled)"
+            ),
+            "rows": rows,
+            "n_contexts": n,
+            "layers_window_indices": list(layers),
+            "pca_dim": pca_dim,
+            "n_boot": B,
+            "seed": args.seed,
+            "per_layer_observed_skill": {s: [float(v) for v in obs_skill[s]] for s in arms},
+            "statistics": statistics,
+            "reproducibility": reproducibility_metadata(),
+        },
+        out_path,
+    )
+    for k, v in statistics.items():
+        logger.info(
+            "%s: obs %+0.4f CI95 [%+0.4f, %+0.4f] P(<=0)=%.4f",
+            k,
+            v["observed"],
+            v["ci95"][0],
+            v["ci95"][1],
+            v["p_delta_le_0"],
+        )
+    logger.info("wrote %s", out_path)
+    return 0
+
+
 # ── cross-genre paired Δskill (plan v6 H1-g(ii); follow-up round) ──────────────
 
 GENRE_GENERALITY_BAND = 0.10  # plan v6 §11: parent's largest within-genre summary effect
@@ -285,13 +421,31 @@ def main() -> int:
         "with --cross-genre: eval_results/issue_810/ultrachat-genre-summary-sweep/"
         "genre_delta_recon.json)",
     )
-    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--n-boot", "--n-draws", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument(
         "--cross-genre",
         action="store_true",
         help="paired Betley-vs-g1 Δskill (plan v6 H1-g(ii)) instead of the within-genre "
         "maxp-vs-mean delta",
+    )
+    ap.add_argument(
+        "--vs",
+        choices=["mean"],
+        default=None,
+        help="'mean' = the uh round's paired Δskill(new_row − mean benchmark) mode "
+        "(plan v11 §4.5 step 6; requires --uh-summaries; writes delta_vs_mean.json)",
+    )
+    ap.add_argument(
+        "--rows",
+        nargs="*",
+        default=None,
+        help="new-row subset for --vs mean (default: all 9 uh rows in the pack)",
+    )
+    ap.add_argument(
+        "--uh-summaries",
+        default=None,
+        help="uh_summaries.pt pack (local path or HF data-repo path) — the new-row source",
     )
     ap.add_argument(
         "--layers",
@@ -302,6 +456,8 @@ def main() -> int:
         "runs all 28 layers (parent behavior, bit-for-bit)",
     )
     args = ap.parse_args()
+    if args.vs == "mean":
+        return _vs_mean_rows(args)
     if args.cross_genre:
         return _cross_genre(args)
     if args.out is None:
