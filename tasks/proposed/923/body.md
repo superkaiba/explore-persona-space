@@ -56,6 +56,9 @@ goal: 'Determine whether the base model''s per-cell mean answer activation v(c,q
   of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with
   the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing
   information unavailable to disjoint parts.'
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 ## Overview / Motivation
 
