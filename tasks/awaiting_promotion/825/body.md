@@ -4,7 +4,8 @@ title: The linear context→answer-profile map exists in pretrained Qwen2.5-7B a
   chat assistant targets, while the user-turn map has no practical predictive power
   (R² < 0) despite above-null structure (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true
 parent_id: 779
