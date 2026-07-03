@@ -58,11 +58,11 @@ relates_to:
 ## Takeaways
 
 - **The linear context→answer activation map is far above chance under family-held-out evaluation: best held-out skill 0.87 against a 0.17 chance band; 17,447 of 34,652 combinations clear.**
-- **No recipe separates from the whole-answer-mean incumbent under the reachable family-restricted bands: 37 of 46 answer families (in-probe; 36 of 46 held-out) and all 29 context families sit inside the winner's selection-noise band, and only single tail-position targets separate (as worse). The head-to-head challenger test itself has zero power — its 0.28 band exceeds the 0.17 achievable lead ceiling — so that read is a failure-to-reject, not evidence of a tie.**
+- **No recipe separates from the whole-answer-mean incumbent under the reachable family-restricted bands: 37 of 46 answer families (in-probe; 36 of 46 held-out) and all 29 context families sit inside the winner's selection-noise band, and only single tail-position targets separate (as worse; one layer-pooled newline family adds a marginal held-out separation). The head-to-head challenger test itself has zero power — its 0.28 band exceeds the 0.17 achievable lead ceiling — so that read is a failure-to-reject, not evidence of a tie.**
 - **The template-token targets' numeric lead reflects target stability: their cross-probe-set ceiling is 0.99 vs 0.89 for the whole-answer mean, which recovers more of its own ceiling (93% vs 88%).**
 - **Probe-set generality is recipe-dependent: pooled and boundary summaries lose about 0.01 skill on unseen probes; last-k content-token context reads with k of 2 or more lose 0.06 to 0.23, while the single final content token loses only 0.02.**
 - **27 of 28 behavior read-out clears are discounted by an exploratory (unbanded) family-centering re-read: family-centered rank correlations drop 57% at the median; none is established beyond family structure, pending a family-aware null.**
-- **Chain read-out maxima land at cells where the map fails (skill −2.9 to +0.6) and exceed their own oracle — selection artifacts, not signal surviving the map.**
+- **Chain read-out maxima land at cells where the map fails (skill −2.9 to +0.55) and exceed their own oracle there — selection artifacts. No chain headline is claimed.**
 
 ## Goal
 
@@ -126,31 +126,31 @@ The heatmap shows the best matched-layer held-out map skill for each of 29 conte
 
 > **Figure.** *Held-out map skill per family pair.* Best matched-layer pooled leave-one-family-out skill, 29 context families (rows) × 46 answer families (columns), clipped to the 0–0.9 range. Bright block: pooled/boundary context reads × pooled/boundary targets (0.75–0.87). Dark columns: single tail-position targets. n = 50 contexts, 7 family folds.
 
-The observed maxima are 0.871 (in-probe), 0.863 (input-held-out), 0.866 (target-held-out), 0.863 (both) against bands 0.17, 0.16, 0.21, 0.18 — all clear by ≥0.65 with the skill ceiling at 1, so the bands are informative, not vacuous. The map itself is not in question at n = 50; which recipe serves it best is (next results).
+The observed maxima are 0.871 (in-probe), 0.863 (input-held-out), 0.866 (target-held-out), 0.863 (both) against bands 0.17, 0.16, 0.21, 0.18 — all clear by ≥0.65, and the skill ceiling at 1 leaves each band ample headroom. The map itself is not in question at n = 50; which recipe serves it best is (next results).
 
 ### Half the sweep clears the chance band
 
-The histogram shows all 34,652 in-probe cell skills (x-axis clipped at −1; 7,045 cells below −1 not shown), with the 0.17 chance band marked.
+All 34,652 in-probe cell skills in one histogram (x-axis clipped at −1; 7,045 cells below −1 not shown), the 0.17 chance band marked.
 
 ![Distribution of map skill over all cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/r1_skill_distribution_v2.png)
 
 > **Figure.** *All 34,652 map cells.* 17,447 cells clear the 0.17 chance band. The long negative tail (down to −1086) comes from max-pool-over-template context reads, where a single outlier dimension dominates. n = 50 contexts.
 
-Half the grid supports the map above chance; the winner-vs-incumbent question needs the separation analysis below, not this marginal view.
+Half the grid supports the map above chance; the winner-vs-incumbent question is settled by the separation analysis below.
 
 ### The head-to-head incumbent test has zero power; under the reachable family bands only tail-position targets separate
 
-The left panel shows the head-to-head incumbent-vs-challenger test on both probe regimes — observed best-challenger lead, 97.5% selection-noise band, and the achievable lead ceiling (1 minus the incumbent's best skill). The right panel shows each answer family's best-cell gap to the sweep winner against its family-restricted per-draw band, in-probe.
+Left panel: the head-to-head incumbent-vs-challenger test on both probe regimes — observed best-challenger lead, 97.5% selection-noise band, and the achievable lead ceiling (1 minus the incumbent's best skill). Right panel: each answer family's best-cell gap to the sweep winner against its family-restricted per-draw band, in-probe.
 
 ![Incumbent test band vs ceiling, and per-family gap vs band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/family_gap_vs_band.png)
 
 > **Figure.** *Left:* the paired band (0.28 in-probe, 0.27 held-out) exceeds the 0.17 ceiling — even a perfect challenger could not clear it. *Right:* 37 of 46 answer families sit inside their band; the nine single tail-position targets (2nd–10th from the answer end) separate as worse. n = 50 contexts, 1,000 draws.
 
-The paired test carries zero power (band 0.277 vs ceiling 0.170 in-probe; 0.269 vs 0.173 held-out), so its non-rejection is a failure-to-reject, never evidence of a tie. The retention claim instead rests on the family-restricted bands, which are demonstrably able to reject — tail-position gaps 0.56–0.66 clear bands near 0.38 — while the incumbent's family sits deep inside (gap 0.0415 vs band 0.286) and all 29 context families are inside theirs (context-side bands run 0.24 up to 217 for degenerate families, uninformative by construction). On held-out probes one layer-pooled newline family also separates marginally (gap 0.374 vs band 0.34), leaving 36 of 46 inside. Full table: `eval_results/issue_920/family_restricted_bands.json`.
+The paired test carries zero power (band 0.277 vs ceiling 0.170 in-probe; 0.269 vs 0.173 held-out), so its non-rejection is a failure-to-reject, never evidence of a tie. The retention claim instead rests on the family-restricted bands, which can reject: tail-position gaps 0.56–0.66 clear bands near 0.38, while the incumbent's family sits deep inside (gap 0.0415 vs band 0.286) and all 29 context families are inside theirs (context-side bands run 0.24 up to 217 for degenerate families, uninformative by construction). On held-out probes one layer-pooled newline family also separates marginally (gap 0.374 vs band 0.34), leaving 36 of 46 inside. Full table: `eval_results/issue_920/family_restricted_bands.json`.
 
 ### The winning cell tracks contexts at family grain, and the anchor cell reproduces the parent
 
-The scatter shows, for the top in-probe cell (template-block max → user-header pool max, layer 12), the pooled held-out prediction against the true target on the leading PCA dimension, one labeled point per context.
+For the top in-probe cell (template-block max → user-header pool max, layer 12): pooled held-out prediction against the true target on the leading PCA dimension, one labeled point per context.
 
 ![Winning cell per-context scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/winning_cell_scatter.png)
 
@@ -160,7 +160,7 @@ Predictions track truth within and between clusters, but the dominant axis separ
 
 ### The top recipes plateau across middle layers rather than peaking at one depth
 
-The line plot shows per-layer in-probe skill for the top-5 family pairs, with the chance band dashed.
+Per-layer in-probe skill for the top-5 family pairs, chance band dashed.
 
 ![Per-layer skill for top-5 family pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/per_layer_top5_pairs.png)
 
@@ -170,7 +170,7 @@ The argmax layers (11–12) sit on a broad plateau; layer choice within 8–18 m
 
 ### Probe-set generality is recipe-dependent: pooled reads transfer, single content tokens degrade
 
-The heatmap shows, per family pair at its best in-probe cell, the input-held-out minus in-probe skill delta (color clipped to ±0.15).
+Per family pair at its best in-probe cell: the input-held-out minus in-probe skill delta (color clipped to ±0.15).
 
 ![Probe-set generalization delta per family pair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/hero_family_heatmap_R2_minus_R1_v2.png)
 
@@ -178,29 +178,29 @@ The heatmap shows, per family pair at its best in-probe cell, the input-held-out
 
 The winner set loses ≈0.01 on unseen probes (winner −0.012; incumbent anchor −0.010; top-100 cells mean −0.013 — the winner's delta matches unselected comparable cells, so selection bias does not drive it). Last-k content-token reads with k ≥ 2 lose 0.06–0.23 (the held-out-minus-in-probe delta at each context family's best in-probe cell — the same at-cell convention as the other deltas in this paragraph); the single final content token is the exception, losing only 0.02, and the trailing turn-start token loses 0.09. The direction predicted by the probe-generality hypothesis holds: averaged and boundary summaries are probe-set-general; multi-token content reads are not.
 
-### The template-token targets' lead is target stability, not more context information
+### Target stability explains the template-token targets' lead
 
-The bar chart shows the target-stability diagnostic per answer family: skill of pool-A targets predicting pool-B targets through the identity, best layer.
+The target-stability diagnostic per answer family: skill of pool-A targets predicting pool-B targets through the identity, best layer.
 
 ![Target-stability ceiling per answer family](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/r3_identity_ceiling.png)
 
 > **Figure.** *Cross-probe-set target stability.* Template-token targets sit at 0.97–0.99, the whole-answer mean at 0.89; tail positions 3–10 from the answer end sit at 0.60–0.66, with the final two positions higher (0.91, 0.81). All families clear the 0.2 planned gate, so the target-held-out regime is valid. n = 50 contexts.
 
-Template-token targets are nearly deterministic functions of the context, carrying little probe-specific variance — mechanically easy targets. Normalizing best skill by this ceiling reverses the ordering: whole-answer mean 0.830/0.891 ≈ 93% of ceiling vs the winning user-header pool 0.871/0.988 ≈ 88%. With no challenger family separating under the reachable family-restricted bands (zero-power result above), the honest phrasing is "best predictive summary under this reduction and noise structure," not "the answer profile lives at boundary tokens." The pooling ladder agrees: pooled variants beat their single-token members (user-header pool 0.87 vs turn-end token 0.76), and the context content-only mean (0.64) trails every trailing-boundary read (0.79–0.87).
+Template-token targets are nearly deterministic functions of the context, carrying little probe-specific variance — mechanically easy targets. Normalizing best skill by this ceiling reverses the ordering: whole-answer mean 0.830/0.891 ≈ 93% of ceiling vs the winning user-header pool 0.871/0.988 ≈ 88%. With no challenger family separating under the reachable family-restricted bands (zero-power result above), the supported claim is "best predictive summary under this reduction and noise structure"; the sweep cannot establish that the answer profile lives at boundary tokens. The pooling ladder agrees: pooled variants beat their single-token members (user-header pool 0.87 vs turn-end token 0.76), and the context content-only mean (0.64) trails every trailing-boundary read (0.79–0.87).
 
 ### Behavior read-out clears are discounted by an exploratory family-centering re-read
 
-The dumbbell plot shows, per read-out test (7 behaviors × context/answer side × two probe regimes = 28), the banded full rank correlation at the best cell (blue) and the same cell's family-centered correlation (red).
+Per read-out test (7 behaviors × context/answer side × two probe regimes = 28), one dumbbell: the banded full rank correlation at the best cell (blue) and the same cell's family-centered correlation (red).
 
 ![Full vs family-centered read-out correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/dv2_full_vs_centered_rho.png)
 
 > **Figure.** *Read-out clears vs the family-structure re-read.* Blue: banded absolute rank correlation at each best cell (0.52–0.86). Red: after subtracting family means from prediction and target. Median drop 57%; 4 of 28 reads fall below 0.06 and 8 below 0.2. Judge-reliability ceilings 0.68–0.96. n = 50 contexts, 7 families.
 
-27 of 28 tests nominally clear their per-behavior bands (0.48–0.54; reachable, ceiling 1). But the behavior target is strongly family-structured (between-family variance fraction 0.31–0.85), predictions cluster by family, and free permutation assumes exchangeability those clusters violate — the bands are anti-conservative; the plan pre-set a ≈51% family-wise chance of at least one nominal clear. Family-means-only correlations span 0.07–0.96; several best cells are layer 0–2 template or tail-token reads, a length/format-confound signature. The centering re-read is exploratory and unbanded (family-aware null pending), so it discounts rather than overturns the clears. Largest surviving residuals: fact expression 0.56 (both regimes, context side; a +0.01-externally-validated target, above its 0.72 reliability-consistent maximum), format style answer-side 0.47–0.49 (+0.15 validation), refusal 0.32–0.47, harmful compliance 0.44–0.48. The one non-clear (self-report, context, in-probe: 0.523 vs 0.526) is a failure to reject. The parent's family-held-out read-out collapse stands.
+27 of 28 tests nominally clear their per-behavior bands (0.48–0.54; reachable, ceiling 1). But the behavior target is strongly family-structured (between-family variance fraction 0.31–0.85), predictions cluster by family, and free permutation assumes exchangeability those clusters violate — the bands are anti-conservative; the plan pre-set a ≈51% family-wise chance of at least one nominal clear. Family-means-only correlations span 0.07–0.96; several best cells are layer 0–2 template or tail-token reads, a length/format-confound signature. The centering re-read is exploratory and unbanded (family-aware null pending), so it discounts rather than overturns the clears. Largest surviving residuals after centering: fact expression 0.56 (context side, both regimes) — that target's external validation is +0.01, essentially none, and its pre-centering best read (0.86) exceeds the 0.72 maximum its measured reliability permits, so this residual reads as target-noise structure rather than behavior signal; format style 0.47–0.49 (answer side; +0.15 external validation); refusal 0.32–0.47 (context side); harmful compliance 0.44–0.48 (context side — the strongest answer-side clear collapses to 0.15 after centering, next result). The one non-clear (self-report, context, in-probe: 0.523 vs 0.526) is a failure to reject. The parent's family-held-out read-out collapse stands.
 
 ### Per-context data behind the strongest answer-side clear: family clusters carry the correlation
 
-The scatter shows the pooled held-out prediction against the graded harmful-compliance score for the clearing answer-side cell (user-header pool max, layer 0), 50 labeled contexts colored by family.
+Pooled held-out prediction against the graded harmful-compliance score for the clearing answer-side cell (user-header pool max, layer 0), 50 labeled contexts colored by family.
 
 ![Per-context scatter behind the harmful-compliance clear](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/dv2_harmful_compliance_cell_scatter.png)
 
@@ -208,15 +208,15 @@ The scatter shows the pooled held-out prediction against the graded harmful-comp
 
 Within any single family the association is weak; the correlation is produced by family separation on both axes. This is the per-unit view of the previous result's aggregate claim.
 
-### Chain read-out maxima are selection artifacts, not signal surviving the map
+### Chain read-out maxima are selection artifacts
 
-The bar chart shows, per behavior, the chained read's absolute rank correlation at its best cell (maximum absolute correlation), paired with the oracle read at the same cell (in-probe).
+Per behavior: the chained read's absolute rank correlation at its best cell (selected by maximum absolute correlation), paired with the oracle read at the same cell (in-probe).
 
 ![Chain vs oracle at each behavior's best chain cell](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/chain_vs_oracle_gap.png)
 
 > **Figure.** *Chained read vs its oracle at each behavior's best chain cell.* The chained read exceeds the same-cell oracle for every behavior, by 0.09–0.49 — impossible as clean signal recovery; the signature of selection over 34,652 family-structured cells. n = 50.
 
-All 14 chain band tests nominally clear (bands 0.54–0.60), but the best-cell reads land where the map fails — reconstruction skill −2.9 to +0.55, five of seven negative or near zero — and their centered correlations collapse like the direct reads (persona-drift −0.83 → −0.08). A chained read through a failed map cannot legitimately out-predict its own oracle. At the winner map cell chain reads stay small (all ≤ 0.37 absolute) but not uniformly below the oracle — 3 of 7 behaviors exceed it (harmful compliance 0.29 vs 0.03) — consistent with noise at n = 50; the map-induced-loss estimate is not identifiable and no chain headline is claimed.
+All 14 chain band tests nominally clear (bands 0.54–0.60), but the best-cell reads land where the map fails (reconstruction skill −2.9 to +0.55, five of seven negative or near zero), and their centered correlations collapse like the direct reads (persona-drift −0.83 → −0.08). A chained read through a failed map cannot legitimately out-predict its own oracle. At the winner map cell chain reads stay small, all ≤ 0.37 absolute, yet 3 of 7 behaviors still exceed their oracle (harmful compliance 0.29 vs 0.03). That is consistent with noise at n = 50; the map-induced-loss estimate is not identifiable and no chain headline is claimed.
 
 *(Conciseness: the prose budget, several 120–175-word results, and three long Takeaways bullets exceed caps — acknowledged; ten results carry a 34,652-cell three-DV sweep.)*
 
