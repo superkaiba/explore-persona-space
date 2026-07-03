@@ -6597,10 +6597,56 @@ def check_v4_results_beat(body: str) -> CheckResult:
 # all-digit 6-hex color (`#000000`) cannot match (fail-open on hypothetical
 # 5-digit issue ids beats fail-closed on hex colors — the LM lens is the
 # backstop). Lookbehind: not preceded by a word char (`file#123`), `&` (HTML
-# entities `&#8212;`), `/` (URL fragments `path/#123`), or `#`.
-_BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\d)")
-_HTML_COMMENT_INLINE_RE = re.compile(r"<!--.*?-->")
+# entities `&#8212;`), `/` (URL fragments `path/#123`), or `#`. Right guard
+# `(?!\w)`: the digit run must not abut a word char, so `#123abc` and the
+# digit prefix of a mixed hex color (`#4b5563` → `#4`) never match; a
+# possessive `#658's` still does (an apostrophe is not a word char).
+_BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\w)")
 _V4_STANDALONE_SECTIONS = ("takeaways", "methodology", "results")
+
+
+def _mask_html_comment_spans(line: str, in_comment: bool) -> tuple[str, bool]:
+    """Replace every HTML-comment span in `line` with spaces, threading the
+    multiline open/closed state across calls (one call per line, in order).
+
+    Character-grain, not line-grain: a line that OPENS a comment keeps its
+    prefix prose scannable (only `<!--`..end-of-line is masked); a line
+    that CLOSES one keeps its suffix scannable (only up to and including
+    `-->` is masked); any number of `<!-- ... -->` segments per line are
+    each masked with the prose between them kept, and a close-then-reopen
+    line (`<!-- a --> mid <!-- b`) returns the state OPEN so following
+    interior lines stay masked. Spans are substituted with same-length
+    runs of spaces — never deleted — so no token join can fabricate a
+    `#N` the raw line never carried.
+
+    Returns (masked_line, out_state); len(masked_line) == len(line).
+    """
+    out: list[str] = []
+    pos = 0
+    n = len(line)
+    while pos < n:
+        if in_comment:
+            close = line.find("-->", pos)
+            if close == -1:
+                out.append(" " * (n - pos))
+                pos = n
+            else:
+                end = close + 3
+                out.append(" " * (end - pos))
+                pos = end
+                in_comment = False
+        else:
+            opener = line.find("<!--", pos)
+            if opener == -1:
+                out.append(line[pos:])
+                pos = n
+            else:
+                out.append(line[pos:opener])
+                pos = opener
+                in_comment = True
+    masked = "".join(out)
+    assert len(masked) == len(line), (len(masked), len(line))
+    return masked, in_comment
 
 
 def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
@@ -6612,24 +6658,43 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
     the scan.
 
     Sanctioned forms excluded: fenced code blocks, `<details>` blocks,
-    HTML comments (line-grain mask); GFM table rows; the
+    HTML comments (char-span mask with cross-line open/closed state —
+    `_mask_html_comment_spans`); GFM table rows; the
     `**Repro:**`/`**Context:**` footer (line-index cut); markdown links
     (label + target) and inline code spans (in-line neutralization,
     substituting a single SPACE — never the empty string, which could
     JOIN adjacent characters into a fabricated `#N` token, e.g.
     ``#`x`123`` → `#123`).
 
-    Conservative edge behavior (all fail-open — missed refs, never false
-    FAILs; the clean-result-critic Lens 2 LM read is the backstop):
+    HTML-comment handling is character-grain, not line-grain: on a line
+    that OPENS a multiline comment only the `<!--`..end-of-line span is
+    masked (prefix prose IS scanned — `Uses #779 corpus <!-- note`
+    hits); on a line that CLOSES one only the span up to and including
+    `-->` is masked (suffix prose IS scanned — `--> still follows #781`
+    hits); multiple `<!-- ... -->` segments per line are each masked
+    with the prose between them scanned, and a close-then-reopen line
+    (`<!-- a --> mid <!-- b`) leaves the state OPEN so following
+    interior lines stay masked (no false hit on a `#K` inside the still
+    open comment). The `<details>` counter reads the comment-MASKED
+    text, so a commented-out `<details>` tag cannot open the details
+    mask.
 
-    - The `<details>` open/close counter runs on RAW line text
-      PRE-neutralization, so a backticked ``<details>`` prose mention
-      opens the mask and excludes the remainder of the body.
+    Documented residual edges (the clean-result-critic Lens 2 LM read is
+    the backstop; direction noted per item):
+
+    - The `<details>` open/close counter runs PRE-neutralization (before
+      link/inline-code masking), so a backticked ``<details>`` prose
+      mention opens the mask and excludes the remainder of the body
+      (fail-open — missed refs, never false FAILs).
     - An unclosed `<details>` likewise excludes everything after it;
-      nesting is handled by the depth counter.
+      nesting is handled by the depth counter (fail-open).
+    - The comment char-span pass also runs PRE-neutralization, so a
+      backticked ``<!--`` prose mention opens the comment mask
+      (fail-open, same family as the backticked ``<details>``).
     - 4-space indented code blocks and multi-line `[#K](\\nurl)` links
       are NOT excluded (both survey-clean across all on-disk v4 bodies
-      as of 2026-07-03).
+      as of 2026-07-03) — a `#K` inside either would false-FAIL; the
+      inline-code escape hatch covers the code-block case.
     - In a slash-run `#658/#742` only the first token matches (the `/`
       lookbehind protects URL fragments) — the line still FAILs, which
       is sufficient.
@@ -6637,10 +6702,14 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
     lines = body.splitlines()
     footer = _v4_footer_start_line(body)  # None -> no footer cut
     table_idx = _table_row_line_indices(lines)
-    # Line-grain structural exclusion mask: fenced code, <details> blocks,
-    # HTML comment spans. Single pass, whole-body (fences/details/comments
-    # may open in one section and close in another).
+    # Structural exclusion mask: line-grain for fenced code + <details>
+    # blocks, char-grain for HTML comments (comment_masked[i] = line i
+    # with every comment span space-substituted; mixed prose on comment
+    # opening/closing lines stays scannable). Single pass, whole-body
+    # (fences/details/comments may open in one section and close in
+    # another).
     excluded: set[int] = set()
+    comment_masked: dict[int, str] = {}
     in_fence = False
     details_depth = 0
     in_comment = False
@@ -6653,20 +6722,13 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
         if in_fence:
             excluded.add(i)
             continue
-        if in_comment:
-            excluded.add(i)
-            if "-->" in line:
-                in_comment = False
-            continue
-        opens = len(re.findall(r"<details\b", line, re.IGNORECASE))
-        closes = len(re.findall(r"</details>", line, re.IGNORECASE))
+        masked, in_comment = _mask_html_comment_spans(line, in_comment)
+        comment_masked[i] = masked
+        opens = len(re.findall(r"<details\b", masked, re.IGNORECASE))
+        closes = len(re.findall(r"</details>", masked, re.IGNORECASE))
         if details_depth > 0 or opens:
             excluded.add(i)
         details_depth = max(0, details_depth + opens - closes)
-        tail = line[line.index("<!--") :] if "<!--" in line else ""
-        if tail and "-->" not in tail:
-            excluded.add(i)
-            in_comment = True
     hits: list[tuple[str, str, str]] = []
     for name, start, end in find_h2_sections(body):
         if name.casefold() not in _V4_STANDALONE_SECTIONS:
@@ -6678,10 +6740,11 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
                 continue
             # Substitute a single space (never ""): an empty-string sub
             # can JOIN the char before and after the removed span into a
-            # new `#N` token that the raw line never carried.
-            residue = _LINK_RE.sub(" ", lines[i])  # [label](target) gone
+            # new `#N` token that the raw line never carried. Comment
+            # spans were already space-masked in comment_masked (every
+            # non-fence line has an entry; fence lines are excluded).
+            residue = _LINK_RE.sub(" ", comment_masked[i])  # [label](target) gone
             residue = _INLINE_CODE_RE.sub(" ", residue)  # `code` escape hatch
-            residue = _HTML_COMMENT_INLINE_RE.sub(" ", residue)
             for m in _BARE_ISSUE_REF_RE.finditer(residue):
                 hits.append((name, m.group(0), lines[i].strip()[:90]))
     return hits
@@ -6696,7 +6759,7 @@ def check_v4_no_bare_issue_refs(body: str) -> CheckResult:
     do not trip: markdown links (label + target), GFM table rows (the
     Training-table Source column), fenced/inline code, `<details>` blocks,
     HTML comments, the footer, YAML frontmatter. Exclusion edge behavior
-    (all fail-open) is documented on `_bare_issue_ref_hits`. Origin: #841
+    (residuals + directions) is documented on `_bare_issue_ref_hits`. Origin: #841
     round-2 (bare `#779` x~8 in Methodology survived two ensemble review
     rounds). PASSes vacuously on v3 / v2 / legacy bodies (forward-only)."""
     label = "no bare issue refs in standalone sections (v4)"

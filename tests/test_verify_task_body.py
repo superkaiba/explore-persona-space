@@ -4954,6 +4954,93 @@ def test_v4_space_substitution_does_not_fabricate_ref():
     assert r.passed, r.render()
 
 
+def test_v4_bare_ref_prefix_prose_on_comment_opening_line_fails():
+    """Char-span comment mask: prose BEFORE a `<!--` that opens a multiline
+    comment is still scanned — `Uses #779 corpus <!-- note` hits (concern
+    comment-mask-mixed-line-fail-open; the round-1 line-grain mask
+    excluded the whole line and missed the ref)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "Uses #779 corpus <!-- note\ninterior continues -->",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "#779" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_bare_ref_suffix_prose_on_comment_closing_line_fails():
+    """Char-span comment mask: prose AFTER the `-->` that closes a
+    multiline comment is still scanned — `--> still follows #781` hits,
+    while a `#999` on the comment's interior stays masked."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "<!-- lineage note #999\n--> still follows #781",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "#781" in r.detail
+    assert "#999" not in r.detail
+
+
+def test_v4_comment_close_reopen_masks_interior_and_scans_between():
+    """Close-then-reopen on one line (`<!-- a --> #779 <!-- b`): both
+    comment segments are masked, the prose BETWEEN them is scanned (the
+    `#779` hit), and the state is left OPEN so a `#123` on the following
+    interior line yields NO hit (concern
+    comment-close-reopen-false-positive; the round-1 first-`<!--` anchor
+    left the state closed and false-hit the interior)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "<!-- a --> #779 <!-- b\nstill inside the comment: #123 -->",
+    )
+    _fm, post_fm = verify_task_body.split_frontmatter(body)
+    hits = verify_task_body._bare_issue_ref_hits(post_fm)
+    assert [(sec, tok) for sec, tok, _txt in hits] == [("Methodology", "#779")], hits
+
+
+def test_v4_ref_flush_against_word_char_passes_but_possessive_fails():
+    """`(?!\\w)` right guard: `#123abc` (digit run flush against a word
+    char, the mixed-hex-color shape) never matches; a possessive `#658's`
+    still FAILs — an apostrophe is not a word char."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\nBars use the #123abc palette variant.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+    body2 = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\nMatches #658's protocol.",
+    )
+    r2 = _bare_ref_result(body2)
+    assert not r2.passed
+    assert "#658" in r2.detail
+
+
+def test_mask_html_comment_spans_char_grain():
+    """Unit-pin `_mask_html_comment_spans`: space substitution preserves
+    line length, prefix/suffix prose survives, close-then-reopen leaves
+    the state OPEN."""
+    f = verify_task_body._mask_html_comment_spans
+    m, state = f("Uses #779 corpus <!-- note", False)
+    assert m == "Uses #779 corpus " + " " * len("<!-- note")
+    assert state is True
+    m, state = f("all interior #123", True)
+    assert m == " " * len("all interior #123")
+    assert state is True
+    m, state = f("--> tail #781", True)
+    assert m == "   " + " tail #781"
+    assert state is False
+    m, state = f("<!-- a --> mid <!-- b", False)
+    assert m == " " * len("<!-- a -->") + " mid " + " " * len("<!-- b")
+    assert state is True
+    assert all(len(f(s, st)[0]) == len(s) for s in ("", "x <!-- y --> z") for st in (False, True))
+
+
 # ─── check 22: inline figure URL sha vs Reproducibility figure-commit claim ──
 #
 # The inline figure in _V3_GOOD_BODY is pinned at sha `0123456789abcdef`
