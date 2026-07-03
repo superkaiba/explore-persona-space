@@ -1381,6 +1381,145 @@ def stage_dispatch_should_skip(
     )
 
 
+# ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
+
+# Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
+# advisory content — excluded from pre-dispatch triage candidates. Anything
+# NOT listed is a candidate (over-approximation by design: a false positive
+# costs one first-line read; a false negative is the #779 failure mode).
+TRIAGE_EXEMPT_KINDS = frozenset(
+    {
+        "epm:status-changed",
+        "epm:step-completed",
+        "epm:backend-selected",
+        "epm:codex-task-spawned",
+        "epm:codex-task-completed",
+        "epm:codex-task-failed",
+        "epm:pod-provisioned",
+        "epm:pod-terminated",
+        "epm:pod-stopped",
+        "epm:run-launched",
+        "epm:run-finished",
+        "epm:upload-verification",
+        "epm:merged",
+        "epm:methodology-doc-generated",
+        "epm:workflow-fix-task-filed",
+        "epm:workflow-fix-applied",
+        "epm:workflow-fix-failed",
+        "epm:workflow-fix-candidate",
+        # Session-pipeline review/lifecycle verdict kinds — structurally posted
+        # by THIS task's own planner/review/implementation loop, never the
+        # vehicle for a cross-session advisory (fact-check on #779: including
+        # these halves the per-dispatch read load, 30 -> 20 candidates, with
+        # zero externals lost).
+        "epm:code-review",
+        "epm:code-review-codex",
+        "epm:review-reconcile",
+        "epm:experiment-implementation",
+        "epm:concern-raised",
+        "epm:concern-addressed",
+        "epm:concern-deferred",
+        "epm:interp-critique",
+        "epm:interp-critique-codex",
+        "epm:clean-result-critique",
+        "epm:clean-result-critique-codex",
+        "epm:plan",
+        "epm:plan-approved",
+        "epm:plan-verify",
+        "epm:consistency",
+        "epm:clarify",
+        "epm:clarify-answers",
+        "epm:test-verdict",
+        "epm:smoke-architecture-check",
+    }
+)
+
+# ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
+# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
+# "unknown", and on #779 both self- and PM-chat-posted markers carried
+# by="unknown" — so this set only strips known machine identities; it never
+# claims to identify externality (that is the orchestrator's judgment call,
+# SKILL.md § Pre-dispatch external-marker triage).
+TRIAGE_MACHINE_BY = frozenset(
+    {
+        "poll_pipeline",
+        "task.py",
+        "backends.router",
+        "backends.gcp",
+        "backends.slurm",
+        "backends.slurm_monitor",
+        "backends.selector",
+        "autonomous-gate",
+        "codex_task",
+        "task_state shim",
+    }
+)
+
+# Compute-launch marker kinds — ALWAYS close the triage window.
+# epm:run-launched is the RunPod/experimenter launch record;
+# epm:cluster-launched is what the default GCP/SLURM lanes post (SKILL.md
+# Step 6b marker trail; #779's own window contains one at 14:56:21Z, by
+# backends.gcp).
+TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
+
+# The auditable triage-record line. A dispatch record carrying this line is
+# DUTY-BOUND (it performed the triage) and closes the window; a note that IS
+# a triage record is also excluded from candidates.
+TRIAGE_LINE_PREFIX = "external-markers triaged:"
+
+
+def triage_candidates_since_last_dispatch(
+    events: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+    launch_kinds: frozenset[str] = TRIAGE_LAUNCH_KINDS,
+) -> list[dict]:
+    """Return pre-dispatch triage candidates since the latest DUTY-BOUND dispatch record.
+
+    THE BOUNDARY MATCHES THE TRIAGE DUTY SURFACE: the window opens AFTER the
+    most recent event that is either (i) a compute-launch marker (kind in
+    ``launch_kinds`` — ``epm:run-launched`` or ``epm:cluster-launched``), or
+    (ii) ANY event whose note contains the ``external-markers triaged:`` line
+    (a triaged compute breadcrumb, or the adjacent ``epm:progress`` triage
+    note the pod/backend-launch form posts). When no such record exists the
+    window is the whole list (task start). A NON-compute breadcrumb (review /
+    analyzer / verifier stages) never closes the window — those dispatches
+    carry no triage duty, so they cannot orphan an advisory; an UNTRIAGED
+    compute breadcrumb (pre-fix or concurrent session) also does not close it
+    (fail-toward-triage). Within the window an event is a candidate unless:
+    kind in ``exempt_kinds``, ``by`` in ``machine_by``, the note is
+    empty/absent, the note is itself breadcrumb-shaped (lstripped note begins
+    ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
+    or the note contains the triage line (it is a triage record, not an
+    advisory). Chronological order preserved. Deliberately over-approximates —
+    it ENUMERATES for LLM-side triage and never classifies externality
+    (``by`` cannot: default "unknown").
+    """
+    boundary = -1
+    for idx in range(len(events) - 1, -1, -1):
+        event = events[idx]
+        note = event.get("note", "") or ""
+        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+            boundary = idx
+            break
+    candidates: list[dict] = []
+    for event in events[boundary + 1 :]:
+        if event.get("kind", "") in exempt_kinds:
+            continue
+        if event.get("by", "") in machine_by:
+            continue
+        note = event.get("note", "") or ""
+        if not note.strip():
+            continue
+        if note.lstrip().startswith("stage-dispatch "):
+            continue
+        if TRIAGE_LINE_PREFIX in note:
+            continue
+        candidates.append(event)
+    return candidates
+
+
 # ─── Same-issue follow-up label grouping (#894) ────────────────────────────
 #
 # Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)

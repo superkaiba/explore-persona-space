@@ -3058,6 +3058,12 @@ that sidecar tick after tick (Step 6d.2); Step 8's
 `confirm_artifacts` + `teardown` (the same RunHandle from launch all
 the way through teardown).
 
+Before this launch call, run the Step 9 entry guard § Pre-dispatch
+external-marker triage and post its `external-markers triaged:` line in an
+`epm:progress` note immediately before dispatching (the launch posts
+`epm:run-launched` / `epm:cluster-launched`, not a stage-dispatch
+breadcrumb).
+
 The operational command:
 
 ```bash
@@ -3330,6 +3336,12 @@ terminated the pod while this session was mid-code-review; this session
 then dispatched a relaunch brief asserting "pod alive; run pending"
 ~10 min after `epm:pod-terminated`; only the experimenter's agent-side
 defense caught it.)
+
+**3. External markers triaged.** Run the Step 9 entry guard
+§ Pre-dispatch external-marker triage check before spawning. Pod/backend
+launches post no `stage-dispatch` breadcrumb, so the
+`external-markers triaged:` line goes in an `epm:progress` note posted
+immediately before the experimenter spawn.
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
@@ -4905,6 +4917,71 @@ same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
 
+**Pre-dispatch external-marker triage (REQUIRED — every COMPUTE-stage
+dispatch; sibling of the pre-dispatch dedup above).** Cross-session markers
+are the sanctioned advisory channel, but a mailbox with no read-gate is how
+#779 launched an 18–20h serial grid 4 minutes after finishing its prior
+phase while a measured audit saying "must NOT launch as-is" sat unread on
+its own events.jsonl (2026-07-02: 10 external audit/directive markers,
+16:12–17:47Z; the 20:46Z `stage=followup-grid` breadcrumb claimed
+"vectorized" while the fixes were unapplied; killed by PM-chat at 12 min).
+Immediately BEFORE posting the dispatch breadcrumb for any stage that
+launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
+(Step 6b / 6d, crash-fix relaunches included), any stage the
+Compute-character pre-launch statement binds (a fit / sweep / statistical
+battery: Step 9a-ter, the Step 9b same-issue follow-up loop), or a detached
+VM-side phase (§ below) — run the mechanical enumerator:
+
+```bash
+uv run python - <<'PY'
+from explore_persona_space.task_workflow import (
+    list_events, triage_candidates_since_last_dispatch)
+for e in triage_candidates_since_last_dispatch(list_events(<N>)):
+    print(e["ts"], e["kind"], (e.get("note") or "").splitlines()[0][:140])
+PY
+```
+
+It returns every non-machine marker posted since the PREVIOUS DUTY-BOUND
+dispatch record — a compute-launch marker (`epm:run-launched` /
+`epm:cluster-launched`) or a record carrying the
+`external-markers triaged:` line; task start if none. A non-compute
+breadcrumb (review / analyzer / verifier stage) never closes the window —
+those dispatches have no triage duty, so an advisory posted before one
+still surfaces at the next compute dispatch — and an untriaged compute
+breadcrumb (pre-fix / concurrent session) doesn't either
+(fail-toward-triage). READ each candidate's full note (`task.py view <N>
+--json` + jq by `ts`); classify EXTERNAL = not posted by this session — the
+`by` field does NOT discriminate (measured on #779: self and PM-chat posts
+both carry `by: unknown`); use session context plus the in-the-wild
+signatures ("PM-chat", "user-raised", "user directive", "# Audit",
+"AMENDMENT", "SCOPE RESTORE"); a successor/recovery session that cannot
+attribute a candidate treats it as external (fail-toward-triage). Then
+TRIAGE each external advisory/directive: APPLY it (fix the code, adjust or
+re-scope the dispatch) BEFORE dispatching, or EXPLICITLY DEFER with a
+one-line reason. If applying took non-trivial time, RE-RUN the enumerator
+immediately before posting the breadcrumb (markers can land mid-apply).
+Record the outcome as ONE line in the dispatch breadcrumb note — or, for
+pod/backend launches that post no breadcrumb, in an immediately-adjacent
+`epm:progress` note:
+
+    external-markers triaged: <N> applied / <M> deferred (<one-line reasons>)
+
+or `external-markers triaged: none` when there are no external candidates.
+This is NOT a gate: triage is apply-or-defer, decided by this session,
+auto-continue preserved — but deferring a marker that contradicts the
+dispatch (e.g. "do not launch as-is") must state WHY the launch is sound
+anyway, and a dispatch note asserting a property an unapplied external
+audit contradicts (#779's "vectorized") without a triage line is the
+regression this rule closes. Triage is BOUNDED to the window; a marker
+already covered by a prior triage line is not re-enumerated (its
+disposition is on the record). Accepted residuals (named, not silent): a
+marker posted in the seconds between the final enumerator run and the
+breadcrumb post lands before the new boundary and is not re-enumerated;
+markers posted after a task's LAST compute dispatch are never enumerated
+(they can no longer avert a launch); a legacy launch marker
+(`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
+still closes the window.
+
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
@@ -4930,7 +5007,8 @@ stage-dispatch breadcrumb MUST carry two additional fields:
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
-genuinely new field). EXEMPT: work that COMPLETES within a subagent's own
+genuinely new field), and the `external-markers triaged:` line
+(§ Pre-dispatch external-marker triage above). EXEMPT: work that COMPLETES within a subagent's own
 bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
 returns follows this SAME detach shape — the phase sits in the session's kill
 domain either way), pod-side workloads (the pod launch contract / #883), the
@@ -5345,7 +5423,10 @@ explicit eval-data path):
    ```
    When the follow-up runs any fit/battery, this breadcrumb (or an
    immediately-following `epm:progress` note) carries the
-   § Compute-character pre-launch statement above.
+   § Compute-character pre-launch statement above. Every 9a-ter dispatch
+   breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
+   entry guard § Pre-dispatch external-marker triage) — the free-analysis
+   run is a VM-side compute phase.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -6580,6 +6661,14 @@ orchestrators driving one round is the #778 root cause.
      compute shape — #778's round re-ran the parent's serial 1000-draw
      null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
      plan that never said "serial".
+   - **Pre-dispatch external-marker triage** (canonical block: Step 9
+     entry guard § Pre-dispatch external-marker triage): REQUIRED — the
+     same `stage=followup-<phase>` dispatch breadcrumb (or adjacent
+     `epm:progress` note) carries the `external-markers triaged:` line
+     before dispatching ANY compute-launching stage of the round. #779's
+     `stage=followup-grid` dispatch (2026-07-02 20:46Z) is the founding
+     incident — 10 unread external audit markers, an 18–20h serial
+     launch.
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
