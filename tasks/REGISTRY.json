@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 910,
+  "highest_id": 911,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5979,6 +5979,13 @@
       "path": "tasks/proposed/910",
       "status": "proposed",
       "title": "workflow-fix: plan-time gates measure per-item serialization/IO wall-time; broaden 'left serial' beyond fits"
+    },
+    "911": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/911",
+      "status": "proposed",
+      "title": "workflow-fix: janitors miss issue-keyed caches outside canonical globs"
     },
     "92": {
       "has_clean_result": false,
