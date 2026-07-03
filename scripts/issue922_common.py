@@ -236,6 +236,31 @@ def eval_questions(trait: str) -> list[str]:
     return list(qs)[:20]
 
 
+def eval_questions_provenance(trait: str) -> str:
+    """'original' when the trait's eval questions are the pass_a capture's own.
+
+    evil = paper-verbatim COMMITTED constants (always ``original``; the #779
+    prompt-construction code is byte-identical between the pass_a capture
+    commit ``fc96549e59`` and HEAD). For sycophancy/hallucination the pinned
+    HF artifact documents its OWN provenance: the #779 r5 reconstruction
+    (2026-07-02, one day AFTER the pass_a capture landed) lists
+    ``eval_questions`` under ``reconstruction.regenerated`` — the question
+    TEXT the cached ``cx.pt`` states + rollouts were captured under was lost
+    with the deleted GCE instance and re-GENERATED via the Claude prompt, so
+    prompts rebuilt from the artifact CANNOT reproduce the cached capture's
+    token stream (crash-fix r4 root cause, att-20260703-163130: fresh-vs-
+    cached parity cos_mean 0.937 / cos_min 0.709 = question-change-magnitude
+    divergence on the 18 regenerated-provenance cells).
+    """
+    assert trait in TRAITS, trait
+    if trait == "evil":
+        return "original"
+    with open(_fetch(f"artifacts/{trait}.json", revision=HF_REVISION_LATE)) as f:
+        art = json.load(f)
+    rec = art.get("reconstruction") or {}
+    return "regenerated" if "eval_questions" in rec.get("regenerated", []) else "original"
+
+
 def capturable_eval_conditions(trait: str) -> list[dict]:
     """The eval-context conditions whose PROMPT is reconstructable: sys* + shot0.
 
@@ -259,11 +284,19 @@ def build_eval_subset_items(
     """Per capturable (trait, condition): n_per_cell questions × FIRST rollout.
 
     Question subset = ``rng(seed).choice`` over the SORTED qi keys (identical
-    subset per cell — a uniform panel). Items carry the SAME messages the
-    #779 pass_a capture used (``issue779_collect.build_eval_prompt_messages``
-    verbatim; shot0 ⇒ empty exemplar history) so the fresh capture's prompt
-    tokenization matches the cached ``cx.pt`` states (the parity probe's
-    premise). ``smoke_cells`` truncates to the first N cells (smoke: 1).
+    subset per cell — a uniform panel). Items carry the SAME message
+    CONSTRUCTION the #779 pass_a capture used
+    (``issue779_collect.build_eval_prompt_messages`` verbatim; shot0 ⇒ empty
+    exemplar history). Whether the QUESTION TEXT itself matches the cached
+    capture is per-trait (``question_provenance`` on each item): evil is
+    exact (committed constants); sycophancy/hallucination questions were
+    post-hoc REGENERATED (see ``eval_questions_provenance``), so those cells'
+    prompts differ textually from the cached ``cx.pt`` capture AND their
+    (prompt question ↔ teacher-forced response) pairing is mismatched — the
+    response answers the LOST original question of the same qi. Downstream
+    reads restrict registered claims accordingly (concern
+    ``eval-questions-regenerated-parity-rescope``). ``smoke_cells`` truncates
+    to the first N cells (smoke: 1).
     """
     import issue779_collect as I779C
 
@@ -275,6 +308,7 @@ def build_eval_subset_items(
         cells = cells[:smoke_cells]
     items: list[dict] = []
     gi = 0
+    prov_by_trait = {t: eval_questions_provenance(t) for t in {t for t, _ in cells}}
     for trait, cond in cells:
         qs = eval_questions(trait)
         rel = f"raw_completions/{trait}_{cond['cond_id']}_seed42.json"
@@ -298,6 +332,7 @@ def build_eval_subset_items(
                     "cond_id": cond["cond_id"],
                     "mode": cond["mode"],
                     "qi": qi,
+                    "question_provenance": prov_by_trait[trait],
                     "messages": messages,
                     "response": by_qi[qi],
                 }
