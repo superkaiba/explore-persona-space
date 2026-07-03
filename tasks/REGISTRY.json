@@ -5214,7 +5214,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/810",
       "status": "followups_running",
-      "title": "Max-pooling \u2014 not the turn-boundary token \u2014 is the strongest late-layer answer-side summary for the base context\u2192answer map, and no summary rescues behavior read-out (MODERATE confidence)"
+      "title": "The mean answer summary \u2014 not max-pool \u2014 carries the base context\u2192answer map across genres, and behavior read-out clears its null band only for harmful compliance on a cleanly re-judged target (MODERATE confidence)"
     },
     "811": {
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",

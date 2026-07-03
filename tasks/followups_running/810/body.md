@@ -1,7 +1,7 @@
 ---
-title: Max-pooling — not the turn-boundary token — is the strongest late-layer answer-side
-  summary for the base context→answer map, and no summary rescues behavior read-out
-  (MODERATE confidence)
+title: The mean answer summary — not max-pool — carries the base context→answer map
+  across genres, and behavior read-out clears its null band only for harmful compliance
+  on a cleanly re-judged target (MODERATE confidence)
 kind: experiment
 tags:
 - answer-summary-sweep
