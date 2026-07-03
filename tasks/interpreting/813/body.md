@@ -5,7 +5,7 @@ title: Fine-tune-induced map change is indistinguishable across query substrates
 kind: experiment
 tags: []
 created_at: '2026-07-01T18:56:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 667
 origin_prompt: 'Spec + run the clean map-change substrate-dependence experiment: 4
   behaviors x 3 query substrates (generic UltraChat vs behavior-eliciting vs mix),
