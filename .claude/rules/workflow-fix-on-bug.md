@@ -82,7 +82,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `pm_queue_report.py`,
   `recent_clean_results.py`, `task_state.py`,
   `post_step_completed.py`,
-  `spawn_session.py`,
+  `spawn_session.py`, `sync_repo_root.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
