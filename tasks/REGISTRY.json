@@ -5306,7 +5306,7 @@
     },
     "823": {
       "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/823",
       "status": "interpreting",

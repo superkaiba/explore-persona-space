@@ -5,7 +5,7 @@ title: 'The context→answer-profile activation map reads answer-content match, 
 kind: experiment
 tags: []
 created_at: '2026-07-01T23:41:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 722
 origin_prompt: "## Motivation\n- We showed that there is a mapping from context vector\
   \ to answer profile -> when the answer was generated from that context\n- It is\
