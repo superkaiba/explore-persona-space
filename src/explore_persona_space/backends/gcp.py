@@ -993,8 +993,19 @@ def render_startup_script(
        upload/skip streams an eager ``[crash-persist]`` line to the
        serial console AS IT HAPPENS, and the trap kills the reachability
        watchdog at ENTRY so no other in-guest actor can power the VM off
-       mid-persist. The sweep is these three named directories only —
-       NOT universal artifact discovery.
+       mid-persist. As of #885 the trap ALSO sweeps ``worker_logs/`` —
+       every regular file under ``$WORKLOAD_ROOT/logs/`` (fan-out
+       per-worker logs carrying the real traceback; the canonical
+       workload.log ends at the fan-out line), newest-first by mtime,
+       per-file tail cap ``EPS_PERSIST_LOG_FILE_CAP_BYTES`` (default
+       5 MiB; an oversized file is TAILED at stage time, never skipped
+       wholesale — the traceback is at the END of a log), file-count
+       bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
+       ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
+       commit (never a per-file ``upload_file`` loop — the #664
+       504-storm gotcha). The sweep covers these three named
+       directories plus the ``logs/`` worker-log tree — still NOT
+       universal artifact discovery.
 
     The workload's existing HF/WandB upload paths remain the AUTHORITATIVE
     artifact route during a normal run; the sentinel is a small completion
@@ -1284,6 +1295,18 @@ def render_startup_script(
         # a crash_persist_transcript.log audit survive same-attempt
         # re-crashes, and the EXIT trap reaps the reachability watchdog at
         # entry so nothing else can power off mid-upload.
+        #
+        # #885: fan-out dispatchers redirect each worker's output to
+        # per-worker logs under $WORKLOAD_ROOT/logs/ (e.g.
+        # logs/issue_779/corpus_gpu0_all.log), so the canonical workload.log
+        # ends at the fan-out line and the REAL traceback lives only in a
+        # worker log the dir sweep never covered (two #779 crashes each
+        # needed a ~30-min manual boot-disk detach). The # 1b. sweep stages
+        # logs/** (newest-first, per-file TAIL cap at stage time — the
+        # traceback is at the END of a log) into a temp tree and uploads it
+        # as ONE upload_folder commit — never a per-file upload_file loop,
+        # which 504-storms on this large repo (#664, ~160 s/file measured:
+        # 40 files would blow the 300s budget and starve the #854 artifacts).
         "_eps_persist_diagnostics() {",
         '  _rc="${1:-1}";',
         # Nothing to do without a repo target or HF token (early-boot crash
@@ -1318,7 +1341,7 @@ def render_startup_script(
         '  ( export PATH="${HOME:-/root}/.local/bin:$PATH" HF_HUB_DISABLE_PROGRESS_BARS=1;'
         ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
         ' && timeout 300 uv run python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
-        "import datetime, os, sys",
+        "import datetime, os, shutil, sys",
         "from pathlib import Path",
         "from huggingface_hub import HfApi",
         "dest, crash = sys.argv[1], sys.argv[2]",
@@ -1349,6 +1372,13 @@ def render_startup_script(
         '        _say(f"[crash-persist] uploaded {path_in_repo}")',
         "    except Exception as exc:",
         '        _say(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
+        "# Shared cache-exclude constants — used by BOTH the # 1b. worker-logs sweep and",
+        "# the # 2. partial-dirs sweep below (hoisted above their first caller, #885).",
+        'IGNORE = ["hf_dl/**", "g*_dl/**", "store/**", ".cache/**", "__pycache__/**",',
+        '          "**/hf_dl/**", "**/g*_dl/**", "**/store/**", "**/.cache/**",',
+        '          "**/__pycache__/**"]',
+        'PRUNE = {"hf_dl", "store", ".cache", "__pycache__"}',
+        'CAP = int(os.environ.get("EPS_PERSIST_DIR_CAP_BYTES", 2 * 1024**3))',
         "# 1. crash report + workload log, small-first (the traceback is the highest-value",
         "#    artifact; a worst-case timeout still lands it). A same-attempt re-crash",
         "#    overwrites the canonical names (#854: run-3 overwrote run-2's log on HF), so",
@@ -1364,18 +1394,95 @@ def render_startup_script(
         "else:",
         '    _say(f"[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing'
         ' ({log_path!r})")',
+        "# 1b. worker logs (#885) — fan-out dispatchers redirect the real traceback to",
+        "#     per-worker logs under $WORKLOAD_ROOT/logs/ (e.g.",
+        "#     logs/issue_779/corpus_gpu0_all.log); the canonical workload.log ends at the",
+        "#     fan-out line. Newest-first, per-file TAIL cap at STAGE time (the traceback",
+        "#     is at the END of a log — an oversized file is tailed, never skipped",
+        "#     wholesale), file-count bound, then ONE upload_folder commit (NEVER a",
+        "#     per-file upload_file loop — the #664 504-storm gotcha). Runs BEFORE the",
+        "#     partial dirs so a worst-case timeout still lands the tracebacks.",
+        "def _env_int(name, default):",
+        "    try:",
+        "        return int(os.environ.get(name, default))",
+        "    except (TypeError, ValueError):",
+        '        _say(f"[crash-persist] WARN {name} malformed; using default {default}")',
+        "        return default",
+        'LOG_FILE_CAP = _env_int("EPS_PERSIST_LOG_FILE_CAP_BYTES", 5 * 1024**2)',
+        'LOG_MAX_FILES = _env_int("EPS_PERSIST_LOG_MAX_FILES", 40)',
+        "def _up_logs():",
+        '    logs_root = root / "logs"',
+        "    if not logs_root.is_dir():",
+        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
+        "        return",
+        "    if LOG_MAX_FILES < 1:",
+        '        _say(f"[crash-persist] SKIP worker_logs:'
+        ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
+        "        return",
+        "    entries = []",
+        "    for dirpath, dirnames, filenames in os.walk(logs_root):",
+        "        dirnames[:] = [d for d in dirnames",
+        '                       if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "        for f in filenames:",
+        "            p = Path(dirpath) / f",
+        "            try:",
+        "                st = p.stat()",
+        "            except OSError:",
+        "                continue",
+        "            entries.append((st.st_mtime, st.st_size, p))",
+        "    if not entries:",
+        '        _say("[crash-persist] SKIP worker_logs: empty after cache excludes")',
+        "        return",
+        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last",
+        "    dropped = len(entries) - LOG_MAX_FILES",
+        "    if dropped > 0:",
+        '        _say(f"[crash-persist] SKIP {dropped} older worker log(s) beyond"',
+        '             f" EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES}")',
+        '    staged_root = Path(os.environ.get("EPS_PERSIST_LOG_STAGE_DIR",',
+        '                                      "/tmp/eps-worker-logs"))',
+        "    # a same-boot re-crash must not accumulate a PRIOR crash's staged files past",
+        "    # the count bound; best-effort — staging below recreates what it needs.",
+        "    shutil.rmtree(staged_root, ignore_errors=True)",
+        "    n_staged = 0",
+        "    for _, _, p in entries[:LOG_MAX_FILES]:",
+        "        try:",
+        "            if log_path and p.resolve() == Path(log_path).resolve():",
+        '                _say(f"[crash-persist] SKIP worker_logs/{p.relative_to(logs_root)}:"',
+        '                     " is the canonical workload.log")',
+        "                continue",
+        "            rel = p.relative_to(logs_root)",
+        "            tmp = staged_root / rel",
+        "            tmp.parent.mkdir(parents=True, exist_ok=True)",
+        "            size = p.stat().st_size  # re-stat: may have grown/shrunk since the walk",
+        '            with open(p, "rb") as fin, open(tmp, "wb") as fout:',
+        "                if size > LOG_FILE_CAP:",
+        "                    fin.seek(size - LOG_FILE_CAP)",
+        '                    _say(f"[crash-persist] TAILED worker_logs/{rel}:"',
+        '                         f" kept last {LOG_FILE_CAP} of {size} bytes")',
+        "                fout.write(fin.read(LOG_FILE_CAP if size > LOG_FILE_CAP else size))",
+        "            n_staged += 1",
+        "        except Exception as exc:",
+        '            _say(f"[crash-persist] FAILED staging worker log {p}: {exc}")',
+        "    if n_staged == 0:",
+        '        _say("[crash-persist] SKIP worker_logs: nothing staged")',
+        "        return",
+        "    try:",
+        '        _say(f"[crash-persist] uploading dir worker_logs ({n_staged} files, one commit)")',
+        "        api.upload_folder(folder_path=str(staged_root),",
+        '                          path_in_repo=f"{dest}/worker_logs",',
+        '                          repo_id=repo, repo_type="dataset")',
+        '        _say("[crash-persist] uploaded dir worker_logs")',
+        "    except Exception as exc:",
+        '        _say(f"[crash-persist] FAILED dir worker_logs: {exc}")',
+        "_up_logs()",
         "# 2. partial artifacts — BOTH output conventions (#854: issue825 wrote its partials",
         "#    under data/issue_825/, structurally OUTSIDE the old eval_results-only sweep ->",
-        "#    silent skip -> boot-disk surgery). The sweep is these three named dirs ONLY,",
-        "#    not universal artifact discovery. Re-downloadable caches / stores are excluded",
-        "#    at BOTH the top level and nested depths — under fnmatch the '**/'-prefixed",
-        "#    forms do NOT match top-level paths, so both forms are listed; every skip is",
-        "#    printed.",
-        'IGNORE = ["hf_dl/**", "g*_dl/**", "store/**", ".cache/**", "__pycache__/**",',
-        '          "**/hf_dl/**", "**/g*_dl/**", "**/store/**", "**/.cache/**",',
-        '          "**/__pycache__/**"]',
-        'PRUNE = {"hf_dl", "store", ".cache", "__pycache__"}',
-        'CAP = int(os.environ.get("EPS_PERSIST_DIR_CAP_BYTES", 2 * 1024**3))',
+        "#    silent skip -> boot-disk surgery). The partial-DIRS sweep is these three named",
+        "#    dirs (the # 1b. worker-logs tree is swept separately above) — not universal",
+        "#    artifact discovery. Re-downloadable caches / stores are excluded at BOTH the",
+        "#    top level and nested depths — under fnmatch the '**/'-prefixed forms do NOT",
+        "#    match top-level paths, so both forms are listed; every skip is printed.",
         "def _dir_stats(local):",
         "    total, n = 0, 0",
         "    for dirpath, dirnames, filenames in os.walk(local):",
@@ -1429,15 +1536,20 @@ def render_startup_script(
         # ZERO serial evidence — the diagnosability gap that let a coverage-gap
         # skip be misdiagnosed as a poweroff race on #825. The reader forwards
         # each line to fd 3 AS IT ARRIVES, caps line length at 2000 chars,
-        # stops PRINTING after 60 lines but keeps READING to EOF — an early
+        # stops PRINTING after 120 lines but keeps READING to EOF — an early
         # pipe close would SIGPIPE-kill the python mid-upload, the exact loss
         # this path exists to prevent. That read-to-EOF property is pinned by
         # the string assert in test_render_startup_script_persist_streams_eagerly
         # (the behavioral heredoc test runs the python WITHOUT this bash
         # streamer, so it does not exercise SIGPIPE protection). The
-        # `|| [ -n "$_l" ]` keeps a trailing unterminated line.
+        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. Print-cap
+        # sizing (#885): worst case ~= 40 worker-log staging TAILED/SKIP
+        # lines + 1 dropped-count + 2 folder-upload lines + ~16 pre-existing
+        # persist lines ~= 60 — right AT the old 60-line cap, so it doubled
+        # to 120 (240 KB max at 2000 chars/line, well inside the GCE serial
+        # buffer); the durable transcript is unaffected either way.
         '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
-        '    if [ "$_n" -le 60 ]; then'
+        '    if [ "$_n" -le 120 ]; then'
         " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
         "  done; } 2>/dev/null || true;",
         "}",
