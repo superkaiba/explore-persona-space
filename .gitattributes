@@ -18,6 +18,17 @@
 tasks/**/events.jsonl merge=union
 tasks/**/comments.jsonl merge=union
 
+# Agent-memory markdown (#896): append-dominant files (new index lines in
+# MEMORY.md, new feedback_*.md sections) written by many concurrent sessions;
+# the 2026-07-02 root pull-rebase incident conflicted exactly on these files.
+# union is line-oriented: clean for append-append; concurrent EDITS of the
+# SAME region merge WITHOUT conflict markers and may duplicate/interleave
+# lines — accepted trade-off (benign duplication the owning agent self-heals
+# on its next write) vs a hard conflict blocking a fleet-wide root sync.
+# Same SCOPE CAVEAT as above: honored on LOCAL merges/rebases only —
+# server-side `gh pr merge` does not honor user-defined merge drivers.
+.claude/agent-memory/**/*.md merge=union
+
 # REGISTRY.json is deliberately NOT unioned — it is a last-writer-wins JSON
 # snapshot (atomic write-temp+rename), never append-only; a union merge would
 # concatenate two JSON objects into invalid JSON.
