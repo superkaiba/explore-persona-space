@@ -71,6 +71,44 @@ N_STREAM_BACKFILL_MARGIN = int(os.environ.get("EPM_I841S_BACKFILL_MARGIN", "2400
 TOKEN_BUDGET = int(os.environ.get("EPM_I841S_TOKEN_BUDGET", "65536"))
 MAX_SEQS_PER_BATCH = int(os.environ.get("EPM_I841S_MAX_SEQS_PER_BATCH", "48"))
 
+# Host-RAM chunking for the stage-0 MLP fit battery (crash-fix cycle 5: attempt 6
+# SIGKILL 137 ~26 min into stage-0). At n=100k each transition's SplitMLPGroup holds
+# an (n, 3584) fp32 X_train + Y_train, so building ALL 27 transitions' groups at once
+# is ~77 GB of copies + the ~40 GB cx pool → exceeds the 170 GB host. Fit transitions
+# in chunks of MLP_GROUP_CHUNK groups (build → fit → free → gc), bounding live copies
+# to ~MLP_GROUP_CHUNK × Y_train. NOTE: fit_batched_split_mlp seeds each group's init in
+# BATCH ORDER (member g gets init g), so the fit is DETERMINISTIC + reproducible at a
+# FIXED chunk size but NOT bit-identical across chunk sizes — group_chunk is a pinned
+# nuisance parameter recorded in the stage-0 output. See mlp_scaling's NON-EQUIVALENCE
+# caveat.
+MLP_GROUP_CHUNK = int(os.environ.get("EPM_I841S_MLP_GROUP_CHUNK", "6"))
+
+
+def rss_gib() -> float:
+    """Current process resident set size in GiB (Linux /proc/self/status VmRSS)."""
+    try:
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) / (1024**2)  # KB → GiB
+    except Exception:
+        pass
+    return float("nan")
+
+
+def mem_total_available_gib() -> tuple[float, float]:
+    """(MemTotal, MemAvailable) in GiB from /proc/meminfo; (nan, nan) if unreadable."""
+    vals: dict[str, float] = {}
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith(("MemTotal:", "MemAvailable:")):
+                    vals[line.split(":")[0]] = int(line.split()[1]) / (1024**2)  # KB → GiB
+    except Exception:
+        pass
+    return vals.get("MemTotal", float("nan")), vals.get("MemAvailable", float("nan"))
+
+
 # HF layout for this round's artifacts (data repo superkaiba1/explore-persona-space-data).
 HF_SCALING_PREFIX = "issue841_scaling"
 HF_CAPTURE_BUCKET = f"{HF_SCALING_PREFIX}/cx_last_shards"
@@ -540,6 +578,61 @@ def fetch_capture_from_hf(capture_dir: Path) -> Path:
         for rel in shard_files:
             _link(overflow, rel)
     return capture_dir
+
+
+def capture_complete_on_hf(
+    n_new: int, requested_dtype: str, repo_type: str = "dataset"
+) -> tuple[bool, str]:
+    """Is a COMPLETE capture already on HF — manifest covering ``n_new`` at
+    ``requested_dtype`` AND every span's ``.pt`` shard present (on the overflow repo
+    via the pointer, else the public repo)? Returns ``(complete, detail)``. Fail-soft:
+    ANY probe error → ``(False, reason)`` so the caller falls through to a full
+    re-capture rather than crashing. Used by the capture-skip short-circuit (#841
+    attempt 6 recovery: capture + all shard uploads succeeded before stage-0 OOMed,
+    so the full capture lives on HF and a relaunch fetches instead of re-capturing)."""
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    manifest_rel = f"{HF_CAPTURE_BUCKET}/manifest.json"
+    try:
+        public = set(list_repo_files(C.HF_DATA_REPO, repo_type=repo_type))
+    except Exception as e:
+        return False, f"public listing failed ({e})"
+    if manifest_rel not in public:
+        return False, "no manifest on HF"
+    try:
+        manifest = json.loads(
+            Path(
+                hf_hub_download(C.HF_DATA_REPO, filename=manifest_rel, repo_type=repo_type)
+            ).read_text()
+        )
+    except Exception as e:
+        return False, f"manifest fetch/parse failed ({e})"
+    hf_dtype = manifest.get("realized_capture_dtype", manifest.get("capture_dtype"))
+    total = manifest.get("total_rows")
+    spans = manifest.get("spans") or []
+    if hf_dtype != requested_dtype:
+        return False, f"dtype {hf_dtype} != requested {requested_dtype}"
+    if total is None or int(total) < n_new:
+        return False, f"coverage short (HF total_rows={total} < {n_new})"
+    if not spans:
+        return False, "manifest has no spans"
+    overflow = _overflow_repo_for_bucket(C.HF_DATA_REPO, HF_CAPTURE_BUCKET, repo_type)
+    shard_repo = overflow or C.HF_DATA_REPO
+    try:
+        shard_files = {
+            f
+            for f in list_repo_files(shard_repo, repo_type=repo_type)
+            if f.startswith(f"{HF_CAPTURE_BUCKET}/")
+        }
+    except Exception as e:
+        return False, f"shard listing on {shard_repo} failed ({e})"
+    missing = [s["shard"] for s in spans if f"{HF_CAPTURE_BUCKET}/{s['shard']}" not in shard_files]
+    if missing:
+        return (
+            False,
+            f"{len(missing)}/{len(spans)} shards missing on {shard_repo} (e.g. {missing[0]})",
+        )
+    return True, f"total_rows={total} dtype={hf_dtype}, {len(spans)} shards on {shard_repo}"
 
 
 def load_capture_local_or_hf(capture_dir: Path) -> dict:

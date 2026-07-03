@@ -30,6 +30,7 @@ download, no GPU) that runs the FULL fit path incl. both KILL-B legs end-to-end.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import logging
 import sys
@@ -137,48 +138,124 @@ def ridge_scaling(fit_pool, test, transitions, ns, *, device, dual_max):
 # ── MLP scaling curve (batched ensemble per n) ───────────────────────────────────
 
 
+def _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk):
+    """Pre-phase host-RAM projection + soft check (crash-fix cycle 5). Logs projected
+    peak (cx pool + one chunk's Y_train deltas) vs MemTotal/MemAvailable; warns loudly
+    if the projection exceeds 80% of MemAvailable so a too-large chunk is caught before
+    the OOM SIGKILL instead of after."""
+    n_max = max(ns)
+    hidden = fit_pool.shape[-1]
+    pool_gib = fit_pool.nbytes / (1024**3)
+    # copy=False makes X_train a view into fit_pool (0 extra); Y_train is a fresh (n,H)
+    # fp32 delta per group, so the live chunk copies ≈ group_chunk × n_max × H × 4 B.
+    chunk_gib = group_chunk * n_max * hidden * 4 / (1024**3)
+    proj_gib = pool_gib + chunk_gib
+    mem_total, mem_avail = S.mem_total_available_gib()
+    logger.info(
+        "[stage0] mlp RAM sizing: pool %.1f + chunk-copies %.1f = proj peak %.1f GiB; "
+        "MemTotal %.0f / MemAvailable %.0f GiB (group_chunk=%d, n_max=%d)",
+        pool_gib,
+        chunk_gib,
+        proj_gib,
+        mem_total,
+        mem_avail,
+        group_chunk,
+        n_max,
+    )
+    if mem_avail == mem_avail and proj_gib > 0.8 * mem_avail:  # NaN-guarded
+        logger.warning(
+            "[stage0] projected MLP peak %.1f GiB > 80%% of MemAvailable %.1f GiB — "
+            "lower EPM_I841S_MLP_GROUP_CHUNK (currently %d) or route off-VM",
+            proj_gib,
+            mem_avail,
+            group_chunk,
+        )
+
+
 def mlp_scaling(
-    fit_pool, val, test, transitions, ns, *, device, chunk_size, num_threads, max_epochs
+    fit_pool,
+    val,
+    test,
+    transitions,
+    ns,
+    *,
+    device,
+    chunk_size,
+    num_threads,
+    max_epochs,
+    group_chunk=None,
 ):
     """MLP r2_id(n) + r2_meancentered(n) per (transition, n), RAW space, batched.
 
-    Returns ``(curve, params_by_n)`` — ``params_by_n[n][t]`` is the numpy param
-    dict Stage-1 rebuilds into the row-1 mlp transported class (RAW space).
+    Fits transitions in CHUNKS of ``group_chunk`` SplitMLPGroups per fit_split_mlps
+    call (default ``S.MLP_GROUP_CHUNK``) to bound host RAM: at n=100k each group holds
+    an (n, 3584) fp32 X_train + Y_train, so building ALL 27 at once is ~77 GB of copies
+    (#841 attempt 6 SIGKILL 137). ``astype(copy=False)`` keeps X_train a view into the
+    pool + Y_train the fresh delta (no redundant copy); each chunk is freed + gc'd
+    before the next.
+
+    NON-EQUIVALENCE CAVEAT: ``fit_batched_split_mlp`` seeds each group's MLP init in
+    BATCH ORDER (``torch.manual_seed(seed)`` then one init per group; member g gets
+    init g — vectorized_mlp_skill.py:809). So group g's init depends on its position
+    in the fit_split_mlps call, and chunking changes that position → the r2 curve is
+    NOT bit-identical to a single all-groups call (which OOMs and never runs). The fit
+    IS DETERMINISTIC + reproducible at a FIXED ``group_chunk`` (same chunk size → same
+    curve). ``group_chunk`` is a pinned nuisance parameter, recorded in the output; the
+    init seed does not change dose/data/schedule. (The all-groups helper cannot be
+    seeded per-absolute-index without touching the #658-gated shared surface.)
+
+    Returns ``(curve, params_by_n)`` — ``params_by_n[n][t]`` is the numpy param dict
+    Stage-1 rebuilds into the row-1 mlp transported class (RAW space).
     """
+    if group_chunk is None:
+        group_chunk = S.MLP_GROUP_CHUNK
+    _log_mlp_ram_sizing(fit_pool, ns, transitions, group_chunk)
     curve: dict = {f"transition_{t}": {} for t in transitions}
     params_by_n: dict[int, dict] = {}
     for n in ns:
         fit = fit_pool[:n]
-        groups = []
-        for t in transitions:
-            h_fit, d_fit = _deltas(fit, t)
-            h_val, d_val = _deltas(val, t)
-            groups.append(
+        params_n: dict = {}
+        n_chunks = (len(transitions) + group_chunk - 1) // group_chunk
+        for ci, lo in enumerate(range(0, len(transitions), group_chunk)):
+            chunk_ts = transitions[lo : lo + group_chunk]
+            groups = [
                 SplitMLPGroup(
                     key=("mlp", t),
-                    X_train=h_fit.astype(np.float32),
-                    Y_train=d_fit.astype(np.float32),
-                    X_eval=_deltas(test, t)[0].astype(np.float32),
-                    X_val=h_val.astype(np.float32),
-                    Y_val=d_val.astype(np.float32),
+                    X_train=_deltas(fit, t)[0].astype(np.float32, copy=False),
+                    Y_train=_deltas(fit, t)[1].astype(np.float32, copy=False),
+                    X_eval=_deltas(test, t)[0].astype(np.float32, copy=False),
+                    X_val=_deltas(val, t)[0].astype(np.float32, copy=False),
+                    Y_val=_deltas(val, t)[1].astype(np.float32, copy=False),
                 )
+                for t in chunk_ts
+            ]
+            preds, params = MP.fit_split_mlps(
+                groups,
+                device=device,
+                chunk_size=chunk_size,
+                num_threads=num_threads,
+                max_epochs=max_epochs,
             )
-        preds, params = MP.fit_split_mlps(
-            groups,
-            device=device,
-            chunk_size=chunk_size,
-            num_threads=num_threads,
-            max_epochs=max_epochs,
-        )
-        for (_, t), pred in preds.items():
-            _h, d_test = _deltas(test, t)
-            _hf, d_fit = _deltas(fit, t)
-            curve[f"transition_{t}"][str(n)] = {
-                "r2_id": MP.identity_relative_r2(pred, d_test),
-                "r2_meancentered": MP.mean_centered_r2(pred, d_test, d_fit.mean(0)),
-            }
-        params_by_n[n] = {t: params[("mlp", t)] for t in transitions}
-        logger.info("[mlp] n=%d done (%d transitions batched)", n, len(transitions))
+            for (_, t), pred in preds.items():
+                _h, d_test = _deltas(test, t)
+                _hf, d_fit = _deltas(fit, t)
+                curve[f"transition_{t}"][str(n)] = {
+                    "r2_id": MP.identity_relative_r2(pred, d_test),
+                    "r2_meancentered": MP.mean_centered_r2(pred, d_test, d_fit.mean(0)),
+                }
+                params_n[t] = params[("mlp", t)]
+            del groups, preds, params
+            gc.collect()
+            logger.info(
+                "[stage0] mlp chunk %d/%d (transitions %d..%d) done, RSS %.1f GiB",
+                ci + 1,
+                n_chunks,
+                chunk_ts[0],
+                chunk_ts[-1],
+                S.rss_gib(),
+            )
+        params_by_n[n] = params_n
+        logger.info("[mlp] n=%d done (%d transitions, %d chunks)", n, len(transitions), n_chunks)
     curve["ns"] = list(ns)
     return curve, params_by_n
 
@@ -482,6 +559,10 @@ def main() -> int:
     result["scaling_curve"]["mlp"] = mlp_curve
     result["atlas_largest_n"] = ns[-1]
     result["mlp_ns"] = mlp_ns  # which n-points have persisted MLP maps for Stage-1
+    # Pin the MLP group-chunk (host-RAM fix): the fixed-split helper seeds init in batch
+    # order, so the r2 curve is deterministic at this chunk size but chunk-size-dependent
+    # — record it so the fit is reproducible (see mlp_scaling NON-EQUIVALENCE caveat).
+    result["mlp_group_chunk"] = S.MLP_GROUP_CHUNK
     C.write_json_atomic(out_dir / "stage0_scaling.json", result)
 
     # Persist every fitted RAW map (Stage-1 reloads them for the class dimension) + upload.

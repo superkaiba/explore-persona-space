@@ -747,6 +747,12 @@ def main() -> int:
     ap.add_argument("--anchor-rel-tol", type=float, default=1e-3, help="KILL-A rel-error tolerance")
     ap.add_argument("--capture-dir", type=Path, default=S.CAPTURE_DIR)
     ap.add_argument("--no-upload", action="store_true")
+    ap.add_argument(
+        "--no-capture-skip",
+        action="store_true",
+        help="disable the HF-complete short-circuit (always re-capture even if a full "
+        "capture already lives on HF)",
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny n (64) new contexts, SAME path")
     ap.add_argument("--equivalence-test", action="store_true")
     ap.add_argument("--dry-run-io", type=int, default=0, metavar="N")
@@ -772,6 +778,33 @@ def main() -> int:
         args.batch_size,
         args.anchor_rel_tol,
     )
+
+    # Capture-skip on HF-complete (crash-fix cycle 5, saves ~45 min GPU + the model
+    # load): attempt 6's capture + all shard uploads SUCCEEDED before stage-0 OOMed, so
+    # the full capture already lives on HF. If a COMPLETE capture (manifest covering
+    # n_new at the requested dtype + every shard present on overflow/public) is there,
+    # FETCH it and skip re-capture. KILL-A + the adjacency audit validated the capture
+    # PATH at original capture time — they are properties of the already-validated
+    # artifact, so they are SKIPPED on the fetch path (no model needed). Loud note either
+    # way; --no-capture-skip forces a full re-capture.
+    if not args.no_capture_skip:
+        complete, detail = S.capture_complete_on_hf(n_new, args.capture_dtype)
+        if complete:
+            logger.info(
+                "[capture] HF-complete (%s) — fetching from HF, skipping re-capture + "
+                "KILL-A + adjacency audit (validated at original capture time)",
+                detail,
+            )
+            S.fetch_capture_from_hf(args.capture_dir)
+            loaded = S.load_capture(args.capture_dir)
+            assert loaded["cx_last"].shape[0] >= n_new, (loaded["cx_last"].shape, n_new)
+            logger.info(
+                "[capture] fetched %d shard-rows (dtype=%s) from HF — capture-skip complete",
+                loaded["cx_last"].shape[0],
+                loaded.get("realized_capture_dtype"),
+            )
+            return 0
+        logger.info("[capture] HF-incomplete (%s) — proceeding with full capture", detail)
 
     use_cuda = torch.cuda.is_available()  # capture reads model.device inside the hook
     tokenizer = AutoTokenizer.from_pretrained(args.model)
