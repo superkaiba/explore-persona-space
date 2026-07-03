@@ -4965,8 +4965,8 @@
       "goal": "Replicate Persona Vectors' two prediction experiments (system-prompt projection, finetuning-shift) on Qwen2.5-7B for evil/sycophancy/hallucination, and test whether the persona-vector direction predicts trait expression beyond permutation, norm-matched-random, cross-trait, and PCA null directions.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/778",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/778",
+      "status": "awaiting_promotion",
       "title": "On Qwen2.5-7B, a persona vector predicts trait expression better than trait-agnostic random directions \u2014 family-wise significant for evil and sycophancy monitoring, unresolved for hallucination at the paper's fixed layer (MODERATE confidence)"
     },
     "779": {
@@ -6019,8 +6019,8 @@
     "916": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/916",
-      "status": "reviewing",
+      "path": "tasks/completed/916",
+      "status": "completed",
       "title": "workflow-fix: null-band-vs-DV-ceiling informativeness check in selection-symmetric-nulls"
     },
     "917": {
@@ -6033,15 +6033,15 @@
     "918": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/918",
-      "status": "planning",
+      "path": "tasks/running/918",
+      "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 HF data-repo staging must use scoped list_repo_tree, not snapshot_download"
     },
     "919": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/919",
-      "status": "proposed",
+      "path": "tasks/approved/919",
+      "status": "approved",
       "title": "workflow-fix: route user 'pause <N>' to on_hold (durable, watcher-safe park)"
     },
     "92": {
@@ -6062,8 +6062,8 @@
     "921": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/921",
-      "status": "proposed",
+      "path": "tasks/planning/921",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
     },
     "922": {
@@ -6143,8 +6143,8 @@
     "932": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/932",
-      "status": "running",
+      "path": "tasks/completed/932",
+      "status": "completed",
       "title": "workflow-fix: verify_plan check \u2014 fail-loud acceptance claims need committed tests"
     },
     "933": {

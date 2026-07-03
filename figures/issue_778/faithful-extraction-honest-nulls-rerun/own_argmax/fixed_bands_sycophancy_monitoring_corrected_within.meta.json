@@ -1,0 +1,37 @@
+{
+  "commit": "3ee5a9cf26",
+  "created": "2026-07-03T04:58:33Z",
+  "figsize": [
+    7.4,
+    3.8
+  ],
+  "points": [
+    {
+      "|Pearson r| at layer 18 (predictor projection vs trait score)": 0.25500150921188525,
+      "y": 6.0,
+      "_kind": "line"
+    },
+    {
+      "|Pearson r| at layer 18 (predictor projection vs trait score)": 0.6213949488193143,
+      "y": 6.0,
+      "_kind": "line"
+    },
+    {
+      "|Pearson r| at layer 18 (predictor projection vs trait score)": 0.5393145439006468,
+      "y": 6.0,
+      "_kind": "line"
+    },
+    {
+      "|Pearson r| at layer 18 (predictor projection vs trait score)": 0.496097081534398,
+      "y": 6.0,
+      "_kind": "line"
+    },
+    {
+      "|Pearson r| at layer 18 (predictor projection vs trait score)": 0.38274073742065495,
+      "y": 6.0,
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5
+}

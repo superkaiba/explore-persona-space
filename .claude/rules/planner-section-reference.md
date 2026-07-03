@@ -184,7 +184,24 @@ max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
 display and does NOT neutralise it). §6 ALSO registers persistence of the
 per-draw × per-axis statistic matrix (one matrix per headline statistic)
 as a downstream artifact (per the Upload Policy) so the analyzer can
-recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+recompute the honest max-selected band post-hoc. §6 ALSO reports, next to
+each registered null-band read, the band's upper bound alongside the DV's
+achievable ceiling (a bounded DV's bound; for a difference statistic,
+max-attainable-favored-arm MINUS the exact registered comparison-arm
+quantity the statistic uses — never the raw single-arm bound; when no
+estimator bound is derivable, the largest previously-observed in-line
+effect as a severity REFERENCE POINT, which is not a ceiling) — band ≥
+estimator-bound ceiling ⇒ the test is uninformative-by-construction:
+pre-commit the narration of any non-rejection as failure-to-reject (never
+evidence of absence/reversal; a separately reachable opposite-tail
+rejection stays legitimate), draw band + ceiling in the figure, report the
+band-to-ceiling margin, and prefer redesigning the read (#810: band p97.5
+0.800 vs an achievable difference ceiling derived from ~0.857 max skill —
+even the parent round's +0.209 effect could not clear it). Band ≥ only the
+fallback reference point ⇒ report low-severity (underpowered against every
+previously-observed effect), not zero power. Full check:
+`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling
+informativeness check. Full recipe + carve-outs
 (a pre-registered fixed position or a mechanistic single-anchor ablation
 does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
