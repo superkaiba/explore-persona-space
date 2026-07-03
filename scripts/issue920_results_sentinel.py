@@ -92,6 +92,7 @@ def main() -> int:
         ),
         "g2_gate": map_json.get("g2"),
         "excluded_families": map_json.get("excluded_families", []),
+        "excluded_families_by_source": map_json.get("excluded_families_by_source"),
         "note": (
             "selection-symmetric max-inherited bands are computed in the post-release "
             "cpu-mid aggregation phase (null_bands_and_headline.json) — per-cell "
@@ -142,7 +143,9 @@ def main() -> int:
         },
     }
     write_sentinel("epm:results", note, eval_out)
-    logger.info("[phase=done] results sentinel written")
+    # NOT [phase=done] — reserved for the dispatcher's single terminal line
+    # (issue920_dispatch.sh emits it right after this script exits).
+    logger.info("[phase=results_sentinel_written] results sentinel written")
     return 0
 
 

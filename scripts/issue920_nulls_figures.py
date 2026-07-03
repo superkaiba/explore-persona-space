@@ -322,6 +322,15 @@ def aggregate_and_figures(  # noqa: C901 — one linear figure pipeline
             "band_p97_5": float(np.quantile(d_null, 0.975)),
             "beats_incumbent_past_band": bool(d_obs > float(np.quantile(d_null, 0.975))),
             "mean_family_cells": list(MEAN_FAMILY_A_CELLS),
+            "incumbent_set": (
+                "ANSWER-side instantiation: incumbent = valid map cells whose "
+                "a-cell family is in mean_family_cells (any context cell × any "
+                "layer); every other valid cell is a challenger. Context-side "
+                "mean-pool families are challengers under this split; the "
+                "persisted per-draw matrices make any other split recomputable."
+            ),
+            "n_incumbent_cells": int(mean_set.sum()),
+            "n_challenger_cells": int(chal_set.sum()),
             "note": "set-size asymmetry biases TOWARD retaining the incumbent (plan §6)",
         }
 
@@ -329,6 +338,52 @@ def aggregate_and_figures(  # noqa: C901 — one linear figure pipeline
     for dv, fname in (("dv2", "dv2_null_rho.pt"), ("dv3", "dv3_null_rho.pt")):
         nb = torch.load(null_dir / fname, weights_only=False)
         summary["bands"][dv] = nb["bands"]
+
+    # ── band convention + the MATCHING observed statistic ────────────────────
+    # The DV-2/3 nulls take the per-draw max of |ρ| (two-sided — sign is not a
+    # selection axis), while the eval JSONs store SIGNED ρ; record the |·|
+    # convention + the observed max |ρ| over the SAME cell set so the analyzer
+    # never compares a signed max against a |·| band.
+    summary["dv23_band_convention"] = (
+        "null bands = 97.5th pct of per-draw max |rho| (two-sided); observed "
+        "comparator = max |rho| over the same (regime[, side], behavior) cell set"
+    )
+    ro_json = load_json(eval_out / "readout_rho_by_cell.json")
+    chain_json = load_json(eval_out / "chain_rho_by_cell.json")
+    behaviors = list(ro_json["behaviors"])
+    n_ctx_cells = len(names_c)
+
+    def _obs_vs_band(col: np.ndarray, band: float | None) -> dict:
+        obs = None if np.all(np.isnan(col)) else float(np.nanmax(np.abs(col)))
+        return {
+            "observed_max_abs_rho": obs,
+            "band_p97_5": band,
+            "clears": bool(obs is not None and band is not None and obs > band),
+        }
+
+    ro_arr = {
+        key: np.array([[np.nan if v is None else v for v in row] for row in ro_json["rho"][key]])
+        for key in ("R_in_probe", "R_input_ood")
+    }
+    summary["dv2_observed_vs_band"] = {
+        f"{regime}_{side}_{b}": _obs_vs_band(
+            ro_arr[key][sel, bi], summary["bands"]["dv2"].get(f"{regime}_{side}_{b}")
+        )
+        for regime, key in (("in_probe", "R_in_probe"), ("input_ood", "R_input_ood"))
+        for side, sel in (("ctx", slice(0, n_ctx_cells)), ("ans", slice(n_ctx_cells, None)))
+        for bi, b in enumerate(behaviors)
+    }
+    ch_arr = {
+        tag: np.array([[np.nan if v is None else v for v in row] for row in chain_json[key]])
+        for tag, key in (("R9", "rho_R9"), ("R10", "rho_R10"))
+    }
+    summary["dv3_observed_vs_band"] = {
+        f"{tag}_{b}": _obs_vs_band(ch_arr[tag][:, bi], summary["bands"]["dv3"].get(f"{tag}_{b}"))
+        for tag in ("R9", "R10")
+        for bi, b in enumerate(behaviors)
+    }
+    summary["excluded_families"] = map_json.get("excluded_families", [])
+    summary["excluded_families_by_source"] = map_json.get("excluded_families_by_source")
 
     # ── figures ──────────────────────────────────────────────────────────────
     ctx_fams = sorted(
@@ -421,10 +476,7 @@ def aggregate_and_figures(  # noqa: C901 — one linear figure pipeline
     plt.close(fig)
 
     # chain-vs-oracle gap per behavior (best chain cell vs its PCA-basis oracle)
-    chain_json = load_json(eval_out / "chain_rho_by_cell.json")
-    ch = np.array(
-        [[np.nan if v is None else v for v in row] for row in chain_json["rho_R9"]]
-    )  # (n_map, 7)
+    ch = ch_arr["R9"]  # (n_map, 7) — loaded with the observed-vs-band block above
     orc = np.array(
         [
             [np.nan if v is None else v for v in row]
@@ -492,60 +544,87 @@ def run_gpu_null(args) -> None:
     store_root = Path(args.store_root)
     null_dir = Path(args.null_out)
     null_dir.mkdir(parents=True, exist_ok=True)
-    instances, fam_map = load_battery()
-    ctx_ids = [i["id"] for i in instances]
-    red_A = load_reduced_matrices(store_root / "summaries_setA", ctx_ids)
-    red_B = load_reduced_matrices(store_root / "summaries_setB", ctx_ids)
-    k = min(PCA_K, max(1, min(len(tr) for _f, tr, _te in lofo_folds(ctx_ids, fam_map)) - 2))
-    if not args.skip_g2:
-        logger.info("[phase=g2_null_gate] %d draws on 2 cells", args.g2_draws)
-        g2 = g2_null_gate(red_A, red_B, ctx_ids, fam_map, k, device, n_draws=args.g2_draws)
+    out_pt = null_dir / "dv1_null_skills.pt"
+    if out_pt.is_file():
+        # Battery resume (an upload crash on a prior attempt must not force a
+        # full recompute); the upload + done-marker below still re-run.
+        logger.info("[phase=dv1_null] %s present — battery skipped (resume)", out_pt.name)
+        blob = torch.load(out_pt, weights_only=False)
+        n_draws, wall = int(blob.get("n_draws", args.n_draws)), float(blob.get("wall_s", 0.0))
     else:
-        g2 = {"skipped": True}
-    c_map, a_map = enumerate_map_cells(red_A["n_layers"])
-    perms = make_perm_matrix(len(ctx_ids), args.n_draws, np.random.default_rng(NULL_SEED))
-    t0 = time.time()
-    skills = dv1_null_battery(red_A, red_B, ctx_ids, fam_map, perms, c_map, a_map, k, device)
-    wall = time.time() - t0
-    logger.info(
-        "[phase=dv1_null] battery wall %.1fs (%d cells × %d draws × 4 regimes)",
-        wall,
-        len(c_map),
-        args.n_draws,
-    )
-    torch.save(
-        {
-            "skills": torch.from_numpy(skills).to(torch.float16),
-            "perm_seed": NULL_SEED,
-            "n_draws": args.n_draws,
-            "regimes": ["R1", "R2", "R3", "R4"],
-            "g2": g2,
-            "wall_s": wall,
-            "reproducibility": reproducibility_metadata(),
-        },
-        null_dir / "dv1_null_skills.pt",
-    )
+        instances, fam_map = load_battery()
+        ctx_ids = [i["id"] for i in instances]
+        red_A = load_reduced_matrices(store_root / "summaries_setA", ctx_ids)
+        red_B = load_reduced_matrices(store_root / "summaries_setB", ctx_ids)
+        k = min(PCA_K, max(1, min(len(tr) for _f, tr, _te in lofo_folds(ctx_ids, fam_map)) - 2))
+        if not args.skip_g2:
+            logger.info("[phase=g2_null_gate] %d draws on 2 cells", args.g2_draws)
+            g2 = g2_null_gate(red_A, red_B, ctx_ids, fam_map, k, device, n_draws=args.g2_draws)
+        else:
+            g2 = {"skipped": True}
+        c_map, a_map = enumerate_map_cells(red_A["n_layers"])
+        perms = make_perm_matrix(len(ctx_ids), args.n_draws, np.random.default_rng(NULL_SEED))
+        t0 = time.time()
+        skills = dv1_null_battery(red_A, red_B, ctx_ids, fam_map, perms, c_map, a_map, k, device)
+        wall = time.time() - t0
+        n_draws = args.n_draws
+        logger.info(
+            "[phase=dv1_null] battery wall %.1fs (%d cells × %d draws × 4 regimes)",
+            wall,
+            len(c_map),
+            args.n_draws,
+        )
+        torch.save(
+            {
+                "skills": torch.from_numpy(skills).to(torch.float16),
+                "perm_seed": NULL_SEED,
+                "n_draws": args.n_draws,
+                "regimes": ["R1", "R2", "R3", "R4"],
+                "g2": g2,
+                "wall_s": wall,
+                "reproducibility": reproducibility_metadata(),
+            },
+            out_pt,
+        )
     if not args.no_upload:
-        _upload_tensors(null_dir, Path(args.preds_dir))
+        _upload_tensors(
+            [
+                (null_dir, "null_matrices"),
+                (Path(args.preds_dir), "pooled_predictions"),
+                (Path(args.eval_out), "eval_json"),  # §6.5 eval JSONs: durable pre-delete
+            ]
+        )
     write_sentinel(
         "epm:progress",
         {
             "phase": "S5_dv1_null",
             "blocks_pipeline": False,
-            "n_draws": args.n_draws,
+            "n_draws": n_draws,
             "wall_s": round(wall, 1),
         },
         null_dir,
         slug_extra="dv1-null",
     )
+    # Post-upload phase-done marker: the dispatcher's resume predicate keys on
+    # this (never on the pre-upload .pt alone), so an upload crash re-enters the
+    # phase on retry (same class as the K3 fit-done marker).
+    dump_json(
+        {"phase": "S5_dv1_null", "n_draws": n_draws, "reproducibility": reproducibility_metadata()},
+        null_dir / "dv1_done.json",
+    )
 
 
-def _upload_tensors(null_dir: Path, preds_dir: Path) -> None:
-    """ONE upload_folder commit per dir (null matrices + pooled predictions) + verify."""
+def _upload_tensors(pairs: list[tuple[Path, str]]) -> None:
+    """ONE upload_folder commit per (dir, subprefix) pair + fresh-listing verify.
+
+    Standard pairs: null matrices, pooled predictions, and the §6.5 eval JSONs
+    (``eval_json``) — the GCP auto-delete lane destroys the boot disk, so the
+    primary-deliverable JSONs must land on the Hub before the instance exits.
+    """
     from huggingface_hub import HfApi, list_repo_files
 
     api = HfApi()
-    for local, sub in ((null_dir, "null_matrices"), (preds_dir, "pooled_predictions")):
+    for local, sub in pairs:
         if not local.is_dir():
             continue
         api.upload_folder(
@@ -574,18 +653,24 @@ def run_cpu_aggregation(args) -> None:
     preds_dir = Path(args.preds_dir)
     fig_dir = Path(args.fig_out)
     preds_path = preds_dir / "pooled_heldout_predictions.pt"
+    # HF fallback for EVERY cross-instance input this phase consumes — P6 runs on
+    # a FRESH cpu-mid instance, so the §6.5 eval JSONs (uploaded by the GPU-null
+    # phase under eval_json/) must be fetchable exactly like the two tensors.
     for p, sub in (
         (preds_path, "pooled_predictions/pooled_heldout_predictions.pt"),
         (null_dir / "dv1_null_skills.pt", "null_matrices/dv1_null_skills.pt"),
+        (eval_out / "map_skill_by_cell.json", "eval_json/map_skill_by_cell.json"),
+        (eval_out / "readout_rho_by_cell.json", "eval_json/readout_rho_by_cell.json"),
+        (eval_out / "chain_rho_by_cell.json", "eval_json/chain_rho_by_cell.json"),
     ):
         if not p.is_file():
+            import shutil
+
             from huggingface_hub import hf_hub_download
 
             logger.info("fetching %s from HF (%s)", p.name, sub)
             got = hf_hub_download(HF_DATA_REPO, f"{I920_TENSORS_PREFIX}/{sub}", repo_type="dataset")
             p.parent.mkdir(parents=True, exist_ok=True)
-            import shutil
-
             shutil.copyfile(got, p)
 
     blob = torch.load(preds_path, weights_only=False)
@@ -652,14 +737,20 @@ def run_cpu_aggregation(args) -> None:
     summary["reproducibility"] = reproducibility_metadata()
     dump_json(summary, eval_out / "null_bands_and_headline.json")
     if not args.no_upload:
-        _upload_tensors(null_dir, Path(args.preds_dir))
+        _upload_tensors(
+            [
+                (null_dir, "null_matrices"),
+                (Path(args.preds_dir), "pooled_predictions"),
+                (eval_out, "eval_json"),  # incl. null_bands_and_headline.json
+            ]
+        )
     write_sentinel(
         "epm:progress",
         {"phase": "S5_cpu_aggregation", "blocks_pipeline": False, "bands": summary["bands"]},
         eval_out,
         slug_extra="agg",
     )
-    logger.info("[phase=done] aggregation + figures complete")
+    logger.info("[phase=aggregation_complete] aggregation + figures complete")
 
 
 def main() -> int:
@@ -684,7 +775,14 @@ def main() -> int:
         run_gpu_null(args)
     if args.cpu_aggregation:
         run_cpu_aggregation(args)
-    logger.info("[phase=done] S5 complete")
+        # The standalone P6 dispatch (cpu-mid lane) runs this script bare as the
+        # workload command, so THIS invocation is that workload's dispatcher-
+        # terminal — the single reserved [phase=done] (pod-side-reporting rule).
+        logger.info("[phase=done] S5 cpu aggregation complete")
+    else:
+        # Inside issue920_dispatch.sh (--gpu-null-only): the terminal token
+        # belongs to the dispatcher, never a phase script (#545 false-done class).
+        logger.info("[phase=nulls_gpu_complete] S5 GPU null battery complete")
     return 0
 
 

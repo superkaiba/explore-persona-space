@@ -8,10 +8,19 @@
 # The post-release cpu-mid phase (`issue920_nulls_figures.py --cpu-aggregation`)
 # is dispatched SEPARATELY by the orchestrator (plan §10 workload commands).
 #
-# Pod-side contract: [phase=...] log lines ending in [phase=done]; sentinels
-# under /workspace/logs/issue-920-*.json (the python scripts write their own
-# per-phase progress sentinels; issue920_results_sentinel.py writes the final
-# epm:results payload). Pod-side code NEVER shells out to scripts/task.py.
+# Resume predicates key on each phase's POST-GATE/POST-UPLOAD `*_done.json`
+# marker (written by the phase script at the very END of its success path —
+# after K3 for fits, after the Hub upload for gen/extract/nulls), never on the
+# intermediate artifacts alone: a retry after a failed gate or a failed upload
+# must RE-ENTER the phase, not skip it (round-1 blocker
+# `k3-resume-bypasses-anchor-gate`).
+#
+# Pod-side contract: [phase=...] log lines; the token [phase=done] is RESERVED
+# for the SINGLE terminal line at the bottom of this script (phase scripts end
+# with non-reserved tokens like [phase=fits_complete] — #545 false-done class).
+# Sentinels under /workspace/logs/issue-920-*.json (the python scripts write
+# their own per-phase progress sentinels; issue920_results_sentinel.py writes
+# the final epm:results payload). Pod-side code NEVER shells out to task.py.
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"
@@ -26,7 +35,7 @@ export PATH="/root/.local/bin:$PATH"
 # never overwrites committed eval_results/figures.
 SMOKE="${EPM_I920_SMOKE:-0}"
 OUT_ROOT="$REPO_ROOT"
-GEN_FLAGS=(--gpu)
+GEN_FLAGS=()
 EXTRACT_FLAGS=(--gpu --equiv-gate-first --probe-set both --batch-probes 8)
 FIT_FLAGS=()
 NULL_FLAGS=(--gpu-null-only)
@@ -76,34 +85,44 @@ fi
 
 echo "[phase=gen_b] set-B greedy completions (vLLM, own process)"
 GEN_DONE=$(ls "$OUT_ROOT"/data/issue_920/gen_b/*.json 2>/dev/null | wc -l || true)
-if [ "$GEN_DONE" -ge "$EXPECT_N" ]; then
-  echo "[phase=gen_b] $EXPECT_N per-context files present — skip (resume)"
+if [ -f "$OUT_ROOT/data/issue_920/gen_b_done.json" ] && [ "$GEN_DONE" -ge "$EXPECT_N" ]; then
+  echo "[phase=gen_b] phase-done marker + $EXPECT_N per-context files present — skip (resume)"
 else
-  uv run python scripts/issue920_gen_completions_b.py "${GEN_FLAGS[@]}"
+  # NOTE: the phase script has its own per-context resume, so this re-entry is
+  # cheap when the crash was late (e.g. at the upload step).
+  uv run python scripts/issue920_gen_completions_b.py ${GEN_FLAGS[@]+"${GEN_FLAGS[@]}"}
 fi
 
 echo "[phase=extract] G1 gate + 55-family extraction, sets A+B (HF, own process)"
 EXT_A=$(ls "$OUT_ROOT"/data/issue_920/summaries_setA/*.pt 2>/dev/null | wc -l || true)
 EXT_B=$(ls "$OUT_ROOT"/data/issue_920/summaries_setB/*.pt 2>/dev/null | wc -l || true)
-if [ "$EXT_A" -ge "$EXPECT_N" ] && [ "$EXT_B" -ge "$EXPECT_N" ]; then
-  echo "[phase=extract] both stores complete — skip (resume)"
+if [ -f "$OUT_ROOT/data/issue_920/extract_done.json" ] \
+  && [ "$EXT_A" -ge "$EXPECT_N" ] && [ "$EXT_B" -ge "$EXPECT_N" ]; then
+  echo "[phase=extract] phase-done marker + both stores complete — skip (resume)"
 else
   uv run python scripts/issue920_extract_summaries.py "${EXTRACT_FLAGS[@]}"
 fi
 
 echo "[phase=fits] batched LOFO fit battery (G2 gate + K3 anchor gate inside)"
-if [ -f "$OUT_ROOT/eval_results/issue_920/map_skill_by_cell.json" ] \
+# The resume predicate REQUIRES the post-K3 fits_done marker — the eval JSON +
+# preds are written BEFORE the K3 anchor gate, so their presence alone must
+# never skip this phase (a K3 FAIL would otherwise be bypassed on retry).
+if [ -f "$OUT_ROOT/data/issue_920/preds/fits_done.json" ] \
+  && [ -f "$OUT_ROOT/eval_results/issue_920/map_skill_by_cell.json" ] \
   && [ -f "$OUT_ROOT/data/issue_920/preds/pooled_heldout_predictions.pt" ]; then
-  echo "[phase=fits] outputs present — skip (resume)"
+  echo "[phase=fits] post-K3 fit-done marker + outputs present — skip (resume)"
 else
   EPM_FIT_DEVICE="${EPM_FIT_DEVICE:-cuda}" uv run python scripts/issue920_fit_lofo.py \
     "${FIT_FLAGS[@]}"
 fi
 
 echo "[phase=nulls_gpu] DV-1 perm-refit null battery (G2-null gate inside)"
-if [ -f "$OUT_ROOT/data/issue_920/null_matrices/dv1_null_skills.pt" ]; then
-  echo "[phase=nulls_gpu] dv1_null_skills.pt present — skip (resume)"
+if [ -f "$OUT_ROOT/data/issue_920/null_matrices/dv1_done.json" ] \
+  && [ -f "$OUT_ROOT/data/issue_920/null_matrices/dv1_null_skills.pt" ]; then
+  echo "[phase=nulls_gpu] phase-done marker + dv1_null_skills.pt present — skip (resume)"
 else
+  # Internal resume: an existing dv1_null_skills.pt skips the battery recompute;
+  # the upload + done marker re-run.
   EPM_FIT_DEVICE="${EPM_FIT_DEVICE:-cuda}" uv run python scripts/issue920_nulls_figures.py \
     "${NULL_FLAGS[@]}"
 fi
