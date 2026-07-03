@@ -367,3 +367,198 @@ def test_cli_exit_codes(figs_root, tmp_path):
     )
     assert r_bad.returncode == 1, r_bad.stdout + r_bad.stderr
     assert "OVERALL: FAIL" in r_bad.stdout
+
+
+# ─── Verbatim content is DATA (fences + blockquotes blanked) ─────────────
+
+
+def test_lexicon_ignores_blockquote_verbatim_in_methodology(figs_root):
+    # A verbatim transcript quoted in Methodology carries interpretive lexemes
+    # as DATA — a blockquote is blanked before the lexicon scan, so it PASSes.
+    sections = _default_sections()
+    sections[2] = (
+        "## Methodology:",
+        "We trained under two conditions. Verbatim transcript we showed the model:\n"
+        "> User: is the claim true?\n"
+        "> Assistant: This suggests it is, and demonstrates that the effect holds.",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert _by_name(results, "no-interpretive-lexicon").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_fenced_metrics_heading_does_not_shadow_real_metrics(figs_root):
+    # A `## Metrics:` line inside a fenced code block must NOT be parsed as a
+    # section heading and shadow the real Metrics section — the banned lexeme
+    # in the REAL Metrics prose must still be flagged.
+    sections = _default_sections()
+    sections[2] = (
+        "## Methodology:",
+        "We trained under two conditions. Example config we pasted verbatim:\n"
+        "```text\n"
+        "## Metrics:\n"
+        "an example metric line inside the fence\n"
+        "```\n"
+        "Training completed without error.",
+    )
+    sections[3] = ("## Metrics:", "Agreement rate. The design demonstrates that it is valid.")
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    lex = _by_name(results, "no-interpretive-lexicon")
+    assert not ok
+    assert not lex.passed
+    # The flagged lexeme comes from the REAL Metrics prose, not the fenced one.
+    assert "Metrics" in lex.detail and "demonstrates that" in lex.detail
+
+
+def test_image_existence_ignores_quoted_image_in_blockquote(figs_root):
+    # A `![...](missing.png)` inside a blockquote is a verbatim reference to a
+    # prior figure — blanked before the image-existence scan, so no FAIL.
+    sections = _default_sections()
+    sections[2] = (
+        "## Methodology:",
+        "We trained under two conditions. A figure from prior work we referenced:\n"
+        "> ![old figure](figures/does_not_exist.png)",
+    )
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert _by_name(results, "figure-files-exist").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_duplicate_required_section_fails(figs_root):
+    # A second `## TLDR:` heading (also the intact placeholder, so the
+    # placeholder check still passes) must trip the duplicate-section check.
+    sections = _default_sections()
+    sections.append(("## TLDR:", PLACEHOLDER))
+    ok, results = _run(_assemble(sections), mode="generation", figs_root=figs_root)
+    assert not ok
+    dup = _by_name(results, "duplicate-section")
+    assert not dup.passed and "## TLDR:" in dup.detail
+
+
+def test_no_duplicate_section_on_valid_body(figs_root):
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    assert _by_name(results, "duplicate-section").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+# ─── --issue resolves body.md via the task-workflow library ──────────────
+
+
+@pytest.fixture
+def issue_repo(tmp_path, monkeypatch):
+    """Rebind task_workflow's path resolvers at a tmp repo so the REAL
+    ``find_task_path`` resolves ``--issue N`` to ``tmp/tasks/<status>/N/body.md``.
+
+    Mirrors the ``fake_repo`` fixture in tests/test_task_workflow.py: the
+    2026-05-25 worktree-staleness fix replaced module constants with the
+    ``repo_root()`` / ``tasks_dir()`` / ``registry_path()`` accessors, so tests
+    monkeypatch the FUNCTIONS. verify_report imports ``find_task_path`` lazily
+    inside ``main()``, picking up these patched resolvers.
+    """
+    (tmp_path / ".git").mkdir()
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    tw.invalidate_cache()
+    monkeypatch.setattr(tw, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(tw, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(tw, "registry_path", lambda: tmp_path / "tasks" / "REGISTRY.json")
+    return tmp_path
+
+
+def test_issue_resolves_body_via_library(issue_repo):
+    repo = issue_repo
+    task_dir = repo / "tasks" / "proposed" / "777"
+    task_dir.mkdir(parents=True)
+    (task_dir / "body.md").write_text(_assemble(_default_sections()))
+    # figures-root defaults to the git-repo root of the resolved body.md.
+    (repo / "figures").mkdir()
+    (repo / "figures" / "f.png").write_bytes(b"\x89PNG\r\n")
+    assert verify_report.main(["--issue", "777", "--mode", "generation"]) == 0
+
+
+def test_issue_missing_task_returns_usage_error(issue_repo):
+    # No such task on disk or in the registry → exit 2 (usage error), not crash.
+    assert verify_report.main(["--issue", "424242", "--mode", "generation"]) == 2
+
+
+def test_issue_and_file_are_mutually_exclusive():
+    with pytest.raises(SystemExit):
+        verify_report.main(["--issue", "1", "--file", "x.md", "--mode", "generation"])
+
+
+def test_neither_issue_nor_file_is_a_usage_error():
+    with pytest.raises(SystemExit):
+        verify_report.main(["--mode", "generation"])
+
+
+# ─── Manifest matching: exact figure headings + word-boundary coverage ───
+
+
+def test_manifest_figure_substring_heading_not_covered(figs_root, tmp_path):
+    # The default Results subsection heading is "rate by condition"; a figure
+    # titled "rate" is a SUBSTRING but not an exact match → NOT covered.
+    manifest = {
+        "issue": 999,
+        "conditions": ["baseline", "treatment"],
+        "metrics": ["Agreement rate"],
+        "figures": [
+            {
+                "id": "ratefig",
+                "title": "rate",
+                "source": "eval_results/issue_999/*.json",
+                "transform": "mean",
+                "plotted_quantity": "rate per condition",
+            }
+        ],
+    }
+    mpath = _write_manifest(tmp_path, manifest)
+    ok, results = _run(
+        _assemble(_default_sections()), mode="generation", figs_root=figs_root, manifest_path=mpath
+    )
+    assert not ok
+    figs = _by_name(results, "manifest-figures")
+    assert not figs.passed and "ratefig" in figs.detail
+
+
+def test_manifest_figure_exact_heading_covered(figs_root, tmp_path):
+    # Exact (case-insensitive) match of the figure title to the ### heading.
+    manifest = {
+        "issue": 999,
+        "conditions": ["baseline", "treatment"],
+        "metrics": ["Agreement rate"],
+        "figures": [
+            {
+                "id": "ratefig",
+                "title": "Rate by Condition",  # exact-match (case-insensitive) of the ### heading
+                "source": "eval_results/issue_999/*.json",
+                "transform": "mean",
+                "plotted_quantity": "rate per condition",
+            }
+        ],
+    }
+    mpath = _write_manifest(tmp_path, manifest)
+    ok, results = _run(
+        _assemble(_default_sections()), mode="generation", figs_root=figs_root, manifest_path=mpath
+    )
+    assert _by_name(results, "manifest-figures").passed
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_manifest_condition_substring_not_covered(figs_root, tmp_path):
+    # The default body mentions "leakage" but not the standalone word "leak";
+    # a planned condition "leak" is a bare-substring hit but not a
+    # word-boundary hit → NOT covered.
+    manifest = {
+        "issue": 999,
+        "conditions": ["leak"],
+        "metrics": ["Agreement rate"],
+        "figures": [],
+    }
+    mpath = _write_manifest(tmp_path, manifest)
+    ok, results = _run(
+        _assemble(_default_sections()), mode="generation", figs_root=figs_root, manifest_path=mpath
+    )
+    assert not ok
+    cond = _by_name(results, "manifest-conditions")
+    assert not cond.passed and "leak" in cond.detail

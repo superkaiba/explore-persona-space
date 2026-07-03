@@ -273,8 +273,12 @@ def _build_table(
     if _nbytes(single) <= shard_bytes or not rows_html:
         return [(f"{prefix}.html", single)], len(records)
 
-    # Overhead of a shard page (empty body, worst-case-length subtitle).
-    overhead = _nbytes(_page(prefix, "part 999/999 · rows 999999-999999", columns, "", footer))
+    # Overhead of a shard page (empty body, worst-case-length subtitle). The
+    # real shard title is f"{prefix} ({sub})" (rendered twice: <title> + <h1>),
+    # so the overhead estimate MUST use that title shape — not the bare prefix —
+    # or a packed shard can exceed --shard-mb by ~2x the subtitle-suffix length.
+    worst_sub = "part 999/999 · rows 999999-999999"
+    overhead = _nbytes(_page(f"{prefix} ({worst_sub})", worst_sub, columns, "", footer))
     budget = shard_bytes - overhead
     groups = _greedy_pack(rows_html, budget if budget > 0 else 1)
 

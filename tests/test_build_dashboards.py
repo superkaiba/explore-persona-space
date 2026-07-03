@@ -208,6 +208,39 @@ def test_no_sharding_when_small(repo: Path, out_dir: Path) -> None:
     assert not list(out_dir.glob("issue3_t_p*.html"))
 
 
+def test_multi_row_shards_never_exceed_shard_cap(repo: Path, out_dir: Path) -> None:
+    # The real shard title is f"{prefix} ({sub})" (rendered in <title> AND
+    # <h1>), so the per-shard overhead estimate must use that title shape — not
+    # the bare prefix — or a tightly packed shard overshoots --shard-mb by ~2x
+    # the subtitle-suffix length. Tiny rows fill each shard close to budget so
+    # the overshoot would manifest; every produced shard page must stay <= cap.
+    src = repo / "data" / "many.jsonl"
+    _write_jsonl(src, [{"i": i} for i in range(2000)])
+    shard_mb = 0.01  # 10_000 bytes
+    rc = _run(
+        [
+            "build",
+            "--issue",
+            "667",
+            "--table",
+            f"t={src}",
+            "--out-dir",
+            str(out_dir),
+            "--shard-mb",
+            str(shard_mb),
+        ]
+    )
+    assert rc == 0
+    shard_bytes = int(shard_mb * 1_000_000)
+    files = _manifest(out_dir, 667)[0]["files"]
+    shards = [f for f in files if "_p" in Path(f).stem]
+    assert len(shards) >= 2  # genuinely sharded, so at least one full shard
+    for f in shards:
+        page = out_dir / Path(f).name
+        size = page.stat().st_size
+        assert size <= shard_bytes, f"{f} is {size} bytes > shard cap {shard_bytes}"
+
+
 # ─── emit-links ──────────────────────────────────────────────────────────
 
 

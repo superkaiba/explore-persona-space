@@ -36,8 +36,20 @@ Mode-specific:
 
 ``--manifest`` (optional, both modes): validates the manifest against
 ``.claude/skills/issue-v2/planned_manifest.schema.json``, then checks every
-planned condition/metric appears somewhere in the report text and every planned
-figure id has a matching ``### `` subsection OR is explicitly marked ``not run``.
+planned condition/metric appears (word-boundary match) in the report text and
+every planned figure id/title EXACT-matches a ``### `` subsection heading OR is
+explicitly marked ``not run`` on the same line.
+
+Verbatim worked examples — fenced code blocks and blockquotes — are DATA, not
+agent assertions (the template mandates them in Methodology). Section-parsing,
+the interpretive-lexicon scan, image-existence, and the duplicate-heading scan
+run on a copy of the body with those lines blanked (line numbers preserved), so
+a ``## `` inside a fence never registers as a section heading and a ``suggests``
+/ ``![x](y)`` inside an example is not flagged. A duplicate top-level required
+``## `` heading FAILs (``duplicate-section``).
+
+Input: exactly one of ``--file <body.md>`` or ``--issue <N>`` (the latter
+resolves ``tasks/<status>/<N>/body.md`` via the task-workflow library).
 
 Exit 0 PASS / 1 FAIL / 2 usage error. Prints one line per check.
 """
@@ -102,6 +114,18 @@ _SCHEMA_PATH = (
 )
 
 
+def _word_match(needle: str, haystack: str) -> bool:
+    r"""Whether ``\b<needle>\b`` occurs in ``haystack``.
+
+    Callers lowercase both sides for case-insensitive matching. Word-boundary,
+    not bare substring, so a planned name that is only a fragment of a longer
+    word in the report (``eval`` inside ``evaluation``) does not count as a hit.
+    """
+    if not needle:
+        return False
+    return re.search(r"\b" + re.escape(needle) + r"\b", haystack) is not None
+
+
 @dataclass
 class CheckResult:
     name: str
@@ -141,6 +165,41 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     if end == -1:
         return {}, text
     return {}, rest[end + len("\n---\n") :]
+
+
+def blank_verbatim(lines: list[str]) -> list[str]:
+    """Return a copy of ``lines`` with fenced-code-block and blockquote lines
+    blanked to ``""`` (line count + numbering preserved).
+
+    Verbatim worked examples — fenced code (```` ``` ```` / ``~~~``, including
+    an info string on the opener) and blockquotes (a leading optionally-indented
+    ``>``) — are DATA, not agent assertions; the template mandates them in
+    Methodology. Section-parsing, the interpretive-lexicon scan, image-existence,
+    and the duplicate-heading scan run on the blanked copy, so a ``## `` inside a
+    fence never registers as a section heading and a ``suggests`` / ``![x](y)``
+    inside a verbatim example is not flagged. An unterminated fence blanks to
+    end-of-document (CommonMark behavior).
+    """
+    out: list[str] = []
+    in_fence = False
+    fence_marker = ""
+    for line in lines:
+        stripped = line.lstrip()
+        if in_fence:
+            out.append("")  # every line inside the fence, incl. the closer
+            if stripped.startswith(fence_marker):
+                in_fence, fence_marker = False, ""
+            continue
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = True
+            fence_marker = "```" if stripped.startswith("```") else "~~~"
+            out.append("")  # blank the opening fence line too
+            continue
+        if stripped.startswith(">"):
+            out.append("")  # blockquote line → verbatim data
+            continue
+        out.append(line)
+    return out
 
 
 def find_h1(lines: list[str]) -> tuple[int, str] | None:
@@ -247,6 +306,28 @@ def check_required_sections(sections: list[Section]) -> list[CheckResult]:
             )
         )
     return results
+
+
+def check_duplicate_sections(lines: list[str]) -> CheckResult:
+    """FAIL if any of the six required ``## `` headings appears more than once.
+
+    Scanned on the fence/blockquote-blanked body, so a required heading string
+    inside a verbatim example does not count. ``section_map`` silently keeps the
+    FIRST occurrence, so a stray duplicate would otherwise slip past the
+    structural checks entirely.
+    """
+    occurrences: dict[str, list[int]] = {}
+    for i, ln in enumerate(lines, 1):
+        header = ln.rstrip()
+        if header in REQUIRED_SECTIONS:
+            occurrences.setdefault(header, []).append(i)
+    dups = {h: ls for h, ls in occurrences.items() if len(ls) > 1}
+    if dups:
+        detail = "; ".join(
+            f"{h} at lines {', '.join(str(x) for x in ls)}" for h, ls in dups.items()
+        )
+        return CheckResult("duplicate-section", False, "duplicate required heading(s): " + detail)
+    return CheckResult("duplicate-section", True, "no duplicate required headings")
 
 
 def _images_in(text: str) -> list[str]:
@@ -424,7 +505,10 @@ def check_manifest(body: str, sections: list[Section], manifest_path: Path) -> l
     low_body = body.lower()
 
     def _coverage(name: str, items: list[str]) -> CheckResult:
-        missing = [it for it in items if it.lower() not in low_body]
+        # Word-boundary match, not bare substring, so a planned name that is
+        # only a fragment of a longer word in the report (``eval`` inside
+        # ``evaluation``) does not falsely count as covered.
+        missing = [it for it in items if not _word_match(it.lower(), low_body)]
         if missing:
             return CheckResult(name, False, "not found in report text: " + ", ".join(missing))
         return CheckResult(name, True, f"all {len(items)} present in report text")
@@ -432,24 +516,25 @@ def check_manifest(body: str, sections: list[Section], manifest_path: Path) -> l
     results.append(_coverage("manifest-conditions", list(manifest.get("conditions", []))))
     results.append(_coverage("manifest-metrics", list(manifest.get("metrics", []))))
 
-    # Figure coverage: each planned figure id needs a matching ### subsection
-    # (id OR title appears in a ### heading) OR is explicitly marked "not run".
-    sub_headings = [
-        ln.strip()[4:].strip()
+    # Figure coverage: a planned figure is covered iff its id OR title
+    # EXACT-matches (case-insensitive, stripped) one of the report's ###
+    # subsection headings, OR the body has an explicit "not run" on the same
+    # line as a word-boundary occurrence of the id/title.
+    heading_set = {
+        ln.strip()[4:].strip().lower()
         for sec in sections
         for ln in sec.content_lines
-        if ln.startswith("### ")
-    ]
-    heading_blob = "\n".join(sub_headings).lower()
+        if ln.startswith("### ") and ln.strip()[4:].strip()
+    }
     body_lines_low = [ln.lower() for ln in body.splitlines()]
     fig_missing: list[str] = []
     for fig in manifest.get("figures", []):
         fid = str(fig.get("id", "")).strip()
         title = str(fig.get("title", "")).strip()
         keys = [k.lower() for k in (fid, title) if k]
-        in_heading = any(k in heading_blob for k in keys)
+        in_heading = any(k in heading_set for k in keys)
         marked_not_run = any(
-            "not run" in ln and any(k in ln for k in keys) for ln in body_lines_low
+            "not run" in ln and any(_word_match(k, ln) for k in keys) for ln in body_lines_low
         )
         if not (in_heading or marked_not_run):
             fig_missing.append(fid or title or "<unnamed figure>")
@@ -486,13 +571,20 @@ def verify_report_text(
         raise ValueError(f"mode must be generation|promote, got {mode!r}")
     _, body = split_frontmatter(raw)
     lines = body.splitlines()
-    sections = parse_sections(lines)
+    # Verbatim worked examples (fenced code + blockquotes) are DATA: blank them
+    # (line numbers preserved) before section-parsing / lexicon / image-existence
+    # / duplicate-heading scans. h1/sentinel + htmlpreview stay on the raw body
+    # (never inside a fence/blockquote in a valid report).
+    blanked_lines = blank_verbatim(lines)
+    blanked_body = "\n".join(blanked_lines)
+    sections = parse_sections(blanked_lines)
 
     results: list[CheckResult] = []
     results.extend(check_h1_and_sentinel(lines))
     results.extend(check_required_sections(sections))
+    results.append(check_duplicate_sections(blanked_lines))
     results.append(check_results_subsections(sections))
-    results.append(check_image_files(body, figures_root))
+    results.append(check_image_files(blanked_body, figures_root))
     results.append(check_htmlpreview(body))
     results.append(check_lexicon(sections))
 
@@ -516,11 +608,17 @@ def _default_figures_root(file_path: Path) -> Path:
     return file_path.resolve().parent
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--file", required=True, help="path to a report body.md to verify")
+    src = parser.add_mutually_exclusive_group(required=True)
+    src.add_argument("--file", help="path to a report body.md to verify")
+    src.add_argument(
+        "--issue",
+        type=int,
+        help="task id; resolves tasks/<status>/<N>/body.md via the task-workflow library",
+    )
     parser.add_argument(
         "--mode", required=True, choices=["generation", "promote"], help="verification mode"
     )
@@ -529,14 +627,32 @@ def main() -> int:
     )
     parser.add_argument(
         "--figures-root",
-        help="root for resolving local image paths (default: the git-repo root of --file)",
+        help="root for resolving local image paths (default: the git-repo root of the body)",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    file_path = Path(args.file)
-    if not file_path.is_file():
-        print(f"verify_report: --file not found: {args.file}", file=sys.stderr)
-        return 2
+    if args.issue is not None:
+        # Resolve via the workflow library — NEVER hand-build tasks/<status>/<N>
+        # (a cwd/worktree-relative path is stale; CLAUDE.md + the enforced
+        # tests/test_no_direct_task_path_construction.py rule).
+        from explore_persona_space.task_workflow import find_task_path
+
+        try:
+            file_path = find_task_path(args.issue) / "body.md"
+        except FileNotFoundError as e:
+            print(f"verify_report: {e}", file=sys.stderr)
+            return 2
+        if not file_path.is_file():
+            print(
+                f"verify_report: body.md not found for issue {args.issue}: {file_path}",
+                file=sys.stderr,
+            )
+            return 2
+    else:
+        file_path = Path(args.file)
+        if not file_path.is_file():
+            print(f"verify_report: --file not found: {args.file}", file=sys.stderr)
+            return 2
     raw = file_path.read_text()
 
     figures_root = (
@@ -553,7 +669,7 @@ def main() -> int:
     overall, results = verify_report_text(
         raw, mode=args.mode, figures_root=figures_root, manifest_path=manifest_path
     )
-    print(f"verify_report — {args.file} (mode={args.mode})")
+    print(f"verify_report — {file_path} (mode={args.mode})")
     for r in results:
         print(r.render())
     print()

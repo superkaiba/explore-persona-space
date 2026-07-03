@@ -147,7 +147,9 @@ are the judgment layer over them.
 uv run python scripts/verify_report.py --issue <N> --mode generation
 ```
 
-Incorporate its output into your verdict. Generation mode asserts the `## TLDR:`
+`--issue <N>` resolves `tasks/<status>/<N>/body.md` via the task-workflow
+library; `--file <body.md>` is the direct-path alternative (exactly one of the
+two is required). Incorporate its output into your verdict. Generation mode asserts the `## TLDR:`
 + `## Next steps:` placeholders are intact and runs the interpretivity / lexicon
 checks on the agent-written sections. A FAIL from the script is a FAIL overall;
 quote the failing check.
