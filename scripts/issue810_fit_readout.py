@@ -90,14 +90,17 @@ from issue810_common import (  # noqa: E402
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
     TF_MARGIN_VALIDATION_BEHAVIORS,
+    UH_SUMMARY_NAMES,
     assert_g1_probe_pool_hash,
     context_ids_from_manifest,
     dump_json,
+    enlarged_summary_names,
     load_json,
     reproducibility_metadata,
     summary_names,
     upload_out_dir,
 )
+from issue810_fit_reconstruction import _expand_rows  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     ridge_predict_loco_centered,
@@ -207,21 +210,53 @@ def _e0_by_context(e0_highm: dict, low_m: dict | None) -> dict[str, dict[str, di
     return out
 
 
-def _summary_matrix(summary, layer_i, kept, free_summaries, pos_summaries, coverage):
-    """(n, H) summary matrix at one layer over the kept ctx_ids (coverage-checked)."""
+def _load_uh_summaries(spec: str) -> tuple[dict, dict]:
+    """Load the compact uh_summaries pack (local path, else an HF data-repo path).
+
+    Returns ``({row: {ctx: (Lc, H) fp32 np}}, {row: {ctx: probe count}})`` — the
+    9 new-row source for the read-out enlarged-axis rerun (plan v11 §4.6 item 5;
+    avoids re-downloading the ~430 MB uh position store on the CPU chain).
+    Fails loud on a non-extended pack.
+    """
+    from huggingface_hub import hf_hub_download
+
+    p = Path(spec)
+    if not p.is_file():
+        p = Path(hf_hub_download(HF_DATA_REPO, spec, repo_type="dataset"))
+    blob = torch.load(p, weights_only=False)
+    if not blob.get("extended_boundary"):
+        raise RuntimeError(f"uh_summaries pack at {spec} lacks extended_boundary provenance")
+    rows = {
+        row: {c: t.float().numpy() for c, t in per_ctx.items()}
+        for row, per_ctx in blob["summaries"].items()
+    }
+    return rows, blob["coverage"]
+
+
+def _summary_matrix(summary, layer_i, kept, free_summaries, pos_summaries, coverage, uh_rows=None):
+    """(n, H) summary matrix at one layer over the kept ctx_ids (coverage-checked).
+
+    Row sources: free recipes (mean/last/maxp) from v0; uh rows from the
+    ``--uh-summaries`` pack when provided; every other position row from the
+    position store. Parent behavior is byte-identical when ``uh_rows`` is None.
+    """
     rows = []
     for c in kept:
         if summary in ("mean", "last", "maxp"):
             rows.append(free_summaries[summary][c][layer_i].numpy())
+        elif uh_rows is not None and summary in uh_rows:
+            rows.append(uh_rows[summary][c][layer_i])
         else:
             rows.append(pos_summaries[c][summary][layer_i])
     return np.stack(rows)
 
 
-def _kept_contexts(summary, ctx_ids, coverage):
+def _kept_contexts(summary, ctx_ids, coverage, uh_cov=None):
     """Contexts with coverage for this summary (free recipes always covered)."""
     if summary in ("mean", "last", "maxp"):
         return list(ctx_ids)
+    if uh_cov is not None and summary in uh_cov:
+        return [c for c in ctx_ids if uh_cov[summary].get(c, 0) > 0]
     return [c for c in ctx_ids if coverage[c].get(summary, 0) > 0]
 
 
@@ -300,6 +335,37 @@ def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def _resolve_rows_and_sources(args, pos_man: dict):
+    """Expand --rows, load the uh pack, and fail loud on missing sources/coverage.
+
+    Returns ``(summaries, uh_rows, uh_cov)``. A requested uh row with NO source
+    (neither the ``--uh-summaries`` pack nor an extended-boundary position
+    store) refuses — never a silent KeyError mid-fit. ``--null-mode full-rerun``
+    additionally requires the FULL 46-row × 28-layer axis (unless --smoke; plan
+    v11 §6 read mode 1 — the enlarged-axis band's denominator).
+    """
+    uh_rows, uh_cov = (None, None)
+    if args.uh_summaries:
+        uh_rows, uh_cov = _load_uh_summaries(args.uh_summaries)
+        logger.info("[phase=load] uh_summaries pack: %d rows", len(uh_rows))
+    summaries = _expand_rows(args.summaries) if args.summaries else summary_names()
+    uh_requested = [s for s in summaries if s in set(UH_SUMMARY_NAMES)]
+    if uh_requested and uh_rows is None and not pos_man.get("extended_boundary"):
+        raise SystemExit(
+            f"rows {uh_requested} requested but no --uh-summaries pack given and the "
+            "position store is not extended-boundary — no source for the new rows"
+        )
+    if args.null_mode == "full-rerun" and not args.smoke:
+        missing = sorted(set(enlarged_summary_names()) - set(summaries))
+        if missing or (args.layers is not None):
+            raise SystemExit(
+                "--null-mode full-rerun requires the FULL 46-row x 28-layer axis "
+                f"(missing rows: {missing[:5]}...; layers subset: {args.layers}) — "
+                "pass --rows all-46 with no --layers (plan v11 §6 read mode 1)"
+            )
+    return summaries, uh_rows, uh_cov
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 DV (b): behavior read-out rho")
     ap.add_argument(
@@ -338,10 +404,42 @@ def main() -> int:
         "eval_results/issue_810/ultrachat-genre-summary-sweep so a g1 run never "
         "clobbers the parent's committed JSONs)",
     )
-    ap.add_argument("--summaries", nargs="*", default=None)
+    ap.add_argument(
+        "--summaries",
+        "--rows",
+        nargs="*",
+        default=None,
+        help="subset of summary rows (default = the parent 37-row set). Accepts the tokens "
+        "'uh-new' (the 9 new rows) and 'all-46' (the enlarged axis). `--rows` is the "
+        "plan-v11 alias.",
+    )
     ap.add_argument("--layers", nargs="*", type=int, default=None)
     ap.add_argument("--behaviors", nargs="*", default=None)
     ap.add_argument("--methods", nargs="*", default=["fixed_rb", "trained_ridge"])
+    ap.add_argument(
+        "--uh-summaries",
+        default=None,
+        help="uh_summaries.pt pack (local path or HF data-repo path) sourcing the 9 new "
+        "rows — the CPU-chain input; without it, uh rows resolve from the position "
+        "store (which must then be the extended-boundary store)",
+    )
+    ap.add_argument(
+        "--null-mode",
+        choices=["per-run", "full-rerun"],
+        default="per-run",
+        help="'per-run' = parent behavior byte-for-bit (per-cell nulls for whatever was "
+        "fit). 'full-rerun' = the plan-v11 read-out enlarged-axis primary path: nulls "
+        "recomputed for EVERY fitted cell (NO --null-join exists on this leg — the "
+        "shared-rng stream makes a join invalid, A5 fact-check) + the enlarged-axis "
+        "max-selected band + the per-behavior two-method conjunction statistic emitted; "
+        "requires the fitted rows to cover the full 46-row axis (unless --smoke).",
+    )
+    ap.add_argument(
+        "--out-suffix",
+        default=None,
+        help="output filename tag: readout_rho_<suffix>.json + null_matrix_readout_"
+        "<suffix>.json (default None = the parent filenames, byte-for-bit)",
+    )
     ap.add_argument("--n-perms", type=int, default=SHUFFLE_NULL_PERMS)
     ap.add_argument(
         "--device",
@@ -413,7 +511,7 @@ def main() -> int:
         )
     e0 = _e0_by_context(e0_highm, low_m)
 
-    summaries = args.summaries or summary_names()
+    summaries, uh_rows, uh_cov = _resolve_rows_and_sources(args, pos_man)
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
     behaviors = _default_behaviors(e0, args)
     rng = np.random.default_rng(SHUFFLE_NULL_SEED)
@@ -437,7 +535,9 @@ def main() -> int:
                 continue
             null_matrix[behavior].setdefault(method, {})
             for summary in summaries:
-                kept = [c for c in _kept_contexts(summary, ctx_ids, coverage) if c in graded]
+                kept = [
+                    c for c in _kept_contexts(summary, ctx_ids, coverage, uh_cov) if c in graded
+                ]
                 if len(kept) < 4:
                     continue
                 y = np.array([graded[c] for c in kept], dtype=np.float64)
@@ -446,7 +546,9 @@ def main() -> int:
                 )  # companion
                 null_matrix[behavior][method].setdefault(summary, {})
                 for li in layers:
-                    X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage)
+                    X = _summary_matrix(
+                        summary, li, kept, free_summaries, pos_summaries, coverage, uh_rows
+                    )
                     # Draw n_perms permutations from the SHARED rng in the SAME
                     # order the serial per-draw loop consumed them (byte-identical
                     # null on a like-seeded rng — the smoke asserts this).
@@ -455,6 +557,11 @@ def main() -> int:
                         # diffmeans is the theory default; report both recipes but
                         # gate the headline on diffmeans (persona-vectors default).
                         r = rb[behavior]["diffmeans"][li].numpy()
+                        if X.shape[1] != r.shape[0]:
+                            # Mixed-model smoke only (0.5B store rows vs 7B r_B):
+                            # the projection is undefined across hidden sizes —
+                            # skip EXPLICITLY. Production shapes always match.
+                            continue
                         pred = _fixed_rb_pred(X, r)
                         # correct null (batched, no re-fit): permute the (E0,
                         # summary) pairing, re-project the SAME pred → re-Spearman.
@@ -505,6 +612,56 @@ def main() -> int:
         rb,
     )
 
+    _write_outputs(
+        args,
+        out_dir,
+        e0_path,
+        ctx_ids,
+        results,
+        null_matrix,
+        conjunction,
+        judge_val,
+        length_control,
+        low_m,
+    )
+    logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
+    return 0
+
+
+def _write_outputs(
+    args,
+    out_dir: Path,
+    e0_path,
+    ctx_ids,
+    results,
+    null_matrix,
+    conjunction,
+    judge_val,
+    length_control,
+    low_m,
+) -> None:
+    """Persist the read-out results + null matrix (+ the full-rerun reductions).
+
+    Enlarged-axis reductions (plan v11 §6 / H4-uh; --null-mode full-rerun): the
+    max-selected band over EVERY fitted cell's freshly recomputed draws + the
+    per-behavior two-method conjunction statistic (max over summaries of min
+    over methods of best-layer ρ, identical selection per draw — the g1
+    conjunction_bands recipe) recomputed over the enlarged summary axis.
+    ``--out-suffix`` retargets the filenames so a uh run never clobbers the
+    parent's committed JSONs.
+    """
+    enlarged = None
+    if args.null_mode == "full-rerun":
+        enlarged = _enlarged_axis_reductions(results, null_matrix, args.n_perms)
+
+    readout_name = (
+        f"readout_rho_{args.out_suffix}.json" if args.out_suffix else "readout_rho_by_summary.json"
+    )
+    null_name = (
+        f"null_matrix_readout_{args.out_suffix}.json"
+        if args.out_suffix
+        else "null_matrix_readout.json"
+    )
     dump_json(
         {
             "dv": "behavior_readout_rho_vs_graded_e0",
@@ -516,15 +673,17 @@ def main() -> int:
             "n_contexts_grid": len(ctx_ids),
             "behaviors_fit": sorted({r["behavior"] for r in results}),
             "methods": args.methods,
+            "null_mode": args.null_mode,
             "low_m_e0_landed": low_m is not None,
             "cells": results,
             "h2_conjunction": conjunction,
+            "enlarged_axis": enlarged,
             "judge_validation": judge_val,
             "length_control": length_control,
             "reproducibility": reproducibility_metadata(),
             "smoke": args.smoke,
         },
-        out_dir / "readout_rho_by_summary.json",
+        out_dir / readout_name,
     )
     dump_json(
         {
@@ -534,16 +693,126 @@ def main() -> int:
             "axes": "behavior -> method -> summary -> layer -> [per-draw rho]",
             "n_perms": args.n_perms,
             "seed": SHUFFLE_NULL_SEED,
+            "null_mode": args.null_mode,
             "readout": null_matrix,
         },
-        out_dir / "null_matrix_readout.json",
+        out_dir / null_name,
     )
     if args.upload_prefix:
         logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
         landed = upload_out_dir(out_dir, args.upload_prefix)
         logger.info("[phase=upload] verified fit-result JSONs under %s/", landed)
-    logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
-    return 0
+
+
+def _conjunction_reductions(results: list[dict], null_matrix: dict, n_perms: int) -> dict:
+    """Per-behavior two-method conjunction statistic + its max-selected band.
+
+    Statistic (the g1 ``conjunction_bands`` recipe, recomputed over THIS run's
+    summary axis): max over summaries of min over methods of best-layer ρ.
+    Null: the IDENTICAL selection applied to each per-draw matrix (best over
+    layers per draw → min over methods → max over summaries). A summary
+    lacking either method (no r_B / mixed-model skip) is excluded from BOTH
+    the observed and the null reduction (selection symmetry preserved).
+    """
+    methods = sorted({r["method"] for r in results})
+    out: dict[str, dict] = {}
+    if len(methods) < 2:
+        return {"note": f"conjunction needs 2 methods; got {methods}", "by_behavior": out}
+    best: dict[tuple, float] = {}
+    for r in results:
+        if r["rho_graded"] is None:
+            continue
+        key = (r["behavior"], r["summary"], r["method"])
+        best[key] = max(best.get(key, -2.0), r["rho_graded"])
+    for beh in sorted({b for (b, _s, _m) in best}):
+        per_summary: dict[str, float] = {}
+        for s in {s for (b, s, _m) in best if b == beh}:
+            vals = [best.get((beh, s, m)) for m in methods]
+            if any(v is None for v in vals):
+                continue
+            per_summary[s] = min(vals)
+        if not per_summary:
+            continue
+        arg = max(per_summary, key=lambda k: per_summary[k])
+        names = sorted(per_summary)
+        mins = None
+        computable = True
+        for m in methods:
+            per_s = null_matrix.get(beh, {}).get(m, {})
+            mats = []
+            for s in names:
+                layer_draws = [
+                    np.asarray(d, dtype=np.float64)
+                    for d in per_s.get(s, {}).values()
+                    if len(d) == n_perms
+                ]
+                if not layer_draws:
+                    computable = False
+                    break
+                mats.append(np.stack(layer_draws).max(axis=0))  # best-over-layers per draw
+            if not computable:
+                break
+            stacked = np.stack(mats)  # (S, draws)
+            mins = stacked if mins is None else np.minimum(mins, stacked)
+        band = None
+        if computable and mins is not None:
+            conj_draws = mins.max(axis=0)  # (draws,)
+            band = float(np.percentile(conj_draws, 97.5))
+        stat = per_summary[arg]
+        out[beh] = {
+            "statistic": stat,
+            "arg_summary": arg,
+            "band_97_5": band,
+            "verdict": (
+                "not_computable"
+                if band is None
+                else ("clears_band" if stat > band else "within_band")
+            ),
+            "per_summary": per_summary,
+        }
+    return {"methods": methods, "by_behavior": out}
+
+
+def _enlarged_axis_reductions(results: list[dict], null_matrix: dict, n_perms: int) -> dict:
+    """Enlarged-axis max-selected band + conjunction (plan v11 §6, full-rerun mode).
+
+    Band: per-draw max over EVERY fitted (behavior × method × summary × layer)
+    cell's freshly recomputed null draws (the read-out leg NEVER joins — the
+    shared-rng stream bars it, A5) → 97.5th percentile, vs the best observed ρ.
+    """
+    all_draws = [
+        np.asarray(draws, dtype=np.float64)
+        for per_m in null_matrix.values()
+        for per_s in per_m.values()
+        for per_l in per_s.values()
+        for draws in per_l.values()
+        if len(draws) == n_perms
+    ]
+    band = None
+    if all_draws:
+        band = float(np.percentile(np.stack(all_draws).max(axis=0), 97.5))
+    obs_cells = [
+        (r["behavior"], r["method"], r["summary"], r["layer"], r["rho_graded"])
+        for r in results
+        if r["rho_graded"] is not None
+    ]
+    obs = max((c[4] for c in obs_cells), default=None)
+    obs_arg = max(obs_cells, key=lambda c: c[4]) if obs_cells else None
+    verdict = (
+        "not_computable"
+        if (obs is None or band is None)
+        else ("clears_band" if obs > band else "within_band")
+    )
+    return {
+        "max_selected": {
+            "statistic": obs,
+            "arg_cell": list(obs_arg) if obs_arg else None,
+            "band_97_5": band,
+            "n_cells": len(all_draws),
+            "verdict": verdict,
+        },
+        "conjunction": _conjunction_reductions(results, null_matrix, n_perms),
+    }
 
 
 def _h2_conjunction(results: list[dict]) -> dict:
