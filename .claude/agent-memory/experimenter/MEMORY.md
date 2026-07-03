@@ -100,3 +100,4 @@
 ## Project results (durable)
 
 - [Truthification EM facts](project_truthification_em.md) — 97.3% preservation off-domain (n=3) but domain-GATED: domain-matched framing collapses all truthified arms to 14-15 alignment
+- [MooseFS FUSE wedge on .venv imports](feedback_moosefs_fuse_wedge_venv_import.md) — silent launch hang (zero stderr, wchan=request_wait_answer, GPU 0 MiB) = wedged /workspace FUSE mount; timeout-bounded import probe discriminates; kill+relaunch never clears it — swap the pod (#779)
