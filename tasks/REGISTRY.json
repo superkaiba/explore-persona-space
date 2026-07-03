@@ -6128,8 +6128,8 @@
     "930": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/930",
-      "status": "reviewing",
+      "path": "tasks/completed/930",
+      "status": "completed",
       "title": "workflow-fix: lint check for reserved [phase=done] multi-emission"
     },
     "931": {
