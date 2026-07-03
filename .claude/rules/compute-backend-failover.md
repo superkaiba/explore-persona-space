@@ -46,9 +46,21 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 1. `crash_report.json` — exit code + timestamp + run identity;
 2. `workload.log` — the workload log (traceback / stderr), `$EPS_LOG_PATH`;
-3. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
+3. `worker_logs/<relpath>` (#885) — every regular file under
+   `$WORKLOAD_ROOT/logs/` (fan-out per-worker logs carrying the REAL
+   traceback; the canonical `workload.log` ends at the fan-out line — the
+   #779 loss class, two ~30-min manual boot-disk detaches on 2026-07-02),
+   newest-first by mtime, per-file tail cap `EPS_PERSIST_LOG_FILE_CAP_BYTES`
+   (default 5 MiB — the traceback is at the END of a log, so an oversized
+   file is TAILED at stage time, never skipped wholesale), file-count bound
+   `EPS_PERSIST_LOG_MAX_FILES` (default 40; `< 1` is a loud-SKIP disable),
+   canonical-log dedup skip, staged into `/tmp/eps-worker-logs` and uploaded
+   as ONE `upload_folder` commit — per-file `upload_file` loops are banned
+   on this large repo (the #664 504-storm gotcha). Uploaded AFTER the
+   canonical `workload.log`, BEFORE the partial dirs (small-first);
+4. `eval_results_issue_<N>/` — the partial `eval_results/issue_<N>/` the
    workload wrote before crashing;
-4. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
+5. `data_issue_<N>/` + `data_issue<N>/` (#854) — working-dir partials under
    BOTH `data/issue_<N>/` and `data/issue<N>/` naming conventions (the #825
    loss class: `data/issue_825/track_s.jsonl` was structurally outside the
    old eval_results-only sweep). Re-downloadable `hf_dl/` / `g*_dl/` /
@@ -56,14 +68,14 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
    an empty-after-excludes dir SKIPs; a per-dir byte cap (default 2 GiB,
    env `EPS_PERSIST_DIR_CAP_BYTES`) SKIPs an oversized dir loudly rather
    than burning the 300s budget;
-5. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
+6. `workload_<utc-ts>.log` (#854) — a per-crash timestamped copy of the
    workload log, uploaded AFTER the partial dirs (small-first ordering; the
    canonical `workload.log` already landed the traceback early). The
    canonical `crash_report.json` / `workload.log` names are OVERWRITTEN by
    a same-attempt re-crash (run-3 overwrote run-2's log on #825) — prior
    crashes' canonical copies stay recoverable via the HF repo's git
    history; the timestamped copies accumulate per crash;
-6. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
+7. `crash_persist_transcript.log` (#854) — the `[crash-persist]` audit
    lines, uploaded as the FINAL step. Its presence proves the persist ran
    to completion with every skip recorded; its ABSENCE proves a killed
    persist — the durable skip-vs-kill discriminator (the serial console is
@@ -71,10 +83,15 @@ HF data repo under `issue<N>_partial/<attempt_id>/`:
 
 **Sweep scope (explicit):** the partial sweep covers exactly the three
 named directories above (`eval_results/issue_<N>/`, `data/issue_<N>/`,
-`data/issue<N>/`) — it is NOT universal artifact discovery (e.g.
-`figures/issue_*`, checkpoints, `ood_eval_results/` are not swept). A
-workload writing partials elsewhere must place them under a swept dir or
-upload them itself.
+`data/issue<N>/`) plus the `$WORKLOAD_ROOT/logs/` worker-log tree (#885) —
+still NOT universal artifact discovery (e.g. `figures/issue_*`,
+checkpoints, `ood_eval_results/` are not swept). Worker logs are swept
+only when they land under `$WORKLOAD_ROOT/logs/` (relative `logs/…` or
+`$REPO_ROOT/logs/…` on the workload-cmd branch, where the startup script
+exports `REPO_ROOT="$WORKLOAD_ROOT"` — #641); absolute
+`<vm_scratch_dir>/logs` paths are not swept — place dispatcher worker logs
+under the workload-root `logs/` convention. A workload writing partials
+elsewhere must place them under a swept dir or upload them itself.
 
 Discipline (all load-bearing — the trap must never delay the poweroff that
 bounds billing):
@@ -82,7 +99,10 @@ bounds billing):
 - **Crash-only safety net.** The workload's own HF/WandB upload paths stay
   the AUTHORITATIVE artifact route for a clean run; the EXIT-trap upload
   fires only on the rc != 0 branch (the clean-exit path keeps the VM alive
-  for the success-sentinel scp + the workload already uploaded).
+  for the success-sentinel scp — bounded, as of #935, by the done-grace
+  self-poweroff window (default 90 min,
+  `EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`), whose expiry persist targets the
+  SEPARATE `issue<N>_done/` prefix — + the workload already uploaded).
 - **Fully guarded + time-bounded.** Early-returns without
   `EPS_HF_DATA_REPO` / `HF_TOKEN` (early-boot crash) — LOUDLY, with a
   `[crash-persist] SKIP-ALL` serial line (#854; a silent return is
@@ -91,7 +111,10 @@ bounds billing):
   strand the `shutdown`.
 - **Eager bounded serial streaming (#854).** The persist's output reaches
   fd 3 (the serial console) line-by-line AS IT HAPPENS via a pure-bash
-  reader (2000-char line cap, 60-line print cap) — the old `| cut | tail`
+  reader (2000-char line cap, 120-line print cap — raised 60 → 120 at #885:
+  the worker-logs sweep's worst case of ~40 staging TAILED/SKIP lines + a
+  dropped-count + 2 folder-upload lines on top of ~16 pre-existing persist
+  lines sat right AT the old cap) — the old `| cut | tail`
   pipe buffered until EOF, so a killed/skipped persist left zero evidence.
   The reader keeps READING to EOF after the print cap (an early pipe close
   would SIGPIPE-kill the uploader mid-upload); every upload / failure /
@@ -132,10 +155,10 @@ looked only in `eval_results/issue_<N>/`, so `data/issue_825/` was
 structurally invisible and skipped without a log line, and the
 end-buffered `| cut | tail` output made the silent skip indistinguishable
 from a poweroff race. No code path could have uploaded `data/issue_825/`
-regardless of timing. Hence the #854 fix set: coverage (item 4), loud
+regardless of timing. Hence the #854 fix set: coverage (item 5), loud
 skips + eager streaming, the trap-entry watchdog reap (closing the one
 other in-guest poweroff actor in principle), and the timestamped +
-transcript artifacts (items 5-6).
+transcript artifacts (items 6-7).
 
 **Snapshot pin.** The EXIT-trap preamble is shared, so any change to it
 alters the hydra-branch render and breaks the byte-identity snapshot test
@@ -389,6 +412,57 @@ recognizes — is a pending `kind: infra` follow-up; until it lands the
 recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
+
+### Gate-park zombie — RUNNING + terminal `eps/phase` (#908/#935)
+
+A GCP workload that exits CLEANLY at a blocking gate (or finishes) leaves
+the VM RUNNING only within the bounded #935 done-grace window (default
+90 min, `EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; sentinel draining is why it
+stays up at all — only a crash powers off immediately). Three guards close
+the former unbounded leak (#763: an A100-80 idled ~40 min post-gate, then
+the next dispatch silently no-op-reconnected to the zombie):
+(0) BOUND (in-VM, #935) — the done-grace self-poweroff in the startup
+script's success tail: a countdown that aborts on the operator keepalive
+file (`/workspace/logs/issue-<N>-keepalive`) or an `eps/phase` re-publish
+(a sanctioned same-VM relaunch), best-effort persists the UNDRAINED
+sentinel set to HF `issue<N>_done/<attempt_id>/` at expiry (one retry;
+`eps/done_persist=ok|failed` breadcrumb on a SEPARATE key), then powers
+off UNCONDITIONALLY. This is the primary billing bound when every actor
+below never runs (dead orchestrator/poller). A TERMINATED+`eps/phase=done`
+instance polls as `status=done` / `workload_done_self_poweroff` (a
+SUCCESSFUL run, never a crash); finalize then needs
+`--skip-confirm-artifacts`.
+(1) PRIMARY (faster) — `/issue` Step 6d.4 gate handlers tear the instance
+down via `dispatch_issue.py finalize --skip-confirm-artifacts` after the
+sentinel drain, split by gate class: PARK-mode gates finalize BEFORE the
+park (never through the user-wait window); auto-resolving gates finalize
+after resolution, BEFORE any off-pod phase or the fresh tail dispatch.
+Never wait out the grace — the in-VM bound is the dead-orchestrator
+fallback, not the plan.
+(2) BACKSTOP (next launch) — `gcp.reconnect_or_none` refuses a RUNNING
+instance whose
+`eps/phase` ∈ {done, failed, wedged} (`_ZOMBIE_GUEST_PHASES`) and
+`_stale_named_instance_or_none` returns it as deletable, so the next
+launch reclaims + creates fresh instead of silently reconnecting. The
+skip/delete sets are pinned identical (`tests/test_gcp_backend.py`, the
+#632 invariant); a guest-attribute probe failure raises `GcpProbeError`
+(never a reconnect, never a delete — the #535 discipline). Relaunch
+contract (the #491 SSH-relaunch recipe in `.claude/rules/gotchas.md`): a
+manual same-VM relaunch MUST re-publish `eps/phase=workload` BEFORE
+resuming work, or the zombie predicates read the active relaunch as
+terminal and the next dispatch reclaims it — and, as of #935, a relaunch
+on a VM whose first workload published `done` must re-publish within the
+done-grace window (or touch the keepalive file), else the in-VM countdown
+powers the VM off at expiry. The #667 NON-terminal
+frozen-phase gap above is UNCHANGED — a hung VM with `eps/phase=workload`
+still needs the manual pivot (the done-grace countdown never arms there:
+the success tail is never reached).
+
+**Manual-pivot runbook line (#909):** a manual RunPod pivot that carries
+`--workload-cmd` must ALSO pass `--execute-workload` — without it the launch
+is provision-only (the pod boots, nothing runs) and the JSON carries
+`workload_executed: false`; the alternative executor is dispatching the
+experimenter on the provisioned pod (#909).
 
 ### CPU intents: cheap CPU lanes + the scoped #677 terminal (#747)
 

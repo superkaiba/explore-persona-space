@@ -389,12 +389,18 @@ both reviewers are graded against the same standard. Read
   Copy the trigger + the three shapes + the tag + the sub-check in full so
   Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
   ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
-- "Step 0.68: Named-helper adherence check" (`type:experiment` only) —
-  INCLUDING the ::fn grep-for-import-and-call requirement, the
-  slower-sibling-substitution → Major substantive rule, and the N/A carve-out
-  (no ::fn-level helper named). Copy in full so Codex never re-derives a
-  narrower check (incident #823: round-1 plan-adherence blessed the slow
-  import while the body named the fast twin).
+- "Step 0.68: Named-helper adherence check" (`type:experiment` only;
+  hollow-gate sub-check: any diff type) — INCLUDING the ::fn
+  grep-for-import-and-call requirement, the slower-sibling-substitution →
+  Major substantive rule, the hollow-verification-gate sub-check (a
+  `--verify-X` / equivalence gate must assert on the function the entrypoint
+  actually dispatches; fires for any diff type even when the named-helper
+  trigger is N/A; blocker tag `hollow-verification-gate`, SUBSTANTIVE — never
+  stripped by Step 5c-bis; incident #779: a green `--verify-vectorized` gated
+  an unused helper while the live ridge hot loop ran unverified), and the N/A
+  carve-out (no ::fn-level helper named). Copy in full so Codex never
+  re-derives a narrower check (incident #823: round-1 plan-adherence blessed
+  the slow import while the body named the fast twin).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
@@ -495,6 +501,21 @@ both reviewers are graded against the same standard. Read
   Codex never re-derives a narrower check (incident #653 r8). Without this
   in the prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
 
+**Workflow v2 addendum (`workflow: v2` tasks only).** Detect the workflow via
+`task.py view <N> --json | jq -r '.frontmatter.workflow // "v1"'`. On a `v2` task
+the Claude implementation panel is three agents — `code-correctness-critic`,
+`plan-adherence-critic`, and `efficiency-critic` (implementation mode) — but carries
+ONLY ONE Codex twin: you. So for a v2 task your single composed prompt is a COMBINED
+correctness + efficiency review: ALSO read `.claude/agents/efficiency-critic.md`
+§ "IMPLEMENTATION MODE" and inline its 8 checks (compute-shape-vs-dispatcher + the
+work-conserving schedule sub-check; batched inner loops + named-helper adherence;
+hollow-verification-gate; API via `api_dispatch.py`; device routing / thread caps;
+compute-throughput anti-patterns; long-loop restartability) alongside the
+code-reviewer.md sections above — the `compute-shape-mismatch` /
+`hollow-verification-gate` / `substantive` tags are already in the Blocker-tags
+line. On a v1 task inline the code-reviewer.md rubric alone (its Steps 0.67 / 0.68 /
+3.6 already carry the efficiency checks, which you inline).
+
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; RUNNING tests is the Claude
 reviewer's responsibility. (Step 4.5 above is a separate test-PRESENCE
@@ -580,7 +601,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>

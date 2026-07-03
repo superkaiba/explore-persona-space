@@ -41,6 +41,16 @@ schedule "ridge per fold × layer × arm" for this to apply — a serial per-cel
 full factorization is the default implementation unless the plan states the
 factorization is shared/batched (#823).
 
+**And the same law covers per-item SERIALIZATION / per-file-upload loops** —
+when per-item IO (client-side compression, `savez_compressed`, a per-file Hub
+commit) rivals or dominates the item's compute, write the cheap format per
+item and compress/upload out-of-band or batched, and benchmark one
+production-shape item's serialization wall-time at plan/gate time (#813:
+`savez_compressed` 103.8 s vs plain `savez` 1.2 s per file at a 1.29× ratio —
+65% of row wall-time; implementation-side rule: `.claude/rules/code-style.md`
+§ Compute-throughput discipline; plan-side recipe:
+`.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing).
+
 ## The diagnostic signature
 
 - The job runs at high `%CPU` (many cores) but makes little progress, with a

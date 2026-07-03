@@ -471,8 +471,10 @@ Two checks:
 a test or smoke that regenerates files under `eval_results/` /
 `figures/`, afterwards run
 `git status --porcelain -- eval_results/ figures/`, restore the committed
-artifacts YOUR OWN command modified (`git checkout -- <paths>` scoped to
-those files, never a blanket revert) and delete the untracked outputs it
+artifacts YOUR OWN command modified
+(`git -C <tree-root> checkout -- <paths>` — the `-C` both names the tree
+deliberately and passes the repo-root guard (#897) — never a blanket
+revert) and delete the untracked outputs it
 left; leaving them dirty plants the clobber for the next explicit-path
 commit (#722 instance 2 was exactly this). Binds BOTH ensemble
 reviewers (rides into the Codex twin via the inlined Step 0.6 rubric).
@@ -492,8 +494,9 @@ final sentinel write, via ANY of the three accepted call shapes:
 3. a batched `HfApi.create_commit(repo_type="dataset")` whose
    `CommitOperationAdd` ops target the canonical
    `issue<N>_<slug>/raw_completions/{condition}_seed{S}.json` paths, with
-   post-commit Hub-side verification (e.g. per-prefix `list_repo_files`
-   counts) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
+   post-commit Hub-side verification (e.g. per-prefix counts via scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
    throttle (#591) the batched shape is PREFERABLE to the per-file loop
    for large file counts — one commit instead of N. Do NOT FAIL an
    implementation for batching its uploads (incident #606: a functionally
@@ -739,7 +742,7 @@ traits one-at-a-time on an 8×H100 pod (~4-5h at 1/8 util) — a degenerate
 single-worker schedule on a multi-GPU pod, in scope of this sub-check even
 when the plan's §9 declared no DP shape.
 
-### Step 0.68: Named-helper adherence check (`type:experiment` only)
+### Step 0.68: Named-helper adherence check (`type:experiment` only; hollow-gate sub-check: any diff type)
 
 For each helper the task body's reuse map or the approved plan (§4 pseudocode
 / §10 Reproducibility Card / §11) names by `module::fn` or file-path
@@ -759,6 +762,31 @@ OR a documented substitution. Record `Step 0.68: N/A — no ::fn-level helper
 named` when neither body nor plan names any function/file-path-level helper
 (module-level "reuse #M's pipeline" claims are the consistency-checker's
 plan-time check, not this one).
+
+**Hollow-verification-gate sub-check.** Whenever the diff carries or invokes
+a verification / equivalence / vectorization gate (a `--verify-X` flag, an
+`assert_*_equivalence` / `assert_matches_reference`-style self-check), or
+modifies the dispatch path of a stage guarded by such a gate, confirm the
+GATED function is the one the entrypoint actually dispatches on the live
+path: trace flag → gate call → gated callee, then grep the dispatch path for
+that same callee — object identity (`gated_fn is dispatched_fn`) OR
+`__module__` + `__qualname__` match (a bare `__qualname__` match
+false-verifies a same-name wrong-module sibling); for grep evidence, quote
+both the import source and the call site proving the same object is
+dispatched. A gate asserting on an unused sibling is a hollow gate — a
+substantive finding at Major severity, blocker tag `hollow-verification-gate`
+(SUBSTANTIVE, never `marker-shape` / `smoke-run-missing` / `git-provenance`,
+never stripped by Step 5c-bis): its green PASS launders an unverified hot
+loop as verified (incident #779: `--verify-vectorized` gated the unused
+`vectorized_mlp_skill.assert_matches_reference()` while the dispatched ridge
+hot loop — ~17k fits, 18-20h — had zero verification coverage; the launch
+note claimed "vectorized" and rounds 6/7 PASSed). This sub-check fires
+whenever such a gate is present — even when the named-helper trigger above is
+otherwise N/A, and for any diff type, not only `type:experiment` (same
+pattern as Step 0.67's work-conserving sub-check: the parent gate's N/A does
+not close it). Record the gate→dispatch trace (gated fn, dispatched fn,
+evidence `file.py:LINE`) or `hollow-gate sub-check: N/A — no verification
+gate in diff`.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
@@ -1133,7 +1161,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
