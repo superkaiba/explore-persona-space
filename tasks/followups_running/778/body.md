@@ -1,7 +1,7 @@
 ---
 title: On Qwen2.5-7B, a persona vector predicts trait expression better than trait-agnostic
   random directions — family-wise significant for evil and sycophancy monitoring,
-  absent for hallucination at the paper's fixed layer (MODERATE confidence)
+  unresolved for hallucination at the paper's fixed layer (MODERATE confidence)
 kind: experiment
 backend: runpod
 tags:
