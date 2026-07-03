@@ -82,13 +82,65 @@ log_phase stage1 "start"
 uv run python scripts/issue841_scaling_stage1.py $SMOKE_S1
 
 # ── plots ────────────────────────────────────────────────────────────────────────
+# FAIL-LOUD (no `|| true` swallow): a plot failure must abort BEFORE the upload +
+# sentinel, so the run never reports success with the required hero / per-unit figures
+# missing (the analyzer would otherwise build the body without them). Plots run AFTER the
+# result JSONs are checkpointed, so a loud abort here loses nothing already on disk.
 log_phase plots "start"
-uv run python scripts/issue841_scaling_plots.py || true
+uv run python scripts/issue841_scaling_plots.py
+
+# ── upload results + figures (FAIL-LOUD, overflow-aware; skip in smoke) ────────────
+# att-7 completed all phases cleanly but the small result artifacts (the 3 stage JSONs,
+# scaling_projections.npz, the plot PNGs) lived only on the boot disk and were destroyed
+# by the instance's clean-exit DELETE — the capture shards + per-n maps were already safe
+# on the overflow repo. This phase persists them BEFORE the sentinel: the stage JSONs +
+# figure PNGs ride the non-LFS canonical path (open over the public-LFS quota 403), and the
+# >10 MB scaling_projections.npz routes to the PRIVATE overflow repo via the SAME split-LFS
+# helper the ridge/MLP maps use (so a public-LFS quota 403 cannot kill the run), leaving a
+# load-bearing OVERFLOW_POINTER.json on the canonical repo. FAIL-LOUD: no `||` swallow — under
+# `set -e` a failed / unverified upload aborts BEFORE the sentinel + [phase=done], so a silent
+# artifact loss cannot happen (the result JSONs are separately git-committed on the branch).
+UPLOAD_STATUS="skipped-smoke"
+if [ "${EPM_I841S_SMOKE:-0}" != "1" ]; then
+  log_phase upload "start (results JSONs + figures → canonical issue841_scaling/{results,figures}/; npz → PRIVATE overflow)"
+  uv run python -c "
+import sys
+sys.path.insert(0, 'src'); sys.path.insert(0, 'scripts')
+from pathlib import Path
+from explore_persona_space.orchestrate.env import load_dotenv
+load_dotenv()
+from huggingface_hub import list_repo_files
+import issue841_scaling_common as S
+# 1. results dir: 3 stage JSONs -> canonical public (non-LFS); scaling_projections.npz
+#    (>10 MB, LFS) -> PRIVATE overflow + load-bearing OVERFLOW_POINTER.json on canonical.
+res_dir = S.EVAL_SCALING_DIR
+assert res_dir.is_dir(), f'results dir missing: {res_dir}'
+res_dev = S.upload_split_lfs_to_overflow(res_dir, 'issue841_scaling/results', lfs_glob='*.npz')
+# 2. figures: PNG/PDF/meta all ride the non-LFS canonical path (lfs_glob matches none).
+fig_dir = Path('figures/issue_841/scaling-capture')
+assert fig_dir.is_dir(), f'figures dir missing (plots produced no figures): {fig_dir}'
+S.upload_split_lfs_to_overflow(fig_dir, 'issue841_scaling/figures', lfs_glob='*.npz')
+# 3. verify-after-upload against FRESH listings (list + assert expected filenames present).
+canon, ov = res_dev['canonical_repo'], res_dev['overflow_repo']
+canon_files = set(list_repo_files(canon, repo_type='dataset'))
+for name in ('stage0_scaling.json', 'stage1_scaling.json', 'transport_fidelity_scaling.json'):
+    dest = f'issue841_scaling/results/{name}'
+    assert dest in canon_files, f'result JSON missing on {canon} after upload: {dest}'
+ov_files = set(list_repo_files(ov, repo_type='dataset'))
+assert 'issue841_scaling/results/scaling_projections.npz' in ov_files, \
+    f'npz missing on overflow {ov} after upload'
+figs = [f for f in canon_files if f.startswith('issue841_scaling/figures/') and f.endswith('.png')]
+assert figs, f'no figure PNGs on {canon} under issue841_scaling/figures/ after upload'
+print('[upload] scaling results + figures uploaded + verified:',
+      'JSONs+figs ->', canon, '; npz ->', ov, '; n_figs=', len(figs))
+"
+  UPLOAD_STATUS="uploaded"
+fi
 
 # ── end-of-run sentinel + terminal phase line ────────────────────────────────────
 SENTINEL="$LOGS_DIR/issue-841-scaling-$(date +%s).json"
-uv run python -c "
-import json, sys
+UPLOAD_STATUS="$UPLOAD_STATUS" uv run python -c "
+import json, os, sys
 json.dump({
   'sentinel_schema_version': 1,
   'kind': 'epm:results',
@@ -96,14 +148,18 @@ json.dump({
   'task_id': 841,
   'note': json.dumps({
     'followup_label': 'scaling-capture',
-    'phases': ['capture', 'stage0', 'stage1', 'plots'],
+    'phases': ['capture', 'stage0', 'stage1', 'plots', 'upload'],
     'artifacts': {
       'stage0': 'eval_results/issue_841/scaling-capture/stage0_scaling.json',
       'stage1': 'eval_results/issue_841/scaling-capture/stage1_scaling.json',
       'fidelity': 'eval_results/issue_841/scaling-capture/transport_fidelity_scaling.json',
       'capture_hf': 'issue841_scaling/cx_last_shards/',
       'ridge_maps_hf': 'issue841_scaling/ridge_maps_n*/',
+      'results_hf': 'issue841_scaling/results/ (stage JSONs canonical; scaling_projections.npz '
+                    '→ private overflow + OVERFLOW_POINTER.json on canonical)',
+      'figures_hf': 'issue841_scaling/figures/ (plot PNGs, canonical)',
     },
+    'results_upload': os.environ.get('UPLOAD_STATUS', 'unknown'),
     'overflow_routing': {
       'overflow_repo': 'superkaiba1/explore-persona-space-overflow',
       'reason': 'public LFS quota 403 (#541/#552 LFS wall)',
@@ -115,4 +171,4 @@ json.dump({
 }, open(sys.argv[1], 'w'), indent=2)
 " "$SENTINEL"
 
-log_phase done "issue-841 scaling-capture pod phases complete (sentinel: $SENTINEL)"
+log_phase done "issue-841 scaling-capture pod phases complete (sentinel: $SENTINEL, upload=$UPLOAD_STATUS)"

@@ -120,7 +120,43 @@ api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(pointer, indent=2).encode(
                 repo_type='dataset')
 print('[upload] state-dicts ->', DEFAULT_OVERFLOW_REPO, '(private, dataset)', present,
       '; pointer ->', DEFAULT_DATASET_REPO, sub + '/OVERFLOW_POINTER.json')
-" "$OUT_DIR"
+# 3. result JSONs (non-LFS) -> canonical public results/; the projections npz (>10 MB, LFS)
+#    -> PRIVATE overflow results/ + a load-bearing OVERFLOW_POINTER.json for that prefix.
+#    (att-7-class gap: the stage JSONs + npz + figures lived only on the boot disk and were
+#    lost to the instance's clean-exit DELETE; only the .pt state-dicts had been persisted.)
+res_sub = sub + '/results'
+api.upload_folder(folder_path=out_dir, path_in_repo=res_sub, repo_id=DEFAULT_DATASET_REPO,
+                  repo_type='dataset', allow_patterns=['*.json'])
+api.upload_folder(folder_path=out_dir, path_in_repo=res_sub, repo_id=DEFAULT_OVERFLOW_REPO,
+                  repo_type='dataset', allow_patterns=['*.npz'])
+res_pointer = {'overflow_repo': DEFAULT_OVERFLOW_REPO, 'overflow_repo_type': 'dataset',
+               'path_in_repo': res_sub, 'files': ['gru_source_only_projections.npz'],
+               'ts': time.time(),
+               'reason': 'projections npz (LFS >10MB) rerouted to the private overflow repo; '
+                         'public-LFS quota 403 live'}
+api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(res_pointer, indent=2).encode('utf-8')),
+                repo_id=DEFAULT_DATASET_REPO, path_in_repo=res_sub + '/OVERFLOW_POINTER.json',
+                repo_type='dataset')
+# 4. figures (PNG/PDF, non-LFS) -> canonical public figures/.
+fig_root = os.path.join(sys.argv[2], 'issue_841/gru_source_only')
+assert os.path.isdir(fig_root), f'figures dir missing (plots produced no figures): {fig_root}'
+api.upload_folder(folder_path=fig_root, path_in_repo=sub + '/figures', repo_id=DEFAULT_DATASET_REPO,
+                  repo_type='dataset', allow_patterns=['*.png', '*.pdf'])
+# 5. verify-after-upload against FRESH listings (list + assert expected filenames present).
+canon_files = set(list_repo_files(DEFAULT_DATASET_REPO, repo_type='dataset'))
+for name in ('stage0_gru_source_only.json', 'stage1_gru_source_only.json',
+             'retention_gru_source_only.json', 'transport_fidelity_gru_source_only.json'):
+    dest = res_sub + '/' + name
+    assert dest in canon_files, f'result JSON missing on {DEFAULT_DATASET_REPO} after upload: {dest}'
+ov_files = set(list_repo_files(DEFAULT_OVERFLOW_REPO, repo_type='dataset'))
+assert res_sub + '/gru_source_only_projections.npz' in ov_files, \
+    f'npz missing on overflow {DEFAULT_OVERFLOW_REPO} after upload'
+gru_figs = [f for f in canon_files if f.startswith(sub + '/figures/') and f.endswith('.png')]
+assert gru_figs, f'no figure PNGs on {DEFAULT_DATASET_REPO} under {sub}/figures/ after upload'
+print('[upload] results ->', DEFAULT_DATASET_REPO, res_sub, '(JSONs) + npz ->',
+      DEFAULT_OVERFLOW_REPO, '; figures ->', DEFAULT_DATASET_REPO, sub + '/figures/',
+      '; n_figs=', len(gru_figs))
+" "$OUT_DIR" "$FIG_DIR"
   UPLOAD_STATUS="overflow-private"
 fi
 
@@ -145,6 +181,9 @@ json.dump({
       'state_dicts_hf': 'PRIVATE overflow superkaiba1/explore-persona-space-overflow '
                         '(dataset): issue841_gru_source_only/gru_source_only_{raw,rmsnorm}.pt; '
                         'pointer: <data-repo>/issue841_gru_source_only/OVERFLOW_POINTER.json',
+      'results_hf': 'issue841_gru_source_only/results/ (stage JSONs canonical; '
+                    'gru_source_only_projections.npz → private overflow + OVERFLOW_POINTER.json)',
+      'figures_hf': 'issue841_gru_source_only/figures/ (plot PNGs, canonical)',
     },
     'state_dict_upload': os.environ['UPLOAD_STATUS'],
     'reproducibility_card': 'N/A — forward-pass-free source-only-GRU refit over cached #779 '
