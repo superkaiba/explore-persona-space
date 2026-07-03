@@ -51,6 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sys
 import time
 from pathlib import Path
@@ -124,21 +125,71 @@ def _load_cell_json(path: Path) -> dict | None:
     return obj if isinstance(obj, dict) else None
 
 
+def _null_regime_matches(null: dict, n_resamples: int, n_refit_pairs: int) -> bool:
+    """True iff the loaded null was produced under the CURRENT output-affecting regime.
+
+    Keys the resume decision on EVERY output-affecting arg the null band depends on —
+    ``--n-null-resamples`` and ``--null-refit-pairs`` (#722-r3: a resume that ignores an
+    output-affecting arg silently reuses wrong cached rows). A stale smoke/debug null
+    (fewer draws or a different refit-pair count) is REJECTED so the cell recomputes
+    rather than corrupting summary.json under the current run's metadata.
+
+    Degenerate nulls (``note`` present AND ``n_over_floor_resamples_used == 0``) encode a
+    STRUCTURAL property of the cell (too few questions / every resample degenerate) — not
+    a scale choice — so both regime checks pass vacuously: no refits contributed and the
+    resample count is not a comparable quantity for a cell that produced no usable band.
+
+    ``n_refit_pairs`` check: the loaded value must equal ``n_refit_pairs``; a null MISSING
+    that key (a legacy full-success artifact predating the regime stamp) FAILS the check
+    (recompute) — refit pairs materially shape the floor.
+
+    Requested-resamples check: if ``n_null_resamples_requested`` is stamped, it must equal
+    ``n_resamples``. If UNSTAMPED (a legacy production full-success artifact — e.g. the
+    em/generic null the live run is writing right now), accept iff
+    ``n_resamples_used >= ceil(0.9 * n_resamples)`` — a production-scale null loses <10%
+    of its draws to degenerate resamples, while a smoke-scale null (requested 5-50) can
+    never clear the floor against a production ``n_resamples`` (e.g. 1000).
+    """
+    is_degenerate = "note" in null and null.get("n_over_floor_resamples_used", 0) == 0
+    if is_degenerate:
+        return True
+    # refit-pairs must match exactly (a legacy full-success null missing the key fails).
+    if null.get("n_refit_pairs") != n_refit_pairs:
+        return False
+    # requested-resamples: stamped ⇒ exact match; unstamped legacy ⇒ >=90%-of-current used.
+    requested = null.get("n_null_resamples_requested")
+    if requested is not None:
+        return requested == n_resamples
+    used = null.get("n_resamples_used", 0)
+    return used >= math.ceil(0.9 * n_resamples)
+
+
 def _resume_cell(
-    behavior: str, substrate: str, delta_dir: Path, null_dir: Path
+    behavior: str,
+    substrate: str,
+    delta_dir: Path,
+    null_dir: Path,
+    n_resamples: int,
+    n_refit_pairs: int,
 ) -> tuple[dict, dict] | None:
-    """Return (obs, null) loaded from disk iff BOTH cell JSONs are complete, else None.
+    """Return (obs, null) loaded from disk iff BOTH cell JSONs are complete AND match the
+    current output-affecting regime, else None.
 
     A cell is RESUMABLE iff BOTH its ``delta_floor`` (observed read) JSON AND its
     ``substrate_swap_null`` JSON exist AND parse as a JSON object AND the null JSON
     carries the completion signal — either ``n_over_floor_resamples_used >= 1`` (the
     full-success shape) OR a ``note`` field (the degenerate-cell early-return shape,
-    e.g. "too few questions" / "all resamples degenerate"). Any missing / corrupt /
-    truncated file OR an in-flight null with neither signal ⇒ None (recompute the cell
-    from scratch, overwriting the partial files). The returned ``obs`` / ``null`` dicts
-    are the EXACT structures ``observed_read`` / ``substrate_swap_null`` produce (the
-    writers use ``json.dumps(default=float)``, so JSON round-trip float coercion is the
-    only difference — accepted by the downstream pairwise/verdict/summary consumers).
+    e.g. "too few questions" / "all resamples degenerate") — AND the loaded null matches
+    the current ``n_resamples`` / ``n_refit_pairs`` regime (``_null_regime_matches``). A
+    regime MISMATCH (a stale smoke/debug null with fewer draws or a different refit-pair
+    count) is REJECTED so the cell recomputes rather than being silently reused under the
+    current run's summary metadata (#722-r3 output-affecting-key discipline). Any missing /
+    corrupt / truncated file OR an in-flight null with neither completion signal ⇒ None
+    (recompute the cell from scratch, overwriting the partial files). The returned
+    ``obs`` / ``null`` dicts are the EXACT structures ``observed_read`` /
+    ``substrate_swap_null`` produce (the writers use ``json.dumps(default=float)``, so JSON
+    round-trip float coercion is the only difference — accepted by the downstream
+    pairwise/verdict/summary consumers).
     """
     obs = _load_cell_json(delta_dir / f"{behavior}__{substrate}.json")
     null = _load_cell_json(null_dir / f"{behavior}__{substrate}.json")
@@ -146,6 +197,8 @@ def _resume_cell(
         return None
     null_complete = null.get("n_over_floor_resamples_used", 0) >= 1 or "note" in null
     if not null_complete:
+        return None
+    if not _null_regime_matches(null, n_resamples, n_refit_pairs):
         return None
     return obs, null
 
@@ -330,6 +383,9 @@ def substrate_swap_null(
         "n_questions": n_q,
         "n_resamples_used": 0,
         "null_space": "delta_over_floor",
+        # Regime stamp so every future artifact self-describes (resume-predicate keying).
+        "n_refit_pairs": n_refit_pairs,
+        "n_null_resamples_requested": n_resamples,
     }
     if n_q < 4:
         return {**empty, "note": "too few questions (<4) for a matched-n split"}
@@ -401,6 +457,8 @@ def substrate_swap_null(
         "n_questions": n_q,
         "n_resamples_used": len(diffs),
         "n_refit_pairs": n_refit_pairs,
+        # Regime stamp so every future artifact self-describes (resume-predicate keying).
+        "n_null_resamples_requested": n_resamples,
     }
 
 
@@ -768,7 +826,14 @@ def main() -> int:
             # carries obs["chain_rho"] — so a skipped cell leaves its existing chain_rho file
             # untouched. --no-resume forces the full recompute path below.
             if not args.no_resume:
-                resumed = _resume_cell(behavior, substrate, delta_dir, null_dir)
+                resumed = _resume_cell(
+                    behavior,
+                    substrate,
+                    delta_dir,
+                    null_dir,
+                    args.n_null_resamples,
+                    args.null_refit_pairs,
+                )
                 if resumed is not None:
                     obs, null = resumed
                     observed_by_sub[substrate] = obs
@@ -779,6 +844,28 @@ def main() -> int:
                         substrate,
                     )
                     continue
+                # A present-but-regime-mismatched null recomputes (never silently reused).
+                stale = _load_cell_json(null_dir / f"{behavior}__{substrate}.json")
+                if (
+                    stale is not None
+                    and (stale.get("n_over_floor_resamples_used", 0) >= 1 or "note" in stale)
+                    and not _null_regime_matches(
+                        stale, args.n_null_resamples, args.null_refit_pairs
+                    )
+                ):
+                    logger.info(
+                        "[phase=analysis] %s/%s resume REJECTED (regime mismatch: "
+                        "loaded n_refit_pairs=%s n_null_resamples_requested=%s "
+                        "n_resamples_used=%s vs current n_refit_pairs=%d "
+                        "n_null_resamples=%d) — recomputing",
+                        behavior,
+                        substrate,
+                        stale.get("n_refit_pairs"),
+                        stale.get("n_null_resamples_requested"),
+                        stale.get("n_resamples_used"),
+                        args.null_refit_pairs,
+                        args.n_null_resamples,
+                    )
             logger.info(
                 "[phase=analysis] observed read %s/%s L%d", behavior, substrate, HEADLINE_LAYER
             )

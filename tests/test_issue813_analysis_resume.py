@@ -36,9 +36,15 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 import issue813_analysis as an  # noqa: E402
 
 
-def _full_null(p95: float = 0.30, n_used: int = 500) -> dict:
-    """A minimal FULL-success substrate-swap-null dict (carries n_over_floor_resamples_used)."""
-    return {
+def _full_null(p95: float = 0.30, n_used: int = 500, requested: int | None = 1000) -> dict:
+    """A minimal FULL-success substrate-swap-null dict (carries the completion signal +
+    the current-regime stamp: n_refit_pairs + n_null_resamples_requested).
+
+    ``requested`` stamps ``n_null_resamples_requested`` (a current-regime full-success
+    artifact carries the stamp = _PROD_RESAMPLES); pass ``None`` to model a LEGACY
+    unstamped artifact for the requested-resamples-floor path.
+    """
+    d = {
         "null_space": "delta_over_floor",
         "null_over_floor_p95": p95,
         "null_over_floor_p975": p95 + 0.05,
@@ -49,6 +55,9 @@ def _full_null(p95: float = 0.30, n_used: int = 500) -> dict:
         "n_resamples_used": n_used,
         "n_refit_pairs": 40,
     }
+    if requested is not None:
+        d["n_null_resamples_requested"] = requested
+    return d
 
 
 def _degenerate_null(note: str = "too few questions (<4) for a matched-n split") -> dict:
@@ -97,6 +106,18 @@ def test_load_cell_json_none_on_missing_and_corrupt(tmp_path):
     assert an._load_cell_json(ok) == {"k": 1}
 
 
+# Production-scale regime the resume predicate is keyed against in these unit tests.
+_PROD_RESAMPLES = 1000
+_PROD_REFIT_PAIRS = 40
+
+
+def _resume(
+    sub, delta_dir, null_dir, *, n_resamples=_PROD_RESAMPLES, n_refit_pairs=_PROD_REFIT_PAIRS
+):
+    """Call _resume_cell at the production regime (mismatch tests override the kwargs)."""
+    return an._resume_cell("em", sub, delta_dir, null_dir, n_resamples, n_refit_pairs)
+
+
 def test_resume_cell_skips_only_when_both_present_and_null_complete(tmp_path):
     delta_dir = tmp_path / "delta_floor"
     null_dir = tmp_path / "substrate_swap_null"
@@ -107,30 +128,90 @@ def test_resume_cell_skips_only_when_both_present_and_null_complete(tmp_path):
         (delta_dir / f"em__{sub}.json").write_text(json.dumps(obs))
         (null_dir / f"em__{sub}.json").write_text(json.dumps(null))
 
-    # (a) full-success null → resumable, returns (obs, null).
+    # (a) full-success null at the matching regime → resumable, returns (obs, null).
     _write("generic", _obs("generic", 0.5), _full_null())
-    got = an._resume_cell("em", "generic", delta_dir, null_dir)
+    got = _resume("generic", delta_dir, null_dir)
     assert got is not None and got[0]["delta_over_floor"] == 0.5
     assert got[1]["n_over_floor_resamples_used"] == 500
 
     # (b) degenerate (note-only) null → ALSO resumable (a completed cell, no work left).
     _write("elicit", _obs("elicit", 0.3), _degenerate_null())
-    got_deg = an._resume_cell("em", "elicit", delta_dir, null_dir)
+    got_deg = _resume("elicit", delta_dir, null_dir)
     assert got_deg is not None and "note" in got_deg[1]
 
     # (c) in-flight null (no n_over_floor signal, no note) → NOT resumable → recompute.
     (delta_dir / "em__mix.json").write_text(json.dumps(_obs("mix", 0.4)))
     (null_dir / "em__mix.json").write_text(json.dumps({"n_over_floor_resamples_used": 0}))
-    assert an._resume_cell("em", "mix", delta_dir, null_dir) is None
+    assert _resume("mix", delta_dir, null_dir) is None
 
     # (d) delta present but null missing → NOT resumable.
     (delta_dir / "em__generic2.json").write_text(json.dumps(_obs("generic2", 0.5)))
-    assert an._resume_cell("em", "generic2", delta_dir, null_dir) is None
+    assert _resume("generic2", delta_dir, null_dir) is None
 
     # (e) corrupt (truncated) null → NOT resumable (recompute overwrites the partial).
     (delta_dir / "em__gc.json").write_text(json.dumps(_obs("gc", 0.5)))
     (null_dir / "em__gc.json").write_text('{"n_over_floor_resamples_used": 5')  # truncated
-    assert an._resume_cell("em", "gc", delta_dir, null_dir) is None
+    assert _resume("gc", delta_dir, null_dir) is None
+
+
+# ── regime-keyed predicate: stale/smoke nulls recompute, live legacy nulls skip ─
+# (#722-r3 output-affecting-key discipline; Codex round-1 Major blocker.)
+
+
+def _write_cell(delta_dir, null_dir, sub, obs, null):
+    (delta_dir / f"em__{sub}.json").write_text(json.dumps(obs, default=float))
+    (null_dir / f"em__{sub}.json").write_text(json.dumps(null, default=float))
+
+
+def test_resume_cell_recomputes_on_mismatched_refit_pairs(tmp_path):
+    """(i) a null seeded with a DIFFERENT n_refit_pairs → recompute (regime mismatch)."""
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    stale = _full_null()  # stamped n_refit_pairs=40, n_resamples_used=500
+    stale["n_refit_pairs"] = 1  # a smoke/debug refit-pair count
+    stale["n_null_resamples_requested"] = _PROD_RESAMPLES  # requested matches; refit-pairs do not
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), stale)
+    # current run uses the production refit-pair count → the loaded null must be rejected.
+    assert _resume("generic", delta_dir, null_dir, n_refit_pairs=_PROD_REFIT_PAIRS) is None
+
+
+def test_resume_cell_recomputes_on_mismatched_requested_resamples(tmp_path):
+    """(ii) a null STAMPED n_null_resamples_requested != current → recompute."""
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    stale = _full_null(n_used=2)  # refit-pairs match, but stamped requested=2 (a smoke run)
+    stale["n_null_resamples_requested"] = 2
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), stale)
+    assert _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES) is None
+
+
+def test_resume_cell_skips_unstamped_legacy_production_null(tmp_path):
+    """(iii) an UNSTAMPED null with n_resamples_used >= 0.9*current → SKIP (live em/generic)."""
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    legacy = _full_null(n_used=950)  # 950 >= ceil(0.9*1000)=900
+    legacy.pop("n_null_resamples_requested", None)  # the live em/generic null predates the stamp
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), legacy)
+    got = _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES)
+    assert got is not None and got[1]["n_resamples_used"] == 950
+
+
+def test_resume_cell_recomputes_unstamped_smoke_scale_null(tmp_path):
+    """(iv) an unstamped smoke-scale null (used=5, current=1000) → recompute (< 0.9 floor)."""
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    smoke = _full_null(n_used=5)  # a 5-draw smoke run, unstamped
+    smoke.pop("n_null_resamples_requested", None)
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), smoke)
+    assert _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES) is None
 
 
 # ── main(): mixed loaded + computed cells, summary includes BOTH ───────────────
