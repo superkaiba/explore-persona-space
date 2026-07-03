@@ -17,6 +17,13 @@
 set -uo pipefail
 REPO_ROOT="${REPO_ROOT:-${WORKLOAD_ROOT:-$PWD}}"
 cd "$REPO_ROOT" || exit 1
+# Round 7c: the GCE bootstrap exports HF_XET_HIGH_PERFORMANCE=1, and the xet
+# path does a per-file token/connection refresh — at 6 threads x 8688 files
+# the refresh endpoint gave out mid-stage (round 7b died in
+# refresh_xet_connection_info after ~4.5k files). Force the plain HTTP/CDN
+# path for this workload (the #515 HF_XET_DISABLE workaround); the final
+# uploads are small JSONs on the non-LFS path, unaffected.
+export HF_XET_DISABLE=1
 mkdir -p logs eval_results/issue_833
 MAIN_LOG="logs/issue833_gcp_phase_d.log"
 
@@ -50,26 +57,42 @@ for pref in PREFIXES:
 print(f"listed {len(paths)} npz files", flush=True)
 
 
-def fetch(p: str) -> None:
-    for attempt in range(4):
+def fetch(p: str, attempts: int = 5) -> str | None:
+    """Return None on success, the path on hard failure (never raises)."""
+    for attempt in range(attempts):
         try:
             hf_hub_download(REPO, p, repo_type="dataset", local_dir="hf_stage")
-            return
-        except Exception as e:  # noqa: BLE001 — retry w/ backoff, then re-raise
-            if attempt == 3:
-                raise
-            time.sleep(20 * (attempt + 1))
+            return None
+        except Exception:  # noqa: BLE001 — retry w/ backoff; report, don't kill the pool
+            if attempt == attempts - 1:
+                return p
+            time.sleep(30 * (attempt + 1))
+    return p
 
 
-done = 0
+done, failed = 0, []
 with ThreadPoolExecutor(max_workers=6) as ex:
     futs = [ex.submit(fetch, p) for p in paths]
     for f in as_completed(futs):
-        f.result()  # re-raise the first hard failure
+        bad = f.result()
+        if bad:
+            failed.append(bad)
+        else:
+            done += 1
+        if (done + len(failed)) % 500 == 0:
+            print(f"downloaded {done}/{len(paths)} (failed so far: {len(failed)})", flush=True)
+print(f"pool pass: {done}/{len(paths)} ok, {len(failed)} failed", flush=True)
+# Serial second pass over the stragglers (rate pressure gone by now).
+still = []
+for p in failed:
+    time.sleep(2)
+    if fetch(p, attempts=3):
+        still.append(p)
+    else:
         done += 1
-        if done % 500 == 0:
-            print(f"downloaded {done}/{len(paths)}", flush=True)
-print(f"downloaded {done}/{len(paths)}", flush=True)
+print(f"downloaded {done}/{len(paths)}; unrecovered: {len(still)}", flush=True)
+for p in still[:20]:
+    print("  FAILED:", p, flush=True)
 sys.exit(0 if done == len(paths) else 1)
 PY
 rm -rf eval_results/issue_833/analysis_tensors eval_results/issue_833/analysis_tensors_rbase
