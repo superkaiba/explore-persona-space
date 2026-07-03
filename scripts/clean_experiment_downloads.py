@@ -38,10 +38,14 @@ What is and is NOT a cache (the safety contract):
     — external, foreign-issue, renamed, a ``store/``, a file — is KEPT
     (fail-toward-keep, sidecar-escalated as
     ``kind: "symlink-external-target-kept"``): a direct link is unlinked
-    (target kept); a shared PARENT link is NEVER unlinked. A dangling cache
-    symlink is discovered and unlinked. Managed reaps delete the TARGET
-    FIRST, then the link — a mid-reap crash leaves the link, so the next run
-    re-discovers and retries.
+    (target kept); with a symlinked PARENT nothing is EVER unlinked — not the
+    shared parent link, and not a child entry inside its target tree (even
+    when that child is itself a link — the double-link case; the only
+    permitted mutation under a linked parent is the managed-target reap). A
+    DIRECT dangling cache symlink is discovered and unlinked; a dangling
+    entry reached through a linked parent is kept + sidecar-escalated.
+    Managed reaps delete the TARGET FIRST, then the link — a mid-reap crash
+    leaves the link, so the next run re-discovers and retries.
 
 There are now THREE reap gates, all composing additively (any one puts a cache
 dir in ``CleanResult.skipped`` instead of deleting it):
@@ -745,10 +749,13 @@ def clean_issue_downloads(
     (strictly inside ``data_disk_root()``, names the owning issue, a directory
     whose basename equals the cache name); otherwise the target is KEPT and
     recorded in ``CleanResult.symlink_external_kept`` + the sidecar (a direct
-    link is unlinked; a shared parent link is never unlinked, and nothing is
-    deleted through it). Dangling links are unlinked. Managed reaps delete the
-    target BEFORE the link (crash safety: a surviving link is re-discovered
-    and retried on the next run). Both gates above run FIRST, unchanged —
+    link is unlinked; with a symlinked parent NOTHING is unlinked — not the
+    shared parent link and not a child entry inside its target tree, even
+    when that child is itself a link). DIRECT dangling links are unlinked;
+    a dangling entry through a linked parent is kept + sidecar-escalated.
+    Managed reaps delete the target BEFORE the link (crash safety: a
+    surviving link is re-discovered and retried on the next run). Both gates
+    above run FIRST, unchanged —
     gate 1 is issue-number-keyed and path-independent; gate 2's ``rglob``
     traverses THROUGH the symlink into the target.
 
@@ -800,18 +807,34 @@ def clean_issue_downloads(
         # design, so both route through disposition logic instead. A data
         # root that is ITSELF a symlink is a deliberate wholesale relocation
         # and stays on the plain path below.
-        parent_linked = (not cache_dir.is_symlink()) and cache_dir.parent.is_symlink()
-        if cache_dir.is_symlink() or parent_linked:
+        #
+        # parent_linked is computed INDEPENDENTLY of the child's own linkness
+        # (the round-2 MF2 fix): when the parent issue dir is a link AND the
+        # cache entry inside its target tree is ITSELF a link (double-link),
+        # cache_dir.is_symlink() is True THROUGH the parent link, so the old
+        # `(not is_symlink()) and parent.is_symlink()` formula misclassified
+        # the case as a DIRECT link — apply-mode unlink() then resolved
+        # through the shared parent link and removed the child entry inside
+        # the not-ours target tree. Parent-link ownership DOMINATES: with a
+        # linked parent, the only permitted mutation is rmtree() of a
+        # fully-validated managed target; nothing is ever unlink()ed.
+        parent_linked = cache_dir.parent.is_symlink()
+        direct_linked = cache_dir.is_symlink()
+        if direct_linked or parent_linked:
             target = _managed_symlink_target(cache_dir, issue_n)
             resolved = Path(os.path.realpath(cache_dir))
             dangling = not cache_dir.exists()  # exists() follows links
             res.symlink_targets[rel] = "" if dangling else str(resolved)
-            if target is None and not dangling:
-                # External / foreign-issue / non-cache-shaped target: KEPT
-                # (fail-toward-keep), sidecar-escalated for a human read.
+            if target is None and (not dangling or parent_linked):
+                # External / foreign-issue / non-cache-shaped target — or a
+                # DANGLING entry reached through a linked parent (nothing to
+                # reap, and the entry inside the parent's target tree is not
+                # ours to unlink): KEPT (fail-toward-keep), sidecar-escalated
+                # for a human read.
                 res.symlink_external_kept.append((rel, str(resolved)))
+                kept_what = "dangling child link" if dangling else "external target"
                 note = (
-                    f"symlink parent kept (nothing unlinked); external target kept: {resolved}"
+                    f"symlink parent kept (nothing unlinked); {kept_what} kept: {resolved}"
                     if parent_linked
                     else f"symlink unlinked; external target kept: {resolved}"
                 )
@@ -830,9 +853,13 @@ def clean_issue_downloads(
                     apply=apply,
                 )
                 if apply and not parent_linked:
-                    # Direct link: the pointer goes; the target stays. A
-                    # shared PARENT link is never unlinked (sibling caches +
-                    # non-cache entries resolve through it).
+                    # Direct link ONLY: the pointer goes; the target stays.
+                    # With a linked PARENT nothing is unlinked — the parent
+                    # link is shared (sibling caches + non-cache entries
+                    # resolve through it), and in the double-link case the
+                    # child entry lives INSIDE the parent's target tree, so an
+                    # unlink() here would mutate that not-ours tree (the
+                    # round-1 MF2 violation).
                     try:
                         cache_dir.unlink()
                     except OSError as exc:
@@ -853,7 +880,13 @@ def clean_issue_downloads(
                     shutil.rmtree(target)
                 if not parent_linked:
                     # The boot-disk link itself (direct case; also the
-                    # dangling-link unlink). Never the shared parent link.
+                    # direct dangling-link unlink). NEVER when the parent is
+                    # a link: not the shared parent link itself, and not a
+                    # child link entry inside the parent's target tree
+                    # (unlink() would resolve through the shared parent link
+                    # and mutate the not-ours tree — the round-1 MF2
+                    # violation; a managed double-link reap leaves the child
+                    # link dangling in the managed tree instead).
                     cache_dir.unlink()
             except OSError as exc:
                 print(f"  ! FAILED to remove {rel}: {exc}", file=sys.stderr)
