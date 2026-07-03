@@ -98,7 +98,11 @@ LEG_A_DROP_FLOOR = 30.0  # §6 cell 1 leg (a): flagged-item mean drop ≥ 30 poi
 LEG_B_RATE_FRACTION = 1.0 / 3.0  # §6 cell 1 leg (b): v2.1 rate < 1/3 of v2's
 LEG_B_MIN_HIGH_DRAWS = 100  # §6 cell 1: minimum denominator for a defined rate
 STABILITY_SECONDARY_MARKER = 0.8  # §6 cell 4(iii): descriptive marker only
-ATTENUATION_RATIO_AGREE_TOL = 0.10  # cell 4(ii): |ratio_v2 − ratio_v2.1| agreement
+# cell 4(ii): |ratio_v2 − ratio_v2.1| agreement. NOTE: 0.10 is a round-level
+# operationalization of the plan's un-quantified "disattenuated ratios agree" —
+# it steers the DESCRIPTIVE attribution string only (emitted as
+# `ratios_agree_within`); the clean-result names this choice as a caveat.
+ATTENUATION_RATIO_AGREE_TOL = 0.10
 
 
 def _probe_sha256(probe: str) -> str:
@@ -535,8 +539,11 @@ def compute_verdict(  # the §6 enumeration is one cohesive decision tree
     # ── cell 0: instrument health ──
     dr_v2 = _drop_rate(e0_v2)
     dr_v2p1 = _drop_rate(e0_v2p1)
-    cell0_pass = (
-        dr_v2p1["drop_rate"] is not None and dr_v2p1["drop_rate"] <= DROP_RATE_HALT_THRESHOLD
+    # plan §6 cell 0: PER-ARM drop-rate gate (the v2 arm is the frozen committed
+    # artifact at 1.78%, so gating it too is constant-equivalent in production).
+    cell0_pass = all(
+        dr["drop_rate"] is not None and dr["drop_rate"] <= DROP_RATE_HALT_THRESHOLD
+        for dr in (dr_v2, dr_v2p1)
     )
     cell0 = {
         "v2": dr_v2,
@@ -703,7 +710,16 @@ def compute_verdict(  # the §6 enumeration is one cohesive decision tree
     else:
         qualified = cell1_v == "PARTIAL-ENGAGEMENT-A"
         if meets_band and significant and control:
-            sub = "SUCCESS-robust" if delta_boot["includes_zero"] else "SUCCESS-attenuated"
+            # Plan §6 cell 2: Δρ CI includes 0 ⇒ robust; excludes 0 ⇒ attenuated —
+            # EXCEPT the pre-registered sharpened cell "(ρ > 0.713 = sharpened;
+            # report, SUCCESS-robust verdict.)": ρ_v2.1 above the band ceiling is a
+            # sharpened read, never an attenuation (a CI exclusion there is v2.1
+            # BEATING v2, exposed via the emitted `sharpened` + Δρ fields).
+            sub = (
+                "SUCCESS-robust"
+                if (delta_boot["includes_zero"] or sharpened)
+                else "SUCCESS-attenuated"
+            )
             final = f"SUCCESS-qualified ({sub})" if qualified else sub
             attribution = None
         elif meets_band:
@@ -751,6 +767,31 @@ def compute_verdict(  # the §6 enumeration is one cohesive decision tree
         "_flagged_shift": flagged_shift,  # figure input; stripped before dump
         "_delta_draws": delta.pop("_draws"),
     }
+
+
+def assert_v2_loco_reproduction(
+    repro: float | None,
+    committed: float,
+    *,
+    tol: float,
+    chosen_layer: int | None = None,
+    ref_layer: int | None = None,
+) -> None:
+    """The v2-arm LOCO-reproduction hard gate (raises RuntimeError on mismatch).
+
+    The paired Δρ read is trusted ONLY if the deterministic refit reproduces the
+    committed reanchor ``rho_graded_ridge`` within ``tol`` (a ``None`` recompute
+    also fails). Pure so the mismatch path is unit-testable
+    (``test_v2_loco_reproduction_gate_raises_on_mismatch``).
+    """
+    if repro is None or abs(repro - committed) > tol:
+        raise RuntimeError(
+            f"v2 LOCO reproduction FAILED: recomputed chosen ρ {repro!r} vs committed "
+            f"{committed:.10f} (|Δ| > tol {tol:g}; layer "
+            f"{chosen_layer} vs {ref_layer}) — do NOT "
+            "trust the paired Δρ read; investigate device/input drift (tol up to 1e-3 "
+            "is pre-registered for cross-device, pass --rho-tol)"
+        )
 
 
 def main() -> int:  # one cohesive verdict assembly
@@ -848,14 +889,13 @@ def main() -> int:  # one cohesive verdict assembly
     loco_v2 = _recompute_loco_pred(args.v2_e0)
     committed = float(rec_v2_ref["rho_graded_ridge"])
     repro = loco_v2["chosen_rho"]
-    if repro is None or abs(repro - committed) > args.rho_tol:
-        raise RuntimeError(
-            f"v2 LOCO reproduction FAILED: recomputed chosen ρ {repro!r} vs committed "
-            f"{committed:.10f} (|Δ| > tol {args.rho_tol:g}; layer "
-            f"{loco_v2['chosen_layer']} vs {rec_v2_ref.get('chosen_layer')}) — do NOT "
-            "trust the paired Δρ read; investigate device/input drift (tol up to 1e-3 "
-            "is pre-registered for cross-device, pass --rho-tol)"
-        )
+    assert_v2_loco_reproduction(
+        repro,
+        committed,
+        tol=args.rho_tol,
+        chosen_layer=loco_v2["chosen_layer"],
+        ref_layer=rec_v2_ref.get("chosen_layer"),
+    )
     logger.info(
         "[verdict] v2 reproduction PASS: ρ %.10f vs committed %.10f (layer %d)",
         repro,

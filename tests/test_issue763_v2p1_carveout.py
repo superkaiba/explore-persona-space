@@ -20,6 +20,12 @@ Pins the round's pre-registered mechanics (plans/v10.md), all offline / hermetic
 6. The §6 cell-1 manipulation-check 2×2 mapping, including the pre-registered
    undefined-rate collapse (ENGAGED-by-collapse / PARTIAL-ENGAGEMENT-B).
 7. The audit YES/NO parser drops (never coerces) malformed / refused returns.
+8. The §6 final-verdict grid on the SUCCESS branch, including the pre-registered
+   SHARPENED cell "(ρ > 0.713 = sharpened; report, SUCCESS-robust verdict.)" —
+   a positive-side Δρ CI exclusion above the band ceiling is SUCCESS-robust,
+   never SUCCESS-attenuated (concern `sharpened-path-final-verdict-mislabel`).
+9. The v2 LOCO-reproduction hard gate RAISES on a mismatch vs the committed ρ
+   (never a silent pass — concern `v2-loco-assert-test-gap`).
 """
 
 from __future__ import annotations
@@ -251,6 +257,134 @@ def test_cell1_verdict_mapping():
     # pre-registered undefined-rate collapse (< 100 v2.1 high draws)
     assert cell1_verdict(True, None, False) == "ENGAGED-by-collapse"
     assert cell1_verdict(False, None, False) == "PARTIAL-ENGAGEMENT-B"
+
+
+# ── §6 final-verdict grid (SUCCESS branch, incl. the sharpened cell) ──────────
+
+
+def _mk_verdict_inputs(*, rho_v2p1: float, delta_mode: str) -> dict:
+    """Minimal synthetic `compute_verdict` kwargs landing in the SUCCESS branch.
+
+    cell 0 passes both arms (drop rate ~2%); cell 1 resolves ENGAGED-by-collapse
+    (leg-(a) drop 70 ≥ 30; v2.1 high-draw denominator 50 < 100 ⇒ rate undefined);
+    the band is the committed v2 CI [0.24410661, 0.71284271]. ``delta_mode``
+    shapes the paired Δρ bootstrap deterministically: ``positive`` ⇒ every draw
+    Δρ = +2 (CI excludes 0 above), ``negative`` ⇒ every draw Δρ = −2, ``zero`` ⇒
+    identical arms (CI = [0, 0], includes 0).
+    """
+    probe_flagged, probe_other = "flagged probe?", "other probe?"
+
+    def _cell(g_flagged: float, g_other: float) -> dict:
+        return {
+            "graded_mean": float(np.mean([g_flagged, g_other])),
+            "n_graded_draws_kept": 100,
+            "n_graded_draws_dropped": 2,
+            "per_probe": [
+                {"probe": probe_flagged, "graded": g_flagged},
+                {"probe": probe_other, "graded": g_other},
+            ],
+        }
+
+    audit = {
+        "by_version": {
+            "v2": {"flag_rate_among_high": 0.029, "n_high_draws": 3140},
+            "v2.1": {"flag_rate_among_high": None, "n_high_draws": 50},
+        },
+        "flagged_items_v2": [("c1", _sha(probe_flagged))],
+    }
+    rng = np.random.default_rng(763)
+    y = rng.normal(size=12)
+    if delta_mode == "positive":
+        pred_a, pred_b = y.copy(), -y  # rho_a = 1, rho_b = -1 on every resample
+    elif delta_mode == "negative":
+        pred_a, pred_b = -y, y.copy()
+    elif delta_mode == "zero":
+        pred_a, pred_b = y.copy(), y.copy()
+    else:  # pragma: no cover - fixture misuse
+        raise ValueError(delta_mode)
+    ctx_ids = [f"ctx{i}" for i in range(12)]
+    return dict(
+        e0_v2={"e0": {"deception": {"c1": _cell(80.0, 40.0)}}},
+        e0_v2p1={"e0": {"deception": {"c1": _cell(10.0, 41.0)}}},
+        audit=audit,
+        rec_v2p1={
+            "rho_graded_ridge": rho_v2p1,
+            "rho_graded_ridge_ci": [rho_v2p1 - 0.2, rho_v2p1 + 0.2],
+            "shuffle_null_p": 0.001,
+            "control_task_pass": True,
+            "sqrt_r_yy": 0.60,
+        },
+        rec_ablate={"rho_graded_ridge": 0.51, "rho_graded_ridge_ci": [0.24, 0.71]},
+        rec_v2_ref={
+            "rho_graded_ridge": 0.5100120048019207,
+            "rho_graded_ridge_ci": [0.24410661, 0.71284271],
+            "sqrt_r_yy": 0.5856,
+        },
+        loco_v2={"ctx_ids": ctx_ids, "pred": list(pred_b), "y_graded": list(y)},
+        loco_v2p1={"ctx_ids": ctx_ids, "pred": list(pred_a), "y_graded": list(y)},
+        rows_v2=[],
+        n_boot=50,
+        seed=763,
+    )
+
+
+def test_final_verdict_sharpened_cell_is_success_robust():
+    """Plan §6 cell 2: "(ρ > 0.713 = sharpened; report, SUCCESS-robust verdict.)".
+
+    ρ_v2.1 = 0.75 > band ceiling 0.71284271 with the paired Δρ CI strictly
+    POSITIVE (excludes 0 above — v2.1 BEAT v2 on every draw). The pre-fix branch
+    split ONLY on ``includes_zero`` and emitted SUCCESS-attenuated here; the
+    ``final_verdict == "SUCCESS-robust"`` assertion below pins the fix (it FAILS
+    against the pre-fix code by construction).
+    """
+    from issue763_v2p1_verdict import compute_verdict
+
+    v = compute_verdict(**_mk_verdict_inputs(rho_v2p1=0.75, delta_mode="positive"))
+    cell2 = v["cell2_success"]
+    assert cell2["sharpened"] is True
+    assert cell2["delta_rho_paired"]["includes_zero"] is False
+    assert cell2["delta_rho_paired"]["ci95"][0] > 0.0  # positive-side exclusion
+    assert v["final_verdict"] == "SUCCESS-robust"
+
+
+def test_final_verdict_attenuated_when_in_band_ci_excludes_zero():
+    """Plan §6 cell 2 mandated attenuated cell: in-band ρ, Δρ CI excludes 0 below."""
+    from issue763_v2p1_verdict import compute_verdict
+
+    v = compute_verdict(**_mk_verdict_inputs(rho_v2p1=0.30, delta_mode="negative"))
+    cell2 = v["cell2_success"]
+    assert cell2["sharpened"] is False
+    assert cell2["delta_rho_paired"]["includes_zero"] is False
+    assert v["final_verdict"] == "SUCCESS-attenuated"
+
+
+def test_final_verdict_robust_when_ci_includes_zero():
+    """Plan §6 cell 2: Δρ CI includes 0 ⇒ SUCCESS-robust (the primary robust cell)."""
+    from issue763_v2p1_verdict import compute_verdict
+
+    v = compute_verdict(**_mk_verdict_inputs(rho_v2p1=0.30, delta_mode="zero"))
+    assert v["cell2_success"]["delta_rho_paired"]["includes_zero"] is True
+    assert v["final_verdict"] == "SUCCESS-robust"
+
+
+def test_v2_loco_reproduction_gate_raises_on_mismatch():
+    """The v2-LOCO reproduction hard gate must RAISE on perturbed references.
+
+    Drives the mismatch path with a deliberately perturbed recomputed ρ (5e-4
+    off the committed value, tol 1e-6) and with a ``None`` recompute — both must
+    raise RuntimeError (never a silent pass); a within-tol reproduction passes.
+    """
+    from issue763_v2p1_verdict import assert_v2_loco_reproduction
+
+    committed = 0.5100120048019207
+    with pytest.raises(RuntimeError, match="v2 LOCO reproduction FAILED"):
+        assert_v2_loco_reproduction(
+            committed + 5e-4, committed, tol=1e-6, chosen_layer=11, ref_layer=11
+        )
+    with pytest.raises(RuntimeError, match="v2 LOCO reproduction FAILED"):
+        assert_v2_loco_reproduction(None, committed, tol=1e-6)
+    # exact / within-tol reproduction passes silently
+    assert_v2_loco_reproduction(committed + 5e-7, committed, tol=1e-6)
 
 
 def test_parse_audit_verdict_drop_never_coerce():

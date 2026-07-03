@@ -637,6 +637,10 @@ def main() -> int:
 
     if args.smoke and not args.mock_audit:
         ap.error("--smoke requires --mock-audit (a smoke must not spend live audit calls)")
+    if args.smoke and args.out_dir.resolve() == V2P1_ROUND_DIR.resolve():
+        # staging trap: a mock disclosure_flag_audit.json / E0_deception_v2_ablate.json
+        # at the canonical round dir could be consumed by an out-of-sequence §3d refit.
+        ap.error("--smoke requires a non-canonical --out-dir (never the production round dir)")
 
     out_dir = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
