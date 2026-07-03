@@ -61,3 +61,4 @@
 {"ts": "2026-07-03T13:35:31Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "{\"phase\": \"S3_g1_gate\", \"blocks_pipeline\": false, \"gate\": \"PASS\", \"worst_cos\": 0.9999999581063865}"}
 {"ts": "2026-07-03T13:35:34Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "{\"phase\": \"S2_gen_completions_b\", \"blocks_pipeline\": false, \"n_contexts\": 50, \"n_probes\": 48, \"empty_completions\": 0, \"hf_path\": \"issue920_summary_sweep/raw_completions/gen_b\", \"elapsed_s\": 1069.0}"}
 {"ts": "2026-07-03T14:16:22Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "{\"phase\": \"S3_extract_setA\", \"blocks_pipeline\": false, \"n_contexts\": 50}"}
+{"ts": "2026-07-03T14:16:25Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "{\"phase\": \"S3_extract_setB\", \"blocks_pipeline\": false, \"n_contexts\": 50}"}
