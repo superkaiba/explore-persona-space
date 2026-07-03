@@ -41,12 +41,16 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch/numpy import
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from explore_persona_space.experiments.issue_825 import common
+from explore_persona_space.experiments.issue_825 import common  # noqa: E402
 
 FROZEN_LAYERS = common.FROZEN_LAYERS
 N_FOLDS = common.N_FOLDS
@@ -488,6 +492,34 @@ def _write_json(path: Path, payload: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _apply_row_allowlist(xy: dict, allowlist: list | None, cell_id: str) -> dict:
+    """Subset xy rows to the allowlisted conv_ids BEFORE fold assignment.
+
+    ``allowlist is None`` (flag absent / cell not listed) returns the SAME xy
+    object untouched — byte-identical legacy behavior (onpolicy-user-turn
+    round, plan MF-A: user cells apply the u2 row filters at FIT time while
+    anchor cells fit the full row set). conv_ids compared as str on both
+    sides (JSON ints vs sidecar strings). Every allowlisted id MUST be
+    present in the bundle — a miss is a pipeline bug, fail loud.
+    """
+    if allowlist is None:
+        return xy
+    ids = np.asarray([str(c) for c in xy["conv_ids"]])
+    wanted = {str(c) for c in allowlist}
+    keep = np.isin(ids, np.asarray(sorted(wanted)))
+    assert int(keep.sum()) == len(wanted), (
+        f"{cell_id}: allowlist has {len(wanted)} conv_ids but only {int(keep.sum())} "
+        f"matched the bundle ({len(ids)} rows) — allowlist/bundle drift"
+    )
+    print(f"[fit_cells] cell={cell_id} row allowlist: kept {int(keep.sum())}/{len(ids)} rows")
+    return {
+        "X": xy["X"][keep],
+        "Y": xy["Y"][keep],
+        "conv_ids": xy["conv_ids"][keep],
+        "nll": xy["nll"][keep] if xy.get("nll") is not None else None,
+    }
+
+
 def run_cell(
     cell: dict,
     turnstore_dir: Path,
@@ -497,11 +529,12 @@ def run_cell(
     seed: int,
     null_draws: int,
     n_boot: int,
+    allowlist: list | None = None,
 ) -> dict:
     cell = _normalize_cell(cell)
     cell_id = cell["cell_id"]
     bundle = _load_bundle(turnstore_dir, cell["model_key"], cell["format_key"], cell["track"])
-    xy = _cell_xy(bundle, cell)
+    xy = _apply_row_allowlist(_cell_xy(bundle, cell), allowlist, cell_id)
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     print(f"[fit_cells] cell={cell_id} n={len(conv_ids)}")
 
@@ -528,9 +561,20 @@ def run_cell(
         str(li): float(r2_obs[li]) - float(mb.get(str(li), float("nan"))) for li in frozen_layers
     }
 
+    # Diversity diagnostic (onpolicy-user-turn round): per-frozen-layer trace of
+    # the target covariance, tr(cov(Y[:, li, :])) = sum of per-dim variances —
+    # target-variance shrinkage moves R^2 mechanically (plan diversity caveat).
+    y_trace_cov = {
+        str(li): float(Y[:, li, :].astype(np.float64).var(axis=0, ddof=1).sum())
+        for li in frozen_layers
+    }
+
     cell_payload = {
         "metadata": _metadata(seed, len(conv_ids)),
         "cell": {k: v for k, v in cell.items() if isinstance(k, str)},
+        "row_allowlist_applied": allowlist is not None,
+        "n_allowlist": (len(allowlist) if allowlist is not None else None),
+        "y_trace_cov_frozen": y_trace_cov,
         "r2_per_layer_obs": [float(v) for v in r2_obs],
         "selection_symmetric": summary,
         "random_projection_control_r2": rp,
@@ -1009,6 +1053,7 @@ def run_per_position(
     n_folds: int,
     seed: int,
     coverage_floor: float = 0.8,
+    allowlist: list | None = None,
 ) -> None:
     """Held-out ridge c_x -> per-position activation at the peak layers.
 
@@ -1024,6 +1069,15 @@ def run_per_position(
         print(f"[fit_cells] perpos missing for {cell_id}; skipping per-position read")
         return
     xy = _cell_xy(bundle, cell)
+    if allowlist is not None:
+        # perpos rows are in BUNDLE order; the xy keep-mask must be identity
+        # (finiteness is asserted at extraction) or the row subset below would
+        # silently misalign — fail loud rather than mis-subset.
+        assert len(xy["conv_ids"]) == np.asarray(arrays["slots"]).shape[0], (
+            f"{cell_id}: NaN keep-mask dropped rows; allowlisted per-position "
+            "read would misalign against the perpos arrays"
+        )
+        xy = _apply_row_allowlist(xy, allowlist, cell_id)
     X, conv_ids = xy["X"], xy["conv_ids"]
     ti = int(cell.get("target_turn_index", 1))
     perpos = np.asarray(arrays["perpos"], dtype=np.float32)[:, ti]  # (N, P, n_peak, D)
@@ -1032,6 +1086,13 @@ def run_per_position(
         if "perpos_mask" in arrays
         else ~np.isnan(perpos).any(axis=(2, 3))
     )
+    if allowlist is not None:
+        row_keep = np.isin(
+            np.asarray([str(c) for c in np.asarray(bundle["sidecar"]["conv_ids"])]),
+            np.asarray(sorted({str(c) for c in allowlist})),
+        )
+        perpos = perpos[row_keep]
+        mask = mask[row_keep]
     n, n_pos = perpos.shape[0], perpos.shape[1]
     n_peak = perpos.shape[2]
     peak_layers = [li for li in FROZEN_LAYERS if li < X.shape[1]][:n_peak]
@@ -1123,7 +1184,7 @@ def run_mlp_secondary(
             break
         Xl, Yl = X[:, li, :], Y[:, li, :]
 
-        def _cv_r2(Yv: np.ndarray, Xl: np.ndarray = Xl) -> float:
+        def _cv_r2(Yv: np.ndarray, Xl: np.ndarray = Xl, collect: dict | None = None) -> float:
             nonlocal budget_hit
             ss_res = ss_tot = 0.0
             for k in range(n_folds):
@@ -1132,6 +1193,8 @@ def run_mlp_secondary(
                 # arbitrarily; the atomic unbounded unit is now one fit).
                 if time.monotonic() - started > MLP_TIME_BUDGET_S:
                     budget_hit = True
+                    if collect is not None:
+                        collect["budget_hit_folds"].append(int(k))
                     return float("nan")
                 te = folds == k
                 tr = ~te
@@ -1140,17 +1203,32 @@ def run_mlp_secondary(
                 pred = mlp_fit_predict(Xl[tr], Yv[tr], Xl[te])
                 true = Yv[te].astype(np.float64)
                 mu = true.mean(0)
-                ss_res += float(np.sum((true - pred) ** 2))
-                ss_tot += float(np.sum((true - mu) ** 2))
+                f_res = float(np.sum((true - pred) ** 2))
+                f_tot = float(np.sum((true - mu) ** 2))
+                ss_res += f_res
+                ss_tot += f_tot
+                if collect is not None:
+                    # Per-fold held-out R^2 (fold dispersion feeds the H-self
+                    # SE_delta noise clause — onpolicy-user-turn hard-req 6).
+                    # Pooled r2_obs accumulation above is UNCHANGED.
+                    collect["r2_folds"].append(
+                        (1.0 - f_res / f_tot) if f_tot > 1e-12 else float("nan")
+                    )
             return (1.0 - ss_res / ss_tot) if ss_tot > 1e-12 else float("nan")
 
-        obs = _cv_r2(Yl)
+        fold_stats: dict = {"r2_folds": [], "budget_hit_folds": []}
+        obs = _cv_r2(Yl, collect=fold_stats)
         nulls = []
         for _ in range(n_null):
             if budget_hit:
                 break
             nulls.append(_cv_r2(Yl[rng.permutation(len(Yl))]))
-        out[str(li)] = {"r2_obs": obs, "r2_null": nulls}
+        out[str(li)] = {
+            "r2_obs": obs,
+            "r2_null": nulls,
+            "r2_obs_folds": fold_stats["r2_folds"],
+            "budget_hit_folds": fold_stats["budget_hit_folds"],
+        }
     # Fold into the existing cells JSON under "mlp".
     cells_path = out_dir / f"cells_{cell_id}.json"
     payload = json.loads(cells_path.read_text()) if cells_path.exists() else {}
@@ -1197,18 +1275,27 @@ def _all_cells() -> tuple[list[dict], list[dict]]:
     return within, cross
 
 
+def _eps_smoke() -> bool:
+    """EPS_SMOKE=1 (the onpolicy-user-turn wrapper's smoke env, plan MF-D):
+    the pipeline runs REAL turnstore data end-to-end at tiny n, so the
+    synthetic-turnstore ``--smoke`` flag is NOT set — but numeric gates are
+    still meaningless at tiny n and must be bypassed (gate JSONs still
+    written; structural asserts unaffected)."""
+    return bool(os.environ.get("EPS_SMOKE"))
+
+
 def _apply_gates(cell: dict, res: dict, args) -> None:
     """Plan section 7 gate checks for the S1 anchor (G1) and the G3 cell.
 
     Writes gate JSONs; HALTs with distinct exit codes on a production
-    failure (smoke exempt).
+    failure (smoke exempt — --smoke OR EPS_SMOKE=1).
     """
     if cell["cell_id"] == "S1":
         run_power_curve(res["xy"], args.out_dir, n_folds=args.folds, seed=args.seed)
         g1 = g1_gate(
             res["sweep"]["r2_obs"], args.out_dir, seed=args.seed, n=len(res["xy"]["conv_ids"])
         )
-        if not g1["pass"] and not args.smoke:
+        if not g1["pass"] and not args.smoke and not _eps_smoke():
             print(
                 "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
                 "HALT per plan section 7",
@@ -1227,7 +1314,7 @@ def _apply_gates(cell: dict, res: dict, args) -> None:
                 "pass": g3_pass,
             },
         )
-        if not g3_pass and not args.smoke:
+        if not g3_pass and not args.smoke and not _eps_smoke():
             print(
                 "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
                 "does not beat its selection-inherited null; HALT per plan "
@@ -1249,8 +1336,29 @@ def main() -> int:
     parser.add_argument(
         "--mlp-cells", default="S1,S2,M_instruct_assistant_chat,M_pretrained_assistant_chat"
     )
+    parser.add_argument(
+        "--cell-row-allowlist",
+        type=Path,
+        default=None,
+        help=(
+            "JSON {cell_id: [conv_id, ...]} applied BEFORE fold assignment; cells "
+            "absent from the map (and every cell when the flag is absent) fit ALL "
+            "rows — byte-identical legacy behavior (onpolicy-user-turn, plan MF-A)"
+        ),
+    )
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
+
+    allowlist_map: dict[str, list] | None = None
+    if args.cell_row_allowlist is not None:
+        allowlist_map = json.loads(args.cell_row_allowlist.read_text())
+        assert isinstance(allowlist_map, dict) and all(
+            isinstance(v, list) for v in allowlist_map.values()
+        ), f"--cell-row-allowlist must be a JSON dict of lists: {args.cell_row_allowlist}"
+        print(
+            "[fit_cells] row allowlist loaded: "
+            + ", ".join(f"{k}={len(v)}" for k, v in sorted(allowlist_map.items()))
+        )
 
     torch.set_num_threads(max(1, min(8, torch.get_num_threads())))
     within, cross = _all_cells()
@@ -1277,6 +1385,7 @@ def main() -> int:
 
     results: dict[str, dict] = {}
     for cell in within:
+        cell_allow = (allowlist_map or {}).get(cell["cell_id"])
         try:
             res = run_cell(
                 cell,
@@ -1286,6 +1395,7 @@ def main() -> int:
                 seed=args.seed,
                 null_draws=args.null_draws,
                 n_boot=args.n_boot,
+                allowlist=cell_allow,
             )
         except FileNotFoundError as e:
             if (
@@ -1307,7 +1417,12 @@ def main() -> int:
         _apply_gates(cell, res, args)
         if cell.get("format_key") == "chat":
             run_per_position(
-                cell, args.turnstore_dir, args.out_dir, n_folds=args.folds, seed=args.seed
+                cell,
+                args.turnstore_dir,
+                args.out_dir,
+                n_folds=args.folds,
+                seed=args.seed,
+                allowlist=cell_allow,
             )
 
     for cell in cross:

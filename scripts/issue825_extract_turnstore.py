@@ -37,6 +37,10 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE torch import
+
 import torch  # noqa: E402
 
 from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
