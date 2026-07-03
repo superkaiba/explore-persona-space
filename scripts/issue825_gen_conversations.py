@@ -57,6 +57,10 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 # claude-haiku-4-5-20251001 is used here as a GENERATOR of simulated user turns,
 # NOT as a judge — no judged DV flows through it (--check-judge-model-pins).
+# API_DISPATCH_ROUTING_EXEMPT: parent-round (#825) u2 generator predating the
+# api_dispatch routing lint; bounded 16-thread fan-out with its own 429/529
+# exponential backoff (_haiku_user_turn); not invoked by the current
+# real-user-turn-null round (no generation anywhere in it).
 HAIKU_GEN_MODEL = "claude-haiku-4-5-20251001"
 _HAIKU_MAX_RETRIES = 6
 _HAIKU_WORKERS = 16
