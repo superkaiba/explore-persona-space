@@ -1,0 +1,1006 @@
+{
+  "commit": "09006be091",
+  "created": "2026-07-03T16:37:21Z",
+  "figsize": [
+    9.0,
+    5.5
+  ],
+  "points": [
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": -0.126571,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.237261,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 2.0,
+      "held-out map skill (in-probe)": 0.481107,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 3.0,
+      "held-out map skill (in-probe)": 0.480778,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 4.0,
+      "held-out map skill (in-probe)": 0.739205,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 5.0,
+      "held-out map skill (in-probe)": 0.791104,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 6.0,
+      "held-out map skill (in-probe)": 0.811204,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 7.0,
+      "held-out map skill (in-probe)": 0.781164,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 8.0,
+      "held-out map skill (in-probe)": 0.852972,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 9.0,
+      "held-out map skill (in-probe)": 0.853903,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 10.0,
+      "held-out map skill (in-probe)": 0.856086,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 11.0,
+      "held-out map skill (in-probe)": 0.86886,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 12.0,
+      "held-out map skill (in-probe)": 0.871223,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 13.0,
+      "held-out map skill (in-probe)": 0.840011,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 14.0,
+      "held-out map skill (in-probe)": 0.809644,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 15.0,
+      "held-out map skill (in-probe)": 0.82584,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 16.0,
+      "held-out map skill (in-probe)": 0.823451,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 17.0,
+      "held-out map skill (in-probe)": 0.836468,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 18.0,
+      "held-out map skill (in-probe)": 0.82413,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 19.0,
+      "held-out map skill (in-probe)": 0.762404,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 20.0,
+      "held-out map skill (in-probe)": 0.748755,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 21.0,
+      "held-out map skill (in-probe)": 0.725912,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 22.0,
+      "held-out map skill (in-probe)": 0.696676,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 23.0,
+      "held-out map skill (in-probe)": 0.671996,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 24.0,
+      "held-out map skill (in-probe)": 0.634909,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 25.0,
+      "held-out map skill (in-probe)": 0.60472,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 26.0,
+      "held-out map skill (in-probe)": 0.6185,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 27.0,
+      "held-out map skill (in-probe)": 0.521719,
+      "series": "template-block max \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": 0.037522,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.299807,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 2.0,
+      "held-out map skill (in-probe)": 0.416378,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 3.0,
+      "held-out map skill (in-probe)": 0.390203,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 4.0,
+      "held-out map skill (in-probe)": 0.635593,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 5.0,
+      "held-out map skill (in-probe)": 0.749928,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 6.0,
+      "held-out map skill (in-probe)": 0.788187,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 7.0,
+      "held-out map skill (in-probe)": 0.781761,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 8.0,
+      "held-out map skill (in-probe)": 0.857824,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 9.0,
+      "held-out map skill (in-probe)": 0.868787,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 10.0,
+      "held-out map skill (in-probe)": 0.855963,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 11.0,
+      "held-out map skill (in-probe)": 0.870298,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 12.0,
+      "held-out map skill (in-probe)": 0.870778,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 13.0,
+      "held-out map skill (in-probe)": 0.843419,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 14.0,
+      "held-out map skill (in-probe)": 0.81414,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 15.0,
+      "held-out map skill (in-probe)": 0.83078,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 16.0,
+      "held-out map skill (in-probe)": 0.808724,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 17.0,
+      "held-out map skill (in-probe)": 0.790428,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 18.0,
+      "held-out map skill (in-probe)": 0.82341,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 19.0,
+      "held-out map skill (in-probe)": 0.774139,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 20.0,
+      "held-out map skill (in-probe)": 0.776005,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 21.0,
+      "held-out map skill (in-probe)": 0.748519,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 22.0,
+      "held-out map skill (in-probe)": 0.700017,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 23.0,
+      "held-out map skill (in-probe)": 0.673828,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 24.0,
+      "held-out map skill (in-probe)": 0.647115,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 25.0,
+      "held-out map skill (in-probe)": 0.61652,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 26.0,
+      "held-out map skill (in-probe)": 0.536292,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 27.0,
+      "held-out map skill (in-probe)": 0.357761,
+      "series": "trailing newline \u2192 next-user-header block max",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": -0.031249,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.406629,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 2.0,
+      "held-out map skill (in-probe)": 0.635478,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 3.0,
+      "held-out map skill (in-probe)": 0.582039,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 4.0,
+      "held-out map skill (in-probe)": 0.714518,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 5.0,
+      "held-out map skill (in-probe)": 0.789108,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 6.0,
+      "held-out map skill (in-probe)": 0.787703,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 7.0,
+      "held-out map skill (in-probe)": 0.781088,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 8.0,
+      "held-out map skill (in-probe)": 0.8469,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 9.0,
+      "held-out map skill (in-probe)": 0.837163,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 10.0,
+      "held-out map skill (in-probe)": 0.83959,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 11.0,
+      "held-out map skill (in-probe)": 0.853581,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 12.0,
+      "held-out map skill (in-probe)": 0.869424,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 13.0,
+      "held-out map skill (in-probe)": 0.825831,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 14.0,
+      "held-out map skill (in-probe)": 0.797388,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 15.0,
+      "held-out map skill (in-probe)": 0.818841,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 16.0,
+      "held-out map skill (in-probe)": 0.824093,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 17.0,
+      "held-out map skill (in-probe)": 0.812402,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 18.0,
+      "held-out map skill (in-probe)": 0.799419,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 19.0,
+      "held-out map skill (in-probe)": 0.741823,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 20.0,
+      "held-out map skill (in-probe)": 0.718619,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 21.0,
+      "held-out map skill (in-probe)": 0.683646,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 22.0,
+      "held-out map skill (in-probe)": 0.675147,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 23.0,
+      "held-out map skill (in-probe)": 0.631118,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 24.0,
+      "held-out map skill (in-probe)": 0.578059,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 25.0,
+      "held-out map skill (in-probe)": 0.576968,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 26.0,
+      "held-out map skill (in-probe)": 0.515961,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 27.0,
+      "held-out map skill (in-probe)": 0.528224,
+      "series": "template-block mean \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": -0.125521,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.318849,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 2.0,
+      "held-out map skill (in-probe)": 0.559995,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 3.0,
+      "held-out map skill (in-probe)": 0.507868,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 4.0,
+      "held-out map skill (in-probe)": 0.605652,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 5.0,
+      "held-out map skill (in-probe)": 0.728682,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 6.0,
+      "held-out map skill (in-probe)": 0.752231,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 7.0,
+      "held-out map skill (in-probe)": 0.766529,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 8.0,
+      "held-out map skill (in-probe)": 0.829958,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 9.0,
+      "held-out map skill (in-probe)": 0.848208,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 10.0,
+      "held-out map skill (in-probe)": 0.83845,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 11.0,
+      "held-out map skill (in-probe)": 0.856877,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 12.0,
+      "held-out map skill (in-probe)": 0.868912,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 13.0,
+      "held-out map skill (in-probe)": 0.842536,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 14.0,
+      "held-out map skill (in-probe)": 0.817127,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 15.0,
+      "held-out map skill (in-probe)": 0.830779,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 16.0,
+      "held-out map skill (in-probe)": 0.829896,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 17.0,
+      "held-out map skill (in-probe)": 0.806678,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 18.0,
+      "held-out map skill (in-probe)": 0.822651,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 19.0,
+      "held-out map skill (in-probe)": 0.779146,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 20.0,
+      "held-out map skill (in-probe)": 0.776409,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 21.0,
+      "held-out map skill (in-probe)": 0.751813,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 22.0,
+      "held-out map skill (in-probe)": 0.719923,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 23.0,
+      "held-out map skill (in-probe)": 0.682274,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 24.0,
+      "held-out map skill (in-probe)": 0.637634,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 25.0,
+      "held-out map skill (in-probe)": 0.636494,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 26.0,
+      "held-out map skill (in-probe)": 0.588838,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 27.0,
+      "held-out map skill (in-probe)": 0.533044,
+      "series": "trailing newline \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": -0.710679,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.133847,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 2.0,
+      "held-out map skill (in-probe)": 0.569974,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 3.0,
+      "held-out map skill (in-probe)": 0.539102,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 4.0,
+      "held-out map skill (in-probe)": 0.658978,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 5.0,
+      "held-out map skill (in-probe)": 0.776085,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 6.0,
+      "held-out map skill (in-probe)": 0.77693,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 7.0,
+      "held-out map skill (in-probe)": 0.792068,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 8.0,
+      "held-out map skill (in-probe)": 0.844232,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 9.0,
+      "held-out map skill (in-probe)": 0.812299,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 10.0,
+      "held-out map skill (in-probe)": 0.829881,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 11.0,
+      "held-out map skill (in-probe)": 0.851957,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 12.0,
+      "held-out map skill (in-probe)": 0.868113,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 13.0,
+      "held-out map skill (in-probe)": 0.835432,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 14.0,
+      "held-out map skill (in-probe)": 0.808512,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 15.0,
+      "held-out map skill (in-probe)": 0.834696,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 16.0,
+      "held-out map skill (in-probe)": 0.8297,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 17.0,
+      "held-out map skill (in-probe)": 0.817111,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 18.0,
+      "held-out map skill (in-probe)": 0.788062,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 19.0,
+      "held-out map skill (in-probe)": 0.726874,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 20.0,
+      "held-out map skill (in-probe)": 0.687889,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 21.0,
+      "held-out map skill (in-probe)": 0.616797,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 22.0,
+      "held-out map skill (in-probe)": 0.567408,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 23.0,
+      "held-out map skill (in-probe)": 0.434859,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 24.0,
+      "held-out map skill (in-probe)": 0.362892,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 25.0,
+      "held-out map skill (in-probe)": 0.336055,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 26.0,
+      "held-out map skill (in-probe)": 0.247555,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 27.0,
+      "held-out map skill (in-probe)": 0.202925,
+      "series": "trailing 'assistant' token \u2192 next-user 'user' token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (matched context/answer layer)": 0.0,
+      "held-out map skill (in-probe)": 0.17044067382812497,
+      "series": "chance band (0.17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (matched context/answer layer)": 1.0,
+      "held-out map skill (in-probe)": 0.17044067382812497,
+      "series": "chance band (0.17)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 142
+}

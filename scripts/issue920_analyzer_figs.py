@@ -12,9 +12,11 @@ Run from the issue-920 worktree root:
 from __future__ import annotations
 
 import json
+import pathlib
 
 import numpy as np
 import torch
+from issue920_labels import plain_family
 from scipy.stats import spearmanr
 
 from explore_persona_space.analysis.paper_plots import (
@@ -29,7 +31,7 @@ OUT = "figures/issue_920"
 EVAL = "eval_results/issue_920"
 PRED_PT = "data/issue_920/preds/pooled_heldout_predictions.pt"
 
-mp = json.load(open(f"{EVAL}/map_skill_by_cell.json"))
+mp = json.loads(pathlib.Path(f"{EVAL}/map_skill_by_cell.json").read_text())
 cc = mp["cells"]["c_cell"]
 ac = mp["cells"]["a_cell"]
 R1 = np.array(mp["skill"]["R1"])
@@ -68,8 +70,8 @@ def famgrid(vals: np.ndarray) -> np.ndarray:
 g1 = famgrid(R1)
 fig, ax = plt.subplots(figsize=(13, 8))
 im = ax.imshow(np.clip(g1, 0.0, 0.9), vmin=0.0, vmax=0.9, cmap="viridis", aspect="auto")
-ax.set_xticks(range(len(AF)), AF, rotation=90, fontsize=6)
-ax.set_yticks(range(len(CF)), CF, fontsize=6)
+ax.set_xticks(range(len(AF)), [plain_family(f) for f in AF], rotation=90, fontsize=6)
+ax.set_yticks(range(len(CF)), [plain_family(f) for f in CF], fontsize=6)
 ax.set_title(
     "Held-out map skill per family pair (best matched layer; color clipped to [0, 0.9];\n"
     "chance band 0.17; values below 0 render as 0)"
@@ -88,8 +90,8 @@ for i, f in enumerate(CF):
             gd[i, j] = R2[k] - R1[k]
 fig, ax = plt.subplots(figsize=(13, 8))
 im = ax.imshow(np.clip(gd, -0.15, 0.15), vmin=-0.15, vmax=0.15, cmap="RdBu_r", aspect="auto")
-ax.set_xticks(range(len(AF)), AF, rotation=90, fontsize=6)
-ax.set_yticks(range(len(CF)), CF, fontsize=6)
+ax.set_xticks(range(len(AF)), [plain_family(f) for f in AF], rotation=90, fontsize=6)
+ax.set_yticks(range(len(CF)), [plain_family(f) for f in CF], fontsize=6)
 ax.set_title(
     "Probe-set generalization delta (input-OOD minus in-probe skill) at each family pair's\n"
     "best cell; color clipped to plus/minus 0.15"
@@ -115,19 +117,20 @@ plt.close(fig)
 
 # ---- DV-2 family-centered cross-check ----------------------------------------
 p = torch.load(PRED_PT, map_location="cpu", weights_only=False)
-ro = json.load(open(f"{EVAL}/readout_rho_by_cell.json"))
+ro = json.loads(pathlib.Path(f"{EVAL}/readout_rho_by_cell.json").read_text())
 cells = ro["cells"]
 beh = ro["behaviors"]
 rin = np.array(ro["rho"]["R_in_probe"])
 rood = np.array(ro["rho"]["R_input_ood"])
-bat = json.load(open("data/issue594/battery.json"))
+bat = json.loads(pathlib.Path("data/issue594/battery.json").read_text())
 items = bat if isinstance(bat, list) else bat.get("instances")
 fammap = {(x.get("context_id") or x.get("id")): x["family"] for x in items}
 ctx_ids = p["ctx_ids"]
 fvec = np.array([fammap[c] for c in ctx_ids])
 e0 = {}
 for src in ["highm", "lowm"]:
-    g = json.load(open(f"../../../eval_results/issue_812/graded_e0_{src}.json"))["e0"]
+    g_path = pathlib.Path(f"../../../eval_results/issue_812/graded_e0_{src}.json")
+    g = json.loads(g_path.read_text())["e0"]
     for b, per_ctx in g.items():
         if b == "deception":
             continue
@@ -171,17 +174,17 @@ for regime, R, key in [("in-probe", rin, "ro_predA"), ("input-OOD", rood, "ro_pr
 
 fig, ax = plt.subplots(figsize=(9, 10))
 ys = np.arange(len(rows))[::-1]
-for yy, (lab, rf, rc, b) in zip(ys, rows):
+for yy, (_lab, rf, rc, _b) in zip(ys, rows, strict=True):
     ax.plot([abs(rf), abs(rc)], [yy, yy], color="lightgray", zorder=1)
     ax.scatter([abs(rf)], [yy], color="#1f4e9c", zorder=2, s=28)
     ax.scatter([abs(rc)], [yy], color="#c23b22", zorder=2, s=28)
-ax.set_yticks(ys, [r[0] for r in rows], fontsize=7)
+ax.set_yticks(ys, [r[0] for r in rows], fontsize=7)  # labels from rows
 ax.scatter([], [], color="#1f4e9c", label="full |rho| (as banded)")
 ax.scatter([], [], color="#c23b22", label="within-family-centered |rho|")
 ax.set_xlabel("absolute Spearman rho vs graded behavior score (n = 50 contexts, 7 families)")
 ax.set_title(
-    "Behavior read-out at each band-clearing best cell: full vs family-centered rho\n"
-    "(judge-reliability ceilings 0.68-0.96 bound attainable rho per behavior)"
+    "Behavior read-out at each best cell (27 of 28 clear their band): full vs\n"
+    "family-centered rho (judge-reliability ceilings 0.68-0.96 bound attainable rho)"
 )
 ax.axvline(0, color="black", lw=0.8)
 ax.legend(loc="lower right")
@@ -191,7 +194,7 @@ plt.close(fig)
 # ---- low-level scatter behind the harmful-compliance clearing cell -----------
 cell, pred, y, rf, rc = scatter_best
 fig, ax = plt.subplots(figsize=(8, 7))
-palette = dict(zip(sorted(set(fvec)), plt.cm.tab10.colors))
+palette = dict(zip(sorted(set(fvec)), plt.cm.tab10.colors, strict=False))
 for f in sorted(set(fvec)):
     m = fvec == f
     ax.scatter(pred[m], y[m], color=palette[f], label=f, s=36)
