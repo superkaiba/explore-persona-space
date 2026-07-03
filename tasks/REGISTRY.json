@@ -5864,8 +5864,8 @@
     "897": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/897",
-      "status": "running",
+      "path": "tasks/reviewing/897",
+      "status": "reviewing",
       "title": "workflow-fix: guard repo-root working-tree reverts (restore/checkout ./clean -f)"
     },
     "898": {
