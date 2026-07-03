@@ -257,3 +257,4 @@
 {"ts": "2026-07-03T17:51:09Z", "kind": "epm:progress", "version": 105, "by": "unknown", "note": "[poll-tick] 5th launch 34h05m. 7/8 cells done; final cell in progress. Disk 23G."}
 {"ts": "2026-07-03T18:45:37Z", "kind": "epm:progress", "version": 106, "by": "unknown", "note": "[poll-tick] 5th launch 34h55m. 7/8 cells done; final cell in progress. Disk 19G (fleet pressure; ran guard). Crash-resume state protects the run regardless."}
 {"ts": "2026-07-03T19:37:06Z", "kind": "epm:progress", "version": 107, "by": "unknown", "note": "[poll-tick] 5th launch 35h45m. 7/8 cells done; final cell in progress. Disk recovered to 80G (fleet released)."}
+{"ts": "2026-07-03T21:23:53Z", "kind": "epm:progress", "version": 108, "by": "unknown", "note": "[autonomous_session_watch:orphan-respawn] active task (status=running) had no live registered session and no real progress marker for 106.6m; auto-respawned via spawn-issue --auto (attempt 1/2 today)."}
