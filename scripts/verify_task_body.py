@@ -486,6 +486,33 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   claim. Incident: task #683 round-1 interp-critique false-FAILed off a
   wrong-sidecar fallback the verifier could not mechanically detect.
 
+- **check 28** (`check_figure_label_codes`, WARN): rendered figure text read
+  from each inline same-repo sha-pinned figure's sibling `.meta.json` (parsed
+  via `_read_figure_meta_json`, check 26's reader) must not carry opaque
+  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`) or
+  regime-code slugs (snake tokens >=3 segments or digit-bearing:
+  `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
+  like `log_prob` stay allowed). Plain-English condition names are the
+  project rule end to end; config slugs belong in the Repro config row /
+  provenance keys. Scans string VALUES only (provenance-keyed subtrees
+  pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
+  whitespace (axis-label-keyed data rows) — identifier keys (`_kind`,
+  `cell_slugs`, translation-map slug keys) are never visited; PATH-SHAPED
+  strings / words (a file path or URL) are exempt, but a slash-separated
+  rendered label (`ctx_blk_max / ans_uhdr_max`) carries whitespace and IS
+  scanned. Coverage = sidecar-CARRIED strings only — known residuals: a
+  slug-bearing figure TITLE with no ad-hoc sidecar echo is invisible (the
+  canonical `savefig_paper` writer never serializes titles; PNG-pixel text
+  stays the multimodal critics' substantive read), a bare slug used as a
+  whitespace-free column KEY is unscanned, and a slug inside a path-shaped
+  word is exempt. WARN, never FAIL; FAIL-SOFT on a missing / unparsable
+  sidecar (check-24 convention, NOT check 26's loud missing-sidecar FAIL);
+  NO-OP PASS offline / `--body-stdin`, with no inline figures, or no
+  scannable same-repo sidecar. Incident: task #920's
+  `winning_cell_scatter.png` reached the 9a-bis gate titled
+  `ctx_blk_max@L12 x ans_uhdr_max@L12` after three review passes each
+  deferred it as a cosmetic nit, costing a REVISE round.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -5434,6 +5461,168 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
     )
 
 
+# ─── Check 28: opaque config-code tokens in figure text ────────────────────
+#
+# Sibling of checks 24/26 (same figure iteration + `_read_figure_meta_json`
+# sidecar read), but the flagged property is INTRINSIC to the sidecar's own
+# strings — no body comparison: rendered figure text must use plain-English
+# condition names, never internal config shorthand (`ctx_blk_max@L12`).
+
+# (a) `@L<digits>` layer pins, with any attached snake stem captured whole
+#     (`ctx_blk_max@L12`); bare `@L12` also matches (no leading \b — `@` is a
+#     non-word char, so a \b there would fail on a space-preceded bare pin).
+_LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
+
+# (b) snake_case token, >=2 segments, starting with a letter. The classifier
+#     below flags only >=3-segment or digit-bearing matches (2-segment
+#     all-alpha metric / persona names like `log_prob` are legitimate labels).
+_SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
+
+# Path/URI-SHAPED string: no internal whitespace and at least one path
+# separator — a file path or URL, which is provenance, not rendered text.
+# Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
+# label like `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS
+# scanned (a whole-string any-slash form would false-clean slash-separated
+# labels inside the incident class).
+_PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
+
+
+def _opaque_code_tokens(text: str) -> list[str]:
+    """Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
+    layer pins, and snake_case tokens that are >=3 segments OR carry any
+    digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
+    all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
+    allowed. PATH-SHAPED strings (whitespace-free with a path separator —
+    file paths, URLs) are exempt from the snake scan; strings that merely
+    CONTAIN a slash (e.g. a slash-separated rendered label) are still
+    scanned, with individual path-shaped whitespace-split words skipped.
+    De-duped case-insensitively, order kept.
+    """
+    hits: list[str] = [m.group(0) for m in _LAYER_PIN_RE.finditer(text)]
+    if not _PATH_SHAPED_RE.match(text.strip()):
+        for m in _SNAKE_TOKEN_RE.finditer(text):
+            tok = m.group(0)
+            # Skip tokens inside a path-shaped word ("see figures/x_1/y.png").
+            ws_words = [w for w in text.split() if tok in w]
+            if ws_words and all(_PATH_SHAPED_RE.match(w) for w in ws_words):
+                continue
+            if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
+                hits.append(tok)
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in hits:
+        key = t.casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(t)
+    return out
+
+
+def _iter_meta_label_values(obj: object) -> list[str]:
+    """Collect the rendered-text-bearing strings of a parsed sidecar for
+    check 28: string VALUES (provenance-keyed subtrees pruned via
+    ``_META_PROVENANCE_KEYS``) plus dict KEYS containing internal whitespace
+    (axis-label-keyed data rows, e.g. ``{"1/30 chance accuracy": 0.41}``).
+    Identifier-shaped keys (``_kind``, ``cell_slugs``, translation-map slug
+    keys) are structural provenance and are NOT collected — the deliberate
+    divergence from check 24's ``_flatten_meta_strings``, which collects all
+    non-provenance keys.
+    """
+    out: list[str] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.casefold() in _META_PROVENANCE_KEYS:
+                continue
+            if isinstance(k, str) and " " in k.strip():
+                out.append(k)
+            out.extend(_iter_meta_label_values(v))
+    elif isinstance(obj, list):
+        for item in obj:
+            out.extend(_iter_meta_label_values(item))
+    elif isinstance(obj, str) and obj.strip():
+        out.append(obj)
+    return out
+
+
+def check_figure_label_codes(body: str) -> CheckResult:
+    """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
+    must not carry opaque config-code tokens — ``@L<digits>`` layer pins or
+    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``). Plain-English
+    condition names are the rule end to end (memory
+    feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
+    config slugs belong in the Repro config row / provenance keys. Incident
+    #920: ``winning_cell_scatter.png`` reached the 9a-bis gate titled
+    ``ctx_blk_max@L12 x ans_uhdr_max@L12`` after three review passes each
+    deferred it as a cosmetic nit.
+
+    Coverage = sidecar-CARRIED strings only: string values (provenance
+    subtrees pruned) plus whitespace-bearing dict keys. Known residuals,
+    accepted by design: (i) a slug-bearing figure TITLE with no ad-hoc
+    sidecar echo is invisible — the canonical ``savefig_paper`` writer never
+    serializes titles (PNG-pixel text stays the multimodal critics'
+    substantive read); (ii) a bare slug used as a whitespace-free column KEY
+    is unscanned; (iii) a slug inside a path-shaped word is exempt. WARN,
+    never FAIL; fail-soft on missing / unparsable sidecars (the check-24
+    convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
+    offline / no figures / no scannable same-repo sidecar.
+    """
+    label = "figure text opaque config codes (slug / @L-pin tokens)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    meta_cache: dict[str, dict | None] = {}
+    warns: list[str] = []
+    scanned = 0
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        if url not in meta_cache:
+            meta_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+        meta = meta_cache[url]
+        if meta is None:
+            continue  # no sidecar / unparsable — fail-soft skip (check-24 convention)
+        scanned += 1
+        toks: list[str] = []
+        for s in _iter_meta_label_values(meta):
+            toks.extend(_opaque_code_tokens(s))
+        toks = list(dict.fromkeys(toks))
+        if toks:
+            basename = m.group("path").rsplit("/", 1)[-1]
+            preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
+            warns.append(
+                f"`{basename}` figure text carries opaque config-code token(s) {preview} — "
+                "use plain-English condition names in rendered figure text (slugs belong in "
+                "the Repro config row / provenance keys); regenerate, or acknowledge in body"
+            )
+    if warns:
+        head = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} figure(s) with opaque code tokens of {scanned} scanned: {head}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        return CheckResult(
+            label, True, "no same-repo figure sidecar with scannable text — nothing to scan"
+        )
+    return CheckResult(label, True, f"{scanned} figure sidecar(s) free of opaque config codes")
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -7302,6 +7491,7 @@ CHECKS = [
     check_figure_text_vs_body_tokens,  # check 24 (WARN)
     check_audit_availability_claims_match_hf,  # check 25
     check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
+    check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
 ]
 
 
