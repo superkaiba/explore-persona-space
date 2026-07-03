@@ -4,3 +4,4 @@
 {"ts": "2026-07-03T01:56:01Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T01:56:41Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root"}
 {"ts": "2026-07-03T02:03:46Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail=0 n_warn=0; plan v1 (kind: infra — most checks kind-exempt; c0/c5/c8 PASS)"}
+{"ts": "2026-07-03T02:03:48Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=fact-check round=1 subagent=planner worktree=repo-root"}
