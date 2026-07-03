@@ -130,16 +130,18 @@ def _load_cc(ctx_ids, capture_layers):
     return {c: tensor[iid_to_row[c]][capture_layers].float().numpy() for c in ctx_ids}
 
 
-def _load_position_summaries(ctx_ids):
+def _load_position_summaries(ctx_ids, store_hf: str = POSITION_STORE_HF):
     """{ctx_id: {position: (Lc,H) fp32}} + {ctx_id: coverage} streamed per-context.
 
     Reads one <ctx>.pt at a time from HF (~7 MB each; peak footprint = one context).
+    ``store_hf`` parametrizes the store prefix (default = the round-1 store; the
+    uh round passes answer_position_sweep_user_header — plan v11 §4.6 item 6).
     """
     from huggingface_hub import hf_hub_download
 
     out, cov = {}, {}
     for i, c in enumerate(ctx_ids):
-        path = hf_hub_download(HF_DATA_REPO, f"{POSITION_STORE_HF}/{c}.pt", repo_type="dataset")
+        path = hf_hub_download(HF_DATA_REPO, f"{store_hf}/{c}.pt", repo_type="dataset")
         blob = torch.load(path, weights_only=False)
         names = blob["positions"]
         pv = blob["pos_vectors"].float().numpy()  # (n_pos, Lc, H)
@@ -572,6 +574,16 @@ def loco_recon_best_midlate(summary):
 
 
 def main() -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Issue #810 adhoc LOFO 7-fold heatmaps")
+    ap.add_argument(
+        "--position-store-hf",
+        default=POSITION_STORE_HF,
+        help="HF prefix of the aligned-subset position store (default: the round-1 "
+        "answer_position_sweep; the uh round passes answer_position_sweep_user_header)",
+    )
+    args = ap.parse_args()
     logger.info("[phase=load] manifest + summaries + c_C + position store + r_B + E0 + families")
     from huggingface_hub import hf_hub_download
 
@@ -586,7 +598,7 @@ def main() -> int:
 
     free_summaries, capture_layers = _load_free_summaries()
     cc = _load_cc(ctx_ids, capture_layers)
-    pos_summaries, coverage = _load_position_summaries(ctx_ids)
+    pos_summaries, coverage = _load_position_summaries(ctx_ids, store_hf=args.position_store_hf)
     rb = _load_rb()
     e0 = _e0_graded_by_behavior()
 
