@@ -501,6 +501,21 @@ both reviewers are graded against the same standard. Read
   Codex never re-derives a narrower check (incident #653 r8). Without this
   in the prompt, an un-CI-pinned BLOCKER-fix assertion ships unflagged.
 
+**Workflow v2 addendum (`workflow: v2` tasks only).** Detect the workflow via
+`task.py view <N> --json | jq -r '.frontmatter.workflow // "v1"'`. On a `v2` task
+the Claude implementation panel is three agents — `code-correctness-critic`,
+`plan-adherence-critic`, and `efficiency-critic` (implementation mode) — but carries
+ONLY ONE Codex twin: you. So for a v2 task your single composed prompt is a COMBINED
+correctness + efficiency review: ALSO read `.claude/agents/efficiency-critic.md`
+§ "IMPLEMENTATION MODE" and inline its 8 checks (compute-shape-vs-dispatcher + the
+work-conserving schedule sub-check; batched inner loops + named-helper adherence;
+hollow-verification-gate; API via `api_dispatch.py`; device routing / thread caps;
+compute-throughput anti-patterns; long-loop restartability) alongside the
+code-reviewer.md sections above — the `compute-shape-mismatch` /
+`hollow-verification-gate` / `substantive` tags are already in the Blocker-tags
+line. On a v1 task inline the code-reviewer.md rubric alone (its Steps 0.67 / 0.68 /
+3.6 already carry the efficiency checks, which you inline).
+
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; RUNNING tests is the Claude
 reviewer's responsibility. (Step 4.5 above is a separate test-PRESENCE

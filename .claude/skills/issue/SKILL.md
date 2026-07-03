@@ -846,6 +846,21 @@ deferred variant.
 
 ### Step 0: Load state
 
+**Workflow-version dispatch (run BEFORE anything else).** Read the task's
+`workflow` frontmatter field and, if it is `v2`, hand the whole task off to the
+v2 skill and EXIT this skill immediately — v1 does nothing further for a v2 task.
+This is a read-only probe (no markers, no mutation); the v2 skill re-runs the
+same Step-0 guards itself.
+
+```bash
+uv run python scripts/task.py view <N> --json | uv run python -c \
+  "import json,sys; print((json.load(sys.stdin).get('frontmatter') or {}).get('workflow') or 'v1')"
+# → "v2"  : announce "Task #<N> is workflow: v2 — delegating to issue-v2." then
+#           invoke the Skill tool `issue-v2` with the same task number <N> and STOP
+#           (do NOT run any step below; issue-v2 owns the whole lifecycle).
+# → "v1" / absent / empty : continue below UNCHANGED (v1 path, byte-for-byte).
+```
+
 **Single-orchestrator guard (run FIRST).** Exactly ONE session may drive
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python

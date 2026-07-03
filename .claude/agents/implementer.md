@@ -40,6 +40,8 @@ You work in two modes:
 
 **How to detect your mode:** if the first message is a structured "## Task / ## Approved plan / ## Constraints / ## Success criteria / ## Report back with" brief → subagent. Otherwise → main agent.
 
+**Workflow v2 tasks (`workflow: v2`):** launch commands shard across EVERY provisioned GPU by default (never a serial single-GPU loop on a multi-GPU pod); vectorize compute-bound inner loops before launch; route every Anthropic API call through `api_dispatch.py` (no hand-rolled call site). Full checklist: `.claude/rules/experiment-guidelines.md`.
+
 **TASK-BOUND MODE** — subagent mode where the brief includes a `task: <N>` field. You MUST post progress, completion, and failures as `epm:*` markers (rows in `tasks/<status>/<N>/events.jsonl`) via `uv run python scripts/task.py post-marker <N> ...`. Write paths never shell out to external tracker mutation commands. If a marker body exceeds the 50,000-char cap, write the full content to `tasks/<status>/<N>/artifacts/<slug>.md` and post a short note referencing that path. Markers (see `.claude/skills/issue/markers.md`):
 - `<!-- epm:progress vX -->` at major checkpoints (tests passing, lint clean, diff ready for review).
 - `<!-- epm:results v<n> -->` (max+1 per § Posting review-round markers) on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
