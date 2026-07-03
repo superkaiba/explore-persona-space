@@ -1,3 +1,4 @@
+- [Artifact-pair provenance coherence](feedback_artifact_pair_provenance_coherence.md) — sha pins ≠ capture-time identity: a question bank REGENERATED after its dependent activation capture (reconstruction.regenerated field; HF last-commit dates) breaks parity + q↔response pairing; assert only on provably-reconstructable inputs. #922 r4.
 - [BPE zero-width spans under plain-text delimiters](feedback_bpe_zero_width_span_plain_text_delimiters.md) — offset-containment span alignment yields (s,s) spans when a generated segment fully BPE-merges into "User: ...
 
 "-style delimiters (bare '.'; even 'Thanks.'); span-validate at GEN time with the consumer's exact asserts + multi-token placeholder. #825 crash-fix 4.
