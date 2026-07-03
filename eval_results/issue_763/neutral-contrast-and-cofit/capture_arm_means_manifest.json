@@ -1,0 +1,90 @@
+{
+  "by_behavior": {
+    "deception": {
+      "arm_kept": {
+        "pos": 264,
+        "neg": 979
+      },
+      "arm_dropped_capture": {
+        "pos": 0,
+        "neg": 0
+      },
+      "neutral_rollouts_captured": 1000,
+      "neutral_dropped_capture": 0,
+      "n_layers": 28,
+      "hidden": 3584
+    },
+    "fact_expression": {
+      "arm_kept": {
+        "pos": 804,
+        "neg": 707
+      },
+      "arm_dropped_capture": {
+        "pos": 0,
+        "neg": 0
+      },
+      "neutral_rollouts_captured": 1000,
+      "neutral_dropped_capture": 0,
+      "n_layers": 28,
+      "hidden": 3584
+    },
+    "format_style": {
+      "arm_kept": {
+        "pos": 997,
+        "neg": 994
+      },
+      "arm_dropped_capture": {
+        "pos": 0,
+        "neg": 0
+      },
+      "neutral_rollouts_captured": 1000,
+      "neutral_dropped_capture": 0,
+      "n_layers": 28,
+      "hidden": 3584
+    },
+    "self_report": {
+      "arm_kept": {
+        "pos": 1000,
+        "neg": 49
+      },
+      "arm_dropped_capture": {
+        "pos": 0,
+        "neg": 0
+      },
+      "neutral_rollouts_captured": 1000,
+      "neutral_dropped_capture": 0,
+      "n_layers": 28,
+      "hidden": 3584
+    },
+    "persona_drift": {
+      "arm_kept": {
+        "pos": 840,
+        "neg": 999
+      },
+      "arm_dropped_capture": {
+        "pos": 0,
+        "neg": 0
+      },
+      "neutral_rollouts_captured": 1000,
+      "neutral_dropped_capture": 0,
+      "n_layers": 28,
+      "hidden": 3584
+    }
+  },
+  "parity_check": {
+    "n_rows": 20,
+    "rel_err": 0.0007336337002925575,
+    "tol": 0.001,
+    "passed": true,
+    "model_name": "Qwen/Qwen2.5-7B-Instruct",
+    "batch_size": 16
+  },
+  "metadata": {
+    "git_commit": "f61490a50a4394d77d60c2ddcad4b757d92f1871",
+    "timestamp_utc": "2026-07-03T03:24:14.737700Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "phase": "capture_arm_means"
+  }
+}
