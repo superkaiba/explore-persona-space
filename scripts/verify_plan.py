@@ -34,10 +34,12 @@ Check catalog (id — classification — kind scope)
       coherence                                           analysis
   c15 fail-loud acceptance      WARN-only, conditional    infra + batch only
       claim backed by test
+  c16 re-extracted reference    WARN-only, conditional    experiment +
+      vs committed headline                               analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15) also SKIP
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16) also SKIP
 when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
@@ -52,6 +54,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no empirical-null gate`` (check 13)
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
+  - ``N/A — no re-extracted reference arms`` (check 16)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1094,22 +1097,30 @@ _C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
 _C12_WINDOW_LINES = 15
 
 
-def _battery_trigger_windows(plan: str) -> list[str]:
-    """RAW-text windows (± ``_C12_WINDOW_LINES`` lines) around each NON-fenced
-    line matching ``_BATTERY_TRIGGER_RE``. Trigger detection is fence-masked
-    (a fence-only example is not a battery plan — the line-preserving
-    equivalent of searching ``strip_fences(plan)``); each WINDOW is raw text,
-    so evidence inside adjacent tables/fences still counts."""
+def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) -> list[str]:
+    """RAW-text windows (± ``window_lines`` raw lines) around each NON-fenced
+    line matching ``trigger_re``. Trigger detection is fence-masked (a
+    fence-only example is not a trigger — the line-preserving equivalent of
+    searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
+    inside adjacent tables/fences still counts. Shared by c12
+    (``_BATTERY_TRIGGER_RE``, ±15) and c16 (``_C16_EXTRACT_RE`` ±3;
+    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     windows: list[str] = []
     for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
-        if fenced or not _BATTERY_TRIGGER_RE.search(line):
+        if fenced or not trigger_re.search(line):
             continue
-        lo = max(0, i - _C12_WINDOW_LINES)
-        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        lo = max(0, i - window_lines)
+        hi = min(len(lines), i + window_lines + 1)
         windows.append("\n".join(lines[lo:hi]))
     return windows
+
+
+def _battery_trigger_windows(plan: str) -> list[str]:
+    """Thin wrapper: c12's fence-masked ±15-raw-line trigger windows (see
+    ``_trigger_windows``; kept so the c12 name + radius stay greppable)."""
+    return _trigger_windows(plan, _BATTERY_TRIGGER_RE, _C12_WINDOW_LINES)
 
 
 def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
@@ -1818,6 +1829,128 @@ def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 16 — re-extracted reference vs committed headline (WARN-only) ───
+
+# Trigger half (a): a NON-NEGATED re-extraction/regeneration token on a
+# NON-fenced line, with reference/parity/committed vocabulary nearby.
+# Two branches, calibrated on the 2026-07-03 historical-corpus sweep:
+#   - `re-?extract`: vocabulary within ±_C16_WINDOW_LINES RAW lines
+#     (hard-wrapped prose splits "re-extracted\nreferences"; #811 v3's §5
+#     rows carry "(reference, re-extracted)" on one line);
+#   - `re-?generat`: SAME-line adjacency only (the plan §4.5 pre-authorized
+#     demotion — window-scoped re-generat swept in doc/data-regeneration
+#     noise: #491/#537/#542/#558/#597/#685/#763/#825 fired on regeneration
+#     mentions with reference vocab merely nearby).
+# The fixed-width negation lookbehinds drop ASSERTED-NEGATIVE mentions
+# ("NOT regenerated", "NO re-extraction of r_B" — #559/#561/#810-v1-3 noise
+# class): a plan stating it does NOT re-extract is not a trigger.
+# `\bre-?extract` does not match "pre-extraction" (no word boundary inside
+# "pre").
+_C16_NEG_GUARD = r"(?<!\bno )(?<!\bnot )(?<!\bnever )(?<!\bwithout )"
+_C16_EXTRACT_RE = re.compile(rf"(?i){_C16_NEG_GUARD}\bre-?extract\w*")
+_C16_REGEN_RE = re.compile(rf"(?i){_C16_NEG_GUARD}\bre-?generat\w*")
+_C16_REF_RE = re.compile(
+    r"(?i)\breferences?\b|\breference[- ]arms?\b|\bparity\b"
+    r"|\bcommitted (?:cells?|v\d)|prior[- ]headline"
+)
+_C16_WINDOW_LINES = 3
+
+# Trigger half (b): the plan reads as a same-issue follow-up / amendment
+# folding into an existing clean-result. Document-global, fence-stripped;
+# (?s) so the wrapped "folds into THIS\nissue's clean-result body" shape
+# (#811 v3:87-89) is caught. Bare "follow-up round" is deliberately absent
+# (709 occ / 216 files in the 2026-07-03 corpus probe — plans cite the
+# follow-up machinery prospectively).
+_C16_FOLD_RE = re.compile(
+    r"(?is)same-issue follow-?up|amendment to (?:the|this|a)\b"
+    r"|epm:followup-scope|followups?_running"
+    r"|folds? into .{0,80}?clean-result"
+)
+
+# Satisfaction: an explicit sentence distinguishing same-pass comparator
+# values from prior committed headline values. Three shapes:
+#   S1 — the term of art itself ("comparator" REQUIRED: #811 v3:189
+#        "re-extracting the references in the SAME pass" must not satisfy);
+#   S2 — committed-headline noun phrase + a retention verb within one
+#        sentence. Gaps exclude '.' and ';' so v3:574 "committed cells only
+#        via R resampling." and v3:499 "(committed; prior rounds' artifacts
+#        untouched)" cannot satisfy — the sentence stop / path dots block;
+#   S3 — an explicit negated-replacement clause naming the headline
+#        (v3:270 "layout replaces grouped bars" carries no negation).
+# "replication-stability" vocabulary alone deliberately does NOT satisfy —
+# the incident plan carried it (v3:347, :434).
+_C16_SAMEPASS_RE = re.compile(r"(?i)same[- ]pass comparators?")
+_C16_DISTINCTION_RE = re.compile(
+    r"(?is)(?:committed|prior|standing|already[- ]adjudicated)"
+    r"[^.;]{0,40}?\b(?:headline|cells?|values?|verdicts?|calls?|evidence)"
+    r"[^.;]{0,120}?"
+    r"(?:remains?|retain\w*|stays?|stands?|kept|keeps?|unchanged|untouched"
+    r"|(?:is |are )?not (?:silently )?replaced?|never (?:silently )?replaced?)"
+)
+_C16_NONREPLACE_RE = re.compile(
+    r"(?is)(?:never|not|no)\s+(?:a\s+)?(?:silent(?:ly)?\s+)?"
+    r"(?:headline[- ])?replac\w*[^.;]{0,80}?(?:headline|committed)"
+    r"|(?:never|not)\s+(?:silently\s+)?replac\w*[^.;]{0,60}?headline"
+)
+_C16_NA_RE = re.compile(NA_RE + r"no re-?extracted reference arms")
+
+
+def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
+    """A follow-up plan that re-extracts prior-headline REFERENCE arms AND
+    folds into an existing clean-result must explicitly distinguish
+    "same-pass comparator" values from "prior committed headline" values —
+    a reference flip is replication-stability evidence, never an
+    unannounced headline replacement (#811 v3 §6; task #937). WARN not
+    FAIL: both trigger halves and the satisfaction shapes are text
+    heuristics; the Statistics critic adjudicates the semantic question
+    (does the plan's adjudication story actually preserve the committed
+    cells) — this gate surfaces, never adjudicates."""
+    cid = "c16_reference_headline_distinction"
+    name = "re-extracted reference vs committed headline"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: clean-result folding is an experiment|analysis plan shape",
+        )
+    # re-extract: ±3-line windows; re-generat: same-line only (radius 0).
+    windows = _trigger_windows(plan, _C16_EXTRACT_RE, _C16_WINDOW_LINES)
+    windows += _trigger_windows(plan, _C16_REGEN_RE, 0)
+    if not any(_C16_REF_RE.search(w) for w in windows):
+        return _skip(cid, name, "no re-extraction of reference arms detected")
+    text = strip_fences(plan)
+    if not _C16_FOLD_RE.search(text):
+        return _skip(
+            cid,
+            name,
+            "re-extraction vocabulary present but the plan does not read as a "
+            "same-issue follow-up folding into an existing clean-result",
+        )
+    if _C16_NA_RE.search(text):
+        return _pass(cid, name, "explicit N/A declared (no re-extracted reference arms)")
+    if (
+        _C16_SAMEPASS_RE.search(text)
+        or _C16_DISTINCTION_RE.search(text)
+        or _C16_NONREPLACE_RE.search(text)
+    ):
+        return _pass(
+            cid,
+            name,
+            "distinguishing sentence present (same-pass comparator / committed-headline retention)",
+        )
+    return _warn(
+        cid,
+        name,
+        "plan re-extracts prior-headline reference arms AND folds into an existing "
+        "clean-result, but no sentence distinguishes same-pass comparator values from "
+        "the prior committed headline values — state which values adjudicate this "
+        "round's NEW comparison vs which remain the committed headline, and that a "
+        "flipped reference CALL is reported as replication-stability evidence rather "
+        "than replacing the headline (#811 v3 §6 incident; the committed-cells-"
+        "remain-evidence rule), or declare `N/A — no re-extracted reference arms`",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1836,6 +1969,7 @@ CHECKS = [
     check_empirical_gate_attainability,
     check_hypothesis_branch_coherence,
     check_failloud_test_coverage,
+    check_reference_headline_distinction,
 ]
 
 

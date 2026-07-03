@@ -1,10 +1,10 @@
 ---
-title: Context×answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe
-  generalization
+title: The whole-answer-mean summary survives an exhaustive context-by-answer recipe
+  sweep under family-held-out, selection-corrected evaluation (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-03T08:50:07Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 810
 origin_prompt: 'Run the following experiment:
 
@@ -51,106 +51,177 @@ goal: On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (
 relates_to:
 - leak-predictor
 ---
+# The whole-answer-mean summary survives an exhaustive context-by-answer recipe sweep under family-held-out, selection-corrected evaluation (MODERATE confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- **The linear context→answer activation map is far above chance under family-held-out evaluation: best held-out skill 0.87 against a 0.17 chance band; 17,447 of 34,652 combinations clear.**
+- **No recipe separates from the whole-answer-mean incumbent under the reachable family-restricted bands: 37 of 46 answer families (in-probe; 36 of 46 held-out) and all 29 context families sit inside the winner's selection-noise band, and only single tail-position targets separate (as worse; one layer-pooled newline family adds a marginal held-out separation). The head-to-head challenger test itself has zero power — its 0.28 band exceeds the 0.17 achievable lead ceiling — so that read is a failure-to-reject, not evidence of a tie.**
+- **The template-token targets' numeric lead reflects target stability: their cross-probe-set ceiling is 0.99 vs 0.89 for the whole-answer mean, which recovers more of its own ceiling (93% vs 88%; point estimates, unbanded).**
+- **Probe-set generality is recipe-dependent: pooled and boundary summaries lose about 0.01 skill on unseen probes; last-k content-token context reads with k of 2 or more lose 0.06 to 0.23, while the single final content token loses only 0.02.**
+- **27 of 28 behavior read-out clears are discounted by an exploratory (unbanded) family-centering re-read: family-centered rank correlations drop 57% at the median; none is established beyond family structure, pending a family-aware null.**
+- **Chain read-out maxima land at cells where the map fails (skill −2.9 to +0.55) and exceed their own oracle there — selection artifacts. No chain headline is claimed.**
+
 ## Goal
 
-On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (context-vector recipe × answer-vector recipe) combination best supports (a) the linear context→answer map, (b) direct behavior read-out, and (c) map-mediated (chain) read-out, under leave-one-family-out (LOFO) evaluation with generic UltraChat probes for activation collection and a disjoint OOD UltraChat probe pool testing probe-set generalization on both the input and target sides — including chat-template-token summaries, with-vs-without-template pooling variants, last-k context content tokens, and first-10/last-10 answer-token positions as map targets — naming the best combination against selection-symmetric nulls.
+- **This experiment in context:** Every summary-recipe choice in the leakage-predictor line was made piecemeal: the context read was locked in [#658](https://eps.superkaiba.com/tasks/658) against one alternative (reconstruction only, context-held-out folds, Betley probes); the answer-side sweep [#810](https://eps.superkaiba.com/tasks/810) was Betley-probe-only and its family-held-out re-read collapsed its behavior read-out; [#812](https://eps.superkaiba.com/tasks/812) bounded pooled-vs-unpooled on the same narrow regime. This run crosses 542 context-vector recipes with 1,018 answer-side targets (34,652 matched-layer combinations, including chat-template tokens, with/without-template pooling, last-k content tokens, and per-position targets) and scores every combination on the map, direct behavior read-out, and map-mediated read-out, under leave-one-family-out folds, generic UltraChat probes, a disjoint held-out probe pool on both input and target sides, and selection-symmetric null bands.
+- **Broader narrative:** The leakage-predictor question (`docs/open_questions.md`, `leak-predictor` anchor) needs one defensible context summary and one answer summary for the base-model context→answer map its theory builds on. This run asks whether any cheaper or sharper read (a single boundary token, a template-block pool) should replace the incumbent whole-answer mean — and finds no recipe that separates from it under the reachable family-restricted bands, keeping the incumbent as the default.
 
-## Overview / Motivation
+## Methodology
 
-Every prior summary-recipe choice in the leakage-predictor line was made piecemeal under the weakest evaluation regime: the context read was locked in #658 against ONE alternative (reconstruction DV only, LOCO, Betley probes); the answer-side sweep #810 was Betley/LOCO-only and its 2026-07-03 LOFO re-read collapsed read-out ρ 0.909→0.285 under family folds; #812's pooled-vs-unpooled bound is LOCO/Betley-only. No experiment has (a) compared context-vector recipes as predictors, (b) swept context×answer COMBINATIONS, (c) combined UltraChat probes with LOFO, or (d) tested OOD-probe generalization of any summary. This closes all four gaps in one shot. The template-token families are motivated by the boundary reads already being the line's strongest single positions (#810: turn-newline 0.735 vs whole-answer mean 0.800 reconstruction skill) — consistent with template tokens acting as aggregation sites.
+**Design:** Nothing is trained. Base `Qwen/Qwen2.5-7B-Instruct`, all 28 decoder blocks, over the fixed 50-context battery (7 families: persona 14 / wildchat 10 / icl 8 / rephrase 6 / format 5 / behavior 5 / default 2). Context summaries: 19 per-layer families (with/without-template mean and max pools, the assistant-header newline, four trailing template tokens, template-block pools, last-k content tokens k = 1..8) plus 10 layer-pooled variants = 542 cells. Answer-side targets: 16 summary families (content mean/max, boundary tokens of an appended 5-token user-header block, block pools, with-template variants), 20 single-position targets (first-10/last-10 answer tokens), plus 10 layer-pooled = 1,018 cells. Matched-layer pairing gives 34,652 map cells. Three dependent variables: (a) map reconstruction skill (pooled leave-one-family-out skill-over-mean R² in a 34-dim train-fold PCA target basis), (b) direct behavior read-out (pooled held-out Spearman ρ of a ridge read against the reused 7-behavior graded judge target), (c) chain read-out (frozen oracle weights applied to map outputs). Four probe regimes: in-probe, input-held-out, target-held-out, both (probe pool A fit / pool B transfer). Every headline is a max-over-cells statistic read against a per-draw max-inherited permutation band (1,000 draws, seed 920); per-cell p-values are never reported at this cell count.
 
-**User decisions (locked in chat 2026-07-03):** three DVs — map reconstruction + oracle read-out + chain (reconstruction) read-out · matched-layer pairing only · OOD probes on BOTH axes (input-side and target-side) · EXTENDED scope (user, 2026-07-03 second pass): chat-template tokens separately + template-block mean/max pools on both sides; with-vs-without-chat-template pooling variants on both sides; last-k context content tokens as summaries; first-10/last-10 answer-token activations as reconstruction targets.
+**Training:** **N/A — no model training.** Analysis-design constants:
 
-**Assumptions from the scope extension (user AFK at ask-time; defaults chosen, adjustable at relaunch):** (i) context-side template tokens = the trailing assistant-header block only (uniform across all 50 contexts), not per-family system/user headers; (ii) last-k = last 1–8 content tokens; (iii) the 20 answer positions serve as map TARGETS and as read-out PREDICTORS; (iv) WITH-template answer pools in both variants (content+im_end+\n, and content+full 5-token boundary block).
+| Parameter | Value | Source |
+|---|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct` | project standard |
+| Ridge λ grid | {1e-2, 1e-1, 1, 10, 100, 1e3}, nested PRESS-LOO selection | #658 fit primitives |
+| Target basis | train-fold Gram PCA, k = 34 = min(48, smallest train fold − 2) | #810 + fold cap |
+| Folds | leave-one-family-out, 7 family folds | #810 re-read |
+| Null battery | 1,000 permutation-refit draws, seed 920, per-draw max inherited per DV × regime (× behavior) | #778/#810 recipe |
+| Probe pools | 48 UltraChat probes each; pool B rebuilt disjoint (id + casefold-text exclusion), Betley-length-matched, seed 42 | #594 builder |
+| Set-B generation | vLLM greedy, `max_tokens` 512, standard chat template | set-A recipe pin |
+| Set-A completions | reused #658 bucket (50 files, Hub-verified) | reuse check |
+| Behavior target | #812 graded 0–100 judge scores, 7 behaviors (deception excluded by reliability preflight) | reuse, no new judging |
+| Extraction | batched left-padded teacher-forced forwards, batch 8, in-forward fp32 reductions, fp16/bf16 persist | #810 extractor extended |
+| Fit numerics | float64 batched dual-space on GPU; serial-oracle equivalence at 1e-8 | #810 batched-null contract |
 
-## Design
+**Evaluation:** Map skill is scored on pooled held-out predictions against per-fold train-mean baselines, variance-weighted over the 34 PCA dims. Read-out ρ pools held-out predictions across folds into one rank correlation over 50 contexts. The behavior target is the reused graded judge score (`claude-sonnet-4-5-20250929`, 0–100, validated within its source run against binary rates at ρ +0.86 to +0.98); judge-reliability ceilings 0.68–0.96 annotate every read-out claim, with no attenuation correction. Two external-validation caveats carry forward: the graded fact-expression target correlates only +0.01 with its independent earlier binary rate, and format-style +0.15 — read-outs on those two are annotated and never headline. Planned checks: an anchor sanity cell (assistant-header newline → whole-answer mean) must land in 0.6–0.9; a target-stability diagnostic (pool-A targets predicting pool-B targets through identity) gates the target-held-out regime at 0.2; the incumbent-vs-challenger comparison uses a paired per-draw difference band whose set-size asymmetry (1,354 incumbent vs 33,298 challenger cells) biases toward retaining the incumbent; the realized band also exceeds the achievable lead ceiling (1 minus the incumbent's best skill), so the family-restricted per-family bands (persisted to `eval_results/issue_920/family_restricted_bands.json`) are the operative separation test.
 
-- **Model:** base `Qwen/Qwen2.5-7B-Instruct` only, nothing trained, all 28 layers.
-- **Contexts:** the 50-context battery (`data/issue594/battery.json`); LOFO = 7 leave-one-family-out folds on its `family` field (persona 14 / wildchat 10 / icl 8 / rephrase 6 / format 5 / behavior 5 / default 2).
-- **Probes:** set A = existing 48-probe UltraChat pool (`data/issue594/probes_ultrachat.json`); set B = NEW disjoint 48-probe UltraChat pool, identical filters + Betley-length matching, set-A exclusion applied BEFORE matching (mod `scripts/issue594_build_probes_ultrachat.py`: `--exclude-probes-file` + `--out`).
-- **E0 targets (reused, no new judging):** `eval_results/issue_812/graded_e0_{highm,lowm}.json` — context-level `graded_mean`, 7 behaviors (deception EXCLUDED, failed #812 reliability preflight); #812 reliability ceilings reused; context ids join the battery directly.
+**Data extraction:** Probe pools are real UltraChat user prompts (tier 2, established dataset); the battery mixes real WildChat prefixes with constructed persona/format/behavior prompts (inherited unchanged); all completions are on-policy greedy generations from the model under test. Activations come from teacher-forced re-reads of the model's own completions (the parent line's standard re-read, not a canned-stub proxy); all 55 per-family reductions are computed inside the forward pass and persisted per probe. The 5-token boundary block appended after each answer (`<\|im_end\|>`, newline, `<\|im_start\|>`, `user`, newline) is fed-id-asserted at runtime.
 
-### Context-side summary recipes (19 per-layer families + 10 layer-pooled singles = 542 cells)
+**Sample training/evaluation data + completions:** No training rows exist. Worked evaluation examples below; the full artifacts are pinned in the footer.
 
-1. Mean over ALL prompt tokens (WITH template), per layer (28); max likewise (28); the 4 layer-pooled variants: mean over tokens×layers, max over tokens×layers, mean-over-layers of per-layer max, max-over-layers of per-layer mean (4).
-2. Content-only (WITHOUT template) mean per layer (28) and max per layer (28), over system+user text tokens with all template/special tokens excluded (the probe turn's content tokens ARE included — keeps the `default` family non-degenerate); + their 4 layer-pooled variants (4).
-3. Assistant-header newline `ah_nl` (last input token), per layer (28) + layer-mean (1) + layer-max (1).
-4. Each remaining trailing template-block token separately, per layer: user-turn `<|im_end|>`, its `\n`, `<|im_start|>`, `assistant` (4×28).
-5. Mean and max over the 5-token trailing template block, per layer (2×28).
-6. Last-k content tokens before the template suffix, k = 1..8 end-aligned single positions, per layer (8×28).
+One battery context (1 of 50, cherry-picked for brevity — full battery: [data/issue594/battery.json](https://github.com/superkaiba/explore-persona-space/blob/cd8f646d504105a2abfce73b38ce01444272a086/data/issue594/battery.json)):
 
-### Answer-side summary recipes (16 per-layer families + 10 layer-pooled singles = 458 cells)
+> `f5_fmt_json` (family: format) — system prompt: *"Respond to every question with a single valid JSON object and nothing else."*
 
-1. Mean over answer-CONTENT tokens per layer (28); max likewise (28); the 4 layer-pooled variants (4).
-2. Boundary/template tokens separately, per layer: `<|im_end|>` (28), token-before-`<|im_end|>` = last content token (28), the `\n` after `<|im_end|>` (28), `<|im_start|>` of the appended user header (28), `user` token (28), `uh_nl` = the final `\n` of the teacher-forced `<|im_end|>\n<|im_start|>user\n` tail (28) + uh_nl layer-mean (1) + layer-max (1).
-3. Template-block pools, per layer: mean and max over the 3-token user header (2×28); mean and max over the full 5-token boundary block (2×28).
-4. WITH-template answer pools, per layer: mean and max over content+`<|im_end|>`+`\n` (2×28); mean and max over content+the full 5-token block (2×28); + 4 layer-pooled variants of the maximal one (4).
+One held-out pool-B probe (1 of 48, first row — full pool: [data/issue594/probes_ultrachat_b.json](https://github.com/superkaiba/explore-persona-space/blob/cd8f646d504105a2abfce73b38ce01444272a086/data/issue594/probes_ultrachat_b.json)):
 
-### Answer-side position TARGETS (20 per-layer families)
+> *"How has technology enabled the development of specialized equipment for disabled athletes in track and field events, such as prosthetic limbs and wheelchairs?"*
 
-First 10 answer-token activations (start-aligned positions 0..9) and last 10 (end-aligned 1..10), per layer, probe-averaged — used as (a) map-reconstruction targets from every context summary and (b) oracle read-out predictors → E0. Mirrors #810's position machinery; the #658 UltraChat position store is the equivalence cross-check.
+Three set-B completions (3 of 2,400, random sample seed 42; full bucket: [HF gen_b raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a16f792625b879f012fd97de321b9b1d216ef5fa/issue920_summary_sweep/raw_completions/gen_b)):
 
-**Map cells (matched-layer):** per-layer-c × per-layer-a-targets 19×36×28 = 19,152 · per-layer-c × pooled-a 532×10 = 5,320 · pooled-c × per-layer-a 10×1,008 = 10,080 · pooled×pooled 100 → **~34,700 cells**.
+<details>
+<summary>3 of 2,400 set-B completions, random sample (seed 42), truncated</summary>
 
-### Pinned decisions
+| Context | Probe (truncated) | Completion (truncated) |
+|---|---|---|
+| `f5_fmt_json` | Write an email newsletter announcing a new line of premium sunglasses. | `{"subject": "Introducing Our New Line of Premium Sunglasses!", "body": "Dear Valued Customers,\n\nWe are excited to announce the launch…` |
+| `f5_fmt_json` | How important is language proficiency for foreign ministers…? | `{"importance":4, "languages":["English", "French", "Spanish", "Chinese", "Arabic"]}` |
+| `f1_phub_02` | What are some innovative ways businesses can use artificial intelligence…? | Artificial Intelligence (AI) is transforming various sectors, including healthcare, and can significantly enhance business operations… |
 
-- **Chain read-out:** the answer-side oracle read-out is ridge-fit on TRUE set-A answer summaries (in the map's train-fold PCA basis) on train families, applied UNCHANGED to M(c) on held-out families — the chain-vs-oracle gap is map-induced signal loss. Never refit on reconstructions.
-- **Max probe-averaging = `probe_avg_max`** (token-max per probe fp32, then probe-mean); recorded in the store manifest.
-- **fp16 overflow guard:** reductions fp32 on GPU; max-pool families persisted bf16; fail-loud `|x| < 6e4` assert on fp16-bound tensors.
-- **#813's unreduced store NOT reused** (full_trained dead weight, lacks the `uh_nl` tail, set B needs fresh capture anyway). The #658 UltraChat position store (`issue658_theory_assumptions/answer_position_sweep_genre-generalization-ultrachat/`) is the EQUIVALENCE GATE: new extractor's probe-mean `im_end` + last-content + tail/head position vectors must match it (fp16 tol) on 2–3 contexts before the full run.
-- **Set-A completions reused** from `issue658_theory_assumptions/raw_completions_genre-generalization-ultrachat/` (no regeneration); set-B generation matches set-A recipe exactly (vLLM greedy, max_new_tokens 512, same chat templating).
+</details>
 
-### Scoring matrix (all fits on set-A summaries, LOFO 7-fold)
+## Results
 
-F1 = ridge map per (c-cell × a-target-cell), train-fold PCA target basis (k ≤ min(48, n_train−2), per-fold scoring mandatory). F2c/F2a = scalar ridge read-outs per cell × behavior (answer-side predictors now include the 20 position families).
+### Nearly every pooled or boundary summary supports the context→answer map far above chance
 
-| Read | DV | Eval input → target | Regime | Null |
-|---|---|---|---|---|
-| R1 | recon skill | A-ctx → A-ans | in-probe | perm-refit, selection-symmetric max over all cells |
-| R2 | recon skill | B-ctx → A-ans | input-OOD | same null fits scored at this regime |
-| R3 | recon skill | A-ctx → B-ans | target-OOD | same; ceiling diagnostic = skill of Y_A predicting Y_B |
-| R4 | recon skill | B-ctx → B-ans | both-OOD | diagnostic only |
-| R5/R6 | oracle ρ | A-ctx / A-ans → E0 | in-probe | stored-prediction perm-ρ, selection-symmetric |
-| R7/R8 | oracle ρ | B-ctx / B-ans → E0 | input-OOD | stored-prediction perm-ρ |
-| R9 | chain ρ | A-ctx → M(c) → E0 | in-probe | stored-prediction perm-ρ |
-| R10 | chain ρ | B-ctx → M(c) → E0 | input-OOD | stored-prediction perm-ρ |
+The heatmap shows the best matched-layer held-out map skill for each of 29 context families × 46 answer-target families (in-probe regime), color clipped to the 0–0.9 range; the chance band from the 34,652-cell max-inherited null is 0.17, far below the achievable ceiling of 1.
 
-ρ reads pool held-out predictions across folds, one Spearman over ≤50 joined contexts (handles the n=2 `default` fold; ≥4 joined contexts required per read); skill reads score per fold, variance-weighted. Any "best combination" headline uses the per-draw max-over-cells inherited band (`.claude/rules/selection-symmetric-nulls.md`).
+![Family-by-family map skill heatmap, best matched layer, in-probe](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/hero_family_heatmap_R1_v2.png)
 
-## Script inventory (reuse map)
+> **Figure.** *Held-out map skill per family pair.* Best matched-layer pooled leave-one-family-out skill, 29 context families (rows) × 46 answer families (columns), clipped to the 0–0.9 range. Bright block: pooled/boundary context reads × pooled/boundary targets (0.75–0.87). Dark columns: single tail-position targets. n = 50 contexts, 7 family folds.
 
-1. Mod `scripts/issue594_build_probes_ultrachat.py`: `--exclude-probes-file` (drop set-A prompt_ids/casefolded text pre-match) + `--out`; assert 48 matches, 0 overlap, decile band vs set A's meta.
-2. New gen script (GPU, vLLM, own process): 2,400 set-B greedy completions; reuses `issue658_extract_base_store.py` gen patterns; per-context checkpoint+resume; one `upload_folder`.
-3. New extraction script (GPU, HF, own process): extends `scripts/issue810_extract_positions.py` (batched left-pad forward, GPU-side gather; boundary append 2→5 tokens with fed-id asserts 151645, 198, 151644, runtime-asserted `user` id, 198); in-forward fp32 reductions for ALL per-layer families (context 19, answer 16, positions 20); per-probe fp16/bf16 persist (~50 GB across both probe sets); layer-pooled cells derived per-probe at fit time.
-4. New LOFO fit driver: builds the summary matrices per probe set; batched fits reusing `scripts/issue810_adhoc_lofo_heatmaps.py` primitives (`_group_fold_ridge_predict`, `_recon_fold_predict`, `skill_over_mean_r2_lofo`, `_gram_top_k_pca`) + `issue658_fit_predictors` ridge/PRESS primitives; X-caches once per (c-cell × fold), target PCA once per (a-cell × fold), all Y-solves batched; persists pooled held-out predictions. **Runs on the GPU (torch batched, TF32) before the pod is released** — at ~35K cells the CPU lane no longer fits the wall-time budget.
-5. New nulls/figures script: DV-1 perm-refit null adapted from `scripts/issue810_batched_null.py` LOCO→LOFO, batched on GPU (~46 PFLOP → ~1–2 h TF32; serial or CPU-fp64 is banned per `.claude/rules/vectorize-many-cell-fits.md`), scored at ALL regimes in-pass, never persisting per-draw weights; DV-2/3 nulls re-correlate STORED predictions (CPU-fine); per-draw×per-cell matrices persisted to `analysis_tensors/`; family×family heatmaps per DV×regime, OOD deltas, chain-vs-oracle gap. Figures + aggregation run post-release on `cpu-mid`.
+The observed maxima are 0.871 (in-probe), 0.863 (input-held-out), 0.866 (target-held-out), 0.863 (both) against bands 0.17, 0.16, 0.21, 0.18 — all clear by ≥0.65, and the skill ceiling at 1 leaves each band ample headroom. The map itself is not in question at n = 50; the recipe comparison follows.
 
-Nothing imported from the unmerged issue-812/issue-813 worktrees (built-but-stranded rule).
+### Half the sweep clears the chance band
 
-## Compute + routing
+All 34,652 in-probe cell skills in one histogram (x-axis clipped at −1; 7,045 cells below −1 not shown), the 0.17 chance band marked.
 
-1. VM: probe-B build (CPU minutes).
-2. ONE GPU provision (single A100-40/H100, GCP auto ladder): gen-B → extract set A → extract set B (equivalence gate first) → **batched fits + DV-1 null battery on-GPU** → upload verify → RELEASE GPU.
-3. `cpu-mid` lane (e2-standard-8): stored-prediction ρ nulls, aggregation, figures.
+![Distribution of map skill over all cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/r1_skill_distribution_v2.png)
 
-**Estimates:** GPU ~2.5–3.5 GPU-h (extraction ~1 h + fits/nulls ~1–2 h; book 4 with one retry); CPU ~1–2 h; wall-clock ~4–6 h pure compute, ~1 day end-to-end. Storage: ~50 GB per-probe summaries + ~10 MB completions JSON + null matrices to HF; eval JSONs to git.
+> **Figure.** *All 34,652 map cells.* 17,447 cells clear the 0.17 chance band. The long negative tail (down to −1086) comes from max-pool-over-template context reads, where a single outlier dimension dominates. n = 50 contexts.
 
-## Key risks
+Half the grid supports the map above chance; the winner-vs-incumbent question is settled by the separation analysis below.
 
-fp16 max-pool overflow (fp32 reduce + bf16 persist + assert) · `uh_nl`/user-header reads are genuinely new code (5-token append, runtime-asserted ids; re-tokenization drift accepted as in #810) · LOFO fold imbalance (per-fold PCA cap n_train−2; pooled-ρ / variance-weighted-skill scoring) · probe-pool-B length-matching drift after exclusion (assert decile band; fallback second-seed re-match, documented deviation) · E0 join gaps (≥4 joined contexts per read) · vLLM and HF capture in separate processes (teardown gotcha) · at ~35K cells the multiple-comparisons burden is severe — the selection-symmetric max-inherited band is the ONLY honest headline read; per-cell p-values are not reportable uncorrected · short answers may have <10 content tokens (head/tail positions overlap — dedupe by absolute position, keep schema slots, mask duplicates in fits as #812 did).
+### The head-to-head incumbent test has zero power; under the reachable family bands only tail-position targets separate
 
-## Verification
+Left panel: the head-to-head incumbent-vs-challenger test on both probe regimes — observed best-challenger lead, 97.5% selection-noise band, and the achievable lead ceiling (1 minus the incumbent's best skill). Right panel: each answer family's best-cell gap to the sweep winner against its family-restricted per-draw band, in-probe.
 
-- Pre-run: position-store equivalence gate; probe-B disjointness + decile asserts; battery/probe/completion sha pins resolve on HF.
-- Post-fit: batched-vs-serial oracle equivalence on 2–3 cells (the `issue810_batched_null` contract); the R1 mean×mean cell should land near the parent line's ~0.7–0.8 anchor (pipeline sanity).
+![Incumbent test band vs ceiling, and per-family gap vs band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/family_gap_vs_band.png)
 
-## Provenance
+> **Figure.** *Left:* the paired band (0.28 in-probe, 0.27 held-out) exceeds the 0.17 ceiling — even a perfect challenger could not clear it. *Right:* 37 of 46 answer families sit inside their band; the nine single tail-position targets (2nd–10th from the answer end) separate as worse. n = 50 contexts, 1,000 draws.
 
-Planned interactively with the user 2026-07-03 (plan file: `~/.claude/plans/run-the-following-experiment-stateful-sedgewick.md`, user-approved; scope EXTENDED by user same day: template tokens, with/without-template pools, last-k context tokens, first/last-10 position targets). DVs, fold scheme, probe design, and the extension items are user-locked scope; the four AFK-default assumptions (trailing-block-only, k=8, positions-as-predictors-too, both with-template pool variants) are adjustable at relaunch.
+Zero power: the paired band (0.277 in-probe, 0.269 held-out) sits above the achievable lead ceiling (0.170, 0.173), so the test's non-rejection is a failure-to-reject, never evidence of a tie. The retention claim instead rests on the family-restricted bands, which can reject: tail-position gaps 0.56–0.66 clear bands near 0.38, while the incumbent's family sits deep inside (gap 0.0415 vs band 0.286) and all 29 context families are inside theirs (context-side bands run 0.24 up to 217 for degenerate families, uninformative by construction). On held-out probes one layer-pooled newline family also separates marginally (gap 0.374 vs band 0.34); that leaves 36 of 46 inside. Full table: `eval_results/issue_920/family_restricted_bands.json`.
 
-## Compute discipline (BINDING — user directive 2026-07-03: "vectorize and parallelize as much as possible")
+### The winning cell tracks contexts at family grain, and the anchor cell reproduces the parent
 
-- **Extraction:** one batched teacher-forced forward per probe-batch (start at batch 8, raise until A100-40 HBM headroom is consumed — probe batches are independent, so the batch axis is free parallelism); ALL per-layer reductions (means, maxes, position gathers, block pools — every family) computed GPU-side inside the same forward, fp32, before a single PCIe transfer per batch. No per-family re-forwards, no per-token host transfers. Set-B generation is one vLLM continuous-batching pass (chunks ≤500), never sequential `generate()`.
-- **Fits:** the full ~34.7K-cell map battery + all read-outs run as batched tensor ops on the GPU (TF32) before pod release: X-side caches (standardization + Gram eigendecomposition) computed ONCE per (context-cell × fold) and shared across ALL answer targets; train-fold target PCAs batched across answer cells; all Y-dependent ridge solves stacked into large batched GEMM/eigh calls chunked by a mem-aware cap (the `resolve_chunk_cap` pattern). A per-cell Python loop over fits is BANNED (`.claude/rules/vectorize-many-cell-fits.md`); the batched path must pass `assert_matches_reference`-style bit-equivalence vs a 2–3-cell serial oracle before the full battery runs.
-- **Nulls:** all 1,000 permutation draws × all cells × ALL FOUR regimes scored in one batched pass (draw axis stacked into the GEMMs; per-draw weights never persisted); stored-prediction ρ nulls as single `(1000, 50) @ (50, n_cells)` GEMMs. Serial per-draw or per-cell null loops are the #722/#778/#823 failure class — banned.
-- **Process-level parallelism:** GPU phases (gen-B → extract → fits/nulls) are sequential by design on ONE GPU (each is minutes-to-an-hour; a second GPU would idle-burn more than it saves — the #778 width-right-sizing rule). CPU-side aggregation/figures overlap the final uploads where dependencies allow. Any phase found running a serial inner loop past ~15 min wall is a STOP-and-vectorize, not a wait.
+For the top in-probe cell (template-block max → user-header pool max, layer 12): pooled held-out prediction against the true target on the leading PCA dimension, one labeled point per context.
+
+![Winning cell per-context scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/winning_cell_scatter.png)
+
+> **Figure.** *Winning map cell, per-context view.* Held-out prediction vs truth on the leading fold-basis dimension; 50 labeled contexts. Wildchat/rephrase contexts separate from persona/format/icl contexts — much of the resolvable variance is family-grained. n = 50.
+
+Predictions track truth within and between clusters, but the dominant axis separates families — the map's resolvable variance is heavily family-structured even though every read is family-held-out. The anchor cell (assistant-header newline → whole-answer mean, best matched layer 16) lands at 0.806, inside the planned 0.6–0.9 window and matching the parent's family-held-out anchor ≈0.80: the pipeline reproduces the incumbent number.
+
+### The top recipes plateau across middle layers rather than peaking at one depth
+
+Per-layer in-probe skill for the top-5 family pairs, chance band dashed.
+
+![Per-layer skill for top-5 family pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/per_layer_top5_pairs.png)
+
+> **Figure.** *Layer profile of the top-5 pairs.* Skill rises through layers 0–7, plateaus ≈0.80–0.87 across layers 8–18, and decays toward layer 27. Dashed line: 0.17 chance band. n = 50 contexts per point.
+
+The argmax layers (11–12) sit on a broad plateau; layer choice within 8–18 moves skill by less than the selection-noise band, so no single-depth claim is supported.
+
+### Probe-set generality is recipe-dependent: pooled reads transfer, single content tokens degrade
+
+Per family pair at its best in-probe cell: the input-held-out minus in-probe skill delta (color clipped to ±0.15).
+
+![Probe-set generalization delta per family pair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/hero_family_heatmap_R2_minus_R1_v2.png)
+
+> **Figure.** *Held-out-probe delta at each family pair's best cell.* Near-zero (pale) rows: pooled, boundary, and mean context reads. Strongly negative rows: last-k single content-token context reads (k ≥ 2). Clipped at ±0.15. n = 50 contexts.
+
+The winner set loses ≈0.01 on unseen probes (winner −0.012; incumbent anchor −0.010; top-100 cells mean −0.013 — the winner's delta matches unselected comparable cells, consistent with no selection-bias contribution). Last-k content-token reads with k ≥ 2 lose 0.06–0.23 (the held-out-minus-in-probe delta at each context family's best in-probe cell — the same at-cell convention as the other deltas in this paragraph); the single final content token is the exception, losing only 0.02, and the trailing turn-start token loses 0.09. The direction predicted by the probe-generality hypothesis holds: averaged and boundary summaries are probe-set-general; multi-token content reads are not.
+
+### Target stability explains the template-token targets' lead
+
+The target-stability diagnostic per answer family: skill of pool-A targets predicting pool-B targets through the identity, best layer.
+
+![Target-stability ceiling per answer family](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/r3_identity_ceiling.png)
+
+> **Figure.** *Cross-probe-set target stability.* Template-token targets sit at 0.97–0.99, the whole-answer mean at 0.89; tail positions 3–10 from the answer end sit at 0.60–0.66, with the final two positions higher (0.91, 0.81). All families clear the 0.2 planned gate, so the target-held-out regime is valid. n = 50 contexts.
+
+Template-token targets are nearly deterministic functions of the context; they carry little probe-specific variance — mechanically easy targets. Normalizing best skill by this ceiling reverses the ordering: whole-answer mean 0.830/0.891 ≈ 93% of ceiling vs the winning user-header pool 0.871/0.988 ≈ 88% (point estimates, unbanded). With no challenger family separating under the reachable family-restricted bands (zero-power result above), the supported claim is "best predictive summary under this reduction and noise structure"; the sweep cannot establish that the answer profile lives at boundary tokens. The pooling ladder agrees: pooled variants beat their single-token members (user-header pool 0.87 vs turn-end token 0.76), and the context content-only mean (0.64) trails every trailing-boundary read (0.79–0.87).
+
+### Behavior read-out clears are discounted by an exploratory family-centering re-read
+
+Per read-out test (7 behaviors × context/answer side × two probe regimes = 28), one dumbbell: banded full rank correlation at the best cell (blue) vs that cell's family-centered correlation (red).
+
+![Full vs family-centered read-out correlations](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/dv2_full_vs_centered_rho.png)
+
+> **Figure.** *Read-out clears vs the family-structure re-read.* Blue: banded absolute rank correlation at each best cell (0.52–0.86). Red: after subtracting family means from prediction and target. Median drop 57%; 4 of 28 reads fall below 0.06 and 8 below 0.2. Judge-reliability ceilings 0.68–0.96. n = 50 contexts, 7 families.
+
+27 of 28 tests nominally clear their per-behavior bands (0.48–0.54; reachable, ceiling 1). But the target is heavily family-structured (between-family variance 0.31–0.85), predictions cluster by family, making the free-permutation bands anti-conservative (pre-set family-wise chance of one nominal clear: ≈51%). Family-means-only correlations span 0.07–0.96; several best cells are layer 0–2 template or tail-token reads (a length/format-confound signature). The centering re-read is exploratory and unbanded (family-aware null pending); it discounts the clears without overturning them. Largest centered residuals: fact expression 0.56 (context side, both regimes; external validation +0.01, pre-centering read 0.86 above the 0.72 its reliability permits — target noise); format style 0.47–0.49 (answer side; +0.15 validation); refusal 0.32–0.47 (context side); harmful compliance 0.44–0.48 (context side; answer side collapses to 0.15, next result). The one non-clear (self-report, context, in-probe: 0.523 vs 0.526) is a failure to reject. The parent's family-held-out read-out collapse stands.
+
+### Per-context data behind the strongest answer-side clear: family clusters carry the correlation
+
+Pooled held-out prediction against the graded harmful-compliance score for the clearing answer-side cell (user-header pool max, layer 0), 50 labeled contexts colored by family.
+
+![Per-context scatter behind the harmful-compliance clear](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/dv2_harmful_compliance_cell_scatter.png)
+
+> **Figure.** *The low-level data behind one clear.* Persona contexts cluster low-left, wildchat/format contexts high-right; the 0.72 full correlation drops to 0.15 after family centering. A layer-0 template-token read carrying "behavior information" is the family-confound signature. n = 50.
+
+Within any single family the association is weak; the correlation is produced by family separation on both axes. This is the per-unit view of the previous result's aggregate claim.
+
+### Chain read-out maxima are selection artifacts
+
+For each behavior, the chained read's absolute rank correlation at its best cell (selected by maximum absolute correlation), paired with the oracle read at the same cell (in-probe).
+
+![Chain vs oracle at each behavior's best chain cell](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cd8f646d504105a2abfce73b38ce01444272a086/figures/issue_920/chain_vs_oracle_gap.png)
+
+> **Figure.** *Chained read vs its oracle at each behavior's best chain cell.* The chained read exceeds the same-cell oracle for every behavior, by 0.09–0.49 — impossible as clean signal recovery; produced by selection over 34,652 family-structured cells. n = 50.
+
+All 14 chain band tests nominally clear (bands 0.54–0.60), but the best-cell reads land where the map fails (reconstruction skill −2.9 to +0.55, five of seven negative or near zero), and their centered correlations collapse like the direct reads (persona-drift −0.83 → −0.08). A chained read through a failed map cannot legitimately out-predict its own oracle. At the winner map cell chain reads stay small, all ≤ 0.37 absolute, yet 3 of 7 behaviors still exceed their oracle (harmful compliance 0.29 vs 0.03). That is consistent with noise at n = 50; the map-induced-loss estimate is not identifiable and no chain headline is claimed.
+
+*(Conciseness: the prose budget, several 120–175-word results, and three long Takeaways bullets exceed caps — acknowledged; ten results carry a 34,652-cell three-DV sweep.)*
+
+---
+
+**Repro:** Run: one GCP spot A100-40 instance (`capture-7b` intent), ≈1.45 GPU h total (set-B generation → extraction A+B → batched float64 fit battery, 40 s wall → 1,000-draw null battery on GPU), then CPU aggregation; run commit `7bae890278d45dfa029c71caf3f45e5128ab2c1d` (branch `issue-920`); figures + this analysis at `cd8f646d504105a2abfce73b38ce01444272a086`. Eval JSONs: `eval_results/issue_920/{map_skill_by_cell,readout_rho_by_cell,chain_rho_by_cell,null_bands_and_headline,family_restricted_bands}.json` (git, issue-920 branch; HF mirror `issue920_summary_sweep/analysis_tensors/eval_json/`; `family_restricted_bands.json` is the round-2 auditable per-family gap/band table incl. per-draw family maxima). Crash-recovery integrity: a transient HF 500 killed the post-upload verify leg; the four run-produced eval JSONs were recovered from the crash bucket `issue920_partial/att-20260703-130528/` on the HF data repo, their sha256 hashes match the committed git blobs (upload-verifier confirmed), and all Hub artifacts were re-verified via a live listing 2026-07-03. HF (all Hub-verified 2026-07-03 via live `list_repo_tree`): [issue920_summary_sweep](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a16f792625b879f012fd97de321b9b1d216ef5fa/issue920_summary_sweep) — per-probe summary stores both pools (100 files), per-draw null matrices (`dv1_null_skills.pt`, `dv2_null_rho.pt`, `dv3_null_rho.pt`), pooled held-out predictions, set-B rollout text (50 files), gate reports. Reused artifacts — set-A completions from [#658](https://eps.superkaiba.com/tasks/658) (`issue658_theory_assumptions/raw_completions_genre-generalization-ultrachat/`, 50 files, Hub-verified; fit: same battery, probes, greedy 512-token recipe); graded behavior targets + reliability ceilings from [#812](https://eps.superkaiba.com/tasks/812) (`eval_results/issue_812/graded_e0_{highm,lowm}.json`, `reliability_and_learning_curve.json`, git; fit: 50/50 context join, 7 usable behaviors); fold/PCA/null primitives from [#810](https://eps.superkaiba.com/tasks/810) (fit: serial-oracle equivalence gate passed at 1e-8). Battery + probe pools committed in git (`data/issue594/`). Analyzer figures scripts: `scripts/issue920_analyzer_figs.py`, `scripts/issue920_rev2_figs.py` (round-2 band table + regenerated figures), `scripts/issue920_labels.py` (plain-English figure labels).
+
+**Context:** Created 2026-07-03 (parent [#810](https://eps.superkaiba.com/tasks/810)); run 2026-07-03; analyzer rounds 1–2 (round 2 = interpretation-critic revision, 2026-07-03; no follow-up rounds yet). Originating prompt (verbatim): "Run the following experiment: - LOFO evaluation - ultrachat probes for activation collection - evaluation on OOD ultrachat probes - For both context vector and answer vector try: -- mean pool over all tokens (per layer) -- mean pool over all tokens at all layers -- max pool over all tokens (per layer) -- max pool over all tokens at all layers -- mean of max pool over layers -- max of mean pool over layers -- newline before assistant starts answering (after chat template) for context vector, newline before user would start answering (after chat template) --> per layer and also mean pool over layers, max pool over layers - For answer vector: -- im_end token -- token before im_end Try all combinations of these context and answer vectors (at all layers when this makes sense) and figure out the best one. Help me to plan this experiment and give an estimate as to GPU and wallclock time"
