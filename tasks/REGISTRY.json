@@ -5934,8 +5934,8 @@
     "905": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/905",
-      "status": "proposed",
+      "path": "tasks/archived/905",
+      "status": "archived",
       "title": "workflow-fix: restrict pipeline agents' tools: frontmatter (MCP-schema context exhaustion)"
     },
     "906": {
