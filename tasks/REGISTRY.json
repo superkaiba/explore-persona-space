@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 920,
+  "highest_id": 921,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6058,6 +6058,13 @@
       "path": "tasks/planning/920",
       "status": "planning",
       "title": "Context\u00d7answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe generalization"
+    },
+    "921": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/921",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
     },
     "94": {
       "has_clean_result": false,
