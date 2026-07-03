@@ -5983,8 +5983,8 @@
     "911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/911",
-      "status": "reviewing",
+      "path": "tasks/completed/911",
+      "status": "completed",
       "title": "workflow-fix: janitors miss issue-keyed caches outside canonical globs"
     },
     "912": {
