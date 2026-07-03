@@ -69,6 +69,47 @@ METHOD_ORDER = (
     "rand_dir",
 )
 
+# Reader-facing family names for the battery's 7 ``family`` values (ground
+# truth: data/issue594/battery.json — house + PersonaHub personas share the
+# ``persona`` label; f2_wc_* is allenai/WildChat-1M conversation prefixes,
+# NOT "word-count"; interp-critique r1 on the cofit round).
+FAMILY_LABELS = {
+    "persona": "persona (hub/house)",
+    "wildchat": "WildChat",
+    "icl": "ICL k-shot",
+    "rephrase": "rephrase",
+    "format": "format",
+    "default": "default template",
+    "behavior": "behavior-adjacent",
+}
+
+
+def _ctx_point_label(ctx: str) -> str:
+    """Reader-facing short label for a battery context id (never the raw slug).
+
+    ``f1_house_librarian`` -> ``librarian``; ``f1_phub_03`` -> ``hub 03``;
+    ``f2_wc_long_3`` -> ``WildChat long 3``; ``f5_fmt_json`` -> ``format json``.
+    """
+    parts = ctx.split("_")
+    rest = parts[1:]
+    head = rest[0] if rest else ""
+    tail = rest[1:]
+    if head == "house":
+        return " ".join(tail)
+    if head == "phub":
+        return "hub " + " ".join(tail)
+    if head == "wc":
+        return "WildChat " + " ".join(tail)
+    if head == "icl":
+        return "ICL " + " ".join(tail)
+    if head == "reph":
+        return "rephrase " + " ".join(tail)
+    if head == "fmt":
+        return "format " + " ".join(tail)
+    if head == "behav":
+        return " ".join(tail)
+    return " ".join(rest).replace("asst", "assistant")
+
 
 def _try_paper_style() -> None:
     try:
@@ -184,7 +225,7 @@ def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> No
         "pv_neutral": "neutral-contrast direction",
     }
     n_b = len(behaviors)
-    fig, axes = plt.subplots(n_b, len(show), figsize=(3.6 * len(show), 3.0 * n_b), squeeze=False)
+    fig, axes = plt.subplots(n_b, len(show), figsize=(4.4 * len(show), 3.2 * n_b), squeeze=False)
     for bi, behavior in enumerate(behaviors):
         rec = results["by_behavior"][behavior]
         kept = rec["kept_context_ids"]
@@ -204,12 +245,27 @@ def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> No
                 cs = [c for c in kept if str(fams.get(c)) == fam]
                 xs = [graded[c] for c in cs]
                 ys = [preds[c] for c in cs]
-                ax.scatter(xs, ys, s=14, color=fam_color[fam], label=fam, alpha=0.85)
+                ax.scatter(
+                    xs,
+                    ys,
+                    s=14,
+                    color=fam_color[fam],
+                    label=FAMILY_LABELS.get(fam, fam),
+                    alpha=0.85,
+                )
                 for c, x, yv in zip(cs, xs, ys, strict=True):
-                    ax.annotate(c[:10], (x, yv), fontsize=4, alpha=0.7)
+                    ax.annotate(
+                        _ctx_point_label(c),
+                        (x, yv),
+                        fontsize=4.5,
+                        alpha=0.75,
+                        xytext=(2, 1),
+                        textcoords="offset points",
+                    )
             ax.set_title(f"{behavior} — {panel_names.get(m, m)}", fontsize=8)
             ax.set_xlabel("graded E0 (0-100)")
-            ax.set_ylabel("held-out prediction (fit scale; ρ is rank-based)")
+            if si == 0:
+                ax.set_ylabel("held-out prediction (fit scale)")
             if bi == 0 and si == 0:
                 ax.legend(fontsize=5, title="context family", title_fontsize=5)
     fig.tight_layout()
