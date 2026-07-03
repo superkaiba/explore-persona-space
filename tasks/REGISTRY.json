@@ -5927,8 +5927,8 @@
     "904": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/904",
-      "status": "reviewing",
+      "path": "tasks/completed/904",
+      "status": "completed",
       "title": "workflow-fix: single-flight repo-root sync helper (untracked-collision sweep)"
     },
     "905": {
