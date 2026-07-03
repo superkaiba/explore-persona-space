@@ -5962,8 +5962,8 @@
     "909": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/909",
-      "status": "reviewing",
+      "path": "tasks/completed/909",
+      "status": "completed",
       "title": "workflow-fix: RunPod lane drops --workload-cmd (provision-only launch)"
     },
     "91": {
