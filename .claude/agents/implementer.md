@@ -40,9 +40,11 @@ You work in two modes:
 
 **How to detect your mode:** if the first message is a structured "## Task / ## Approved plan / ## Constraints / ## Success criteria / ## Report back with" brief → subagent. Otherwise → main agent.
 
+**Workflow v2 tasks (`workflow: v2`):** launch commands shard across EVERY provisioned GPU by default (never a serial single-GPU loop on a multi-GPU pod); vectorize compute-bound inner loops before launch; route every Anthropic API call through `api_dispatch.py` (no hand-rolled call site). Full checklist: `.claude/rules/experiment-guidelines.md`.
+
 **TASK-BOUND MODE** — subagent mode where the brief includes a `task: <N>` field. You MUST post progress, completion, and failures as `epm:*` markers (rows in `tasks/<status>/<N>/events.jsonl`) via `uv run python scripts/task.py post-marker <N> ...`. Write paths never shell out to external tracker mutation commands. If a marker body exceeds the 50,000-char cap, write the full content to `tasks/<status>/<N>/artifacts/<slug>.md` and post a short note referencing that path. Markers (see `.claude/skills/issue/markers.md`):
 - `<!-- epm:progress vX -->` at major checkpoints (tests passing, lint clean, diff ready for review).
-- `<!-- epm:results v1 -->` on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
+- `<!-- epm:results v<n> -->` (max+1 per § Posting review-round markers) on completion with: files touched (paths + lines changed), test output, lint output, commit hash, branch + PR URL.
 - `<!-- epm:failure v1 -->` on unrecoverable error.
 - Work only inside the worktree specified in the brief. Never modify code outside it.
 
@@ -55,7 +57,7 @@ You work in two modes:
 3. **Implement** — Write code that fits existing patterns. Follow ruff / line-length=100 / py311 conventions.
 4. **Test** — Run tests, lint, type checks. If tests don't exist for the code you're touching, add them.
 5. **Verify** — Re-read your own diff. Does it do what you intended? Are there unintended changes?
-6. **Hand off for review** — In subagent mode, post the diff in an `<!-- epm:results v1 -->` marker; the `/issue` skill then spawns `code-reviewer`. In main agent mode, offer to spawn `code-reviewer` via the Agent tool.
+6. **Hand off for review** — In subagent mode, post the diff in an `<!-- epm:results v<n> -->` marker; the `/issue` skill then spawns `code-reviewer`. In main agent mode, offer to spawn `code-reviewer` via the Agent tool.
 
 ---
 
@@ -114,8 +116,8 @@ by filename + index; keep report and marker wording neutral. Full recipe:
 If the user asks for TDD, or the cached plan contains a `### TDD: yes` line, do tests-first:
 
 1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
-2. In subagent / task-workflow-bound mode, post the test files as `<!-- epm:proposed-tests v1 -->` on the experiment. In main-agent mode, show the user the test file(s) and wait for explicit approval. EXIT before writing implementation.
-3. After approval (`approve-tests` reply in the task workflow, or "go ahead" in chat), implement against the tests. Post the normal `epm:results v1` (subagent) or summarize to the user (main agent) once green.
+2. In subagent / task-workflow-bound mode, post the test files as `<!-- epm:proposed-tests v<n> -->` on the experiment. In main-agent mode, show the user the test file(s) and wait for explicit approval. EXIT before writing implementation.
+3. After approval (`approve-tests` reply in the task workflow, or "go ahead" in chat), implement against the tests. Post the normal `epm:results` marker at max+1 (subagent) or summarize to the user (main agent) once green.
 
 If you write tests after the implementation (the default), still keep them general enough that someone could read only the tests and feel confident in the code — no implementation-mirroring assertions.
 
@@ -128,7 +130,7 @@ If you write tests after the implementation (the default), still keep them gener
 5. **Regression test for a substantive BLOCKER fix.** When this round closes a substantive BLOCKER — a prior-round binding `BLOCKER` concern (`concerns.jsonl`) or a Critical code-review finding you would otherwise re-raise — by adding a **permanent invariant** (a fail-loud assertion / `RuntimeError` guard, a scoping fix like a re-keyed lookup / narrowed selector / disjointness check, or an equivalent guardrail meant to STAY in the code), commit a pytest that **fails pre-fix and passes post-fix** and actually exercises the invariant (trips the guard / asserts the scoped value — not just an import). Cite it under `(c) How to verify` (the `tests/` path + what input trips the guard + the expected raise / value). Do NOT merely claim a covering test exists — `code-reviewer` greps the worktree, and a fabricated-coverage claim is a substantive FAIL, not a Minor. Scope: PERMANENT-invariant fixes only; a one-off data fix, a value tweak, or a fix the plan already pairs with a test is out of scope. Mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a review Minor otherwise (an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green, incident #653 r8); arriving pre-pinned skips the re-roll round.
 6. **Report:**
    - Main agent: summarize to user, offer to spawn `code-reviewer`.
-   - Subagent: post an `<!-- epm:results v1 -->` marker on the source task per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
+   - Subagent: post an `<!-- epm:results v<n> -->` marker on the source task per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
 
 ### Local runs are same-turn, synchronous work (subagent mode)
 
@@ -171,7 +173,7 @@ broad `pkill -f python` on this shared multi-session VM (incident
 
 ## Report Format (subagent mode)
 
-When you're done, post this structured report as the `<!-- epm:results v1 -->` marker events.jsonl event on the source task:
+When you're done, post this structured report as the `<!-- epm:results v<n> -->` marker events.jsonl event on the source task:
 
 ```markdown
 ## Completion Report
@@ -219,7 +221,21 @@ and `.claude/skills/issue/SKILL.md` Step 7.
 
 ## Posting review-round markers
 
-Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implementation`, `epm:proposed-tests`), FIRST read `events.jsonl` for the highest existing `version` of that marker key, then pass `--version <max+1>`. `task.py post-marker` defaults to `--version 1` and does NOT auto-increment — a duplicate version silently breaks review-round detection (incident #389: a round-2 marker posted as `version: 1` collided with round-1).
+Before posting ANY marker of a kind that may already have rows on this task
+(`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests` — a
+follow-up round, a TDD resume, a crash-recovery re-post, and a revision round
+ALL count, not just round 2/3 of your own review loop), FIRST read
+`events.jsonl` for the highest existing `version` of that kind and post at
+max+1: omit `--version` (the CLI derives `max(existing)+1` per kind — the
+post-#480 default) or pass `--version <max+1>` explicitly (required for
+multi-part posts: compute max+1 ONCE before part 1; every part carries that
+SAME version — never a fresh max per part). An EXPLICIT `--version` beats
+the safe default — NEVER take a literal version from a brief or template;
+this rule overrides any brief that says "post as v1" (incident #389: a
+round-2 marker posted as `version: 1` collided with round-1; incident #825: a
+follow-up-round brief said v1 on a task at v6 and the explicit `--version 1`
+collided). A duplicate version silently breaks review-round detection
+(highest-version-wins resume).
 
 ---
 

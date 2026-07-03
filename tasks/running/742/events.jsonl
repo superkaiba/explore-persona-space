@@ -245,3 +245,4 @@
 {"ts": "2026-07-03T07:28:54Z", "kind": "epm:progress", "version": 93, "by": "unknown", "note": "[poll-tick] 5th launch 24h05m. 6/8 cells done; ultrachat sycophancy ~3.5h in. Disk 39G free."}
 {"ts": "2026-07-03T08:20:45Z", "kind": "epm:progress", "version": 94, "by": "unknown", "note": "[poll-tick] 5th launch 24h55m. 6/8 cells done; ultrachat sycophancy grinding. Disk 35G free."}
 {"ts": "2026-07-03T09:11:47Z", "kind": "epm:progress", "version": 95, "by": "unknown", "note": "[poll-tick] 5th launch 25h45m. 6/8 cells done; ultrachat sycophancy grinding. Disk 33G free."}
+{"ts": "2026-07-03T10:04:38Z", "kind": "epm:progress", "version": 96, "by": "unknown", "note": "[poll-tick] 5th launch 26h35m. 6/8 cells done; ultrachat sycophancy ~6h in. Disk pressure (26G) — pruned uv cache."}

@@ -34,7 +34,10 @@ What this slice ships
   instances create`` argv for a given (spec, config). Golden-tested.
 * :func:`reconnect_or_none` — pre-launch idempotent reconnect via ``gcloud
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
-  exists, return a handle for it without re-provisioning.
+  exists, return a handle for it without re-provisioning; refuses a RUNNING
+  instance whose ``eps/phase`` is already terminal (``done``/``failed``/
+  ``wedged``) — the #908 gate-park zombie — which the pre-launch stale
+  reclaim then deletes so the create does not collide (#632).
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
   reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
   fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
@@ -2722,7 +2725,30 @@ def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: Gcloud
 #: the "already exists" wedge it exists to prevent). Incident #632
 #: (2026-06-13): a workload-crash respawn hit "already exists" because the
 #: prior TERMINATED record blocked re-provisioning and nothing deleted it.
+#: The SAME identical-sets invariant extends to the phase-gated RUNNING
+#: case below (:data:`_ZOMBIE_GUEST_PHASES`): a RUNNING record whose
+#: ``eps/phase`` disqualifies it from reconnect MUST be deletable by the
+#: pre-launch check, or the refusal dead-ends in the "already exists" wedge.
 _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED", "SUSPENDED"})
+
+#: Guest ``eps/phase`` values that disqualify a RUNNING instance as a
+#: reconnect target AND qualify it for pre-launch reclaim (#908/#763): the
+#: janitor's terminal set (``done``/``failed``, :data:`_TERMINAL_GUEST_PHASES`)
+#: plus the #669 reachability watchdog's pre-shutdown ``wedged`` write. A
+#: RUNNING instance in any of these states is a finished-or-wedged zombie —
+#: reconnecting to it silently no-ops the new dispatch (#763 leg 2), and
+#: only deleting it frees the canonical name for the create (#632).
+#: The two consumers (:func:`reconnect_or_none`,
+#: :func:`_stale_named_instance_or_none`) MUST share this set — same
+#: invariant as :data:`_NONLIVE_INSTANCE_STATUSES` above. Deliberately a
+#: NEW constant, not an edit to :data:`_TERMINAL_GUEST_PHASES` (adding
+#: ``wedged`` there would change janitor reap behavior — the #667
+#: follow-up's business, out of scope here).
+#: Relaunch contract (#908 leg 1b): the #491 same-VM SSH-relaunch recovery
+#: recipe (`.claude/rules/gotchas.md`, GCE-metadata-runner entry) REQUIRES
+#: re-publishing ``eps/phase=workload`` BEFORE resuming work, so an active
+#: manual relaunch reads non-terminal here and is never classified a zombie.
+_ZOMBIE_GUEST_PHASES: frozenset[str] = _TERMINAL_GUEST_PHASES | frozenset({"wedged"})
 
 
 def reconnect_or_none(
@@ -2740,6 +2766,18 @@ def reconnect_or_none(
     instance is treated as "not live" (the backend will create a fresh
     one); no instance returns None.
 
+    Zombie refusal (#908/#763): a RUNNING instance whose ``eps/phase``
+    guest attribute is already in :data:`_ZOMBIE_GUEST_PHASES`
+    (``done``/``failed``/``wedged``) is NOT a live run to rejoin —
+    reconnecting to it silently no-ops the new dispatch (#763: the
+    phase-C launch "reconnected" to a gate-parked done VM and never
+    ran). Such an instance returns ``None``; the pre-launch stale
+    reclaim (:func:`_stale_named_instance_or_none`) then deletes it so
+    the create does not collide (#632). An unwritten phase (``""`` —
+    early boot, 404) reconnects normally; the probe fires for RUNNING
+    status only (PROVISIONING/STAGING have no phase yet; STOPPING is a
+    transient teardown state).
+
     Matches the "Idempotent: a per-run attempt-id is the sole write
     namespace; route() reconnects to an existing eps-issue-<N> GCE
     instance before re-provisioning" success criterion. The
@@ -2753,7 +2791,11 @@ def reconnect_or_none(
     (round-6 B1 mirrored from SLURM; the pre-fix warn-and-None here let
     an expired-auth list fall through toward a blind create — live GCP
     attempt 1, issue 535). The router's reconnect seams handle
-    ``BackendProbeError`` typed-ly on every lane.
+    ``BackendProbeError`` typed-ly on every lane. The #908 phase probe
+    adds a second (guest-attribute) raise surface with the SAME
+    semantics — a probe flake fails the launch typed and RETRIABLE
+    (re-run the same command; idempotent by design, the #736 exit-75
+    precedent), never a silent reconnect and never a delete.
     """
     name = instance_name_for(spec.issue)
     argv = render_list_argv(config=config, name_filter=f"name={name}")
@@ -2784,6 +2826,29 @@ def reconnect_or_none(
         zone_url = inst.get("zone") or ""
         # The zone field is a URL; take the last path segment.
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
+        # NEW (#908): a RUNNING instance whose workload already published a
+        # terminal/wedged ``eps/phase`` is a zombie, NOT a live run to rejoin
+        # — reconnecting to it silently no-ops the new dispatch (#763: the
+        # phase-C launch "reconnected" to the gate-parked done VM and never
+        # ran). ``""`` (unwritten — early boot, 404) reconnects normally. A
+        # probe FAILURE raises GcpProbeError out of this function: state
+        # UNKNOWN must never read as EITHER "live, reconnect" (would
+        # resurrect the silent no-op) or "zombie, delete" (could reclaim a
+        # healthy VM) — the #535 "couldn't ask" discipline, same as the
+        # LIST probe above. RUNNING-only, matching the janitor's
+        # ``should_probe_phase`` gate (PROVISIONING/STAGING have no phase
+        # yet; STOPPING+done is the normal seconds-long teardown transition).
+        if status.upper() == "RUNNING":
+            phase = _read_guest_phase(config=config, name=name, zone=zone, runner=runner)
+            if phase in _ZOMBIE_GUEST_PHASES:
+                logger.warning(
+                    "GCP reconnect: %s is RUNNING with terminal eps/phase=%r — refusing "
+                    "reconnect (gate-park/finished zombie, #908); the pre-launch stale "
+                    "reclaim deletes it before create.",
+                    name,
+                    phase,
+                )
+                continue
         instance_id = str(inst.get("id") or "")
         # Recover the original attempt_id from the instance's labels (set
         # by ``_format_labels`` at create time as ``eps-attempt=<id>``).
@@ -2837,15 +2902,21 @@ class StaleNamedInstance:
 
     Returned by :func:`_stale_named_instance_or_none` when a prior
     instance is in a :data:`_NONLIVE_INSTANCE_STATUSES` state (TERMINATED /
-    STOPPED / SUSPENDED): the record blocks the next ``gcloud compute
+    STOPPED / SUSPENDED) — OR (#908) is RUNNING with a terminal/wedged
+    ``eps/phase`` (:data:`_ZOMBIE_GUEST_PHASES`, a gate-park/finished
+    zombie): the record blocks the next ``gcloud compute
     instances create`` with ``resource ... already exists`` even though the
     instance is doing nothing. ``zone`` is the parsed last-segment of the
     instance's zone URL so the launch path can delete it in the right zone.
+    ``guest_phase`` is set ONLY on the #908 RUNNING+zombie case (the
+    re-probed ``eps/phase`` value); ``None`` for the status-stale cases —
+    defaulted so pre-#908 constructors stay valid.
     """
 
     name: str
     zone: str
     status: str
+    guest_phase: str | None = None
 
 
 def _stale_named_instance_or_none(
@@ -2868,19 +2939,28 @@ def _stale_named_instance_or_none(
     returned record before re-provisioning.
 
     Returns:
-        * ``StaleNamedInstance`` — a record in a non-live state exists;
-          safe to delete (it is doing no work).
+        * ``StaleNamedInstance`` — a record in a non-live state exists,
+          OR (#908) a RUNNING record whose re-probed ``eps/phase`` is in
+          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/``wedged`` —
+          the gate-park/finished zombie ``reconnect_or_none`` now
+          refuses; ``guest_phase`` carries the probed value). Both are
+          safe to delete (no live workload); the matched skip/delete
+          sets are the #632 invariant on
+          :data:`_NONLIVE_INSTANCE_STATUSES`.
         * ``None`` — no record with the canonical name exists; ``create``
           will proceed clean.
 
     Raises:
         * :class:`GcpProbeError` — the ``list`` probe itself failed
-          (rc != 0 / unparseable JSON). Instance state is UNKNOWN, and
-          "couldn't ask" must never read as "name is free" on the
+          (rc != 0 / unparseable JSON), OR (#908) the ``eps/phase``
+          guest-attribute probe on a RUNNING record failed. Instance /
+          phase state is UNKNOWN, and "couldn't ask" must never read as
+          "name is free" — and NEVER as "zombie, delete" — on the
           credit-spending lane (mirrors :func:`reconnect_or_none`).
         * :class:`GcpBackendError` — a record exists in a state that is
-          NEITHER live-reconnectable NOR in the non-live set (e.g.
-          RUNNING / PROVISIONING / STAGING / STOPPING / REPAIRING). This
+          NEITHER live-reconnectable NOR deletable: a non-RUNNING live
+          status (PROVISIONING / STAGING / STOPPING / REPAIRING), or a
+          RUNNING record whose re-probed phase is NON-terminal. This
           can only happen as a TOCTOU race against the reconnect probe
           (which would itself have returned a handle for a live status):
           refuse to auto-delete a possibly-live instance — deleting a
@@ -2915,6 +2995,24 @@ def _stale_named_instance_or_none(
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
         if status in _NONLIVE_INSTANCE_STATUSES:
             return StaleNamedInstance(name=name, zone=zone, status=status)
+        # NEW (#908): reconnect now REFUSES a RUNNING instance with a
+        # terminal/wedged eps/phase (see reconnect_or_none), so the SAME
+        # extended set must be deletable here — a skip without a matching
+        # delete re-creates the #632 "already exists" create collision
+        # (the documented invariant on _NONLIVE_INSTANCE_STATUSES). The
+        # phase is RE-PROBED locally (never carried over from the earlier
+        # reconnect read); a probe failure propagates GcpProbeError — no
+        # delete on unknown state. What a delete here costs on the
+        # accepted same-workload re-entry race (R1): any UNDRAINED
+        # VM-disk sentinel is destroyed AND the workload re-runs in full
+        # (duplicate compute + duplicate non-idempotent side effects,
+        # e.g. HF/WandB appends — the re-run regenerates the sentinel);
+        # artifacts themselves were uploaded BEFORE ``[phase=done]`` per
+        # the pod-side blocking contract, so no permanent data loss.
+        if status == "RUNNING":
+            phase = _read_guest_phase(config=config, name=name, zone=zone, runner=runner)
+            if phase in _ZOMBIE_GUEST_PHASES:
+                return StaleNamedInstance(name=name, zone=zone, status=status, guest_phase=phase)
         # A record exists in a state the non-live set does NOT cover. The
         # only way to reach here is a TOCTOU race vs the reconnect probe
         # (a live status would have reconnected). Never auto-delete a
@@ -2923,8 +3021,9 @@ def _stale_named_instance_or_none(
         raise GcpBackendError(
             f"GCP pre-launch: instance {name} exists in non-deletable status "
             f"{status!r} (zone={zone}); refusing to auto-delete a possibly-live "
-            "instance before create. Re-launch to reconnect, or delete manually "
-            "if it is genuinely stale."
+            "instance before create (a RUNNING record reaches this raise only "
+            "with a checked, NON-terminal eps/phase — #908). Re-launch to "
+            "reconnect, or delete manually if it is genuinely stale."
         )
     return None
 
@@ -3033,9 +3132,14 @@ def preflight_quota_headroom(
     * a live ``eps-issue-<N>`` instance already exists (the launch path
       reconnects, consuming no new quota — and our own instance may BE
       the usage the probe would read),
-    * the reconnect probe or the ``regions describe`` call fails in ANY
-      way (rc != 0, missing gcloud, timeout, unparseable JSON, metric
-      absent from ``quotas[]``).
+    * a RUNNING zombie (terminal/wedged ``eps/phase``, #908) occupies
+      the canonical name — reconnect refuses it, but its GPUs still
+      count in the usage read; launch's stale reclaim deletes it and
+      frees the quota before create, so the headroom verdict would be
+      stale by construction,
+    * the reconnect probe, the stale-name probe, or the ``regions
+      describe`` call fails in ANY way (rc != 0, missing gcloud,
+      timeout, unparseable JSON, metric absent from ``quotas[]``).
 
     Only a successfully parsed quota row produces a verdict. A swallowed
     probe failure here never enables a blind create: the launch path
@@ -3054,6 +3158,33 @@ def preflight_quota_headroom(
     except Exception as exc:  # GcpProbeError / transport — fail OPEN (launch re-probes)
         logger.warning(
             "GCP quota pre-check: reconnect probe failed OPEN (%s: %s); proceeding to launch.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    # NEW (#908): reconnect now REFUSES a RUNNING instance whose eps/phase is
+    # terminal/wedged (a gate-park zombie), so it returns None above while
+    # the zombie's allocated GPUs still COUNT in the regions-describe usage
+    # read — in a tight-quota regime the headroom verdict would block the
+    # GCP lane BEFORE launch's stale reclaim can delete the zombie and free
+    # the quota. Restore the pre-#908 disposition for exactly that case: a
+    # RUNNING record with a terminal guest phase is about to be reclaimed by
+    # launch, so SKIP the headroom check ("no opinion"), same as the
+    # reconnect-handle path above. Probe failures keep the broad fail-OPEN.
+    try:
+        stale = _stale_named_instance_or_none(spec=spec, config=config, runner=runner)
+        if stale is not None and stale.guest_phase is not None:
+            logger.info(
+                "GCP quota pre-check: RUNNING zombie %s (eps/phase=%s) occupies the "
+                "canonical name — skipping the headroom check; launch's stale reclaim "
+                "frees its quota before create (#908).",
+                stale.name,
+                stale.guest_phase,
+            )
+            return None
+    except Exception as exc:  # GcpProbeError / GcpBackendError / transport — fail OPEN
+        logger.warning(
+            "GCP quota pre-check: stale-name probe failed OPEN (%s: %s); proceeding to launch.",
             type(exc).__name__,
             exc,
         )
@@ -3600,10 +3731,11 @@ class GcpBackend(ComputeBackend):
         stale = _stale_named_instance_or_none(spec=spec, config=config, runner=self._run)
         if stale is not None:
             logger.info(
-                "GCP pre-launch: deleting stale %s instance %s in zone=%s to free the name "
-                "before create (issue=%d).",
+                "GCP pre-launch: deleting stale %s instance %s (eps/phase=%s) in zone=%s "
+                "to free the name before create (issue=%d).",
                 stale.status,
                 stale.name,
+                stale.guest_phase,
                 stale.zone,
                 spec.issue,
             )

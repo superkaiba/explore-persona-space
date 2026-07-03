@@ -22,6 +22,13 @@ post-marker` writes one row per call. The schema:
   distinct queued follow-ups share the kind under different
   `followup_label`s; group by label per
   `task_workflow.unrun_followup_labels`, #894).
+  `task.py post-marker` derives `max(existing)+1` per kind when `--version`
+  is omitted (an explicit `--version` always wins — required for multi-part
+  posts, where every part carries the same version). Briefs and skill/agent
+  prose never instruct a literal version for the round-versioned kinds
+  (`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests`) —
+  see the implementer agents' § Posting review-round markers (incidents
+  #389, #480, #825).
 - `note` = human-readable body (capped at 50,000 chars by `task.py`).
 - `metadata` = compact JSON sidecar (e.g., reviewer-loop fields below).
 
@@ -164,6 +171,10 @@ table below is the at-a-glance index.
 | `epm:campaign-digest` | campaign skill (Step 1.5, at most every 24h) | the daily campaign digest fires (last_digest_at older than 24h at a decision round) | budget spent/committed/total (GPU-hours), children table (id / status / headline), current working belief + confidence, next planned arms. v1. |
 | `epm:campaign-stalled` | scripts/autonomous_session_watch.py (campaign pass) | a live campaign session posted no skill-posted epm:campaign-* marker AND no child task posted any marker for > EPM_CAMPAIGN_STALL_S (default 2h); one alert per stalled episode (the second consecutive stalled check stop-then-respawns, cap 3/episode) | stall window in hours, note carries the [autonomous_session_watch:campaign] sentinel so the alert never resets the staleness clock it measures. v1. |
 | `epm:campaign-stopped` | campaign skill (Step 2) | a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed) | stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1. |
+| `epm:plan-revision-log` | issue-v2 skill (post-approval critic rounds) | workflow: v2 tasks only. Once PER post-approval critic round (Step 3 of .claude/skills/issue-v2/SKILL.md), after the plan + planned_manifest.json are auto-revised in response to that round's critic panel | round (integer), changes (what the revision changed + why, per critic — statistics / methodology-baselines / efficiency / consistency), manifest_diff (the diff to planned_manifest.json: conditions / metrics / planned figures added/removed/changed, or 'none'). The audit surface for post-approval critic drift (Thomas approves the pre-critique draft; this log is how he sees what the critics changed). v1. |
+| `epm:methodology-check` | issue-v2 skill (via methodology-critic) | workflow: v2 tasks only. After each methodology-critic round over the assembled report's Motivation / Methodology / Metrics sections (Step 8 report loop); round cap 5 | verdict (PASS\|FAIL), round, untraceable/incorrect claims (each with the ground-truth source checked — config / code @ SHA / run_result.json / adapter_config.json / dashboard row count) OR 'all claims trace'. Link-liveness (every link resolves at the pinned SHA) folded in. v1. |
+| `epm:report` | issue-v2 skill | workflow: v2 tasks only. When the report body (<!-- report-v1 --> sentinel) is mechanically assembled — methodology-writer REPORT MODE sections + plotter figures/captions spliced into the template, with TLDR / Next steps placeholders intact (Step 8) | report body path, sections filled (Motivation / Methodology / Metrics / Results), figure count, placeholders left for Thomas (TLDR, Next steps). v1. |
+| `epm:report-verified` | issue-v2 skill (via report-verifier) | workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 5. PASS advances the task to awaiting_promotion | verdict (PASS\|FAIL), round, per-figure recompute results (≥1 plotted value re-derived from source JSON via the manifest transform recipe), completeness-vs-manifest (every planned condition/metric/figure present or explicitly 'not run'), interpretivity-lens result (hypothesis-framing allowed / asserted-conclusion banned; Thomas's TLDR + Next steps never reviewed), verify_report.py --mode generation output. v1. |
 <!-- /workflow.yaml: AUTO-GENERATED -->
 
 ### Notes (not auto-generated; permanent context for kinds)

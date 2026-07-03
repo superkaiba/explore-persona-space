@@ -1,0 +1,537 @@
+{
+  "commit": "ecf19704c0",
+  "created": "2026-07-03T08:30:44Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.25301320528211285,
+      "fraction of 37 summaries below": 0.0,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.27807923169267706,
+      "fraction of 37 summaries below": 0.027777777777777776,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.2843217286914766,
+      "fraction of 37 summaries below": 0.05555555555555555,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.31025210084033605,
+      "fraction of 37 summaries below": 0.08333333333333333,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3786314525810324,
+      "fraction of 37 summaries below": 0.1111111111111111,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3825690276110444,
+      "fraction of 37 summaries below": 0.1388888888888889,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3839135654261705,
+      "fraction of 37 summaries below": 0.16666666666666666,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.4033133253301321,
+      "fraction of 37 summaries below": 0.19444444444444442,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.4206002400960384,
+      "fraction of 37 summaries below": 0.2222222222222222,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.420984393757503,
+      "fraction of 37 summaries below": 0.25,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.4634333733493397,
+      "fraction of 37 summaries below": 0.2777777777777778,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.46631452581032407,
+      "fraction of 37 summaries below": 0.3055555555555555,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.48677070828331326,
+      "fraction of 37 summaries below": 0.3333333333333333,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.48696278511404556,
+      "fraction of 37 summaries below": 0.3611111111111111,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.4941656662665066,
+      "fraction of 37 summaries below": 0.38888888888888884,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.49637454981992796,
+      "fraction of 37 summaries below": 0.41666666666666663,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.502328931572629,
+      "fraction of 37 summaries below": 0.4444444444444444,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5045378151260504,
+      "fraction of 37 summaries below": 0.4722222222222222,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5064585834333732,
+      "fraction of 37 summaries below": 0.5,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5113565426170468,
+      "fraction of 37 summaries below": 0.5277777777777778,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5133733493397359,
+      "fraction of 37 summaries below": 0.5555555555555556,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5171188475390156,
+      "fraction of 37 summaries below": 0.5833333333333333,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5332533013205282,
+      "fraction of 37 summaries below": 0.611111111111111,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5368067226890756,
+      "fraction of 37 summaries below": 0.6388888888888888,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5473709483793516,
+      "fraction of 37 summaries below": 0.6666666666666666,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5496758703481391,
+      "fraction of 37 summaries below": 0.6944444444444444,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5496758703481391,
+      "fraction of 37 summaries below": 0.7222222222222222,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5578391356542617,
+      "fraction of 37 summaries below": 0.75,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5656182472989195,
+      "fraction of 37 summaries below": 0.7777777777777777,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5671548619447779,
+      "fraction of 37 summaries below": 0.8055555555555555,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5739735894357744,
+      "fraction of 37 summaries below": 0.8333333333333333,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5930852340936374,
+      "fraction of 37 summaries below": 0.861111111111111,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6003841536614647,
+      "fraction of 37 summaries below": 0.8888888888888888,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6104681872749098,
+      "fraction of 37 summaries below": 0.9166666666666666,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6320768307322928,
+      "fraction of 37 summaries below": 0.9444444444444444,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6425450180072029,
+      "fraction of 37 summaries below": 0.9722222222222222,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6454261704681872,
+      "fraction of 37 summaries below": 1.0,
+      "series": "UltraChat activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5930852340936374,
+      "fraction of 37 summaries below": 0.8648648648648649,
+      "series": "mean summary",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.07082833133253301,
+      "fraction of 37 summaries below": 0.0,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.11750300120048018,
+      "fraction of 37 summaries below": 0.027777777777777776,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.12979591836734694,
+      "fraction of 37 summaries below": 0.05555555555555555,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.1709003601440576,
+      "fraction of 37 summaries below": 0.08333333333333333,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.1736854741896759,
+      "fraction of 37 summaries below": 0.1111111111111111,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.23246098439375748,
+      "fraction of 37 summaries below": 0.1388888888888889,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.2460984393757503,
+      "fraction of 37 summaries below": 0.16666666666666666,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.246578631452581,
+      "fraction of 37 summaries below": 0.19444444444444442,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.2630972388955582,
+      "fraction of 37 summaries below": 0.2222222222222222,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.2632893157262905,
+      "fraction of 37 summaries below": 0.25,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.2873949579831933,
+      "fraction of 37 summaries below": 0.2777777777777778,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3031452581032413,
+      "fraction of 37 summaries below": 0.3055555555555555,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3228331332533013,
+      "fraction of 37 summaries below": 0.3333333333333333,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.37795918367346937,
+      "fraction of 37 summaries below": 0.3611111111111111,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.3871788715486194,
+      "fraction of 37 summaries below": 0.38888888888888884,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.4385594237695078,
+      "fraction of 37 summaries below": 0.41666666666666663,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.45315726290516206,
+      "fraction of 37 summaries below": 0.4444444444444444,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5007923169267706,
+      "fraction of 37 summaries below": 0.4722222222222222,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5031932773109243,
+      "fraction of 37 summaries below": 0.5,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5277791116446579,
+      "fraction of 37 summaries below": 0.5277777777777778,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5295078031212485,
+      "fraction of 37 summaries below": 0.5555555555555556,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.544297719087635,
+      "fraction of 37 summaries below": 0.5833333333333333,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5538055222088836,
+      "fraction of 37 summaries below": 0.611111111111111,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5562064825930372,
+      "fraction of 37 summaries below": 0.6388888888888888,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.55937575030012,
+      "fraction of 37 summaries below": 0.6666666666666666,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5684033613445377,
+      "fraction of 37 summaries below": 0.6944444444444444,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5723409363745497,
+      "fraction of 37 summaries below": 0.7222222222222222,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.5818487394957984,
+      "fraction of 37 summaries below": 0.75,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.60124849939976,
+      "fraction of 37 summaries below": 0.7777777777777777,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6094117647058823,
+      "fraction of 37 summaries below": 0.8055555555555555,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6152701080432174,
+      "fraction of 37 summaries below": 0.8333333333333333,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6303481392557022,
+      "fraction of 37 summaries below": 0.861111111111111,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6304441776710683,
+      "fraction of 37 summaries below": 0.8888888888888888,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6400480192076831,
+      "fraction of 37 summaries below": 0.9166666666666666,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6415846338535413,
+      "fraction of 37 summaries below": 0.9444444444444444,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6593517406962786,
+      "fraction of 37 summaries below": 0.9722222222222222,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "per-summary conjunction \u03c1 (harmful compliance, fresh target)": 0.6943097238895558,
+      "fraction of 37 summaries below": 1.0,
+      "series": "misalignment-pool activations \u2192 UltraChat target",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 75
+}
