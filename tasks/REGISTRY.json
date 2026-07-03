@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 918,
+  "highest_id": 919,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6036,6 +6036,13 @@
       "path": "tasks/proposed/918",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 HF data-repo staging must use scoped list_repo_tree, not snapshot_download"
+    },
+    "919": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/919",
+      "status": "proposed",
+      "title": "workflow-fix: route user 'pause <N>' to on_hold (durable, watcher-safe park)"
     },
     "92": {
       "has_clean_result": false,
