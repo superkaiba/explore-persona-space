@@ -1,0 +1,96 @@
+{
+  "commit": "09006be091",
+  "created": "2026-07-03T16:37:19Z",
+  "figsize": [
+    9.0,
+    5.5
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "absolute Spearman rho vs graded behavior score": 0.598367,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "absolute Spearman rho vs graded behavior score": 0.809748,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "absolute Spearman rho vs graded behavior score": 0.816375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "absolute Spearman rho vs graded behavior score": 0.86141,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "absolute Spearman rho vs graded behavior score": 0.747419,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "absolute Spearman rho vs graded behavior score": 0.765282,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "absolute Spearman rho vs graded behavior score": 0.826843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "absolute Spearman rho vs graded behavior score": 0.10521,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "absolute Spearman rho vs graded behavior score": 0.484466,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "absolute Spearman rho vs graded behavior score": 0.58617,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "absolute Spearman rho vs graded behavior score": 0.626056,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "absolute Spearman rho vs graded behavior score": 0.471405,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "absolute Spearman rho vs graded behavior score": 0.679136,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "absolute Spearman rho vs graded behavior score": 0.514142,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 14
+}
