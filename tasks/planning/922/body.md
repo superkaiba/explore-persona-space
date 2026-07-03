@@ -9,13 +9,15 @@ parent_id: 841
 origin_prompt: Run an issue in the background which is 841 but predicting the next
   token activation from previous token activation, one mapping per layer, trying the
   different options
-goal: 'On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations
-  can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1}
-  taking ONLY the previous position''s activation (no token identity), evaluate single-step
-  held-out Delta R^2 per layer and multi-step autoregressive rollout from the last
-  prompt token against true on-policy answer activations, and benchmark behavior read-out
-  off rolled-forward states against #779''s direct context->trait predictor and context->answer-profile
-  map.'
+goal: 'On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory
+  can be predicted WITHOUT generating, comparing three per-layer transition structures
+  — (a) a global next-token map g_l: h_{l,t} -> h_{l,t+1} rolled from the last prompt
+  token, (b) a context-conditioned map g_l(h_{l,t}, c) re-injecting the fixed context
+  vector at every step, and (c) a direct per-horizon map c -> h_{l,t+k} (no recursion;
+  #779''s answer-profile map is its mean-over-horizon nested baseline) — each over
+  the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step
+  Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior
+  read-out vs #779''s direct context->trait predictor.'
 relates_to:
 - spec-context-as-vector
 ---
@@ -23,7 +25,7 @@ relates_to:
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing three transition structures per layer — (a) a GLOBAL next-token map g_l: h_{l,t} -> h_{l,t+1} rolled autoregressively from the last prompt token (context enters only as the initial condition), (b) a CONTEXT-CONDITIONED map g_l(h_{l,t}, c) that re-injects the fixed context vector at every rollout step, and (c) a DIRECT per-horizon map c -> h_{l,t+k} (k = 1..K, no recursion; its mean-over-horizon collapse is #779's context->answer-profile map, a nested baseline) — each across the #841 function-class ladder (identity/copy-previous null, affine ridge, small MLP, optional sequence model as exploratory), never conditioning on generated-token identities; evaluate single-step held-out Delta R^2, rollout/horizon skill against true on-policy answer activations, and behavior read-out off predicted trajectories benchmarked against #779's direct context->trait predictor.
+On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing three per-layer transition structures — (a) a global next-token map g_l: h_{l,t} -> h_{l,t+1} rolled from the last prompt token, (b) a context-conditioned map g_l(h_{l,t}, c) re-injecting the fixed context vector at every step, and (c) a direct per-horizon map c -> h_{l,t+k} (no recursion; #779's answer-profile map is its mean-over-horizon nested baseline) — each over the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior read-out vs #779's direct context->trait predictor.
 
 ## Overview / Motivation
 

@@ -6067,7 +6067,7 @@
       "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
     },
     "922": {
-      "goal": "On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1} taking ONLY the previous position's activation (no token identity), evaluate single-step held-out Delta R^2 per layer and multi-step autoregressive rollout from the last prompt token against true on-policy answer activations, and benchmark behavior read-out off rolled-forward states against #779's direct context->trait predictor and context->answer-profile map.",
+      "goal": "On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing three per-layer transition structures \u2014 (a) a global next-token map g_l: h_{l,t} -> h_{l,t+1} rolled from the last prompt token, (b) a context-conditioned map g_l(h_{l,t}, c) re-injecting the fixed context vector at every step, and (c) a direct per-horizon map c -> h_{l,t+k} (no recursion; #779's answer-profile map is its mean-over-horizon nested baseline) \u2014 each over the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior read-out vs #779's direct context->trait predictor.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/planning/922",
