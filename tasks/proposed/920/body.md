@@ -48,6 +48,8 @@ goal: On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (
   collection and a disjoint OOD UltraChat probe pool testing probe-set generalization
   on both the input and target sides — naming the best combination against selection-symmetric
   nulls.
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
