@@ -749,6 +749,29 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
     return v is True or (isinstance(v, str) and v.strip().lower() == "true")
 
 
+#: Body sentinel for the v2 report clean-result form (workflow v2 — the
+#: report-only track: Motivation / Methodology / Metrics / Results-as-plots
+#: written by agents, TLDR / Next-steps written by Thomas). Placed on the line
+#: after the H1 ``# Experiment: ...`` title, mirroring the ``<!-- clean-result-v4 -->``
+#: convention. ``scripts/verify_report.py`` is the mechanical verifier for this
+#: form. Unlike ``paper: true`` (a frontmatter flag), a report body is
+#: identified by this BODY sentinel.
+REPORT_V1_SENTINEL = "<!-- report-v1 -->"
+
+
+def is_report_body(body: str) -> bool:
+    """True when ``body`` is a v2 report clean-result (carries ``REPORT_V1_SENTINEL``).
+
+    Detects the v2 report form by its body sentinel, the analogue of
+    :func:`is_paper_task` for the report track. Consumers (dashboard rendering,
+    promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
+    report body as a valid clean-result form alongside the markdown-v4 and paper
+    tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
+    frontmatter flag, only this sentinel.
+    """
+    return REPORT_V1_SENTINEL in body
+
+
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
 # Workflow-surface fixes (a `<!-- workflow-fix-candidate v1 -->` block or a
 # surfaced prose follow-up) are filed as a `kind: infra` task and implemented by
@@ -2844,6 +2867,14 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
     marked a clean-result before the HF upload lands. Clearing (``value=False``)
     and every non-paper task skip the manifest gate.
+
+    A **v2 report** body (carries ``REPORT_V1_SENTINEL`` — see
+    :func:`is_report_body`) is a valid non-paper clean-result form: it is not a
+    ``paper: true`` task and carries no ``paper_manifest.json``, so it flows
+    through the non-paper path here and flips ``has_clean_result`` with no extra
+    gate. Its own mechanical gate is ``scripts/verify_report.py`` (run before
+    ``set-clean-result`` / at promote time), the report-track analogue of
+    ``verify_task_body.py`` / ``verify_paper.py``.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
