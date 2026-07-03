@@ -15,8 +15,13 @@ Figures:
   behavior x layer x summary with 95% family-clustered CI whiskers.
 - ``per_context_strips_three_summaries`` — the 16 per-context |delta(c)| / floor
   values behind every hero bar (from ``offset_decomposition.json``).
+- ``scatter_maxp_vs_mean_and_turn`` — ONE two-panel 9-cell scatter of raw
+  Delta_med, max-pool vs the answer mean (left) and vs the turn boundary
+  (right); supersedes the two standalone ``scatter_maxp_vs_{mean,turn_nl}``
+  files (one figure unit, one sidecar).
 
-Run from the repo/worktree root: ``uv run python scripts/issue811_maxp_round_figures.py``.
+Run from the repo/worktree root: ``uv run python scripts/issue811_maxp_round_figures.py``
+(``--only scatter`` regenerates just the two-panel scatter).
 """
 
 from __future__ import annotations
@@ -254,8 +259,10 @@ def fig_per_context_strips() -> None:
     plt.close(fig)
 
 
-# Per-point text placement overrides for the 9-cell scatters, keyed
-# (fname, behavior, layer) -> (x_factor, y_factor, ha, va) in log-space
+# Per-point text placement overrides for the 9-cell scatter panels, keyed
+# (panel spec key, behavior, layer) -> (x_factor, y_factor, ha, va) in log-space
+# (the spec keys keep the historical standalone-figure names; the panels now
+# live side by side in the single scatter_maxp_vs_mean_and_turn figure)
 # multiplicative offsets. Defaults put text right-above; overrides resolve the
 # bottom-left cluster collisions the round-2 critique flagged (the uniform
 # +0.004 linear offset also let paper_plots' nearest-text sidecar join attach
@@ -273,20 +280,23 @@ _SCATTER_TEXT_SPECS: dict[tuple[str, str, int], tuple[float, float, str, str]] =
 }
 
 
-def fig_delta_scatters() -> None:
-    """Raw Delta_med per cell (9 points), max-pool vs each reference summary.
+def fig_delta_scatter_pair() -> None:
+    """Raw Delta_med per cell (9 points), max-pool vs BOTH reference summaries.
 
-    Two files (one per reference), labeled points, identity line, LOG-LOG axes
-    (the 9 cells span ~30x; log axes spread the bottom-left cluster that
-    collided on the linear draft). Each point is its own labeled scatter
-    series, so the ``savefig_paper`` sidecar carries an exact per-point
-    ``series`` name instead of relying on the nearest-text join. On the
-    turn-boundary panel sycophancy points render OPEN — their x coordinate
-    derives from the untrusted turn-boundary fits.
+    ONE two-panel figure (left: vs answer mean; right: vs turn boundary) with a
+    single ``.meta.json`` sidecar — the panels share the max-pool y-quantity and
+    tell one call-level story, so they are one figure unit (this supersedes the
+    two standalone ``scatter_maxp_vs_{mean,turn_nl}`` files; clean-result-critic
+    round-1, Lens 3/9). Labeled points, identity line, LOG-LOG axes per panel
+    (the 9 cells span ~30x). Each point is its own labeled scatter series with a
+    panel-qualified label, so the sidecar carries an exact per-point ``series``
+    name. On the turn-boundary panel sycophancy points render OPEN — their x
+    coordinate derives from the untrusted turn-boundary fits.
     """
     fc = {s: _cells(s, "fc") for s in SUMMARIES}
-    for ref, fname in (("mean", "scatter_maxp_vs_mean"), ("turn_nl", "scatter_maxp_vs_turn_nl")):
-        fig, ax = plt.subplots(figsize=(5.4, 5.2))
+    fig, axes = plt.subplots(1, 2, figsize=(10.8, 5.2))
+    panels = (("mean", "scatter_maxp_vs_mean"), ("turn_nl", "scatter_maxp_vs_turn_nl"))
+    for ax, (ref, spec_key) in zip(axes, panels, strict=True):
         vals: list[float] = []
         for beh in BEHAVIORS:
             for li in LAYERS:
@@ -294,6 +304,7 @@ def fig_delta_scatters() -> None:
                 y = fc["maxp"][f"{beh}/L{li}"]["Delta_med"]
                 vals += [x, y]
                 cell_label = f"{BEHAVIOR_LABEL[beh].split(' (')[0]} L{li}"
+                series_label = f"{cell_label} · vs {SUMMARY_LABEL[ref]}"
                 open_marker = ref == "turn_nl" and beh == "sycophancy"
                 if open_marker:
                     ax.scatter(
@@ -304,12 +315,12 @@ def fig_delta_scatters() -> None:
                         edgecolors=C_SUMMARY["maxp"],
                         linewidths=1.2,
                         zorder=3,
-                        label=cell_label,
+                        label=series_label,
                     )
                 else:
-                    ax.scatter(x, y, s=42, color=C_SUMMARY["maxp"], zorder=3, label=cell_label)
+                    ax.scatter(x, y, s=42, color=C_SUMMARY["maxp"], zorder=3, label=series_label)
                 fx, fy, ha, va = _SCATTER_TEXT_SPECS.get(
-                    (fname, beh, li), (1.05, 1.03, "left", "bottom")
+                    (spec_key, beh, li), (1.05, 1.03, "left", "bottom")
                 )
                 ax.text(x * fx, y * fy, cell_label, fontsize=6.5, ha=ha, va=va)
         lo, hi = min(vals) * 0.55, max(vals) * 1.6
@@ -319,7 +330,8 @@ def fig_delta_scatters() -> None:
         ax.set_xlim(lo, hi)
         ax.set_ylim(lo, hi)
         ax.set_xlabel(f"map change under {SUMMARY_LABEL[ref]} (median, activation units)")
-        ax.set_ylabel("map change under max-pool (median, activation units)")
+        if ref == "mean":
+            ax.set_ylabel("map change under max-pool (median, activation units)")
         if ref == "turn_nl":
             legend_handle = ax.scatter(
                 [],
@@ -331,18 +343,35 @@ def fig_delta_scatters() -> None:
                 label="open: sycophancy — turn-boundary coordinate untrusted",
             )
             ax.legend(handles=[legend_handle], loc="upper left", fontsize=7)
-        savefig_paper(fig, f"{FIG_PREFIX}/{fname}", dir=FIG_DIR)
-        plt.close(fig)
+    savefig_paper(fig, f"{FIG_PREFIX}/scatter_maxp_vs_mean_and_turn", dir=FIG_DIR)
+    plt.close(fig)
+
+
+FIGURES = {
+    "hero": fig_hero_three_summaries,
+    "forest": fig_chain_rho_forest_ci,
+    "strips": fig_per_context_strips,
+    "scatter": fig_delta_scatter_pair,
+}
 
 
 def main() -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Issue #811 maxp-round analyzer figures")
+    ap.add_argument(
+        "--only",
+        choices=tuple(FIGURES),
+        default=None,
+        help="regenerate a single figure (default: all)",
+    )
+    args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     set_paper_style("blog")
-    fig_hero_three_summaries()
-    fig_chain_rho_forest_ci()
-    fig_per_context_strips()
-    fig_delta_scatters()
-    logger.info("wrote 5 figures to figures/%s/", FIG_PREFIX)
+    names = (args.only,) if args.only else tuple(FIGURES)
+    for name in names:
+        FIGURES[name]()
+    logger.info("wrote %d figure(s) to figures/%s/", len(names), FIG_PREFIX)
     return 0
 
 
