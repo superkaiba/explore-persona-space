@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 933,
+  "highest_id": 934,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6153,6 +6153,13 @@
       "path": "tasks/proposed/933",
       "status": "proposed",
       "title": "workflow-fix: test_shared_vm_thread_caps.py red on main (stale #895 grandfather + ungrandfathered violators)"
+    },
+    "934": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/934",
+      "status": "proposed",
+      "title": "workflow-fix: GCP lane multi-lane instance naming + loud reconnect result"
     },
     "94": {
       "has_clean_result": false,
