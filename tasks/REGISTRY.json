@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 925,
+  "highest_id": 926,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6095,6 +6095,13 @@
       "path": "tasks/planning/925",
       "status": "planning",
       "title": "workflow-fix: verify_plan.py WARN check for incoherent hypothesis confirm/falsify branches"
+    },
+    "926": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/926",
+      "status": "proposed",
+      "title": "vectorized_mlp_skill: per-absolute-index MLP init seeding (chunk-invariant fits)"
     },
     "94": {
       "has_clean_result": false,
