@@ -6591,6 +6591,135 @@ def check_v4_results_beat(body: str) -> CheckResult:
     )
 
 
+# ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
+
+# Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
+# all-digit 6-hex color (`#000000`) cannot match (fail-open on hypothetical
+# 5-digit issue ids beats fail-closed on hex colors — the LM lens is the
+# backstop). Lookbehind: not preceded by a word char (`file#123`), `&` (HTML
+# entities `&#8212;`), `/` (URL fragments `path/#123`), or `#`.
+_BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\d)")
+_HTML_COMMENT_INLINE_RE = re.compile(r"<!--.*?-->")
+_V4_STANDALONE_SECTIONS = ("takeaways", "methodology", "results")
+
+
+def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
+    """Return (section_name, matched_token, line_text) for every bare
+    `#<digits>` issue reference in the v4 standalone sections
+    (## Takeaways / ## Methodology / ## Results), excluding every
+    sanctioned form. `body` is the post-frontmatter text (as handed to
+    CHECKS entries by verify_text), so frontmatter bare refs never reach
+    the scan.
+
+    Sanctioned forms excluded: fenced code blocks, `<details>` blocks,
+    HTML comments (line-grain mask); GFM table rows; the
+    `**Repro:**`/`**Context:**` footer (line-index cut); markdown links
+    (label + target) and inline code spans (in-line neutralization,
+    substituting a single SPACE — never the empty string, which could
+    JOIN adjacent characters into a fabricated `#N` token, e.g.
+    ``#`x`123`` → `#123`).
+
+    Conservative edge behavior (all fail-open — missed refs, never false
+    FAILs; the clean-result-critic Lens 2 LM read is the backstop):
+
+    - The `<details>` open/close counter runs on RAW line text
+      PRE-neutralization, so a backticked ``<details>`` prose mention
+      opens the mask and excludes the remainder of the body.
+    - An unclosed `<details>` likewise excludes everything after it;
+      nesting is handled by the depth counter.
+    - 4-space indented code blocks and multi-line `[#K](\\nurl)` links
+      are NOT excluded (both survey-clean across all on-disk v4 bodies
+      as of 2026-07-03).
+    - In a slash-run `#658/#742` only the first token matches (the `/`
+      lookbehind protects URL fragments) — the line still FAILs, which
+      is sufficient.
+    """
+    lines = body.splitlines()
+    footer = _v4_footer_start_line(body)  # None -> no footer cut
+    table_idx = _table_row_line_indices(lines)
+    # Line-grain structural exclusion mask: fenced code, <details> blocks,
+    # HTML comment spans. Single pass, whole-body (fences/details/comments
+    # may open in one section and close in another).
+    excluded: set[int] = set()
+    in_fence = False
+    details_depth = 0
+    in_comment = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            excluded.add(i)
+            continue
+        if in_fence:
+            excluded.add(i)
+            continue
+        if in_comment:
+            excluded.add(i)
+            if "-->" in line:
+                in_comment = False
+            continue
+        opens = len(re.findall(r"<details\b", line, re.IGNORECASE))
+        closes = len(re.findall(r"</details>", line, re.IGNORECASE))
+        if details_depth > 0 or opens:
+            excluded.add(i)
+        details_depth = max(0, details_depth + opens - closes)
+        tail = line[line.index("<!--") :] if "<!--" in line else ""
+        if tail and "-->" not in tail:
+            excluded.add(i)
+            in_comment = True
+    hits: list[tuple[str, str, str]] = []
+    for name, start, end in find_h2_sections(body):
+        if name.casefold() not in _V4_STANDALONE_SECTIONS:
+            continue
+        for i in range(start, end):
+            if footer is not None and i >= footer:
+                continue  # footer + everything after
+            if i in excluded or i in table_idx:
+                continue
+            # Substitute a single space (never ""): an empty-string sub
+            # can JOIN the char before and after the removed span into a
+            # new `#N` token that the raw line never carried.
+            residue = _LINK_RE.sub(" ", lines[i])  # [label](target) gone
+            residue = _INLINE_CODE_RE.sub(" ", residue)  # `code` escape hatch
+            residue = _HTML_COMMENT_INLINE_RE.sub(" ", residue)
+            for m in _BARE_ISSUE_REF_RE.finditer(residue):
+                hits.append((name, m.group(0), lines[i].strip()[:90]))
+    return hits
+
+
+def check_v4_no_bare_issue_refs(body: str) -> CheckResult:
+    """Check 27 (v4 only): no bare `#<digits>` issue refs in the standalone
+    sections. SPEC.md § `## Goal` (v4): the Goal context slot is the ONLY
+    place in the body that may cite prior tasks; `## Takeaways` /
+    `## Methodology` / `## Results` are standalone, and lineage/provenance
+    live in the `**Repro:**`/`**Context:**` footer. Sanctioned forms that
+    do not trip: markdown links (label + target), GFM table rows (the
+    Training-table Source column), fenced/inline code, `<details>` blocks,
+    HTML comments, the footer, YAML frontmatter. Exclusion edge behavior
+    (all fail-open) is documented on `_bare_issue_ref_hits`. Origin: #841
+    round-2 (bare `#779` x~8 in Methodology survived two ensemble review
+    rounds). PASSes vacuously on v3 / v2 / legacy bodies (forward-only)."""
+    label = "no bare issue refs in standalone sections (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    hits = _bare_issue_ref_hits(body)
+    if not hits:
+        return CheckResult(label, True, "Takeaways/Methodology/Results carry no bare `#K` refs")
+    shown = "; ".join(f'## {sec}: `{tok}` in "{txt}"' for sec, tok, txt in hits[:5])
+    more = f" (+{len(hits) - 5} more)" if len(hits) > 5 else ""
+    return CheckResult(
+        label,
+        False,
+        f"bare issue reference(s) in standalone section(s) — {shown}{more}. "
+        "Prior-issue references live ONLY in the `## Goal` context slot as "
+        "`[#K](https://eps.superkaiba.com/tasks/K)` links and in the `**Repro:**`/"
+        "`**Context:**` footer (SPEC.md § `## Goal` (v4) + Rule A). Rewrite the prose to "
+        "describe the method standalone and move lineage to the footer. The inline-code "
+        "escape hatch is for NON-issue `#N` strings only (a hex color, an ordinal like "
+        "`GPU #2`) — do NOT backtick a genuine issue reference to silence this check.",
+    )
+
+
 # ─── v3 body-table ⊆ methodology-doc table check (21) ────────────────────────
 
 
@@ -6881,6 +7010,7 @@ CHECKS = [
     check_v4_methodology_shape,  # check 18 (v4)
     check_v4_word_caps,  # check 20 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
+    check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs in standalone sections
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
