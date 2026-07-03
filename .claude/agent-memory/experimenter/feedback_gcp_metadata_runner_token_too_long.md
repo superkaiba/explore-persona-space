@@ -22,7 +22,8 @@ a healthy "workload" phase forever while no process is alive.
 parent shell, not a wipe).
 
 **How to recover:** FIRST (REQUIRED, #908) re-publish `eps/phase=workload`
-via the guest-attribute curl BEFORE resuming any work on the VM — the #908
+via the guest-attribute curl (`curl -fsS -X PUT -H "Metadata-Flavor: Google" --data "workload" "http://metadata.google.internal/computeMetadata/v1/instance/guest-attributes/eps/phase"`)
+BEFORE resuming any work on the VM — the #908
 zombie predicates (`reconnect_or_none` + the pre-launch stale reclaim in
 `backends/gcp.py`) classify a RUNNING VM whose phase reads terminal/wedged
 (`done`/`failed`/`wedged`) as a finished zombie and DELETE it on the next
