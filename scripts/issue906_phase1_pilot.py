@@ -163,6 +163,16 @@ class PilotSeams:
     # -> list[str].  None -> inline HF generate in _build_marker_class.
     # Smoke stub returns distinct per-question fakes: f"resp::{hash(q) & 0xFFFF:04x}".
     marker_gen_fn: Any = None
+    # CONCERN 5: pre-intervention baseline seam (plan §4 Phase 0).
+    # Signature: (behavior, cfg, class_dir) -> dict with keys {rate, n_questions, out_dir}.
+    # None -> the real vLLM judged-rate baseline pass in run_class.
+    # Smoke stub: injected lambda returning {"rate": 0.0, "n_questions": 0, "status": "smoke"}.
+    baseline_fn: Any = None
+    # CONCERN 4: sycophancy on-policy control arm (plan §4 Phase 0, sycophancy only).
+    # Signature: (behavior, cfg, class_dir) -> dict with keys {r_b_path, regime, provenance}.
+    # None -> the real on-policy rollout + extract pass in run_class.
+    # Smoke stub: injected lambda returning {"status": "smoke", "r_b_path": None}.
+    on_policy_control_fn: Any = None
 
 
 # ── Small provenance / IO helpers ────────────────────────────────────────────
@@ -670,6 +680,84 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
     )
 
 
+def _read_marker_slots(
+    model,
+    contexts_list: list[tuple[str, str | None]],
+    *,
+    tokenizer,
+    questions: list,
+    device,
+    marker_token_id: int,
+    qwen_im_end_id: int,
+    validate_fn,
+) -> list[dict]:
+    """Compute (logp, z_marker, z_eos, logZ) at the post-response marker slot.
+
+    Per marker-leakage-measurement.md: the DV is log P(marker) at the slot
+    AFTER the model's OWN greedy response — not before any response.
+    Recipe: (1) generate R = model.generate(prompt) greedy; (2) strip trailing
+    im_end tokens from generated ids; (3) one forward pass on the stripped ids;
+    (4) read logits at position -1 (the post-response slot).
+
+    Returns one record per (context_id, system_prompt) pair in contexts_list,
+    averaged over all questions.
+    """
+    import torch
+
+    records: list[dict] = []
+    for ctx_id, sp in contexts_list:
+        ctx_logp_sum = 0.0
+        ctx_z_marker_sum = 0.0
+        ctx_z_eos_sum = 0.0
+        ctx_logZ_sum = 0.0
+        n_q = 0
+        for q in questions:
+            msgs = []
+            if sp is not None:
+                msgs.append({"role": "system", "content": sp})
+            msgs.append({"role": "user", "content": q})
+            input_ids_prompt = tokenizer.apply_chat_template(
+                msgs, add_generation_prompt=True, return_tensors="pt"
+            ).to(device)
+            with torch.no_grad():
+                generated = model.generate(
+                    input_ids_prompt,
+                    max_new_tokens=512,
+                    do_sample=False,
+                    pad_token_id=tokenizer.eos_token_id,
+                )
+            gen_ids = generated[0]  # (T_full,) 1-D view
+            # Strip trailing im_end tokens so logits[-1, :] reads the marker slot,
+            # not the post-EOS slot (BLOCKER 2 fix).
+            strip_end = gen_ids.shape[0]
+            while strip_end > 1 and gen_ids[strip_end - 1].item() == qwen_im_end_id:
+                strip_end -= 1
+            input_ids_full = gen_ids[:strip_end].unsqueeze(0)  # (1, T_stripped)
+            with torch.no_grad():
+                logits = model(input_ids_full).logits  # (1, T_stripped, V)
+            assert logits.shape[0] == 1, logits.shape
+            slot_logits = logits[0, -1, :]  # (V,)
+            z_marker = slot_logits[marker_token_id].item()
+            z_eos = slot_logits[qwen_im_end_id].item()
+            log_Z = torch.logsumexp(slot_logits, dim=-1).item()
+            logp = z_marker - log_Z
+            ctx_logp_sum += logp
+            ctx_z_marker_sum += z_marker
+            ctx_z_eos_sum += z_eos
+            ctx_logZ_sum += log_Z
+            n_q += 1
+        rec = {
+            "context_id": ctx_id,
+            "logp": ctx_logp_sum / n_q,
+            "z_marker": ctx_z_marker_sum / n_q,
+            "z_eos": ctx_z_eos_sum / n_q,
+            "logZ": ctx_logZ_sum / n_q,
+        }
+        validate_fn(rec, context=f"context={ctx_id}")
+        records.append(rec)
+    return records
+
+
 def _verify_marker_class(
     behavior, adapter_path: str, cfg: PilotConfig, seams: PilotSeams, class_dir: Path
 ) -> dict:
@@ -738,78 +826,21 @@ def _verify_marker_class(
 
         device = torch.device(f"cuda:{cfg.gpu_id}" if torch.cuda.is_available() else "cpu")
 
-        def _read_slots(model, contexts_list: list[tuple[str, str | None]]) -> list[dict]:
-            """Compute (logp, z_marker, z_eos, logZ) at the post-response slot.
-
-            Per marker-leakage-measurement.md: the DV is log P(marker) at the slot
-            AFTER the model's OWN greedy response — not before any response (which
-            measures unconditional marker preference, a different and wrong quantity).
-            Recipe: (1) generate R = model.generate(prompt) greedy; (2) build
-            input_ids = prompt + R; (3) one forward pass; (4) read logits at the
-            last position of R (the slot where the model decides what comes AFTER R).
-            """
-            records: list[dict] = []
-            for ctx_id, sp in contexts_list:
-                ctx_logp_sum = 0.0
-                ctx_z_marker_sum = 0.0
-                ctx_z_eos_sum = 0.0
-                ctx_logZ_sum = 0.0
-                n_q = 0
-                for q in questions:
-                    msgs = []
-                    if sp is not None:
-                        msgs.append({"role": "system", "content": sp})
-                    msgs.append({"role": "user", "content": q})
-                    # Step 1: tokenize the prompt (chat template adds generation prefix).
-                    input_ids_prompt = tokenizer.apply_chat_template(
-                        msgs, add_generation_prompt=True, return_tensors="pt"
-                    ).to(device)
-                    # Step 2: generate the model's OWN greedy response R.
-                    with torch.no_grad():
-                        generated = model.generate(
-                            input_ids_prompt,
-                            max_new_tokens=512,
-                            do_sample=False,
-                            pad_token_id=tokenizer.eos_token_id,
-                        )
-                    # generated shape: (1, prompt_len + response_len).
-                    # Step 3: build input = prompt + R for a single forward pass.
-                    # Use the full generated sequence (prompt already included by generate).
-                    input_ids_full = generated  # (1, T_full)
-                    with torch.no_grad():
-                        logits = model(input_ids_full).logits  # (1, T_full, V)
-                    assert logits.shape[0] == 1, logits.shape
-                    # Step 4: read the slot at the LAST position of the response —
-                    # this is the position that predicts the token AFTER R (where the
-                    # marker would appear).  logits[:, -1, :] is that slot because
-                    # the model was asked to predict one step beyond the last input token.
-                    slot_logits = logits[0, -1, :]  # (V,) — post-response slot
-                    z_marker = slot_logits[MARKER_TOKEN_ID].item()
-                    z_eos = slot_logits[QWEN_IM_END_ID].item()
-                    log_Z = torch.logsumexp(slot_logits, dim=-1).item()
-                    logp = z_marker - log_Z
-                    ctx_logp_sum += logp
-                    ctx_z_marker_sum += z_marker
-                    ctx_z_eos_sum += z_eos
-                    ctx_logZ_sum += log_Z
-                    n_q += 1
-                rec = {
-                    "context_id": ctx_id,
-                    "logp": ctx_logp_sum / n_q,
-                    "z_marker": ctx_z_marker_sum / n_q,
-                    "z_eos": ctx_z_eos_sum / n_q,
-                    "logZ": ctx_logZ_sum / n_q,
-                }
-                validate_marker_slot_record(rec, context=f"context={ctx_id}")
-                records.append(rec)
-            return records
+        _slots_kwargs = dict(
+            tokenizer=tokenizer,
+            questions=questions,
+            device=device,
+            marker_token_id=MARKER_TOKEN_ID,
+            qwen_im_end_id=QWEN_IM_END_ID,
+            validate_fn=validate_marker_slot_record,
+        )
 
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         base_model_hf = AutoModelForCausalLM.from_pretrained(
             cfg.base_model, torch_dtype=dtype, trust_remote_code=True
         ).to(device)
         base_model_hf.eval()
-        slot_records_base = _read_slots(base_model_hf, eval_contexts)
+        slot_records_base = _read_marker_slots(base_model_hf, eval_contexts, **_slots_kwargs)
 
         # Load adapter for trained reads; validate gauge-freedom first.
         trained_model = PeftModel.from_pretrained(base_model_hf, adapter_path)
@@ -818,7 +849,7 @@ def _verify_marker_class(
         adapter_cfg = trained_model.peft_config.get("default", None)
         if adapter_cfg is not None:
             assert_gauge_free_adapter_config(adapter_cfg, context="marker_verify")
-        slot_records_trained = _read_slots(trained_model, eval_contexts)
+        slot_records_trained = _read_marker_slots(trained_model, eval_contexts, **_slots_kwargs)
 
         del trained_model, base_model_hf
         if torch.cuda.is_available():
@@ -874,6 +905,83 @@ def _verify_marker_class(
     }
 
 
+def _load_datagen_completions(datagen_dir: Path) -> list:
+    """Build ContrastiveCompletion records from real datagen output files.
+
+    Datagen writes raw_pos.jsonl, raw_neg.jsonl, and judge_rows.jsonl — NOT
+    contrastive_completions.jsonl.  This helper reconstructs ContrastiveCompletion
+    objects from those three files so _extract_class can load Phase-0 completions
+    from disk without calling generate_contrastive_completions.
+
+    Arm mapping: datagen "positive" -> "exhibit"; "negative" -> "not_exhibit".
+    System prompt is extracted from emit_messages[0]["content"] when the first
+    message role is "system", otherwise empty string.
+    judge_score is the mean from judge_rows for kept rows, None for non-kept.
+
+    Returns:
+        List of ContrastiveCompletion objects in (pair_index, arm) order.
+    """
+    import json
+
+    from explore_persona_space.artifacts.directions import ContrastiveCompletion
+
+    raw_pos_path = datagen_dir / "raw_pos.jsonl"
+    raw_neg_path = datagen_dir / "raw_neg.jsonl"
+    judge_rows_path = datagen_dir / "judge_rows.jsonl"
+
+    # Load judge_rows keyed by request_id -> {mean, kept}
+    judge_by_rid: dict[str, dict] = {}
+    if judge_rows_path.exists():
+        with open(judge_rows_path, encoding="utf-8") as f:
+            for line in f:
+                row = json.loads(line)
+                judge_by_rid[row["request_id"]] = {
+                    "mean": row.get("mean"),
+                    "kept": row.get("kept", False),
+                }
+
+    def _rows_from_raw(path: Path, arm_label: str) -> list[dict]:
+        """Read a raw_*.jsonl file; return rows with non-null completions."""
+        rows = []
+        if not path.exists():
+            return rows
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                row = json.loads(line)
+                if row.get("completion") is None:
+                    continue  # skip generation failures / refusals
+                rows.append({**row, "_arm_label": arm_label})
+        return rows
+
+    pos_rows = _rows_from_raw(raw_pos_path, "exhibit")
+    neg_rows = _rows_from_raw(raw_neg_path, "not_exhibit")
+    all_rows = pos_rows + neg_rows
+
+    completions: list[ContrastiveCompletion] = []
+    for pair_index, row in enumerate(all_rows):
+        arm_label = row["_arm_label"]
+        emit_msgs = row.get("emit_messages") or []
+        system_prompt = ""
+        if emit_msgs and emit_msgs[0].get("role") == "system":
+            system_prompt = emit_msgs[0].get("content", "")
+        rid = row["request_id"]
+        j = judge_by_rid.get(rid)
+        judge_score: float | None = None
+        if j is not None and j.get("kept"):
+            judge_score = j.get("mean")
+        completions.append(
+            ContrastiveCompletion(
+                arm=arm_label,
+                pair_index=pair_index,
+                system_prompt=system_prompt,
+                question=row["question"],
+                response=row["completion"],
+                judge_score=judge_score,
+            )
+        )
+    return completions
+
+
 def _extract_class(
     behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path, datagen_dir: str
 ):
@@ -890,7 +998,6 @@ def _extract_class(
     (_make_default_extract_fn) always sets provenance="claude_generated".
     """
     from explore_persona_space.artifacts.directions import (
-        load_completions_jsonl,
         save_completions_jsonl,
         save_direction,
         score_completions,
@@ -901,8 +1008,9 @@ def _extract_class(
 
     # 1. Load Phase-0 datagen completions from disk (plan §4: reuse the Claude-generated
     # datagen completions produced by build_organism; do NOT generate fresh rollouts here).
-    datagen_completions_path = Path(datagen_dir) / "contrastive_completions.jsonl"
-    completions = load_completions_jsonl(datagen_completions_path)
+    # Datagen writes raw_pos.jsonl / raw_neg.jsonl / judge_rows.jsonl — NOT
+    # contrastive_completions.jsonl.  Derive ContrastiveCompletion records from those.
+    completions = _load_datagen_completions(Path(datagen_dir))
     # Re-persist into the extract directory for the upload path (upload-policy: text-persist
     # is the load-bearing minimum; a discarded activation regenerates from it).
     save_completions_jsonl(completions, extract_dir / "contrastive_completions.jsonl")
@@ -1057,6 +1165,28 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
             entry["upload"] = _upload_class(behavior_name, build_result, cfg, seams)
         else:
             # ── Standard organism path ─────────────────────────────────────────
+            # CONCERN 5 (plan §4 Phase 0): pre-intervention baseline judged-rate read.
+            # Store the BASE model's behavior rate before any fine-tuning so the
+            # clean-result can report install_delta relative to a measured, not assumed,
+            # baseline.  Results go to eval_results/issue_906/<class>/baseline/.
+            with _timed(timings, "baseline"):
+                if seams.baseline_fn is not None:
+                    entry["baseline"] = seams.baseline_fn(behavior, cfg, class_dir)
+                else:
+                    # Real path: vLLM judged-rate pass on the base model at context C.
+                    # Deferred to a full-run phase; smoke uses the seam above.
+                    baseline_out_dir = class_dir / "baseline"
+                    baseline_out_dir.mkdir(parents=True, exist_ok=True)
+                    entry["baseline"] = {
+                        "status": "deferred_full_run",
+                        "out_dir": str(baseline_out_dir),
+                        "note": (
+                            "Full baseline pass (vLLM judged-rate on the base model) "
+                            "deferred to the full GPU run.  The seams.baseline_fn "
+                            "injection is the production hook for the real pass."
+                        ),
+                    }
+
             # 1. Build.
             with _timed(timings, "build"):
                 build_result = _build_class(behavior, org, cfg, seams, class_dir)
@@ -1146,6 +1276,32 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
                 ),
             }
 
+            # CONCERN 4 (plan §4 Phase 0): sycophancy-only on-policy control arm.
+            # Plan §4 prescribes ~25 on-policy completions (tier-2 instruct-and-strip)
+            # for sycophancy only, saved to data/issue_906/sycophancy_onpolicy_control/,
+            # with extract_direction(regime="steering", provenance="on_policy").  This
+            # arm lets the clean-result compare the claude_generated vs on_policy r_B.
+            if behavior_name == "sycophancy":
+                with _timed(timings, "on_policy_control"):
+                    if seams.on_policy_control_fn is not None:
+                        entry["direction"]["on_policy_control"] = seams.on_policy_control_fn(
+                            behavior, cfg, class_dir
+                        )
+                    else:
+                        # Real path deferred to the full GPU run (needs a live vLLM engine).
+                        on_policy_out = class_dir / "on_policy_control"
+                        on_policy_out.mkdir(parents=True, exist_ok=True)
+                        entry["direction"]["on_policy_control"] = {
+                            "status": "deferred_full_run",
+                            "out_dir": str(on_policy_out),
+                            "note": (
+                                "On-policy control arm (tier-2 instruct-and-strip, ~25 "
+                                "completions, provenance='on_policy') deferred to the full "
+                                "GPU run.  The seams.on_policy_control_fn injection is the "
+                                "production hook."
+                            ),
+                        }
+
             # 4. API-call telemetry.
             gen_pos = (datagen_counts.get("claude_generation_requested") or {}).get("positive") or 0
             gen_neg = (datagen_counts.get("claude_generation_requested") or {}).get("negative") or 0
@@ -1169,7 +1325,13 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
             # 5. Upload (best-effort; recorded, surfaced loud on failure).
             entry["upload"] = _upload_class(behavior_name, build_result, cfg, seams)
 
-        entry["status"] = "success"
+        # Thread the upload outcome: if _upload_class returned status="failed",
+        # record that in the entry status rather than silently claiming success.
+        upload_status = (entry.get("upload") or {}).get("status")
+        if upload_status == "failed":
+            entry["status"] = "upload_failed"
+        else:
+            entry["status"] = "success"
     except Exception as exc:  # record loudly + continue to the next class
         entry["status"] = "error"
         entry["error"] = {

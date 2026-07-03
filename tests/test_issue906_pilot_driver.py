@@ -508,39 +508,56 @@ def test_extract_class_loads_from_disk_not_generate(tmp_path):
     This exercises the PRODUCTION _extract_class function (not the smoke stub) with
     injected score_fn and extract_fn seams, so the test verifies real code paths —
     not mock seam literals.
+
+    Datagen writes raw_pos.jsonl / raw_neg.jsonl / judge_rows.jsonl (NOT
+    contrastive_completions.jsonl).  This test writes those real datagen-format files
+    and verifies that _extract_class reads them via _load_datagen_completions.
     """
+    import json
     from unittest.mock import MagicMock, patch
 
     import torch
 
     from explore_persona_space.artifacts.directions import (
-        ContrastiveCompletion,
         DirectionResult,
-        save_completions_jsonl,
     )
 
-    # Write fake completions.jsonl to disk (the production load path).
+    # Write real datagen-format files (the production load path).
+    # Datagen writes raw_pos.jsonl / raw_neg.jsonl with arm="positive"/"negative"
+    # and judge_rows.jsonl keyed by request_id.
     datagen_dir = tmp_path / "datagen"
     datagen_dir.mkdir(parents=True)
-    fake_completions = [
-        ContrastiveCompletion(
-            arm="exhibit",
-            pair_index=0,
-            system_prompt="sp",
-            question="q0",
-            response="pos resp 0",
-            judge_score=80.0,
-        ),
-        ContrastiveCompletion(
-            arm="not_exhibit",
-            pair_index=0,
-            system_prompt="sp",
-            question="q0",
-            response="neg resp 0",
-            judge_score=10.0,
-        ),
-    ]
-    save_completions_jsonl(fake_completions, datagen_dir / "contrastive_completions.jsonl")
+
+    raw_pos_row = {
+        "request_id": "rid-pos-0",
+        "arm": "positive",
+        "question_id": "q0",
+        "variant_id": "v0",
+        "question": "q0",
+        "gen_messages": [],
+        "emit_messages": [{"role": "system", "content": "sp"}, {"role": "user", "content": "q0"}],
+        "completion": "pos resp 0",
+        "drop_reason": None,
+    }
+    raw_neg_row = {
+        "request_id": "rid-neg-0",
+        "arm": "negative",
+        "question_id": "q0",
+        "variant_id": "v0",
+        "question": "q0",
+        "gen_messages": [],
+        "emit_messages": [{"role": "system", "content": "sp"}, {"role": "user", "content": "q0"}],
+        "completion": "neg resp 0",
+        "drop_reason": None,
+    }
+    judge_pos_row = {"request_id": "rid-pos-0", "mean": 80.0, "kept": True}
+    judge_neg_row = {"request_id": "rid-neg-0", "mean": 10.0, "kept": True}
+
+    (datagen_dir / "raw_pos.jsonl").write_text(json.dumps(raw_pos_row) + "\n")
+    (datagen_dir / "raw_neg.jsonl").write_text(json.dumps(raw_neg_row) + "\n")
+    (datagen_dir / "judge_rows.jsonl").write_text(
+        json.dumps(judge_pos_row) + "\n" + json.dumps(judge_neg_row) + "\n"
+    )
 
     # Build a minimal fake behavior object.
     behavior = MagicMock()
@@ -790,3 +807,297 @@ def test_summarize_judge_refusal_fractions_from_flat_keys():
     assert fractions["marker"] is None, (
         f"expected None for marker (no judge calls), got {fractions['marker']}"
     )
+
+
+# ── R4 BLOCKER 1 regression: _load_datagen_completions reads real datagen files ─
+
+
+def test_load_datagen_completions_reads_real_datagen_files(tmp_path):
+    """BLOCKER 1 (_load_datagen_completions): must read raw_pos.jsonl / raw_neg.jsonl /
+    judge_rows.jsonl — NOT contrastive_completions.jsonl which datagen never writes.
+
+    Arm mapping: datagen 'positive' -> ContrastiveCompletion arm 'exhibit';
+    datagen 'negative' -> 'not_exhibit'.  Judge score propagated for kept rows.
+    """
+    import json
+
+    datagen_dir = tmp_path / "datagen"
+    datagen_dir.mkdir(parents=True)
+
+    raw_pos = {
+        "request_id": "rid-p1",
+        "arm": "positive",
+        "question_id": "q1",
+        "variant_id": "v0",
+        "question": "test question",
+        "gen_messages": [],
+        "emit_messages": [
+            {"role": "system", "content": "sys_prompt"},
+            {"role": "user", "content": "u"},
+        ],
+        "completion": "positive answer",
+        "drop_reason": None,
+    }
+    raw_neg = {
+        "request_id": "rid-n1",
+        "arm": "negative",
+        "question_id": "q1",
+        "variant_id": "v0",
+        "question": "test question",
+        "gen_messages": [],
+        "emit_messages": [
+            {"role": "system", "content": "neg_prompt"},
+            {"role": "user", "content": "u"},
+        ],
+        "completion": "negative answer",
+        "drop_reason": None,
+    }
+    # kept=True -> judge_score is propagated; kept=False -> judge_score stays None.
+    judge_pos = {"request_id": "rid-p1", "mean": 82.5, "kept": True}
+    judge_neg = {"request_id": "rid-n1", "mean": 15.0, "kept": False}
+
+    (datagen_dir / "raw_pos.jsonl").write_text(json.dumps(raw_pos) + "\n")
+    (datagen_dir / "raw_neg.jsonl").write_text(json.dumps(raw_neg) + "\n")
+    (datagen_dir / "judge_rows.jsonl").write_text(
+        json.dumps(judge_pos) + "\n" + json.dumps(judge_neg) + "\n"
+    )
+
+    completions = pilot._load_datagen_completions(datagen_dir)
+
+    assert len(completions) == 2, f"expected 2 completions, got {len(completions)}"
+
+    pos_comps = [c for c in completions if c.arm == "exhibit"]
+    neg_comps = [c for c in completions if c.arm == "not_exhibit"]
+    assert len(pos_comps) == 1, "datagen 'positive' must map to arm='exhibit'"
+    assert len(neg_comps) == 1, "datagen 'negative' must map to arm='not_exhibit'"
+
+    pc = pos_comps[0]
+    assert pc.system_prompt == "sys_prompt", f"system prompt not extracted: {pc.system_prompt!r}"
+    assert pc.question == "test question"
+    assert pc.response == "positive answer"
+    assert pc.judge_score == pytest.approx(82.5), "kept=True row should carry judge mean"
+
+    nc = neg_comps[0]
+    assert nc.judge_score is None, "kept=False row should have judge_score=None"
+
+
+# ── R4 BLOCKER 2 regression: _read_marker_slots strips trailing im_end ──────────
+
+
+def test_read_marker_slots_strips_trailing_im_end(tmp_path):
+    """BLOCKER 2 (_read_marker_slots): generated ids end with <|im_end|> (id 151645).
+
+    Before this fix, the inline _read_slots closure read logits[0, -1, :] on the
+    FULL sequence including the trailing im_end, giving P(next | prompt+R+EOS) —
+    the post-EOS position — instead of the marker slot at the end of R.
+
+    The fix (promoted to module-level _read_marker_slots) strips all trailing
+    QWEN_IM_END_ID tokens before the forward pass so logits[0, -1, :] reads the
+    slot BEFORE im_end.
+
+    This test drives _read_marker_slots directly (it is now module-level and
+    testable) with a mock model whose generate() appends QWEN_IM_END_ID, then
+    verifies that the forward-pass input has that token stripped.
+    """
+    from unittest.mock import MagicMock
+
+    import torch
+
+    MARKER_TOKEN_ID = 83399  # ` ※` Qwen-2.5-7B token id
+    QWEN_IM_END_ID = 151645
+
+    # Fake "generated" tensor: [10, 20, 30, 40, QWEN_IM_END_ID]  — 5 tokens.
+    # The fix must strip the trailing im_end so the forward pass sees 4 tokens.
+    prompt_and_response = [10, 20, 30, 40]
+    full_ids = torch.tensor([[*prompt_and_response, QWEN_IM_END_ID]], dtype=torch.long)
+    expected_stripped_len = len(prompt_and_response)  # 4, not 5
+
+    vocab_size = 200000
+    seen_input_shapes: list[tuple] = []
+
+    class FakeModel:
+        """Mock whose __call__ records input_ids.shape and returns plausible logits."""
+
+        def __call__(self, input_ids):
+            seen_input_shapes.append(tuple(input_ids.shape))
+            T = input_ids.shape[1]
+            logits_data = torch.zeros(1, T, vocab_size)
+            logits_data[0, -1, MARKER_TOKEN_ID] = 20.0  # high marker logit
+            result = MagicMock()
+            result.logits = logits_data
+            return result
+
+        def generate(self, input_ids, max_new_tokens=512, do_sample=False, pad_token_id=None):
+            return full_ids  # always returns the tensor with trailing im_end
+
+    fake_model = FakeModel()
+
+    fake_tokenizer = MagicMock()
+    fake_tokenizer.eos_token_id = QWEN_IM_END_ID
+    # apply_chat_template is called with return_tensors="pt" → return a (1, N) tensor.
+    fake_tokenizer.apply_chat_template.return_value = torch.tensor(
+        [prompt_and_response], dtype=torch.long
+    )
+
+    # validate_fn stub that does nothing (avoids importing the real validator).
+    def _noop_validate(rec, context=""):
+        pass
+
+    contexts_list = [("source", "You are a helpful assistant.")]
+    questions = ["What is 2+2?"]
+    device = torch.device("cpu")
+
+    result = pilot._read_marker_slots(
+        fake_model,
+        contexts_list,
+        tokenizer=fake_tokenizer,
+        questions=questions,
+        device=device,
+        marker_token_id=MARKER_TOKEN_ID,
+        qwen_im_end_id=QWEN_IM_END_ID,
+        validate_fn=_noop_validate,
+    )
+
+    # The forward pass input must NOT include the trailing im_end.
+    assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
+    fwd_T = seen_input_shapes[0][1]  # (batch=1, T)
+    assert fwd_T == expected_stripped_len, (
+        f"_read_marker_slots forwarded T={fwd_T} tokens (includes trailing im_end?); "
+        f"expected T={expected_stripped_len} after stripping QWEN_IM_END_ID"
+    )
+
+    # The result must have the four-float three-space contract fields.
+    assert len(result) == 1, f"expected 1 record for 1 context, got {len(result)}"
+    rec = result[0]
+    for key in ("logp", "z_marker", "z_eos", "logZ"):
+        assert key in rec, f"three-space record missing key {key!r}"
+    assert rec["context_id"] == "source"
+
+
+# ── R4 CONCERN 3 regression: upload_failed status threaded correctly ──────────
+
+
+def test_run_class_upload_failed_status_threaded(tmp_path):
+    """CONCERN 3 (run_class): when _upload_class returns status='failed',
+    entry['status'] must be 'upload_failed', NOT 'success'.
+
+    Before this fix, entry['status'] = 'success' was written unconditionally
+    inside the outer try block, so a failed upload silently appeared as success
+    in the calibration report.
+    """
+    cfg = _smoke_config(tmp_path, classes=("sycophancy",))
+
+    # Inject an uploader that always returns status='failed'.
+    def failing_uploader(behavior_name, build_result, cfg_):
+        return {"status": "failed", "error": "simulated upload failure"}
+
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    seams = dataclasses.replace(seams, uploader=failing_uploader)
+
+    entry = pilot.run_class("sycophancy", cfg, seams)
+
+    assert entry.get("status") == "upload_failed", (
+        f"expected status='upload_failed' when upload fails, got {entry.get('status')!r}; "
+        "upload outcome: " + str(entry.get("upload"))
+    )
+
+
+# ── R4 CONCERN 4 regression: on_policy_control_fn called for sycophancy ──────
+
+
+def test_run_class_calls_on_policy_control_fn_for_sycophancy(tmp_path):
+    """CONCERN 4 (run_class): seams.on_policy_control_fn must be called for
+    sycophancy and its result stored in entry['direction']['on_policy_control'].
+
+    The on-policy control arm (~25 tier-2 instruct-and-strip completions) was
+    entirely absent before this fix — only a comment remained.
+    """
+    cfg = _smoke_config(tmp_path, classes=("sycophancy",))
+
+    on_policy_calls: list = []
+
+    def fake_on_policy_control_fn(behavior, cfg_, class_dir):
+        on_policy_calls.append(True)
+        return {"status": "smoke", "r_b_path": None}
+
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    seams = dataclasses.replace(seams, on_policy_control_fn=fake_on_policy_control_fn)
+
+    entry = pilot.run_class("sycophancy", cfg, seams)
+
+    assert entry.get("status") == "success", entry.get("error")
+    assert on_policy_calls, "seams.on_policy_control_fn was never called for sycophancy"
+    opc = entry.get("direction", {}).get("on_policy_control")
+    assert opc is not None, "entry['direction']['on_policy_control'] is missing"
+    assert opc.get("status") == "smoke", f"unexpected on_policy_control result: {opc!r}"
+
+
+def test_run_class_on_policy_control_fn_not_called_for_non_sycophancy(tmp_path):
+    """CONCERN 4 corollary: on_policy_control_fn must NOT be called for
+    harmful_compliance / china_censorship / marker (sycophancy-only control).
+    """
+    cfg = _smoke_config(tmp_path, classes=("harmful_compliance",))
+
+    on_policy_calls: list = []
+
+    def fake_on_policy_control_fn(behavior, cfg_, class_dir):
+        on_policy_calls.append(True)
+        return {"status": "smoke", "r_b_path": None}
+
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    seams = dataclasses.replace(seams, on_policy_control_fn=fake_on_policy_control_fn)
+
+    entry = pilot.run_class("harmful_compliance", cfg, seams)
+    assert entry.get("status") == "success", entry.get("error")
+    assert not on_policy_calls, "on_policy_control_fn must NOT be called for harmful_compliance"
+
+
+# ── R4 CONCERN 5 regression: baseline_fn called before _build_class ──────────
+
+
+def test_run_class_calls_baseline_fn_before_build(tmp_path):
+    """CONCERN 5 (run_class): seams.baseline_fn must be called before _build_class,
+    and its result stored in entry['baseline'].
+
+    Plan §4 Phase 0 prescribes a pre-intervention baseline judged-rate read stored
+    to eval_results/issue_906/<class>/baseline/.  No baseline call existed before
+    this fix — run_class went directly to _build_class.
+    """
+    cfg = _smoke_config(tmp_path, classes=("sycophancy",))
+
+    call_order: list[str] = []
+
+    def tracking_baseline_fn(behavior, cfg_, class_dir):
+        call_order.append("baseline")
+        return {"rate": 0.12, "n_questions": 10, "status": "smoke"}
+
+    # Wrap the smoke datagen_fn to record call order.
+    real_seams = pilot.make_smoke_seams(cfg.reference_root)
+
+    original_datagen_fn = real_seams.datagen_fn
+
+    def tracking_datagen_fn(*args, **kwargs):
+        call_order.append("build")
+        return original_datagen_fn(*args, **kwargs)
+
+    seams = dataclasses.replace(
+        real_seams,
+        baseline_fn=tracking_baseline_fn,
+        datagen_fn=tracking_datagen_fn,
+    )
+
+    entry = pilot.run_class("sycophancy", cfg, seams)
+
+    assert entry.get("status") == "success", entry.get("error")
+
+    # baseline_fn must have been called.
+    assert "baseline" in call_order, "seams.baseline_fn was never called"
+    # baseline must appear BEFORE any build activity.
+    assert call_order.index("baseline") < call_order.index("build"), (
+        f"baseline_fn called AFTER datagen (build started first); order={call_order}"
+    )
+
+    bl = entry.get("baseline")
+    assert bl is not None, "entry['baseline'] is missing"
+    assert bl.get("status") == "smoke", f"unexpected baseline result: {bl!r}"
+    assert bl.get("rate") == pytest.approx(0.12)
