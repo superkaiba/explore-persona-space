@@ -564,32 +564,67 @@ def _journal_append(rescue_dir: Path, action: SweepAction, *, applied: bool) -> 
     Called with ``applied=False`` BEFORE the remove/move executes and
     ``applied=True`` right after — the journal-before-action contract (round-1
     concern ``sweep-before-durable-ledger``): a mid-sweep SIGKILL always
-    leaves an on-disk record from which ``restore_swept`` can restore."""
+    leaves an on-disk record from which ``restore_swept`` can restore. The
+    write LOOPS until every byte lands (``os.write`` may short-write, e.g. on
+    a filling disk); a short/failed append raises BEFORE the caller executes
+    its sweep action, so an unjournalable action never runs."""
     row = dataclasses.asdict(action) | {"applied": applied}
+    data = (json.dumps(row) + "\n").encode()
     fd = os.open(_journal_path(rescue_dir), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
     try:
-        os.write(fd, (json.dumps(row) + "\n").encode())
+        written = 0
+        while written < len(data):
+            n = os.write(fd, data[written:])
+            if n <= 0:  # defensive: only ever expected as a driver/filesystem anomaly
+                raise OSError(
+                    f"short write appending to {_journal_path(rescue_dir)}: "
+                    f"{written}/{len(data)} bytes written"
+                )
+            written += n
         os.fsync(fd)
     finally:
         os.close(fd)
 
 
-def load_sweep_journal(rescue_dir: Path) -> list[SweepAction]:
+def load_sweep_journal(rescue_dir: Path, report: dict | None = None) -> list[SweepAction]:
     """Reconstruct sweep actions from the on-disk journal ALONE (crash recovery).
 
     Keeps the LAST row per ``(path, action)`` (the applied-marker row when the
     action completed, else the pre-action intent row) in first-seen order —
     enough for ``restore_swept`` even when the in-memory ledger died with the
-    process. Returns ``[]`` when no journal exists."""
+    process. Returns ``[]`` when no journal exists.
+
+    Parses line-by-line so one malformed line never discards the complete rows
+    around it. A malformed TRAILING line is the expected torn tail of a
+    mid-append crash: recorded (journal path + line number) and skipped. A
+    malformed NON-trailing line is journal CORRUPTION — named loudly, never
+    silently ignored — and the remaining valid rows are still returned so the
+    restore proceeds with what is recoverable. Records go to ``report`` when
+    given, else stderr (never silent)."""
     journal = _journal_path(rescue_dir)
     if not journal.exists():
         return []
     latest: dict[tuple[str, str], dict] = {}
     order: list[tuple[str, str]] = []
-    for line in journal.read_text().splitlines():
+    lines = journal.read_text().splitlines()
+    last_row_idx = max((i for i, ln in enumerate(lines) if ln.strip()), default=-1)
+    for i, line in enumerate(lines):
         if not line.strip():
             continue
-        row = json.loads(line)
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as e:
+            kind = (
+                "torn trailing line (mid-append crash) skipped"
+                if i == last_row_idx
+                else "CORRUPT non-trailing line — journal corruption"
+            )
+            message = f"sweep-journal {kind}: {journal} line {i + 1}: {e}"
+            if report is not None:
+                _msg(report, message)
+            else:
+                print(f"sync_repo_root: {message}", file=sys.stderr)
+            continue
         row.pop("applied", None)
         key = (row["path"], row["action"])
         if key not in latest:
@@ -661,8 +696,9 @@ def restore_swept(repo: Path, ledger: list[SweepAction], report: dict) -> None:
     failure exit, put back what the sweep took. ``ledger`` may come from the
     in-memory list OR from ``load_sweep_journal`` alone (crash recovery), so
     every action is guarded for the journaled-but-not-applied case. Rescued
-    files move back to their original paths (kept in the rescue dir + reported
-    if the path is now occupied); identical-removed files are rematerialized
+    files move back to their original paths (an occupied original path reports
+    KEPT-IN-RESCUE when the rescue copy exists, or INTACT-never-applied when
+    the journaled move never ran); identical-removed files are rematerialized
     from the RECORDED origin blob sha via ``git cat-file blob`` (plumbing
     write — no index staging; the sha recorded at sweep time, NOT
     ``origin/main:<path>``, since the ref may have moved between sweep and
@@ -673,10 +709,20 @@ def restore_swept(repo: Path, ledger: list[SweepAction], report: dict) -> None:
         if a.action == "rescued" and a.rescue_path:
             rescue_copy = Path(a.rescue_path)
             if target.exists():
-                report["restored"].append(
-                    f"KEPT-IN-RESCUE {a.path} — original path now occupied; "
-                    f"rescue copy at {a.rescue_path}"
-                )
+                if rescue_copy.exists():
+                    report["restored"].append(
+                        f"KEPT-IN-RESCUE {a.path} — original path now occupied; "
+                        f"rescue copy at {a.rescue_path}"
+                    )
+                else:
+                    # Journaled-but-NOT-applied intent: the move never ran, so
+                    # no rescue copy exists — the occupant is the file still
+                    # sitting (verified present) at its original path.
+                    report["restored"].append(
+                        f"INTACT {a.path} — journaled rescue intent was never applied "
+                        f"(no rescue copy at {a.rescue_path}); file present at its "
+                        f"original path"
+                    )
                 continue
             if not rescue_copy.exists():
                 # Journaled intent whose move never executed AND the original
@@ -1113,7 +1159,7 @@ def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: f
             # in-memory ledger does not (every action is journaled before it
             # executes), so it is authoritative; union in any ledger rows the
             # journal is missing (e.g. a failed journal append) as backstop.
-            actions = load_sweep_journal(rescue.allocated) if rescue.allocated else []
+            actions = load_sweep_journal(rescue.allocated, report) if rescue.allocated else []
             journaled = {(a.path, a.action) for a in actions}
             actions += [a for a in ledger if (a.path, a.action) not in journaled]
             restore_swept(repo, actions, report)

@@ -885,3 +885,144 @@ def test_restore_failure_routes_to_exit_6_with_report(origin_and_clone, monkeypa
     assert "content conflict" in err  # the original abort message is retained
     rescue_copy = Path(rep["rescue_dir"]) / "eval_results/issue_9/diff.json"
     assert rescue_copy.read_text() == "LOCAL\n"  # swept copy retained, not lost
+
+
+# ─── Round 3: torn trailing journal line + not-applied restore report ─────────
+
+
+def test_load_journal_tolerates_torn_trailing_line(tmp_path):
+    """Concern ``journal-loader-torn-trailing-line`` (c): one valid row + a
+    truncated trailing row → the valid action is returned without raising,
+    and the tear is recorded (journal path + line number) in the report."""
+    rescue_dir = tmp_path / "rescue-run"
+    rescue_dir.mkdir()
+    action = srr.SweepAction(
+        "eval_results/issue_9/t.json",
+        "differing",
+        "rescued",
+        str(rescue_dir / "eval_results/issue_9/t.json"),
+        "0" * 40,
+    )
+    srr._journal_append(rescue_dir, action, applied=True)
+    journal = rescue_dir / "sweep-journal.jsonl"
+    with journal.open("a") as f:  # torn tail: crash mid-append, no newline
+        f.write('{"path": "eval_results/issue_9/u.json", "kind": "differi')
+    report = srr._new_report(tmp_path, dry_run=False)
+    actions = srr.load_sweep_journal(rescue_dir, report)
+    assert [(x.path, x.action) for x in actions] == [("eval_results/issue_9/t.json", "rescued")]
+    assert any("torn trailing" in m and "line 2" in m for m in report["messages"])
+
+
+def test_load_journal_reports_non_trailing_corruption_keeps_valid_rows(tmp_path):
+    """A malformed NON-trailing row is named loudly as corruption (never
+    silently ignored) and the valid rows around it are still returned."""
+    rescue_dir = tmp_path / "rescue-run"
+    rescue_dir.mkdir()
+    a1 = srr.SweepAction("eval_results/issue_9/v.json", "identical", "removed", None, "1" * 40)
+    srr._journal_append(rescue_dir, a1, applied=True)
+    with (rescue_dir / "sweep-journal.jsonl").open("a") as f:
+        f.write("NOT-JSON-GARBAGE\n")
+    a2 = srr.SweepAction(
+        "eval_results/issue_9/w.json", "differing", "rescued", str(rescue_dir / "w"), None
+    )
+    srr._journal_append(rescue_dir, a2, applied=False)
+    report = srr._new_report(tmp_path, dry_run=False)
+    actions = srr.load_sweep_journal(rescue_dir, report)
+    assert [(x.path, x.action) for x in actions] == [
+        ("eval_results/issue_9/v.json", "removed"),
+        ("eval_results/issue_9/w.json", "rescued"),
+    ]
+    assert any("CORRUPT" in m and "line 2" in m for m in report["messages"])
+
+
+def test_journal_append_loops_on_short_write(tmp_path, monkeypatch):
+    """Concern (b): ``os.write`` may short-write; the append loops until every
+    byte lands, so our own writer can never leave a torn-but-fsync'd row."""
+    rescue_dir = tmp_path / "rescue-run"
+    rescue_dir.mkdir()
+    real_write = os.write
+
+    def one_byte_write(fd, data):
+        return real_write(fd, bytes(data)[:1])
+
+    monkeypatch.setattr(srr.os, "write", one_byte_write)
+    action = srr.SweepAction("eval_results/issue_9/s.json", "identical", "removed", None, "2" * 40)
+    srr._journal_append(rescue_dir, action, applied=False)
+    monkeypatch.undo()  # restore os.write before anything else runs
+    rows = (rescue_dir / "sweep-journal.jsonl").read_text().splitlines()
+    assert len(rows) == 1
+    parsed = json.loads(rows[0])  # the full row landed despite 1-byte writes
+    assert parsed["path"] == "eval_results/issue_9/s.json"
+    assert parsed["applied"] is False
+
+
+def test_torn_trailing_journal_line_restore_end_to_end(origin_and_clone, monkeypatch, capsys):
+    """End-to-end: a crash that tears the journal's trailing line no longer
+    aborts the exit-6 restore — the complete journal rows still restore (the
+    rescued file moves back) and the tear is named in the report."""
+    _origin, local, other = origin_and_clone
+    _write(other, "eval_results/issue_9/a.json", "ORIGIN-A\n")
+    _commit(other, "eval_results/issue_9/a.json")
+    _git(other, "push", "-q", "origin", "main")
+    a = _write(local, "eval_results/issue_9/a.json", "LOCAL-A\n")  # differing → rescued
+    _backdate(a)
+
+    real_append = srr._journal_append
+
+    def tearing_append(rescue_dir, action, *, applied):
+        real_append(rescue_dir, action, applied=applied)
+        if applied:  # crash mid-append of the NEXT row: torn partial JSON tail
+            with (rescue_dir / "sweep-journal.jsonl").open("a") as f:
+                f.write('{"path": "eval_results/issue_9/next.json", "kind": "differi')
+            raise RuntimeError("seam: simulated SIGKILL mid-append of the next row")
+
+    monkeypatch.setattr(srr, "_journal_append", tearing_append)
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    # Pre-fix the torn tail raised inside load_sweep_journal, skipping the
+    # restore ("restore_swept FAILED"); post-fix the valid rows restore.
+    assert "restore_swept FAILED" not in err
+    assert a.read_text() == "LOCAL-A\n"
+    assert any("moved-back eval_results/issue_9/a.json" in s for s in rep["restored"])
+    assert any("torn trailing" in m for m in rep["messages"])
+
+
+def test_restore_reports_intact_for_not_applied_rescue_intent(tmp_path):
+    """Concern ``restore-kept-in-rescue-misreport``: a journaled-but-NOT-applied
+    rescue intent (the move never ran; no rescue copy exists) must not claim a
+    nonexistent rescue copy — the report states the intent was never applied
+    and that the file is still present at its original path."""
+    repo = tmp_path / "repo"
+    p = repo / "eval_results/issue_9/n.json"
+    p.parent.mkdir(parents=True)
+    p.write_text("STILL-HERE\n")
+    phantom = tmp_path / "rescue-never-created" / "eval_results/issue_9/n.json"
+    row = srr.SweepAction("eval_results/issue_9/n.json", "differing", "rescued", str(phantom), None)
+    report = srr._new_report(repo, dry_run=False)
+    srr.restore_swept(repo, [row], report)
+    assert p.read_text() == "STILL-HERE\n"  # untouched
+    (msg,) = report["restored"]
+    assert "KEPT-IN-RESCUE" not in msg
+    assert "never applied" in msg
+    assert "original path" in msg
+
+
+def test_restore_kept_in_rescue_only_when_rescue_copy_exists(tmp_path):
+    """The true KEPT-IN-RESCUE case (move applied, original path re-occupied)
+    keeps its message — and the rescue copy it names actually exists."""
+    repo = tmp_path / "repo"
+    occupant = repo / "eval_results/issue_9/o.json"
+    occupant.parent.mkdir(parents=True)
+    occupant.write_text("POST-PULL-OCCUPANT\n")
+    rescue_copy = tmp_path / "rescue-real" / "eval_results/issue_9/o.json"
+    rescue_copy.parent.mkdir(parents=True)
+    rescue_copy.write_text("SWEPT-LOCAL\n")
+    row = srr.SweepAction(
+        "eval_results/issue_9/o.json", "differing", "rescued", str(rescue_copy), None
+    )
+    report = srr._new_report(repo, dry_run=False)
+    srr.restore_swept(repo, [row], report)
+    (msg,) = report["restored"]
+    assert msg.startswith("KEPT-IN-RESCUE")
+    assert str(rescue_copy) in msg
+    assert rescue_copy.read_text() == "SWEPT-LOCAL\n"  # copy retained, untouched
