@@ -5815,8 +5815,8 @@
     "890": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/890",
-      "status": "approved",
+      "path": "tasks/running/890",
+      "status": "running",
       "title": "workflow-fix: verification gates must test the live dispatched path"
     },
     "891": {
