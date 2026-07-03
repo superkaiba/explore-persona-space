@@ -5871,8 +5871,8 @@
     "898": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/898",
-      "status": "running",
+      "path": "tasks/reviewing/898",
+      "status": "reviewing",
       "title": "workflow-fix: index.lock-resilient _run_git + crash-safe set_status registry move"
     },
     "899": {
