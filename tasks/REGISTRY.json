@@ -6053,7 +6053,7 @@
     },
     "920": {
       "goal": "On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (context-vector recipe \u00d7 answer-vector recipe) combination best supports (a) the linear context\u2192answer map, (b) direct behavior read-out, and (c) map-mediated (chain) read-out, under leave-one-family-out (LOFO) evaluation with generic UltraChat probes for activation collection and a disjoint OOD UltraChat probe pool testing probe-set generalization on both the input and target sides \u2014 naming the best combination against selection-symmetric nulls.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/920",
       "status": "interpreting",

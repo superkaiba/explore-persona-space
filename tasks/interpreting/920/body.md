@@ -4,7 +4,7 @@ title: The whole-answer-mean summary survives an exhaustive context-by-answer re
 kind: experiment
 tags: []
 created_at: '2026-07-03T08:50:07Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 810
 origin_prompt: 'Run the following experiment:
 
