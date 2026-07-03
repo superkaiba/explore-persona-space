@@ -8,7 +8,10 @@ monkeypatched into ``tmp_path`` for per-test isolation (multi-process probes
 receive the lock path via the child's argv, not via monkeypatch — module
 monkeypatches don't survive ``spawn``).
 
-Covers the 14 cases in plan §5 (task #904).
+Covers the 14 cases in plan §5 (task #904), plus the round-2 hardening cases:
+exclusive rescue-dir allocation (concern ``rescue-dir-nonexclusive-overwrite``),
+journal-before-action durability (concern ``sweep-before-durable-ledger``),
+recorded-blob-sha rematerialization, and restore-failure containment (exit 6).
 """
 
 from __future__ import annotations
@@ -735,3 +738,150 @@ def test_push_rejected_twice_exits_3(origin_and_clone, capsys):
     assert not (local / ".git" / "rebase-merge").exists()
     assert "push failed after the one retry" in err
     assert "always rejected" in err
+
+
+# ─── Round 2: exclusive rescue-dir allocation (concern 1) ────────────────────
+
+
+def test_allocate_rescue_dir_exclusive_bounded_retry(tmp_path, monkeypatch):
+    """Same frozen second + same pid → mkdir(exist_ok=False) collides and the
+    bounded retry appends a counter; every allocation is a DISTINCT dir."""
+    monkeypatch.setattr(srr, "RESCUE_ROOT", tmp_path / "rescue")
+    monkeypatch.setattr(srr, "_rescue_timestamp", lambda: "20260101T000000Z")
+    dirs = [srr.allocate_rescue_dir() for _ in range(3)]
+    assert len(set(dirs)) == 3
+    assert all(d.is_dir() for d in dirs)
+    assert all(d.name.startswith("20260101T000000Z") for d in dirs)
+
+
+def test_same_second_sequential_runs_distinct_rescue_dirs(
+    origin_and_clone, tmp_path, monkeypatch, capsys
+):
+    """Two sequential runs at a FROZEN timestamp rescuing the same rel-path:
+    the first rescue's bytes survive in a DISTINCT dir; both manifests exist
+    (pre-fix, run 2 reused run 1's dir and shutil.move replaced the copy)."""
+    _origin, local, other = origin_and_clone
+    monkeypatch.setattr(srr, "_rescue_timestamp", lambda: "20260101T000000Z")
+    _write(other, "eval_results/issue_9/r.json", "ORIGIN-1\n")
+    _commit(other, "eval_results/issue_9/r.json")
+    _git(other, "push", "-q", "origin", "main")
+    p1 = _write(local, "eval_results/issue_9/r.json", "FIRST-RESCUE\n")
+    _backdate(p1)
+    rc1, rep1, _err = _run(local, capsys=capsys)
+    assert rc1 == 0
+    dir1 = Path(rep1["rescue_dir"])
+
+    # Run 2 (same frozen second): a fresh clone lagging at the init commit
+    # gets the SAME rel-path as an untracked differing collision.
+    local2 = tmp_path / "local2"
+    subprocess.run(
+        ["git", "clone", "-q", str(_origin), str(local2)], check=True, capture_output=True
+    )
+    _configure(local2)
+    init_sha = _git(local2, "rev-list", "--max-parents=0", "HEAD").stdout.strip()
+    _git(local2, "reset", "--hard", "-q", init_sha)  # scratch test clone, not the shared root
+    p2 = _write(local2, "eval_results/issue_9/r.json", "SECOND-RESCUE\n")
+    _backdate(p2)
+    rc2, rep2, _err = _run(local2, capsys=capsys)
+    assert rc2 == 0
+    dir2 = Path(rep2["rescue_dir"])
+
+    assert dir1 != dir2
+    assert dir1.name.startswith("20260101T000000Z")
+    assert dir2.name.startswith("20260101T000000Z")
+    assert (dir1 / "eval_results/issue_9/r.json").read_text() == "FIRST-RESCUE\n"
+    assert (dir2 / "eval_results/issue_9/r.json").read_text() == "SECOND-RESCUE\n"
+    assert (dir1 / "sweep-manifest.json").exists()
+    assert (dir2 / "sweep-manifest.json").exists()
+
+
+# ─── Round 2: journal-before-action durability (concern 2) ───────────────────
+
+
+def test_mid_sweep_crash_durable_journal_restores(origin_and_clone, monkeypatch, capsys):
+    """A crash immediately after the FIRST sweep action leaves a durable
+    on-disk journal (the in-memory ledger died before it was populated), and
+    the exit-6 restore driven from that journal alone puts the file back."""
+    _origin, local, other = origin_and_clone
+    _write(other, "eval_results/issue_9/a.json", "ORIGIN-A\n")
+    _write(other, "eval_results/issue_9/b.json", "SAME\n")
+    _commit(other, "eval_results/issue_9/a.json", "eval_results/issue_9/b.json")
+    _git(other, "push", "-q", "origin", "main")
+    a = _write(local, "eval_results/issue_9/a.json", "LOCAL-A\n")  # differing → rescued first
+    _backdate(a)
+    b = _write(local, "eval_results/issue_9/b.json", "SAME\n")  # identical, never reached
+    _backdate(b)
+
+    real_append = srr._journal_append
+
+    def crashing_append(rescue_dir, action, *, applied):
+        real_append(rescue_dir, action, applied=applied)
+        if applied:
+            raise RuntimeError("seam: simulated SIGKILL immediately after the first sweep action")
+
+    monkeypatch.setattr(srr, "_journal_append", crashing_append)
+    rc, rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    rescue_dir = Path(rep["rescue_dir"])
+    journal = rescue_dir / "sweep-journal.jsonl"
+    assert journal.exists()  # durable record written BEFORE the action
+    actions = srr.load_sweep_journal(rescue_dir)
+    assert [(x.path, x.action) for x in actions] == [("eval_results/issue_9/a.json", "rescued")]
+    assert actions[0].rescue_path and actions[0].origin_blob_sha  # enough info to restore
+    # Journal-driven restore ran on the exit-6 path: the swept file is back.
+    assert a.read_text() == "LOCAL-A\n"
+    assert any("moved-back eval_results/issue_9/a.json" in s for s in rep["restored"])
+    assert b.read_text() == "SAME\n"  # second collision never swept (loop stopped)
+    assert "seam: simulated SIGKILL" in err
+
+
+def test_restore_rematerializes_from_recorded_blob_sha_not_moving_ref(origin_and_clone):
+    """Minor (a): rematerialization uses the ledger's RECORDED blob sha, not
+    ``origin/main:<path>`` — the ref may have moved between sweep and restore."""
+    _origin, local, other = origin_and_clone
+    _write(other, "eval_results/issue_9/d.json", "V1\n")
+    _commit(other, "eval_results/issue_9/d.json")
+    _git(other, "push", "-q", "origin", "main")
+    _git(local, "fetch", "-q", "origin")
+    sha_v1 = _git(local, "rev-parse", "origin/main:eval_results/issue_9/d.json").stdout.strip()
+    _write(other, "eval_results/issue_9/d.json", "V2-MOVED\n")
+    _commit(other, "eval_results/issue_9/d.json")
+    _git(other, "push", "-q", "origin", "main")
+    _git(local, "fetch", "-q", "origin")  # origin/main:<path> now resolves to V2
+
+    row = srr.SweepAction("eval_results/issue_9/d.json", "identical", "removed", None, sha_v1)
+    report = srr._new_report(local, dry_run=False)
+    srr.restore_swept(local, [row], report)
+    assert (local / "eval_results/issue_9/d.json").read_text() == "V1\n"
+    assert any("recorded blob" in s for s in report["restored"])
+
+
+def test_restore_failure_routes_to_exit_6_with_report(origin_and_clone, monkeypatch, capsys):
+    """Minor (b): an exception inside restore_swept must not lose the report or
+    exit outside the documented code set — it routes to exit 6, the report is
+    emitted, and the rescue copies stay on disk."""
+    _origin, local, other = origin_and_clone
+    _write(local, "conflict.txt", "base\n")
+    _commit(local, "conflict.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _git(other, "pull", "-q", "origin", "main")
+    _write(other, "conflict.txt", "origin-side\n")
+    _write(other, "eval_results/issue_9/diff.json", "OTHER\n")
+    _commit(other, "conflict.txt", "eval_results/issue_9/diff.json")
+    _git(other, "push", "-q", "origin", "main")
+    _write(local, "conflict.txt", "local-side\n")
+    _commit(local, "conflict.txt")
+    _write(local, "eval_results/issue_9/diff.json", "LOCAL\n")
+
+    def boom(repo, ledger, report):
+        raise RuntimeError("boom-restore")
+
+    monkeypatch.setattr(srr, "restore_swept", boom)
+    rc, rep, err = _run(local, capsys=capsys)  # JSON report still emitted + parses
+    assert rc == 6
+    assert rep["exit_code"] == 6
+    assert "restore_swept FAILED" in err
+    assert "boom-restore" in err
+    assert "content conflict" in err  # the original abort message is retained
+    rescue_copy = Path(rep["rescue_dir"]) / "eval_results/issue_9/diff.json"
+    assert rescue_copy.read_text() == "LOCAL\n"  # swept copy retained, not lost

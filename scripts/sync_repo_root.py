@@ -39,7 +39,8 @@ Exit codes::
     4  a bounded git subprocess timed out (rebase aborted cleanly)
     5  precondition failure (HEAD not main, fresh rebase/merge husk present,
        index.lock persistently held, task-workflow lock held past the bound)
-    6  unexpected error (fail loud; swept files restored; state reported)
+    6  unexpected error (fail loud; swept files restored from the journal; a
+       failure inside the restore itself also routes here, report emitted)
 
 Safety invariants (binding; pinned by tests/test_sync_repo_root.py):
 
@@ -50,12 +51,26 @@ Safety invariants (binding; pinned by tests/test_sync_repo_root.py):
     byte-identity is re-checked (re-hash) immediately before every removal;
     a file touched within ``EPM_ROOT_SYNC_FRESH_S`` (default 60s) is rescued
     regardless of hash (it may be mid-write by a live session).
-  * Ledger-driven abort-restore: every sweep action is recorded in
-    ``<rescue-dir>/sweep-manifest.json`` BEFORE the pull; on any post-sweep
-    failure exit (2/3/4/6) rescued files are moved back (kept in the rescue
-    dir + reported if the path is now occupied) and identical-removed files
-    are rematerialized from the origin blob via ``git cat-file blob`` (a
-    plumbing write — no index staging).
+  * Journal-before-action abort-restore: every sweep action is appended
+    DURABLY (O_APPEND + fsync) to ``<rescue-dir>/sweep-journal.jsonl`` BEFORE
+    its remove/move executes, and marked applied after — a mid-sweep SIGKILL
+    leaves a mechanically restorable record (``load_sweep_journal``
+    reconstructs it from the journal alone). ``sweep-manifest.json`` stays as
+    the consolidated rollup, written atomically after each sweep pass. On any
+    post-sweep failure exit (2/3/4/6) the restore is driven from the journal
+    (union with the in-memory ledger): rescued files are moved back (kept in
+    the rescue dir + reported if the path is now occupied) and
+    identical-removed files are rematerialized from the RECORDED origin blob
+    sha via ``git cat-file blob`` (a plumbing write — no index staging; the
+    recorded sha, NOT ``origin/main:<path>``, because the ref may move
+    between sweep and restore). A failure inside the restore itself never
+    loses the report — it is contained, reported, and routed to exit 6 with
+    the rescue dir + journal retained on disk.
+  * The per-run rescue dir is allocated EXCLUSIVELY —
+    ``<UTC %Y%m%dT%H%M%SZ>-<pid>[-<k>]`` via ``mkdir(exist_ok=False)`` with a
+    bounded retry on collision — so a same-second sequential/concurrent run
+    can never reuse a prior run's rescue dir (reuse would let
+    ``shutil.move`` replace a prior rescue copy and clobber its manifest).
   * Fail loud; no silent husks; a young (< ``EPM_ROOT_SYNC_HUSK_AGE_S``)
     rebase/merge husk or a persistent index.lock is reported and exits 5 —
     never deleted.
@@ -151,6 +166,54 @@ def _fresh_s() -> float:
     """Mtime freshness window under which a collision is rescued, never removed
     (``EPM_ROOT_SYNC_FRESH_S``)."""
     return float(os.environ.get("EPM_ROOT_SYNC_FRESH_S", "60"))
+
+
+def _rescue_timestamp() -> str:
+    """UTC timestamp component of a rescue-dir name (monkeypatchable in tests)."""
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+
+
+def allocate_rescue_dir() -> Path:
+    """Allocate a fresh, EXCLUSIVE per-run rescue directory.
+
+    Name shape ``<UTC %Y%m%dT%H%M%SZ>-<pid>[-<k>]`` — the timestamp keeps the
+    plan §4.3 ``<UTC-ts>*`` shape; the pid suffix plus ``mkdir(exist_ok=False)``
+    make allocation exclusive, so a same-second sequential/concurrent run can
+    never reuse a prior run's dir (reuse would let ``shutil.move`` replace a
+    prior rescue copy and clobber its manifest — round-1 concern
+    ``rescue-dir-nonexclusive-overwrite``). On collision a bounded retry
+    appends a counter; exhaustion raises (fail loud, never silently reuse).
+    """
+    ts = _rescue_timestamp()
+    base = f"{ts}-{os.getpid()}"
+    for k in range(100):
+        candidate = RESCUE_ROOT / (base if k == 0 else f"{base}-{k}")
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            continue
+        return candidate
+    raise RuntimeError(
+        f"could not allocate an exclusive rescue dir under {RESCUE_ROOT} "
+        f"after 100 attempts (base {base!r})"
+    )
+
+
+class RescueDir:
+    """Lazy, exclusive per-run rescue-dir handle.
+
+    Allocation is deferred to first use so dry-run / already-in-sync /
+    no-collision runs create nothing on disk; once allocated the same dir is
+    reused for every sweep pass of the run (initial, fallback, push-retry).
+    """
+
+    def __init__(self) -> None:
+        self.allocated: Path | None = None
+
+    def get(self) -> Path:
+        if self.allocated is None:
+            self.allocated = allocate_rescue_dir()
+        return self.allocated
 
 
 # ─── Errors ──────────────────────────────────────────────────────────────────
@@ -491,13 +554,60 @@ class SweepAction:
     note: str = ""
 
 
+def _journal_path(rescue_dir: Path) -> Path:
+    return rescue_dir / "sweep-journal.jsonl"
+
+
+def _journal_append(rescue_dir: Path, action: SweepAction, *, applied: bool) -> None:
+    """Durably append one journal row (O_APPEND + fsync) for ``action``.
+
+    Called with ``applied=False`` BEFORE the remove/move executes and
+    ``applied=True`` right after — the journal-before-action contract (round-1
+    concern ``sweep-before-durable-ledger``): a mid-sweep SIGKILL always
+    leaves an on-disk record from which ``restore_swept`` can restore."""
+    row = dataclasses.asdict(action) | {"applied": applied}
+    fd = os.open(_journal_path(rescue_dir), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    try:
+        os.write(fd, (json.dumps(row) + "\n").encode())
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def load_sweep_journal(rescue_dir: Path) -> list[SweepAction]:
+    """Reconstruct sweep actions from the on-disk journal ALONE (crash recovery).
+
+    Keeps the LAST row per ``(path, action)`` (the applied-marker row when the
+    action completed, else the pre-action intent row) in first-seen order —
+    enough for ``restore_swept`` even when the in-memory ledger died with the
+    process. Returns ``[]`` when no journal exists."""
+    journal = _journal_path(rescue_dir)
+    if not journal.exists():
+        return []
+    latest: dict[tuple[str, str], dict] = {}
+    order: list[tuple[str, str]] = []
+    for line in journal.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        row.pop("applied", None)
+        key = (row["path"], row["action"])
+        if key not in latest:
+            order.append(key)
+        latest[key] = row
+    return [SweepAction(**latest[key]) for key in order]
+
+
 def sweep(
-    repo: Path, collisions: list[Collision], rescue_dir: Path, dry_run: bool
+    repo: Path, collisions: list[Collision], rescue_dir: Path | None, dry_run: bool
 ) -> list[SweepAction]:
     """Clear collisions: byte-identical → remove (re-hashed immediately before
     the removal); anything else (differing / non-regular / freshly-touched) →
     move to the rescue dir, preserving relative paths. Never deletes
-    non-identical data."""
+    non-identical data. Every mutating action is journaled durably BEFORE it
+    executes and marked applied after (``_journal_append``). ``rescue_dir``
+    must be an allocated dir for a mutating sweep; ``None`` is allowed only
+    with ``dry_run=True`` (a dry-run sweep writes nothing)."""
     actions: list[SweepAction] = []
     for c in collisions:
         fp = repo / c.path
@@ -505,6 +615,7 @@ def sweep(
             planned = "planned-remove" if c.kind == "identical" else "planned-rescue"
             actions.append(SweepAction(c.path, c.kind, planned, None, c.origin_blob_sha))
             continue
+        assert rescue_dir is not None, "rescue_dir is required for a mutating sweep"
         fresh = False
         if fp.is_file() and not fp.is_symlink():
             fresh = (time.time() - fp.stat().st_mtime) < _fresh_s()
@@ -512,43 +623,67 @@ def sweep(
             # RE-HASH immediately before removal (TOCTOU guard, plan §11 item 13).
             new_sha = git(repo, "hash-object", "--", c.path).stdout.strip()
             if new_sha == c.origin_blob_sha:
+                action = SweepAction(c.path, c.kind, "removed", None, c.origin_blob_sha)
+                _journal_append(rescue_dir, action, applied=False)
                 os.remove(fp)
-                actions.append(SweepAction(c.path, c.kind, "removed", None, c.origin_blob_sha))
+                _journal_append(rescue_dir, action, applied=True)
+                actions.append(action)
                 continue
             note = "re-hash mismatch — downgraded to rescue"
         else:
             note = "fresh-mtime guard — rescued regardless of hash" if fresh else ""
         dest = rescue_dir / c.path
+        action = SweepAction(c.path, c.kind, "rescued", str(dest), c.origin_blob_sha, note)
+        _journal_append(rescue_dir, action, applied=False)
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(fp), str(dest))
-        actions.append(SweepAction(c.path, c.kind, "rescued", str(dest), c.origin_blob_sha, note))
+        _journal_append(rescue_dir, action, applied=True)
+        actions.append(action)
     return actions
 
 
 def _write_ledger(rescue_dir: Path, ledger: list[SweepAction]) -> None:
-    """Persist the sweep ledger BEFORE the pull (the abort-restore contract
-    reads the in-memory list; the file is the durable audit record)."""
+    """Write the consolidated ``sweep-manifest.json`` rollup atomically
+    (tmp + ``os.replace``). The DURABLE per-action record is the journal
+    (``_journal_append``, written before each action); this manifest is the
+    human-facing audit rollup of the full run."""
     if not ledger:
         return
     rescue_dir.mkdir(parents=True, exist_ok=True)
     manifest = rescue_dir / "sweep-manifest.json"
-    manifest.write_text(json.dumps([dataclasses.asdict(a) for a in ledger], indent=2))
+    tmp = manifest.with_name(manifest.name + ".tmp")
+    tmp.write_text(json.dumps([dataclasses.asdict(a) for a in ledger], indent=2))
+    os.replace(tmp, manifest)
 
 
 def restore_swept(repo: Path, ledger: list[SweepAction], report: dict) -> None:
-    """Ledger-driven abort-restore (plan §4.3): on any post-sweep failure exit,
-    put back what the sweep took. Rescued files move back to their original
-    paths (kept in the rescue dir + reported if the path is now occupied);
-    identical-removed files are rematerialized from the origin blob via
-    ``git cat-file blob`` (plumbing write — no index staging). Applies only to
-    the sweep's own actions — never any other working-tree state."""
+    """Journal/ledger-driven abort-restore (plan §4.3): on any post-sweep
+    failure exit, put back what the sweep took. ``ledger`` may come from the
+    in-memory list OR from ``load_sweep_journal`` alone (crash recovery), so
+    every action is guarded for the journaled-but-not-applied case. Rescued
+    files move back to their original paths (kept in the rescue dir + reported
+    if the path is now occupied); identical-removed files are rematerialized
+    from the RECORDED origin blob sha via ``git cat-file blob`` (plumbing
+    write — no index staging; the sha recorded at sweep time, NOT
+    ``origin/main:<path>``, since the ref may have moved between sweep and
+    restore). Applies only to the sweep's own actions — never any other
+    working-tree state."""
     for a in ledger:
         target = repo / a.path
         if a.action == "rescued" and a.rescue_path:
+            rescue_copy = Path(a.rescue_path)
             if target.exists():
                 report["restored"].append(
                     f"KEPT-IN-RESCUE {a.path} — original path now occupied; "
                     f"rescue copy at {a.rescue_path}"
+                )
+                continue
+            if not rescue_copy.exists():
+                # Journaled intent whose move never executed AND the original
+                # path is gone too — nothing to restore from; report loudly.
+                report["restored"].append(
+                    f"MISSING {a.path} — neither the original path nor the rescue copy "
+                    f"({a.rescue_path}) exists; journaled rescue intent was not applied"
                 )
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -556,18 +691,28 @@ def restore_swept(repo: Path, ledger: list[SweepAction], report: dict) -> None:
             report["restored"].append(f"moved-back {a.path}")
         elif a.action == "removed":
             if target.exists():
+                # Post-pull tracked copy, or a journaled-but-not-applied
+                # remove whose original untracked file is still in place.
                 report["restored"].append(
-                    f"SKIPPED rematerialize {a.path} — path now occupied (tracked copy present)"
+                    f"SKIPPED rematerialize {a.path} — path now occupied; leaving as-is"
+                )
+                continue
+            if not a.origin_blob_sha:
+                report["restored"].append(
+                    f"CANNOT rematerialize {a.path} — no recorded origin blob sha in the "
+                    "ledger/journal row"
                 )
                 continue
             blob = subprocess.run(
-                _git_argv(repo, "cat-file", "blob", f"origin/main:{a.path}"),
+                _git_argv(repo, "cat-file", "blob", a.origin_blob_sha),
                 capture_output=True,
                 check=True,
             )
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(blob.stdout)
-            report["restored"].append(f"rematerialized {a.path} from origin/main blob")
+            report["restored"].append(
+                f"rematerialized {a.path} from recorded blob {a.origin_blob_sha[:12]}"
+            )
 
 
 def parse_collision_stderr(text: str) -> list[str]:
@@ -714,25 +859,44 @@ def _conflict_message(conflicted: list[str]) -> str:
     return "\n".join(lines)
 
 
-def _pull_pipeline(
+def _sweep_and_record(
     repo: Path,
+    collisions: list[Collision],
     ledger: list[SweepAction],
-    rescue_dir: Path,
+    rescue: RescueDir,
     report: dict,
-    timeout_s: float,
 ) -> None:
-    """Sweep-wrapped pull: enumerate collisions → sweep (ledger written before
-    the pull) → bounded pull-rebase → error-driven fallback sweep + one retry →
-    conflict/timeout abort policy → post-pull stranded-autostash recovery."""
-    collisions = enumerate_collisions(repo)
-    _record_collision_plan(report, collisions)
+    """Allocate the rescue dir (lazily, exclusively), run the journaled sweep,
+    fold the actions into the ledger + report, and write the consolidated
+    manifest. No-op on an empty collision list (nothing is allocated)."""
+    if not collisions:
+        return
+    rescue_dir = rescue.get()
+    report["rescue_dir"] = str(rescue_dir)
     actions = sweep(repo, collisions, rescue_dir, dry_run=False)
     ledger.extend(actions)
     report["sweep"].extend(dataclasses.asdict(a) for a in actions)
-    _write_ledger(rescue_dir, ledger)
+    if ledger:
+        _write_ledger(rescue_dir, ledger)
     if actions:
-        report["rescue_dir"] = str(rescue_dir)
         report["actions_performed"] = True
+
+
+def _pull_pipeline(
+    repo: Path,
+    ledger: list[SweepAction],
+    rescue: RescueDir,
+    report: dict,
+    timeout_s: float,
+) -> None:
+    """Sweep-wrapped pull: enumerate collisions → journaled sweep (each action
+    durable BEFORE it executes; consolidated manifest after) → bounded
+    pull-rebase → error-driven fallback sweep + one retry → conflict/timeout
+    abort policy → post-pull stranded-autostash recovery. The rescue dir is
+    allocated lazily + exclusively on first sweep need (``RescueDir``)."""
+    collisions = enumerate_collisions(repo)
+    _record_collision_plan(report, collisions)
+    _sweep_and_record(repo, collisions, ledger, rescue, report)
 
     result = pull_rebase(repo, timeout_s)
     if result.timed_out:
@@ -752,13 +916,7 @@ def _pull_pipeline(
             "sweeping exactly those and retrying once.",
         )
         fallback = [_classify(repo, p) for p in first_paths if (repo / p).exists()]
-        actions2 = sweep(repo, fallback, rescue_dir, dry_run=False)
-        ledger.extend(actions2)
-        report["sweep"].extend(dataclasses.asdict(a) for a in actions2)
-        _write_ledger(rescue_dir, ledger)
-        if actions2:
-            report["rescue_dir"] = str(rescue_dir)
-            report["actions_performed"] = True
+        _sweep_and_record(repo, fallback, ledger, rescue, report)
         result = pull_rebase(repo, timeout_s)
         if result.timed_out:
             if _rebase_in_progress(repo):
@@ -856,7 +1014,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 def _push_leg(
     repo: Path,
     ledger: list[SweepAction],
-    rescue_dir: Path,
+    rescue: RescueDir,
     report: dict,
     timeout_s: float,
 ) -> None:
@@ -875,7 +1033,7 @@ def _push_leg(
             "push rejected — one retry through the sweep-wrapped pull "
             f"pipeline. stderr: {push.stderr.strip()}",
         )
-        _pull_pipeline(repo, ledger, rescue_dir, report, timeout_s)
+        _pull_pipeline(repo, ledger, rescue, report, timeout_s)
         push = _run_bounded(_git_argv(repo, "push", "origin", "main"), timeout_s)
         if push.timed_out:
             raise SyncAbortError(EXIT_TIMEOUT, f"push timed out after {timeout_s:.0f}s.")
@@ -894,7 +1052,7 @@ def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: f
     """Everything under the root-sync lock: bounded second lock → preflight →
     fetch → dry-run report OR pull pipeline → push with one retry → integrity."""
     ledger: list[SweepAction] = []
-    rescue_dir = RESCUE_ROOT / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    rescue = RescueDir()
     try:
         fd2 = acquire_task_workflow_lock(_lock2_wait_s())
     except SyncAbortError as e:
@@ -920,17 +1078,17 @@ def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: f
                 collisions = enumerate_collisions(repo)
                 _record_collision_plan(report, collisions)
                 report["sweep"] = [
-                    dataclasses.asdict(a) for a in sweep(repo, collisions, rescue_dir, dry_run=True)
+                    dataclasses.asdict(a) for a in sweep(repo, collisions, None, dry_run=True)
                 ]
                 report["state"] = "dry-run"
                 report["exit_code"] = EXIT_OK
                 return EXIT_OK
 
             if behind > 0:
-                _pull_pipeline(repo, ledger, rescue_dir, report, timeout_s)
+                _pull_pipeline(repo, ledger, rescue, report, timeout_s)
 
             if not args.no_push:
-                _push_leg(repo, ledger, rescue_dir, report, timeout_s)
+                _push_leg(repo, ledger, rescue, report, timeout_s)
 
             _post_sync_integrity(repo, report)
             report["state"] = "synced" if report.get("actions_performed") else "already"
@@ -949,11 +1107,27 @@ def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: f
                 EXIT_UNEXPECTED, f"unexpected error: {e!r}\n{traceback.format_exc()}"
             ) from e
     except SyncAbortError as e:
-        restore_swept(repo, ledger, report)
+        code = e.exit_code
+        try:
+            # Journal-first restore: the on-disk journal survives a crash the
+            # in-memory ledger does not (every action is journaled before it
+            # executes), so it is authoritative; union in any ledger rows the
+            # journal is missing (e.g. a failed journal append) as backstop.
+            actions = load_sweep_journal(rescue.allocated) if rescue.allocated else []
+            journaled = {(a.path, a.action) for a in actions}
+            actions += [a for a in ledger if (a.path, a.action) not in journaled]
+            restore_swept(repo, actions, report)
+        except Exception as restore_err:  # never lose the report (minor (b))
+            code = EXIT_UNEXPECTED
+            _msg(
+                report,
+                "restore_swept FAILED — swept copies + journal retained at "
+                f"{rescue.allocated}: {restore_err!r}\n{traceback.format_exc()}",
+            )
         report["state"] = "error"
-        report["exit_code"] = e.exit_code
+        report["exit_code"] = code
         _msg(report, e.message)
-        return e.exit_code
+        return code
     finally:
         os.close(fd2)
 
