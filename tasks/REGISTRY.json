@@ -6214,8 +6214,8 @@
     "940": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/940",
-      "status": "approved",
+      "path": "tasks/running/940",
+      "status": "running",
       "title": "workflow-fix: RunPod terminal rung maps GCP-only intents to nearest RunPod intent"
     },
     "941": {
