@@ -31,8 +31,9 @@ INVENTORY_PATH = OUT_DIR / "inventory.json"
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
-        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis|registered alpha|fail at the gate|passed the gate|gate-pre-?registered",
-        "Pre-registration jargon ('pre-registered', 'fail at the gate', 'gate-passed', etc.)",
+        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis|registered alpha|\bas registered\b|fail at the gate|passed the gate|gate-pre-?registered",
+        "Pre-registration jargon ('pre-registered', 'as registered', "
+        "'fail at the gate', 'gate-passed', etc.)",
     ),
     "verdict_caps": (
         r"\b(?:REJECTED|INDETERMINATE|PASSED|EXCEEDING)\b",

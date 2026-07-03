@@ -541,6 +541,50 @@ def test_pre_reg_whole_body_scan_preserved_for_legacy_bodies():
     assert "pre_reg" in findings, findings
 
 
+def test_pre_reg_as_registered_in_takeaways_is_flagged():
+    """The bare 'As registered, ...' phrasing family (incident: a #763 body
+    carried 'As registered, SUCCESS was not met' twice and the LM critic had
+    to catch it manually) trips `pre_reg` in a scanned prose section. The
+    capitalized form also pins the re.IGNORECASE application."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- As registered, SUCCESS was not met: the lift is null at every seed.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("as registered" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_innocuous_registered_usage_not_flagged():
+    """Plain 'registered' verb usages in a SCANNED prose section ('registered
+    the adapter on HF', 'was registered in WandB', 'alias registered') must
+    NOT trip `pre_reg` — the new alternation is anchored to the literal
+    'as registered' bigram, and the leading `\\b` fails inside 'was'/'alias'."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Registered the adapter on HF; the run was registered in WandB; alias registered too.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_as_registered_caught_on_v4_body_whole_body_scan():
+    """A v4-sentinel body bypasses the v3-only prose-section restriction
+    (`_restrict_pre_reg_to_prose_sections` gates on the v3 sentinel), so the
+    incident phrasing in `## Results` prose is caught by the whole-body scan
+    — the exact #763 path."""
+    v4 = (
+        "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
+        "## Methodology\n\nclean.\n\n## Results\n\n"
+        "As registered, SUCCESS was not met.\n"
+    )
+    findings = audit.audit_body(v4)
+    assert "pre_reg" in findings, findings
+
+
 # ─── bit/byte-identical AI-slop family (Lens 6; incident #642) ───────────
 #
 # The `byte_identical` rule (task #454) banned `byte identical` /
