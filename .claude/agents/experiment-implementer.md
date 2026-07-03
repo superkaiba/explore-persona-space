@@ -623,6 +623,17 @@ with the turn.
   a generous timeout (up to 600000 ms) for multi-minute phases, or
   `run_in_background` plus a bounded same-turn polling loop over the
   output file. Never end the turn while a poll is still pending.
+- **Every VM-side python launch — smokes included — carries the shared-VM
+  thread-cap prefix**
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
+  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  worktree's branch point (Step 5a never syncs `src/`) and cannot
+  in-process-cap a script that imports torch before `load_dotenv()`; the
+  explicit launch env caps both, regardless of branch age (incidents #779:
+  a pre-#847 worktree ran 78 uncapped threads; #823: three concurrent
+  64-thread smokes ≈ 1/3 of a load-186 VM overload). Pod-side commands
+  NEVER carry the prefix (dedicated GPUs keep full width). A deliberately
+  wider VM cap needs the explicit value + a one-line reason in your report.
 - NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
   the turn ends permanently and everything downstream (remaining smoke
   verification, concern responses, the marker) is silently left unposted
@@ -634,7 +645,9 @@ with the turn.
   gap instead of a truncation.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
-  turn: launch `setsid ... < /dev/null &`, write a PID file + log path,
+  turn: launch
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell).
 

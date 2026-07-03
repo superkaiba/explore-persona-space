@@ -2051,7 +2051,13 @@ adds its own `scripts/issue<N>_*.py` + tests). Operational rule
 instead: a workflow test that FAILs inside a long-lived issue worktree
 but PASSes at the repo root on `main` is worktree-staleness, not this
 issue's breakage — cross-check at the repo root before chasing it; the
-Step 10d merge resolves it (observed on #542, 2026-06-11).
+Step 10d merge resolves it (observed on #542, 2026-06-11). (A shared-infra
+`src/` fix with fleet-wide blast radius — e.g. the #847 thread caps — gets a
+LAUNCH-TIME fallback instead of a sync: the VM-side launch surfaces carry the
+explicit thread-cap env prefix, Step 9 entry guard § "Detached VM-side long
+compute phases"; #891. Do not extend this sync to `src/` allowlists — a synced
+`env.py` would still miss torch-before-dotenv importers in-process, which the
+launch prefix caps unconditionally.)
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -4987,7 +4993,7 @@ Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
 
@@ -5008,7 +5014,24 @@ stage-dispatch breadcrumb MUST carry two additional fields:
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
 genuinely new field), and the `external-markers triaged:` line
-(§ Pre-dispatch external-marker triage above). EXEMPT: work that COMPLETES within a subagent's own
+(§ Pre-dispatch external-marker triage above).
+
+**The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
+shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
+the WORKTREE's branch point — the Step 5a spec-freshness sync deliberately
+never syncs `src/` — so an in-flight worktree cut before an infra fix launches
+with the pre-fix library (incident #779, 2026-07-02: a pre-#847 worktree's grid
+ran 78 uncapped threads ~20h after the fix landed on main). The explicit prefix
+is branch-age-independent AND caps torch/BLAS regardless of the script's import
+order (the env.py hook cannot in-process-cap a script that imports torch before
+`load_dotenv()`; the launch env can). `env` execs `<cmd>` in place, so `$!` pid
+capture and the `ps -o args=` identity verify are unchanged. env.py's
+setdefault never clobbers these values. A phase that genuinely needs a wider
+cap on the shared VM states the wider explicit value + a one-line reason in its
+breadcrumb. Pod / GCE / SLURM launches NEVER carry the prefix — dedicated boxes
+keep full width (the #847 scope invariant).
+
+EXEMPT: work that COMPLETES within a subagent's own
 bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
 returns follows this SAME detach shape — the phase sits in the session's kill
 domain either way), pod-side workloads (the pod launch contract / #883), the
@@ -5407,7 +5430,9 @@ realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
-shape + log path per the Step 9 entry-guard § "Detached VM-side long compute phases" convention.
+shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
+or the wider explicit value + one-line reason) per the Step 9 entry-guard
+§ "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
 **Auto-run procedure.** For the single highest-priority unran entry
