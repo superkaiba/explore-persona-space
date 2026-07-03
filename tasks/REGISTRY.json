@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 938,
+  "highest_id": 939,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6188,6 +6188,13 @@
       "path": "tasks/proposed/938",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md \u2014 MooseFS FUSE wedge on pod .venv (silent launch hang)"
+    },
+    "939": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/939",
+      "status": "proposed",
+      "title": "workflow-fix: scoped listing in verify_uploads.py (1M-file repo hang)"
     },
     "94": {
       "has_clean_result": false,
