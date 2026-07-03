@@ -1416,21 +1416,28 @@ _ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-resu
 def parse_followup_note_field(note: str, field: str) -> str | None:
     """Extract ``<field>``'s value from a followup-scope / run-marker note.
 
-    Matches the FIRST line whose core (after stripping leading ``-``/``*``
-    bullets, bold markers, and whitespace) starts with ``<field>:`` OR
-    ``<field>=`` — both separators occur in the wild (the ``=`` form is the
-    dominant historical run-marker shape, e.g. #537/#552). The value is the
-    first whitespace token of the remainder, stripped of backticks / quotes /
-    ``*`` and a trailing comma (#664 ships a backtick-wrapped bold value).
-    Handles bare-colon, bare-equals, dash-bullet (#658 v1), star-bullet,
-    bold ``**field:**`` (#837 §4c), and single-line space-separated run notes
-    (first-token rule; labels are kebab-slugs with no whitespace — workflow.yaml
-    § markers). First hit wins: #763 v2 embeds a second bold label deep inside
-    its verbatim-proposal section, and the top-of-note canonical line is hit
+    Matches the FIRST line whose core (after stripping any leading mix of
+    ``-``/``*`` bullets, bold markers, and whitespace) starts with
+    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
+    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
+    The value is the first whitespace token of the remainder, stripped of
+    backticks / quotes / ``*`` and a trailing comma (#664 ships a
+    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
+    COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
+    field — corpus-clean today, pinned against future drift), and
+    single-line space-separated run notes (first-token rule; labels are
+    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
+    wins: #763 v2 embeds a second bold label deep inside its
+    verbatim-proposal section, and the top-of-note canonical line is hit
     first. Returns ``None`` when the field is absent or its value is empty.
     """
     for line in (note or "").splitlines():
-        core = line.strip().lstrip("-*").lstrip()
+        # One regex pass strips any interleaved mix of whitespace, bullet
+        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
+        # chain stops at the space in "- **field:** x" and misses the bold
+        # marker behind it).
+        core = re.sub(r"^[\s\-*]+", "", line)
         if core.startswith(f"{field}:") or core.startswith(f"{field}="):
             rest = core[len(field) + 1 :].lstrip("*").strip()
             tokens = rest.split()
@@ -1475,7 +1482,11 @@ def followup_label_groups(events: list[dict]) -> list[dict]:
       kebab-slug field contract and would name
       ``eval_results/issue_<N>/<label>/`` artifact dirs with colons) — Step 0
       surfaces these loudly as repair items instead of executing a malformed
-      round.
+      round. Dispatchability is FOUNDING-based: a group FOUNDED as
+      ``pseudo-ts`` stays ``dispatchable: False`` even when a later unlabeled
+      CORRECTION inherits into it (the inherit raises the group's
+      authoritative entry but cannot repair the malformed label — only a
+      re-post with a proper kebab-slug ``followup_label`` can).
 
     Returns one dict per label, in first-armed order, with JSON-native
     values: ``{followup_label, source, user_initiated, armed_ts,
@@ -1494,6 +1505,7 @@ def followup_label_groups(events: list[dict]) -> list[dict]:
     prev_label: str | None = None
     groups: dict[str, dict] = {}
     sources: dict[str, list[str]] = {}
+    founded_pseudo: dict[str, bool] = {}
     for ev in scopes:
         note = ev.get("note") or ""
         label = parse_followup_note_field(note, "followup_label")
@@ -1515,6 +1527,7 @@ def followup_label_groups(events: list[dict]) -> list[dict]:
             }
             groups[label] = group
             sources[label] = []
+            founded_pseudo[label] = parse_mode == "pseudo-ts"
         group["n_entries"] += 1
         group["authoritative"] = ev  # last in (ts, version) order wins
         group["label_parse"] = parse_mode
@@ -1525,7 +1538,13 @@ def followup_label_groups(events: list[dict]) -> list[dict]:
     for label, group in groups.items():
         group["source"] = sources[label][0] if sources[label] else "unknown"
         group["user_initiated"] = group["source"] in USER_INITIATED_FOLLOWUP_SOURCES
-        group["dispatchable"] = group["label_parse"] in ("parsed", "inherited-from-previous")
+        # FOUNDING-based: a pseudo-founded group is a repair item forever —
+        # a later unlabeled CORRECTION inheriting into it must NOT flip it
+        # dispatchable (the label is still the malformed `unlabeled-<ts>`).
+        group["dispatchable"] = not founded_pseudo[label] and group["label_parse"] in (
+            "parsed",
+            "inherited-from-previous",
+        )
         result.append(group)
     return result
 
