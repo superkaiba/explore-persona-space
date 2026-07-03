@@ -6099,8 +6099,8 @@
     "926": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/926",
-      "status": "proposed",
+      "path": "tasks/planning/926",
+      "status": "planning",
       "title": "vectorized_mlp_skill: per-absolute-index MLP init seeding (chunk-invariant fits)"
     },
     "927": {
