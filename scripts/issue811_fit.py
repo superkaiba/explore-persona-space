@@ -440,9 +440,12 @@ def run_phase0_gate(args) -> int:
     assert test_summary in PHASE0_SUMMARY_KEYS and test_summary != "mean", test_summary
     summaries = ("mean", test_summary)
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: a Hub error at gate time RAISES (never a silent fact-drop —
+    # r10 CONCERN rb-fact-silent-drop-headline); None here means ONLY the
+    # data-declared degenerate flag (plan §8), which legitimately drops fact.
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact unavailable — dropping fact from KILL-1")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact from KILL-1")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     strict = not args.smoke and args.max_sources is None and args.max_targets_per_source is None
@@ -765,9 +768,11 @@ def main() -> int:
     logger.info("[phase=fit_M] ridge exactness gate PASS")
 
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: fail LOUD on a load failure (rb-fact-silent-drop-headline);
+    # None means ONLY the data-declared degenerate flag (plan §8).
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact.pt unavailable/degenerate — dropping fact")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     strict = not args.smoke and args.max_sources is None and args.max_targets_per_source is None
