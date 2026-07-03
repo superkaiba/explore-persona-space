@@ -13,6 +13,16 @@ item ids), the public derive_margin_pools + pools-through-the-seam
 side-invariance, exports, base-model parity + deferred-import resolvers, and
 production call-site signature smokes.
 
+r2 round-2 additions: construction-time CONTENT-identity panel/source
+disjointness (the qt_rephrase_curious/neg_reph_curious alias BLOCKER), the
+GPU-seam lifecycle contract (_SingleLiveResource teardown-before-build,
+generation->judge->margin phase ordering, owned-close-only semantics,
+rate-factory close + build calling it), the manifest-keyed completion-resume
+refusal (adapter/base/n/temperature regime keys), draw-level judge telemetry
+surviving to the report, missing-item_id-as-contract-violation, entry-time
+rate_fn validation, pool-provenance sidecar source paths, and the
+n_completions / dose-shape guards.
+
 Mocked at the injectable boundaries only (datagen_fn / train_fn / rate_fn /
 fullft_run_fn / generate_fn / judge_fn / margin_read_fn); the real 0e recipe
 code, real derive_margin_pools, and real rate/transfer arithmetic stay
@@ -23,6 +33,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import itertools
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -272,6 +283,8 @@ def test_dose_override_validation():
         ModelOrganism("sycophancy", SOURCE, train_method="fullft", dose=(0.6, 0.85))
     with pytest.raises(ValueError, match=r"dose\[0\] < dose\[1\]"):
         ModelOrganism("sycophancy", SOURCE, dose=(0.9, 0.5))
+    with pytest.raises(ValueError, match=r"\(lo, hi\) pair"):
+        ModelOrganism("sycophancy", SOURCE, dose=(0.5,))  # r2: len != 2 is a ValueError
     o = ModelOrganism("sycophancy", SOURCE, dose=(0.5, 0.9))
     assert o.dose == (0.5, 0.9)
 
@@ -376,6 +389,7 @@ def test_generic_required_error(tmp_path):
             out_root=tmp_path,
             datagen_fn=make_datagen_stub(8, 8),
             train_fn=_fail_train,
+            rate_fn=lambda _c: 0.7,  # r2: rate_fn is validated at entry now
         )
 
 
@@ -484,7 +498,14 @@ def test_drop_never_coerce_denominator(tmp_path):
     rep = _run_verify(o, tmp_path, judge_fn=make_judge_stub(score_for))
     assert rep.rate_trained_C == pytest.approx(2 / 3)
     cell = rep.judge_drop_telemetry[f"trained:{SOURCE}"]
-    assert cell == {"n_scored": 3, "n_dropped": 1}
+    # r2: telemetry carries completion-level AND draw-level counts (the stub
+    # issues len(items) * n_draws = 4 * 5 draws, none dropped).
+    assert cell == {"n_scored": 3, "n_dropped": 1, "n_total_draws": 20, "n_dropped_draws": 0}
+    # r2: bystander denominators are PER SIDE (the r1 pair mixed a trained-only
+    # denominator with a summed-both-sides drop count).
+    b0 = rep.bystanders[0]
+    assert (b0.n_scored_trained, b0.n_dropped_trained) == (4, 0)
+    assert (b0.n_scored_base, b0.n_dropped_base) == (4, 0)
     # An ALL-dropped cell is a judging outage, never a 0% rate.
     with pytest.raises(ValueError, match="judge-dropped"):
         _run_verify(
@@ -661,6 +682,7 @@ def test_base_model_parity_and_lazy_gpu_deps():
     # a renamed symbol fails HERE on CPU, not minutes into a pod run.
     margin_deps = org_mod._resolve_margin_deps()
     assert callable(margin_deps["compute_tf_margin"])
+    assert callable(margin_deps["_is_full_model_dir"])  # r2: shared routing helper
     pytest.importorskip("vllm")
     gen_deps = org_mod._resolve_generation_deps()
     assert callable(gen_deps["teardown_vllm"])
@@ -768,7 +790,7 @@ def test_margin_pool_derivation_from_sidecar_fixtures(tmp_path):
     # receive the IDENTICAL derived pool objects across every context.
     o = ModelOrganism("sycophancy", SOURCE)
     margin_calls: list = []
-    _run_verify(
+    rep = _run_verify(
         o,
         tmp_path / "verify",
         datagen_dir=d,
@@ -780,6 +802,12 @@ def test_margin_pool_derivation_from_sidecar_fixtures(tmp_path):
     first = margin_calls[0]
     assert all(c["pos"] is first["pos"] and c["neg"] is first["neg"] for c in margin_calls)
     assert [p["request_id"] for p in first["pos"]] == ["pos-00001", "pos-00000"]
+    # r2 minor: the raw sidecar SOURCE PATHS ride the pool provenance when the
+    # pools are derived from a datagen_dir (audit trail back to the artifacts).
+    srcs = rep.provenance["margin_pools"]["sources"]
+    assert srcs["raw_pos"].endswith("raw_pos.jsonl")
+    assert srcs["raw_neg"].endswith("raw_neg.jsonl")
+    assert srcs["judge_rows"].endswith("judge_rows.jsonl")
 
 
 def test_cn_deficit_tolerance_and_surplus_refusal(tmp_path):
@@ -804,6 +832,7 @@ def test_cn_deficit_tolerance_and_surplus_refusal(tmp_path):
             out_root=tmp_path / "surplus",
             datagen_fn=make_datagen_stub(n_pos=8, n_cn=10),
             train_fn=_fail_train,
+            rate_fn=lambda _c: 0.7,  # r2: rate_fn is validated at entry now
         )
     # A deficit LARGER than panel_size - 1 is refused loud.
     with pytest.raises(ValueError, match="SHORTFALL"):
@@ -812,6 +841,7 @@ def test_cn_deficit_tolerance_and_surplus_refusal(tmp_path):
             out_root=tmp_path / "shortfall",
             datagen_fn=make_datagen_stub(n_pos=8, n_cn=3),
             train_fn=_fail_train,
+            rate_fn=lambda _c: 0.7,
         )
 
 
@@ -848,6 +878,215 @@ def test_production_callsite_signature_smoke():
 
     margin_params = set(inspect.signature(compute_tf_margin).parameters)
     assert set(org_mod._MARGIN_CALL_KWARGS) <= margin_params
+
+
+# ---------------------------------------------------------------------------
+# r2 round-2 revision additions (union punch list, review round 1)
+# ---------------------------------------------------------------------------
+
+
+def test_source_content_identical_to_panel_member_raises():
+    # r2 BLOCKER (source-panel-content-identity-gap): CONTEXTS['qt_rephrase_curious']
+    # is content-identical to trained negative neg_reph_curious (context.py's own
+    # `source` field says so) — constructing it as a SOURCE would train the same
+    # prompt distribution as source-positive AND contrastive-negative (#527/#538).
+    with pytest.raises(ValueError, match=r"CONTENT-IDENTICAL.*neg_reph_curious"):
+        ModelOrganism("sycophancy", "qt_rephrase_curious")
+    # A non-aliased installable source still constructs.
+    assert ModelOrganism("sycophancy", SOURCE).context_id == SOURCE
+
+
+def test_single_live_resource_teardown_before_next_build():
+    events: list = []
+
+    def build(key):
+        events.append(("build", key))
+        return f"res-{key}"
+
+    holder = org_mod._SingleLiveResource(build, lambda v: events.append(("teardown", v)))
+    first = holder.get("a")
+    assert holder.get("a") is first  # same key: reuse, no rebuild, no teardown
+    holder.get(None)  # key switch (None is a valid key — the base side)
+    # The old resource is torn down BEFORE the next one is built (the OOM guard).
+    assert events == [("build", "a"), ("teardown", "res-a"), ("build", None)]
+    holder.close()
+    holder.close()  # idempotent
+    assert events[-1] == ("teardown", "res-None")
+    assert len(events) == 4
+
+
+def test_verify_gpu_seam_phases_and_ownership(tmp_path):
+    # r2 (concern gpu-seam-memory-coexistence): generation (vLLM) -> judging
+    # (API/CPU) -> margins (HF) run as strictly SEQUENTIAL phases, and verify
+    # closes only the seams it CREATED (caller-injected fns stay open).
+    o = ModelOrganism("sycophancy", SOURCE)
+    events: list = []
+
+    def gen(side_path, messages_list, *, n, temperature):
+        events.append(("generate", side_path))
+        return [[f"c{j}" for j in range(n)] for _ in messages_list]
+
+    gen.close = lambda: events.append(("gen_close", None))
+
+    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model):
+        events.append(("judge", None))
+        return JudgeResult(
+            scores={iid: 10.0 for iid, _q, _a in items}, n_total_draws=0, n_dropped_draws=0
+        )
+
+    def margin(side_path, ctx, pos_pairs, neg_pairs):
+        events.append(("margin", side_path))
+        return SimpleNamespace(margin=0.0)
+
+    margin.close = lambda: events.append(("margin_close", None))
+
+    verify_organism(
+        o,
+        "/fake/adapter",
+        out_dir=tmp_path,
+        eval_questions=QUESTIONS,
+        n_completions=2,
+        generate_fn=gen,
+        judge_fn=judge,
+        margin_pools=POOLS,
+        margin_read_fn=margin,
+    )
+    kinds = [k for k, _ in events]
+    assert {"generate", "judge", "margin"} <= set(kinds)
+    # Strict phase ordering: ALL generation precedes ALL judging precedes ALL
+    # margin reads — an HF margin model is never requested while the vLLM
+    # generation phase is still in flight.
+    assert kinds.index("judge") > max(i for i, k in enumerate(kinds) if k == "generate")
+    assert kinds.index("margin") > max(i for i, k in enumerate(kinds) if k == "judge")
+    # Generation is side-major: exactly ONE side_path switch across the phase,
+    # so the default single-live-engine seam swaps engines exactly once.
+    gen_paths = [p for k, p in events if k == "generate"]
+    assert sum(1 for a, b in itertools.pairwise(gen_paths) if a != b) == 1
+    # Ownership: injected seams are the CALLER's to close — verify closed neither.
+    assert "gen_close" not in kinds and "margin_close" not in kinds
+
+
+def test_build_closes_rate_fn_after_dose_selection(tmp_path):
+    # r2 (Codex unaddressed-case note): a close()-exposing rate_fn (the
+    # make_source_rate_fn factory shape) is closed ONCE, after ladder scoring.
+    o = ModelOrganism("sycophancy", SOURCE, generic_frac=0.0)
+    events: list = []
+
+    def rate(ckpt_dir):
+        events.append(("rate", Path(ckpt_dir).name))
+        return 0.7
+
+    rate.close = lambda: events.append(("close", None))
+    build_organism(
+        o,
+        out_root=tmp_path,
+        datagen_fn=make_datagen_stub(8, 8),
+        train_fn=make_train_stub(),
+        rate_fn=rate,
+    )
+    assert events[-1] == ("close", None)
+    assert [k for k, _ in events].count("close") == 1
+    assert all(k == "rate" for k, _ in events[:-1])
+
+
+def test_rate_factory_close_closes_only_owned_gen(tmp_path):
+    o = ModelOrganism("sycophancy", SOURCE)
+    closed: list = []
+    gen = make_gen_stub()
+    gen.close = lambda: closed.append(True)
+    fn = make_source_rate_fn(
+        o,
+        out_dir=tmp_path,
+        eval_questions=QUESTIONS,
+        n_completions=2,
+        generate_fn=gen,
+        judge_fn=make_judge_stub(lambda iid: 90.0),
+    )
+    ckpt = tmp_path / "checkpoint-25"
+    ckpt.mkdir()
+    assert fn(str(ckpt)) == 1.0
+    fn.close()  # factory-owned close: a CALLER-injected gen is never closed
+    assert closed == []
+
+
+def test_rate_fn_required_before_any_datagen_or_training(tmp_path):
+    # r2 minor: the checkpoint_and_select contract is knowable at ENTRY — the
+    # failing datagen_fn/train_fn stubs prove nothing expensive ran first.
+    o = ModelOrganism("sycophancy", SOURCE, generic_frac=0.0)
+    with pytest.raises(ValueError, match="rate_fn is REQUIRED"):
+        build_organism(o, out_root=tmp_path, datagen_fn=_fail_train, train_fn=_fail_train)
+
+
+def test_completion_resume_refuses_regime_mismatch(tmp_path):
+    # r2 (Codex concern unsafe-completion-resume-key): resume is keyed on a
+    # manifest of every output-affecting input, not just the questions.
+    o = ModelOrganism("sycophancy", SOURCE)
+
+    def kw(gen_calls):
+        return dict(
+            eval_questions=QUESTIONS,
+            n_completions=2,
+            generate_fn=make_gen_stub(gen_calls),
+            judge_fn=make_judge_stub(lambda iid: 10.0),
+            margin_pools=POOLS,
+            margin_read_fn=make_margin_stub(),
+        )
+
+    calls: list = []
+    verify_organism(o, "/fake/adapter-A", out_dir=tmp_path, **kw(calls))
+    n_first = len(calls)
+    assert n_first > 0
+    # Same out_dir + IDENTICAL regime -> healthy resume, zero regeneration.
+    verify_organism(o, "/fake/adapter-A", out_dir=tmp_path, **kw(calls))
+    assert len(calls) == n_first
+    # A DIFFERENT adapter must never reuse adapter-A's completions: loud
+    # refusal naming the differing key, never a silent false report.
+    with pytest.raises(ValueError, match=r"resume mismatch.*side_path"):
+        verify_organism(o, "/fake/adapter-B", out_dir=tmp_path, **kw(calls))
+    assert len(calls) == n_first  # nothing regenerated into the stale dir
+    # A changed generation parameter refuses too.
+    changed = kw(calls)
+    changed["n_completions"] = 3
+    with pytest.raises(ValueError, match=r"resume mismatch.*n_completions"):
+        verify_organism(o, "/fake/adapter-A", out_dir=tmp_path, **changed)
+
+
+def test_judge_draw_telemetry_survives_to_report(tmp_path):
+    # r2 (Codex concern judge-draw-telemetry-lost): every item keeps a mean
+    # score, yet 7 of 20 draws were dropped — invisible at completion grain,
+    # exposed at draw grain in the report telemetry.
+    o = ModelOrganism("sycophancy", SOURCE)
+
+    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model):
+        return JudgeResult(
+            scores={iid: 60.0 for iid, _q, _a in items}, n_total_draws=20, n_dropped_draws=7
+        )
+
+    rep = _run_verify(o, tmp_path, judge_fn=judge)
+    cell = rep.judge_drop_telemetry[f"trained:{SOURCE}"]
+    assert cell == {"n_scored": 4, "n_dropped": 0, "n_total_draws": 20, "n_dropped_draws": 7}
+
+
+def test_missing_item_id_is_contract_violation_not_a_drop(tmp_path):
+    # r2 minor: an item_id ABSENT from JudgeResult.scores is a judge-contract
+    # bug and raises; only present-with-None is the rule-9 drop disposition.
+    o = ModelOrganism("sycophancy", SOURCE)
+
+    def judge(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model):
+        scores = {iid: 60.0 for iid, _q, _a in items}
+        scores.pop(next(iter(scores)))  # a KEY missing entirely = contract bug
+        return JudgeResult(scores=scores, n_total_draws=0, n_dropped_draws=0)
+
+    with pytest.raises(ValueError, match="contract violation"):
+        _run_verify(o, tmp_path, judge_fn=judge)
+
+
+def test_n_completions_must_be_positive(tmp_path):
+    o = ModelOrganism("sycophancy", SOURCE)
+    with pytest.raises(ValueError, match="n_completions"):
+        _run_verify(o, tmp_path, n_completions=0)
+    with pytest.raises(ValueError, match="n_completions"):
+        make_source_rate_fn(o, out_dir=tmp_path, eval_questions=QUESTIONS, n_completions=0)
 
 
 # ---------------------------------------------------------------------------

@@ -171,12 +171,32 @@ class ModelOrganism:
         )
         # HARD disjointness invariant (contrastive-negatives.md, #527/#538).
         assert_panel_disjoint_from_sources(self.panel, [self.context_id])
+        # r2 (BLOCKER source-panel-content-identity-gap): the slug/identity assert
+        # above cannot see a REGISTRY ALIAS — a CONTEXTS entry whose CONTENT is
+        # byte-identical to a trained negative (CONTEXTS['qt_rephrase_curious'] ==
+        # neg_reph_curious; context.py's own `source` field says so). Such a
+        # source would train the SAME prompt distribution as source-positive AND
+        # contrastive-negative (the #527/#538 confound), so it is refused at
+        # construction — fail-fast, never a silently confounded organism.
+        source_fp = _context_content_fingerprint(ctx)
+        for member in self.panel:
+            if _context_content_fingerprint(member.to_context()) == source_fp:
+                raise ValueError(
+                    f"source context {self.context_id!r} is CONTENT-IDENTICAL to trained "
+                    f"negative {member.slug!r} in panel {self.negatives!r} (identical "
+                    "system/user_wrap/prefix fingerprint — a registry alias): it would "
+                    "train the same prompt distribution as source-positive AND "
+                    "contrastive-negative (the #527/#538 confound). Pick a non-aliased "
+                    "source context or a panel without the alias."
+                )
         if self.dose is not None:
             if spec.stopping.kind != "checkpoint_and_select":
                 raise ValueError(
                     f"dose band override is only valid for checkpoint_and_select stopping; "
                     f"this recipe stops via {spec.stopping.kind!r}"
                 )
+            if len(self.dose) != 2:
+                raise ValueError(f"dose must be a (lo, hi) pair, got {self.dose!r}")
             lo, hi = float(self.dose[0]), float(self.dose[1])
             if not lo < hi:
                 raise ValueError(f"dose band must satisfy dose[0] < dose[1], got {self.dose!r}")
@@ -238,15 +258,22 @@ class BuildResult:
 
 @dataclass(frozen=True)
 class BystanderRead:
-    """One bystander context's leakage read (rates + optional margin companion)."""
+    """One bystander context's leakage read (rates + optional margin companion).
+
+    Denominator telemetry is PER SIDE (r2 — the r1 ``n_scored``/``n_dropped``
+    pair mixed a trained-only denominator with a summed-both-sides drop count);
+    draw-level judge telemetry lives in ``OrganismReport.judge_drop_telemetry``.
+    """
 
     context_id: str
     trained_negative: bool  # slug OR content identity matches a trained panel member
     rate_trained: float
     rate_base: float
     rate_delta: float
-    n_scored: int  # denominator AFTER dropping all-draws-dropped completions
-    n_dropped: int  # llm-judging rule-9 telemetry
+    n_scored_trained: int  # trained-side denominator AFTER rule-9 drops
+    n_dropped_trained: int  # trained-side all-draws-dropped completions (rule 9)
+    n_scored_base: int  # base-side denominator AFTER rule-9 drops
+    n_dropped_base: int  # base-side all-draws-dropped completions (rule 9)
     margin_trained: float | None  # None iff the companion was not computed
     margin_base: float | None
     margin_delta: float | None
@@ -287,7 +314,11 @@ class OrganismReport:
     leakage_bound: float
     leakage_ok: bool  # ADVISORY: all HELD-OUT bystanders have rate_delta <= leakage_bound
     companion_status: str  # "computed" | skipped/unimplemented (machine-readable, never silent)
-    judge_drop_telemetry: dict  # per-(side, context) dropped/total
+    # Per-(side, context): completion-level {n_scored, n_dropped} AND draw-level
+    # {n_total_draws, n_dropped_draws} from JudgeResult (r2 — draw telemetry was
+    # discarded in r1; a partially-dropped draw set is invisible at completion
+    # grain whenever the item still has a mean score).
+    judge_drop_telemetry: dict
     provenance: dict
 
 
@@ -406,12 +437,21 @@ def _resolve_generation_deps() -> dict[str, Any]:
 
 
 def _resolve_margin_deps() -> dict[str, Any]:
-    """Deferred imports for the production HF/PEFT margin path (see above)."""
+    """Deferred imports for the production HF/PEFT margin path (see above).
+
+    ``_is_full_model_dir`` is the SAME routing helper the generation seam uses
+    (r2 minor: the r1 margin seam re-implemented the detection inline, a drift
+    risk between the two seams' full-model-vs-LoRA routing). ``eval_battery``
+    has no top-level vllm import, so this resolver stays vllm-free.
+    """
     import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from explore_persona_space.eval.margin import compute_tf_margin
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import (
+        _is_full_model_dir,
+    )
 
     return {
         "torch": torch,
@@ -419,37 +459,78 @@ def _resolve_margin_deps() -> dict[str, Any]:
         "AutoModelForCausalLM": AutoModelForCausalLM,
         "AutoTokenizer": AutoTokenizer,
         "compute_tf_margin": compute_tf_margin,
+        "_is_full_model_dir": _is_full_model_dir,
     }
 
 
 # ── Production default seams (GPU; mocked in every test) ─────────────────────
 
 
+class _SingleLiveResource:
+    """At most ONE live GPU resource; a key switch tears the old one down FIRST.
+
+    The memory-coexistence guard for the default GPU seams (r2 — concern
+    ``gpu-seam-memory-coexistence``): the r1 seams cached one engine/model per
+    ``side_path`` and tore down only at final close, so a second ~0.9-HBM vLLM
+    engine (or an HF bf16 model) was constructed while the previous engine
+    still held the GPU — OOM on any single-GPU pod. This holder guarantees the
+    previous resource is torn down BEFORE the next one is built. Pure lifecycle
+    logic (CPU-testable with recorder fns); the GPU builders plug in below.
+    """
+
+    _UNSET = object()
+
+    def __init__(self, build: Callable[[Any], Any], teardown: Callable[[Any], None]) -> None:
+        self._build = build
+        self._teardown = teardown
+        self._key: Any = self._UNSET
+        self._value: Any = None
+
+    def get(self, key: Any) -> Any:
+        """The live resource for ``key`` — reused if live, else swap (teardown first)."""
+        if self._key is not self._UNSET and key == self._key:
+            return self._value
+        self.close()  # teardown the previous resource BEFORE building the next
+        value = self._build(key)
+        self._key, self._value = key, value
+        return value
+
+    def close(self) -> None:
+        """Tear down the live resource, if any. Idempotent."""
+        if self._key is self._UNSET:
+            return
+        value = self._value
+        self._key, self._value = self._UNSET, None
+        self._teardown(value)
+
+
 def _default_vllm_generate_fn(base_model: str) -> GenFn:
-    """One vLLM engine per model side, chunked generate, teardown via close().
+    """ONE live vLLM engine at a time, chunked generate, teardown via close().
 
     Engine kwargs follow the ``run_generation_phase`` precedent
     (``max_lora_rank=64``, ``max_model_len=8192``, ``enable_prefix_caching=True``,
     fixed sampling seed); chunked ≤500 prompts per ``llm.generate`` call
     (gotchas.md large-batch deadlock prevention) with ``use_tqdm=False``.
+    Lifecycle (r2): a ``side_path`` switch tears down the previous engine
+    BEFORE constructing the next (``_SingleLiveResource``), and every adapter
+    path gets a DISTINCT ``lora_int_id`` (the r1 fixed ``1`` would silently
+    reuse the first adapter if an engine were ever shared across checkpoints).
     """
     deps = _resolve_generation_deps()
     chunk_size = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
-    engines: dict[str | None, tuple[Any, Any]] = {}  # side_path -> (llm, lora_request | None)
+    lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
-    def _engine_for(side_path: str | None) -> tuple[Any, Any]:
-        if side_path in engines:
-            return engines[side_path]
+    def _build(side_path: str | None) -> tuple[Any, Any]:
         common = {"max_model_len": 8192, "enable_prefix_caching": True, "seed": 0}
         if side_path is None:
-            llm, lora_req = deps["LLM"](model=base_model, **common), None
-        elif deps["_is_full_model_dir"](side_path):
-            llm, lora_req = deps["LLM"](model=side_path, **common), None
-        else:
-            llm = deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
-            lora_req = deps["LoRARequest"]("organism", 1, side_path)
-        engines[side_path] = (llm, lora_req)
-        return llm, lora_req
+            return deps["LLM"](model=base_model, **common), None
+        if deps["_is_full_model_dir"](side_path):
+            return deps["LLM"](model=side_path, **common), None
+        lora_id = lora_ids.setdefault(side_path, len(lora_ids) + 1)
+        llm = deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
+        return llm, deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
+
+    engine = _SingleLiveResource(_build, lambda pair: deps["teardown_vllm"](pair[0]))
 
     def generate(
         side_path: str | None,
@@ -458,7 +539,7 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
         n: int,
         temperature: float,
     ) -> list[list[str]]:
-        llm, lora_req = _engine_for(side_path)
+        llm, lora_req = engine.get(side_path)
         tok = llm.get_tokenizer()
         prompts = [
             tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -477,33 +558,32 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
             outs.extend([o.text for o in out.outputs] for out in chunk_out)
         return outs
 
-    def close() -> None:
-        for llm, _ in engines.values():
-            deps["teardown_vllm"](llm)
-        engines.clear()
-
-    generate.close = close  # type: ignore[attr-defined]
+    generate.close = engine.close  # type: ignore[attr-defined]
     return generate
 
 
 def _default_margin_read_fn(base_model: str) -> MarginReadFn:
-    """HF model loaded once per side (base; base+PEFT adapter), tf-margin per context."""
+    """ONE live HF model at a time (base; base+PEFT adapter), tf-margin per context.
+
+    Lifecycle (r2): a ``side_path`` switch frees the previous model BEFORE the
+    next one loads (``_SingleLiveResource`` + ``torch.cuda.empty_cache``), and
+    the returned fn exposes ``close()``. ``verify_organism`` only invokes this
+    seam AFTER the generation phase has torn down every vLLM engine, so an HF
+    bf16 model never coexists with a ~0.9-HBM vLLM engine on one GPU.
+    """
     deps = _resolve_margin_deps()
     torch = deps["torch"]
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = deps["AutoTokenizer"].from_pretrained(base_model)
-    models: dict[str | None, Any] = {}
 
-    def _model_for(side_path: str | None):
-        if side_path in models:
-            return models[side_path]
+    def _build(side_path: str | None) -> Any:
         if side_path is None:
             model = (
                 deps["AutoModelForCausalLM"]
                 .from_pretrained(base_model, torch_dtype=torch.bfloat16)
                 .to(device)
             )
-        elif (Path(side_path) / "config.json").exists():  # full model dir
+        elif deps["_is_full_model_dir"](side_path):  # full model dir (fullft arm)
             model = (
                 deps["AutoModelForCausalLM"]
                 .from_pretrained(side_path, torch_dtype=torch.bfloat16)
@@ -517,8 +597,14 @@ def _default_margin_read_fn(base_model: str) -> MarginReadFn:
             )
             model = deps["PeftModel"].from_pretrained(base, side_path)
         model.eval()
-        models[side_path] = model
         return model
+
+    def _teardown(model: Any) -> None:
+        del model
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    holder = _SingleLiveResource(_build, _teardown)
 
     def read(
         side_path: str | None,
@@ -526,7 +612,7 @@ def _default_margin_read_fn(base_model: str) -> MarginReadFn:
         pos_pairs: list[dict],
         neg_pairs: list[dict],
     ) -> MarginResult:
-        model = _model_for(side_path)
+        model = holder.get(side_path)
         # Kwargs pinned by _MARGIN_CALL_KWARGS (signature-smoke test 31).
         return deps["compute_tf_margin"](
             model,
@@ -538,6 +624,7 @@ def _default_margin_read_fn(base_model: str) -> MarginReadFn:
             max_batch_tokens=DEFAULT_MARGIN_MAX_BATCH_TOKENS,
         )
 
+    read.close = holder.close  # type: ignore[attr-defined]
     return read
 
 
@@ -721,9 +808,16 @@ def build_organism(
     ``generic_data_path`` is a prompt-completion JSONL, REQUIRED whenever the
     resolved recipe's ``generic_frac > 0``. ``rate_fn`` is REQUIRED on the
     checkpoint_and_select path (the module ships :func:`make_source_rate_fn`
-    as the production default the caller constructs explicitly). Every step
-    fails fast; ``train_mix.jsonl`` + ``mix_meta.json`` persist the moment
-    assembly completes (checkpoint-per-phase).
+    as the production default the caller constructs explicitly) — validated at
+    ENTRY, before any datagen/training work (r2 minor), and its ``close()``
+    (when exposed, e.g. by the :func:`make_source_rate_fn` factory) is called
+    after the checkpoint-ladder scoring so a factory-owned vLLM engine never
+    outlives dose selection. ``datagen_fn`` is the injectable data-generation
+    boundary and PUBLIC API surface (default :func:`generate_training_data`;
+    the r1 review accepted this seam): same signature/returns contract as
+    ``generate_training_data`` — mocked in tests, overridable for custom data
+    pipelines. Every step fails fast; ``train_mix.jsonl`` + ``mix_meta.json``
+    persist the moment assembly completes (checkpoint-per-phase).
     """
     out_root = Path(out_root)
     behavior = organism.behavior_spec
@@ -736,6 +830,19 @@ def build_organism(
             "programmatic behaviors by design (0d) and the marker/fact training-mix builders "
             "are not yet promoted into artifacts/ — Phase 1 wires the carve-out build path "
             "(recipe_for(...) already validates the recipe side)"
+        )
+    # 1b. Fail-fast contract check (r2 minor): the checkpoint_and_select path
+    # needs rate_fn, and that is knowable at ENTRY — refuse before the
+    # expensive datagen + training steps, not after training completes.
+    if (
+        spec.train_method != "fullft"
+        and spec.stopping.kind == "checkpoint_and_select"
+        and rate_fn is None
+    ):
+        raise ValueError(
+            "rate_fn is REQUIRED on the checkpoint_and_select path (ckpt_dir -> "
+            "source judged rate at C); construct the production default via "
+            "make_source_rate_fn(organism, ...)"
         )
 
     # 2. Data (datagen re-asserts panel disjointness + resumes on an exact manifest match).
@@ -809,13 +916,16 @@ def build_organism(
                     f"no checkpoint-<step> dirs under {adapter_dir} — the recipe's "
                     "save_strategy='steps' checkpoint ladder did not take"
                 )
-            if rate_fn is None:
-                raise ValueError(
-                    "rate_fn is REQUIRED on the checkpoint_and_select path (ckpt_dir -> "
-                    "source judged rate at C); construct the production default via "
-                    "make_source_rate_fn(organism, ...)"
-                )
-            rates_by_step = {step: float(rate_fn(str(d))) for step, d in ckpt_dirs.items()}
+            # rate_fn presence was validated at entry (step 1b). Close a
+            # close()-exposing rate_fn after the ladder scoring (r2 — the
+            # make_source_rate_fn factory owns a vLLM engine that must not
+            # outlive dose selection).
+            try:
+                rates_by_step = {step: float(rate_fn(str(d))) for step, d in ckpt_dirs.items()}
+            finally:
+                rate_close = getattr(rate_fn, "close", None)
+                if callable(rate_close):
+                    rate_close()
             selection = select_dose_checkpoint(
                 rates_by_step, band=organism.dose or spec.stopping.rate_band
             )
@@ -854,20 +964,52 @@ def _generate_and_persist(
     n: int,
     temperature: float,
     out_dir: Path,
+    base_model: str,
 ) -> list[list[str]]:
     """Generate (or resume from disk) the per-question completion lists for one cell.
 
     Persists ``completions__{side}__{context_id}.json`` the moment generation
     returns (checkpoint-per-phase; these are the raw completions the caller
     uploads under ``raw_completions/verify/`` per the Upload Policy).
+
+    Resume is keyed on a MANIFEST of every output-affecting input (r2 — Codex
+    concern ``unsafe-completion-resume-key``: the r1 predicate checked only the
+    questions, so reusing an ``out_dir`` with a different adapter / base model /
+    ``n`` / temperature silently reused stale completions and produced a false
+    verification report). A mismatched resume REFUSES loud, naming the
+    differing keys — never silent reuse.
     """
+    manifest = {
+        "side": side,
+        # Adapter identity: the resolved path (None for the base side). A
+        # content hash would be stronger but requires hashing multi-GB weights
+        # per cell; the resolved path disambiguates every in-scope collision
+        # (different adapters, same-basename checkpoint dirs across builds).
+        "side_path": None if side_path is None else str(Path(side_path).resolve()),
+        "base_model": base_model,
+        "context_id": ctx.context_id,
+        "context_fingerprint": _context_content_fingerprint(ctx),
+        "questions_sha256": _sha256_text(json.dumps(list(questions), ensure_ascii=False)),
+        "n_completions": n,
+        "temperature": temperature,
+    }
     out_path = out_dir / f"completions__{side}__{ctx.context_id}.json"
     if out_path.exists():
         payload = json.loads(out_path.read_text())
-        if payload["questions"] != list(questions):
+        persisted = payload.get("manifest")
+        if persisted != manifest:
+            if persisted is None:
+                diff = sorted(manifest)  # pre-manifest file: no regime record at all
+            else:
+                diff = sorted(
+                    k for k in set(manifest) | set(persisted) if persisted.get(k) != manifest.get(k)
+                )
             raise ValueError(
-                f"resume mismatch at {out_path}: persisted questions differ from the "
-                "current eval set — use a fresh out_dir"
+                f"resume mismatch at {out_path}: persisted completions were generated "
+                f"under a DIFFERENT regime (differing keys: {diff}; "
+                f"persisted={ {k: (persisted or {}).get(k) for k in diff} }, "
+                f"current={ {k: manifest.get(k) for k in diff} }) — stale completions "
+                "would corrupt the verification report; use a fresh out_dir"
             )
         return payload["completions"]
     completions = gen_fn(
@@ -879,8 +1021,28 @@ def _generate_and_persist(
             f"{len(questions)} questions at ({side}, {ctx.context_id})"
         )
     out_dir.mkdir(parents=True, exist_ok=True)
-    _atomic_write_json(out_path, {"questions": list(questions), "completions": completions})
+    _atomic_write_json(
+        out_path,
+        {"manifest": manifest, "questions": list(questions), "completions": completions},
+    )
     return completions
+
+
+@dataclass(frozen=True)
+class _CellRate:
+    """One (side, context) cell's rate + completion- AND draw-level telemetry.
+
+    r2 (Codex concern ``judge-draw-telemetry-lost``): the r1 tuple carried only
+    completion-level counts, discarding ``JudgeResult.n_total_draws`` /
+    ``n_dropped_draws`` — partial draw drops were invisible whenever an item
+    still had a mean score. Structural cells (no judge) carry zero draws.
+    """
+
+    rate: float
+    n_scored: int  # completions in the denominator AFTER rule-9 drops
+    n_dropped: int  # completions with ALL draws dropped (rule 9)
+    n_total_draws: int  # judge draws issued for this cell (0 on the structural path)
+    n_dropped_draws: int  # judge draws dropped (REFUSAL / non-numeric / out-of-range)
 
 
 def _rate_for_cell(
@@ -893,13 +1055,15 @@ def _rate_for_cell(
     questions: Sequence[str],
     completions: list[list[str]],
     judge_root: Path,
-) -> tuple[float, int, int]:
-    """(rate, n_scored, n_dropped) for one (side, context) cell.
+) -> _CellRate:
+    """The :class:`_CellRate` for one (side, context) cell.
 
     Structural primary: the deterministic predicate, ZERO judge calls.
     Judged primary: graded scores; a None score (all draws dropped) is dropped
     from the denominator and counted — never coerced (llm-judging rule 9);
-    ``rate = #(score > behavior.threshold) / n_scored``.
+    ``rate = #(score > behavior.threshold) / n_scored``. An item_id MISSING
+    from ``JudgeResult.scores`` is a judge-contract violation and raises (r2
+    minor — distinct from the rule-9 present-with-``None`` disposition).
     """
     flat: list[tuple[str, str, str]] = []
     for i, q in enumerate(questions):
@@ -907,7 +1071,7 @@ def _rate_for_cell(
             flat.append((f"{ctx.context_id}-{side}-q{i:03d}-c{j}", q, completion))
     if predicate is not None:
         n_pos = sum(1 for _iid, _q, c in flat if predicate(c))
-        return n_pos / len(flat), len(flat), 0
+        return _CellRate(n_pos / len(flat), len(flat), 0, 0, 0)
     cell_dir = judge_root / f"{side}_{ctx.context_id}"
     cell_dir.mkdir(parents=True, exist_ok=True)
     # Kwargs pinned by _JUDGE_CALL_KWARGS (signature-smoke test 31).
@@ -923,7 +1087,13 @@ def _rate_for_cell(
     n_pos = 0
     n_scored = 0
     for iid, _q, _c in flat:
-        score = result.scores.get(iid)
+        if iid not in result.scores:
+            raise ValueError(
+                f"judge_fn contract violation at ({side}, {ctx.context_id}): item_id "
+                f"{iid!r} is MISSING from JudgeResult.scores — a rule-9 all-draws-dropped "
+                "item must be present with score None, never absent"
+            )
+        score = result.scores[iid]
         if score is None:
             n_dropped += 1
             continue
@@ -935,7 +1105,9 @@ def _rate_for_cell(
             f"every completion at ({side}, {ctx.context_id}) was judge-dropped — a fully "
             "dropped cell is a judging outage, not a 0% rate"
         )
-    return n_pos / n_scored, n_scored, n_dropped
+    return _CellRate(
+        n_pos / n_scored, n_scored, n_dropped, result.n_total_draws, result.n_dropped_draws
+    )
 
 
 def _verify_context_set(
@@ -985,7 +1157,12 @@ def _verify_context_set(
     for ctx in candidates:
         fp = _context_content_fingerprint(ctx)
         if fp == source_fp or fp in seen_fps or ctx.context_id in seen_ids:
-            continue  # content-identity dedup (panel-first precedence by list order)
+            # Content-identity dedup (panel-first precedence by list order). The
+            # fp == source_fp drop can only hit a CONTEXTS alias of the SOURCE
+            # itself (the same measurement cell — correctly excluded): a panel
+            # member content-identical to the source is refused at ModelOrganism
+            # construction (r2 BLOCKER fix), so this branch never masks one.
+            continue
         seen_fps.add(fp)
         seen_ids.add(ctx.context_id)
         out.append((ctx, _is_trained_negative(ctx)))
@@ -1063,12 +1240,21 @@ def _resolve_margin_pools(
     """(pos_pairs, neg_pairs, pool_provenance) — derived ONCE, before the side loop."""
     if companion_status != "computed":
         return None, None, None
+    sources: dict[str, str] | None = None
     if margin_pools is not None:
         pos_pairs, neg_pairs = margin_pools
         pool_source = "caller-provided margin_pools"
     elif datagen_dir is not None:
-        pos_pairs, neg_pairs = derive_margin_pools(datagen_dir)
-        pool_source = str(Path(datagen_dir))
+        d = Path(datagen_dir)
+        pos_pairs, neg_pairs = derive_margin_pools(d)
+        pool_source = str(d)
+        # r2 minor: the raw sidecar paths the derivation joined, so downstream
+        # can audit pool composition back to the exact datagen artifacts.
+        sources = {
+            "raw_pos": str(d / "raw_pos.jsonl"),
+            "raw_neg": str(d / "raw_neg.jsonl"),
+            "judge_rows": str(d / "judge_rows.jsonl"),
+        }
     else:
         raise ValueError(
             "companion 'tf_margin' requires fixed pools: pass margin_pools explicitly "
@@ -1076,6 +1262,7 @@ def _resolve_margin_pools(
         )
     pool_provenance = {
         "pool_source": pool_source,
+        "sources": sources,  # None for caller-provided pools
         "n_pos": len(pos_pairs),
         "n_neg": len(neg_pairs),
         "pools_sha256": _sha256_text(
@@ -1114,6 +1301,8 @@ def verify_organism(
     """
     out_dir = Path(out_dir)
     behavior = organism.behavior_spec
+    if n_completions < 1:
+        raise ValueError(f"n_completions must be >= 1, got {n_completions}")
 
     # 1. DV router + 1b. companion router (v2 — explicit judged_spotcheck skip).
     predicate = _resolve_primary_predicate(behavior)
@@ -1129,24 +1318,30 @@ def verify_organism(
         companion_status, margin_pools, datagen_dir
     )
 
-    created_default_gen = generate_fn is None
-    gen = generate_fn if generate_fn is not None else _default_vllm_generate_fn(base_model)
-    margin_fn = margin_read_fn
-    if companion_status == "computed" and margin_fn is None:
-        margin_fn = _default_margin_read_fn(base_model)
-
     sides: tuple[tuple[str, str | None], ...] = (
         ("trained", adapter_or_ckpt),
         ("base", None),
     )
     all_cells = [(organism.context, None)] + [(c, tn) for c, tn in bystanders_ctx]
-    rates: dict[tuple[str, str], tuple[float, int, int]] = {}
-    margins: dict[tuple[str, str], float] = {}
     judge_root = out_dir / "judge"
+
+    # r2 (concern gpu-seam-memory-coexistence): three strictly SEQUENTIAL
+    # phases so heavyweight GPU residents never coexist. Phase 1 is the only
+    # vLLM phase (side-major, so the default single-live-engine seam swaps
+    # engines exactly once) and the verify-owned engine is closed in its
+    # `finally` BEFORE any margin model loads; phase 2 is judge-API/CPU only;
+    # phase 3 (HF margin models) starts only after every verify-owned vLLM
+    # engine is down. Caller-injected seams are closed by the CALLER (verify
+    # closes only what it created).
+
+    # Phase 1 — generation (vLLM). Each cell persists the moment it returns.
+    completions_by_cell: dict[tuple[str, str], list[list[str]]] = {}
+    created_default_gen = generate_fn is None
+    gen = generate_fn if generate_fn is not None else _default_vllm_generate_fn(base_model)
     try:
         for side, side_path in sides:
             for ctx, _tn in all_cells:
-                completions = _generate_and_persist(
+                completions_by_cell[(side, ctx.context_id)] = _generate_and_persist(
                     gen,
                     side,
                     side_path,
@@ -1155,25 +1350,46 @@ def verify_organism(
                     n=n_completions,
                     temperature=temperature,
                     out_dir=out_dir,
+                    base_model=base_model,
                 )
-                rates[(side, ctx.context_id)] = _rate_for_cell(
-                    behavior,
-                    predicate,
-                    judge_fn,
-                    n_judge_draws,
-                    side,
-                    ctx,
-                    questions,
-                    completions,
-                    judge_root,
-                )
-                if companion_status == "computed":
-                    mr = margin_fn(side_path, ctx, pos_pairs, neg_pairs)
-                    margins[(side, ctx.context_id)] = float(mr.margin)
     finally:
         close = getattr(gen, "close", None)
         if created_default_gen and callable(close):
             close()
+
+    # Phase 2 — rates (judge API / structural predicate; no GPU).
+    rates: dict[tuple[str, str], _CellRate] = {}
+    for side, _side_path in sides:
+        for ctx, _tn in all_cells:
+            rates[(side, ctx.context_id)] = _rate_for_cell(
+                behavior,
+                predicate,
+                judge_fn,
+                n_judge_draws,
+                side,
+                ctx,
+                questions,
+                completions_by_cell[(side, ctx.context_id)],
+                judge_root,
+            )
+
+    # Phase 3 — margins (HF models; the default seam is created ONLY here,
+    # after phase 1's finally tore down every verify-owned vLLM engine).
+    margins: dict[tuple[str, str], float] = {}
+    if companion_status == "computed":
+        created_default_margin = margin_read_fn is None
+        margin_fn = (
+            margin_read_fn if margin_read_fn is not None else _default_margin_read_fn(base_model)
+        )
+        try:
+            for side, side_path in sides:
+                for ctx, _tn in all_cells:
+                    mr = margin_fn(side_path, ctx, pos_pairs, neg_pairs)
+                    margins[(side, ctx.context_id)] = float(mr.margin)
+        finally:
+            margin_close = getattr(margin_fn, "close", None)
+            if created_default_margin and callable(margin_close):
+                margin_close()
 
     def _margin(side: str, cid: str) -> float | None:
         return margins.get((side, cid))
@@ -1183,26 +1399,28 @@ def verify_organism(
         return None if t is None or b is None else t - b
 
     src_id = organism.context_id
-    rate_trained_c, _ns_t, _nd_t = rates[("trained", src_id)]
-    rate_base_c, _ns_b, _nd_b = rates[("base", src_id)]
+    rate_trained_c = rates[("trained", src_id)].rate
+    rate_base_c = rates[("base", src_id)].rate
     source_margin_delta = _delta(src_id)
 
     bystander_reads: list[BystanderRead] = []
     for ctx, trained_negative in bystanders_ctx:
         cid = ctx.context_id
-        rt, ns_t, nd_t = rates[("trained", cid)]
-        rb, _ns_b2, nd_b2 = rates[("base", cid)]
+        cell_t = rates[("trained", cid)]
+        cell_b = rates[("base", cid)]
         margin_delta = _delta(cid)
         fraction, reason = _transfer_fraction(margin_delta, source_margin_delta)
         bystander_reads.append(
             BystanderRead(
                 context_id=cid,
                 trained_negative=trained_negative,
-                rate_trained=rt,
-                rate_base=rb,
-                rate_delta=rt - rb,
-                n_scored=ns_t,
-                n_dropped=nd_t + nd_b2,
+                rate_trained=cell_t.rate,
+                rate_base=cell_b.rate,
+                rate_delta=cell_t.rate - cell_b.rate,
+                n_scored_trained=cell_t.n_scored,
+                n_dropped_trained=cell_t.n_dropped,
+                n_scored_base=cell_b.n_scored,
+                n_dropped_base=cell_b.n_dropped,
                 margin_trained=_margin("trained", cid),
                 margin_base=_margin("base", cid),
                 margin_delta=margin_delta,
@@ -1246,8 +1464,13 @@ def verify_organism(
         leakage_ok=all(b.rate_delta <= leakage_bound for b in held_out),
         companion_status=companion_status,
         judge_drop_telemetry={
-            f"{side}:{cid}": {"n_scored": ns, "n_dropped": nd}
-            for (side, cid), (_r, ns, nd) in sorted(rates.items())
+            f"{side}:{cid}": {
+                "n_scored": cell.n_scored,
+                "n_dropped": cell.n_dropped,
+                "n_total_draws": cell.n_total_draws,
+                "n_dropped_draws": cell.n_dropped_draws,
+            }
+            for (side, cid), cell in sorted(rates.items())
         },
         provenance=provenance,
     )
@@ -1275,11 +1498,22 @@ def make_source_rate_fn(
 
     Closes over the verify-side generation + judging machinery for the ONE
     trigger context; per-checkpoint artifacts persist under
-    ``out_dir/rate_<ckpt_name>/`` (resume-safe). This is the production
-    default the ``build_organism`` caller constructs explicitly.
+    ``out_dir/rate_<ckpt_name>/`` (resume-safe, manifest-keyed on the resolved
+    checkpoint path + generation params). This is the production default the
+    ``build_organism`` caller constructs explicitly.
+
+    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``): the default
+    generation seam keeps at most ONE live engine, so each checkpoint's engine
+    is torn down BEFORE the next rung's engine is built (the r1 version leaked
+    one ~0.9-HBM engine per rung — OOM at rung 2 of a dose ladder). The
+    returned closure exposes ``close()``, which tears down the FACTORY-OWNED
+    default engine (a caller-injected ``generate_fn`` is the caller's to
+    close); ``build_organism`` calls it after the ladder scoring.
     """
     out_dir = Path(out_dir)
     behavior = organism.behavior_spec
+    if n_completions < 1:
+        raise ValueError(f"n_completions must be >= 1, got {n_completions}")
     questions = _resolve_eval_questions(behavior, eval_questions)
     predicate = (
         _STRUCTURAL_PREDICATES[behavior.name] if behavior.dv.primary == "structural" else None
@@ -1289,6 +1523,7 @@ def make_source_rate_fn(
             f"make_source_rate_fn supports judged_rate/structural primaries only, "
             f"got {behavior.dv.primary!r}"
         )
+    created_default_gen = generate_fn is None
     gen = generate_fn if generate_fn is not None else _default_vllm_generate_fn(base_model)
 
     def rate(ckpt_dir: str) -> float:
@@ -1303,8 +1538,9 @@ def make_source_rate_fn(
             n=n_completions,
             temperature=temperature,
             out_dir=cell_dir,
+            base_model=base_model,
         )
-        r, _ns, _nd = _rate_for_cell(
+        cell = _rate_for_cell(
             behavior,
             predicate,
             judge_fn,
@@ -1315,6 +1551,12 @@ def make_source_rate_fn(
             completions,
             cell_dir / "judge",
         )
-        return r
+        return cell.rate
 
+    def close() -> None:
+        gen_close = getattr(gen, "close", None)
+        if created_default_gen and callable(gen_close):
+            gen_close()
+
+    rate.close = close  # type: ignore[attr-defined]
     return rate
