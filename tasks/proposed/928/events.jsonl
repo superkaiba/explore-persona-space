@@ -1,1 +1,2 @@
 {"ts": "2026-07-03T11:47:21Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-03T21:34:22Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #928 to open question(s) spec-context-as-vector; created_new=none; mode=auto-match (autonomous). Rationale: #928 extends the #810 context→answer activation-summary map (the compact-context-code line: #685/#823/#841/#922/#923) across the CoT of a thinking model."}
