@@ -1,6 +1,6 @@
 {
   "commit": "fd6476191e",
-  "created": "2026-07-03T02:31:17Z",
+  "created": "2026-07-03T03:18:02Z",
   "figsize": [
     8.0,
     4.6
@@ -97,7 +97,7 @@
       "_group": 4
     },
     {
-      "x": 0.715,
+      "x": 0.7149999999999999,
       "Refit pooled fold $R^2$ at read-out layer": 0.6010149286912362,
       "_kind": "line",
       "_group": 4
@@ -115,7 +115,7 @@
       "_group": 5
     },
     {
-      "x": 0.715,
+      "x": 0.7149999999999999,
       "Refit pooled fold $R^2$ at read-out layer": 0.6150174014577287,
       "_kind": "line",
       "_group": 5
