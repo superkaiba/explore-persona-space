@@ -1,0 +1,418 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:24Z",
+  "figsize": [
+    6.5,
+    3.5
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "transfer \u2212 in-corpus r2_id": -0.018501765015898064,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "transfer \u2212 in-corpus r2_id": -0.028771491340879307,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "transfer \u2212 in-corpus r2_id": -0.024887283118982695,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "transfer \u2212 in-corpus r2_id": -0.02591829901902476,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "transfer \u2212 in-corpus r2_id": -0.03256918664096664,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "transfer \u2212 in-corpus r2_id": -0.03269783766047707,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "transfer \u2212 in-corpus r2_id": -0.030761624442315116,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "transfer \u2212 in-corpus r2_id": -0.03548478522842946,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "transfer \u2212 in-corpus r2_id": -0.043507397301143724,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "transfer \u2212 in-corpus r2_id": -0.05085101249818058,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "transfer \u2212 in-corpus r2_id": -0.0533291404526951,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "transfer \u2212 in-corpus r2_id": -0.05469107339486934,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "transfer \u2212 in-corpus r2_id": -0.05696694598061469,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "transfer \u2212 in-corpus r2_id": -0.05896341798664928,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "transfer \u2212 in-corpus r2_id": -0.06112645772110692,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "transfer \u2212 in-corpus r2_id": -0.06520283836127216,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "transfer \u2212 in-corpus r2_id": -0.06539726480923613,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "transfer \u2212 in-corpus r2_id": -0.06178139048273068,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "transfer \u2212 in-corpus r2_id": -0.06097235942185075,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "transfer \u2212 in-corpus r2_id": -0.06333768667134176,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "transfer \u2212 in-corpus r2_id": -0.06685537565248711,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "transfer \u2212 in-corpus r2_id": -0.06739264396152389,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "transfer \u2212 in-corpus r2_id": -0.06462631164375021,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "transfer \u2212 in-corpus r2_id": -0.0670696328974788,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "transfer \u2212 in-corpus r2_id": -0.06473188959141518,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "transfer \u2212 in-corpus r2_id": -0.06078446626265421,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "transfer \u2212 in-corpus r2_id": -0.058291469786555195,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "transfer \u2212 in-corpus r2_id": -0.0569942904673435,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 28.0,
+      "transfer \u2212 in-corpus r2_id": -0.05508666314192279,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "transfer \u2212 in-corpus r2_id": 9.769962616701378e-15,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "transfer \u2212 in-corpus r2_id": -0.009547716094404302,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "transfer \u2212 in-corpus r2_id": 0.000721121595659624,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "transfer \u2212 in-corpus r2_id": 0.0027552400419328382,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "transfer \u2212 in-corpus r2_id": -0.0014019853269707783,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "transfer \u2212 in-corpus r2_id": -0.004232187312992686,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "transfer \u2212 in-corpus r2_id": -0.0018473783632916296,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "transfer \u2212 in-corpus r2_id": -0.007713662902745222,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "transfer \u2212 in-corpus r2_id": -0.008944792109831345,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "transfer \u2212 in-corpus r2_id": -0.019814795917818095,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "transfer \u2212 in-corpus r2_id": -0.02639808581257752,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "transfer \u2212 in-corpus r2_id": -0.028435676615152672,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "transfer \u2212 in-corpus r2_id": -0.032495870772685786,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "transfer \u2212 in-corpus r2_id": -0.03492130583776376,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "transfer \u2212 in-corpus r2_id": -0.03851987221256359,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "transfer \u2212 in-corpus r2_id": -0.04139430332397509,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "transfer \u2212 in-corpus r2_id": -0.043625860106006664,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "transfer \u2212 in-corpus r2_id": -0.0393173479312211,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "transfer \u2212 in-corpus r2_id": -0.03726669995188592,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "transfer \u2212 in-corpus r2_id": -0.03559197414305992,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "transfer \u2212 in-corpus r2_id": -0.0402166438188285,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "transfer \u2212 in-corpus r2_id": -0.042744264661258136,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "transfer \u2212 in-corpus r2_id": -0.04142119861918381,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "transfer \u2212 in-corpus r2_id": -0.0398991768800705,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "transfer \u2212 in-corpus r2_id": -0.03690706805424182,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "transfer \u2212 in-corpus r2_id": -0.040210320558591084,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "transfer \u2212 in-corpus r2_id": -0.044280184252536325,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "transfer \u2212 in-corpus r2_id": -0.048750325573523545,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 28.0,
+      "transfer \u2212 in-corpus r2_id": -0.049315204668200274,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 58
+}
