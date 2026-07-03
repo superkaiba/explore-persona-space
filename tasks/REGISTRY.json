@@ -5794,8 +5794,8 @@
     "888": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/888",
-      "status": "approved",
+      "path": "tasks/running/888",
+      "status": "running",
       "title": "workflow-fix: context-hygiene rule for harmful-content bank files in agent specs"
     },
     "889": {
