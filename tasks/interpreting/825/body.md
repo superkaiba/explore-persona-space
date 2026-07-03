@@ -56,6 +56,7 @@ relates_to:
 | Track-M second user turn | claude-haiku-4-5, T = 1.0, 22 rotated user-persona briefs | plan §11 (tier-3 synthetic) |
 | Row filters | ≥ 8 content tokens, ≤ 2048 total tokens | plan §11 |
 | MLP probe | PCA-64 input, 1800 s/cell CPU budget | [#779](https://eps.superkaiba.com/tasks/779) `mlp_fit_predict` |
+| Per-position store cap | ≤64 positions/turn, peak layers only | plan §11 (storage bound; pilot ≥80% coverage) |
 | n per cell | 5000 (Track S) / 2000 (Track M) | [#779](https://eps.superkaiba.com/tasks/779) / plan §11 |
 | Models | Qwen2.5-7B (pretrained) vs Qwen2.5-7B-Instruct | plan |
 | Activation dtype | bf16 (plan deviation from fp16: fp16 max 65504 overflows Qwen residual outlier dims) | run log |
@@ -90,37 +91,37 @@ What is plotted: held-out R² of the ridge map by layer (all 28 layers) for the 
 
 > **Figure.** *The pretrained base model carries the single-turn linear map at 87.3% of instruct strength.* Held-out R² by layer: instruct 0.673 (95% CI 0.666–0.681) vs pretrained 0.588 (95% CI 0.579–0.598) at frozen layer 19; shuffle nulls ≈ −0.02 at every layer. n = 5000 prompts per cell.
 
-The map is not created by an explicit post-training stage: the pretrained checkpoint reaches 87.3% of instruct strength frozen-vs-frozen (selection read 0.598 at layer 27). Pretraining corpora contain chat-formatted text, so chat-data exposure is not ruled out. Non-spuriousness rests on the global-mean baseline (−0.0017) and the shuffle nulls; the random-projection arm (0.684 ≈ observed) is an invertible scramble that ridge is near-invariant to, so it verifies basis-independence only.
+The map is not created by an explicit post-training stage: the pretrained checkpoint reaches 87.3% of instruct strength frozen-vs-frozen (selection read 0.598 at layer 27). Pretraining corpora contain chat-formatted text, so chat-data exposure is not ruled out. Non-spuriousness rests on the global-mean baseline (−0.0017) and the shuffle nulls; the random-projection arm (0.684 ≈ observed) is an invertible scramble that ridge is near-invariant to, so it verifies basis-independence only. Per-example predictions were not persisted (cell aggregates and bootstrap draws only — deliberate size scoping; regenerable from the turnstore per the footer recipe), so no predicted-vs-actual scatter is shown.
 
 ### Two-turn conversation targets collapse the ridge map: best frozen-layer R² falls to +0.076 (instruct) and −0.461 (pretrained)
 
-What is plotted: best frozen-layer held-out R², one bar per two-turn within-cell map (model × format × target role); n = 2000 conversations per cell.
+What is plotted: best frozen-layer held-out R², one bar per within-cell map — the two single-turn cells (n = 5000) plus all eight two-turn cells (model × format × target role, n = 2000) — sorted by value, 95% bootstrap CI whiskers.
 
 ![Best frozen-layer held-out R-squared per two-turn within-cell map, bars per model and format](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745e62f4b6cbb510d529a8778cb0137b98522cc8/figures/issue_825/within_cell_best_frozen_r2.png)
 
 > **Figure.** *Two-turn targets collapse the ridge map.* Best frozen-layer held-out R² for the assistant cells: instruct/chat +0.076, instruct/naturalistic −0.078, pretrained/chat −0.461, pretrained/naturalistic −0.390; n = 2000 conversations per cell. The single-turn cells read 0.59–0.67 on the same rig.
 
-The collapse is not purely sample size: the single-turn instruct map at a matched n = 2000 subsample reads 0.321, far above the two-turn 0.093. The power curve is non-monotone (0.452 / 0.499 / 0.495 / 0.321 / 0.673 at n = 250–5000), and the two tracks change corpus, turn count, and n together, so the two-turn regime alone is not established as the cause. Per-position reads are late-layer dominated (layer 26 best at 12 of 12 positions, instruct/chat); selection argmaxes at layers 0–1 in three cells may reflect formatting/role information.
+Frozen-layer-19 reads with 95% CIs: instruct/chat +0.076 (0.052 to 0.098), instruct/naturalistic −0.078 (−0.106 to −0.050), pretrained/chat −0.461 (−0.504 to −0.415), pretrained/naturalistic −0.390 (−0.432 to −0.346); selection-symmetric nulls sit at −3.6 to −3.8. Not purely sample size: the single-turn map at a matched n = 2000 subsample reads 0.321 ≫ 0.093, though the power curve is non-monotone (0.452 / 0.499 / 0.495 / 0.321 / 0.673 at n = 250–5000) and the tracks change corpus, turn count, and n together. Per-position reads are late-layer dominated (layer 26 best at 12 of 12 positions, instruct/chat); layer-0–1 selection argmaxes in three cells may reflect formatting/role information.
 
 ### The collapse is nonlinearity, not absence: an MLP probe recovers R² 0.557 (instruct) and 0.487 (pretrained) where ridge reads +0.076 and −0.461
 
-What is plotted: layer-19 held-out R² for ridge vs the MLP probe on the two two-turn chat assistant cells; n = 2000 conversations per cell.
+What is plotted: layer-19 held-out R², ridge vs MLP bars side by side, for all four MLP-probed cells — the two single-turn cells (n = 5000) and the two two-turn chat assistant cells (n = 2000).
 
 ![Layer-19 held-out R-squared, ridge versus MLP probe, for the two two-turn chat assistant cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/72a249c79239ac8548681b6682ff83b16a06789f/figures/issue_825/ridge_vs_mlp_l19.png)
 
 > **Figure.** *An MLP probe recovers what ridge misses at layer 19.* Held-out R², MLP vs ridge: instruct/chat 0.557 vs 0.076; pretrained/chat 0.487 vs −0.461. Both cells ran to completion with full null draws. n = 2000 conversations per cell.
 
-Both two-turn chat cells completed within budget (all four frozen layers, full 5-draw nulls) — complete reads, not lower bounds. In the single-turn cells the MLP ≈ ridge (0.654 vs 0.673 instruct; 0.587 vs 0.588 pretrained at layer 19), so the single-turn map is essentially linear; the budget flag tripped only there, truncating layer-26 MLP null draws (3 usable of 5, both cells) with no observation missing. The MLP probe was not run for the naturalistic or user cells, so nonlinearity there is untested.
+Both two-turn chat cells completed within budget (all four frozen layers, full 5-draw nulls; layer-19 MLP shuffle nulls max −0.009 instruct / −0.008 pretrained, far below the observed 0.557 / 0.487) — complete reads, not lower bounds. In the single-turn cells the MLP ≈ ridge (0.654 vs 0.673 instruct; 0.587 vs 0.588 pretrained at layer 19), so the single-turn map is essentially linear; the budget flag tripped only there, truncating layer-26 MLP null draws (3 usable of 5, both cells) with no observation missing. The MLP probe was not run for the naturalistic or user cells, so nonlinearity there is untested.
 
 ### User-turn maps have no practical predictive power (R² −1.08 to −1.32) despite sitting above shuffle nulls
 
-What is plotted: held-out R² by layer for the four two-turn user-target cells (model × format), with layer-26 values annotated; n = 2000 conversations per cell.
+What is plotted: held-out R² by layer for all eight two-turn cells — assistant (solid) and user (dashed) curves for both models, one panel per format; n = 2000 conversations per cell.
 
 ![Held-out R-squared by layer for the four two-turn user-target cells, all deeply negative at late layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6c752ab6e3805bbc68d1d71e1987f2dc0b48e71b/figures/issue_825/m_track_layer_curves_role.png)
 
 > **Figure.** *User-target maps predict worse than the global mean at every late layer.* Held-out R² by layer for the four user cells; layer-26 values −1.08 to −1.32. The chat-panel layer-0 selection point (0.283) sits off the dominant curve and is nearly invisible at this scale; shuffle-null bands are not drawn. n = 2000 per cell.
 
-All four user cells read R² between −1.08 and −1.32 at layer 26 — worse than predicting the global mean — yet sit above their far more negative selection-symmetric nulls (−0.807 observed vs −2.368 null at layer 27): structure exists, practical predictive power does not. Teacher-forced NLL agrees (user 2.04–2.64 vs assistant 0.32–0.59). The second user turn is LLM-written (claude-haiku-4-5, 22 rotated briefs), so the null is established for LLM-simulated users; format sensitivity is observational only.
+All four user cells read R² between −1.08 and −1.32 at layer 26 (95% CIs spanning −1.02 to −1.38; per-cell selection-symmetric nulls −2.45 to −2.96) — worse than predicting the global mean — yet every cell sits above its null band: structure exists, practical predictive power does not. Teacher-forced NLL agrees (user 2.04–2.64 vs assistant 0.32–0.59). The second user turn is LLM-written (claude-haiku-4-5, 22 rotated briefs), so the null is established for LLM-simulated users; format sensitivity is observational only.
 
 ### Pretrained assistant→user transfer sign-flips across depth (ΔR² −0.62 at layer 14 to +0.23 at layer 26) — provisional
 
@@ -130,7 +131,13 @@ What is plotted: paired ΔR² (assistant-fit map applied to user targets, minus 
 
 > **Figure.** *Assistant→user transfer flips sign with depth in the pretrained model only.* Paired ΔR² at layers 14 / 18 / 19 / 26: pretrained −0.62 → +0.23; instruct negative at all four layers. n = 2000 conversations per cell; provisional (single seed).
 
-In the pretrained model the assistant→user delta flips sign with depth: −0.623 [−0.809, −0.448] at layer 14, −0.171 [−0.315, −0.024] at 18, +0.124 [+0.013, +0.242] at 19, +0.229 [+0.166, +0.293] at 26. The instruct model is negative at all four layers (−0.709 / −0.634 / −0.311 / −0.214), so the positive transfer is a pretrained-only observation — no mechanism claim. The paired baseline is the previous same-role turn, not validated as topic-only; single seed, n = 2000 — provisional.
+In the pretrained model the assistant→user delta flips sign with depth: −0.623 (95% CI −0.809 to −0.448) at layer 14, −0.171 (−0.315 to −0.024) at 18, +0.124 (+0.013 to +0.242) at 19, +0.229 (+0.166 to +0.293) at 26. The instruct model is negative at all four layers (−0.709 / −0.634 / −0.311 / −0.214; every 95% CI excludes zero — whiskers in the figure), so the positive transfer is a pretrained-only observation — no mechanism claim. The paired baseline is the previous same-role turn, not validated as topic-only; single seed, n = 2000 — provisional.
+
+What is plotted (underlying data): the full 1000-draw bootstrap distribution of paired ΔR² per layer, violins for both models' assistant→user cells — the raw draws behind the bar-and-whisker summary above.
+
+![Bootstrap distributions of paired delta R-squared for assistant-to-user transfer, violins per layer and model](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1a9a23418e671e38d985226fee93586f2a5a2e08/figures/issue_825/crossrole_delta_r2_bootstrap_distributions.png)
+
+> **Figure.** *Underlying bootstrap draws for the transfer deltas.* 1000 paired-bootstrap ΔR² draws per cell-layer; medians marked. The pretrained distributions cross zero between layers 18 and 19; instruct stays below zero at all four layers. n = 2000 conversations per cell.
 
 ### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render integrity PASS on regenerated evidence
 
