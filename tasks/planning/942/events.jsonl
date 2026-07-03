@@ -4,3 +4,4 @@
 {"ts": "2026-07-03T19:39:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T21:38:46Z", "kind": "epm:progress", "version": 2, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cmr5c0h0toc0wwc0usj3rzf0l reason=operator stop via spawn_session.py stop"}
 {"ts": "2026-07-03T22:04:04Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail=0 n_warn=0; plan v1 (mechanical pre-pass, verify_plan.py; kind-exempt checks SKIPped, N/A escapes accepted)"}
+{"ts": "2026-07-03T22:16:38Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=planning-critique round=1 subagent=critic-ensemble worktree=repo-root — Phase 2 dispatched: 3 Claude critics + consistency-checker + 3 codex-critic composers (fact-checker: 10/10 CONFIRMED; verify_plan: 0 FAIL/0 WARN)"}
