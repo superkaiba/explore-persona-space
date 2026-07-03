@@ -503,7 +503,9 @@ def _atomic_write_json(path: Path, obj: Any) -> None:
     rename is atomic on POSIX) — the interrupt-safe checkpoint contract (§1b).
     """
     path = Path(path)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    # Per-PID tmp name: concurrent sessions share ~/.task-workflow files (the
+    # headroom snapshot), and a fixed tmp collides across writers mid-write.
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
     with open(tmp, "w") as f:
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)

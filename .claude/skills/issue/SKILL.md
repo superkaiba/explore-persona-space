@@ -854,7 +854,7 @@ same Step-0 guards itself.
 
 ```bash
 uv run python scripts/task.py view <N> --json | uv run python -c \
-  "import json,sys; print(json.load(sys.stdin).get('frontmatter',{}).get('workflow') or 'v1')"
+  "import json,sys; print((json.load(sys.stdin).get('frontmatter') or {}).get('workflow') or 'v1')"
 # → "v2"  : announce "Task #<N> is workflow: v2 — delegating to issue-v2." then
 #           invoke the Skill tool `issue-v2` with the same task number <N> and STOP
 #           (do NOT run any step below; issue-v2 owns the whole lifecycle).
