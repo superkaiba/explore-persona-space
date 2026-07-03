@@ -418,17 +418,24 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 
 - **check 25** (`check_audit_availability_claims_match_hf`): a prose claim
   that a data artifact "was not uploaded" / "cannot be audited" /
-  "unavailable for audit" must NOT be contradicted by that artifact
+  "unavailable for audit" — or, since #942, a LIVE quota-hold denial
+  ("remain(s) on the pod", "quota-held", "under/pending/behind/blocked on
+  the ... quota hold", "upload 403"; present-tense/stative only, resolved
+  narratives never fire) — must NOT be contradicted by that artifact
   actually existing on the HF data repo. Scans the fence-stripped body for
   a line carrying BOTH an availability-denial phrase AND a known
   data-artifact class spelled in PROSE (raw-completions / install-probe /
-  training-mix / on-policy pool / analysis-tensor — hyphen/space/singular
-  variants mapped to the canonical underscore-plural HF-path token
+  training-mix / on-policy pool / analysis-tensor / unreduced-activation-
+  store / reduced-store-or-summary / fitted-map — hyphen/space/singular
+  variants mapped to the canonical HF-path token
   `raw_completions` / `install_probes` / `mixes` / `onpolicy_pools` /
-  `analysis_tensors`); for each, lists the body's HF Hub revision-pinned
+  `analysis_tensors` / `unreduced` / `reduced` / `maps`); for each, lists
+  the body's HF Hub revision-pinned
   URLs (the check-23 set) ONCE per (repo, sha) and asks whether ≥1 file
-  UNDER the URL's path-prefix carries the canonical token as a path
-  component at ANY depth (a denial usually links the repo TREE ROOT while
+  UNDER the URL's path-prefix carries the canonical token as an
+  ALPHANUMERIC-BOUNDARY path component at ANY depth (`/` and `_` count as
+  boundaries; never a bare substring, so `reduced` cannot match
+  `unreduced/`; a denial usually links the repo TREE ROOT while
   the file lives several levels down at `<root>/…/<token>/…`, the #653
   shape). If ANY HF URL yields such a file via a BOUNDED direct
   tree-endpoint GET (`_hf_tree_get`, self-paginated under a page/time cap;
@@ -438,13 +445,25 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   any network / auth / HTTP error surface as an `unverified` note on the
   PASS line, never a FAIL; only a SUCCESSFUL listing returning ≥1 matching
   file is the FAIL. Vacuous PASS when there is no denial-near-artifact line
-  or no HF Hub revision-pinned URL to reconcile against. Body-wide +
+  or no HF Hub revision-pinned URL to reconcile against — so the check
+  protects ONLY bodies that themselves pin a covering HF URL: a false
+  denial in a body with no covering revision-pinned URL still PASSes
+  vacuously (pre-existing check-25 architecture shared by every denial
+  family and artifact class; NOT closed by the #942 vocabulary extension —
+  the incident-time #813 v1 body had no covering URL and would still
+  PASS). Body-wide +
   fence-stripped scan (the denial prose lives in `## Methodology` /
-  `## Results` / the Reproducibility footer). Incident: task #653 round 6
+  `## Results` / the Reproducibility footer). Incidents: task #653 round 6
   asserted the per-cell install-probe firing/non-firing completions "were
   not separately uploaded ... cannot be audited at the record level" while
   those files DID exist on HF under the body's own linked data-repo tree —
-  caught by hand at round-6 interp-critique, mechanizable into this check.
+  caught by hand at round-6 interp-critique, mechanizable into this check;
+  task #813 v1 asserted the unreduced store / reduced summaries / fitted
+  maps "remain on the pod under an HF public-storage quota hold (upload
+  403)" while all 24,206 files were on HF at the body-pinned revision —
+  the quota-hold denial family + `unreduced`/`reduced`/`maps` classes +
+  the module-level line pre-filter (`_AUDIT_LINE_PREFILTER_RE`) + the
+  boundary-match fix were added for it (#942).
 
 - **check 26** (`check_figure_panel_prose_vs_sidecar`): a figure's
   what-is-plotted prose (scoped to its enclosing `### <result>` H3 + the
@@ -5422,14 +5441,40 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
 # ("themselves were not separately uploaded"). Case-insensitive; the
 # apostrophe in "wasn't" / "can't" matches both the ASCII `'` and the curly
 # right-single-quote (real clean-result bodies use either) via `_APOS`.
+#
+# The #813 quota-hold family (the last four alternations) covers a LIVE
+# pod-residency / storage-quota claim of non-availability ("remain on the
+# pod", "quota-held", "under/pending/behind/blocked on the ... quota hold",
+# "upload 403") \u2014 present-tense/stative shapes only, so a resolved narrative
+# never fires (see the inline comment in the regex).
 _APOS = "['\u2019]"  # ASCII apostrophe or curly right-single-quote (U+2019)
 _AUDIT_DENIAL_RE = re.compile(
     r"(?:not\s+(?:separately\s+)?uploaded"
     r"|was\s+not\s+uploaded|wasn" + _APOS + r"t\s+uploaded"
     r"|cannot\s+be\s+audited|cannot\s+audit|can" + _APOS + r"t\s+be\s+audited"
-    r"|(?:un|not\s+)available\s+for\s+audit)",
+    r"|(?:un|not\s+)available\s+for\s+audit"
+    # The #813 family — a LIVE quota-hold / pod-residency claim of
+    # non-availability. Present-tense / stative shapes ONLY (deliberately NOT
+    # `remained ... on the pod` and NOT a bare `quota hold` without a stative
+    # preposition): a resolved narrative ("after the quota hold cleared, all
+    # files were uploaded") is not a denial and must not fire.
+    r"|\bremain(?:s)?\s+on\s+the\s+pod\b"
+    r"|\bquota[ _-]held\b"
+    r"|(?:under|pending|behind|blocked\s+(?:on|by))\s+(?:the\s+|an?\s+)?"
+    r"(?:[\w-]+\s+){0,4}?quota\s+hold"
+    r"|\bupload\s+403\b)",
     re.IGNORECASE,
 )
+# Cheap per-line pre-filter: every _AUDIT_DENIAL_RE alternation family
+# contains >=1 of these substrings ("upload" covers uploaded / upload 403 /
+# unuploaded; "quota" the hold/held family; "pod" the remain-on-the-pod
+# family). Pinned in sync with the denial regex by
+# test_prefilter_covers_every_denial_family. Before #942 the pre-filter was an
+# inline `"uploaded" not in line and "audit" not in line` — which skipped the
+# #813 line-51 phrasing ("... ride the unreduced activation store (quota-held
+# on the pod at write time)", neither token present) before the denial regex
+# ever ran, so extending the regex alone would have been dead code there.
+_AUDIT_LINE_PREFILTER_RE = re.compile(r"upload|audit|quota|\bpod\b", re.IGNORECASE)
 # Artifact classes whose HF upload-path convention is known. A denial claim
 # co-located (same line) with one of these names a concrete, mechanically
 # probe-able artifact class — the only case this check fires on (a bare
@@ -5453,6 +5498,27 @@ _AUDIT_ARTIFACT_CLASSES: dict[str, re.Pattern[str]] = {
         r"on[ _-]?policy[ _-](?:pools?|completions?)|onpolicy[ _-]pools?", re.IGNORECASE
     ),
     "analysis_tensors": re.compile(r"analysis[ _-]tensors?", re.IGNORECASE),
+    # #813 (issue813_mapchange_substrate) layout: unreduced/ (per-question
+    # activation stores), reduced/ (per-question stores + summaries), maps/
+    # (fitted maps). Prose spellings from the #813 v1 body verbatim. The
+    # leading \b on "reduced" cannot fire inside "unreduced" (no word
+    # boundary there); bare `\bstores?\b` and bare singular `map\b` are
+    # deliberately EXCLUDED (common noun/verb in analysis prose).
+    "unreduced": re.compile(
+        r"\bunreduced\s+(?:activation\s+|per[ -]question\s+)?stores?\b"
+        r"|\bactivation\s+stores?\b",
+        re.IGNORECASE,
+    ),
+    "reduced": re.compile(
+        r"\breduced\s+(?:per[ -]question\s+)?stores?\b|\breduced\s+summar(?:y|ies)\b",
+        re.IGNORECASE,
+    ),
+    "maps": re.compile(
+        r"\bfitted[ _-]maps?\b"
+        r"|\b(?:behavior|linear|averaged|per[ -]example|factored)[ _-]maps?\b"
+        r"|\bmaps\b",
+        re.IGNORECASE,
+    ),
 }
 
 
@@ -5497,14 +5563,28 @@ def _audit_denied_artifact_classes_in(line: str) -> list[str]:
     return out
 
 
+def _audit_keyword_path_re(keyword: str) -> re.Pattern[str]:
+    """Alphanumeric-boundary matcher for a canonical HF-path ``keyword``
+    (check 25): the keyword must appear as a path-component-like token, NOT a
+    bare substring — so ``reduced`` never matches ``unreduced/``. ``/``, ``_``,
+    ``.`` and ``-`` all count as boundaries (the legacy tokens keep matching
+    their real path shapes: ``.../raw_completions/...``, ``..._mixes.jsonl``);
+    an adjacent letter or digit does not. Callers search ``path.lower()``; the
+    keyword is lowercased here, so the match is case-insensitive.
+    """
+    return re.compile(r"(?<![a-z0-9])" + re.escape(keyword.lower()) + r"(?![a-z0-9])")
+
+
 def _hf_probe_keyword(
     repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
 ) -> tuple[str, str]:
     """Bounded direct-GET depth-agnostic keyword probe (check 25).
 
     Lists the URL's OWN sub-tree (`recursive=True` scoped to ``path_prefix``,
-    NOT the whole repo) and substring-matches ``keyword`` in any FILE path
-    under the prefix. The keyword can be nested at ANY depth (#653: the denial
+    NOT the whole repo) and matches ``keyword`` as an ALPHANUMERIC-BOUNDARY
+    path component (``_audit_keyword_path_re`` — never a bare substring, so
+    ``reduced`` cannot match ``unreduced/``; #942) in any FILE path under the
+    prefix. The keyword can be nested at ANY depth (#653: the denial
     linked the tree ROOT while the file lives several levels down), so the
     scoped recursive listing is followed across Link-header pages OURSELVES
     under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
@@ -5514,7 +5594,7 @@ def _hf_probe_keyword(
     check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
     denial against a revision that does not exist).
     """
-    kw = keyword.lower()
+    kw_re = _audit_keyword_path_re(keyword)
     needle = path_prefix.strip("/")
     url = _hf_tree_url(repo_id, repo_type, sha, needle)
     params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
@@ -5530,7 +5610,11 @@ def _hf_probe_keyword(
             return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
         for e in res.entries:
             path = e.get("path", "")
-            if e.get("type") == "file" and kw in path.lower() and _hf_under_prefix(path, needle):
+            if (
+                e.get("type") == "file"
+                and kw_re.search(path.lower())
+                and _hf_under_prefix(path, needle)
+            ):
                 return "pass", path  # denial is FALSE → body-level FAIL
         pages += 1
         if (
@@ -5562,12 +5646,15 @@ def _hf_keyword_present_under_prefix(
     Lists the URL's OWN sub-tree at the cited revision (a BOUNDED direct
     tree-endpoint GET with self-paginated recursion under a page/time cap —
     ``_hf_probe_keyword`` → ``_hf_tree_get``, NOT the unbounded whole-repo
-    ``list_repo_files``, #733) and substring-matches the keyword anywhere in
-    the path, restricted to files under ``path_prefix``. A keyword nested at
-    ANY depth below the prefix counts — the #653 denial linked the repo TREE
+    ``list_repo_files``, #733) and matches the keyword as an
+    alphanumeric-boundary path component anywhere in the path
+    (``_audit_keyword_path_re`` — `/` and `_` count as boundaries; NOT a bare
+    substring, so ``reduced`` cannot match ``unreduced/``; #942), restricted
+    to files under ``path_prefix``. A keyword nested at ANY depth below the
+    prefix counts — the #653 denial linked the repo TREE
     ROOT (`…/issue653_install-validated-reladder`) while the file lives several
     levels down at `…/raw_completions/armB/install_probes/cell0/…`, so a fixed
-    `<prefix>/<keyword>` candidate path would miss it; substring-on-the-listing
+    `<prefix>/<keyword>` candidate path would miss it; matching on the listing
     is depth-agnostic.
 
     Returns ``(verdict, matched_path)`` with verdict one of:
@@ -5620,6 +5707,25 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
     hand; this check mechanizes it so a future analyzer's honest-but-wrong
     non-availability claim FAILs before promotion.
 
+    The #813 pattern (the quota-hold family, added by #942): the v1 body
+    asserted the unreduced store / reduced summaries / fitted maps "remain
+    on the pod under an HF public-storage quota hold (upload 403)" while
+    `epm:upload-verification` + an independent listing proved all 24,206
+    artifacts WERE on HF at the body-pinned revision. Two vocabularies were
+    missing (the quota-hold denial family in `_AUDIT_DENIAL_RE`; the
+    `unreduced` / `reduced` / `maps` classes in `_AUDIT_ARTIFACT_CLASSES`),
+    and the old inline pre-filter (`"uploaded" not in line and "audit" not
+    in line`) skipped quota-hold phrasings before the regex ever ran — the
+    pre-filter is now the module-level `_AUDIT_LINE_PREFILTER_RE`, kept in
+    sync with every denial-alternation family by
+    `test_prefilter_covers_every_denial_family`. NOTE the scoping: this
+    check probes ONLY revision-pinned HF URLs the body itself carries, so it
+    protects a body that pins a covering HF URL; the #813 v1 incident-time
+    body carried the denial with NO covering pinned URL and would still PASS
+    vacuously — the no-URL escape is pre-existing check-25 architecture,
+    shared by every denial family and artifact class, and is NOT closed by
+    the #942 vocabulary extension.
+
     Mechanism (standalone — no `events.jsonl` / marker read, keeping the
     verifier self-contained): scan the fence-stripped body line by line for
     a line carrying BOTH (a) an availability-denial phrase
@@ -5660,8 +5766,10 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
     # HF-path tokens.
     suspect_keywords: list[str] = []
     for line in stripped.splitlines():
-        if "uploaded" not in line.lower() and "audit" not in line.lower():
-            continue  # cheap pre-filter before the proximity scan
+        if not _AUDIT_LINE_PREFILTER_RE.search(line):
+            continue  # cheap pre-filter before the proximity scan (kept in
+            # sync with every _AUDIT_DENIAL_RE alternation family — see the
+            # constant's comment + test_prefilter_covers_every_denial_family)
         for canonical in _audit_denied_artifact_classes_in(line):
             if canonical not in suspect_keywords:
                 suspect_keywords.append(canonical)
