@@ -66,6 +66,17 @@ _SUMMARY_LABELS = {
     "maxp": "max-pool over answer tokens",
     "im_end": "turn-end token",
     "turn_nl": "newline after turn end",
+    # user-header-newline-summary round (round 3) — keep in sync with
+    # scripts/issue810_uh_promotion_figures.py::ROW_LABELS
+    "uh_im_start": "header start token",
+    "uh_user": "header 'user' token",
+    "uh_nl": "header newline",
+    "uh_mean3": "header mean (3 tokens)",
+    "uh_max3": "header max (3 tokens)",
+    "bnd_mean5": "boundary mean (5 tokens)",
+    "bnd_max5": "boundary max (5 tokens)",
+    "mean_xbnd": "whole-turn mean (answer + boundary)",
+    "maxp_xbnd": "whole-turn max-pool (answer + boundary)",
 }
 
 _METHOD_LABELS = {
