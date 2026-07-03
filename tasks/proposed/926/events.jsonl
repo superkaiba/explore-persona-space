@@ -1,2 +1,3 @@
 {"ts": "2026-07-03T11:29:06Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-07-03T14:03:49Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "[autonomous_session_watch:proposed-infra-sweep-dispatch] watcher auto-dispatched ripe proposed infra task (no PM queue entry)"}
+{"ts": "2026-07-03T14:14:23Z", "kind": "epm:auto-defaults", "version": 1, "by": "unknown", "note": "Step 0b: drafted body from origin_prompt (verbatim spec present at filing) + code ground truth (main vs issue-841/issue-922 branch state). Autonomous session; empty-body gate resolved without user input because origin_prompt carries the full spec — no user-unique fact was missing."}
