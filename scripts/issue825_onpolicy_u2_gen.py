@@ -544,7 +544,9 @@ def run_wiring_check(args) -> None:
             }
             for i in range(take)
         ]
-        bs = 2 if args.tiny_model_dir else 4
+        # bs 8 matches the extraction path's measured throughput (same forward
+        # shape); env-tunable without a code change.
+        bs = 2 if args.tiny_model_dir else int(os.environ.get("EPS_WIRING_BS", "8"))
         own = _batched_u2_nll(model, tokenizer, own_convs, fmt, bs)
         shuf = _batched_u2_nll(model, tokenizer, shuf_convs, fmt, bs)
         own_mean = float(np.mean(own))
