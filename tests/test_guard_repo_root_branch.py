@@ -667,6 +667,61 @@ def test_mangled_comment_separator_split_fails_closed():
 
 
 # ---------------------------------------------------------------------------
+# #897 round 2 — comment-tail waiver spoof (concern id
+# comment-tail-waiver-spoof, the round-1 BLOCKER). Bash never executes an
+# unquoted `#` comment tail, but the raw scan previously READ it — so a
+# trailing comment carrying a waiver token (`git -C ...`, `--staged`) or a
+# latch shape (`cd .claude/worktrees/...`) made the hook exit 0 while bash
+# executed the destructive head. The driver loop now strips the
+# whitespace-anchored ` #` tail of each clause before any latch / waiver /
+# gate / classification read; these rows pin the spoof shapes CLOSED.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git restore . # git -C /tmp status",  # comment `-C` cannot waive
+        "git restore . # --staged",  # comment `--staged` cannot flip the allow-arm
+        "git checkout . # git -C /tmp status",
+        "git clean -fd # git -C /tmp status",
+        "git reset --hard # git -C /tmp status",
+        # control: a plain comment tail (no waiver token) also blocks — the
+        # spoof required a waiver token in the tail, the strip removes both
+        "git restore . # plain comment no waiver tokens",
+        # comment-tail LATCH spoof: the `cd .claude/worktrees/x` lives in the
+        # comment tail of clause 1, so it must NOT latch scope across the &&
+        "echo hi # cd .claude/worktrees/x && git restore .",
+    ],
+)
+def test_comment_tail_cannot_spoof_waiver_or_allow_arm(cmd):
+    assert _run(cmd) == 2
+
+
+@on_main
+def test_commit_message_checkout_realpath_prose_blocks_known_limitation():
+    # KNOWN LIMITATION (documented in the script header, round-2 concern id
+    # header-tight-anchor-claim-overbroad): the bare-pathspec existence probe
+    # rides the LEGACY loose `\bgit\b[^;&|]*\bcheckout\b` anchor, so prose
+    # containing `checkout <path>` where `<path>` names a REAL repo file trips
+    # WITHOUT a `git checkout` bigram — this `-m` message blocks (fails
+    # CLOSED). Remediation: `git commit -F <file>` / `--file <path.md>`.
+    assert _run('git commit -m "fix checkout CLAUDE.md handling"') == 2
+
+
+def test_abs_path_bare_pathspec_residual_gap_allows():
+    # RESIDUAL GAP (vii), documented in the script header (round-2 concern id
+    # abs-path-bare-pathspec-residual-unnamed): an ABSOLUTE-path bare pathspec
+    # inside the repo evades the existence probe (`cat-file -e "HEAD:/abs"`
+    # fails; `[ -e "$REPO/$arg" ]` concatenates the repo prefix onto the
+    # already-absolute path) so the revert is ALLOWED (fail-open) while git
+    # would revert the file. Pinned as CURRENT behavior, deliberately NOT
+    # closed this round; closable post-v1 by stripping a `$REPO/` prefix from
+    # the arg before probing. NOT @on_main: the allow must hold in either
+    # repo-root HEAD state.
+    assert _run("git checkout /home/thomasjiralerspong/explore-persona-space/CLAUDE.md") == 0
+
+
+# ---------------------------------------------------------------------------
 # MUST ALLOW — #897 allow-side: index-only restore, dry-run clean, the safe
 # stash alternative, per-clause `-C` waivers, cd-latches, tight-anchor
 # non-matches, comment clauses, and unresolvable bare args. NOT guarded by
@@ -695,6 +750,10 @@ def test_mangled_comment_separator_split_fails_closed():
         "git add docs/notes-clean.md",  # `clean` inside a filename, no force flag
         "uv run python scripts/clean_experiment_downloads.py 897 --apply",  # no `git` word
         "git switch main",  # unchanged allow-arm
+        # -- #897 round 2: comment-tail strip allow-side parity ---------------
+        "git clean -n # -f",  # comment `-f` cannot force-block a dry run
+        "git -C .claude/worktrees/issue-1 clean -fdx # cleanup pass",  # waiver + comment
+        "git switch main # back to main",  # comment tail no longer breaks the allow-arm
         "# git checkout .",  # comment-clause skip
         # the SKILL.md Step 10d fence shape: cd + a comment SPELLING a gated
         # form + a benign git command — the comment clause is skipped

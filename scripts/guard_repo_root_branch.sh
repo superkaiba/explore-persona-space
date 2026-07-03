@@ -61,7 +61,14 @@
 # `git <verb>` bigram anchor (`git [flags] restore|clean|reset|checkout`), so
 # plain-English "restore"/"clean"/"reset" inside a `-m` message (e.g.
 # `git commit -m "restore defaults"`) does NOT trip — only a full
-# `git <verb>` command literal does. A quote-strip
+# `git <verb>` command literal does. EXCEPTION (round-2 concern id
+# header-tight-anchor-claim-overbroad): the bare-pathspec EXISTENCE PROBE in
+# the branch-arg classifier rides the LEGACY loose anchor
+# (`\bgit\b[^;&|]*\bcheckout\b`), so prose containing `checkout <path>` where
+# `<path>` names a REAL repo file trips WITHOUT a `git checkout` bigram —
+# `git commit -m "fix checkout CLAUDE.md handling"` is BLOCKED (fails
+# closed; test-pinned). Same remediation: `git commit -F <file>` / `--file`.
+# A quote-strip
 # pre-pass was tried (round 1 of #796) and reverted: stripping quoted spans
 # BEFORE parsing silently hid REAL quoted git refs (`git checkout "HEAD~1"`,
 # `git switch "main"`) from the detectors — a leak of the exact class this
@@ -69,6 +76,20 @@
 # shell-syntax-aware strip is not safe to do in a bash regex, so the raw-scan
 # behavior (correct on git refs, over-eager on note-text literals) is the
 # deliberate trade-off. See #796 round-2 report.
+#
+# COMMENT TAILS (#897 round 2) are the one exception to the raw scan: bash
+# never EXECUTES an unquoted `#` comment tail, but reading it let trailing
+# comment text WAIVE an executed destructive command (`git restore . # git -C
+# /tmp status` exited 0 — fail-OPEN, the opposite direction from every other
+# raw-scan trade-off). Each clause therefore has its whitespace-anchored ` #`
+# tail STRIPPED before any latch / waiver / gate / classification read. The
+# strip does not shell-parse quotes (deliberately — quote-parity detection
+# would let an odd apostrophe before the `#` disable the strip and resurrect
+# the spoof), so a QUOTED argument containing ` # ` also truncates: harmless
+# for non-gated verbs (`git commit -m "see #841"` loses its tail and stays
+# allowed), fail-closed for allows (truncation cannot ADD an allow token),
+# and fail-open only for the residual-gap-(viii) shape (`git clean "x # y"
+# -f` — the force flag after a quoted ` # ` becomes invisible).
 #
 # <!-- known residual gaps (#897, accepted + documented) -->
 # (i)   `git checkout main <path>` (a pathspec after the `main` allow-arm with
@@ -91,6 +112,24 @@
 #       (sync_repo_root.py's autostash depends on it). Incident responders:
 #       a stash produces the same "file snapped back to HEAD" symptom with
 #       the data recoverable via `git stash list`.
+# (vii) An ABSOLUTE-path bare pathspec inside the repo (`git checkout
+#       /home/.../explore-persona-space/CLAUDE.md`) evades the existence
+#       probe — `cat-file -e "HEAD:/abs/..."` fails and `[ -e "$REPO/$arg" ]`
+#       concatenates the repo prefix onto the already-absolute path — so the
+#       revert is ALLOWED (fail-open) while git reverts the file
+#       (round-2 concern id abs-path-bare-pathspec-residual-unnamed;
+#       test-pinned). Closable post-v1 by stripping a `$REPO/` prefix from
+#       the arg before probing.
+# (viii) A QUOTED argument containing whitespace-anchored ` # ` hides
+#       everything after it from the detectors (the round-2 comment-tail
+#       strip cuts at the first whitespace-anchored `#` without
+#       shell-parsing quotes), so `git clean "x # y" -f` is allowed while
+#       bash executes a force clean. ~zero accidental probability under the
+#       cooperative-agent threat model (requires a quoted argument
+#       containing ` # ` AND a destructive flag after it); the alternative
+#       (quote-parity comment detection) re-opens the comment-tail
+#       allow-spoof on any odd-apostrophe prefix, which is the worse
+#       direction.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -398,6 +437,27 @@ while IFS=$'\t' read -r sep clause; do
   # classifies — that mis-split fails CLOSED (blocks), the safe direction.
   # (The awk splitter already stripped leading whitespace from each clause.)
   case "$clause" in "#"*) continue ;; esac
+
+  # (#897 round 2) Strip the unquoted comment TAIL of the clause before ANY
+  # latch / waiver / gate / classification read. Bash never EXECUTES text
+  # after a whitespace-anchored `#`, but the raw scan previously READ it —
+  # so trailing comment text could SPOOF the `-C` waiver, the restore
+  # `--staged` allow-arm, or a `cd`-latch: `git restore . # git -C /tmp
+  # status` exited 0 while bash executed the destructive revert (the round-2
+  # BLOCKER class, concern id comment-tail-waiver-spoof). Stripping the tail
+  # makes every downstream read see (an approximation of) exactly what bash
+  # executes: comment text can never GRANT an allow, a comment SPELLING a
+  # gated form no longer false-blocks (`git clean -n # -f` is a dry-run and
+  # now allows), and the greedy checkout-arg extraction can no longer be
+  # steered by comment text. This is NOT the reverted #796 quote-strip:
+  # quoted spans are PRESERVED — only a whitespace-anchored ` #` tail is cut,
+  # without shell-parsing quotes, so a QUOTED ` # ` argument also truncates
+  # (see the header known-limitation paragraph + residual gap (viii); a `#`
+  # glued to non-space text, e.g. `path#frag`, never matches). Truncation is
+  # fail-closed for allows (removing text cannot add an allow token) and can
+  # err fail-open ONLY in the quoted-` # ` residual (viii).
+  clause=$(printf '%s' "$clause" | sed -E 's/[[:space:]]#.*$//')
+  [ -n "$clause" ] || continue
 
   # A `cd` into a worktree / /tmp latches scope forward ONLY across a following
   # `&&` clause. Latch and continue — this clause runs the `cd`, not a git
