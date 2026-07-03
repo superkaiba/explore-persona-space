@@ -5976,8 +5976,8 @@
     "910": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/910",
-      "status": "running",
+      "path": "tasks/reviewing/910",
+      "status": "reviewing",
       "title": "workflow-fix: plan-time gates measure per-item serialization/IO wall-time; broaden 'left serial' beyond fits"
     },
     "911": {
