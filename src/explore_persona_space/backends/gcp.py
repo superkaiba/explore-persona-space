@@ -139,6 +139,7 @@ from explore_persona_space.backends.base import (
     RunHandle,
     RunSpec,
     recommend_lane_next_interval,
+    validate_lane_suffix,
 )
 
 logger = logging.getLogger(__name__)
@@ -748,14 +749,35 @@ def attempt_id_for(spec: RunSpec) -> str:
 # ---------------------------------------------------------------------------
 
 
-def instance_name_for(issue: int) -> str:
+def lane_suffix_for(spec: RunSpec) -> str | None:
+    """Validated per-lane suffix from ``spec.extra['lane_suffix']`` (#934), or None.
+
+    Raises ``ValueError`` on a malformed value (fail loud, never strip)
+    so a bad suffix can never silently derive a divergent instance name.
+    """
+    raw = spec.extra.get("lane_suffix")
+    if not raw:
+        return None
+    return validate_lane_suffix(str(raw))
+
+
+def instance_name_for(issue: int, lane_suffix: str | None = None) -> str:
     """Canonical GCE instance name for a `/issue` run.
 
-    ``eps-issue-<N>`` matches the prefix the GCP stale-VM reaper greps
-    for. Mirrors RunPod's ``pod-<N>`` shape (issue-keyed, one-instance-
-    per-issue).
+    ``eps-issue-<N>[-<lane_suffix>]`` (#934: the optional suffix lets two
+    concurrent GCP lanes for one issue coexist). The unsuffixed form
+    matches the prefix the GCP stale-VM reaper greps for and mirrors
+    RunPod's ``pod-<N>`` shape (issue-keyed, one-instance-per-lane); a
+    suffixed name keeps the ``eps-issue-`` prefix, so the janitor's
+    prefix classification still covers it. Raises ``ValueError`` when
+    the composed name exceeds the 63-char RFC1035 cap (belt-and-
+    suspenders behind the tighter attempt-label budget in
+    ``base.validate_lane_suffix``).
     """
-    return f"eps-issue-{issue}"
+    name = f"eps-issue-{issue}" + (f"-{lane_suffix}" if lane_suffix else "")
+    if len(name) > 63:
+        raise ValueError(f"GCE instance name {name!r} exceeds the 63-char RFC1035 cap")
+    return name
 
 
 def workload_dir_for(config: GcpConfig, issue: int) -> str:
@@ -1998,7 +2020,7 @@ def render_create_argv(
     boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
     boot_disk_type = spec.extra.get("boot_disk_type") or config.default_boot_disk_type
     target_zone = zone or config.primary_zone
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
 
     # GPUs cannot live-migrate (gcloud rejects MIGRATE on accelerator VMs), so
     # accelerator VMs MUST be TERMINATE. A CPU-only machine (gpu_count==0, #677)
@@ -2760,11 +2782,14 @@ def reconnect_or_none(
     config: GcpConfig,
     runner: GcloudRunner,
 ) -> RunHandle | None:
-    """Return a handle for an existing live ``eps-issue-<N>`` instance, or None.
+    """Return a handle for an existing live ``eps-issue-<N>[-<lane_suffix>]`` instance, or None.
 
     Idempotency hinge: before any ``instances create`` call, this looks
-    up the canonical instance name via ``gcloud compute instances list
-    --filter='name=eps-issue-<N>'``. A live instance (status RUNNING,
+    up the canonical instance name (per-lane suffixed when
+    ``spec.extra['lane_suffix']`` is set, #934) via ``gcloud compute
+    instances list --filter='name=eps-issue-<N>[-<suffix>]'`` — so a
+    suffixed lane never reconnects to a sibling lane's instance. A live
+    instance (status RUNNING,
     PROVISIONING, STAGING, STOPPING) returns a handle. A TERMINATED
     instance is treated as "not live" (the backend will create a fresh
     one); no instance returns None.
@@ -2800,7 +2825,7 @@ def reconnect_or_none(
     (re-run the same command; idempotent by design, the #736 exit-75
     precedent), never a silent reconnect and never a delete.
     """
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
     argv = render_list_argv(config=config, name_filter=f"name={name}")
     result = runner(argv)
     if result.returncode != 0:
@@ -2928,7 +2953,7 @@ def _stale_named_instance_or_none(
     config: GcpConfig,
     runner: GcloudRunner,
 ) -> StaleNamedInstance | None:
-    """Return a stale non-live record blocking the ``eps-issue-<N>`` name, or None.
+    """Return a stale non-live record blocking the ``eps-issue-<N>[-<lane_suffix>]`` name, or None.
 
     Called by :meth:`GcpBackend.launch` ONLY after
     :func:`reconnect_or_none` has already returned ``None`` (no LIVE
@@ -2971,7 +2996,7 @@ def _stale_named_instance_or_none(
           orchestrator retries the launch (whose reconnect will then catch
           the now-observable live instance).
     """
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
     result = runner(render_list_argv(config=config, name_filter=f"name={name}"))
     if result.returncode != 0:
         raise GcpProbeError(
@@ -4029,7 +4054,7 @@ class GcpBackend(ComputeBackend):
         # Successful create. Build the handle + thread the artifact
         # declaration through handle.extra. The handle name matches
         # the gcloud name (idempotent reconnect uses it).
-        instance_name = instance_name_for(spec.issue)
+        instance_name = instance_name_for(spec.issue, lane_suffix_for(spec))
         # gcloud returns the instance object as a list with one entry.
         instance_id = _parse_instance_id(result.stdout, instance_name)
         handle = RunHandle(
@@ -5547,6 +5572,7 @@ __all__ = [
     "default_gcp_config",
     "expected_artifacts_declaration",
     "instance_name_for",
+    "lane_suffix_for",
     "machine_for_intent",
     "preflight_quota_headroom",
     "reconnect_or_none",

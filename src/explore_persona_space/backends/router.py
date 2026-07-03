@@ -173,6 +173,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    validate_lane_suffix,
 )
 from explore_persona_space.backends.gcp import (
     GcpProvisioningError,
@@ -3946,7 +3947,8 @@ def _attempt_one_gcp_rung(
                 # Placeholder only — superseded by the fresh per-launch mint in
                 # _thread_attempt_id_into just before _prepare_and_launch below
                 # (#927); this lease exists here so the cap counter has a home.
-                attempt_id=_make_attempt_id(),
+                # Suffixed anyway for consistency (#934).
+                attempt_id=_make_attempt_id(spec.extra.get("lane_suffix")),
             )
         today = _today_utc_iso()
         attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
@@ -4381,7 +4383,9 @@ def _lease_after_submit(
         lease = Lease(
             issue=int(spec.issue),
             spec_hash=spec_hash(spec),
-            attempt_id=str(spec.extra.get("attempt_id") or _make_attempt_id()),
+            attempt_id=str(
+                spec.extra.get("attempt_id") or _make_attempt_id(spec.extra.get("lane_suffix"))
+            ),
         )
     lease.backend = backend_kind
     lease.cluster = cluster
@@ -4456,7 +4460,7 @@ def _thread_attempt_id_into(
     reconnect-check → launch → lease-write sequence atomic.
     """
     current_id = (spec.extra or {}).get("attempt_id")
-    attempt_id = str(current_id or _make_attempt_id())
+    attempt_id = str(current_id or _make_attempt_id((spec.extra or {}).get("lane_suffix")))
     if lease is None:
         lease = Lease(
             issue=int(spec.issue),
@@ -4471,9 +4475,23 @@ def _thread_attempt_id_into(
     return replace(spec, extra=new_extra), lease
 
 
-def _make_attempt_id() -> str:
-    """Per-attempt id — same shape the GCP backend's ``attempt_id_for`` produces."""
-    return f"att-{datetime.now(tz=UTC).strftime('%Y%m%d-%H%M%S')}"
+def _make_attempt_id(lane_suffix: str | None = None) -> str:
+    """Per-attempt id — same shape the GCP backend's ``attempt_id_for`` produces.
+
+    ``lane_suffix`` (#934): appended as ``-<suffix>`` so two concurrent
+    lanes launched in the SAME second mint DISTINCT attempt ids — the
+    shared HF crash-persist prefix ``issue<N>_partial/<attempt>/`` and
+    the sentinel dir ``eval_results/issue_<N>/<attempt>/`` would
+    otherwise collide. Validated (fail loud, never strip); ``None`` /
+    empty keeps the unsuffixed shape byte-identical. The suffix charset
+    ``[a-z0-9-]`` is within ``gcp.attempt_id_for``'s acceptance regex
+    and the ``eps-attempt`` label charset, and the 43-char cap in
+    ``base.validate_lane_suffix`` keeps the full id under the 63-char
+    GCP label truncation so reconnect label recovery stays lossless.
+    """
+    ts = datetime.now(tz=UTC).strftime("%Y%m%d-%H%M%S")
+    suffix = f"-{validate_lane_suffix(lane_suffix)}" if lane_suffix else ""
+    return f"att-{ts}{suffix}"
 
 
 def _post_marker_nonfatal(
