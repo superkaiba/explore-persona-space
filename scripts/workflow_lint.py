@@ -4293,6 +4293,77 @@ def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
+_VM_THREAD_CAP_PREFIX = (
+    "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+)
+
+# {file: minimum occurrence count of the literal prefix}. Count floors (not
+# bare presence) so stripping the prefix from ONE template instance while a
+# prose mention survives still FAILs (Methodology + Statistics critic
+# hardening; raised to Must-Fix by the Codex alternatives critic, round 1):
+# SKILL.md 1 (detached-launch template), experiment-implementer.md 2 (bullet
+# + setsid line), code-style.md 3 (line-20 bullet + the two § nohup template
+# copies), analyzer-section-reference.md 1 (off-pod template).
+# BINDING CONVENTION (keeps the floors template-anchored): rationale PROSE in
+# the pinned files refers to the caps by the shorthand
+# "OMP/MKL/OPENBLAS/NUMEXPR=8" and NEVER spells the full literal prefix, so
+# every literal occurrence is a copy-pastable command/template instance and
+# the floors bind to templates, not paragraphs. (The experiment-implementer.md
+# bullet's quoted command string counts as a copy-paste instance by design.)
+# The literal stays UNSPLIT on one physical line at every occurrence — a
+# hard-wrapped prefix breaks both the count pin and copy-paste (loud lint
+# FAIL, by design).
+_VM_THREAD_CAP_GUIDANCE_FILES = {
+    Path(".claude") / "skills" / "issue" / "SKILL.md": 1,
+    Path(".claude") / "agents" / "experiment-implementer.md": 2,
+    Path(".claude") / "rules" / "code-style.md": 3,
+    Path(".claude") / "rules" / "analyzer-section-reference.md": 1,
+}
+
+
+def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the shared-VM thread-cap launch prefix (#891) is absent from any
+    VM-side launch-guidance surface.
+
+    The #847 setdefault in ``orchestrate/env.py`` is src/-side and pinned to a
+    worktree's branch point (the Step 5a spec-freshness sync is deliberately
+    specs-only), so the workflow's VM-side launch templates carry the explicit
+    four-var cap prefix as the branch-age-independent fallback (incident #779,
+    2026-07-02: a pre-#847 worktree ran 78 uncapped threads ~20h after the fix
+    landed on main). This check pins the LITERAL prefix — with a per-file
+    occurrence-count floor, so stripping it from a TEMPLATE instance while a
+    prose mention survives still fails — in the four guidance surfaces, making
+    a silent re-open of the gap loud. (Residual: an edit swapping which LINE
+    carries an occurrence at equal count passes; the count floor is the
+    granularity/robustness trade the plan accepts.)
+    The value 8 is deliberately coupled to ``_DEFAULT_VM_THREAD_CAP`` in
+    env.py: changing either requires changing both (and this constant), which
+    is the point — drift fails loud. ``repo_root`` is a unit-test override
+    hook; production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for rel, min_count in _VM_THREAD_CAP_GUIDANCE_FILES.items():
+        p = root / rel
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #891 shared-VM thread-cap launch guidance "
+                f"must live in all four VM-launch surfaces."
+            )
+            continue
+        n = p.read_text(encoding="utf-8").count(_VM_THREAD_CAP_PREFIX)
+        if n < min_count:
+            errors.append(
+                f"{p}: {n} occurrence(s) of the shared-VM thread-cap prefix "
+                f"{_VM_THREAD_CAP_PREFIX!r}, expected >= {min_count} (#891). "
+                f"VM-side launch TEMPLATES must carry explicit caps: a stale "
+                f"worktree's env.py setdefault (#847) may predate the fix, and "
+                f"no env.py version can in-process-cap a torch-before-dotenv "
+                f"importer."
+            )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -4941,6 +5012,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-vm-thread-cap-guidance",
+        action="store_true",
+        help="Verify the #891 shared-VM thread-cap launch prefix "
+        "(OMP/MKL/OPENBLAS/NUMEXPR=8, one literal string) is pinned — at its "
+        "per-file occurrence-count floor — in the four VM-launch guidance "
+        "surfaces (the /issue detached-launch template, "
+        "experiment-implementer.md, code-style.md, "
+        "analyzer-section-reference.md). The launch-time prefix is the "
+        "branch-age-independent fallback for the #847 src/-side setdefault "
+        "(incident #779). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -5004,6 +5087,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_long_loop_restartability_review_lens
         or args.check_smoke_architecture_review_lens
         or args.check_smoke_output_hygiene
+        or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
         or args.check_agent_spec_size
     )
@@ -5082,6 +5166,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_smoke_architecture_review_lens())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
+    if args.check_vm_thread_cap_guidance or no_flags:
+        errors.extend(check_vm_thread_cap_guidance())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
 
