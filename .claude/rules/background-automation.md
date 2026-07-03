@@ -488,7 +488,12 @@ session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unr
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
-**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).** To take
+**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).**
+(Scope: this sentinel is a short-TTL session-TAKEOVER shield,
+NOT a user pause — an indefinite user "pause <N>" routes to
+`task.py set-status <N> on_hold` (the watcher PARK set; holds indefinitely)
+per `.claude/skills/issue/SKILL.md` § User pause affordance; a stale
+sentinel FAILS OPEN at ~`EPS_TAKEOVER_TTL_H`.) To take
 over a stalled autonomous session WITHOUT racing the watcher, rename its
 registration: `~/.eps-autonomous/issue-<N>.json` →
 `issue-<N>.json.paused-takeover-<YYYYMMDD>` (any suffix after the literal
