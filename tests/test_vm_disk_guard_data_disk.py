@@ -77,6 +77,11 @@ def test_run_guard_watches_data_disk_percent(tmp_path, monkeypatch):
     data_root = tmp_path / "wt-data"
     _make_issue_data(data_root, 658)
     monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "completed")
+    # Sandbox the #773 active-consumer gate: REAL active tasks reference
+    # data/issue_658/, so an un-sandboxed gate walks the LIVE tasks/ tree and
+    # (correctly) keeps this synthetic cache — same trap the fake_repo
+    # fixtures in the sibling test files exist to prevent.
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
 
     invoked = {"uv": False, "logs": False}
 
@@ -119,6 +124,8 @@ def test_data_disk_full_leaves_root_escalation_only(tmp_path, monkeypatch):
     repo = tmp_path
     monkeypatch.setattr(vdg, "repo_root", lambda: repo)
     monkeypatch.setattr(ced, "repo_root", lambda: repo)
+    # Determinism pin (#924): force the on-main resolution path.
+    monkeypatch.setattr(ced, "_off_main_checkout_root", lambda: None)
     data_root = repo / "wt-data"
     issue_dir = _make_issue_data(data_root, 658)
     # Make the active cache big enough to clear the escalation floor (5 GB).
@@ -173,6 +180,8 @@ def test_data_disk_pass_dry_run_no_mutation(tmp_path, monkeypatch):
     repo = tmp_path
     monkeypatch.setattr(vdg, "repo_root", lambda: repo)
     monkeypatch.setattr(ced, "repo_root", lambda: repo)
+    # Determinism pin (#924): force the on-main resolution path.
+    monkeypatch.setattr(ced, "_off_main_checkout_root", lambda: None)
     data_root = repo / "wt-data"
     issue_dir = _make_issue_data(data_root, 658)
     monkeypatch.setattr(vdg, "_ACTIVE_ESCALATION_MIN_BYTES", 1)
