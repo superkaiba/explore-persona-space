@@ -5997,8 +5997,8 @@
     "913": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/913",
-      "status": "approved",
+      "path": "tasks/running/913",
+      "status": "running",
       "title": "Fix run_823.py phase-5 length-R2 diagnostic: valid_idx slice + un-swallow bare except"
     },
     "914": {
