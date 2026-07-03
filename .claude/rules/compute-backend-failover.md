@@ -410,6 +410,37 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+### Gate-park zombie — RUNNING + terminal `eps/phase` (#908)
+
+A GCP workload that exits CLEANLY at a blocking gate (or finishes) leaves
+the VM RUNNING by design (sentinel draining; only a crash powers off). Two
+guards close the former leak (#763: an A100-80 idled ~40 min post-gate,
+then the next dispatch silently no-op-reconnected to the zombie):
+(1) PRIMARY — `/issue` Step 6d.4 gate handlers tear the instance down via
+`dispatch_issue.py finalize --skip-confirm-artifacts` after the sentinel
+drain, split by gate class: PARK-mode gates finalize BEFORE the park
+(never through the user-wait window); auto-resolving gates finalize after
+resolution, BEFORE any off-pod phase or the fresh tail dispatch.
+(2) BACKSTOP — `gcp.reconnect_or_none` refuses a RUNNING instance whose
+`eps/phase` ∈ {done, failed, wedged} (`_ZOMBIE_GUEST_PHASES`) and
+`_stale_named_instance_or_none` returns it as deletable, so the next
+launch reclaims + creates fresh instead of silently reconnecting. The
+skip/delete sets are pinned identical (`tests/test_gcp_backend.py`, the
+#632 invariant); a guest-attribute probe failure raises `GcpProbeError`
+(never a reconnect, never a delete — the #535 discipline). Relaunch
+contract (the #491 SSH-relaunch recipe in `.claude/rules/gotchas.md`): a
+manual same-VM relaunch MUST re-publish `eps/phase=workload` BEFORE
+resuming work, or the zombie predicates read the active relaunch as
+terminal and the next dispatch reclaims it. The #667 NON-terminal
+frozen-phase gap above is UNCHANGED — a hung VM with `eps/phase=workload`
+still needs the manual pivot.
+
+**Manual-pivot runbook line (#909):** a manual RunPod pivot that carries
+`--workload-cmd` must ALSO pass `--execute-workload` — without it the launch
+is provision-only (the pod boots, nothing runs) and the JSON carries
+`workload_executed: false`; the alternative executor is dispatching the
+experimenter on the provisioned pod (#909).
+
 ### CPU intents: cheap CPU lanes + the scoped #677 terminal (#747)
 
 The GCP→RunPod failover above (capacity AND workload-crash, sync AND async)

@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), and costing wall-time against the machine the router will ACTUALLY provision (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), and costing wall-time against the machine the router will ACTUALLY provision (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,10 +7,11 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These five recipes are the planner-specific §9 sizing blocks relocated verbatim
-from `.claude/agents/planner.md` (#829). The planner applies each when its
-trigger matches; the compute-projection table spec + stratification spec stay
-inline in planner.md §9.
+These six recipes are the planner-specific §9 sizing blocks — five relocated
+verbatim from `.claude/agents/planner.md` (#829), plus the
+store-heavy / IO-heavy phase recipe (#910, from incident #813). The planner
+applies each when its trigger matches; the compute-projection table spec +
+stratification spec stay inline in planner.md §9.
 
 **Activation-capture HBM sizing.** If any phase captures hidden states on a
 7B model (residual streams at one-or-more layers, online activation
@@ -76,8 +77,10 @@ either the pinned lane + why, or "no sentinel dependence — auto-safe."
 **Floor cross-check for long or many-call phases.** For any row with
 `planned_wall_h` above 4, OR any row whose component executes more than ~500
 serial calls of a non-trivial kernel (a fit / dense factorization
-(svd/eigh/lstsq/GCV-ridge) / model forward — the call count is the §9
-multiplier product `draws × cells × folds × …`), state the arithmetic compute
+(svd/eigh/lstsq/GCV-ridge) / model forward / SERIALIZATION of a
+multi-hundred-MB artifact / a per-file Hub commit — the call count is the §9
+multiplier product `draws × cells × folds × …`, or the output-file count for
+a store phase), state the arithmetic compute
 floor next to the estimate
 (`n_forwards × 2 · params · tokens_per_forward / sustained GPU FLOPs`, or
 the analogous bound for the dominant kernel) and justify any >5-10×
@@ -95,6 +98,35 @@ asserted ~2 s/fit sailed under the old 12 h trigger while the measured
 ~125 s/call implied a ~131 h serial floor).
 (#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
 CPU wall-time blowup vs its §9 estimate.)
+
+
+**Store-heavy / IO-heavy phase sizing — measure one item's serialization +
+upload wall-time; compression defaults OFF for fp16 → Xet.** Any phase that
+WRITES >~10^3 output files OR >~50 GB total (per-cell activation stores,
+per-context tensor dumps, raw-completion shards, per-cell result files) MUST
+ground its §9 row's `basis` on a MEASURED one-item serialization + upload
+wall-time at PRODUCTION shape (a timed write+commit of one production-size
+item, or a prior-issue measured figure — either way measured with the SAME
+serializer/format + destination the phase will actually run) —
+bytes/file-counts alone are NOT a sizing basis: per-item wall-time is
+dominated by serialization CPU and Hub-commit overhead, not byte count, so a
+bytes-only gate passes exactly the phase that blows up (#813: a one-cell
+GO/NO-GO gate measured per-file BYTES and passed, while `np.savez_compressed`
+cost 103.8 s/file — 65% of the ~160 s wc_long row wall-time, vs 1.2 s for
+plain `savez` — and drove the store phase 4.5× over plan on an idle 8×H100).
+Client-side compression (`np.savez_compressed`, gzip) of fp16 activation
+tensors bound for a Xet-backed HF repo defaults OFF: Xet chunk-compresses and
+dedupes server-side (already −59% on the #813 upload), so client zlib bought
+a 1.29× ratio for ~86× the write time; a plan that turns compression ON
+states the measured ratio + per-item wall-time that justifies it. And
+per-file Hub commits are the same per-item-overhead trap — batch into one
+`upload_folder` commit (Upload Policy). The projected store wall
+(`n_items × measured_per_item_cost / parallelism`) enters the row's basis,
+and when it crosses the floor-cross-check triggers above, that check applies
+to the serialization kernel exactly as to a fit kernel (the
+implementation-side twin — write the cheap format per row, compress/upload
+out-of-band or batched — is `.claude/rules/code-style.md`
+§ Compute-throughput discipline).
 
 
 **Cost wall-time against the machine the router will ACTUALLY provision —

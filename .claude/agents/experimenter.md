@@ -476,8 +476,13 @@ authoritative recipe is agent memory
      HF mirror for the same artifact (parent-task HF data repo
      subdirectory, named in plan §Reproducibility), AUTO-STAGE it via
      `huggingface_hub.hf_hub_download(repo_id=..., filename=...,
-     local_dir=<parent_of_default>)` (or `snapshot_download` for a
-     directory) on the pod, then re-stat to confirm it now exists; (b)
+     local_dir=<parent_of_default>)` (or, for a directory, scoped
+     `list_repo_tree(path_in_repo=<prefix>, recursive=True)` + per-file
+     `hf_hub_download` in a ≤6-worker pool — NEVER `snapshot_download`
+     against the ~1M-file data repo (or any similarly huge repo): it
+     enumerates the full tree before `allow_patterns`;
+     `.claude/rules/gotchas.md`) on the pod, then re-stat to confirm it
+     now exists; (b)
      if no HF mirror is cited, post `epm:failure v1` with
      ```
      failure_class: infra

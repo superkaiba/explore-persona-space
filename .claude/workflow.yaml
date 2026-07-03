@@ -489,7 +489,7 @@ gates:
       step: "4b"
       condition: "plan body contains '### TDD: yes' OR user explicitly requested TDD"
       reason: |
-        Implementer posts `epm:proposed-tests v1`, EXITs awaiting an
+        Implementer posts `epm:proposed-tests v<n>` (max+1), EXITs awaiting an
         `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
         after approval resumes Step 4b normally. (See `markers.md` and the
         implementer agent specs.)
@@ -2666,6 +2666,22 @@ markers:
     posted_by: campaign skill (Step 2)
     when: "a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed)"
     fields: "stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1."
+  - kind: "epm:plan-revision-log"
+    posted_by: issue-v2 skill (post-approval critic rounds)
+    when: "workflow: v2 tasks only. Once PER post-approval critic round (Step 3 of .claude/skills/issue-v2/SKILL.md), after the plan + planned_manifest.json are auto-revised in response to that round's critic panel"
+    fields: "round (integer), changes (what the revision changed + why, per critic — statistics / methodology-baselines / efficiency / consistency), manifest_diff (the diff to planned_manifest.json: conditions / metrics / planned figures added/removed/changed, or 'none'). The audit surface for post-approval critic drift (Thomas approves the pre-critique draft; this log is how he sees what the critics changed). v1."
+  - kind: "epm:methodology-check"
+    posted_by: issue-v2 skill (via methodology-critic)
+    when: "workflow: v2 tasks only. After each methodology-critic round over the assembled report's Motivation / Methodology / Metrics sections (Step 8 report loop); round cap 5"
+    fields: "verdict (PASS|FAIL), round, untraceable/incorrect claims (each with the ground-truth source checked — config / code @ SHA / run_result.json / adapter_config.json / dashboard row count) OR 'all claims trace'. Link-liveness (every link resolves at the pinned SHA) folded in. v1."
+  - kind: "epm:report"
+    posted_by: issue-v2 skill
+    when: "workflow: v2 tasks only. When the report body (<!-- report-v1 --> sentinel) is mechanically assembled — methodology-writer REPORT MODE sections + plotter figures/captions spliced into the template, with TLDR / Next steps placeholders intact (Step 8)"
+    fields: "report body path, sections filled (Motivation / Methodology / Metrics / Results), figure count, placeholders left for Thomas (TLDR, Next steps). v1."
+  - kind: "epm:report-verified"
+    posted_by: issue-v2 skill (via report-verifier)
+    when: "workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 5. PASS advances the task to awaiting_promotion"
+    fields: "verdict (PASS|FAIL), round, per-figure recompute results (≥1 plotted value re-derived from source JSON via the manifest transform recipe), completeness-vs-manifest (every planned condition/metric/figure present or explicitly 'not run'), interpretivity-lens result (hypothesis-framing allowed / asserted-conclusion banned; Thomas's TLDR + Next steps never reviewed), verify_report.py --mode generation output. v1."
 steps:
   - id: "0"
     name: load_state
