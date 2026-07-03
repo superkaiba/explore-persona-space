@@ -30,7 +30,9 @@ echo "[phase=join]"
 # repo access dies HERE (set -e) instead of burning the full join window as
 # "sentinel not present" (r1 Minor: auth failures looked like not-yet).
 # set -a: export .env so HF_TOKEN reaches the one-liner (heredoc-dotenv rule).
-set -a && . ./.env && set +a
+# ./.env exists on the VM/worktree only; GCE exports tokens via the startup
+# script (crash att-20260703-163121: unconditional sourcing killed the poll).
+if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 uv run python - <<'PY'
 from huggingface_hub import list_repo_files
 
@@ -46,7 +48,8 @@ while [ "$(date +%s)" -lt "$DEADLINE" ]; do
   # rc contract: 0 = sentinel found; 3 = not-yet / transient HTTP (retry);
   # anything else = non-transient (auth/config) -> FAIL FAST, no window burn.
   rc=0
-  (set -a && . ./.env && set +a && uv run python - <<'PY'
+  (if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
+  uv run python - <<'PY'
 import sys
 
 import requests
@@ -88,7 +91,7 @@ if [ "$JOINED" -ne 1 ]; then
 fi
 
 echo "[phase=fetch_capture_packs]"
-set -a && . ./.env && set +a
+if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 uv run python - <<'PY'
 from pathlib import Path
 
