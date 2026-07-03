@@ -1,7 +1,7 @@
 ---
-title: 'The pre/post-finetuning function-change verdict is answer-summary-dependent:
-  the taught-fact Δ-over-floor call at the primary layer is specific to the mean-over-answer
-  read (LOW confidence)'
+title: 'The taught-fact function-change call at the primary layer holds under the
+  max-pool answer summary: the turn-boundary read, not the mean, is the outlier (MODERATE
+  confidence)'
 kind: experiment
 tags:
 - answer-summary-sweep
