@@ -6,7 +6,7 @@ The VM root disk fills because each experiment downloads its source data into
 2026-06-25: ``/`` hit 100% full, one finished experiment held 97 GB), plus the
 ``uv`` package cache and accumulating logs. This guard reads ``df`` for ``/``
 and, when usage exceeds a threshold (default 85%, env ``EPS_VM_DISK_THRESHOLD``),
-runs three TIERS of strictly-safe cleanup, reporting bytes freed per tier:
+runs four TIERS of strictly-safe cleanup, reporting bytes freed per tier:
 
   (a) ``uv cache prune`` (skipped gracefully if the uv lock is held — never
       ``--force``).
@@ -14,7 +14,25 @@ runs three TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       status is TERMINAL (``completed`` / ``archived`` / ``awaiting_promotion``).
       Status is resolved READ-ONLY via the task workflow — task state is NEVER
       mutated. An issue at any ACTIVE status (its caches may be in use) is
-      skipped.
+      skipped. (#911) The tier ALSO covers NON-CANONICAL issue-keyed caches —
+      top-level ``/tmp`` dirs named ``i<N>*`` / ``issue<N>*`` / ``issue-<N>*``
+      / ``issue_<N>*`` / ``*_<N>`` and whole-dir ``data/``
+      ``issue…<N>…{_dl,_hfstage,_cache}`` dirs — under the same
+      terminal-reap / active-escalate contract PLUS three extra gates in
+      ``clean_issue_downloads`` (48h recency, nested ``store/`` +
+      ``eval_results/`` block, positive re-downloadability evidence). The
+      /tmp part is a ``main()``-only opt-in (``tmp_root=production_tmp_
+      root()``); library calls stay hermetic. Structured outcome rows
+      (``active_cache_attributions`` / ``noncanonical_candidates`` /
+      ``total_discovered_bytes``) ride the ``--json`` output — report-only
+      escalation persists nothing to the sidecar, so dry-run acceptance reads
+      the JSON.
+  (d) The VM's pod-style ``/workspace/.cache/huggingface`` hub cache (#911):
+      age-gated ``delete_revisions`` of repos unused >= 14 days (env
+      ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``), pod-guarded twice
+      (``os.path.ismount('/workspace')`` OR pod-side detection refuses) so it
+      can never run where /workspace is a real volume; every failure degrades
+      to a skipped tier. Boot-disk pass only, same ``main()``-only opt-in.
   (c) Stale logs: ``logs/**/*.log`` older than N days (default 14, env
       ``EPS_VM_DISK_LOG_MAX_AGE_DAYS``) plus ``/tmp/*.log`` of the same age.
 
@@ -49,8 +67,12 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 # helper is shared so every disk escalation lands on ONE stream.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
+    _running_pod_side,
+    _tmp_entry_owned,
     append_disk_guard_event,
     clean_issue_downloads,
+    extract_issue_number,
+    production_tmp_root,
 )
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
@@ -196,6 +218,9 @@ def escalate_active_cache(
     *,
     data_root: Path | None = None,
     state: dict | None = None,
+    tmp_root: Path | None = None,
+    sweep_tmp: bool = True,
+    report_to: TierResult | None = None,
 ) -> TierResult | None:
     """ESCALATE (never delete) an ACTIVE task's re-downloadable cache that the
     terminal-status gate cannot reap.
@@ -206,14 +231,45 @@ def escalate_active_cache(
     Telegram push AND a shared-sidecar row naming the largest cache path, the
     footprint, and the SAFE reclaim command. NEVER calls rmtree. Returns a
     TierResult describing the escalation, or None when nothing was escalated.
-    ``state`` (the dedup map) is read+updated in place by the caller."""
-    sub = clean_issue_downloads(issue_n, apply=False, data_root=data_root)
+    ``state`` (the dedup map) is read+updated in place by the caller.
+
+    ``tmp_root``/``sweep_tmp`` forward VERBATIM into the sizing call (#911 —
+    with ``tmp_root=None`` the sizing sees ZERO /tmp bytes; the tier-b caller
+    threads its own opt-in through so an active owner's /tmp + P3 footprint
+    is attributed). ``report_to`` (the calling tier's TierResult, #911) —
+    when given — receives the DEDUP-INDEPENDENT structured rows BEFORE any
+    floor/ack/band suppression: the owner's ``active_cache_attributions`` row
+    + one ``noncanonical_candidates`` row per discovered non-canonical dir
+    (disposition ``escalated`` / ``unresolved-kept``) + the discovered-bytes
+    total. Report-only escalation persists nothing, so these fields are the
+    dry-run acceptance surface."""
+    sub = clean_issue_downloads(
+        issue_n, apply=False, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+    )
     # Size from EVERY discovered cache dir, NOT bytes_freed: a large active
     # hf_dl/.../store/ correctly KEPT by the nested-store parity guard lands in
     # `skipped` (contributing 0 to bytes_freed), so bytes_freed would suppress
     # the escalation for the exact large-unmirrored-active-cache shape #679
     # targets (BLOCKER #1). total_discovered_bytes counts removed + skipped.
     bytes_ = sub.total_discovered_bytes
+    if report_to is not None:
+        report_to.total_discovered_bytes += bytes_
+        if bytes_ > 0:
+            largest_path = max(sub.sizes_bytes, key=lambda n: sub.sizes_bytes.get(n, 0), default="")
+            report_to.active_cache_attributions.append(
+                {"task": issue_n, "status": status, "path": largest_path, "bytes": bytes_}
+            )
+        owner_disposition = "escalated" if status is not None else "unresolved-kept"
+        for rel in sub.noncanonical_dispositions:
+            report_to.noncanonical_candidates.append(
+                {
+                    "path": rel,
+                    "issue": issue_n,
+                    "bytes": sub.sizes_bytes.get(rel, 0),
+                    "disposition": owner_disposition,
+                    "evidence": sub.noncanonical_evidence.get(rel, ""),
+                }
+            )
     if bytes_ < _ACTIVE_ESCALATION_MIN_BYTES:
         return None
     band_gb = _active_escalation_band_gb(bytes_)
@@ -345,6 +401,30 @@ def _discover_data_issue_numbers(data_roots: list[Path]) -> list[int]:
     return sorted(found)
 
 
+def _discover_tmp_issue_numbers(tmp_root: Path) -> list[int]:
+    """Issue numbers extracted from TOP-LEVEL dirs/symlinks of ``tmp_root``
+    (uid-owned; ``ced.extract_issue_number`` over the entry NAME — the P1/P2
+    non-canonical patterns, #911). Lets tier (b) visit a /tmp-ONLY issue (the
+    #823 shape: a ``/tmp/fact_check_823`` staging dir with no ``data/issue*``
+    dir anywhere). Never recursive; files are never considered. Returns
+    sorted unique ints."""
+    found: set[int] = set()
+    if not tmp_root.is_dir():
+        return []
+    for child in sorted(tmp_root.iterdir()):
+        try:
+            if not (child.is_dir() or child.is_symlink()):
+                continue
+        except OSError:
+            continue
+        if not _tmp_entry_owned(child):
+            continue
+        n = extract_issue_number(child.name)
+        if n is not None:
+            found.add(n)
+    return sorted(found)
+
+
 # ─── tier results ────────────────────────────────────────────────────────────
 
 
@@ -355,6 +435,24 @@ class TierResult:
     detail: list[str] = field(default_factory=list)
     skipped: bool = False
     skip_reason: str = ""
+    # ── v4 structured dry-run reporting (#911) — surfaced in --json ──
+    # Report-only escalation persists NOTHING (sidecar / Telegram / state are
+    # all apply-gated, pinned by test_dry_run_escalation_reports_no_sidecar_
+    # write), so a dry-run acceptance MUST read these fields, never the
+    # sidecar. One attribution row per ACTIVE/unresolved owner from tier (b)'s
+    # sizing pass ({task, status, path, bytes}) — dedup-independent: computed
+    # even when the alert row is ack/band-suppressed or below the alert floor.
+    active_cache_attributions: list[dict] = field(default_factory=list)
+    # One row per discovered NON-CANONICAL candidate:
+    # {path, issue, bytes, disposition, evidence} with disposition in
+    # would-remove | removed | escalated | recency-kept | unverified-kept |
+    # durable-content-kept | unresolved-kept | consumer-kept |
+    # external-target-kept | failed.
+    noncanonical_candidates: list[dict] = field(default_factory=list)
+    # Total bytes of every cache dir this tier DISCOVERED (canonical +
+    # non-canonical, any disposition); tier (d) reports its
+    # expected_freed_size here as the would-free upper bound.
+    total_discovered_bytes: int = 0
 
 
 @dataclass
@@ -372,6 +470,13 @@ class GuardResult:
     @property
     def bytes_freed(self) -> int:
         return sum(t.bytes_freed for t in self.tiers)
+
+    @property
+    def total_discovered_bytes(self) -> int:
+        """Sum of every tier's discovered-cache footprint (any disposition —
+        would-remove, escalated, recency-/unverified-/durable-content-kept;
+        #911 acceptance surface)."""
+        return sum(t.total_discovered_bytes for t in self.tiers)
 
 
 # ─── tier (a): uv / pip caches ───────────────────────────────────────────────
@@ -426,7 +531,13 @@ def _all_worktree_data_roots() -> list[Path]:
     return [c / "data" for c in sorted(wt_root.iterdir()) if (c / "data").is_dir()]
 
 
-def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -> TierResult:
+def clean_terminal_download_caches(
+    apply: bool,
+    data_root: Path | None = None,
+    *,
+    tmp_root: Path | None = None,
+    sweep_tmp: bool = True,
+) -> TierResult:
     """Tier (b): delete ``hf_dl`` / ``g*_dl`` caches for issues at a terminal
     status (completed / archived / awaiting_promotion) — across BOTH the
     repo-root ``data/`` AND every worktree ``data/`` (the live experiment's
@@ -438,6 +549,18 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
     ``eval_results/`` always kept, in worktrees too) is identical to the Step-8
     helper.
 
+    NON-CANONICAL caches (#911): with an EXPLICIT ``tmp_root`` (strict opt-in
+    — ``main()`` passes ``production_tmp_root()`` on the boot-disk pass;
+    library calls with ``tmp_root=None`` never touch any /tmp), discovery is
+    widened with ``_discover_tmp_issue_numbers`` so a /tmp-ONLY issue (the
+    #823 shape) is visited, and ``tmp_root``/``sweep_tmp`` forward into every
+    per-issue cleanup + escalation-sizing call. The per-candidate reap gates
+    (recency / nested-durable / positive re-downloadability evidence) live in
+    ``clean_issue_downloads``; the terminal/active/unresolved branching here
+    is UNCHANGED. Structured outcome rows (``active_cache_attributions`` +
+    ``noncanonical_candidates`` + ``total_discovered_bytes``) land on the
+    returned TierResult for the ``--json`` dry-run acceptance surface.
+
     With an explicit ``data_root`` (tests) the search is scoped to that single
     root; in production (``data_root is None``) it spans repo-root + all
     worktree data roots."""
@@ -446,9 +569,12 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
         discover_roots = [data_root]
     else:
         discover_roots = [repo_root() / "data", *_all_worktree_data_roots()]
+    issue_numbers = set(_discover_data_issue_numbers(discover_roots))
+    if sweep_tmp and tmp_root is not None:
+        issue_numbers.update(_discover_tmp_issue_numbers(tmp_root))
     escalation_state = _load_active_escalation_state()
     escalated_any = False
-    for issue_n in _discover_data_issue_numbers(discover_roots):
+    for issue_n in sorted(issue_numbers):
         status = _resolve_issue_status(issue_n)
         if status not in TERMINAL_CACHE_REAP_STATUSES:
             res.detail.append(
@@ -456,9 +582,18 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
             )
             # An ACTIVE task's cache is NEVER deleted — but a large one the
             # terminal-gate can't reap is ESCALATED (Telegram + sidecar) so a
-            # human can reclaim it AFTER the run (#679). Fail-soft.
+            # human can reclaim it AFTER the run (#679). Fail-soft. The
+            # structured attribution rows land on `res` via report_to
+            # regardless of the alert's floor/ack/band suppression (#911).
             esc = escalate_active_cache(
-                issue_n, status, apply, data_root=data_root, state=escalation_state
+                issue_n,
+                status,
+                apply,
+                data_root=data_root,
+                state=escalation_state,
+                tmp_root=tmp_root,
+                sweep_tmp=sweep_tmp,
+                report_to=res,
             )
             if esc is not None:
                 escalated_any = True
@@ -466,20 +601,164 @@ def clean_terminal_download_caches(apply: bool, data_root: Path | None = None) -
             continue
         # data_root=data_root forwards the test-scoping; None lets
         # clean_issue_downloads resolve repo-root + this issue's worktree(s).
-        sub = clean_issue_downloads(issue_n, apply=apply, data_root=data_root)
+        sub = clean_issue_downloads(
+            issue_n, apply=apply, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        )
         res.bytes_freed += sub.bytes_freed
+        res.total_discovered_bytes += sub.total_discovered_bytes
+        for rel, disposition in sub.noncanonical_dispositions.items():
+            res.noncanonical_candidates.append(
+                {
+                    "path": rel,
+                    "issue": issue_n,
+                    "bytes": sub.sizes_bytes.get(rel, 0),
+                    "disposition": disposition,
+                    "evidence": sub.noncanonical_evidence.get(rel, ""),
+                }
+            )
         for name in sub.removed:
             verb = "removed" if apply else "would remove"
-            res.detail.append(
+            line = (
                 f"issue {issue_n} ({status}): {verb} {name} "
                 f"[{_fmt_gb(sub.sizes_bytes.get(name, 0))}]"
             )
+            evidence = sub.noncanonical_evidence.get(name)
+            if evidence:
+                line += f" (evidence: {evidence})"
+            res.detail.append(line)
+        for name, reason in sub.skipped:
+            res.detail.append(f"issue {issue_n} ({status}): kept {name} — {reason}")
         for name in sub.failed:
             res.detail.append(f"issue {issue_n}: FAILED to remove {name}")
         for name, tgt in sub.symlink_external_kept:
             res.detail.append(f"issue {issue_n}: external symlink target kept: {name} -> {tgt}")
     if apply and escalated_any:
         _save_active_escalation_state(escalation_state)
+    return res
+
+
+# ─── tier (d): the VM's pod-style /workspace HF hub cache (#911) ─────────────
+
+# The VM carries a pod-CONVENTION stray HF hub cache at /workspace/.cache
+# (plain directory on the boot disk — NOT a mounted pod volume; 21 GB on
+# 2026-07-03). Age-gated reap: only repos whose repo-level last_accessed is
+# older than the cutoff lose their revisions (relatime keeps last_accessed
+# >= daily-fresh for actively read repos; the 14 d margin dwarfs the 24 h
+# relatime coarseness). datasets/ + xet/ + stray top-level dirs untouched.
+DEFAULT_WORKSPACE_HF_CACHE = "/workspace/.cache/huggingface"  # env EPS_VM_WORKSPACE_HF_CACHE
+DEFAULT_WORKSPACE_HF_CACHE_MAX_AGE_DAYS = 14.0  # env EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS
+
+
+def workspace_hf_cache_root() -> Path:
+    """The watched pod-style HF cache root on the VM
+    (env ``EPS_VM_WORKSPACE_HF_CACHE``; blank -> default)."""
+    raw = os.environ.get("EPS_VM_WORKSPACE_HF_CACHE", "").strip()
+    return Path(raw or DEFAULT_WORKSPACE_HF_CACHE)
+
+
+def workspace_hf_cache_max_age_days() -> float:
+    """Tier-(d) age cutoff in days (env ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``;
+    invalid/negative -> default)."""
+    raw = os.environ.get("EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS", "").strip()
+    if not raw:
+        return DEFAULT_WORKSPACE_HF_CACHE_MAX_AGE_DAYS
+    try:
+        val = float(raw)
+    except ValueError:
+        return DEFAULT_WORKSPACE_HF_CACHE_MAX_AGE_DAYS
+    return val if val >= 0.0 else DEFAULT_WORKSPACE_HF_CACHE_MAX_AGE_DAYS
+
+
+def _scan_hf_cache(hub: Path):
+    """Import + scan seam (monkeypatched by tests): ``scan_cache_dir`` over the
+    hub dir. Raises on any import/scan failure — the caller degrades to a
+    skipped tier with the reason."""
+    from huggingface_hub import scan_cache_dir
+
+    return scan_cache_dir(str(hub))
+
+
+def clean_vm_workspace_hf_cache(
+    apply: bool,
+    *,
+    max_age_days: float | None = None,
+    cache_root: Path | None = None,
+    now: float | None = None,
+) -> TierResult:
+    """Tier (d): age-gated reap of the VM's pod-style HF hub cache (#911).
+
+    Pod guards FIRST (both must clear): skip when ``os.path.ismount(
+    '/workspace')`` is True (a real pod volume — mirrors ``orchestrate.env``'s
+    plain-dir-vs-mount discriminator; on a pod this cache is the live
+    ``HF_HOME``) OR ``ced._running_pod_side()`` is True (defense in depth,
+    #803). Then ``scan_cache_dir(root/'hub')``, collect ALL revisions of
+    repos whose repo-level ``last_accessed`` is older than
+    ``max_age_days``, build one ``delete_revisions`` strategy, report its
+    ``expected_freed_size``; ``apply`` executes it + writes one sidecar row
+    (``kind='workspace-hf-cache-reaped'``). EVERY failure (import, scan,
+    execute) degrades to ``TierResult.skipped`` + reason — the guard never
+    crashes on a corrupt cache. ``datasets/`` + ``xet/`` + stray top-level
+    dirs are untouched (~220 MB, below the noise floor by design)."""
+    res = TierResult(name="workspace-hf-cache")
+    try:
+        if os.path.ismount("/workspace"):
+            res.skipped = True
+            res.skip_reason = "/workspace is a real mount (pod volume) — tier (d) refuses"
+            return res
+        if _running_pod_side():
+            res.skipped = True
+            res.skip_reason = "pod-side detected (#803) — tier (d) refuses"
+            return res
+    except OSError as exc:
+        res.skipped = True
+        res.skip_reason = f"pod-guard probe failed: {exc}"
+        return res
+    root = cache_root if cache_root is not None else workspace_hf_cache_root()
+    hub = root / "hub"
+    if not hub.is_dir():
+        res.skipped = True
+        res.skip_reason = f"no hub cache at {hub}"
+        return res
+    age_days = max_age_days if max_age_days is not None else workspace_hf_cache_max_age_days()
+    cutoff = (time.time() if now is None else now) - age_days * 86400.0
+    try:
+        info = _scan_hf_cache(hub)
+        stale_repos = [r for r in info.repos if r.last_accessed < cutoff]
+        hashes = [rev.commit_hash for r in stale_repos for rev in r.revisions]
+        if not hashes:
+            res.detail.append(f"no hub repos unused >= {age_days:g}d (of {len(list(info.repos))})")
+            return res
+        strategy = info.delete_revisions(*hashes)
+        freed = int(strategy.expected_freed_size)
+        repo_ids = sorted(r.repo_id for r in stale_repos)
+        res.total_discovered_bytes = freed  # the would-free upper bound
+        shown = ", ".join(repo_ids[:5])
+        if not apply:
+            res.bytes_freed = freed
+            res.detail.append(
+                f"would delete {len(hashes)} revision(s) of {len(stale_repos)} stale "
+                f"repo(s) [{_fmt_gb(freed)}]: {shown}"
+            )
+            return res
+        strategy.execute()
+        res.bytes_freed = freed
+        res.detail.append(
+            f"deleted {len(hashes)} revision(s) of {len(stale_repos)} stale repo(s) "
+            f"[{_fmt_gb(freed)}]: {shown}"
+        )
+        append_disk_guard_event(
+            {
+                "kind": "workspace-hf-cache-reaped",
+                "repos": repo_ids,
+                "bytes": freed,
+                "max_age_days": age_days,
+            },
+            apply=apply,
+        )
+    except Exception as exc:  # deliberate degrade — never crash the guard pass
+        res.skipped = True
+        res.skip_reason = f"{type(exc).__name__}: {exc}"[:200]
+        res.detail.append(f"workspace hf-cache tier skipped: {res.skip_reason}")
     return res
 
 
@@ -555,6 +834,7 @@ def run_guard(
     disk_path: str = "/",
     reclaim_tiers: bool = True,
     now: float | None = None,
+    tmp_root: Path | None = None,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
@@ -571,7 +851,17 @@ def run_guard(
     ONE data-disk-appropriate arm: it reaps a TERMINAL issue's re-downloadable
     ``hf_dl``/``g*_dl`` cache on EITHER disk and ESCALATES (never deletes) an
     ACTIVE task's cache. So the data-disk pass is escalate-only + reap-terminal,
-    never the `/`-rooted uv/log reclaims (#681 plan §4 Phase 4, §11)."""
+    never the `/`-rooted uv/log reclaims (#681 plan §4 Phase 4, §11).
+
+    ``tmp_root`` (#911) is forwarded VERBATIM to tier (b) — ``run_guard``
+    itself NEVER calls ``production_tmp_root()`` (the /tmp opt-in lives ONLY
+    in the two CLI ``main()`` bodies; a source-scan test pins the invariant):
+    the existing suite calls ``run_guard(apply=True, data_root=temp)`` as a
+    LIBRARY under constant-terminal status monkeypatches, and a run_guard-side
+    production fallback would sweep the real /tmp during pytest. Tier (d)
+    (the /workspace hub-cache reap) rides the SAME production opt-in — it
+    runs only when ``reclaim_tiers`` AND an explicit ``tmp_root`` are set, so
+    every library call stays hermetic by construction."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -591,7 +881,11 @@ def run_guard(
 
     if reclaim_tiers:
         res.tiers.append(clean_uv_cache(apply))
-    res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root))
+    res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root, tmp_root=tmp_root))
+    if reclaim_tiers and tmp_root is not None:
+        # Tier (d) rides the production opt-in (an explicit tmp_root) so
+        # library callers can never touch the real /workspace cache (#911).
+        res.tiers.append(clean_vm_workspace_hf_cache(apply, now=now))
     if reclaim_tiers:
         res.tiers.append(clean_stale_logs(apply, age, now=now))
 
@@ -676,6 +970,10 @@ def _result_json(res: GuardResult) -> dict:
         "triggered": res.triggered,
         "bytes_freed": res.bytes_freed,
         "still_over_after": res.still_over_after,
+        # v4 (#911): the discovered-cache footprint across all tiers, any
+        # disposition — the dry-run acceptance surface (report-only persists
+        # no sidecar rows; read THESE fields, never the sidecar).
+        "total_discovered_bytes": res.total_discovered_bytes,
         "tiers": [
             {
                 "name": t.name,
@@ -683,6 +981,9 @@ def _result_json(res: GuardResult) -> dict:
                 "skipped": t.skipped,
                 "skip_reason": t.skip_reason,
                 "detail": t.detail,
+                "active_cache_attributions": t.active_cache_attributions,
+                "noncanonical_candidates": t.noncanonical_candidates,
+                "total_discovered_bytes": t.total_discovered_bytes,
             }
             for t in res.tiers
         ],
@@ -759,8 +1060,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
     args = ap.parse_args(argv)
 
-    # Boot disk (/) — the full tiered cleanup, unchanged.
-    res = run_guard(args.apply, threshold=args.threshold, log_max_age=args.log_max_age_days)
+    # Boot disk (/) — the full tiered cleanup. The /tmp + /workspace-cache
+    # opt-in lives HERE (and in clean_experiment_downloads.main()) ONLY: the
+    # CLI passes production_tmp_root(); library callers stay hermetic (#911).
+    res = run_guard(
+        args.apply,
+        threshold=args.threshold,
+        log_max_age=args.log_max_age_days,
+        tmp_root=production_tmp_root(),
+    )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
     # so the /-rooted uv/log reclaims never run there, only tier (b)
@@ -780,6 +1088,9 @@ def main(argv: list[str] | None = None) -> int:
             data_root=None,
             disk_path=dd_path,
             reclaim_tiers=False,
+            # The /tmp tree lives on `/` — the data-disk pass never sweeps it
+            # (no double-sweep per run; #911 test pins this).
+            tmp_root=None,
         )
 
     if args.json:
