@@ -9,11 +9,13 @@ parent_id: 841
 origin_prompt: Run an issue in the background which is 841 but predicting the next
   token activation from previous token activation, one mapping per layer, trying the
   different options
-goal: 'On Qwen-2.5-7B-Instruct, characterize the per-layer predictability of residual-stream
-  token-position dynamics on real chat contexts — fit one map per layer g_l: h_{l,t}
-  -> h_{l,t+1} (identity/copy-previous null, affine ridge, small MLP, optional sequence
-  model as exploratory) and report held-out variance explained of the update Delta_t
-  = h_{l,t+1} - h_{l,t} per layer relative to the identity and affine baselines.'
+goal: 'On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations
+  can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1}
+  taking ONLY the previous position''s activation (no token identity), evaluate single-step
+  held-out Delta R^2 per layer and multi-step autoregressive rollout from the last
+  prompt token against true on-policy answer activations, and benchmark behavior read-out
+  off rolled-forward states against #779''s direct context->trait predictor and context->answer-profile
+  map.'
 relates_to:
 - spec-context-as-vector
 ---
@@ -21,7 +23,7 @@ relates_to:
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1} that takes ONLY the previous position's activation — never the next token's identity, since the whole point is to forecast in the no-generation regime — across the #841 function-class ladder (identity/copy-previous null, affine ridge, small MLP, optional sequence model as exploratory), evaluate (a) single-step held-out variance explained of the update Delta_t = h_{l,t+1} - h_{l,t} per layer and (b) multi-step autoregressive rollout from the last prompt token against the model's true on-policy answer activations, and (c) benchmark whether rolled-forward states support behavior read-out against #779's direct context->trait predictor and context->answer-profile map.
+On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1} taking ONLY the previous position's activation (no token identity), evaluate single-step held-out Delta R^2 per layer and multi-step autoregressive rollout from the last prompt token against true on-policy answer activations, and benchmark behavior read-out off rolled-forward states against #779's direct context->trait predictor and context->answer-profile map.
 
 ## Overview / Motivation
 
