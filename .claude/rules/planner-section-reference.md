@@ -190,6 +190,38 @@ does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
 max-over-axis selection in the headline" and move on.
 
+**Required: OOD generalization folds (group-structured held-out
+predictive DVs).** If any DV is a held-out predictive statistic —
+reconstruction R² / skill, read-out ρ, predictor accuracy, any
+"held-out" / "cross-validated" number — over a sample with known GROUP
+structure (context/prompt families, genres, persona panels, behavior
+classes, seeds sharing a template), §6 MUST: (a) NAME the sample's
+grouping axes — "no known structure" is a positive claim requiring an
+explicit iid argument, the only pointwise-only exemption; (b) register
+at least one GROUP-level held-out fold — leave-one-family-out (LOFO) /
+leave-one-genre-out / leave-one-persona-out, or a corpus/genre
+TRANSFER arm (fit on corpus A, evaluate on corpus B — the strongest
+form, counts); (c) report BOTH and label EVERY headline with its
+fold — pointwise LOO/LOCO may stay (it upper-bounds
+within-distribution skill) but never carries a generalization claim
+alone; a claim that holds under LOO and fails under the group fold is
+reported as within-family interpolation, not generalization; (d) give
+any max/argmax-over-free-axis selection inside a group-fold headline
+its selection-symmetric null (the block above) computed under the
+SAME fold structure; and (e) frame CIs and "unresolved" calls on
+GROUP-level n — G quasi-independent test units, not n points.
+Pointwise LOO trains on same-family siblings of every test point, so
+it measures within-family interpolation and can REORDER cross-context
+claims: #810's LOCO headline (max-pool 0.826 best answer-side
+summary vs mean 0.800; trained-ridge read-out ρ ≈ 0.909) reordered
+under the 7-fold leave-one-FAMILY-out re-read (mean 0.804 ≥ turn_nl
+0.791 > max-pool 0.760 at LOCO-best layers) and the read-out
+collapsed to ρ ≈ 0.285. Full rule:
+`.claude/rules/ood-generalization-folds.md`. Plans with no held-out
+predictive DV write "N/A — no held-out predictive DV" and move on; a
+plan claiming a genuinely iid sample writes the iid argument here
+instead of the N/A.
+
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ## 6.5 Primary deliverable (the upstream completeness-vs-plan gate)

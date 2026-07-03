@@ -243,8 +243,9 @@ content-behavior leakage/implantation (judge-rate PRIMARY + continuous
 completion-probability SECONDARY) · **Install-strength control** for
 cross-condition leakage comparisons · **Statistical-input existence** for
 registered corrections · **Selection-symmetric nulls** for max-over-axis
-headlines · **Figures to produce** (hero figure + over-produced exploratory
-dump).
+headlines · **OOD generalization folds** for group-structured held-out
+predictive DVs · **Figures to produce** (hero figure + over-produced
+exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 6. Evaluation — read that section (grep the heading, chunked Read) BEFORE writing
