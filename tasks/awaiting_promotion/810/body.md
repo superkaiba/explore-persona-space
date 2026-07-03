@@ -7,6 +7,7 @@ tags:
 - answer-summary-sweep
 - from-722
 - followup-manual
+- followup-auto
 created_at: '2026-07-01T18:16:26Z'
 has_clean_result: true
 parent_id: 722
