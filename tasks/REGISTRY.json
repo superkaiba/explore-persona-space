@@ -5829,8 +5829,8 @@
     "892": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/892",
-      "status": "reviewing",
+      "path": "tasks/completed/892",
+      "status": "completed",
       "title": "workflow-fix: audit pre-reg regex misses 'as registered' phrasing"
     },
     "893": {
