@@ -5724,8 +5724,8 @@
     "879": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/879",
-      "status": "reviewing",
+      "path": "tasks/completed/879",
+      "status": "completed",
       "title": "workflow-fix: verify_plan.py p-floor attainability check for empirical-null gates"
     },
     "88": {
