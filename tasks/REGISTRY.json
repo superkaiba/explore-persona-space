@@ -6271,8 +6271,8 @@
     "948": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/948",
-      "status": "reviewing",
+      "path": "tasks/completed/948",
+      "status": "completed",
       "title": "workflow-fix: reviewer must verify seam-stubbed production bodies vs real APIs"
     },
     "949": {
