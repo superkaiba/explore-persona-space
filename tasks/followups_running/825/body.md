@@ -23,7 +23,7 @@ relates_to:
 - identity-contextual-vs-base
 - identity-cb-duality
 ---
-# The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells — including a user-turn map the linear probe misses that strengthens when the model writes the user turn itself (MODERATE confidence)
+# The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells — including a weak user-turn map (MLP R² 0.19–0.23) that the linear probe misses entirely (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
@@ -223,3 +223,4 @@ All planned cells across three rounds are present (10 within-cell maps, 4 cross-
 > Help me to plan this experiment: Is the context vector to answer profile mapping present in the base model (Qwen/Qwen2.5-7B) and does it hold for the user?
 
 (full text in `original-body.md` `## Provenance`). Lineage: [#779](https://eps.superkaiba.com/tasks/779) — the parent single-turn instruct rig this run replicates and extends. Run 2026-07-02 (7 launch attempts; crash-fix rounds 1–6: extract host-RAM OOM → block-wise flush → host upsize → GPU Gram-ridge fit). Interpretation reviewed rounds 1–3 (two critic REVISE rounds, then PASS+PASS). Follow-up round `mlp-unprobed-cells` run 2026-07-03 (cheap-band auto-run, redundancy-screened; plan v6; 3 launches, results rescued from the crash-persist upload). Follow-up round `onpolicy-user-turn` run 2026-07-03 (user-requested; verbatim prompt: "run on-policy user turn for both instruct and base model"; plan v7; 4 GCP launches — three extraction crashes on a zero-width-span tokenizer edge in short self-written turns, then a clean run).
+
