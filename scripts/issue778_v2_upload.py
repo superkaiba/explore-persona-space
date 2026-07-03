@@ -86,19 +86,30 @@ def _bulk_upload_and_verify(api: HfApi, v2_root: Path, subdirs: tuple[str, ...])
             commit_message=f"issue778 v2rerun: {sub}/ bundle ({time.strftime('%Y-%m-%d')})",
         )
         print(f"[upload-v2] {sub}/ folder commit done", flush=True)
-    # EXACT-set verify on a FRESH listing (never prefix-presence alone).
+    # EXACT-set verify on a FRESH listing (never prefix-presence alone):
+    # missing files AND extra stale files under OUR subdirs both fail — a
+    # foreign/stale file inside the prefix corrupts the #816-consumed bundle
+    # and must be resolved BEFORE the MANIFEST completion signal lands.
     listing = set(
         list_repo_files_complete(api, DEFAULT_DATASET_REPO, repo_type="dataset", revision="main")
     )
-    missing = [
-        f"{HF_PREFIX}/{p.relative_to(v2_root).as_posix()}"
-        for p in expected
-        if f"{HF_PREFIX}/{p.relative_to(v2_root).as_posix()}" not in listing
-    ]
+    expected_set = {f"{HF_PREFIX}/{p.relative_to(v2_root).as_posix()}" for p in expected}
+    missing = sorted(expected_set - listing)
     if missing:
         raise RuntimeError(
             f"upload verify FAILED: {len(missing)} expected v2 files missing on the Hub "
             f"(first: {missing[:5]})"
+        )
+    hub_in_scope = {
+        f for f in listing if any(f.startswith(f"{HF_PREFIX}/{sub}/") for sub in subdirs)
+    }
+    extra = sorted(hub_in_scope - expected_set)
+    if extra:
+        raise RuntimeError(
+            f"upload verify FAILED: {len(extra)} EXTRA stale Hub files under "
+            f"{HF_PREFIX}/{{{','.join(subdirs)}}} with no local counterpart "
+            f"(first: {extra[:5]}) — delete them (or restore the local files) before "
+            "the MANIFEST completion signal publishes."
         )
     return {
         "prefix": HF_PREFIX,

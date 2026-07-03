@@ -374,6 +374,64 @@ def _stub_responses(records: list[dict]) -> list[str]:
     return [f"[stub response {r['rollout_id']}] This is a placeholder answer." for r in records]
 
 
+def _extract_trait_v2_done(
+    trait: str,
+    out_root: Path,
+    *,
+    n_questions: int,
+    n_rollouts: int,
+    gen_stub: bool,
+    capture_stub: bool,
+    skip_capture: bool,
+) -> bool:
+    """True iff the pod extract phase for ``trait`` already produced complete
+    artifacts UNDER THE SAME PARAMS (a completed-trait resume predicate — a pod
+    crash at trait 3 must not re-sample traits 1-2 at T=1.0 and silently
+    replace their persisted rollout text; concern ``v2-ladder-resume-incomplete``).
+    Keyed on the gen_meta params (incl. the stub flags, so a production run can
+    never resume onto stub artifacts) + rollouts row count + acts shape."""
+    extract_dir = _v2_root(out_root) / "extract"
+    meta_path = extract_dir / f"{trait}_gen_meta.json"
+    rollouts_path = extract_dir / f"{trait}_rollouts.jsonl"
+    acts_path = extract_dir / f"{trait}_acts_all.pt"
+    if not (meta_path.exists() and rollouts_path.exists()):
+        return False
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    want = {
+        "n_questions": n_questions,
+        "n_rollouts_per_cell": n_rollouts,
+        "gen_stub": gen_stub,
+        "capture_stub": capture_stub,
+        "skip_capture": skip_capture,
+    }
+    if any(meta.get(k) != v for k, v in want.items()):
+        return False
+    n_total = meta.get("n_rollouts_total")
+    if not isinstance(n_total, int) or n_total <= 0:
+        return False
+    with open(rollouts_path) as f:
+        n_lines = sum(1 for ln in f if ln.strip())
+    if n_lines != n_total:
+        return False
+    if not skip_capture:
+        if not acts_path.exists():
+            return False
+        import torch
+
+        try:
+            acts = torch.load(acts_path, weights_only=False, map_location="cpu")
+        except Exception as e:  # torch.load raises heterogeneous types on corruption
+            lib.log_phase("extract_v2", f"trait={trait} unreadable acts_all ({e}) — regenerating")
+            return False
+        if tuple(acts.shape) != (n_total, lib.N_LAYERS, lib.HIDDEN_DIM):
+            return False
+    return True
+
+
 def extract_trait_v2(
     trait: str,
     external_root: Path,
@@ -384,6 +442,7 @@ def extract_trait_v2(
     gen_stub: bool = False,
     capture_stub: bool = False,
     skip_capture: bool = False,
+    force: bool = False,
 ) -> dict:
     """v2 GPU phase: generate + persist ALL rollout text, capture ALL acts.
 
@@ -392,11 +451,33 @@ def extract_trait_v2(
       v2/extract/{trait}_rollouts.jsonl   (one row per rollout, pairing keys)
       v2/extract/{trait}_acts_all.pt      ((n, 28, 3584) fp32, row-aligned)
       v2/extract/{trait}_gen_meta.json
+
+    A trait whose artifacts are already complete under IDENTICAL params is
+    SKIPPED (resume predicate above) unless ``force`` — regeneration would
+    re-sample at T=1.0 and silently replace persisted rollout text.
     """
     import torch
     from transformers import AutoTokenizer
 
     v2 = _v2_root(out_root)
+    if not force and _extract_trait_v2_done(
+        trait,
+        out_root,
+        n_questions=n_questions,
+        n_rollouts=n_rollouts,
+        gen_stub=gen_stub,
+        capture_stub=capture_stub,
+        skip_capture=skip_capture,
+    ):
+        lib.log_phase(
+            "extract_v2",
+            f"trait={trait} already complete — SKIPPED (matching params; --force to regenerate)",
+            trait=trait,
+        )
+        with open(v2 / "extract" / f"{trait}_gen_meta.json") as f:
+            meta = json.load(f)
+        meta["resumed_from_disk"] = True
+        return meta
     lib.log_phase("extract_v2", f"trait={trait} start", trait=trait)
     td = lib.load_trait_data(external_root, trait)
     tokenizer = AutoTokenizer.from_pretrained(lib.MODEL_NAME)
@@ -495,6 +576,7 @@ def judge_and_build_v2(  # noqa: C901
     *,
     judge_dry_run: bool = False,
     judge_stub: bool = False,
+    allow_gate_skip: bool = False,
 ) -> dict:
     """v2 VM phase: judge trait+coherence, build the paired mask + r_B v2.
 
@@ -685,6 +767,7 @@ def judge_and_build_v2(  # noqa: C901
     # ── W1 wiring gate + v1-vs-v2 per-layer cosine (reported for all traits) ──
     v1_rb_path = out_root / "rb" / f"{trait}.pt"
     cos_per_layer = None
+    w1_gate = "n/a — not the W1 trait"
     if v1_rb_path.exists():
         rb_v1 = torch.load(v1_rb_path, weights_only=False).to(torch.float64)
         rb64 = rb.to(torch.float64)
@@ -705,8 +788,25 @@ def judge_and_build_v2(  # noqa: C901
                     "downstream compute (plan §7 W1)."
                 )
             lib.log_phase("judge_v2", f"W1 PASS: evil cos(v2,v1)@L{W1_LAYER_IDX}={c:.4f}")
+            w1_gate = "pass"
+    elif trait == W1_TRAIT and not allow_gate_skip:
+        # FAIL-CLOSED: an unarmed gate is not a passed gate (plan §7 W1 has STOP
+        # semantics). Missing v1 r_B for the W1 trait means the wiring gate
+        # cannot fire — raise in production; only the explicit smoke flag
+        # (never set by the production driver) records a non-production skip.
+        raise RuntimeError(
+            f"W1 GATE UNARMED: v1 r_B missing at {v1_rb_path} for the W1 trait "
+            f"{trait!r} — the plan §7 wiring gate cannot fire. Stage the v1 "
+            "inputs (scripts/issue778_v2_prefetch.py) or pass "
+            "--allow-gate-skip-smoke-only (smoke ONLY; recorded non-production)."
+        )
     else:
-        lib.log_phase("judge_v2", f"trait={trait} v1 rb missing — v1-vs-v2 cosine skipped")
+        if trait == W1_TRAIT:
+            w1_gate = "skipped_smoke_only — NON-PRODUCTION (v1 r_B missing)"
+        skip_note = " (W1 GATE SKIP — smoke only, NON-PRODUCTION)" if trait == W1_TRAIT else ""
+        lib.log_phase(
+            "judge_v2", f"trait={trait} v1 rb missing — v1-vs-v2 cosine skipped{skip_note}"
+        )
 
     meta = {
         "trait": trait,
@@ -714,6 +814,7 @@ def judge_and_build_v2(  # noqa: C901
         "n_kept_pairs": n_kept,
         "rb_v2_norm_per_layer": [float(rb[layer].norm()) for layer in range(lib.N_LAYERS)],
         "cos_v2_v1_per_layer": cos_per_layer,
+        "w1_gate": w1_gate,
         "reproducibility": lib.repro_metadata(),
     }
     with open(extract_dir / f"{trait}_v2_meta.json", "w") as f:
@@ -775,6 +876,20 @@ def main() -> None:
         help="SMOKE ONLY: deterministic judge scores (no API) — exercises the full "
         "mask + r_B v2 build path",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="v2 --paired-mask: regenerate a trait whose extract artifacts are "
+        "already complete (default: completed traits are SKIPPED — regeneration "
+        "re-samples at T=1.0 and replaces persisted rollout text)",
+    )
+    parser.add_argument(
+        "--allow-gate-skip-smoke-only",
+        action="store_true",
+        help="SMOKE ONLY (never set by the production driver): permit the W1 gate "
+        "to record an unarmed skip (v1 r_B missing) instead of raising; recorded "
+        "as non-production in the trait meta",
+    )
     args = parser.parse_args()
 
     external_root = Path(args.external_root)
@@ -796,6 +911,7 @@ def main() -> None:
                 out_root,
                 judge_dry_run=args.judge_dry_run,
                 judge_stub=args.judge_stub,
+                allow_gate_skip=args.allow_gate_skip_smoke_only,
             )
         lib.log_phase("judge_v2", f"all traits done ({len(results)})")
         print(json.dumps({"phase": "judge_v2", "results": results}, indent=2, default=str))
@@ -814,6 +930,7 @@ def main() -> None:
                 gen_stub=args.gen_stub,
                 capture_stub=args.capture_stub,
                 skip_capture=args.skip_capture,
+                force=args.force,
             )
         lib.log_phase("extract_v2", f"all traits done ({len(results)})")
         print(json.dumps({"phase": "extract_v2", "traits": list(results)}, indent=2))

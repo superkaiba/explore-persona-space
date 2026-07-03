@@ -136,25 +136,61 @@ def _pin_for(rel: str, pins: dict) -> str | None:
 
 
 def fetch_v2_bundle(out_root: Path) -> int:
-    """Pull the pod-produced analysis_tensors_v2 bundle from HF into out_root/v2."""
+    """Pull the pod-produced analysis_tensors_v2 bundle from HF into out_root/v2.
+
+    A PRE-EXISTING local file is never trusted blindly (the stub-poisoning
+    residual): it is verified against the Hub entry — byte size always, plus
+    the LFS sha256 where the Hub records one — and a mismatch fails LOUD
+    (delete the local copy and re-fetch; the Hub copy is the pod-verified
+    canonical bundle)."""
     from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.hf_api import RepoFile
 
-    from explore_persona_space.orchestrate.hub import list_repo_files_complete
-
-    files = list_repo_files_complete(HfApi(), HF_REPO, repo_type="dataset", revision="main")
-    v2_files = [f for f in files if f.startswith(f"{HF_V2_PREFIX}/")]
-    n = 0
-    for f in v2_files:
-        rel = f[len(HF_V2_PREFIX) + 1 :]
+    entries = [
+        e
+        for e in HfApi().list_repo_tree(
+            HF_REPO,
+            path_in_repo=HF_V2_PREFIX,
+            repo_type="dataset",
+            revision="main",
+            recursive=True,
+        )
+        if isinstance(e, RepoFile)
+    ]
+    n_fetched = 0
+    n_verified = 0
+    for e in entries:
+        rel = e.path[len(HF_V2_PREFIX) + 1 :]
         dest = out_root / "v2" / rel
         if dest.exists():
+            lfs = getattr(e, "lfs", None)
+            hub_sha = (
+                (lfs.get("sha256") if isinstance(lfs, dict) else getattr(lfs, "sha256", None))
+                if lfs is not None
+                else None
+            )
+            size_ok = dest.stat().st_size == e.size
+            sha_ok = hub_sha is None or _sha256(dest) == hub_sha
+            if not (size_ok and sha_ok):
+                raise RuntimeError(
+                    f"prefetch: pre-existing local v2 file {dest} does NOT match the Hub "
+                    f"copy (local {dest.stat().st_size}B vs hub {e.size}B; sha256 "
+                    f"{'mismatch' if hub_sha is not None else 'unavailable — size mismatch'}) "
+                    "— possible stub/stale artifact; delete the local file and re-run "
+                    "--fetch-v2 (the Hub bundle is the pod-verified canonical copy)."
+                )
+            n_verified += 1
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
-        got = hf_hub_download(HF_REPO, f, repo_type="dataset", revision="main")
+        got = hf_hub_download(HF_REPO, e.path, repo_type="dataset", revision="main")
         shutil.copy2(got, dest)
-        n += 1
-    print(f"[prefetch] v2 bundle: {len(v2_files)} on Hub, {n} fetched", flush=True)
-    return len(v2_files)
+        n_fetched += 1
+    print(
+        f"[prefetch] v2 bundle: {len(entries)} on Hub, {n_fetched} fetched, "
+        f"{n_verified} pre-existing verified (size+sha)",
+        flush=True,
+    )
+    return len(entries)
 
 
 def main() -> None:
