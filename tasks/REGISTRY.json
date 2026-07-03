@@ -6143,8 +6143,8 @@
     "932": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/932",
-      "status": "running",
+      "path": "tasks/reviewing/932",
+      "status": "reviewing",
       "title": "workflow-fix: verify_plan check \u2014 fail-loud acceptance claims need committed tests"
     },
     "933": {
