@@ -418,6 +418,71 @@ def test_positive_evidence_ignores_hub_local_dir_bookkeeping(tmp_path, repo, mon
     assert list(res2.noncanonical_dispositions.values()) == ["unverified-kept"]
 
 
+# ─── 8c-bis: r2 regressions — P2 empty-dir license + hidden-dir marker spoof ─
+
+
+def test_p2_suffix_only_empty_dir_never_reap_licensed(tmp_path, repo, monkeypatch):
+    """r2 fix (concern ``p2-empty-tempdir-false-reap``): an aged, EMPTY,
+    uid-owned FOREIGN mkdtemp leftover (``tmpabc_7``) whose ``_(\\d+)$``
+    suffix collides with a real terminal issue must NEVER ride the empty-dir
+    evidence license — it is kept + escalated (``unverified-kept``), on disk
+    intact, through the guard tier-(b) path. POSITIVE CONTROL in the same
+    run: an aged empty P1-named dir keeps the empty-dir license unchanged."""
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    tmp_root = tmp_path / "faketmp"
+    foreign = tmp_root / "tmpabc_7"  # P2-suffix-only: no P1/P3 route
+    foreign.mkdir(parents=True)
+    p1_empty = tmp_root / "i7_stage"  # P1 route: empty-dir license unchanged
+    p1_empty.mkdir()
+    _backdate(tmp_root)
+    _stub_evidence_set(monkeypatch, set())
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "completed")
+
+    res = vdg.clean_terminal_download_caches(apply=True, data_root=data_root, tmp_root=tmp_root)
+
+    assert foreign.is_dir(), "empty P2-suffix-only dir must never be deleted"
+    assert not p1_empty.exists(), "P1 empty-dir license must be unchanged"
+    by_name = {os.path.basename(r["path"]): r for r in res.noncanonical_candidates}
+    assert by_name["tmpabc_7"]["disposition"] == "unverified-kept"
+    assert by_name["tmpabc_7"]["issue"] == 7
+    assert by_name["i7_stage"]["disposition"] == "removed"
+    kinds = [r["kind"] for r in _read_sidecar(repo)]
+    assert "noncanonical-cache-unverified-kept" in kinds
+
+
+def test_hidden_git_dir_not_hub_evidence(tmp_path, repo, monkeypatch):
+    """r2 fix (concern ``evidence-scan-hidden-dir-collision``): ``.git/refs``
+    inside an aged, terminal-owned, issue-keyed /tmp git checkout must NOT
+    spoof a hub-layout marker (``refs`` at depth 2) — hidden entries are
+    skipped at every depth of the branch-(a) scan, so both checkout shapes
+    are ``unverified-kept`` and stay intact."""
+    tmp_root = tmp_path / "faketmp"
+    checkout = tmp_root / "i916_checkout"  # .git + uncommitted work
+    (checkout / ".git" / "refs" / "heads").mkdir(parents=True)
+    (checkout / ".git" / "refs" / "heads" / "main").write_text("abc123\n")
+    (checkout / ".git" / "config").write_text("[core]\n")
+    (checkout / "notes.txt").write_text("uncommitted work\n")
+    gitonly = tmp_root / "i916_gitonly"  # the reviewer-sketched only-.git shape
+    (gitonly / ".git" / "refs").mkdir(parents=True)
+    (gitonly / ".git" / "refs" / "HEAD").write_text("ref: refs/heads/main\n")
+    _backdate(tmp_root)
+    _stub_evidence_set(monkeypatch, {"issue916_monitoring"})
+
+    res = ced.clean_issue_downloads(916, apply=True, data_root=tmp_path / "data", tmp_root=tmp_root)
+
+    assert (checkout / ".git" / "refs" / "heads" / "main").is_file()
+    assert (checkout / "notes.txt").is_file()
+    assert (gitonly / ".git" / "refs" / "HEAD").is_file()
+    assert res.removed == []
+    assert list(res.noncanonical_dispositions.values()) == [
+        "unverified-kept",
+        "unverified-kept",
+    ]
+    for rel in res.noncanonical_evidence.values():
+        assert "refs" not in rel  # no spoofed hub-layout marker string
+
+
 # ─── 8d: production_tmp_root referenced ONLY inside the two main() bodies ────
 
 
@@ -456,6 +521,39 @@ def test_production_tmp_root_only_in_mains():
                 f"{script}: production_tmp_root referenced outside main(): "
                 f"{' > '.join(stack) or '<module>'}"
             )
+
+
+def test_cli_main_forwards_tmp_root_to_cleaner(tmp_path, monkeypatch):
+    """r2 Minor: pin that ced ``main()``'s signature-adaptive dispatch
+    actually FORWARDS ``production_tmp_root()`` into the production cleaners
+    (default AND ``--incremental``). The I7 source-scan test pins WHERE
+    ``production_tmp_root`` may be referenced, not that its value reaches the
+    cleaner — the ``inspect.signature`` dispatch could silently drop the CLI
+    opt-in on a future rename with every other test still green."""
+    fake_root = tmp_path / "prod_tmp"
+    calls: list[dict] = []
+
+    def _spy(issue_n, *, apply=False, data_root=None, tmp_root=None, sweep_tmp=True):
+        calls.append({"issue_n": issue_n, "apply": apply, "tmp_root": tmp_root})
+        return SimpleNamespace(
+            removed=[],
+            skipped=[],
+            symlink_external_kept=[],
+            failed=[],
+            bytes_freed=0,
+            sizes_bytes={},
+        )
+
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+    monkeypatch.setattr(ced, "production_tmp_root", lambda: fake_root)
+    monkeypatch.setattr(ced, "clean_issue_downloads", _spy)
+    monkeypatch.setattr(ced, "clean_issue_downloads_incremental", _spy)
+
+    assert ced.main(["903"]) == 0
+    assert ced.main(["903", "--incremental"]) == 0
+    assert [c["tmp_root"] for c in calls] == [fake_root, fake_root]
+    assert [c["issue_n"] for c in calls] == [903, 903]
+    assert all(c["apply"] is False for c in calls)  # dry-run default preserved
 
 
 # ─── 9: recency gate (I4) ────────────────────────────────────────────────────

@@ -610,6 +610,25 @@ def _noncanonical_recency_blocked(
     return reason
 
 
+def _p2_suffix_only(name: str) -> bool:
+    """True iff ``name``'s ONLY extraction route is the P2 ``_(\\d+)$`` suffix
+    (no P1 prefix match, no P3 cache-suffix match).
+
+    P2 stays in discovery for ATTRIBUTION visibility, but its match class
+    includes foreign mkdtemp leftovers (``tmpdu2m4w_7`` extracts issue 7), so
+    a P2-suffix-only candidate never gets the empty-dir evidence license — it
+    must show REAL non-empty positive evidence (hub-layout markers or a
+    data-repo-prefix mirror) to be reap-eligible; an empty P2-only dir is
+    kept + escalated (``unverified-kept``), never deleted. P1/P3 candidates
+    keep the empty-dir license unchanged. (r2 fix, review concern
+    ``p2-empty-tempdir-false-reap``.)"""
+    if _TMP_ISSUE_PREFIX_RE.match(name) is not None:
+        return False
+    if _DATA_NONCANONICAL_CACHE_RE.match(name) is not None:
+        return False
+    return _TMP_ISSUE_SUFFIX_RE.search(name) is not None
+
+
 def _nested_durable_dirs(cache_dir: Path) -> list[Path]:
     """Nested dirs named ``store`` OR ``eval_results`` under the candidate —
     the v4 generalization of :func:`_nested_store_dirs` (#911 I12).
@@ -701,20 +720,29 @@ def _noncanonical_reap_gates(
         return ("durable-content-kept", reason)
     # Gate 1.7 — positive re-downloadability evidence. Branch (a) + the
     # trivial empty case need no network; fetch the data-repo listing only
-    # when branch (b) is actually needed.
-    evidence = _positive_redownloadability_evidence(cache_dir, data_repo_toplevel=None)
+    # when branch (b) is actually needed. A P2-suffix-only candidate (a
+    # ``*_<N>`` name with no P1/P3 route — the foreign-mkdtemp shape,
+    # ``tmpdu2m4w_7``) never gets the empty-dir license: it must show REAL
+    # non-empty evidence (r2 fix, concern ``p2-empty-tempdir-false-reap``).
+    p2_only = _p2_suffix_only(cache_dir.name)
+    evidence = _positive_redownloadability_evidence(
+        cache_dir, data_repo_toplevel=None, allow_empty_license=not p2_only
+    )
     if evidence is None:
         repo = hf_data_repo()
         if repo not in data_repo_toplevel_cache:
             data_repo_toplevel_cache[repo] = _data_repo_toplevel_names()
         evidence = _positive_redownloadability_evidence(
-            cache_dir, data_repo_toplevel=data_repo_toplevel_cache[repo]
+            cache_dir,
+            data_repo_toplevel=data_repo_toplevel_cache[repo],
+            allow_empty_license=not p2_only,
         )
     if evidence is None:
         reason = (
             "no positive re-downloadability evidence (no hub-layout markers; "
-            "top-level names not verified as data-repo prefixes) — "
-            "KEPT (escalate-only, never deleted)"
+            "top-level names not verified as data-repo prefixes"
+            + ("; P2 suffix-only route — requires non-empty positive evidence" if p2_only else "")
+            + ") — KEPT (escalate-only, never deleted)"
         )
         append_disk_guard_event(
             {
@@ -733,6 +761,7 @@ def _positive_redownloadability_evidence(
     cache_dir: Path,
     *,
     data_repo_toplevel: frozenset[str] | None,
+    allow_empty_license: bool = True,
 ) -> str | None:
     """Gate 1.7 — the v4 REAP LICENSE for whole-dir non-canonical candidates
     (#911 I11). Returns an evidence string, or ``None`` (=> escalate-only,
@@ -740,24 +769,35 @@ def _positive_redownloadability_evidence(
 
     Branch (a): HF hub-layout markers at depth <= 2 (``models--*`` /
     ``datasets--*`` / ``blobs`` / ``snapshots`` / ``refs``) — the dir is a hub
-    cache, re-downloadable by construction. Branch (b): every top-level entry
-    name is a top-level prefix that exists on the HF data repo
-    (``data_repo_toplevel``; ``None`` = the listing fetch failed =>
-    fail-toward-keep) — the dir is a partial mirror of on-repo folders. A
+    cache, re-downloadable by construction. HIDDEN entries (any name starting
+    with ``.``) are EXCLUDED from this scan at both depths: a dot-dir is tool
+    state — a git checkout's ``.git/refs`` is present in EVERY checkout and
+    ``refs``/``snapshots`` are generic enough to collide — so scanning it
+    would spoof hub evidence and license a whole-dir rmtree of a non-hub dir
+    (r2 fix, review concern ``evidence-scan-hidden-dir-collision``). Branch
+    (b): every top-level entry name is a top-level prefix that exists on the
+    HF data repo (``data_repo_toplevel``; ``None`` = the listing fetch failed
+    => fail-toward-keep) — the dir is a partial mirror of on-repo folders. A
     top-level ``.cache`` DIRECTORY is ignored in branch (b): it is the
     huggingface_hub ``snapshot_download(local_dir=...)`` bookkeeping dir
     (``.cache/huggingface/`` metadata + locks — hub-client tooling state,
     never data; the live ``data/issue_744_dl`` mirror carries exactly this
-    shape), and at least one NON-bookkeeping entry must remain and match. An
-    empty candidate dir passes trivially (nothing to lose). A flat pile of
-    generated files (the ``fact_check_823`` judge-cache shape) matches
+    shape), and at least one NON-bookkeeping entry must remain and match.
+    Other hidden top-level entries (``.git``, ...) STAY in the branch-(b)
+    name set, where an unmatched name can only BLOCK the license
+    (fail-toward-keep). An empty candidate dir passes trivially (nothing to
+    lose) ONLY when ``allow_empty_license`` is True — the caller disables it
+    for P2-suffix-only candidates (see :func:`_p2_suffix_only`). A flat pile
+    of generated files (the ``fact_check_823`` judge-cache shape) matches
     NEITHER branch and correctly escalates."""
     try:
         depth1 = sorted(cache_dir.iterdir())
     except OSError:
         return None  # unreadable / dangling — nothing verifiable, keep
     if not depth1:
-        return "empty dir (nothing to lose)"
+        if allow_empty_license:
+            return "empty dir (nothing to lose)"
+        return None  # P2 suffix-only candidate — empty-dir license disallowed
 
     def _is_hub_marker(name: str) -> bool:
         return (
@@ -766,11 +806,12 @@ def _positive_redownloadability_evidence(
             or name in ("blobs", "snapshots", "refs")
         )
 
-    entries = list(depth1)
-    for child in depth1:
+    visible1 = [c for c in depth1 if not c.name.startswith(".")]
+    entries = list(visible1)
+    for child in visible1:
         if child.is_dir() and not child.is_symlink():
             try:
-                entries.extend(child.iterdir())
+                entries.extend(e for e in child.iterdir() if not e.name.startswith("."))
             except OSError:
                 continue
     for entry in entries:
