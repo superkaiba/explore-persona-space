@@ -77,8 +77,13 @@ Save the plan to a temporary file or pass it directly.
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
 line plus a `<usage>...</usage>` block. Remove BOTH before writing the
-planner's return to ANY durable handoff surface (the `/tmp/issue-<N>-plan-v<K>.md`
-handoff file, `task.py new-plan-version` → `plans/v<K>.md`), e.g.:
+planner's return to ANY durable handoff surface (the
+`/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file, where `<attempt>` is a
+fresh `$(date +%s)` chosen once per orchestrator planning attempt — the
+`<attempt>` suffix exists because a crashed attempt leaves a stale /tmp file;
+a respawned session re-Writing the fixed path after Reading an older version
+gets "File has been modified since read" (4× on #822) —
+`task.py new-plan-version` → `plans/v<K>.md`), e.g.:
 
 ```python
 text = re.sub(r"\n?agentId:\s*\S+\s*\(use SendMessage.*?</usage>\s*$", "\n", text, flags=re.DOTALL)
@@ -101,7 +106,8 @@ Run the structural verifier against the plan version just persisted:
 
 - **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
   just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
-  still lives at the `/tmp/issue-<N>-plan-v<K>.md` handoff file), use `--plan-file <handoff>
+  still lives at the `/tmp/issue-<N>-plan-v<K>-<attempt>.md` handoff file), use
+  `--plan-file <handoff>
   --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
   "persist first or use --plan-file", NOT as a bounce.
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
@@ -300,6 +306,31 @@ After all 6 critics return, for EACH lens independently:
 | APPROVE | REVISE/REJECT (or vice versa) | **Disagreement.** Spawn `reconciler` (in-context mode) with brief: `mode: in-context`, role=`critic`, lens=`<lens>`, both verdict bodies, plan_body. Reconciler prints `<!-- epm:plan-critique-reconcile v<n> --> ... <!-- /epm:plan-critique-reconcile -->` to stdout with role-specific verdict (`APPROVE` / `REVISE` / `REJECT` per `.claude/agents/reconciler.md` Step 4 table). Reconciler is required to **preserve REJECT severity** when siding with a REJECT reviewer — it does not silently downgrade to REVISE. Manager parses the printed marker's `**Verdict:**` line directly into `lens_verdict[lens]`. |
 | Codex no-show (BLOCKER printed) | (any) | Fall back to single-Claude-critic for this lens this round. Surface a one-line note in the merged critique: "Codex {{lens}} twin no-show this round." |
 
+**Durable-output-first (Phase 2 analogue of /issue Step 5b's
+durable-verdict-first rule).** A bg-Bash error exit or a wrapper
+Agent-tool error is NOT itself a Codex no-show: the expected output file
+(`/tmp/codex-critic-<N>-<lens>-output.md`, or the round-suffixed variant
+the composer's dispatch config named) is the durable deliverable — read
+it first; only an absent/malformed marker block there synthesizes the
+`BLOCKER: codex no-show`. If the WRAPPER (`codex-critic`) errors before
+returning its dispatch config, check the conventional prompt file
+(`/tmp/codex-critic-<N>-<lens>-prompt.md`): if present AND fresh for
+this round (mtime postdating the composer spawn; when in doubt,
+recompose rather than dispatch a stale prompt), dispatch
+`codex_task.py` against it with the conventional output path rather
+than declaring a no-show. A CLAUDE lens critic whose Agent-tool result
+errors has NO durable output by design (in-context mode) — re-spawn
+that lens critic once before any fallback; never drop the lens. The
+in-context RECONCILER is covered too: on a reconciler Agent-tool error,
+FIRST parse whatever text it returned for the
+`<!-- epm:plan-critique-reconcile v<n> -->` block (a parseable block =
+the reconciler returned; use its verdict); if none, re-spawn the
+reconciler once; if still none, do NOT adjudicate the disagreement
+yourself — adopt the MORE SEVERE of the two lens verdicts as a
+fail-safe (biasing toward revision, never toward shipping) and record
+the unresolved reconcile in the merged critique handed to the
+plan-approval gate.
+
 **Cross-lens merge (after per-lens reconciliation):**
 
 - **Overall verdict = worst of the three lens verdicts.** REJECT > REVISE > APPROVE.
@@ -461,6 +492,9 @@ c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-tas
 #     If the agent returned `BLOCKER: ...` instead (missing lens, missing
 #     plugin, malformed brief), skip dispatch — the Codex no-show
 #     fallback in Step 5 will fire.
+#     (Agent-tool ERROR ≠ BLOCKER: on an error result, first try the
+#     conventional prompt-file path if round-fresh — durable-output-first,
+#     see the paragraph after the Phase 2 decision table.)
 codex_dispatches = {}  # lens -> (output_file, bg_bash_handle)
 for lens, codex_agent_out in (("methodology", m_codex),
                               ("statistics",  s_codex),

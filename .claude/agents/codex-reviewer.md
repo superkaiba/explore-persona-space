@@ -14,6 +14,11 @@ absorbed_into: codex-clean-result-critic
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 ---
 
 > **DEPRECATED 2026-05-13.** Use `codex-clean-result-critic` instead. The

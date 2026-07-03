@@ -14,6 +14,12 @@ description: >
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Codex Follow-Up Critic (thin Claude wrapper, marker mode)

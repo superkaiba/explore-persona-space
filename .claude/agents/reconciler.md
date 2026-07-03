@@ -14,6 +14,12 @@ skills:
   - independent-reviewer
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Reconciler

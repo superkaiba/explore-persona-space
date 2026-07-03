@@ -8,6 +8,12 @@ accepts:
   - lookback_days
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Retrospective

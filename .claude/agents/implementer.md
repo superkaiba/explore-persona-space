@@ -13,6 +13,19 @@ skills:
   - adversarial-planner
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - Agent
+  - WebSearch
+  - WebFetch
+  - mcp__plugin_context7_context7
 ---
 
 # Implementer
@@ -82,6 +95,20 @@ You work in two modes:
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
 - **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s.
 
+### Content hygiene for harmful-content data files (EM corpora, refusal-bait, safety-benchmark banks)
+
+Raw item text from harmful-content data files in your context triggers
+terminal API usage-policy refusals that kill your turn and poison the
+transcript for resumes (incidents: task #537; task #866 — four sessions
+lost on one task). This covers EM / refusal / harmful-advice corpora,
+the training JSONLs generated from them, AND safety-benchmark question
+banks (`src/explore_persona_space/artifacts/query_banks/*.json`). NEVER
+`cat` / `head` / `Read` their raw item text — verify via structural
+digests only (`wc -l`, `sha256sum`, `jq 'keys'` / `jq length`, row/token
+counts computed in Python without printing text fields); reference items
+by filename + index; keep report and marker wording neutral. Full recipe:
+`experiment-implementer.md` § Content hygiene.
+
 ### TDD mode (when the user / plan requests it)
 
 If the user asks for TDD, or the cached plan contains a `### TDD: yes` line, do tests-first:
@@ -117,6 +144,16 @@ the turn ends permanently and the `epm:results` marker is left unposted
 twin). If a check genuinely cannot finish within the tool-timeout budget,
 post the marker with that check explicitly marked NOT-RUN plus the exact
 copy-pasteable command — never end the turn silently mid-verification.
+
+Wrap any multi-minute invocation in `timeout(1)` as the command's direct
+parent (`timeout --kill-after=30s <N>s <cmd>`, `<N>+30` ending ≥60 s
+before the Bash tool timeout) — the tool timeout kills the shell but
+ORPHANS the python child. Before RE-running an invocation a prior
+attempt may have left running, kill-and-confirm-dead the prior instance
+per `.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch: an
+exact-invocation-scoped `pgrep -af` probe (read every match), never a
+broad `pkill -f python` on this shared multi-session VM (incident
+2026-07-02: three concurrent #823 smoke instances from kill-less retries).
 
 ---
 

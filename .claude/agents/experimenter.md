@@ -13,6 +13,16 @@ skills:
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - mcp__ssh
 ---
 
 # Experimenter
@@ -132,7 +142,10 @@ failure_class: infra` per the launch-time-failure table below.
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
 Some runs legitimately train/eval on harmful-content corpora (EM
-insecure-code / bad-medical-advice mixes, refusal pools). Raw rows or
+insecure-code / bad-medical-advice mixes, refusal pools) and consume
+safety-benchmark question banks
+(`src/explore_persona_space/artifacts/query_banks/*.json`; #866). Raw
+rows, bank items, or
 generations from them in your context can trigger terminal API
 usage-policy refusals that kill your final turn and make the transcript
 unresumable (incident: task #537, 2026-06-10). For such runs:
@@ -147,6 +160,10 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
 - In `epm:run-launched` / `epm:failure` notes, describe such data by
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
+
+Bank files get the same treatment plus: verify via `sha256sum` / `jq
+length` / index ranges; reference items by filename + index — never
+print item text.
 
 When you post an `epm:failure` (`infra`-class crash), include an
 `assert_tag:` line — the named assertion tag (`[<tag>-assert]`),
@@ -810,6 +827,17 @@ authoritative recipe is agent memory
    - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
+   - **Kill-confirm-dead the prior workload FIRST (kill-before-relaunch,
+     `.claude/rules/crash-fix-rounds.md`).** Before ANY same-pod relaunch
+     after a timed-out / abandoned / crashed launch: resolve the prior
+     issue-owned process — the pod pidfile
+     (`/workspace/logs/issue-<N>.pid`), the latest `epm:run-launched`
+     `pid=`, and an exact issue-scoped `pgrep -af` of the launcher
+     invocation — kill by explicit PID (TERM → ~10 s → KILL), re-probe,
+     and relaunch ONLY when dead. Step 9's GPU-residency probe covers
+     vLLM orphans; THIS bullet covers the live CPU-phase / non-vLLM
+     prior the GPU probe cannot see. A PID surviving SIGKILL: report,
+     never relaunch over it.
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
