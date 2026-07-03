@@ -14,8 +14,12 @@
 #   stage1  : issue841_gru_source_only_stage1.py (memoryless transport, pairing-integrity
 #             assert, paired bootstrap, 68-cell win-counts + chance + BH, retention, fidelity)
 #   plots   : issue841_gru_source_only_plots.py
-#   upload  : bulk-upload the 2 GRU state-dicts to HF issue841_gru_source_only/ (skipped in
-#             smoke; tracked-gap on failure — the result JSONs are the durable artifact in git)
+#   upload  : persist ALL artifacts to HF (skipped in smoke; FAIL-LOUD, aborts pre-sentinel):
+#             the 2 GRU state-dicts + gru_source_only_projections.npz (LFS) → PRIVATE overflow
+#             issue841_gru_source_only/{,results/} + load-bearing OVERFLOW_POINTER.json breadcrumbs;
+#             the stage JSONs → canonical issue841_gru_source_only/results/ and plot PNGs →
+#             canonical issue841_gru_source_only/figures/ (non-LFS); verify-after-upload lists both
+#             repos + asserts every expected filename + pointer landed (the boot disk is DELETEd on exit)
 #
 # Analysis-only, forward-pass-FREE (no Qwen weights, no new judging, NO raw completions):
 # the upload_raw_completions_to_data_repo() helper is N/A for this round.
@@ -151,11 +155,34 @@ for name in ('stage0_gru_source_only.json', 'stage1_gru_source_only.json',
 ov_files = set(list_repo_files(DEFAULT_OVERFLOW_REPO, repo_type='dataset'))
 assert res_sub + '/gru_source_only_projections.npz' in ov_files, \
     f'npz missing on overflow {DEFAULT_OVERFLOW_REPO} after upload'
-gru_figs = [f for f in canon_files if f.startswith(sub + '/figures/') and f.endswith('.png')]
-assert gru_figs, f'no figure PNGs on {DEFAULT_DATASET_REPO} under {sub}/figures/ after upload'
+# Both OVERFLOW_POINTER.json breadcrumbs are LOAD-BEARING for the overflow fetch path
+# (scaling_common.hf_download_pt_maybe_overflow / _overflow_repo_for_bucket read them to
+# locate the rerouted .pt/.npz on the private repo); a silently-missing pointer makes a
+# fresh-instance durability fetch treat the bucket as public and return an empty set.
+assert res_sub + '/OVERFLOW_POINTER.json' in canon_files, \
+    f'results-npz OVERFLOW_POINTER.json missing on {DEFAULT_DATASET_REPO} (load-bearing for overflow fetch)'
+assert sub + '/OVERFLOW_POINTER.json' in canon_files, \
+    f'state-dict OVERFLOW_POINTER.json missing on {DEFAULT_DATASET_REPO} (load-bearing for overflow fetch)'
+# EXACT expected figure set (gru plots write these fixed stems on a full run) — a partial
+# figure upload must fail pre-sentinel, so assert every expected PNG landed (not just >=1).
+expected_gru_figs = {
+    'heroA_stage0_atlas.png', 'heroB_stage1_comparison_bars.png',
+    'exp_delta_forest.png', 'exp_per_unit_scatter.png', 'exp_retention.png',
+    'exp_transport_fidelity.png', 'exp_stage0_wincount.png',
+}
+uploaded_gru_figs = {
+    f.split('/')[-1]
+    for f in canon_files
+    if f.startswith(sub + '/figures/') and f.endswith('.png')
+}
+missing_gru_figs = expected_gru_figs - uploaded_gru_figs
+assert not missing_gru_figs, (
+    f'expected figure PNGs missing on {DEFAULT_DATASET_REPO} under {sub}/figures/ '
+    f'after upload (partial figure upload): {sorted(missing_gru_figs)}'
+)
 print('[upload] results ->', DEFAULT_DATASET_REPO, res_sub, '(JSONs) + npz ->',
       DEFAULT_OVERFLOW_REPO, '; figures ->', DEFAULT_DATASET_REPO, sub + '/figures/',
-      '; n_figs=', len(gru_figs))
+      '; n_figs=', len(uploaded_gru_figs), '; pointers verified')
 " "$OUT_DIR" "$FIG_DIR"
   UPLOAD_STATUS="overflow-private"
 fi

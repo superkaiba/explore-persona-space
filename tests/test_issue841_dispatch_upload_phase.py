@@ -100,3 +100,59 @@ def test_upload_phase_is_fail_loud(script: str) -> None:
         f"{script}: upload phase swallows failures with '|| true' — the upload must be "
         f"fail-loud so an unverified upload aborts before the sentinel"
     )
+
+
+# The EXACT fixed figure stems each plots script writes on a full run (issue #841 v18 —
+# Codex verification-layer Major: the prior >=1-png check let a partial figure upload pass).
+_EXPECTED_FIGS = {
+    "issue841_scaling_dispatch.sh": [
+        "hero_r2_scaling_r2_id.png",
+        "hero_r2_scaling_r2_meancentered.png",
+        "hero_transport_scaling.png",
+        "exploratory_retention_scaling.png",
+        "exploratory_position_drift.png",
+    ],
+    "issue841_gru_source_only_dispatch.sh": [
+        "heroA_stage0_atlas.png",
+        "heroB_stage1_comparison_bars.png",
+        "exp_delta_forest.png",
+        "exp_per_unit_scatter.png",
+        "exp_retention.png",
+        "exp_transport_fidelity.png",
+        "exp_stage0_wincount.png",
+    ],
+}
+
+
+@pytest.mark.parametrize("script", DISPATCH_SCRIPTS)
+def test_upload_asserts_exact_figure_set(script: str) -> None:
+    """The upload phase verifies the EXACT expected figure set (every fixed-stem PNG landed),
+    not merely >=1 PNG — a partial figure upload must fail pre-sentinel. Pins: (a) each expected
+    stem is named, (b) a `missing`-set assert exists, (c) the weak bare `assert figs,` /
+    `assert gru_figs,` >=1 form is gone."""
+    text = (SCRIPTS / script).read_text()
+    for stem in _EXPECTED_FIGS[script]:
+        assert stem in text, f"{script}: expected figure stem not asserted in upload verify: {stem}"
+    assert "missing_figs" in text or "missing_gru_figs" in text, (
+        f"{script}: upload verify has no exact-figure-set (missing-set) assert"
+    )
+    # the retired weak >=1-png checks must be gone (they let a partial upload pass)
+    assert "assert figs," not in text, f"{script}: weak >=1-png check `assert figs,` still present"
+    assert "assert gru_figs," not in text, (
+        f"{script}: weak >=1-png check `assert gru_figs,` still present"
+    )
+
+
+def test_gru_upload_asserts_both_overflow_pointers() -> None:
+    """The gru upload verify asserts BOTH load-bearing OVERFLOW_POINTER.json breadcrumbs landed
+    on the canonical repo — the results-npz pointer (`res_sub`) AND the state-dict pointer (`sub`)
+    — since the overflow fetch path reads them to locate the rerouted .pt/.npz."""
+    text = (SCRIPTS / "issue841_gru_source_only_dispatch.sh").read_text()
+    # prefix with `assert ` so the res_sub line (`assert res_sub + ...`) does not satisfy the
+    # state-dict check (`assert sub + ...`) by substring overlap — the two are distinct asserts.
+    assert "assert res_sub + '/OVERFLOW_POINTER.json' in canon_files" in text, (
+        "gru upload verify does not assert the results-npz OVERFLOW_POINTER.json landed"
+    )
+    assert "assert sub + '/OVERFLOW_POINTER.json' in canon_files" in text, (
+        "gru upload verify does not assert the state-dict OVERFLOW_POINTER.json landed"
+    )

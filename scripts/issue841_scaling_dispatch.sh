@@ -129,10 +129,25 @@ for name in ('stage0_scaling.json', 'stage1_scaling.json', 'transport_fidelity_s
 ov_files = set(list_repo_files(ov, repo_type='dataset'))
 assert 'issue841_scaling/results/scaling_projections.npz' in ov_files, \
     f'npz missing on overflow {ov} after upload'
-figs = [f for f in canon_files if f.startswith('issue841_scaling/figures/') and f.endswith('.png')]
-assert figs, f'no figure PNGs on {canon} under issue841_scaling/figures/ after upload'
+# EXACT expected figure set (the scaling plots write these fixed stems on a full run) — a
+# partial figure upload must fail pre-sentinel, so assert every expected PNG landed (not just >=1).
+expected_figs = {
+    'hero_r2_scaling_r2_id.png', 'hero_r2_scaling_r2_meancentered.png',
+    'hero_transport_scaling.png', 'exploratory_retention_scaling.png',
+    'exploratory_position_drift.png',
+}
+uploaded_figs = {
+    f.split('/')[-1]
+    for f in canon_files
+    if f.startswith('issue841_scaling/figures/') and f.endswith('.png')
+}
+missing_figs = expected_figs - uploaded_figs
+assert not missing_figs, (
+    f'expected figure PNGs missing on {canon} under issue841_scaling/figures/ '
+    f'after upload (partial figure upload): {sorted(missing_figs)}'
+)
 print('[upload] scaling results + figures uploaded + verified:',
-      'JSONs+figs ->', canon, '; npz ->', ov, '; n_figs=', len(figs))
+      'JSONs+figs ->', canon, '; npz ->', ov, '; n_figs=', len(uploaded_figs))
 "
   UPLOAD_STATUS="uploaded"
 fi
