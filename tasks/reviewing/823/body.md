@@ -46,6 +46,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_823.md](https://github.com/superkaiba/explore-persona-space/blob/e0ff38b63d6a6e62de9aa1c054274d2af28caaa2/docs/methodology/issue_823.md) · [gist](https://gist.github.com/superkaiba/ed2ad9e7cb0c17b137635b7573dc9e27)
+
 ## Takeaways
 
 - The per-context ridge map from last-context-token activations to answer-span mean activations is NOT self-generation-specific: refit on Claude-Sonnet plain-style answers retains 97.6% (evil, R² 0.585 vs 0.599), 91.4% (sycophancy, 0.556 vs 0.608), and 94.4% (hallucination, 0.591 vs 0.626) of the own-answer refit R² at the plan-pinned read-out layers (n=4998 contexts).
