@@ -104,15 +104,16 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 31 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 32 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
     # `check_data_subset_disclosure`, check 19b
     # `check_data_unwrapped_example_table` WARN, check 20
-    # `check_v3_word_caps`), the THREE v4-gated body-only checks added
-    # 2026-W26 (check 18 `check_v4_methodology_shape`, check 20
-    # `check_v4_word_caps`, check 21 `check_v4_results_beat` WARN) — each
+    # `check_v3_word_caps`), the FOUR v4-gated body-only checks (check 18
+    # `check_v4_methodology_shape`, check 20 `check_v4_word_caps`, check
+    # 21 `check_v4_results_beat` WARN, check 27
+    # `check_v4_no_bare_issue_refs`) — each
     # a PASS-skip on this non-v3/non-v4 fixture — PLUS the FOUR
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
@@ -129,16 +130,16 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (31 functions), then appends the Goal soft check, the Lens 14
+    # (32 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), AND the
     # #732 judge-API-error denominator check (PASS-skip: legacy body) →
-    # 39 results total (2 prepended + CHECKS[1:]=31 + 6 appended). The
+    # 40 results total (2 prepended + CHECKS[1:]=32 + 6 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 39
+    assert len(results) == 40
 
 
 def test_missing_confidence_tag():
@@ -2428,13 +2429,15 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 32 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 33 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
-    v3-gated body-only checks added 2026-W24, and the THREE v4-gated
-    body-only checks added 2026-W26 (`check_v4_methodology_shape`,
-    `check_v4_word_caps`, `check_v4_results_beat`). The four
+    v3-gated body-only checks added 2026-W24, and the FOUR v4-gated
+    body-only checks (`check_v4_methodology_shape`,
+    `check_v4_word_caps`, `check_v4_results_beat`, plus check 27
+    `check_v4_no_bare_issue_refs` — bare `#K` refs in the standalone
+    sections, #900). The four
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
@@ -2458,11 +2461,14 @@ def test_checks_list_size():
     something beyond the body string): the Goal soft check (needs
     frontmatter), the Lens 14 concerns-audit (needs concerns.jsonl),
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
-    provenance row (needs frontmatter + original-body.md), and the v3
-    check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 38 results, but `CHECKS` stays at 32.
+    provenance row (needs frontmatter + original-body.md), the v3
+    check-21 body-Parameters-⊆-doc (needs the methodology doc path),
+    and the #732 judge-API-error denominator check (needs eval JSONs).
+    So `verify_text` returns 40 results (2 prepended + CHECKS[1:]=32 +
+    6 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 33.
     """
-    assert len(verify_task_body.CHECKS) == 32
+    assert len(verify_task_body.CHECKS) == 33
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -4510,6 +4516,9 @@ def test_v4_good_body_passes_all():
     assert by_name["v3 conciseness caps"].passed
     # The v2-only nested-structure check PASS-skips on a v4 body.
     assert by_name["TL;DR nested-design structure (v2)"].passed
+    # Check 27: the fixture's standalone sections carry no bare `#K` refs
+    # (its `[#34](...)` Goal link + footer lineage are sanctioned forms).
+    assert by_name["no bare issue refs in standalone sections (v4)"].passed
     # The only FAILs are the two existence probes on the fake sha.
     fails = [r.name for r in results if not r.passed]
     assert set(fails) <= {"Figure URL resolvable", "Reproducibility artifact URLs exist"}, fails
@@ -4793,6 +4802,156 @@ def test_v4_methodology_bare_rows_disclosure_passes_check10():
     assert by_name["Cherry-picked label discipline"].passed, by_name[
         "Cherry-picked label discipline"
     ].render()
+
+
+# ─── check 27: bare `#K` issue refs in v4 standalone sections ────────────────
+
+_BARE_REF_CHECK_NAME = "no bare issue refs in standalone sections (v4)"
+
+
+def _bare_ref_result(fixture_text):
+    """Direct-call check 27 on the post-frontmatter body, as verify_text does."""
+    _fm, body = verify_task_body.split_frontmatter(fixture_text)
+    return verify_task_body.check_v4_no_bare_issue_refs(body)
+
+
+def test_v4_bare_issue_ref_in_methodology_prose_fails():
+    """The #841 shape: a bare `#779` in Methodology prose is a hard FAIL
+    (run through verify_text to pin the CHECKS registration)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Design:** 3 seeds;",
+        "- **Design:** 3 seeds on the #779 LMSYS corpus;",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_BARE_REF_CHECK_NAME]
+    assert not r.passed
+    assert "#779" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_issue_ref_in_table_row_passes():
+    """A `#K` in a GFM table row (the Training-table Source column
+    grounding convention) is a sanctioned form."""
+    body = _V4_GOOD_BODY.replace(
+        "| Seeds | [42, 137, 256] | plan §11 |\n",
+        "| Seeds | [42, 137, 256] | plan §11 |\n| Judge cache | reused | #779 |\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_linked_issue_ref_passes_mechanically():
+    """A `[#K](url)` LINK in Methodology is deliberately out of MECHANICAL
+    scope (plan Non-goals: the linked-form violation stays Lens 2 / Rule A
+    territory); the fixture's Goal `[#34](...)` link is sanctioned too."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
+        "Recipe as in [#779](https://eps.superkaiba.com/tasks/779).",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_bare_ref_check_skips_v3_and_legacy():
+    """Forward-only: bare refs in a v3 `## Findings` / legacy prose never
+    fire the check (PASS-skip)."""
+    v3 = _V3_GOOD_BODY.replace("## Findings", "## Findings\n\nUses the #779 corpus.", 1)
+    legacy = GOOD_BODY.replace("### Motivation", "### Motivation\n\nUses the #779 corpus.", 1)
+    for fixture in (v3, legacy):
+        r = _bare_ref_result(fixture)
+        assert r.passed
+        assert "skipped" in r.detail
+
+
+def test_v4_bare_ref_in_fence_and_comment_passes():
+    """`#K` inside a fenced code block or an HTML comment is sanctioned."""
+    body = _V4_GOOD_BODY.replace(
+        "\n## Results\n",
+        "\n```text\ngrep for #779 rows\n```\n\n<!-- lineage: #613 -->\n\n## Results\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_bare_ref_in_footer_passes():
+    """Lineage refs in the `**Context:**` footer are sanctioned (the
+    footer-line cut); in a slash-run `#658/#742` nothing fires here."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded\n",
+        "- Originating prompt: origin prompt not recorded\n- Parent #34; informed by #658/#742.\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_bare_issue_ref_in_takeaways_fails():
+    """Takeaways IS a standalone section (SPEC.md: `## Goal` is the ONLY
+    place that may cite prior tasks) — a bare ref there FAILs (run through
+    verify_text to pin the registration on the Takeaways span too)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Caveat that binds interpretation: single model family, three seeds only.\n",
+        "- Caveat that binds interpretation: single model family, three seeds only.\n"
+        "- Matches the #537 protocol readout.\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_BARE_REF_CHECK_NAME]
+    assert not r.passed
+    assert "#537" in r.detail
+    assert "Takeaways" in r.detail
+
+
+def test_v4_bare_ref_in_details_block_passes():
+    """`#K` inside a `<details>` block (verbatim sample data) is sanctioned;
+    the fixture anchor is literally `<details open>` — pins the `<details\\b`
+    regex covering attribute-bearing open tags."""
+    body = _V4_GOOD_BODY.replace(
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n",
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n"
+        "\nRows drawn per #658.\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_bare_issue_ref_in_results_caption_fails():
+    """The live #667 shape: a bare ref in a `> **Figure.**` caption line
+    under `## Results` FAILs (a blockquote caption is prose, not a
+    sanctioned form)."""
+    body = _V4_GOOD_BODY.replace(
+        "error bars 95% Wald CIs.",
+        "error bars 95% Wald CIs (#667 protocol).",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "#667" in r.detail
+    assert "Results" in r.detail
+
+
+def test_v4_inline_code_escape_hatch_passes():
+    """A non-issue `#N` string (a 3-digit hex color) wrapped in inline code
+    is the documented escape hatch."""
+    body = _V4_GOOD_BODY.replace(
+        "the smallest within-condition gap between seeds is 1.2 pts.",
+        "the smallest within-condition gap between seeds is 1.2 pts. Bars colored `#333`.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_space_substitution_does_not_fabricate_ref():
+    """Neutralization substitutes a SPACE, never the empty string: on
+    ``prefix #`v`123`` an empty-string strip of the inline-code span would
+    JOIN `#` and `123` into a fabricated `#123` hit; the space substitution
+    keeps them apart. Regression for the plan-review neutralization-join
+    concern."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "- **Note:** config ids use the prefix #`v`123 shape.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
 
 
 # ─── check 22: inline figure URL sha vs Reproducibility figure-commit claim ──

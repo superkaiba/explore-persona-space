@@ -904,6 +904,18 @@ Forward-only: each check branches on the sentinel. The v4 checks
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
     legitimately figure-less qualitative result is not blocked; the
     clean-result-critic owns the substantive beat read.
+27. **No bare issue refs in standalone sections**
+    (`check_v4_no_bare_issue_refs`, v4 only): a bare `#<digits>` token in
+    the `## Takeaways` / `## Methodology` / `## Results` section spans is
+    a hard FAIL — prior-issue references live ONLY in the `## Goal`
+    context slot (`[#K](...)` links) and the `**Repro:**`/`**Context:**`
+    footer. Sanctioned forms that do not trip: markdown links (label +
+    target), GFM table rows (the Training-table Source column), fenced +
+    inline code, `<details>` blocks, HTML comments, the footer,
+    frontmatter. The inline-code escape hatch is for non-issue `#N`
+    strings (colors, ordinals) only — never for a genuine issue
+    reference. (Origin: the #841 round-2 two-round Lens-2 miss; numbered
+    27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23). The Goal-of-experiment frontmatter
