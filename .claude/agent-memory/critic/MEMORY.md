@@ -16,6 +16,7 @@
 - [Crossed-panel axis-power asymmetry](feedback_crossed_panel_axis_power_asymmetry.md) — widest-axis success + ALL-axes falsify is OK (#560)
 - [Seed-conditioned cluster bootstrap](feedback_seed_conditioned_cluster_bootstrap.md) — 2-seed cluster CIs understate run noise ~5x (#571)
 - [Best-of-group selection asymmetry](feedback_bestofgroup_selection_asymmetry.md) — biased when K differs 10-30x; report K (#545)
+- [Cross-genre amendment band + unpowered conjunction leg](feedback_cross_genre_amendment_band.md) — parent-anchored Δ-band OK; point-ordering + no-power leg = Concerns (#810)
 
 ## Threshold / calibration provenance
 - [Subset-mismatched threshold calibration](feedback_subset_mismatched_threshold_calibration.md) — recompute same-subset per-prompt (#558)

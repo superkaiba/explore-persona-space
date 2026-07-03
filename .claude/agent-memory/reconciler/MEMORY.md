@@ -14,6 +14,7 @@
 - [Claude APPROVEs reroute w/o consumer-pointer trace](feedback_claude_approves_reroute_without_consumer_pointer_trace.md) — grep consumers of canonical repo ids + env-gate setters; consumers RECONSTRUCTING ids ≠ consuming the return. #564 r1.
 - [Codex APPROVEs trim-license on modal-lane control](feedback_codex_approves_trim_license_on_modal_lane_control.md) — "trim if preferred" on the ONLY control covering the DEFAULT launch lane + topology-misleading assumption → REVISE. #578 r1.
 - [Codex skips data-construction/coverage arithmetic](feedback_codex_skips_data_construction_arithmetic.md) — mix-rule quotas (#543), Goal-cell coverage (#545), "weighable from text" the rig discards (#603) — trace the persisted artifact yourself.
+- [Claude credits plan §9 machine claims without resolving the intent map](feedback_claude_credits_plan_machine_claim_without_intent_map.md) — "A100-40 spot (intent: eval)" is L4-first; read INTENT_TO_MACHINE + parent backend-selected rungs; capture-7b exists for 7B capture. #810 g1 r1.
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
