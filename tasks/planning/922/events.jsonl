@@ -6,3 +6,4 @@
 {"ts": "2026-07-03T10:25:18Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T10:27:04Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=planner worktree=repo-root — Phase 1 planner spawned (bg); adversarial-planner loop underway."}
 {"ts": "2026-07-03T10:52:51Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS — n_fail=0 n_warn=0 n_skip=3, plan v1 (59109 chars). Proceeding to fact-checker."}
+{"ts": "2026-07-03T10:53:34Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=fact-checker worktree=repo-root — plan v1 persisted (verify_plan PASS); Phase 1.5 fact-checker spawned (bg)."}
