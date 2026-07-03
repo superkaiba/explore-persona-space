@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "issue": 812,
+    "followup": "fixed_layer_paired_contrast",
+    "git_commit": "7c944c5ff50afeeb3893f9e6fbc1c877cd5fb969",
+    "created_utc": "2026-07-03T05:14:02Z",
+    "inputs": "/home/thomasjiralerspong/.cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/snapshots/6b446e00f133c0997e1ff0f1b8c56d8a938dc31b/issue812_pooling/gpu_leg_inputs/pooling_inputs.pt",
+    "inputs_hf": "superkaiba1/explore-persona-space-data/issue812_pooling/gpu_leg_inputs/pooling_inputs.pt",
+    "fit_results": "eval_results/issue_812/pooling_fit_results.json",
+    "n_draws": 1000,
+    "seed": 658,
+    "d_in_pca": 10,
+    "numpy_version": "2.2.6",
+    "torch_version": "2.8.0+cu128"
+  },
+  "results": {
+    "sycophancy": {
+      "fixed_layer": 20,
+      "n_contexts": 50,
+      "rho_mean": 0.5855942376950779,
+      "rho_unpooled": 0.43721488595438174,
+      "delta_obs": -0.14837935174069616,
+      "null_p2_5": -0.2439543817527011,
+      "null_p97_5": 0.2484993997599039,
+      "p_two_sided": 0.25274725274725274,
+      "n_draws": 1000
+    },
+    "refusal": {
+      "fixed_layer": 14,
+      "n_contexts": 50,
+      "rho_mean": 0.6123889555822329,
+      "rho_unpooled": 0.3513565426170468,
+      "delta_obs": -0.26103241296518614,
+      "null_p2_5": -0.21719567827130848,
+      "null_p97_5": 0.23549099639855942,
+      "p_two_sided": 0.02197802197802198,
+      "n_draws": 1000
+    },
+    "harmful_compliance": {
+      "fixed_layer": 20,
+      "n_contexts": 50,
+      "rho_mean": 0.7477070828331333,
+      "rho_unpooled": 0.5381512605042016,
+      "delta_obs": -0.20955582232893166,
+      "null_p2_5": -0.1969891956782713,
+      "null_p97_5": 0.2032388955582232,
+      "p_two_sided": 0.04395604395604396,
+      "n_draws": 1000
+    },
+    "fact_expression": {
+      "fixed_layer": 16,
+      "n_contexts": 50,
+      "rho_mean": 0.8364387255130392,
+      "rho_unpooled": 0.5279965430598155,
+      "delta_obs": -0.30844218245322375,
+      "null_p2_5": -0.21932145626517832,
+      "null_p97_5": 0.22569751274583008,
+      "p_two_sided": 0.002997002997002997,
+      "n_draws": 1000
+    },
+    "format_style": {
+      "fixed_layer": 9,
+      "n_contexts": 50,
+      "rho_mean": 0.8741896758703481,
+      "rho_unpooled": 0.6126770708283312,
+      "delta_obs": -0.2615126050420169,
+      "null_p2_5": -0.21427130852340937,
+      "null_p97_5": 0.2165906362545018,
+      "p_two_sided": 0.01998001998001998,
+      "n_draws": 1000
+    },
+    "self_report": {
+      "fixed_layer": 18,
+      "n_contexts": 50,
+      "rho_mean": 0.6893157262905162,
+      "rho_unpooled": 0.6264105642256903,
+      "delta_obs": -0.06290516206482588,
+      "null_p2_5": -0.21684513805522207,
+      "null_p97_5": 0.22406242496998802,
+      "p_two_sided": 0.6083916083916084,
+      "n_draws": 1000
+    },
+    "persona_drift": {
+      "fixed_layer": 5,
+      "n_contexts": 50,
+      "rho_mean": 0.7578871548619448,
+      "rho_unpooled": 0.5204801920768307,
+      "delta_obs": -0.23740696278511408,
+      "null_p2_5": -0.25606242496998793,
+      "null_p97_5": 0.25501800720288115,
+      "p_two_sided": 0.06793206793206794,
+      "n_draws": 1000
+    }
+  }
+}
