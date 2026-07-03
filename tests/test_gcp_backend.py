@@ -7420,3 +7420,447 @@ def test_lane_suffixed_name_classifies_managed() -> None:
     """A suffixed name keeps the eps-issue- prefix, so the janitor's
     classification (and per-instance age fences) still covers it."""
     assert _classify_janitor_instance("eps-issue-137-cpu") == JANITOR_CLASS_MANAGED
+
+
+# ---------------------------------------------------------------------------
+# #935 — done-grace self-poweroff on the clean-exit path
+# ---------------------------------------------------------------------------
+
+
+def _extract_bash_function(script: str, name: str) -> str:
+    """Return the rendered bash function ``<name>() { ... }`` verbatim.
+
+    Scans from the definition line to the first column-0 ``}``, skipping any
+    embedded ``<<'TERMINATOR'`` heredoc region so a python line inside the
+    heredoc can never terminate the extraction early."""
+    lines = script.splitlines()
+    start = next(i for i, ln in enumerate(lines) if ln == f"{name}() {{")
+    in_heredoc = False
+    terminator = ""
+    for j in range(start + 1, len(lines)):
+        ln = lines[j]
+        if not in_heredoc:
+            m = re.search(r"<<'(\w+)'$", ln)
+            if m:
+                in_heredoc = True
+                terminator = m.group(1)
+                continue
+            if ln == "}":
+                return "\n".join(lines[start : j + 1]) + "\n"
+        elif ln == terminator:
+            in_heredoc = False
+    raise AssertionError(f"unterminated bash function {name}")
+
+
+def test_render_startup_script_done_grace_poweroff_after_done_publish() -> None:
+    """#935 acceptance criterion 1: BOTH branch renders carry the done-grace
+    block, ordered strictly AFTER the completion-sentinel write + the
+    ``_eps_phase done`` publish. The pin targets the standalone TAIL CALL
+    line ``_eps_done_grace_poweroff || true`` — NOT the preamble function
+    definition, which precedes ``_eps_phase done`` and would satisfy a naive
+    name-index assert tautologically."""
+    for spec in (_spec(), _workload_spec("bash scripts/issue935_smoke.sh")):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        lines = script.splitlines()
+        # Helpers live in the shared preamble (both branches).
+        assert "_eps_done_grace_poweroff() {" in lines
+        assert "_eps_persist_done_sentinels() {" in lines
+        # THE TAIL CALL — exactly one standalone occurrence, after done.
+        call_idx = lines.index("_eps_done_grace_poweroff || true")
+        assert lines.count("_eps_done_grace_poweroff || true") == 1
+        assert lines.index("_eps_phase done") < call_idx
+        assert script.index('{"phase":"done"') < script.index("_eps_done_grace_poweroff || true")
+        # Nothing but comments/blank lines after the tail call.
+        residue = [ln for ln in lines[call_idx + 1 :] if ln.strip() and not ln.startswith("#")]
+        assert residue == [], residue
+
+
+def test_render_startup_script_done_grace_default_and_env_override(monkeypatch, caplog) -> None:
+    """#935 acceptance criterion 2: the grace is env-tunable at render time —
+    default 5400 s, ``EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`` overrides, and a
+    non-numeric value falls back to the default WITH a logged warning (the
+    fail-loud-with-fallback claim on the knob, asserted via caplog)."""
+    monkeypatch.delenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", raising=False)
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=5400" in script
+    # The keepalive escape hatch carries NO .json suffix (the poller's
+    # sentinel drain glob is issue-<N>-*.json and must never ingest it).
+    assert "export EPS_DONE_KEEPALIVE_PATH=/workspace/logs/issue-137-keepalive" in script
+    assert "issue-137-keepalive.json" not in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "7200")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=7200" in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "ninety minutes")
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        script = render_startup_script(
+            spec=_spec(), config=_test_config(), attempt_id="att-fixed-001"
+        )
+    assert "export EPS_DONE_GRACE=5400" in script
+    assert any(
+        "EPS_GCP_DONE_POWEROFF_GRACE_SECONDS" in rec.getMessage() for rec in caplog.records
+    ), caplog.records
+
+
+def test_render_startup_script_done_grace_zero_disables(monkeypatch) -> None:
+    """#935: env ``0`` renders ``EPS_DONE_GRACE=0`` and the runtime disable
+    guard (the case pattern) is present, so the countdown is a no-op; a
+    negative value clamps to 0 (disable), never a negative export."""
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "0")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=0" in script
+    assert 'case "$_grace" in (*[!0-9]*|""|0)' in script
+    assert "[done-grace] disabled" in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "-100")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=0" in script
+
+
+def test_render_startup_script_done_grace_aborts_on_phase_change_and_keepalive() -> None:
+    """#935 acceptance criterion 3 (string level; the EXECUTED test below
+    certifies runtime semantics): the countdown reads the eps/phase guest
+    attribute via the metadata GET, aborts on ``!= "done"`` ONLY for a
+    NON-EMPTY read (empty continues), and honors the keepalive file."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_done_grace_poweroff")
+    # The guest-attributes GET (curl -m 5, best-effort || true).
+    assert "instance/guest-attributes/eps/phase' 2>/dev/null || true" in fn
+    # Non-empty-and-changed aborts; the -n conjunct keeps an EMPTY read
+    # (metadata server down / attr gone) COUNTING DOWN, never aborting.
+    assert '[ -n "$ph" ] && [ "$ph" != "done" ]' in fn
+    # The keepalive escape hatch (set -u-safe default).
+    assert 'if [ -e "${EPS_DONE_KEEPALIVE_PATH:-/nonexistent}" ]; then' in fn
+    # 60 s tick — fixed (guest-attr rate limit is 10 queries/min per VM).
+    assert "tick=60" in fn
+
+
+def test_render_startup_script_done_grace_persists_before_poweroff() -> None:
+    """#935 acceptance criterion 4 (string level): at expiry the persist
+    helper runs BEFORE the unconditional shutdown ladder; the persist is
+    bounded (timeout 120), best-effort (|| true), targets
+    issue<N>_done/<attempt_id>/ in one commit + transcript LAST, and writes
+    the ok|failed breadcrumb on the SEPARATE eps/done_persist key — never
+    touching eps/phase."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    countdown = _extract_bash_function(script, "_eps_done_grace_poweroff")
+    assert countdown.index("_eps_persist_done_sentinels || true") < countdown.index(
+        "shutdown -h now 2>/dev/null || poweroff -f 2>/dev/null || halt -f"
+    )
+    persist = _extract_bash_function(script, "_eps_persist_done_sentinels")
+    assert "timeout 120 uv run python" in persist
+    assert "issue${EPS_ISSUE:-0}_done/${EPS_ATTEMPT_ID:-unknown}" in persist
+    assert "guest-attributes/eps/done_persist" in persist
+    # ONE upload_folder commit + the transcript upload_file LAST.
+    assert persist.index("api.upload_folder(") < persist.index("api.upload_file(")
+    assert 'path_in_repo=f"{dest}/persist_transcript.log"' in persist
+    # The breadcrumb key is SEPARATE: the persist helper NEVER writes
+    # eps/phase (the poll classification + #908 predicates key on it).
+    assert "guest-attributes/eps/phase" not in persist
+    assert "_eps_phase " not in persist
+
+
+@pytest.mark.parametrize(
+    ("grace", "fake_phase", "keepalive", "expect_calls", "expect_out"),
+    [
+        # keepalive file present -> abort BEFORE persist/ladder.
+        ("120", "done", True, [], "keepalive present"),
+        # eps/phase left done (sanctioned relaunch) -> abort.
+        ("120", "workload", False, [], "a relaunch owns the VM"),
+        # EMPTY metadata read CONTINUES to expiry -> persist then ladder.
+        ("120", "", False, ["persist", "shutdown -h now"], "grace expired"),
+        # healthy done phase all the way -> expiry: persist then ladder.
+        ("120", "done", False, ["persist", "shutdown -h now"], "grace expired"),
+        # 0 disables outright (no sleep, no ladder).
+        ("0", "done", False, [], "[done-grace] disabled"),
+        # runtime non-numeric value disables (defense in depth).
+        ("12abc", "done", False, [], "[done-grace] disabled"),
+    ],
+)
+def test_done_grace_countdown_executes_abort_and_expiry_paths(
+    tmp_path, grace, fake_phase, keepalive, expect_calls, expect_out
+) -> None:
+    """#935 acceptance criterion 3 (EXECUTED — runtime semantics the string
+    pins + bash -n cannot certify): runs the extracted
+    ``_eps_done_grace_poweroff`` with PATH-stubbed ``sleep``/``curl`` and
+    shell-function stubs for the persist helper + the shutdown ladder that
+    append to a call log. Certifies: keepalive abort, phase-change abort,
+    empty-read-continues-to-expiry, 0-disables, and the persist-BEFORE-ladder
+    ordering at expiry."""
+    import shlex
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_done_grace_poweroff")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "sleep").write_text("#!/bin/bash\nexit 0\n")
+    (bin_dir / "curl").write_text("#!/bin/bash\nprintf '%s' \"${FAKE_PHASE:-}\"\nexit 0\n")
+    for stub in ("sleep", "curl"):
+        (bin_dir / stub).chmod(0o755)
+
+    call_log = tmp_path / "calls.log"
+    keepalive_path = tmp_path / "issue-137-keepalive"
+    if keepalive:
+        keepalive_path.write_text("")
+    driver = "\n".join(
+        [
+            "#!/bin/bash",
+            "set -euo pipefail",
+            "trap ':' PIPE",
+            fn,
+            f'_eps_persist_done_sentinels() {{ echo "persist" >> {shlex.quote(str(call_log))}; }}',
+            f'shutdown() {{ echo "shutdown $*" >> {shlex.quote(str(call_log))}; }}',
+            f'poweroff() {{ echo "poweroff $*" >> {shlex.quote(str(call_log))}; }}',
+            f'halt() {{ echo "halt $*" >> {shlex.quote(str(call_log))}; }}',
+            "_eps_done_grace_poweroff || true",
+            'echo "driver-exit-ok"',
+            "",
+        ]
+    )
+    driver_path = tmp_path / "driver.sh"
+    driver_path.write_text(driver)
+    env = dict(os.environ)
+    env.update(
+        {
+            "PATH": f"{bin_dir}:{env.get('PATH', '/usr/bin:/bin')}",
+            "EPS_DONE_GRACE": grace,
+            "EPS_DONE_KEEPALIVE_PATH": str(keepalive_path),
+            "FAKE_PHASE": fake_phase,
+        }
+    )
+    proc = subprocess.run(
+        ["bash", str(driver_path)], capture_output=True, text=True, env=env, timeout=60
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "driver-exit-ok" in proc.stdout
+    assert expect_out in proc.stdout
+    calls = call_log.read_text().splitlines() if call_log.is_file() else []
+    assert calls == expect_calls
+    # The abort/disable paths must NEVER reach persist OR any ladder rung.
+    if not expect_calls:
+        assert "grace expired" not in proc.stdout
+
+
+def _extract_done_persist_heredoc(script: str) -> str:
+    """Return the EPS_DONE_PERSIST_PY heredoc body (the embedded python)."""
+    lines = script.splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.endswith("<<'EPS_DONE_PERSIST_PY'")]
+    ends = [i for i, ln in enumerate(lines) if ln == "EPS_DONE_PERSIST_PY"]
+    assert len(starts) == 1 and len(ends) == 1, (starts, ends)
+    assert starts[0] < ends[0]
+    return "\n".join(lines[starts[0] + 1 : ends[0]]) + "\n"
+
+
+def _run_done_persist_heredoc(tmp_path, *, env_overrides=None, folder_failures=0):
+    """Execute the REAL extracted EPS_DONE_PERSIST_PY heredoc against a fake
+    ``huggingface_hub`` (records upload calls to a JSONL; the first
+    ``folder_failures`` upload_folder calls raise AFTER recording, so the
+    in-heredoc retry is observable), mirroring production's
+    ``python - <dest>`` stdin invocation. Returns ``(proc, calls, paths)``."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_done_persist_heredoc(script)
+
+    shim = tmp_path / "shim" / "huggingface_hub"
+    shim.mkdir(parents=True, exist_ok=True)
+    calls_path = tmp_path / "calls.jsonl"
+    budget_path = tmp_path / "folder-fail-budget"
+    budget_path.write_text(str(folder_failures))
+    (shim / "__init__.py").write_text(
+        "import json, os\n"
+        "class HfApi:\n"
+        "    def _rec(self, kind, **kw):\n"
+        "        with open(os.environ['FAKE_HUB_CALLS'], 'a') as fh:\n"
+        "            fh.write(json.dumps({'kind': kind, **kw}) + '\\n')\n"
+        "    def upload_file(self, *, path_or_fileobj, path_in_repo, repo_id, repo_type):\n"
+        "        self._rec('file', path_in_repo=path_in_repo, repo_id=repo_id,\n"
+        "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
+        "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
+        "                      ignore_patterns=None):\n"
+        "        staged = {}\n"
+        "        for dp, _dns, fns in os.walk(folder_path):\n"
+        "            for fn in fns:\n"
+        "                p = os.path.join(dp, fn)\n"
+        "                rel = os.path.relpath(p, folder_path).replace(os.sep, '/')\n"
+        "                with open(p, 'rb') as fh:\n"
+        "                    staged[rel] = fh.read().decode('utf-8', 'replace')\n"
+        "        self._rec('folder', path_in_repo=path_in_repo, repo_id=repo_id,\n"
+        "                  repo_type=repo_type, staged=staged)\n"
+        "        bp = os.environ.get('FAKE_HUB_FOLDER_FAIL_BUDGET', '')\n"
+        "        if bp and os.path.exists(bp):\n"
+        "            n = int(open(bp).read().strip() or '0')\n"
+        "            if n > 0:\n"
+        "                with open(bp, 'w') as fh:\n"
+        "                    fh.write(str(n - 1))\n"
+        "                raise RuntimeError('fake transient upload failure')\n"
+    )
+
+    # Fixture tree: completion sentinel, undrained /workspace/logs-style
+    # sentinels (+ the keepalive escape hatch, which must NOT be staged),
+    # and a small workload log.
+    sentinel = tmp_path / "sentinel.json"
+    sentinel.write_text('{"phase":"done","issue":137,"attempt_id":"att-x"}\n')
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    (logs_dir / "issue-137-results.json").write_text('{"kind":"epm:results"}\n')
+    (logs_dir / "issue-137-keepalive").write_text("")
+    log = tmp_path / "workload.log"
+    log.write_text("workload tail line\n")
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "PYTHONPATH": str(tmp_path / "shim"),
+            "FAKE_HUB_CALLS": str(calls_path),
+            "FAKE_HUB_FOLDER_FAIL_BUDGET": str(budget_path),
+            "EPS_HF_DATA_REPO": "org/repo",
+            "EPS_ISSUE": "137",
+            "EPS_ATTEMPT_ID": "att-x",
+            "EPS_DONE_GRACE": "5400",
+            "EPS_LOG_PATH": str(log),
+            "EPS_SENTINEL_PATH": str(sentinel),
+            "EPS_DONE_LOGS_DIR": str(logs_dir),
+            "EPS_DONE_PERSIST_STAGE_DIR": str(tmp_path / "staged"),
+            "EPS_DONE_PERSIST_STATUS": str(tmp_path / "status"),
+            "EPS_DONE_PERSIST_TRANSCRIPT": str(tmp_path / "transcript.log"),
+            "EPS_DONE_PERSIST_RETRY_BACKOFF_S": "0",
+        }
+    )
+    env.update(env_overrides or {})
+    proc = subprocess.run(
+        [sys.executable, "-", "issue137_done/att-x"],
+        input=heredoc,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
+    )
+    calls = []
+    if calls_path.is_file():
+        calls = [json.loads(ln) for ln in calls_path.read_text().splitlines()]
+    paths = {"status": tmp_path / "status", "transcript": tmp_path / "transcript.log"}
+    return proc, calls, paths
+
+
+def test_done_persist_heredoc_uploads_sentinels_one_commit(tmp_path) -> None:
+    """#935 acceptance criterion 4 (EXECUTED heredoc): the persist stages
+    sentinel.json + the undrained issue-<N>-*.json sentinels + the workload
+    log tail + done_report.json, uploads them in ONE upload_folder commit to
+    issue<N>_done/<attempt_id>/ followed by the transcript upload_file LAST
+    (exactly these two upload calls — never a per-file loop), retries ONCE
+    on a first-attempt failure, and SKIP-ALLs when the env is unset."""
+    # Variant A — happy path: exactly [folder, transcript-file], status ok.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "a")
+    assert proc.returncode == 0, proc.stderr
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
+        ("folder", "issue137_done/att-x"),
+        ("file", "issue137_done/att-x/persist_transcript.log"),
+    ]
+    staged = calls[0]["staged"]
+    assert set(staged) == {
+        "sentinel.json",
+        "logs_sentinels/issue-137-results.json",
+        "workload_tail.log",
+        "done_report.json",
+    }, staged
+    # The keepalive escape hatch (no .json suffix) is NEVER staged.
+    assert not any("keepalive" in k for k in staged)
+    report = json.loads(staged["done_report.json"])
+    assert report["issue"] == "137" and report["attempt_id"] == "att-x"
+    assert report["grace_s"] == "5400" and report["kind"] == "gcp-done-grace-sentinel-persist"
+    assert staged["workload_tail.log"] == "workload tail line\n"
+    assert paths["status"].read_text() == "ok"
+    assert "[done-persist] DONE status=ok" in proc.stdout
+    transcript_text = paths["transcript"].read_text()
+    assert "[done-persist] BEGIN" in transcript_text
+    assert "[done-persist] DONE status=ok" in transcript_text
+
+    # Variant B — first upload_folder raises: the in-heredoc retry fires
+    # (two folder attempts), then the transcript still lands LAST; status ok.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "b", folder_failures=1)
+    assert proc.returncode == 0, proc.stderr
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
+        ("folder", "issue137_done/att-x"),
+        ("folder", "issue137_done/att-x"),
+        ("file", "issue137_done/att-x/persist_transcript.log"),
+    ]
+    assert "[done-persist] FAILED upload attempt 1/2" in proc.stdout
+    assert paths["status"].read_text() == "ok"
+
+    # Variant C — BOTH attempts fail: status=failed, the poweroff is never
+    # blocked (rc still 0), and the transcript audit STILL uploads LAST.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "c", folder_failures=2)
+    assert proc.returncode == 0, proc.stderr
+    kinds = [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert kinds[-1] == ("file", "issue137_done/att-x/persist_transcript.log")
+    assert len([k for k in kinds if k[0] == "folder"]) == 2
+    assert paths["status"].read_text() == "failed"
+    assert "[done-persist] DONE status=failed" in proc.stdout
+
+
+def test_done_persist_bash_skip_all_without_repo_or_token(tmp_path) -> None:
+    """#935: the bash-level SKIP-ALL guard — with EPS_HF_DATA_REPO/HF_TOKEN
+    unset the persist function early-returns LOUDLY, never invoking uv (no
+    heredoc run) and never writing the breadcrumb."""
+    import shlex
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_persist_done_sentinels")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    call_log = tmp_path / "calls.log"
+    (bin_dir / "uv").write_text(f'#!/bin/bash\necho "uv $*" >> {shlex.quote(str(call_log))}\n')
+    (bin_dir / "curl").write_text(f'#!/bin/bash\necho "curl $*" >> {shlex.quote(str(call_log))}\n')
+    for stub in ("uv", "curl"):
+        (bin_dir / stub).chmod(0o755)
+    driver = "\n".join(
+        [
+            "#!/bin/bash",
+            "set -euo pipefail",
+            "trap ':' PIPE",
+            fn,
+            "_eps_persist_done_sentinels || true",
+            'echo "after-persist"',
+            "",
+        ]
+    )
+    driver_path = tmp_path / "driver.sh"
+    driver_path.write_text(driver)
+    env = {k: v for k, v in os.environ.items() if k not in ("EPS_HF_DATA_REPO", "HF_TOKEN")}
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '/usr/bin:/bin')}"
+    proc = subprocess.run(
+        ["bash", str(driver_path)], capture_output=True, text=True, env=env, timeout=60
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[done-grace] SKIP persist" in proc.stdout
+    assert "after-persist" in proc.stdout
+    assert not call_log.exists(), call_log.read_text() if call_log.exists() else None
+
+
+def test_poll_terminated_with_done_phase_maps_to_done_self_poweroff() -> None:
+    """#935 acceptance criterion 6: a TERMINATED instance whose eps/phase
+    reads ``done`` (the done-grace self-poweroff fired on the STOP outcome,
+    or a manual stop of a done VM) classifies ``done`` with the
+    ``workload_done_self_poweroff`` phase — a SUCCESSFUL run, never dead."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_self_poweroff"
+    assert pr.new_milestone is True
+
+
+def test_poll_terminated_with_workload_phase_still_dead() -> None:
+    """#935 negative control: TERMINATED + a NON-terminal phase (spot
+    preemption / max-run-duration mid-run) keeps classifying dead with the
+    ``terminal_terminated`` phase EXACTLY as today — asserting BOTH the
+    status and the phase so the new done branch cannot widen."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
