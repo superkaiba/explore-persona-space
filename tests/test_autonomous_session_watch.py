@@ -3893,7 +3893,17 @@ def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch)
 # is the no-sentinel control).
 
 
-def test_takeover_sentinel_fresh_skips_orphan_respawn(isolated_registry, monkeypatch):
+@pytest.fixture
+def clear_takeover_ttl_env(monkeypatch):
+    """The sentinel tests below pin the DEFAULT 6h TTL (and the 7d GC floor's
+    max(7d, TTL) contract); an operator shell exporting the fleet knob
+    ``EPS_TAKEOVER_TTL_H`` must not flip them."""
+    monkeypatch.delenv("EPS_TAKEOVER_TTL_H", raising=False)
+
+
+def test_takeover_sentinel_fresh_skips_orphan_respawn(
+    isolated_registry, monkeypatch, clear_takeover_ttl_env
+):
     import time
 
     import autonomous_session_watch as asw
@@ -3910,7 +3920,7 @@ def test_takeover_sentinel_fresh_skips_orphan_respawn(isolated_registry, monkeyp
     assert asw._load_orphan_state(866).get("missed") == 1
 
 
-def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch):
+def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch, clear_takeover_ttl_env):
     import os
     import time
 
@@ -3926,7 +3936,9 @@ def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch):
     assert respawns == [867]  # FAIL OPEN: today's behavior once the sentinel ages out
 
 
-def test_takeover_sentinel_manual_prefix_also_honored(isolated_registry, monkeypatch):
+def test_takeover_sentinel_manual_prefix_also_honored(
+    isolated_registry, monkeypatch, clear_takeover_ttl_env
+):
     import time
 
     import autonomous_session_watch as asw
@@ -3948,7 +3960,7 @@ def test_takeover_ttl_env_malformed_falls_back(monkeypatch):
     assert spawn_session._takeover_ttl_s() == pytest.approx(6.0 * 3600.0)
 
 
-def test_takeover_sentinel_future_mtime_not_fresh(isolated_registry):
+def test_takeover_sentinel_future_mtime_not_fresh(isolated_registry, clear_takeover_ttl_env):
     # A future-dated mtime (clock skew / `touch -d` typo) would be PERMANENTLY
     # fresh — an indefinite crash-recovery suppression inverting the fail-open
     # guarantee. Beyond the clock-jitter slack it is treated as NOT fresh.
@@ -3965,7 +3977,7 @@ def test_takeover_sentinel_future_mtime_not_fresh(isolated_registry):
     )
 
 
-def test_gc_reaps_stale_takeover_sentinels(isolated_registry):
+def test_gc_reaps_stale_takeover_sentinels(isolated_registry, clear_takeover_ttl_env):
     # Sentinels never match the `*.json` GC globs, so without the dedicated
     # reap they linger forever; the 7-day floor keeps the forensics record
     # well past the (inert-after-6h) TTL.

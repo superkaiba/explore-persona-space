@@ -315,6 +315,13 @@ def _find_happy_log_for_node(node_pid: int, now: float | None = None) -> Path | 
 # avoids reading a multi-hundred-MB log wholesale. Allowed-deviation tunable.
 _LOG_SID_SCAN_BYTES = 4_000_000
 
+# Degenerate-sid floor. Real Happy session ids are ~25-char cuids; an EMPTY
+# sid (an unset "$SID" in a caller script) or a short fragment would
+# substring-match essentially every log head and resolve to an arbitrary live
+# wrapper — the wrong-kill vector under `stop --kill`. 8 is a generous floor:
+# well below real sid length, well above accidental fragments.
+_MIN_SID_LEN = 8
+
 
 def find_node_pid_for_session(sid: str, now: float | None = None) -> int | None:
     """Reverse-map a Happy session id -> LIVE node wrapper pid, daemon-free.
@@ -323,10 +330,16 @@ def find_node_pid_for_session(sid: str, now: float | None = None) -> int | None:
     and the session id in the content (``"sessionId": "<sid>"``; verified live
     2026-07-02: 304 occurrences in the newest log). For daemon-UNTRACKED
     sessions (#903): scan logs newest-first within ``_HAPPY_LOG_MAX_AGE_S``,
-    match ``sid`` in the first ``_LOG_SID_SCAN_BYTES``, parse the pid from the
-    filename, return the first pid that is alive. ``None`` on any miss (the
-    caller degrades to a structured recipe). The ``-pid-(\\d+)\\.log$`` regex
+    match the QUOTED form ``"<sid>"`` in the first ``_LOG_SID_SCAN_BYTES``
+    (the quotes bind the full id — a sid that is a PREFIX of another id must
+    not vouch), parse the pid from the filename, return the first pid that is
+    alive. A degenerate sid (empty, or shorter than ``_MIN_SID_LEN``) never
+    resolves — a bare-substring match on it would bind every log head and
+    SIGTERM an arbitrary live wrapper. ``None`` on any miss (the caller
+    degrades to a structured recipe). The ``-pid-(\\d+)\\.log$`` regex
     structurally excludes the daemon's ``...-pid-<pid>-daemon.log``."""
+    if len(sid) < _MIN_SID_LEN:
+        return None
     if not HAPPY_LOGS_DIR.is_dir():
         return None
     cutoff = (now if now is not None else time.time()) - _HAPPY_LOG_MAX_AGE_S
@@ -359,7 +372,7 @@ def find_node_pid_for_session(sid: str, now: float | None = None) -> int | None:
                 head = fh.read(_LOG_SID_SCAN_BYTES)
         except OSError:
             continue
-        if sid not in head:
+        if f'"{sid}"' not in head:
             continue
         if _pid_alive(pid):
             return pid

@@ -61,7 +61,11 @@ def _spawn_ns(*, auto: bool) -> argparse.Namespace:
 @pytest.fixture
 def takeover_registry(tmp_path, monkeypatch):
     """Isolated AUTONOMOUS_REGISTRY_DIR with a FRESH takeover sentinel for
-    :data:`_FAKE_ISSUE`."""
+    :data:`_FAKE_ISSUE`.
+
+    Clears ``EPS_TAKEOVER_TTL_H`` so the sentinel tests pin the DEFAULT 6h
+    TTL — an operator shell exporting the fleet knob must not flip them."""
+    monkeypatch.delenv("EPS_TAKEOVER_TTL_H", raising=False)
     monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
     (tmp_path / f"issue-{_FAKE_ISSUE}.json.paused-takeover-20260702").write_text("{}")
     return tmp_path
@@ -277,6 +281,34 @@ def test_find_node_pid_reused_pid_older_log_does_not_vouch(tmp_path, monkeypatch
     os.utime(newer, (now - 100, now - 100))
     monkeypatch.setattr(session_resolver, "_pid_alive", lambda pid: True)
     assert session_resolver.find_node_pid_for_session(_SID, now=now) is None
+
+
+def test_find_node_pid_degenerate_sid_never_resolves(tmp_path, monkeypatch):
+    # An EMPTY sid (an unset "$SID" in a caller script) bare-substring-matches
+    # every log head and would resolve to the newest live wrapper — which IS a
+    # happy wrapper, so it passes the comm/cmdline/daemon-pid refusals and gets
+    # SIGTERMed under --kill. The degenerate-sid floor must return None even
+    # with a perfectly matchable log present.
+    monkeypatch.setattr(session_resolver, "HAPPY_LOGS_DIR", tmp_path)
+    log = tmp_path / "2026-07-02-10-00-00-pid-4242.log"
+    log.write_text(f'... "sessionId": "{_SID}" ...\n')
+    monkeypatch.setattr(session_resolver, "_pid_alive", lambda pid: True)
+    assert session_resolver.find_node_pid_for_session("") is None
+    # A short fragment below the 8-char floor (real Happy sids are ~25-char
+    # cuids) is rejected even when it appears verbatim in the log content.
+    assert session_resolver.find_node_pid_for_session("happy") is None
+
+
+def test_find_node_pid_requires_quoted_form_match(tmp_path, monkeypatch):
+    # The log carries the sid ONLY as a PREFIX of a longer id (and as a bare
+    # path fragment). A bare `sid in head` substring match would vouch pid
+    # 4242 for a session the log never bound; the quoted-form `"<sid>"` match
+    # must miss.
+    monkeypatch.setattr(session_resolver, "HAPPY_LOGS_DIR", tmp_path)
+    log = tmp_path / "2026-07-02-10-00-00-pid-4242.log"
+    log.write_text(f'"sessionId": "{_SID}-suffix"\npath=/tmp/{_SID}\n')
+    monkeypatch.setattr(session_resolver, "_pid_alive", lambda pid: True)
+    assert session_resolver.find_node_pid_for_session(_SID) is None
 
 
 def test_find_node_pid_daemon_log_excluded(tmp_path, monkeypatch):
