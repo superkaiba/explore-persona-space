@@ -192,22 +192,147 @@ def _tokenize_left_pad(tokenizer, texts: list[str]) -> tuple[torch.Tensor, torch
     return enc["input_ids"], enc["attention_mask"]
 
 
-def capture_prompts(
-    model, tokenizer, prompts: list[str], layers: list[int], *, batch_size: int
-) -> np.ndarray:
-    """Batched last-token capture over all ``prompts`` → (N, len(layers), H) fp32."""
+def plan_token_budget_batches(
+    lengths: list[int], *, token_budget: int, max_seqs: int, sort_by_length: bool
+) -> list[list[int]]:
+    """Group row indices into batches whose PADDED-token cost stays under budget.
+
+    Cost of a batch = ``len(batch) × max(lengths in batch)`` (left-pad pads every
+    sequence to the batch max). Greedily accretes indices until the next one would
+    push cost over ``token_budget`` or the batch over ``max_seqs``, then flushes.
+    When ``sort_by_length`` the visit order is stable-ascending length so batches are
+    length-homogeneous (minimal pad waste); the returned batches carry ORIGINAL
+    indices regardless, so the caller restores whatever order it needs. Fail-loud: a
+    single row longer than ``token_budget`` cannot be placed without truncation (which
+    the parent regime forbids) → RuntimeError naming EPM_I841S_TOKEN_BUDGET.
+    """
+    order = (
+        sorted(range(len(lengths)), key=lambda i: lengths[i])
+        if sort_by_length
+        else list(range(len(lengths)))
+    )
+    for i in order:
+        if lengths[i] > token_budget:
+            raise RuntimeError(
+                f"prompt row {i} needs {lengths[i]} padded tokens alone, over the "
+                f"token budget {token_budget}; raise EPM_I841S_TOKEN_BUDGET (NO "
+                f"truncation — the parent capture regime had none, so truncating "
+                f"would introduce a second variable)"
+            )
+    batches: list[list[int]] = []
+    cur: list[int] = []
+    cur_max = 0
+    for i in order:
+        li = lengths[i]
+        new_cost = max(cur_max, li) * (len(cur) + 1)
+        if cur and (new_cost > token_budget or len(cur) + 1 > max_seqs):
+            batches.append(cur)
+            cur, cur_max = [i], li
+        else:
+            cur.append(i)
+            cur_max = max(cur_max, li)
+    if cur:
+        batches.append(cur)
+    return batches
+
+
+def _capture_prompts_budgeted(
+    model,
+    tokenizer,
+    prompts: list[str],
+    layers: list[int],
+    *,
+    token_budget: int,
+    max_seqs: int,
+    sort_by_length: bool,
+    want_adjacent: bool = False,
+    log_prefix: str = "capture",
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """Token-budget-batched last-token (+ optional second-to-last) capture.
+
+    Returns ``(last, adjacent)`` each ``(N, len(layers), H)`` fp32 numpy in INPUT
+    (stream) order — batches are scattered back to their original indices, so the
+    internal length-sort never leaks into the shard/stream order the nesting property
+    keys on. ``adjacent`` is None unless ``want_adjacent`` (the KILL-A adjacency audit
+    path). The padded-token budget is the OOM guard (crash-fix round 4): each batch's
+    ``n_seqs × max_len`` stays ≤ ``token_budget``.
+    """
     texts = _chat_texts(tokenizer, prompts)
     if texts:
         _assert_generation_suffix(tokenizer, texts[0])
-    out = []
-    n_batches = (len(texts) + batch_size - 1) // batch_size
-    for bi, lo in enumerate(range(0, len(texts), batch_size)):
-        chunk = texts[lo : lo + batch_size]
-        ids, attn = _tokenize_left_pad(tokenizer, chunk)
-        out.append(capture_last_token_batched(model, ids, attn, layers))
-        if bi % 20 == 0 or bi == n_batches - 1:
-            logger.info("[capture] batch %d/%d (%d prompts)", bi + 1, n_batches, len(chunk))
-    return np.concatenate(out, axis=0)
+    lengths = [
+        int(tokenizer(t, padding=False, return_tensors="pt")["input_ids"].shape[1]) for t in texts
+    ]
+    batches = plan_token_budget_batches(
+        lengths, token_budget=token_budget, max_seqs=max_seqs, sort_by_length=sort_by_length
+    )
+    n, n_layers, hidden = len(prompts), len(layers), int(model.config.hidden_size)
+    out_last = np.empty((n, n_layers, hidden), dtype=np.float32)
+    out_adj = np.empty((n, n_layers, hidden), dtype=np.float32) if want_adjacent else None
+    worst_padded = max((len(b) * max(lengths[i] for i in b) for b in batches), default=0)
+    longest = max(lengths, default=0)
+    # Memory-sanity assert (item 5): the worst batch must fit the budget (the greedy
+    # guarantees this, but assert it before any forward so a regression fails loud).
+    assert worst_padded <= token_budget, (worst_padded, token_budget)
+    logger.info(
+        "[%s] token-budget batching: %d batches over %d rows, max padded tokens/batch "
+        "%d <= %d, longest prompt %d tok",
+        log_prefix,
+        len(batches),
+        n,
+        worst_padded,
+        token_budget,
+        longest,
+    )
+    for bi, batch in enumerate(batches):
+        chunk_texts = [texts[i] for i in batch]
+        ids, attn = _tokenize_left_pad(tokenizer, chunk_texts)
+        if want_adjacent:
+            last, adj = _capture_last_two_batched(model, ids, attn, layers)
+        else:
+            last, adj = capture_last_token_batched(model, ids, attn, layers), None
+        for k, orig in enumerate(batch):
+            out_last[orig] = last[k]
+            if want_adjacent:
+                out_adj[orig] = adj[k]
+        if bi % 20 == 0 or bi == len(batches) - 1:
+            peak = (
+                torch.cuda.max_memory_allocated() / (1024**3) if torch.cuda.is_available() else 0.0
+            )
+            logger.info(
+                "[%s] batch %d/%d (%d seqs, max_len %d, peak alloc %.1f GiB)",
+                log_prefix,
+                bi + 1,
+                len(batches),
+                len(batch),
+                max(lengths[i] for i in batch),
+                peak,
+            )
+    return out_last, out_adj
+
+
+def capture_prompts(
+    model, tokenizer, prompts: list[str], layers: list[int], *, batch_size: int
+) -> np.ndarray:
+    """Token-budget-batched last-token capture → (N, len(layers), H) fp32, stream order.
+
+    ``batch_size`` is retained as the per-batch sequence cap (min'd with
+    ``S.MAX_SEQS_PER_BATCH``); the PADDED-token budget ``S.TOKEN_BUDGET`` is the
+    primary OOM guard against one long left-padded prompt inflating a fixed-size batch
+    (crash-fix round 4). See ``_capture_prompts_budgeted`` / ``plan_token_budget_batches``.
+    """
+    last, _ = _capture_prompts_budgeted(
+        model,
+        tokenizer,
+        prompts,
+        layers,
+        token_budget=S.TOKEN_BUDGET,
+        max_seqs=min(batch_size, S.MAX_SEQS_PER_BATCH),
+        sort_by_length=True,
+        want_adjacent=False,
+        log_prefix="capture",
+    )
+    return last
 
 
 # ── KILL-A spot-gate ─────────────────────────────────────────────────────────────
@@ -284,6 +409,8 @@ def kill_a_spot_gate(
     cos_floor: float = _KILLA_COS_FLOOR,
     norm_rel_tol: float = _KILLA_NORM_REL_TOL,
     norm_ratio_band: tuple[float, float] = _KILLA_NORM_RATIO_BAND,
+    token_budget: int = S.TOKEN_BUDGET,
+    max_seqs: int = S.MAX_SEQS_PER_BATCH,
 ) -> dict:
     """Re-capture ``n_probe`` regenerated parent contexts MIXED into a realistic batch
     and assert each matches its stored ``cx_last`` row under the robust triple
@@ -300,13 +427,23 @@ def kill_a_spot_gate(
     fill_n = max(0, batch_fill - n_probe)
     fill_prompts = new_prompts[:fill_n]
     batch_prompts = probe_prompts + fill_prompts
-    texts = _chat_texts(tokenizer, batch_prompts)
-    _assert_generation_suffix(tokenizer, texts[0])
-    ids, attn = _tokenize_left_pad(tokenizer, texts)
-    # ONE forward captures BOTH the last token (the gated read) and the second-to-last
-    # token (the adjacency-audit read) so the logged off-by-one audit below shares the
-    # probe forward — no extra pass, no cross-forward bf16 jitter.
-    captured, captured_adj = _capture_last_two_batched(model, ids, attn, layers)  # (batch, L, H)
+    # Route the probe batch through the SAME token-budget guard as the main capture
+    # (crash-fix round 4) so a long fill prompt cannot OOM the gate; sort_by_length=False
+    # preserves input order so the probe rows stay at indices 0..n_probe-1. want_adjacent
+    # captures BOTH the last token (the gated read) and the second-to-last (the logged
+    # off-by-one audit) from the SAME per-batch forward — no extra pass, no cross-forward
+    # bf16 jitter.
+    captured, captured_adj = _capture_prompts_budgeted(
+        model,
+        tokenizer,
+        batch_prompts,
+        layers,
+        token_budget=token_budget,
+        max_seqs=max_seqs,
+        sort_by_length=False,
+        want_adjacent=True,
+        log_prefix="KILL-A",
+    )
     probe_captured = captured[:n_probe]  # rows 0..n_probe-1 are the parent probes
     probe_captured_adj = captured_adj[:n_probe]  # same rows, second-to-last token
 

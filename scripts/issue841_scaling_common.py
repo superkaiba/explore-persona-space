@@ -57,6 +57,18 @@ N_STREAM_TOTAL = N_PARENT + N_NEW_CONTEXTS  # 101000
 # clean needs ~10100 margin at the observed rate; 24000 gives ~2.4x headroom.
 N_STREAM_BACKFILL_MARGIN = int(os.environ.get("EPM_I841S_BACKFILL_MARGIN", "24000"))
 
+# Token-budget batching for the GPU capture (crash-fix round 4: attempt 4 OOMed in
+# the Qwen2 MLP forward at 78.75/79.25 GiB). A FIXED batch_size × LEFT-PAD pads every
+# sequence to the batch max, so ONE long lmsys prompt (4-8k tokens) inflated a 32-seq
+# batch to 32×8k retained activations + MLP forward workspace. Cap each batch by
+# PADDED tokens (n_seqs × max_len_in_batch ≤ TOKEN_BUDGET) AND a hard seq cap. 65536
+# padded tokens ≈ worst-case ~16 GB of 28-layer bf16 hidden-state retention + MLP
+# workspace, comfortably under 80 GiB. NO truncation — the parent regime (issue779
+# `_tokenize_left_pad`: padding=True, no max_length/truncation) had none, so any
+# truncation here would be a second variable. Override via the env vars below.
+TOKEN_BUDGET = int(os.environ.get("EPM_I841S_TOKEN_BUDGET", "65536"))
+MAX_SEQS_PER_BATCH = int(os.environ.get("EPM_I841S_MAX_SEQS_PER_BATCH", "48"))
+
 # HF layout for this round's artifacts (data repo superkaiba1/explore-persona-space-data).
 HF_SCALING_PREFIX = "issue841_scaling"
 HF_CAPTURE_BUCKET = f"{HF_SCALING_PREFIX}/cx_last_shards"

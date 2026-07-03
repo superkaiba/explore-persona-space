@@ -29,6 +29,13 @@ ISSUE=841
 LOGS_DIR="${EPM_LOGS_DIR:-/workspace/logs}"
 mkdir -p "$LOGS_DIR"
 
+# Fragmentation belt for the GPU capture (crash-fix round 4): the token-budget batcher
+# (issue841_scaling_common.TOKEN_BUDGET) bounds the per-batch allocation, and
+# expandable_segments lets the allocator grow/shrink segments instead of fragmenting a
+# fixed pool — together they keep the Qwen2 MLP forward under 80 GiB. `:-` so an
+# explicit launch-time PYTORCH_CUDA_ALLOC_CONF override always wins.
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
+
 # Load credentials at entry (uv run does NOT auto-load .env). Source into the
 # shell env so every uv subprocess inherits (sh-safe; no heredoc load_dotenv).
 if [ -f "$REPO_ROOT/.env" ]; then
