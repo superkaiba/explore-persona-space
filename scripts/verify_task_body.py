@@ -5493,18 +5493,34 @@ def _opaque_code_tokens(text: str) -> list[str]:
     digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
     all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
     allowed. PATH-SHAPED strings (whitespace-free with a path separator —
-    file paths, URLs) are exempt from the snake scan; strings that merely
-    CONTAIN a slash (e.g. a slash-separated rendered label) are still
-    scanned, with individual path-shaped whitespace-split words skipped.
-    De-duped case-insensitively, order kept.
+    file paths, URLs) are exempt from BOTH token scans (pins AND snakes);
+    strings that merely CONTAIN a slash (e.g. a slash-separated rendered
+    label) are still scanned, with individual path-shaped whitespace-split
+    words skipped for both token classes. De-duped case-insensitively,
+    order kept.
     """
-    hits: list[str] = [m.group(0) for m in _LAYER_PIN_RE.finditer(text)]
+    hits: list[str] = []
     if not _PATH_SHAPED_RE.match(text.strip()):
+        words = text.split()
+
+        def _only_in_path_words(tok: str) -> bool:
+            """True iff every whitespace-split word containing `tok` is
+            path-shaped ("see figures/x_1/y.png") — provenance, not
+            rendered text, so the token is skipped."""
+            ws_words = [w for w in words if tok in w]
+            return bool(ws_words) and all(_PATH_SHAPED_RE.match(w) for w in ws_words)
+
+        for m in _LAYER_PIN_RE.finditer(text):
+            tok = m.group(0)
+            # Same containing-word path skip snake tokens get (round-2
+            # concern layer-pin-path-exemption): a pin inside a path word
+            # ("figures/issue_920/ctx_blk_max@L12.png") is provenance.
+            if _only_in_path_words(tok):
+                continue
+            hits.append(tok)
         for m in _SNAKE_TOKEN_RE.finditer(text):
             tok = m.group(0)
-            # Skip tokens inside a path-shaped word ("see figures/x_1/y.png").
-            ws_words = [w for w in text.split() if tok in w]
-            if ws_words and all(_PATH_SHAPED_RE.match(w) for w in ws_words):
+            if _only_in_path_words(tok):
                 continue
             if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
                 hits.append(tok)
@@ -5561,7 +5577,9 @@ def check_figure_label_codes(body: str) -> CheckResult:
     sidecar echo is invisible — the canonical ``savefig_paper`` writer never
     serializes titles (PNG-pixel text stays the multimodal critics'
     substantive read); (ii) a bare slug used as a whitespace-free column KEY
-    is unscanned; (iii) a slug inside a path-shaped word is exempt. WARN,
+    is unscanned; (iii) a slug or ``@L`` pin inside a path-shaped word (or a
+    whole path-shaped string) is exempt — the path exemption covers BOTH
+    token classes. WARN,
     never FAIL; fail-soft on missing / unparsable sidecars (the check-24
     convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
     offline / no figures / no scannable same-repo sidecar.

@@ -6217,6 +6217,22 @@ def test_check28_opaque_code_tokens_classifier():
         assert fn(good) == [], f"false positive on {good!r}: {fn(good)}"
 
 
+def test_check28_layer_pin_in_path_word_not_flagged():
+    """`@L` pins get the SAME path-shaped exemption snake tokens already get
+    (round-2 concern `layer-pin-path-exemption`): a pin-bearing path word in
+    prose and a whole path-shaped string are both clean; a slash-SEPARATED
+    rendered label (whitespace around the slash) is NOT path-shaped and
+    still WARNs both pins."""
+    fn = verify_task_body._opaque_code_tokens
+    # (a) pin inside a path-shaped word within prose → clean.
+    assert fn("source: figures/issue_920/ctx_blk_max@L12.png") == []
+    # (b) whole-string path with an embedded pin → clean.
+    assert fn("figures/issue_920/ctx_blk_max@L12.png") == []
+    # (c) slash-separated rendered label → both pins still flagged.
+    toks = fn("ctx_blk_max@L12 / ans_uhdr_max@L12")
+    assert "ctx_blk_max@L12" in toks and "ans_uhdr_max@L12" in toks
+
+
 def test_check28_provenance_subtrees_pruned(tmp_path, monkeypatch):
     """Provenance-keyed subtrees (`script`, `argv` — slug-dense by
     construction) are pruned whole by the walker → clean PASS. Pins the
