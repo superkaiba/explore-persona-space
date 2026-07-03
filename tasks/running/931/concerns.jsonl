@@ -1,0 +1,1 @@
+{"ts": "2026-07-03T23:44:20Z", "event": "raised", "concern_id": "p3b-serial-cpu-pca-battery", "severity": "CONCERN", "summary": "P3b runs ~360 serial CPU robust_pca_basis SVDs (~30s each measured at prod shape) with no budget: ~1.2-2.5h vs 0.3h row, GPU idle, 6 GPU-h budget breach; no epm:compute-deviation", "raised_by": "code-reviewer", "raised_at_round": 1}
