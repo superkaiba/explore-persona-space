@@ -997,5 +997,167 @@
     "d1: one fit per group on the 80% split serves BOTH the rig eval and the 20% held-out recon (rig read at 0.8N).",
     "d1: PCA-64 target basis via covariance/Gram eigh (pca_basis_eigh), not robust_pca_basis full SVD; subspace gated.",
     "d1: batched bmm AdamW trainer (per-group early-stop snapshots) gated vs fit_h.mlp_fit_predict at prediction-agreement R2 > 0.995."
-  ]
+  ],
+  "krr": {
+    "traits": {
+      "evil": {
+        "system": {
+          "layer": 14,
+          "gamma": 0.000710335695748652,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": -0.1354251955966426,
+            "lo": -0.34011816473884343,
+            "hi": 0.04926294706849491,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "within_r_cos": {
+            "point": -0.15015459750569202,
+            "lo": -0.35961805758609205,
+            "hi": 0.037655495558904815,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "overall_r_mode_dot": 0.7131512704029419,
+          "heldout_recon": {
+            "r2": 0.6914760626386552,
+            "mean_cosine": 0.9538680662287035,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "gamma": 8.952031626131586e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.4166569560723921,
+            "lo": 0.22591601153286908,
+            "hi": 0.6182028926639344,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.45174470039845455,
+            "lo": 0.2535764141816866,
+            "hi": 0.6503201583370425,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.6464392959257282,
+          "heldout_recon": {
+            "r2": 0.6416855519968554,
+            "mean_cosine": 0.9658321104679078,
+            "n_test": 1480
+          }
+        }
+      },
+      "sycophancy": {
+        "system": {
+          "layer": 26,
+          "gamma": 8.514398153481717e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.53607296857318,
+            "lo": 0.46867247581979515,
+            "hi": 0.6065007428913776,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.5516190072464126,
+            "lo": 0.49208914108628765,
+            "hi": 0.6133086719062781,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.8129483353716839,
+          "heldout_recon": {
+            "r2": 0.6395334730257933,
+            "mean_cosine": 0.9652381129401356,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "gamma": 8.514398153481717e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.5552967125872479,
+            "lo": 0.3919274913967052,
+            "hi": 0.663077311373721,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.5747943180498829,
+            "lo": 0.42249532549941604,
+            "hi": 0.6780182657380662,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.5806020526296187,
+          "heldout_recon": {
+            "r2": 0.6395334730257933,
+            "mean_cosine": 0.9652381129401356,
+            "n_test": 1480
+          }
+        }
+      },
+      "hallucination": {
+        "system": {
+          "layer": 17,
+          "gamma": 0.00044603787202651056,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.38610589404056017,
+            "lo": 0.34015837941963667,
+            "hi": 0.426077145644534,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.3831761003209674,
+            "lo": 0.33747835341561355,
+            "hi": 0.42301059593017853,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.5198121559258997,
+          "heldout_recon": {
+            "r2": 0.7005067538326354,
+            "mean_cosine": 0.9554588637296443,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 27,
+          "gamma": 6.204773786848206e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.44733994686082257,
+            "lo": 0.3650366148541419,
+            "hi": 0.5594342132335586,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.4484304639726771,
+            "lo": 0.3622023796850438,
+            "hi": 0.5672434764033409,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.4761341848667133,
+          "heldout_recon": {
+            "r2": 0.6511479244684424,
+            "mean_cosine": 0.8553257086169787,
+            "n_test": 1480
+          }
+        }
+      }
+    },
+    "m_landmarks": 1024,
+    "recipe": "RBF Nystrom K_nm @ K_mm^{-1/2}; GCV ridge on features (fit_h.ridge_fit_predict); gamma = 1/median sq-dist"
+  }
 }
