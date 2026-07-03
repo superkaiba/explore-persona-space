@@ -10,7 +10,7 @@ update this index (lint: `--check-lessons-index`).
 
 - **analyzer-paper-mode** ([`.claude/rules/analyzer-paper-mode.md`](analyzer-paper-mode.md)) — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **analyzer-section-reference** ([`.claude/rules/analyzer-section-reference.md`](analyzer-section-reference.md)) — fires when: the analyzer executes a protocol step (pointer-loaded step span).
-- **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/fit-analysis helper vs retraining ((a)-(i) fitness check).
+- **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/fit-analysis helper vs retraining ((a)-(j) fitness check).
 - **arxiv-mcp** ([`.claude/rules/arxiv-mcp.md`](arxiv-mcp.md)) — fires when: you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **background-automation** ([`.claude/rules/background-automation.md`](background-automation.md)) — fires when: you touch/reason about the cron audits / session watcher / pod-GCP janitors.
 - **clean-result-paper-review** ([`.claude/rules/clean-result-paper-review.md`](clean-result-paper-review.md)) — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
