@@ -965,14 +965,21 @@ def _upload_store(
         commit_message=f"issue #810: answer position sweep store ({len(ctx_ids)} contexts)",
     )
     remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
-    expected = {f"{path_in_repo}/{c}.pt" for c in ctx_ids}
+    # Exact expected set: every per-context tensor + the manifest (readers
+    # resolve <prefix>/manifest.json first — a store without it is unusable).
+    expected = {f"{path_in_repo}/{c}.pt" for c in ctx_ids} | {f"{path_in_repo}/manifest.json"}
     missing = expected - remote
     if missing:
         raise RuntimeError(
-            f"aligned-subset store upload verification FAILED: {len(missing)} context "
-            f"files missing on the Hub under {path_in_repo}/ (e.g. {sorted(missing)[:3]})"
+            f"aligned-subset store upload verification FAILED: {len(missing)} of "
+            f"{len(expected)} expected files missing on the Hub under {path_in_repo}/ "
+            f"(e.g. {sorted(missing)[:3]})"
         )
-    logger.info("aligned-subset store verified: %d contexts under %s/", len(expected), path_in_repo)
+    logger.info(
+        "aligned-subset store verified: %d contexts + manifest under %s/",
+        len(ctx_ids),
+        path_in_repo,
+    )
     return path_in_repo
 
 

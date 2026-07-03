@@ -167,6 +167,91 @@ def enlarged_summary_names() -> list[str]:
     return summary_names() + UH_SUMMARY_NAMES
 
 
+class UhPackValidationError(RuntimeError):
+    """A uh_summaries pack failed production-path validation (fail loud, pre-fit)."""
+
+
+def validate_uh_pack(
+    rows: dict,
+    coverage: dict,
+    meta: dict,
+    *,
+    requested_rows: list[str],
+    ctx_ids: list[str],
+    expected_model: str = DEFAULT_MODEL,
+    expected_capture_layers: list[int] | None = None,
+) -> None:
+    """PRODUCTION-path validation of a loaded uh_summaries pack (fail loud, pre-fit).
+
+    Callers branch on the pack's smoke provenance: a ``meta['smoke']`` pack takes
+    the caller's explicit relaxed path (partial-context pairing, layer-prefix
+    truncation) and NEVER reaches this helper on a production run — this helper
+    REFUSES it. Non-smoke checks (round-2 hardening of the r1 CONCERNs
+    ``uh-pack-meta-validation-readout`` / ``uh-pack-validation-bootstrap``):
+
+    - ``meta['smoke'] is False`` (a smoke / pre-meta pack cannot feed a
+      production fit);
+    - ``meta['model'] == expected_model`` (the 7B production model);
+    - ``meta['capture_layers'] == expected_capture_layers`` (default
+      ``list(range(EXPECTED_LAYERS))`` — the full 28-layer axis);
+    - ``meta['context_ids']`` covers the production ctx grid as a SET;
+    - EVERY requested row has, for EVERY production context, a tensor with the
+      full layer axis AND positive coverage.
+
+    Raises :class:`UhPackValidationError` naming the first offenders.
+    """
+    if expected_capture_layers is None:
+        expected_capture_layers = list(range(EXPECTED_LAYERS))
+    if meta.get("smoke") is not False:
+        raise UhPackValidationError(
+            f"uh pack smoke-provenance check failed: meta['smoke']={meta.get('smoke')!r} — a "
+            "smoke (or pre-meta) pack cannot feed a production fit"
+        )
+    if meta.get("model") != expected_model:
+        raise UhPackValidationError(
+            f"uh pack model mismatch: pack={meta.get('model')!r} expected={expected_model!r}"
+        )
+    pack_layers = meta.get("capture_layers")
+    if pack_layers is None or list(pack_layers) != list(expected_capture_layers):
+        raise UhPackValidationError(
+            f"uh pack capture_layers mismatch: pack has "
+            f"{len(pack_layers) if pack_layers is not None else None} layers "
+            f"({list(pack_layers)[:4] if pack_layers else None}...), expected the full "
+            f"{len(expected_capture_layers)}-layer axis — layer-prefix truncation is a "
+            "smoke-only path"
+        )
+    pack_ctx = set(meta.get("context_ids") or [])
+    missing_meta_ctx = sorted(set(ctx_ids) - pack_ctx)
+    if missing_meta_ctx:
+        raise UhPackValidationError(
+            f"uh pack meta context_ids missing {len(missing_meta_ctx)} production contexts "
+            f"(e.g. {missing_meta_ctx[:5]})"
+        )
+    n_layers = len(expected_capture_layers)
+    for row in requested_rows:
+        per_ctx = rows.get(row)
+        if per_ctx is None:
+            raise UhPackValidationError(f"requested row {row!r} absent from the uh pack")
+        no_tensor = [c for c in ctx_ids if c not in per_ctx]
+        if no_tensor:
+            raise UhPackValidationError(
+                f"row {row!r}: {len(no_tensor)} production contexts lack a tensor "
+                f"(e.g. {no_tensor[:5]})"
+            )
+        bad_shape = [c for c in ctx_ids if per_ctx[c].shape[0] != n_layers]
+        if bad_shape:
+            raise UhPackValidationError(
+                f"row {row!r}: {len(bad_shape)} contexts have a truncated layer axis "
+                f"(e.g. {bad_shape[:3]}: {per_ctx[bad_shape[0]].shape[0]} != {n_layers})"
+            )
+        no_cov = [c for c in ctx_ids if coverage.get(row, {}).get(c, 0) <= 0]
+        if no_cov:
+            raise UhPackValidationError(
+                f"row {row!r}: {len(no_cov)} production contexts have zero coverage "
+                f"(e.g. {no_cov[:5]})"
+            )
+
+
 def load_battery50(local_hint: Path | str | None = None) -> dict:
     """Load + sha256-pin the 50-context battery (local fast path, else HF snapshot).
 

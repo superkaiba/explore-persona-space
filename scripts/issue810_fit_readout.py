@@ -99,6 +99,7 @@ from issue810_common import (  # noqa: E402
     reproducibility_metadata,
     summary_names,
     upload_out_dir,
+    validate_uh_pack,
 )
 from issue810_fit_reconstruction import _expand_rows  # noqa: E402
 
@@ -337,18 +338,54 @@ def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
-def _resolve_rows_and_sources(args, pos_man: dict):
-    """Expand --rows, load the uh pack, and fail loud on missing sources/coverage.
+def _handle_rb_shape_mismatch(smoke, behavior, summary, layer_label, x_h, r_h, n_skips) -> int:
+    """Fixed-r_B hidden-size mismatch: loud error in production, counted skip in smoke.
+
+    A mixed-model SMOKE (0.5B store rows vs the 7B r_B) legitimately cannot
+    project across hidden sizes — the skip is logged + counted (persisted as
+    ``fixed_rb_shape_skips`` in the output JSON). Production shapes always
+    match, so a NON-smoke mismatch means the summaries store and r_B come from
+    different models — raise, never a silent skip (r1 Minor: the bare
+    ``continue`` was undocumented + uncounted).
+    """
+    if not smoke:
+        raise RuntimeError(
+            f"fixed_rb hidden-size mismatch on a NON-smoke run: summary rows H={x_h} vs "
+            f"r_B H={r_h} ({behavior}/{summary}/L{layer_label}) — the summaries store "
+            "and r_B come from different models"
+        )
+    n_skips += 1
+    logger.info(
+        "[phase=skip] fixed_rb %s/%s L%s: hidden-size mismatch (%d vs %d) — "
+        "mixed-model smoke skip #%d",
+        behavior,
+        summary,
+        layer_label,
+        x_h,
+        r_h,
+        n_skips,
+    )
+    return n_skips
+
+
+def _resolve_rows_and_sources(args, pos_man: dict, ctx_ids: list[str], capture_layers: list[int]):
+    """Expand --rows, load + validate the uh pack, fail loud on missing sources.
 
     Returns ``(summaries, uh_rows, uh_cov)``. A requested uh row with NO source
     (neither the ``--uh-summaries`` pack nor an extended-boundary position
-    store) refuses — never a silent KeyError mid-fit. ``--null-mode full-rerun``
-    additionally requires the FULL 46-row × 28-layer axis (unless --smoke; plan
-    v11 §6 read mode 1 — the enlarged-axis band's denominator).
+    store) refuses — never a silent KeyError mid-fit. On a NON-smoke run the
+    loaded pack is validated against the production grid BEFORE the fit loop
+    (``validate_uh_pack``: non-smoke provenance, model, the full layer axis,
+    every requested row × every production context — r1 CONCERN
+    ``uh-pack-meta-validation-readout``); a ``--smoke`` run keeps the relaxed
+    path (partial coverage pairs via ``_kept_contexts``). ``--null-mode
+    full-rerun`` additionally requires the FULL 46-row × 28-layer axis (unless
+    --smoke; plan v11 §6 read mode 1 — the enlarged-axis band's denominator).
     """
     uh_rows, uh_cov = (None, None)
+    uh_meta: dict = {}
     if args.uh_summaries:
-        uh_rows, uh_cov, _meta = _load_uh_summaries(args.uh_summaries)
+        uh_rows, uh_cov, uh_meta = _load_uh_summaries(args.uh_summaries)
         logger.info("[phase=load] uh_summaries pack: %d rows", len(uh_rows))
     summaries = _expand_rows(args.summaries) if args.summaries else summary_names()
     uh_requested = [s for s in summaries if s in set(UH_SUMMARY_NAMES)]
@@ -357,6 +394,29 @@ def _resolve_rows_and_sources(args, pos_man: dict):
             f"rows {uh_requested} requested but no --uh-summaries pack given and the "
             "position store is not extended-boundary — no source for the new rows"
         )
+    if uh_rows is not None:
+        if args.smoke:
+            logger.info(
+                "[phase=load] --smoke: uh pack production validation RELAXED "
+                "(smoke=%s model=%s) — partial coverage pairs via _kept_contexts",
+                uh_meta.get("smoke"),
+                uh_meta.get("model"),
+            )
+        else:
+            validate_uh_pack(
+                uh_rows,
+                uh_cov,
+                uh_meta,
+                requested_rows=uh_requested,
+                ctx_ids=ctx_ids,
+                expected_capture_layers=capture_layers,
+            )
+            logger.info(
+                "[phase=load] uh pack VALIDATED: %d requested rows x %d contexts x %d layers",
+                len(uh_requested),
+                len(ctx_ids),
+                len(capture_layers),
+            )
     if args.null_mode == "full-rerun" and not args.smoke:
         missing = sorted(set(enlarged_summary_names()) - set(summaries))
         if missing or (args.layers is not None):
@@ -513,7 +573,7 @@ def main() -> int:
         )
     e0 = _e0_by_context(e0_highm, low_m)
 
-    summaries, uh_rows, uh_cov = _resolve_rows_and_sources(args, pos_man)
+    summaries, uh_rows, uh_cov = _resolve_rows_and_sources(args, pos_man, ctx_ids, capture_layers)
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
     behaviors = _default_behaviors(e0, args)
     rng = np.random.default_rng(SHUFFLE_NULL_SEED)
@@ -521,6 +581,7 @@ def main() -> int:
     results: list[dict] = []
     # null_matrix[behavior][method][summary][layer] = [per-draw ρ]
     null_matrix: dict = {}
+    fixed_rb_shape_skips = 0
 
     for behavior in behaviors:
         graded = e0.get(behavior, {}).get("graded", {})
@@ -560,9 +621,15 @@ def main() -> int:
                         # gate the headline on diffmeans (persona-vectors default).
                         r = rb[behavior]["diffmeans"][li].numpy()
                         if X.shape[1] != r.shape[0]:
-                            # Mixed-model smoke only (0.5B store rows vs 7B r_B):
-                            # the projection is undefined across hidden sizes —
-                            # skip EXPLICITLY. Production shapes always match.
+                            fixed_rb_shape_skips = _handle_rb_shape_mismatch(
+                                args.smoke,
+                                behavior,
+                                summary,
+                                capture_layers[li],
+                                X.shape[1],
+                                r.shape[0],
+                                fixed_rb_shape_skips,
+                            )
                             continue
                         pred = _fixed_rb_pred(X, r)
                         # correct null (batched, no re-fit): permute the (E0,
@@ -612,6 +679,8 @@ def main() -> int:
         layers,
         capture_layers,
         rb,
+        uh_rows,
+        uh_cov,
     )
 
     _write_outputs(
@@ -625,6 +694,7 @@ def main() -> int:
         judge_val,
         length_control,
         low_m,
+        fixed_rb_shape_skips,
     )
     logger.info("[phase=done] wrote read-out results + null matrix to %s", out_dir)
     return 0
@@ -641,6 +711,7 @@ def _write_outputs(
     judge_val,
     length_control,
     low_m,
+    fixed_rb_shape_skips: int = 0,
 ) -> None:
     """Persist the read-out results + null matrix (+ the full-rerun reductions).
 
@@ -677,6 +748,7 @@ def _write_outputs(
             "methods": args.methods,
             "null_mode": args.null_mode,
             "low_m_e0_landed": low_m is not None,
+            "fixed_rb_shape_skips": fixed_rb_shape_skips,  # >0 on mixed-model smoke only
             "cells": results,
             "h2_conjunction": conjunction,
             "enlarged_axis": enlarged,
@@ -910,12 +982,18 @@ def _length_control(
     layers,
     capture_layers,
     rb,
+    uh_rows=None,
+    uh_cov=None,
 ) -> dict:
     """Per behavior: corr(answer length, winning-summary read-out pred) + corr(len, graded E0).
 
     A length-explained lift is NOT a persona finding (llm-judging rule 10). Answer
     length is the per-context median answer token count (from the Phase B manifest's
     per_context_diag). Uses the winning (behavior, method, summary, layer) by best ρ.
+    A winning UH row resolves through the uh pack's OWN coverage + row source
+    (``_kept_contexts`` / ``_summary_matrix(..., uh_rows)``) — the r1 gap filtered
+    UH rows through the position store's coverage, degrading every UH winner to
+    ``insufficient`` (CONCERN ``uh-length-control-uh-winner-gap``).
     """
     per_ctx_len = {}
     for c, d in pos_man.get("per_context_diag", {}).items():
@@ -933,15 +1011,16 @@ def _length_control(
         graded = e0.get(behavior, {}).get("graded", {})
         summary, li_val, method = cell["summary"], cell["layer"], cell["method"]
         li = capture_layers.index(li_val)
+        covered = set(_kept_contexts(summary, ctx_ids, coverage, uh_cov))
         kept = [
-            c for c in ctx_ids if c in graded and c in per_ctx_len and per_ctx_len[c] is not None
+            c
+            for c in ctx_ids
+            if c in covered and c in graded and c in per_ctx_len and per_ctx_len[c] is not None
         ]
-        if summary not in ("mean", "last", "maxp"):
-            kept = [c for c in kept if coverage[c].get(summary, 0) > 0]
         if len(kept) < 4:
             out[behavior] = {"status": "insufficient", "n": len(kept)}
             continue
-        X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage)
+        X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage, uh_rows)
         if method == "fixed_rb" and behavior in rb:
             pred = X @ rb[behavior]["diffmeans"][li].numpy()
         else:

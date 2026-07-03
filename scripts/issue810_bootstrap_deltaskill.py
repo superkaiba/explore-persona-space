@@ -139,7 +139,7 @@ def _vs_mean_rows(args) -> int:
     import json
 
     from huggingface_hub import hf_hub_download
-    from issue810_common import UH_SUMMARY_NAMES
+    from issue810_common import UH_SUMMARY_NAMES, validate_uh_pack
     from issue810_fit_readout import _load_uh_summaries
 
     man_path = hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset")
@@ -154,30 +154,40 @@ def _vs_mean_rows(args) -> int:
     unknown = [r for r in rows if r not in uh_rows]
     if unknown:
         raise SystemExit(f"rows {unknown} absent from the uh_summaries pack ({sorted(uh_rows)})")
-    # Pack context coverage must span the manifest grid (paired design). A
-    # SMOKE-provenance pack (tiny ctx subset) pairs on its own covered subset,
-    # loudly; a PRODUCTION pack with missing contexts is a capture bug — refuse.
-    missing_ctx = [c for c in ctx_ids if uh_cov[rows[0]].get(c, 0) <= 0]
-    if missing_ctx:
-        if not meta.get("smoke"):
-            raise SystemExit(
-                f"uh pack missing contexts {missing_ctx[:5]} — paired read impossible "
-                "(production pack must cover the full manifest grid)"
-            )
-        ctx_ids = [c for c in ctx_ids if uh_cov[rows[0]].get(c, 0) > 0]
-        n = len(ctx_ids)
-        if n < 8:
-            raise SystemExit(f"smoke pack covers only {n} contexts (<8) — too small to fit")
-        pca_dim = min(PCA_TARGET_DIM_CAP, n - 2)
-        logger.warning(
-            "[vs-mean] SMOKE pack: pairing on its %d covered contexts (production covers 50)", n
-        )
     free_summaries, capture_layers = _load_free_summaries()
+    if not meta.get("smoke"):
+        # PRODUCTION pack: ALL requested rows must carry a full-layer tensor +
+        # positive coverage for EVERY manifest context, on the production model
+        # (r1 CONCERN uh-pack-validation-bootstrap — rows[0]-only coverage +
+        # min()-layer truncation let a partial/truncated pack through silently).
+        # Raises UhPackValidationError BEFORE any decomposition/output.
+        validate_uh_pack(
+            uh_rows,
+            uh_cov,
+            meta,
+            requested_rows=rows,
+            ctx_ids=ctx_ids,
+            expected_capture_layers=capture_layers,
+        )
+        layers = args.layers or list(range(len(capture_layers)))
+    else:
+        # SMOKE-provenance pack (tiny ctx subset / non-7B layer count): pair on
+        # the subset covered by ALL requested rows, loudly; the layer window
+        # truncates to the pack's own axis. This relaxed path is smoke-ONLY.
+        covered = [c for c in ctx_ids if all(uh_cov[r].get(c, 0) > 0 for r in rows)]
+        if len(covered) < n:
+            ctx_ids = covered
+            n = len(ctx_ids)
+            if n < 8:
+                raise SystemExit(f"smoke pack covers only {n} contexts (<8) — too small to fit")
+            pca_dim = min(PCA_TARGET_DIM_CAP, n - 2)
+            logger.warning(
+                "[vs-mean] SMOKE pack: pairing on its %d covered contexts (production covers 50)",
+                n,
+            )
+        n_layers_pack = next(iter(uh_rows[rows[0]].values())).shape[0]
+        layers = args.layers or list(range(min(len(capture_layers), n_layers_pack)))
     cc = _load_cc(ctx_ids, capture_layers)
-    # The pack rows carry their own layer count (0.5B smoke = 24; production 28)
-    # — the paired Δ is computed on the overlapping layer prefix, labeled.
-    n_layers_pack = next(iter(uh_rows[rows[0]].values())).shape[0]
-    layers = args.layers or list(range(min(len(capture_layers), n_layers_pack)))
     n_layers = len(layers)
     logger.info("[vs-mean] rows=%s n=%d layers=%d pca_dim=%d", rows, n, n_layers, pca_dim)
 
