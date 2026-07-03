@@ -6,7 +6,7 @@ title: The linear context→answer-profile map exists in pretrained Qwen2.5-7B a
 kind: experiment
 tags: []
 created_at: '2026-07-02T00:14:16Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'Help me to plan this experiment: Is the context vector to answer profile
   mapping present in the base model (Qwen/Qwen2.5-7B) and does it hold for the user?
