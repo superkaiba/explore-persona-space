@@ -5201,6 +5201,14 @@
       "status": "completed",
       "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
+    "809": {
+      "goal": "Faithful PV-native rig reproduction on Qwen-2.5-7B to isolate the rig-gate residual gap #779 documented (parked as redundant with #778).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/on_hold/809",
+      "status": "on_hold",
+      "title": "Faithful PV-native rig reproduction on Qwen-2.5-7B (parked on_hold \u2014 duplicates #778)"
+    },
     "81": {
       "has_clean_result": false,
       "kind": "experiment",
