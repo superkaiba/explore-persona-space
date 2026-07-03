@@ -4,3 +4,4 @@
 {"ts": "2026-07-02T23:54:19Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: overall PASS, n_fail=0, n_warn=0, n_skip=10 (kind-exempt infra checks), plan v1"}
 {"ts": "2026-07-02T23:54:21Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "stage-dispatch stage=fact-check round=1 subagent=planner(fact-checker) worktree=repo-root"}
 {"ts": "2026-07-03T00:01:12Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "Fact-checker (Phase 1.5): 27/27 CONFIRMED (15 assumptions + 12 §11 sources), 0 WRONG, 0 UNVERIFIED. Assumption 9 (datagen sidecar schema for margin-pool join) upgraded Medium→CONFIRMED — kill-criterion-1 contingency likely unnecessary. Proceeding to Phase 2 critic ensemble."}
+{"ts": "2026-07-03T00:01:15Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=plan-critique round=1 subagent=critic-ensemble(3xClaude+3xCodex)+consistency-checker worktree=repo-root"}
