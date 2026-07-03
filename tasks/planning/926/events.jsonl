@@ -5,3 +5,4 @@
 {"ts": "2026-07-03T14:14:50Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T14:26:34Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py mechanical pre-pass on plans/v1.md: PASS — n_fail=0, n_warn=0 (kind-exempt SKIPs only: c11 dry-run, c12 battery, c13 empirical-gate, c14 hypothesis, c15 fail-loud)."}
 {"ts": "2026-07-03T14:44:40Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr51od0q-pfvxnk effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-07-03T14:46:43Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr51od0q-pfvxnk phase=done after 121s."}
