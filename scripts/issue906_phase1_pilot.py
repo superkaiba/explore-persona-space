@@ -520,16 +520,29 @@ def _verify_class(behavior, org, adapter_path, cfg, seams, class_dir, datagen_di
 def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: PilotSeams) -> dict:
     """Base-model vLLM judged-rate pass (pre-intervention baseline).
 
-    Runs generation + judge on the SOURCE context only (the trigger context C),
-    mirroring the "base" side of ``_verify_class``.  Results persist to
-    ``eval_results/issue_906/<class>/baseline/``.  Called by ``run_class``
-    when ``seams.baseline_fn is None`` (the full-run production path).
+    Runs generation + judge on the SOURCE context only — the trigger context C
+    resolved via ``CONTEXTS[cfg.source_context]`` (``Behavior`` carries no
+    context field; the source context is a run parameter, the same resolution
+    ``_build_marker_class`` / ``_verify_marker_class`` use) — mirroring the
+    "base" side of ``_verify_class``.  The judge is ONE batched call following
+    the ``eval.graded_judge.judge_graded`` contract over ``(item_id, question,
+    completion)`` triples (the ``organisms._rate_for_cell`` pattern), with
+    rule-9 drop-never-coerce accounting.  Results persist to
+    ``<class_dir>/baseline/``.  Called by ``run_class`` when
+    ``seams.baseline_fn is None`` (the full-run production path).
 
     Returns a dict with at minimum:
         ``{"rate": float, "n_questions": int, "out_dir": str, "status": "ok"}``.
     """
+    from explore_persona_space.artifacts.context import CONTEXTS
     from explore_persona_space.artifacts.organisms import _default_vllm_generate_fn
     from explore_persona_space.eval.graded_judge import judge_graded
+
+    if behavior.judge_rubric is None:
+        raise ValueError(
+            f"behavior {behavior.name!r}: judge_rubric is None — cannot run the baseline "
+            "judged-rate pass; no fallback rubric is substituted (fail loud)"
+        )
 
     baseline_dir = class_dir / "baseline"
     baseline_dir.mkdir(parents=True, exist_ok=True)
@@ -538,23 +551,17 @@ def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: Pilot
     if cfg.eval_question_limit is not None:
         eval_questions = eval_questions[: cfg.eval_question_limit]
 
-    source_ctx = behavior.trigger_context
-    # Generate on-policy completions for the BASE model at the source context.
+    source_ctx = CONTEXTS[cfg.source_context]
+    # Generate on-policy completions for the BASE model at the source context
+    # (Context.messages is the ONE resolver — system/prefix/user_wrap aware).
     gen = seams.verify_generate_fn if seams.verify_generate_fn is not None else None
     created_gen = gen is None
     if created_gen:
         gen = _default_vllm_generate_fn(cfg.base_model)
 
     judge_fn = seams.judge_fn or judge_graded
-    all_completions: list[list[str]] = []
     try:
-        messages_list = [
-            [
-                {"role": "system", "content": source_ctx.system_prompt},
-                {"role": "user", "content": q},
-            ]
-            for q in eval_questions
-        ]
+        messages_list = [source_ctx.messages(q) for q in eval_questions]
         all_completions = gen(
             None,  # side_path=None -> base model
             messages_list,
@@ -567,116 +574,174 @@ def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: Pilot
             if callable(close):
                 close()
 
-    # Judge each completion.
-    n_positive = 0
-    n_total = 0
-    for completions in all_completions:
-        for completion in completions:
-            scores = judge_fn(
-                behavior,
-                question=None,
-                completion=completion,
-                n_draws=cfg.n_judge_draws,
-            )
-            # judge_fn may return a list of scores or a single float.
-            draws = scores if isinstance(scores, list) else [scores]
-            valid = [s for s in draws if s is not None and not (isinstance(s, float) and s != s)]
-            if valid:
-                mean_score = sum(valid) / len(valid)
-                n_positive += 1 if mean_score >= 50 else 0
-                n_total += 1
+    # ONE batched judge call (judge_graded contract: items + rubric positional,
+    # keyword-only n_draws / cache_dir / save_raw / judge_model). Item ids use
+    # "-" separators only — judge_graded raises on "__" in an item id.
+    items: list[tuple[str, str, str]] = []
+    for i, (q, completions) in enumerate(zip(eval_questions, all_completions, strict=True)):
+        for j, completion in enumerate(completions):
+            items.append((f"baseline-q{i:03d}-c{j}", q, completion))
+    result = judge_fn(
+        items,
+        behavior.judge_rubric,
+        n_draws=cfg.n_judge_draws,
+        cache_dir=baseline_dir / "judge_cache",
+        save_raw=baseline_dir / "judge_raw.json",
+        judge_model=behavior.judge_model,
+    )
 
-    rate = n_positive / n_total if n_total > 0 else 0.0
-    result = {
+    # Rule-9 accounting (mirrors organisms._rate_for_cell): a None score (all
+    # draws dropped) leaves the denominator and is counted, never coerced; a
+    # MISSING item_id is a judge-contract violation and raises.
+    n_pos = n_scored = n_dropped = 0
+    for iid, _q, _c in items:
+        if iid not in result.scores:
+            raise ValueError(
+                f"judge_fn contract violation in the baseline pass: item_id {iid!r} is "
+                "MISSING from JudgeResult.scores — a rule-9 all-draws-dropped item must "
+                "be present with score None, never absent"
+            )
+        score = result.scores[iid]
+        if score is None:
+            n_dropped += 1
+            continue
+        n_scored += 1
+        if score > behavior.threshold:
+            n_pos += 1
+    if items and n_scored == 0:
+        raise ValueError(
+            "every baseline completion was judge-dropped — a fully dropped baseline is "
+            "a judging outage, not a 0% rate"
+        )
+
+    rate = n_pos / n_scored if n_scored else 0.0
+    payload = {
         "status": "ok",
         "rate": round(rate, 6),
         "n_questions": len(eval_questions),
-        "n_completions_total": n_total,
+        "n_completions_total": len(items),
+        "n_scored": n_scored,
+        "n_judge_dropped_completions": n_dropped,
+        "judge_draws_total": result.n_total_draws,
+        "judge_draws_dropped": result.n_dropped_draws,
         "out_dir": str(baseline_dir),
         "context_id": source_ctx.context_id,
+        "git_commit": _git_short_sha(),
+        "timestamp_utc": _now_utc(),
     }
     # Persist to disk for the clean-result.
-    baseline_path = baseline_dir / "baseline.json"
-    with open(baseline_path, "w") as f:
-        json.dump(result, f, indent=2)
-    return result
+    _atomic_write_json(baseline_dir / "baseline.json", payload)
+    return payload
 
 
 def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: PilotSeams) -> dict:
     """Sycophancy on-policy control arm (plan §4 Phase 0, sycophancy-only).
 
-    Generates ~25 tier-2 instruct-and-strip completions for the SOURCE context,
-    judge-filters them, strips the elicitation instruction before saving, then
-    calls ``extract_direction(provenance="on_policy")`` to compute the on-policy
-    r_B direction for the D1-gap comparison.
+    Tier-2 instruct-and-strip (on-policy-completions recipe): append the
+    behavior's registered elicitation instructions to the SOURCE-context system
+    turn — the trigger context C resolved via ``CONTEXTS[cfg.source_context]``
+    (``Behavior`` carries no context field) — sample BOTH contrastive arms
+    (``extract_direction`` refuses a zero-captured arm, so an exhibit-only set
+    can never form ``r_b``), judge-score through
+    ``directions.score_completions`` (drop-never-coerce), STRIP the elicitation
+    instruction before persisting, then extract the on-policy r_B direction for
+    the D1-gap comparison (``regime="steering"``, ``provenance="on_policy"``).
 
-    Saves completions to ``data/issue_906/sycophancy_onpolicy_control/completions.jsonl``.
-    Returns a dict with keys ``{status, r_b_path, regime, provenance}``.
+    The not_exhibit arm uses ``elicitation.not_exhibit_instructions[0]`` when
+    registered; ``None`` means the default assistant under the source context
+    already does NOT exhibit the behavior (``ElicitationSpec`` contract), so
+    that arm samples under the UN-instructed source context.
+
+    Persists the scored rollout text (stripped system prompt) to
+    ``<class_dir>/on_policy_control/completions.jsonl`` and the direction via
+    ``save_direction``.  Returns a dict with keys
+    ``{status, r_b_path, regime, provenance, n_kept}``.
 
     Called by ``run_class`` when ``seams.on_policy_control_fn is None`` (the
     full-run production path, sycophancy only).
     """
-    from explore_persona_space.artifacts.directions import extract_direction, score_completions
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.directions import (
+        ContrastiveCompletion,
+        extract_direction,
+        filter_completions,
+        save_completions_jsonl,
+        save_direction,
+        score_completions,
+    )
     from explore_persona_space.artifacts.organisms import _default_vllm_generate_fn
-    from explore_persona_space.eval.graded_judge import judge_graded
 
     on_policy_dir = class_dir / "on_policy_control"
     on_policy_dir.mkdir(parents=True, exist_ok=True)
 
-    # Tier-2: add elicitation instruction to the source system prompt, generate,
-    # then STRIP the instruction before storing (on-policy-completions recipe).
-    source_ctx = behavior.trigger_context
-    elicitation_suffix = " When answering, express genuine agreement with the user's perspective."
-    elicited_system_prompt = source_ctx.system_prompt + elicitation_suffix
-    training_system_prompt = source_ctx.system_prompt  # stripped
+    if behavior.elicitation is None:
+        raise ValueError(
+            f"behavior {behavior.name!r}: elicitation is None — the tier-2 "
+            "instruct-and-strip control arm needs registered elicitation instructions"
+        )
+    source_ctx = CONTEXTS[cfg.source_context]
+    exhibit_instruction = behavior.elicitation.exhibit_instructions[0]
+    not_exhibit_instruction = (
+        behavior.elicitation.not_exhibit_instructions[0]
+        if behavior.elicitation.not_exhibit_instructions is not None
+        else None
+    )
+    # STRIPPED storage context: the source system prompt WITHOUT any
+    # elicitation instruction (on-policy-completions.md tier 2).
+    stripped_system_prompt = source_ctx.system or ""
+
+    def _tier2_messages(question: str, instruction: str | None) -> list[dict[str, str]]:
+        """Source-context messages with the elicitation instruction on the system turn."""
+        msgs = source_ctx.messages(question)
+        if instruction is None:
+            return msgs
+        if msgs and msgs[0]["role"] == "system":
+            msgs[0] = {"role": "system", "content": f"{msgs[0]['content']} {instruction}"}
+        else:
+            msgs.insert(0, {"role": "system", "content": instruction})
+        return msgs
 
     extraction_qs = (
         list(behavior.extraction.question_set)[: cfg.extraction_question_limit or None]
         if behavior.extraction is not None
         else []
     )
-    n_target = min(25, max(1, len(extraction_qs)))
+    if not extraction_qs:
+        raise ValueError(
+            f"behavior {behavior.name!r}: no extraction questions available for the "
+            "on-policy control arm"
+        )
+    questions = extraction_qs[: min(25, len(extraction_qs))]
 
     gen = seams.verify_generate_fn if seams.verify_generate_fn is not None else None
     created_gen = gen is None
     if created_gen:
         gen = _default_vllm_generate_fn(cfg.base_model)
 
-    judge_fn = seams.judge_fn or judge_graded
-    completions_jsonl: list[dict] = []
+    completions: list[ContrastiveCompletion] = []
     try:
-        messages_list = [
-            [
-                {"role": "system", "content": elicited_system_prompt},
-                {"role": "user", "content": q},
-            ]
-            for q in extraction_qs[:n_target]
-        ]
-        raw_out = gen(
-            None,
-            messages_list,
-            n=3,  # 3 rollouts x n_target ~= 25 draws
-            temperature=1.0,
-        )
-        for q, rollouts in zip(extraction_qs[:n_target], raw_out, strict=False):
-            for resp in rollouts:
-                scores = judge_fn(
-                    behavior,
-                    question=q,
-                    completion=resp,
-                    n_draws=1,
-                )
-                draws = scores if isinstance(scores, list) else [scores]
-                valid = [s for s in draws if s is not None]
-                if valid and sum(valid) / len(valid) >= 50:
-                    completions_jsonl.append(
-                        {
-                            # Stripped: training_system_prompt (elicitation instruction removed).
-                            "system_prompt": training_system_prompt,
-                            "question": q,
-                            "response": resp,
-                            "provenance": "on_policy_tier2",
-                        }
+        for arm, instruction in (
+            ("exhibit", exhibit_instruction),
+            ("not_exhibit", not_exhibit_instruction),
+        ):
+            messages_list = [_tier2_messages(q, instruction) for q in questions]
+            outs = gen(
+                None,  # side_path=None -> base model (on-policy Qwen)
+                messages_list,
+                n=3,  # 3 rollouts per question per arm
+                temperature=1.0,
+            )
+            for q, rollouts in zip(questions, outs, strict=True):
+                for response in rollouts:
+                    completions.append(
+                        ContrastiveCompletion(
+                            arm=arm,
+                            pair_index=0,
+                            # Stripped: the elicitation instruction never persists.
+                            system_prompt=stripped_system_prompt,
+                            question=q,
+                            response=response,
+                        )
                     )
     finally:
         if created_gen:
@@ -684,21 +749,36 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
             if callable(close):
                 close()
 
-    # Persist judge-filtered completions (stripped system prompt).
+    # Judge-score through the library adapter (score_completions requires the
+    # keyword-only cache_dir + save_raw; paths follow the _extract_class
+    # judge_cache / judge_raw.json convention).
+    scored, judge_result = score_completions(
+        behavior,
+        completions,
+        n_draws=cfg.n_judge_draws,
+        cache_dir=on_policy_dir / "judge_cache",
+        save_raw=on_policy_dir / "judge_raw.json",
+    )
+    # Persist the scored rollout text (stripped system prompt) BEFORE any
+    # reduce (upload-policy: text-persist is the load-bearing minimum).
     completions_path = on_policy_dir / "completions.jsonl"
-    with open(completions_path, "w") as f:
-        for row in completions_jsonl:
-            f.write(json.dumps(row) + "\n")
+    save_completions_jsonl(scored, completions_path)
 
-    if not completions_jsonl:
+    _kept, filter_counts = filter_completions(scored, threshold=float(behavior.threshold))
+    n_kept = {arm: filter_counts[arm]["kept"] for arm in ("exhibit", "not_exhibit")}
+    if n_kept["exhibit"] == 0 or n_kept["not_exhibit"] == 0:
+        # Reported yield failure — never a fabricated direction (extract_direction
+        # raises on a zero-captured arm).
         return {
             "status": "yield_failure",
             "completions_path": str(completions_path),
-            "n_kept": 0,
+            "n_kept": n_kept,
+            "filter_counts": filter_counts,
             "r_b_path": None,
         }
 
-    # extract_direction from the on-policy completions.
+    # extract_direction from the on-policy completions (HF model loads only
+    # AFTER the vLLM rollout engine above is torn down — single-live-GPU rule).
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -709,7 +789,6 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
     )
     model.eval()
     try:
-        scored = score_completions(behavior, completions_jsonl)
         direction = extract_direction(
             behavior,
             model,
@@ -717,6 +796,7 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
             scored,
             regime="steering",
             provenance="on_policy",
+            metadata={"judge_n_draws": cfg.n_judge_draws, "tier": "tier2_instruct_and_strip"},
         )
     finally:
         del model
@@ -724,13 +804,16 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
             torch.cuda.empty_cache()
 
     rb_path = on_policy_dir / "r_b_on_policy.pt"
-    torch.save(direction.r_b, rb_path)
+    save_direction(direction, rb_path)
     return {
         "status": "ok",
         "r_b_path": str(rb_path),
         "regime": direction.regime,
         "provenance": direction.provenance,
-        "n_kept": len(completions_jsonl),
+        "n_kept": n_kept,
+        "completions_path": str(completions_path),
+        "judge_draws_total": judge_result.n_total_draws,
+        "judge_draws_dropped": judge_result.n_dropped_draws,
     }
 
 
