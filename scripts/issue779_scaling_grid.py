@@ -568,6 +568,29 @@ def _write_grid_checkpoint(out_path: Path, scaling: dict, *, run_flags: dict) ->
     C.write_json_atomic(out_path, merged)
 
 
+def _merge_component_traits(out_path: Path, doc: dict, *, mode_nested: bool = True) -> None:
+    """Shallow no-clobber merge-write for the NON-grid component JSONs.
+
+    Same overwrite class as the r6 grid BLOCKER, reachable via a --traits
+    subset: arm_comparison / g_holdout_question / scaling_grid_layer_matrix
+    used to be written unconditionally, so a partial re-run replaced prior
+    traits wholesale. Prior traits (and, for mode-nested docs, prior modes)
+    absent from THIS run are preserved; recomputed entries win. The grid keeps
+    its own cell-grain, axis-guarded merge (``_write_grid_checkpoint``)."""
+    merged = dict(doc)
+    if out_path.exists():
+        with open(out_path) as f:
+            prev = json.load(f)
+        traits = {t: v for t, v in prev.get("traits", {}).items()}
+        for t, tv in doc.get("traits", {}).items():
+            if mode_nested and t in traits and isinstance(traits[t], dict):
+                traits[t] = {**traits[t], **tv}
+            else:
+                traits[t] = tv
+        merged["traits"] = traits
+    C.write_json_atomic(out_path, merged)
+
+
 def _compose_edges_cli(args) -> int:
     """``--compose-edges``: merge pod edge cells into the interior grid + exit.
 
@@ -961,16 +984,17 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                     "arms": {arm: gho for arm in ARM_KEYS},
                 }
             # checkpoint per (trait, mode) — ONLY the components that ran (a
-            # skipped component's JSON is never clobbered with an empty skeleton)
+            # skipped component's JSON is never clobbered with an empty skeleton),
+            # and every write is merge-safe against a prior artifact (r10).
             if "arm_comparison" in components:
-                C.write_json_atomic(args.out_dir / "arm_comparison.json", arm_comparison)
+                _merge_component_traits(args.out_dir / "arm_comparison.json", arm_comparison)
             if "grid" in components:
                 # r6 BLOCKER fix: merge-safe, completeness-stamped canonical write
                 _write_grid_checkpoint(
                     args.out_dir / "scaling_grid.json", scaling, run_flags=grid_run_flags
                 )
             if "g_holdout" in components:
-                C.write_json_atomic(args.out_dir / "g_holdout_question.json", g_holdout)
+                _merge_component_traits(args.out_dir / "g_holdout_question.json", g_holdout)
             logger.info(
                 "[%s/%s] block done in %.1fs (RSS %.1f GB)",
                 trait,
@@ -998,7 +1022,9 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                 max_behavior=max_behavior,
                 cb=corpus_bundle,
             )
-            C.write_json_atomic(args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix)
+            _merge_component_traits(
+                args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix, mode_nested=False
+            )
         # single-bundle-resident invariant: free this trait's multi-GB bundle
         # BEFORE the next trait's torch.load.
         del corpus_bundle

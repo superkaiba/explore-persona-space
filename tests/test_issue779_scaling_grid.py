@@ -1143,3 +1143,27 @@ def test_r10_compose_edges_cli_roundtrip(tmp_path):
         GRID._compose_edges_cli(
             SimpleNamespace(out_dir=tmp_path / "nope", compose_edges=edges_path)
         )
+
+
+def test_r10_component_writes_preserve_prior_traits(tmp_path):
+    """The non-grid component writers share the r6 overwrite class via --traits
+    subsets: a partial re-run must preserve prior traits/modes, not clobber."""
+    import json
+
+    import issue779_scaling_grid as GRID
+
+    p = tmp_path / "arm_comparison.json"
+    GRID._merge_component_traits(
+        p, {"traits": {"evil": {"system": {"v": 1}, "many_shot": {"v": 2}}}, "meta": {"m": 1}}
+    )
+    # a later single-(trait,mode) run: evil/system recomputed, many_shot kept
+    GRID._merge_component_traits(p, {"traits": {"evil": {"system": {"v": 9}}}, "meta": {"m": 2}})
+    doc = json.loads(p.read_text())
+    assert doc["traits"]["evil"] == {"system": {"v": 9}, "many_shot": {"v": 2}}
+    assert doc["meta"] == {"m": 2}
+    # trait-grain (layer_matrix shape): prior trait preserved, recomputed wins
+    q = tmp_path / "scaling_grid_layer_matrix.json"
+    GRID._merge_component_traits(q, {"traits": {"evil": {"rows": 1}}}, mode_nested=False)
+    GRID._merge_component_traits(q, {"traits": {"sycophancy": {"rows": 2}}}, mode_nested=False)
+    doc2 = json.loads(q.read_text())
+    assert doc2["traits"] == {"evil": {"rows": 1}, "sycophancy": {"rows": 2}}
