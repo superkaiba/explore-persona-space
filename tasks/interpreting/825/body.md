@@ -19,135 +19,133 @@ relates_to:
 - identity-contextual-vs-base
 - identity-cb-duality
 ---
-# Is the per-example context→answer-profile map present in the pretrained base model, and does it hold for the user turn?
+# The linear context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn chat assistant targets, while the user-turn map has no practical predictive power (R² < 0) despite above-null structure (MODERATE confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- **Pretrained Qwen2.5-7B carries the linear context→answer-profile map at 87.3% of instruct strength** (held-out R² 0.588 vs 0.673 at layer 19; shuffle nulls ≈ −0.02).
+- Two-turn chat assistant targets turn strongly nonlinear: an MLP (multilayer perceptron) probe recovers R² 0.557 (instruct) / 0.487 (pretrained) where ridge reads +0.076 / −0.461.
+- User-turn maps have no practical predictive power — R² −1.08 to −1.32 at layer 26 — yet sit above shuffle nulls; scoped to LLM-written second user turns.
+- Pretrained assistant→user transfer sign-flips with depth (ΔR² −0.62 at layer 14 → +0.23 at layer 26); provisional — single seed, n = 2000.
+- The replication gate vs the parent rig PASSed (layer-profile rank correlation 0.963, ΔR² 0.004 at layer 19); render-integrity evidence was lost at pod teardown (regenerable).
 
 ## Goal
 
-Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.
+**This experiment in context:** The parent experiment ([#779](https://eps.superkaiba.com/tasks/779)) established a strong linear map from a context's mean residual-stream activation to the model's answer profile on single-turn Qwen2.5-7B-Instruct, peaking near layer 19. This experiment holds that rig fixed and asks two questions: does the same linear map already exist in the *pretrained* base model (before any post-training), and does it hold when the prediction target is the *user's* next turn rather than the assistant's — extended with a two-turn conversational track and cross-role transfer cells.
 
-## Motivation
+**Broader narrative:** Whether the context→answer-profile map is inherited from pretraining or created by post-training locates where context/persona conditioning enters the training pipeline; whether it is assistant-generation-specific or a general next-turn property bounds how far base-model context geometry can be used to predict downstream fine-tuning behavior (the project's leakage-prediction line).
 
-#779 established the per-context map on Qwen2.5-7B-Instruct: h: c_x → v(x) fit at the per-example level over 5000 individual LMSYS-Chat-1M prompts, held-out (5-fold over contexts) reconstruction R² = 0.60–0.63, per-example cosine 0.93–0.96 (`eval_results/issue_779/percontext_recon.json`; the in-sample 0.83–0.86 carries a ~+0.23 overfitting gap — this task reads held-out only). Two axes are untested: **model** (everything ran on Instruct; the pretrained `Qwen/Qwen2.5-7B` is never touched) and **role** (v(x) is defined only over assistant/response tokens; nothing predicts the user turn). The theory paper's Assumption A3 (v_θ(C) ≈ h(c_C)) treats neither axis; this experiment extends it along both.
+## Methodology
 
-- If the pretrained map ≈ Instruct's, the map is a pretraining phenomenon and A3 generalizes below θ₀; if pretrained ≪ Instruct, instruction tuning builds/sharpens it. Either is a finding.
-- The user-turn map is not required by post-training (the model does not predict user turns there), but next-user-turn prediction is literally a pretraining objective — instruction tuning could preserve or erode it. Either direction is a finding.
+**Design:** Two models (pretrained Qwen2.5-7B; Qwen2.5-7B-Instruct) × two target roles (assistant, user) × two context formats (chat template, naturalistic transcript). The single-turn track (Track S; n = 5000 prompts per cell, 2 cells) replicates the parent rig on both models; the two-turn track (Track M; n = 2000 conversations per cell) fits 8 within-cell maps plus 4 cross-role transfer cells. Single seed throughout (fit seed 0, generation seed 42).
 
-**Terminology guard:** in this repo "base model" means Instruct-as-θ₀ (#658/#779). All artifacts, JSON keys, and prose in this task use `model ∈ {instruct, pretrained}`, never bare "base".
+**Training:** N/A — no model training. Complete analysis + generation constants:
 
-**Does this even make sense for the pretrained model (it can't generate from a chat template)?** Yes — the pretrained model never generates. Every DV is computed from teacher-forced forwards over fixed text; both models are forwarded over identical token sequences, so any R² difference is purely representational. The chat-template-vs-naturalistic arm turns the format worry into hypothesis H3.
+| Parameter | Value | Source |
+|---|---|---|
+| Ridge fit | closed-form ridge, generalized-cross-validation-selected λ, K = 5 folds, fit seed 0 | [#779](https://eps.superkaiba.com/tasks/779) `fit_h` |
+| Frozen layer set | 14, 18, 19, 26 (headline read at 19) | [#779](https://eps.superkaiba.com/tasks/779) / [#722](https://eps.superkaiba.com/tasks/722) |
+| Shuffle nulls | selection-symmetric, 20 draws (ridge), 5 draws (MLP) | [#778](https://eps.superkaiba.com/tasks/778) / [#779](https://eps.superkaiba.com/tasks/779) |
+| Bootstrap CIs | n_boot = 1000 | plan §11 |
+| Track-S sampling | 1 sample/prompt, T = 1.0, top_p = 0.95, max_tokens = 1024, seed 42, chat template | [#779](https://eps.superkaiba.com/tasks/779) pass-B parity |
+| Track-M assistant turns | vLLM greedy, seed 42 | task body |
+| Track-M second user turn | claude-haiku-4-5, T = 1.0, 22 rotated user-persona briefs | plan §11 (tier-3 synthetic) |
+| Row filters | ≥ 8 content tokens, ≤ 2048 total tokens | plan §11 |
+| MLP probe | PCA-64 input, 1800 s/cell CPU budget | [#779](https://eps.superkaiba.com/tasks/779) `mlp_fit_predict` |
+| n per cell | 5000 (Track S) / 2000 (Track M) | [#779](https://eps.superkaiba.com/tasks/779) / plan §11 |
+| Models | Qwen2.5-7B (pretrained) vs Qwen2.5-7B-Instruct | plan |
+| Activation dtype | bf16 (plan deviation from fp16: fp16 max 65504 overflows Qwen residual outlier dims) | run log |
 
-## Hypotheses
+**Evaluation:** The dependent variable is held-out R² (5-fold cross-validation) of a ridge map h from c_x — the mean residual-stream activation over the context tokens at a given layer — to v(x), the answer-profile vector of the target turn; R² below 0 means the map predicts worse than the global mean. Teacher-forced NLL of the realized target turn is the secondary read. Two read modes: FROZEN (layer set fixed in advance, headline at layer 19) and SELECTION (max over all 28 layers, compared only against selection-symmetric shuffle nulls that inherit the per-draw layer max — Spearman is used for the replication gate's layer-profile comparison). Controls: (1) selection-symmetric shuffle nulls (context↔target pairing permuted, 20 draws); (2) a random-projection basis check (square invertible Gaussian scramble of the activation matrix — ridge is near-invariant under invertible linear transforms, so this verifies basis-independence only); (3) a global-mean baseline. Gates: G1 replication vs the parent rig (layer-profile Spearman + absolute ΔR² at layer 19 within 0.05), G2 render/BPE integrity, G3 two-turn signal above null at n = 2000. Nonlinearity probe: an MLP on PCA-64 inputs, run for both Track S cells and both Track M chat assistant cells.
 
-- **H1:** the per-example map exists in the pretrained model (held-out R² > shuffle null), plausibly weaker / layer-shifted vs Instruct's ~0.60 band.
-- **H2:** the user-turn map exists in both models; instruction tuning (assistant-only loss) could weaken it.
-- **H3 (format × model):** pretrained: naturalistic ≥ chat template; Instruct: chat ≥ or ≈ naturalistic.
-- **H4:** cross-role prediction beats the topic-persistence baseline (incremental R² > 0).
+**Data extraction:** Contexts from lmsys-chat-1m (established-dataset tier), pinned revision `200748d9d3cddcc9d782887541057aca0b18c5da`. Track S: single real user prompts, responses sampled from each model. Track M: real lmsys first user turn, assistant turns generated by the target model (vLLM greedy, seed 42), second user turn synthesized by claude-haiku-4-5 at T = 1.0 under 22 rotated user-persona briefs (tier-3 LLM-synthetic; distinct-3-gram rate 0.781). Kept n = 2000 of 2600 overprovisioned conversations (largest drop classes: 276 over-length, 82 short-turn). Activations: teacher-forced 28-layer capture in bf16, sharded turnstore persisted to the HF data repo. Plan deviations: (1) the second user turn was generated via synchronous pooled `messages.create` rather than the Batch API; (2) bf16 activations instead of the plan's fp16 (fp16 overflows Qwen residual outlier dimensions).
 
-## Design
+**Sample training/evaluation data + completions:**
 
-### Track S — single-turn LMSYS continuity (assistant role; anchors to #779's numbers)
+First row (row 0) of the 2000 kept Track M conversations — deterministic first row, not a random sample; excerpt truncated (`...`). Complete artifact: [issue825_userbase_map on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data).
 
-Reuse #779's 5000 LMSYS prompts + rollouts. Single manipulated variable = model.
+```json
+{"conv_id": 0, "u1": "how can identity protection services help protect me against identity theft", "a1": "Identity protection services can help you protect against identity theft in several ways. Here are some key features and benefits of these services:\n\n1. **Monitoring and Alerts**:\n   - **Credit Report Monitoring**: Services often provide real-time monitoring of your credit reports from major credit bureaus (Equifax, Experian, TransUnion). This allows you to quickly detect any unauthorized activity or changes to your credit profile.\n   - **Fraud Alerts**: Some services can set up fraud alerts on your credit files, making it harder for identity thieves to open new accounts in your name.\n   - **Activity Alerts**: Receive notifications about any suspicious activity, such as new accounts opened in your name, changes to your address, or unusual transactions.\n\n2. **Credit Freeze**:\n   - **Freeze Your Credit**: Services can help you freeze your credit, which prevents creditors from accessing your credit report. This makes it much harder for identity thieves to open new accounts in your name.\n\n3. **Identity Theft Protection**:\n   - **Assistance with Identity Theft**: If you become a victim of identity theft, these services often provide assistance, such as helping you file a police report, working with creditors to close fraudulent accounts, and providing legal support.\n\n4. **Credit Score Monitoring**:\n   - **Track Your Credit Score**: Services can help you moni
+...
+```
 
-| cell | model | data | notes |
-|---|---|---|---|
-| S1 | instruct | 5000 LMSYS (c_x, v(x)) pairs | = #779 percontext_recon Read 1; replication anchor (expect held-out R² ≈ 0.60–0.63 at L14–26); reuse cached tensors where they exist |
-| S2 | pretrained | same prompts, identical rollout texts teacher-forced | isolates representation change at n=5000 |
+First row (row 0) of the 5000 Track S single-turn prompts — deterministic first row, not a random sample; excerpt truncated (`...`). Complete artifact: [issue825_userbase_map on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data).
 
-Artifact premise (verify at Phase 0 via `huggingface_hub.list_repo_files`): `issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt` (c_x, Instruct) is on HF; the LMSYS rollout **texts** were dropped by #779's extraction (known incident) but are being regenerated by #779's in-flight ablation round. Fallback: regenerate greedy with vLLM (~1 GPU-h); both models' v(x) passes then teacher-force the same text.
+```json
+{"prompt_idx": 0, "prompt": "how can identity protection services help protect me against identity theft", "response": "Identity protection services can help safeguard you against identity theft in several ways. Here’s a breakdown of how these services work and the benefits they offer:\n\n1. **Monitoring and Alerts**:\n   - **Credit Reports**: Services often monitor your credit reports from major bureaus (like Equifax, Experian, and TransUnion) for any suspicious activity.\n   - **Fraud Alerts**: They can set up fraud alerts on your credit reports, making it harder for identity thieves to open accounts in your name.\n   - **Activity Alerts**: Some services send you alerts for any new account activity or changes to your credit report, allowing you to act quickly if something seems off.\n\n2. **Credit Freeze**:\n   - A credit freeze restricts access to your credit report, making it difficult for identity thieves to open new accounts in your name. This is a strong defense against identity theft.\n\n3. **Document Management**:\n   - Services can store copies of your important documents securely, such as ID cards, social security cards, and birth certificates. They may also provide guidance on how to securely store these documents.\n\n4. **Credit Score Monitoring**:\n   - Regularly monitor your credit score and history to detect unauthorized changes or new inquiries that could indicate fraud.\n\n5. **Identity Theft Insurance**:\n   - Some services offer insurance that can
+...
+```
 
-### Track M — generated multi-turn, 2×2×2 factorial (role × model × format) + cross-role
+## Results
 
-n = 2000 conversations, structure u1→a1→u2→a2:
+### The map exists in pretrained Qwen2.5-7B at 87.3% of instruct strength (0.588 vs 0.673 at layer 19)
 
-- u1 seeded from real LMSYS/WildChat opening user messages (reuse `issue617_build_wildchat_slice.py` eligibility: English, non-toxic, non-redacted, dedup) — tier-1 real openers.
-- Assistant turns: Qwen2.5-7B-Instruct on-policy greedy via vLLM (chat template).
-- User turns (u2): Claude Haiku 4.5 role-plays the user (diverse persona/instruction briefs, conditioned on the full conversation). Generated in alternating batched rounds (vLLM batch for assistant turns, parallel/Batch API for Haiku).
-- Filters: each analyzed turn ≥8 content tokens; total ≤2k tokens.
-- **Data-realism caveat (carry into the plan §-assumptions + clean-result):** user turns are tier-3 LLM-generated (user-directed choice, 2026-07-01); mitigations = real seeds + diverse personas; assistant turns are Qwen's own on-policy text.
+What is plotted: held-out R² of the ridge map by layer (all 28 layers) for the two single-turn cells — instruct and pretrained — with 95% bootstrap CIs and the shuffle-null band; n = 5000 prompts per cell.
 
-Cells: model {instruct, pretrained} × role {assistant: c_x before a1 → v(a1); user: c_x before u2 → v(u2)} × format {chat, naturalistic} = 8 within-role cells. Same conversations, same fixed texts, all 28 layers, same fit recipe across every cell — only the three named axes vary. Both roles measured on the SAME conversations ⇒ clean role comparison at matched n and topic distribution.
+![Held-out R-squared by layer for the single-turn instruct and pretrained maps with shuffle-null band near zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745e62f4b6cbb510d529a8778cb0137b98522cc8/figures/issue_825/s_track_layer_curves.png)
 
-### Constructs & slots (exact)
+> **Figure.** *The pretrained base model carries the single-turn linear map at 87.3% of instruct strength.* Held-out R² by layer: instruct 0.673 (95% CI 0.666–0.681) vs pretrained 0.588 (95% CI 0.579–0.598) at frozen layer 19; shuffle nulls ≈ −0.02 at every layer. n = 5000 prompts per cell.
 
-- Chat template: assistant slot = final token of `<|im_start|>assistant\n`; user slot = final token of `<|im_start|>user\n` opening u2. Profile = mean over that turn's content tokens (exclude headers + `<|im_end|>`).
-- Naturalistic: `User: <text>\n\nAssistant: <text>\n\n…`; invariant slot rule = last token of the role header opening the turn (the `:`); profile = content tokens between header and `\n\n`.
-- One forward per (model, format, conversation) yields all slots + spans (causal attention); assert once on 3 conversations that full-sequence slot == prefix-only slot.
-- Phase-0 asserts: identical `input_ids` across the two models' tokenizers on rendered strings; spans via `return_offsets_mapping`; cross-format first-boundary-token BPE mismatch rate (fail loud >10%; robustness re-fit excluding first content token).
+The map is not created by an explicit post-training stage: the pretrained checkpoint reaches 87.3% of instruct strength frozen-vs-frozen (its selection read peaks at 0.598, layer 27). Pretraining corpora contain chat-formatted text, so this does not rule out chat-data exposure. Non-spuriousness rests on the global-mean baseline (−0.0017) and the shuffle nulls — not the random-projection arm (0.684 ≈ observed), which applies an invertible Gaussian scramble that ridge is near-invariant to and so verifies basis-independence only.
 
-### Fit & metrics (#779 recipe, every cell)
+### Two-turn conversation targets collapse the ridge map: best frozen-layer R² falls to +0.076 (instruct) and −0.461 (pretrained)
 
-Global linear ridge per layer, GCV λ (`fit_h.ridge_fit_predict`), full 3584-dim target; held-out K-fold (K=5) CV over examples (`percontext_recon.read1_heldout_recon` pattern; torch-eigh fast ridge `_ridge_fit_predict_fast`). Metrics: held-out recon R² (primary), per-example cosine (secondary). MLP (`fit_h.mlp_fit_predict`, PCA-64 head) as a secondary nonlinearity read — viable at n≥2000, but #779 found linear ≥ MLP; report only with its shuffle null. All fits vectorized (batch layers/cells); no serial loops.
+What is plotted: best frozen-layer held-out R², one bar per two-turn within-cell map (model × format × target role); n = 2000 conversations per cell.
 
-### Controls & nulls (per cell)
+![Best frozen-layer held-out R-squared per two-turn within-cell map, bars per model and format](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745e62f4b6cbb510d529a8778cb0137b98522cc8/figures/issue_825/within_cell_best_frozen_r2.png)
 
-1. Row-shuffle null (`r3_granularity.shuffled_context_null_r2` pattern, ≥20 draws per layer; persist the per-draw × per-layer matrix).
-2. Selection-symmetric layer handling (#778 rule, `issue779_layer_sweep.read_b` precedent): headline layer-max inherits selection per null draw; ALSO report frozen pre-registered layers (L14/L18/L26 — #779's oracle band + #722's peak).
-3. Random-projection c_x control (dimension-matched).
-4. Predict-the-mean baseline: report skill-over-mean alongside raw R².
-5. CIs: bootstrap over examples (Track S) / conversations (Track M — conversation is the i.i.d. unit).
-6. Power/bridge read: subsample S1 at n ∈ {250, 500, 1000, 2000, 5000} → R²(n) curve; Track M cells (n=2000) are interpreted against that curve.
+> **Figure.** *Two-turn targets collapse the ridge map.* Best frozen-layer held-out R² for the assistant cells: instruct/chat +0.076, instruct/naturalistic −0.078, pretrained/chat −0.461, pretrained/naturalistic −0.390; n = 2000 conversations per cell. The single-turn cells read 0.59–0.67 on the same rig.
 
-### Per-position sub-analysis
+The collapse is not purely sample size: the single-turn instruct map at a matched n = 2000 subsample reads 0.321, far above the two-turn 0.093. The power curve is non-monotone (0.452 / 0.499 / 0.495 / 0.321 / 0.673 at n = 250 / 500 / 1000 / 2000 / 5000), and the two tracks change corpus, turn count, and n together — so the two-turn regime alone is not established as the cause. Per-position reads are late-layer dominated (instruct/chat: layer 26 best at 12 of 12 positions), retracting an earlier peak-layer-mean-19.25 read; selection argmaxes at layers 0–1 in three cells (e.g. 0.283 at layer 0) may reflect formatting/role information.
 
-(#779 deferred exactly this read — "R3 per-position-decay".) Per position p: ridge c_x → activation at position p of the turn, held-out; positions with ≥80% coverage. Restrict to peak layers (≈3–5, chosen from the main sweep) to bound storage. Scope: the 4 chat-format cells (model × role). Question: does #722's early-position-best/decay profile hold per-example, for user turns, and in the pretrained model?
+### The collapse is nonlinearity, not absence: an MLP probe recovers R² 0.557 (instruct) and 0.487 (pretrained) where ridge reads +0.076 and −0.461
 
-### Cross-role prediction (chat format, both models)
+What is plotted: layer-19 held-out R² for ridge vs the MLP probe on the two two-turn chat assistant cells; n = 2000 conversations per cell.
 
-Per example, targets strictly in the slot's future: c_x^assistant (before a1) → v(u2); c_x^user (before u2) → v(a2). Report per cross cell: (1) raw cross-R²; (2) topic-persistence baseline: previous same-role profile → target (v(u1)→v(u2), v(a1)→v(a2)) via the same ridge; (3) incremental R² of c_x over that baseline — the claim lives in (3). Compare to within-role R² on the same conversations.
+![Layer-19 held-out R-squared, ridge versus MLP probe, for the two two-turn chat assistant cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/72a249c79239ac8548681b6682ff83b16a06789f/figures/issue_825/ridge_vs_mlp_l19.png)
 
-## Reuse map
+> **Figure.** *An MLP probe recovers what ridge misses at layer 19.* Held-out R², MLP vs ridge: instruct/chat 0.557 vs 0.076; pretrained/chat 0.487 vs −0.461. Both cells ran to completion with full null draws. n = 2000 conversations per cell.
 
-Reuse as-is: `src/explore_persona_space/experiments/issue_779/fit_h.py` (`ridge_fit_predict`, `mlp_fit_predict`, `reconstruction_metrics`), `scripts/issue779_percontext_recon.py` (`read1_heldout_recon`, `_ridge_fit_predict_fast`), `scripts/issue779_layer_sweep.py` (selection-symmetric layer reads), `experiments/issue_779/metrics.py` (bootstrap CIs), `issue779_collect.py` pass-B extraction pattern + `issue779_common.py` constants, `analysis/extraction.py::extract_layer_activations` (model-agnostic — works on pretrained), `issue685_extract_shifts.py` (pretrained-model loading precedent), #779 HF artifacts (`issue779_monitoring/analysis_tensors/pass_b/`).
+Both two-turn chat cells completed within budget (all four frozen layers, full 5-draw nulls) — these are complete reads, not lower bounds. The compute budget was exhausted only in the two single-turn cells (MLP 0.600 / 0.626 / 0.654 / 0.564 for instruct and 0.527 / 0.546 / 0.587 / 0.526 for pretrained over layers 14 / 18 / 19 / 26); the only consequence there is truncated layer-26 MLP null draws (3 usable of 5 planned, both cells). The MLP probe was not run for the naturalistic or user cells — a deliberate budget scoping — so nonlinearity there is untested.
 
-Adapt: `issue617_build_wildchat_slice.py` (opener harvesting), `issue779_collect.py` (point at the pretrained model; two-role capture).
+### User-turn maps have no practical predictive power (R² −1.08 to −1.32) despite sitting above shuffle nulls
 
-New (only the changed variables): conversation generator (Haiku-user × Qwen-assistant, alternating batched rounds), format renderer (chat + naturalistic, slot/span indices, tokenization asserts), turn-store extractor (one-forward two-role capture × 2 models × 2 formats; persist per-example slots + per-turn profile means fp16, per-position means at peak layers only; ALL conversation/rollout texts persisted per upload policy), vectorized cell driver (10 within-role + 4 cross cells + nulls).
+What is plotted: held-out R² by layer for the four two-turn user-target cells (model × format), with layer-26 values annotated; n = 2000 conversations per cell.
 
-## Phases + compute
+![Held-out R-squared by layer for the four two-turn user-target cells, all deeply negative at late layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6c752ab6e3805bbc68d1d71e1987f2dc0b48e71b/figures/issue_825/m_track_layer_curves_role.png)
 
-- Phase 0 (VM CPU): verify #779 artifacts on HF; harvest openers; rendering + tokenization asserts.
-- Phase 1a (GPU 1× eval lane + API): generate 2000 conversations (vLLM assistant turns ~1 GPU-h; Haiku Batch API, trivial cost).
-- Phase 1b (GPU 1× eval lane, `dispatch_issue.py --intent eval`, GCP-first): extraction — Track S ≤2×5000 teacher-forced forwards (instruct side reused if cached); Track M 2 models × 2 formats × 2000 forwards. Batched; ~3–5 GPU-h.
-- Phase 2 (vectorized fits, GPU-resident or VM CPU): all cells + nulls + per-position + cross-role.
-- Phase 3: figures (held-out R²-vs-layer overlays: 8 Track-M cells + S1/S2 pair; R²(n) power curve; per-position decay per role×model; cross-role bars with baseline), eval_results JSONs (per-draw × per-layer null matrices included), HF upload.
-- Total: ~5–7 GPU-h estimated; budget 10.
+> **Figure.** *User-target maps predict worse than the global mean at every late layer.* Held-out R² by layer for the four user cells; layer-26 values −1.08 to −1.32. The chat-panel layer-0 selection point (0.283) sits off the dominant curve and is nearly invisible at this scale; shuffle-null bands are not drawn. n = 2000 per cell.
 
-## Success / kill criteria
+All four user cells read R² between −1.08 and −1.32 at layer 26 — worse than predicting the global mean — yet sit above their far more negative selection-symmetric nulls (e.g. −0.807 observed vs −2.368 null at layer 27): structure exists, practical predictive power does not. Teacher-forced NLL agrees (user 2.04–2.64 vs assistant 0.32–0.59). Scope: the second user turn is LLM-written (claude-haiku-4-5, 22 rotated briefs), not human — the null is established for LLM-simulated users; format sensitivity is observational, with no causal read licensed.
 
-- Success: H1–H4 patterns at frozen layers AND selection-symmetric layer-max. A null user-map in Instruct with a positive one in pretrained (or vice versa) is a headline finding.
-- Kill/uninterpretable: (i) S1 replication drifts materially from #779's held-out 0.60–0.63 band → wiring bug, halt; (ii) >10% cross-format tokenization mismatches → fix rendering first; (iii) Track-M instruct/assistant/chat cell fails its shuffle null at n=2000 → generation-pipeline problem, halt before interpreting user cells.
+### Pretrained assistant→user transfer sign-flips across depth (ΔR² −0.62 at layer 14 to +0.23 at layer 26) — provisional
 
-## Related work / anchors
+What is plotted: paired ΔR² (assistant-fit map applied to user targets, minus the same-role paired baseline) with 95% bootstrap CIs at the four frozen layers, for both models; n = 2000 conversations per cell.
 
-Parent: #779 (per-context map h, fit recipe, LMSYS pass-B artifacts). Lineage: #778 (selection-symmetric-nulls discipline), #722/#658 (across-context map, layer peak L18), #810/#811/#812/#823 (Instruct assistant-side across-context line — no overlap with the model/role axes here). Open-questions anchors: `q:identity-contextual-vs-base` (§4.2), `q:identity-cb-duality` (§4.3). The /issue planner runs the mandatory literature review at plan time; closest prior threads to search: interlocutor-/theory-of-mind-representation probing, next-turn prediction structure in LMs, base-vs-instruct representation comparisons.
+![Paired delta R-squared for assistant-to-user transfer at four layers, pretrained flipping from negative to positive with depth](https://raw.githubusercontent.com/superkaiba/explore-persona-space/11d933bba760b7dcf1e089ad98fffc202d6b649e/figures/issue_825/crossrole_paired_delta_r2.png)
 
-## Provenance
+> **Figure.** *Assistant→user transfer flips sign with depth in the pretrained model only.* Paired ΔR² at layers 14 / 18 / 19 / 26: pretrained −0.62 → +0.23; instruct negative at all four layers. n = 2000 conversations per cell; provisional (single seed).
 
-Verbatim originating user prompt (chat, 2026-07-01):
+In the pretrained model the assistant→user delta flips sign with depth: −0.623 (95% CI −0.809 to −0.448) at layer 14, −0.171 (95% CI −0.315 to −0.024) at 18, +0.124 (95% CI +0.013 to +0.242) at 19, +0.229 (95% CI +0.166 to +0.293) at 26. The instruct model is negative at all four layers (−0.709 / −0.634 / −0.311 / −0.214), so the positive transfer is a pretrained-only observation — no mechanism claim. Caveats: the paired baseline is the previous same-role turn, labeled a topic-persistence baseline but not validated as topic-only; single seed, n = 2000 — provisional pending replication.
 
-> # Experiment: Is the context vector to answer profile mapping present in the base model and does it hold for the user?
-> ## Motivation
-> - We showed that there is a context vector to answer profile mapping (issue 722 I think) for the assistant in the Qwen 2.5 7B instruct model
-> - We are interested now in seeing:
->     - is this mapping present in the base model?
->         - how much does it change post instruction -> probably a lot but still good to test
->     - does this mapping exist for the user?
->         - how much does it change post instruction
->         - this user mapping is not super necessary in post training because the model doesn't have to predict the user turn but
-> ## Questions
-> - Does this even make sense because we can't even get the base model to really generate from a chat template?
-> - Do our mapping results hold
-> ## Methodology
-> - Do the same experiment from issue 722 (linear mapping only -- at all layers) with the following changes:
->     - test corresponding user context vector -> user answer profile  mapping
->     - test in the base model (https://huggingface.co/Qwen/Qwen2.5-7B) -- (make sure this is the proper base model) for both user and assistant
->     - also test the same in the finetuned model
-> - Considerations:
->     - we need multi turn conversations to test this -- answer mean should only be taken over the current "speaker's" answer
->     - try one with the chat template and one replacing it with more naturalistic format (e.g. semicolon)
->     - also plot how well we can predict each token in the answer (separately -- per position) with the context vector
->     - also check if you can predict user response from the assistant context vector (and vice versa)
-> - Reuse as much code as possible
+### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render-integrity evidence lost
 
-Follow-up user decisions (same chat): frame on #779's per-context (per-example) map rather than #722's across-context map ("We are interested more in the per-context map"); Track M conversations are generated with Claude Haiku 4.5 as the user; file as proposed only (no autonomous session spawned).
+No figure; the gate outcomes are stated inline.
+
+- Replication gate (G1): the single-turn instruct map reproduces the parent run — layer-profile rank correlation 0.963; absolute R² difference at layer 19 of 0.004, within the 0.05 gate — PASS.
+- Two-turn signal gate (G3): selection read 0.093 vs shuffle null ≈ −0.036 at n = 2000 — PASS.
+- Render/BPE-integrity gate (G2): the evidence file was lost at pod teardown before upload; regenerable from the persisted turnstore. Reported as evidence-lost — not PASS.
+
+All 10 planned within-cell maps (2 single-turn + 8 two-turn) and all 4 cross-role cells are present and analyzed; no silent drops. Binding constraints: single seed throughout; LLM-synthetic second user turns; no MLP probe for naturalistic or user cells; G2 evidence lost. These hold the headline at MODERATE, the cross-role sign-flip at LOW (provisional), and the user-turn null at LOW-to-MODERATE scoped to LLM-written user turns.
+
+---
+
+**Repro:** Compute: GCP 1× A100-80, ~6.5 h final run (7 launch attempts across crash-fix rounds; 8 GPU-h budget). Code: run pinned at [e011a0b1ca](https://github.com/superkaiba/explore-persona-space/tree/e011a0b1cabd26be6cfd227757650f5f49ca7b12); eval JSONs (34 files) committed at [c9bf728fa1](https://github.com/superkaiba/explore-persona-space/tree/c9bf728fa1/eval_results/issue_825) on branch issue-825. Artifacts: HF data repo [superkaiba1/explore-persona-space-data](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data), prefix `issue825_userbase_map/` — `analysis_tensors/` (111 GB turnstore), `raw_completions/` (incl. `conversations.jsonl` + `track_s.jsonl`), `eval_results_mirror/` (34 JSONs). WandB: n/a (analysis-only run). Plan: plan v4 at `plans/plan.md` in the task folder (resolve via `uv run python scripts/task.py find 825`).
+
+**Context:** Created 2026-07-01 from user chat. Verbatim originating prompt:
+
+> Help me to plan this experiment: Is the context vector to answer profile mapping present in the base model (Qwen/Qwen2.5-7B) and does it hold for the user?
+
+(full text in `original-body.md` `## Provenance`). Lineage: [#779](https://eps.superkaiba.com/tasks/779) — the parent single-turn instruct rig this run replicates and extends. Run 2026-07-02 (7 launch attempts; crash-fix rounds 1–6: extract host-RAM OOM → block-wise flush → host upsize → GPU Gram-ridge fit). Interpretation reviewed rounds 1–3 (two critic REVISE rounds, then PASS+PASS).
