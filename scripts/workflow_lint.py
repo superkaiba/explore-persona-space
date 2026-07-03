@@ -4690,9 +4690,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
     # + <=3 KB)
     "codex-code-reviewer.md": 50_400,
-    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
-    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
-    "experiment-implementer.md": 58_500,
+    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
+    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
+    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
+    "experiment-implementer.md": 61_500,
     "experimenter.md": 65_500,  # measured 62,672 B
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B
