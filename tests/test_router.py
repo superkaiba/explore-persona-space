@@ -5657,3 +5657,334 @@ def test_caller_pinned_attempt_id_wins_over_lane_suffix_mint():
     new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
     assert new_spec.extra["attempt_id"] == "att-pinned-1"
     assert lease.attempt_id == "att-pinned-1"
+
+
+# ---------------------------------------------------------------------------
+# #940 — GCP-only GPU intent translation at the RunPod launch paths
+#
+# The RunPod terminal rung (and the explicit `backend: runpod` override)
+# translate GCP-only GPU intents (capture-7b / lora / lora-7b-h100) to the
+# nearest same-or-narrower RunPod-provisionable intent via the router-owned
+# RUNPOD_INTENT_FOR_GCP_INTENT map, so the sanctioned last-rung fallback
+# actually fires instead of dying in gpu_heuristics.resolve_intent's KeyError
+# (the #841 incident: `provision --issue 841 --intent capture-7b` exit 1 →
+# NoComputeAvailableError despite live RunPod 1-GPU capacity). An unmapped
+# GCP GPU intent (eval-h100, in RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)
+# fails loud PRE-launch naming the missing map row.
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_only_intent_exhausted_ladder_fires_runpod_with_translated_intent(
+    lease_store, marker_poster, captured_markers
+):
+    """T1 / the #841 regression test: a capture-7b auto route with every GCP
+    rung + SLURM exhausted launches RunPod EXACTLY ONCE with the translated
+    `--intent eval`, RunPod LAST in the attempt trail, and the marker extra
+    carries the translation record."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        RunSpec(issue=940, intent="capture-7b", backend="auto", time_budget_hours=1.0),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    # The launched spec carries the TRANSLATED RunPod-provisionable intent.
+    assert rp.launches[0].intent == "eval"
+    # RunPod is the FINAL attempt, behind every GCP rung + the nibi park-fail
+    # (capture-7b is in INTENT_A100_40_FALLBACK, so the short 5-rung ladder
+    # applies exactly as lora-7b's).
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    gcp_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "gcp"]
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert len(gcp_idxs) == 5, outcomes  # all five short-ladder rungs attempted + failed
+    assert nibi_idxs, "the free SLURM lane must have been attempted"
+    assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1
+    assert max(gcp_idxs) < runpod_idxs[-1]
+    assert max(nibi_idxs) < runpod_idxs[-1]
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+
+
+def test_runpod_native_intent_terminal_rung_untranslated_no_marker_key(
+    lease_store, marker_poster, captured_markers
+):
+    """T2: an identity-row intent (lora-7b) passes through the terminal rung
+    verbatim — no translation record on the marker (byte-identical to the
+    pre-#940 marker shape for existing intents)."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "lora-7b"
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert "runpod_intent_translation" not in finals[-1]["extra"]
+
+
+@pytest.mark.parametrize("reason_name", ["async_crash", "queue_timeout"])
+def test_async_failover_translates_gcp_only_intent(
+    lease_store, marker_poster, captured_markers, reason_name
+):
+    """T3: the async poller failover seam (#659) AND the queue-timeout
+    failover (#783) — both via failover_to_runpod_after_async_workload_crash —
+    inherit the translation from the shared terminal rung: a capture-7b
+    failover launches RunPod with `--intent eval`, and the marker extra
+    carries BOTH the translation record and the crash evidence."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    reason = {
+        "async_crash": ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        "queue_timeout": ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+    }[reason_name]
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=RunSpec(issue=940, intent="capture-7b", backend="auto", workload_cmd="bash x.sh"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        reason=reason,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == reason
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "eval"
+    finals = _by_reason(captured_markers, reason)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+    assert finals[-1]["extra"]["gcp_workload_evidence"]["source"] == "async_poller"
+
+
+def test_unmapped_gcp_gpu_intent_fails_loud_naming_map_row(
+    lease_store, marker_poster, captured_markers
+):
+    """T4: a GCP-mapped GPU intent with NO translation row (eval-h100) fails
+    loud BEFORE any provision attempt, inside the existing
+    NoComputeAvailableError / no_compute_available terminal shape, with a
+    message naming the missing RUNPOD_INTENT_FOR_GCP_INTENT row."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        failover_to_runpod_after_async_workload_crash(
+            spec=RunSpec(issue=940, intent="eval-h100", backend="auto"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert "eval-h100" in str(excinfo.value)
+    assert "RUNPOD_INTENT_FOR_GCP_INTENT" in str(excinfo.value)
+    # NO provision was attempted (the failure is pre-launch).
+    assert rp.launches == []
+    # A no_compute_available terminal marker was posted.
+    from explore_persona_space.backends.router import ROUTE_REASON_NO_COMPUTE
+
+    assert _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+
+
+def test_translated_runpod_intent_helper_unit():
+    """T4 companion: the helper itself raises ValueError naming the missing
+    row for eval-h100, and returns the record shape for a real translation."""
+    from explore_persona_space.backends.router import _translated_runpod_intent
+
+    with pytest.raises(ValueError, match="RUNPOD_INTENT_FOR_GCP_INTENT"):
+        _translated_runpod_intent(RunSpec(issue=1, intent="eval-h100", backend="auto"))
+    assert _translated_runpod_intent(RunSpec(issue=1, intent="capture-7b", backend="auto")) == (
+        "eval",
+        {"from": "capture-7b", "to": "eval"},
+    )
+    assert _translated_runpod_intent(RunSpec(issue=1, intent="lora-7b", backend="auto")) == (
+        "lora-7b",
+        None,
+    )
+
+
+def test_translation_map_total_over_gcp_gpu_intents():
+    """T5 completeness/drift pin: every gpu_count>0 key of gcp.INTENT_TO_MACHINE
+    is EITHER in the translation map OR in the deliberate-gap set (disjointly) —
+    a future GCP intent added without deciding its RunPod fate fails HERE, at
+    the adding PR, instead of crashing at the terminal rung months later (the
+    #841 failure mode, recurrence-proofed)."""
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+    from explore_persona_space.backends.router import (
+        RUNPOD_INTENT_FOR_GCP_INTENT,
+        RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS,
+    )
+
+    gpu_keys = {k for k, m in INTENT_TO_MACHINE.items() if m.gpu_count > 0}
+    covered = set(RUNPOD_INTENT_FOR_GCP_INTENT) | set(RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)
+    assert gpu_keys == covered, (
+        f"gcp.INTENT_TO_MACHINE GPU intents not reconciled with the RunPod "
+        f"translation map: missing={sorted(gpu_keys - covered)} "
+        f"stale={sorted(covered - gpu_keys)}"
+    )
+    assert not set(RUNPOD_INTENT_FOR_GCP_INTENT) & RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS
+
+
+def test_translation_never_widens_gpu_count_and_targets_provisionable():
+    """T6 property test: every translation target is RunPod-provisionable
+    (a gpu_heuristics.INTENTS key) at a same-or-narrower GPU width than the
+    GCP machine it translates from (never widen — constraint 2)."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import gpu_heuristics
+
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+    from explore_persona_space.backends.router import RUNPOD_INTENT_FOR_GCP_INTENT
+
+    for gcp_intent, runpod_intent in RUNPOD_INTENT_FOR_GCP_INTENT.items():
+        assert runpod_intent in gpu_heuristics.INTENTS, (
+            f"{gcp_intent!r} -> {runpod_intent!r}: target is not a RunPod-provisionable "
+            f"intent (gpu_heuristics.INTENTS)"
+        )
+        assert (
+            gpu_heuristics.INTENTS[runpod_intent].gpu_count
+            <= INTENT_TO_MACHINE[gcp_intent].gpu_count
+        ), f"{gcp_intent!r} -> {runpod_intent!r} WIDENS the GPU count"
+
+
+def test_explicit_runpod_override_translates_gcp_only_intent(
+    lease_store, marker_poster, captured_markers
+):
+    """T7: the explicit `backend: runpod` override (the documented manual
+    recovery for the #667 hung-GCP-VM gap) translates a GCP-only intent too —
+    previously it could only crash (uncaught KeyError class), so no working
+    behavior is altered."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=940, intent="capture-7b", backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "eval"
+    finals = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+
+
+def test_explicit_runpod_override_runpod_only_intent_verbatim(
+    lease_store, marker_poster, captured_markers
+):
+    """T7 companion: a RunPod-only intent (ft-70b — NOT GCP-mapped) passes
+    through the override verbatim, no raise, no translation record
+    (byte-identical to pre-#940). NOTE: ft-70b is reachable ONLY via the
+    override path — the terminal rung's pre-existing CPU guard
+    (machine_for_intent) raises gcp.py's own ValueError on non-GCP intents
+    before the translation helper would run there."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=940, intent="ft-70b", backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "ft-70b"
+    finals = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert finals
+    assert "runpod_intent_translation" not in finals[-1]["extra"]
+
+
+def test_explicit_runpod_override_unmapped_gcp_intent_raises_valueerror(
+    lease_store, marker_poster, captured_markers
+):
+    """Ensemble-review addition: the OVERRIDE x eval-h100 cell fails loud with
+    the helper's RAW ValueError (a config error, per §4d — NOT wrapped into
+    NoComputeAvailableError), pre-launch, naming the missing map row. Pins the
+    exception shape so a future "wrap it silently" regression fails here."""
+    rp = _PassiveRunpod()
+    with pytest.raises(ValueError, match="RUNPOD_INTENT_FOR_GCP_INTENT"):
+        route(
+            RunSpec(issue=940, intent="eval-h100", backend="runpod"),
+            runpod_backend=rp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+        )
+    assert rp.launches == []
+
+
+def test_translation_helper_cpu_intents_pass_through_verbatim():
+    """T8: CPU intents (gpu_count == 0 in INTENT_TO_MACHINE) pass through the
+    helper verbatim — the #677/#747 CPU semantics are untouched at the helper
+    level (the end-to-end pins are the existing CPU tests above)."""
+    from explore_persona_space.backends.router import _translated_runpod_intent
+
+    for cpu_intent in ("cpu-small", "cpu-mid", "cpu-bigmem"):
+        assert _translated_runpod_intent(RunSpec(issue=1, intent=cpu_intent, backend="auto")) == (
+            cpu_intent,
+            None,
+        )
