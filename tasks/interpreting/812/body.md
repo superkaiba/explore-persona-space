@@ -186,7 +186,7 @@ With no layer choice left free, the gap is negative for all seven behaviors and 
 
 Per-context data behind the refusal cell (fixed layer 14): held-out predicted expression against graded refusal score, all 50 contexts labeled, one panel per arm.
 
-![Per-context scatter of held-out predicted versus graded refusal score at layer 14 for mean pool and unpooled arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f95abc34f8c90d58ddec08222bc62332c52e0f16/figures/issue_812/fixed_layer_perctx_scatter_refusal.png)
+![Per-context scatter of held-out predicted versus graded refusal score at layer 14 for mean pool and unpooled arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/214044a7f912ea9da0a787827020d26a42dc80bd/figures/issue_812/fixed_layer_perctx_scatter_refusal.png)
 
 > **Figure.** *Per-context view of the refusal contrast cell.* Held-out predicted expression (x) vs graded refusal score (y, judge 0–100) at the fixed layer 14, all 50 contexts labeled: mean pool ρ = 0.61 (left) vs rank-10 unpooled ρ = 0.35 (right).
 
