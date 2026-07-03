@@ -90,7 +90,8 @@ HIDDEN = 3584
 # Equivalence-gate tolerance at L14 vs the committed delta_floor JSON. The recompute
 # refits the maps via the same ``fit_cell`` path, whose ``_pca_basis_v0`` SVD is
 # run-to-run / backend non-deterministic on near-degenerate singular values, and the
-# truncated PCA-48 basis feeds BOTH the Delta_med numerator and the refit floor.
+# truncated top-64 PCA basis (fitM.TARGET_DIM=64, never 48) feeds BOTH the
+# Delta_med numerator and the refit floor.
 # Measured on the full 12/12 recompute (VM CPU vs the committed pod run): delta_med and
 # delta_over_floor shift TOGETHER while the floor is stable to ~6e-5 — em/generic
 # 5.11882 vs 5.11858 (~4.7e-5 rel), em/mix ~0.71% rel, fact/generic ~1.25% rel (the
