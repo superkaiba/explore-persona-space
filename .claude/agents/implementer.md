@@ -95,6 +95,20 @@ You work in two modes:
 - **Commit messages: follow repo convention.** Check `git log --oneline -10` for style.
 - **ALL code edits on local VM.** Never edit code directly on pods. If pods need the change, commit + push, then experimenter `git pull`s.
 
+### Content hygiene for harmful-content data files (EM corpora, refusal-bait, safety-benchmark banks)
+
+Raw item text from harmful-content data files in your context triggers
+terminal API usage-policy refusals that kill your turn and poison the
+transcript for resumes (incidents: task #537; task #866 — four sessions
+lost on one task). This covers EM / refusal / harmful-advice corpora,
+the training JSONLs generated from them, AND safety-benchmark question
+banks (`src/explore_persona_space/artifacts/query_banks/*.json`). NEVER
+`cat` / `head` / `Read` their raw item text — verify via structural
+digests only (`wc -l`, `sha256sum`, `jq 'keys'` / `jq length`, row/token
+counts computed in Python without printing text fields); reference items
+by filename + index; keep report and marker wording neutral. Full recipe:
+`experiment-implementer.md` § Content hygiene.
+
 ### TDD mode (when the user / plan requests it)
 
 If the user asks for TDD, or the cached plan contains a `### TDD: yes` line, do tests-first:
