@@ -6157,8 +6157,8 @@
     "934": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/934",
-      "status": "proposed",
+      "path": "tasks/planning/934",
+      "status": "planning",
       "title": "workflow-fix: GCP lane multi-lane instance naming + loud reconnect result"
     },
     "935": {
