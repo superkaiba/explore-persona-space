@@ -7888,7 +7888,10 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
-  xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --
+  # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
+  # (#897): the hook's working-tree-revert detector would bounce the bare
+  # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
+  xargs -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
