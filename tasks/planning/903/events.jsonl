@@ -4,3 +4,4 @@
 {"ts": "2026-07-03T06:26:22Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-03T06:43:25Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: overall PASS, n_fail=0, n_warn=0, n_skip=11 (kind-exempt: infra). Plan v1."}
 {"ts": "2026-07-03T06:43:26Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=fact-check round=1 subagent=planner worktree=repo-root"}
+{"ts": "2026-07-03T06:57:30Z", "kind": "epm:consistency", "version": 1, "by": "unknown", "note": "PASS (N/A) — parentless kind:infra workflow-fix task; no parent experiment recipe to diff. All Step-2b checks (single-variable-vs-parent, baseline model, eval suite, seeds, data version) are experiment-specific and N/A. Consistency-checker agent not spawned."}
