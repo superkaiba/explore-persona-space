@@ -5990,8 +5990,8 @@
     "912": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/912",
-      "status": "reviewing",
+      "path": "tasks/completed/912",
+      "status": "completed",
       "title": "workflow-fix: worktree sweep should reap idle worktrees' regenerable .venv"
     },
     "913": {
