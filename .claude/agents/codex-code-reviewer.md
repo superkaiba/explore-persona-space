@@ -478,6 +478,19 @@ both reviewers are graded against the same standard. Read
   one-per-round (incident #779 whack-a-mole). Codex twins never emit
   workflow-fix candidates for a sweep finding — surface siblings in the verdict
   body only.
+- The **Step 3.8 seam-stubbed production-body verification** rule VERBATIM.
+  This is load-bearing: copy the trigger (production `def`s ADDED — or
+  seam-stubbed and body-modified — in the round whose names appear as test
+  stub / monkeypatch / seams-dataclass targets), the two-part body check
+  (external call sites vs the callee's REAL signature; attribute dereferences
+  vs the real dataclass fields), the "a dispatch/resolver test is NOT body
+  coverage" rule, the Critical `substantive` routing (never stripped by Step
+  5c-bis), and the cost bound, so Codex keeps catching what it caught on
+  #906. Codex adaptation: without the project's `uv` env, verify signatures
+  by READING the callee's `def` line and the dataclass definition (Grep/Read)
+  instead of running `inspect.signature`. (Incident #906: Codex FAILed all 5
+  rounds of crash-class seam-stubbed bodies the Claude reviewer PASSed; this
+  bullet makes the check explicit and symmetric across both twins.)
 - The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
   every Critical/Major finding cites a concrete artifact location
   (`file.py:LINE`, diff hunk, plan section; the reconciler discards
@@ -592,7 +605,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

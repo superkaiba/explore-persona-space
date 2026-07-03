@@ -114,6 +114,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Step 3.5 cached-artifact coverage (`cached-artifact-coverage-unverified`) | code-reviewer.md Step 3.5 | v2-owner: code-correctness-critic |
 | Step 3.6 long-loop restartability | code-reviewer.md Step 3.6 | v2-owner: efficiency-critic |
 | Step 3.7 bug-class sibling sweep | code-reviewer.md Step 3.7 | v2-owner: code-correctness-critic |
+| Step 3.8 seam-stubbed production-body verification | code-reviewer.md Step 3.8 | v2-owner: code-correctness-critic |
 | Step 4 run / verify tests | code-reviewer.md Step 4 | v2-owner: code-correctness-critic |
 | Step 4.5 regression-test presence for BLOCKER fixes | code-reviewer.md Step 4.5 | v2-owner: code-correctness-critic |
 | Step 5 security sweep | code-reviewer.md Step 5 | v2-owner: code-correctness-critic |

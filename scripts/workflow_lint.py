@@ -5199,16 +5199,17 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
-    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
-    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
-    # all plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 84_500,
+    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
+    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
+    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "code-reviewer.md": 92_300,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
-    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
-    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
-    # + <=3 KB)
-    "codex-code-reviewer.md": 50_400,
+    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
+    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 47,930 B post-#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "codex-code-reviewer.md": 51_600,
     # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
     # calibration caveat in § Batched-rewrite equivalence — plan-mandated
     # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
