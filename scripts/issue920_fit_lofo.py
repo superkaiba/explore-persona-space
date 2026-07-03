@@ -226,6 +226,14 @@ def main() -> int:
     )
     ap.add_argument("--smoke-h", type=int, default=16)
     ap.add_argument("--smoke-layers", type=int, default=2)
+    ap.add_argument(
+        "--smoke-zero-coverage-b",
+        default=None,
+        metavar="FAMILY",
+        help="synthetic smoke only: zero out ALL probes' validity for FAMILY in "
+        "set B (context 0), leaving set A valid — exercises the union-exclusion "
+        "contract (round-1 blocker set-b-zero-coverage-not-masked)",
+    )
     args = ap.parse_args()
 
     t0 = time.time()
@@ -239,7 +247,13 @@ def main() -> int:
     instances, fam_map = load_battery()
     ctx_ids = [i["id"] for i in instances]
     if args.synthetic_smoke:
-        make_synthetic_stores(store_root, ctx_ids, args.smoke_layers, args.smoke_h)
+        make_synthetic_stores(
+            store_root,
+            ctx_ids,
+            args.smoke_layers,
+            args.smoke_h,
+            zero_coverage_b=args.smoke_zero_coverage_b,
+        )
     logger.info("[phase=load_reduced] set A + set B stores")
     red_A = load_reduced_matrices(store_root / "summaries_setA", ctx_ids)
     red_B = load_reduced_matrices(store_root / "summaries_setB", ctx_ids)
@@ -273,13 +287,29 @@ def main() -> int:
     n_beh = len(E0_BEHAVIORS)
     n = len(ctx_ids)
 
-    # excluded-cell masks (zero-valid-probe families, plan §3.3)
+    # excluded-cell masks (zero-valid-probe families, plan §3.3). UNION of BOTH
+    # stores' exclusion lists: `load_reduced_matrices` zero-fills a zero-coverage
+    # (family, context) cell, so a set-B-only gap would otherwise silently
+    # zero-fill into R2/R3/R4, the B-side read-outs, the identity ceiling, and
+    # every null band (round-1 blocker `set-b-zero-coverage-not-masked`).
     def _excluded_mask(names: list[str], fams: list[str]) -> np.ndarray:
         ex = {f.split("@")[0] for f in fams}
         return np.array([nm.split("@")[0] in ex for nm in names], dtype=bool)
 
-    ex_ctx = _excluded_mask(red_A["ctx_cell_names"], red_A["excluded_families"])
-    ex_ans = _excluded_mask(red_A["ans_cell_names"], red_A["excluded_families"])
+    excluded_by_source = {
+        "set_A": sorted(red_A["excluded_families"]),
+        "set_B": sorted(red_B["excluded_families"]),
+    }
+    excluded_union = sorted(set(red_A["excluded_families"]) | set(red_B["excluded_families"]))
+    if excluded_union:
+        logger.warning(
+            "excluded families (union A|B): %s (A=%s, B=%s)",
+            excluded_union,
+            excluded_by_source["set_A"],
+            excluded_by_source["set_B"],
+        )
+    ex_ctx = _excluded_mask(red_A["ctx_cell_names"], excluded_union)
+    ex_ans = _excluded_mask(red_A["ans_cell_names"], excluded_union)
     ex_map = ex_ctx[c_map] | ex_ans[a_map]
 
     # accumulators
@@ -393,6 +423,7 @@ def main() -> int:
         skills[map_ss[:, :, 1] < 1e-12] = np.nan
         ceiling = 1.0 - ceil_ss[:, 0] / np.where(ceil_ss[:, 1] < 1e-12, np.nan, ceil_ss[:, 1])
     skills[ex_map] = np.nan
+    ceiling[ex_ans] = np.nan  # identity ceiling consumes set-B rows — union-masked too
 
     y_ranks = np.stack([_rankdata_avg(E0[:, bi]) for bi in range(n_beh)], axis=0)  # (7, 50)
     ro_rho = np.stack(
@@ -414,6 +445,7 @@ def main() -> int:
     )  # (n_ans_cells, 7) PCA-basis oracle
     ro_rho[np.concatenate([ex_ctx, ex_ans])] = np.nan
     ch_rho[ex_map] = np.nan
+    or_rho[ex_ans] = np.nan  # PCA-basis oracle rows for excluded families: out of the sweep
 
     names_c, names_a = red_A["ctx_cell_names"], red_A["ans_cell_names"]
 
@@ -449,7 +481,8 @@ def main() -> int:
                 for i in range(n_ans_cells)
             },
             "anchor_r1_best_matched_layer": anchor_r1,
-            "excluded_families": red_A["excluded_families"],
+            "excluded_families": excluded_union,
+            "excluded_families_by_source": excluded_by_source,
             "pca_k": k,
             "g2": g2,
             "fit_wall_s": round(fit_wall, 1),
@@ -545,7 +578,23 @@ def main() -> int:
             f"[k3-anchor-assert] anchor cell R1 skill {anchor_r1:.4f} outside [0.6, 0.9] "
             "(#810 LOFO anchor ~0.80) — stop and debug extraction/fits before the nulls"
         )
-    logger.info("[phase=done] S4 fit battery complete (%.1fs total)", time.time() - t0)
+    # Post-K3 fit-done marker — the dispatcher's S4 resume predicate keys on THIS
+    # file, never on the pre-gate eval JSONs / preds artifacts alone, so a retry
+    # after a K3 FAIL re-runs the fits instead of skipping the failed gate
+    # (round-1 blocker `k3-resume-bypasses-anchor-gate`).
+    dump_json(
+        {
+            "phase": "S4_fit_battery",
+            "anchor_gate": "PASS" if anchor_gate_armed else "SKIPPED",
+            "anchor_r1": None if np.isnan(anchor_r1) else round(anchor_r1, 6),
+            "excluded_families": excluded_union,
+            "reproducibility": meta,
+        },
+        preds_out / "fits_done.json",
+    )
+    # NOT [phase=done] — that token is RESERVED for the dispatcher's single
+    # terminal line (pod-side-reporting rule; #545 false-done class).
+    logger.info("[phase=fits_complete] S4 fit battery complete (%.1fs total)", time.time() - t0)
     return 0
 
 
@@ -587,13 +636,20 @@ class _ChainCache:
 
 
 def make_synthetic_stores(
-    store_root: Path, ctx_ids: list[str], lc: int, H: int, seed: int = 920
+    store_root: Path,
+    ctx_ids: list[str],
+    lc: int,
+    H: int,
+    seed: int = 920,
+    zero_coverage_b: str | None = None,
 ) -> None:
     """Tiny schema-conformant per-probe stores (both sets) for the fits/nulls smoke.
 
     Real battery context ids + fold structure; random per-probe values with a
     planted linear c→a signal so the anchor cell is non-trivially fittable; a few
     short answers so position validity/dedup codes are exercised.
+    ``zero_coverage_b``: family whose validity is zeroed for ALL probes on
+    context 0 in set B ONLY (set A untouched) — the union-exclusion smoke.
     """
     from issue920_common import ALL_STORE_FAMILIES, position_slots, store_dtype
 
@@ -623,6 +679,9 @@ def make_synthetic_stores(
                 fam0 = len(ALL_STORE_FAMILIES) - 20
                 validity[pi, fam0:] = pos_valid
             blob["ans_lens"] = ans_lens
+            if zero_coverage_b is not None and s == "B" and ci == 0:
+                assert zero_coverage_b in ALL_STORE_FAMILIES, zero_coverage_b
+                validity[:, ALL_STORE_FAMILIES.index(zero_coverage_b)] = 0
             for f in ALL_STORE_FAMILIES:
                 base = latent if f.startswith(("ans_", "pos_")) else latent * 0.5
                 vals = (base[None, None, :] + 0.3 * rng.normal(size=(n_probes, lc, H))).astype(

@@ -70,6 +70,7 @@ from issue920_common import (  # noqa: E402
     I658_POSITION_STORE_PREFIX,
     I658_RAW_COMPLETIONS_PREFIX,
     I920_SUMMARIES_PREFIX,
+    I920_TENSORS_PREFIX,
     N_LASTK,
     PROBES_A_PATH,
     PROBES_B_PATH,
@@ -701,6 +702,19 @@ def main() -> int:
                 "self_equivalence": self_report,
             }
             dump_json(gate_report, out_root / "g1_gate_report.json")
+            if not args.no_upload and not args.smoke:
+                # Gate evidence is durable BEFORE the auto-delete lane exits
+                # (single small file — the per-file API is correct here).
+                from huggingface_hub import HfApi
+
+                HfApi().upload_file(
+                    path_or_fileobj=str(out_root / "g1_gate_report.json"),
+                    path_in_repo=f"{I920_TENSORS_PREFIX}/g1_gate_report.json",
+                    repo_id=HF_DATA_REPO,
+                    repo_type="dataset",
+                    commit_message="issue #920: G1 equivalence-gate report",
+                )
+                logger.info("g1_gate_report.json uploaded to %s/", I920_TENSORS_PREFIX)
             write_sentinel(
                 "epm:progress",
                 {
@@ -803,7 +817,21 @@ def main() -> int:
     finally:
         capture.remove()
 
-    logger.info("[phase=done] S3 extraction complete (%.1fs)", time.time() - t0)
+    # Post-upload phase-done marker: the dispatcher's resume predicate keys on
+    # this, so a crash at a per-set upload re-enters the phase on retry (same
+    # class as the post-K3 fit-done marker; internal per-context resume makes
+    # the re-entry cheap).
+    dump_json(
+        {
+            "phase": "S3_extract",
+            "sets": sets,
+            "n_contexts": len(ctx_ids),
+            "reproducibility": reproducibility_metadata(),
+        },
+        out_root / "extract_done.json",
+    )
+    # NOT [phase=done] — reserved for the dispatcher's single terminal line.
+    logger.info("[phase=extract_complete] S3 extraction complete (%.1fs)", time.time() - t0)
     return 0
 
 

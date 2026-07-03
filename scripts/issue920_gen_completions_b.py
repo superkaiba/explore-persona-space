@@ -18,7 +18,7 @@ teardown gotcha); ``VLLM_WORKER_MULTIPROC_METHOD=spawn`` is pinned at module top
 
 Usage (production, inside issue920_dispatch.sh)::
 
-    uv run python scripts/issue920_gen_completions_b.py --gpu
+    uv run python scripts/issue920_gen_completions_b.py
 
     # CPU smoke of the templating/chunking/checkpoint-resume logic (mock engine):
     uv run python scripts/issue920_gen_completions_b.py --smoke --mock-engine \\
@@ -153,7 +153,6 @@ def _upload(out_dir: Path, ctx_ids: list[str]) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #920 S2: set-B greedy completions (vLLM)")
     ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--gpu", action="store_true")
     ap.add_argument("--probes", default=str(PROBES_B_PATH))
     ap.add_argument("--out-dir", default=str(PROJECT_ROOT / "data" / "issue_920" / "gen_b"))
     ap.add_argument("--n-ctx", type=int, default=None, help="smoke: cap contexts")
@@ -292,7 +291,23 @@ def main() -> int:
         out_dir,
         slug_extra="gen-b",
     )
-    logger.info("[phase=done] S2 gen_b complete")
+    # Post-upload phase-done marker (OUTSIDE out_dir so the gen_b bulk upload
+    # never picks it up): the dispatcher's resume predicate keys on this, so a
+    # crash at the upload step re-enters the phase on retry instead of skipping
+    # it (same class as the post-K3 fit-done marker).
+    dump_json(
+        {
+            "phase": "S2_gen_completions_b",
+            "n_contexts": len(ctx_ids),
+            "n_probes": n_per_ctx,
+            "hf_path": hf_path,
+            "reproducibility": reproducibility_metadata(),
+        },
+        out_dir.parent / f"{out_dir.name}_done.json",
+    )
+    # NOT [phase=done] — reserved for the dispatcher's single terminal line
+    # (pod-side-reporting rule; #545 false-done class).
+    logger.info("[phase=gen_b_complete] S2 gen_b complete")
     return 0
 
 
