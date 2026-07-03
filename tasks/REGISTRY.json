@@ -6263,8 +6263,8 @@
     "948": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/948",
-      "status": "planning",
+      "path": "tasks/approved/948",
+      "status": "approved",
       "title": "workflow-fix: reviewer must verify seam-stubbed production bodies vs real APIs"
     },
     "96": {
