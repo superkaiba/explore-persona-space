@@ -52,6 +52,20 @@ did); (v) a redirect attached directly to the invocation's OWN segment on
 a multi-segment line still suppresses (the live-tree shape the round-1
 probe found on 3 lines — segment scoping must not un-exclude it); plus
 both-emit ``&&`` chains yield one error per edge.
+
+Round-3 additions (binding concern ``phase-done-comment-strip-midword-fn``
+— the trailing-comment strip must cut only at a ``#`` that BEGINS a shell
+word, honoring backslash escapes, so an executable mid-word/escaped ``#``
+before an invocation no longer hides the edge):
+(w) ``tag=run#1; uv run python scripts/bad.py`` -> exactly one error naming
+``bad.py`` (pre-fix the unconditional ``#``-cut truncated at ``tag=run``);
+(x) ``echo \\#; uv run python scripts/bad.py`` -> one error (``\\#`` is
+escaped, not a comment; the echo-preview skip is SEGMENT grain, so the
+``echo`` segment no longer hides the later invocation segment);
+(y) trailing-comment control — ``uv run python scripts/bad.py  # launch
+note`` is still detected (the invocation precedes the comment) and a
+pure-comment line is still skipped; plus a direct
+``_strip_sh_trailing_comment`` word-boundary/escape unit pin.
 """
 
 from __future__ import annotations
@@ -70,6 +84,7 @@ if str(_SCRIPTS) not in sys.path:
 from workflow_lint import (  # noqa: E402
     PHASE_DONE_EDGE_LEGACY_ALLOWLIST,
     PHASE_DONE_TOKEN,
+    _strip_sh_trailing_comment,
     check_phase_done_reserved,
 )
 
@@ -735,6 +750,97 @@ def test_both_invocations_emitting_yield_one_error_per_edge(tmp_path: Path) -> N
     text = "\n".join(errors)
     assert "scripts/bad_a.py" in text
     assert "scripts/bad_b.sh" in text
+
+
+# --------------------------------------------------------------------------
+# (w)/(x)/(y) round-3 word-boundary comment-strip regression fixtures
+# (binding concern `phase-done-comment-strip-midword-fn`): a `#` cuts only
+# where it BEGINS a shell word; backslash escapes are honored; the
+# echo-preview skip is segment grain.
+# --------------------------------------------------------------------------
+
+
+def test_midword_hash_before_invocation_fails(tmp_path: Path) -> None:
+    """(w) `tag=run#1; uv run python scripts/bad.py` -> exactly one error
+    naming bad.py. Pre-fix, _strip_sh_trailing_comment cut unconditionally
+    at the mid-word `#`, truncating the line at `tag=run` so the emitting
+    invocation after it was never seen (a silent commit-gate FN)."""
+    sh = _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\ntag=run#1; uv run python scripts/bad.py\n",
+    )
+    _write(tmp_path, "bad.py", 'print("[phase=done]")\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(sh) in errors[0]
+    assert "scripts/bad.py" in errors[0]
+
+
+def test_escaped_hash_echo_segment_before_invocation_fails(tmp_path: Path) -> None:
+    """(x) `echo \\#; uv run python scripts/bad.py` -> one error. The `\\#`
+    is a backslash-escaped literal, not a comment; the echo-preview skip is
+    SEGMENT grain, so the leading `echo` segment no longer hides the real
+    invocation in the later segment (pre-fix BOTH the unconditional `#`-cut
+    and the line-level `echo `-prefix skip swallowed the line)."""
+    sh = _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\necho \\#; uv run python scripts/bad.py\n",
+    )
+    _write(tmp_path, "bad.py", 'print("[phase=done]")\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(sh) in errors[0]
+    assert "scripts/bad.py" in errors[0]
+
+
+def test_trailing_comment_control_and_pure_comment_line(tmp_path: Path) -> None:
+    """(y) CONTROLS: a genuine trailing comment after the invocation still
+    strips (the invocation PRECEDES the `#`, so the edge stays detected,
+    and a redirect inside the comment text cannot suppress), while a
+    pure-comment line is still skipped entirely."""
+    sh = _write(
+        tmp_path,
+        "dispatch.sh",
+        "#!/usr/bin/env bash\n"
+        "# uv run python scripts/bad.py\n"
+        "uv run python scripts/bad.py  # launch note > /dev/null\n",
+    )
+    _write(tmp_path, "bad.py", 'print("[phase=done]")\n')
+    errors = check_phase_done_reserved(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(sh) in errors[0]
+    assert f"{sh}:3:" in errors[0]  # the live line, not the comment line
+    assert "scripts/bad.py" in errors[0]
+
+
+def test_strip_sh_trailing_comment_word_boundary() -> None:
+    """Direct unit pin of the round-3 scanner invariants: mid-word `#`
+    forms and escaped `\\#` are kept; a word-initial `#` (string start /
+    after whitespace / after an operator char) cuts; quoted `#` is kept."""
+    strip = _strip_sh_trailing_comment
+    # Mid-word / escaped forms: NO cut.
+    assert strip("tag=run#1; uv run python scripts/bad.py") == (
+        "tag=run#1; uv run python scripts/bad.py"
+    )
+    assert strip("echo \\#; uv run python scripts/bad.py") == (
+        "echo \\#; uv run python scripts/bad.py"
+    )
+    assert strip('echo "${#ARR[@]} left"; bash scripts/x.sh') == (
+        'echo "${#ARR[@]} left"; bash scripts/x.sh'
+    )
+    assert strip("n=${#ARR[@]} && bash scripts/x.sh") == "n=${#ARR[@]} && bash scripts/x.sh"
+    assert strip('if [ "$#" -lt 2 ]; then exit 1; fi') == 'if [ "$#" -lt 2 ]; then exit 1; fi'
+    assert strip("v=${x#prefix} y=$((2#101))") == "v=${x#prefix} y=$((2#101))"
+    # Word-initial forms: cut.
+    assert strip("# whole-line comment") == ""
+    assert strip("cmd  # trailing note") == "cmd  "
+    assert strip("cmd; # after separator") == "cmd; "
+    assert strip("cmd #comment > /dev/null") == "cmd "
+    # Quoted `#` is content, not a comment.
+    assert strip("echo '# kept'") == "echo '# kept'"
+    assert strip('echo "# kept" # cut') == 'echo "# kept" '
 
 
 # --------------------------------------------------------------------------
