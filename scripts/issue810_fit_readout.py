@@ -74,7 +74,14 @@ from issue810_batched_null import (  # noqa: E402
     make_perm_matrix,
 )
 from issue810_common import (  # noqa: E402
+    BETLEY_E0_HIGHM_FILE,
+    G1_ANSWER_POSITION_SWEEP_SUBDIR,
+    G1_OUT_DIR,
+    G1_STORE_MANIFEST,
+    G1_V0_SUMMARIES,
+    GENRES,
     HF_DATA_REPO,
+    HF_PREFIX,
     I658_RB,
     I658_STORE_MANIFEST,
     I658_V0_SUMMARIES,
@@ -83,6 +90,7 @@ from issue810_common import (  # noqa: E402
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
     TF_MARGIN_VALIDATION_BEHAVIORS,
+    assert_g1_probe_pool_hash,
     context_ids_from_manifest,
     dump_json,
     load_json,
@@ -125,19 +133,37 @@ def _tf_margin_scalar(cell) -> float | None:
 # ── inputs ────────────────────────────────────────────────────────────────────
 
 
-def _load_free_summaries():
+def _load_free_summaries(genre: str = "betley"):
+    """{recipe: {ctx: (28,H)}} from the summaries-genre's v0_summaries.pt (g1 hash-pinned)."""
     from huggingface_hub import hf_hub_download
 
-    p = hf_hub_download(HF_DATA_REPO, I658_V0_SUMMARIES, repo_type="dataset")
+    v0_file = I658_V0_SUMMARIES if genre == "betley" else G1_V0_SUMMARIES
+    p = hf_hub_download(HF_DATA_REPO, v0_file, repo_type="dataset")
     blob = torch.load(p, weights_only=False)
+    if genre == "g1":
+        assert_g1_probe_pool_hash(blob, G1_V0_SUMMARIES)
     return blob["summaries"], blob["capture_layers"]
 
 
 def _load_rb():
-    """{behavior: {recipe: (28,H)}} from #658 store/r_b.pt (recipes diffmeans/meanDB)."""
+    """{behavior: {recipe: (28,H)}} from #658 store/r_b.pt (recipes diffmeans/meanDB).
+
+    PINNED to the parent's Betley ``store/r_b.pt`` in EVERY cell of the 2×2
+    square — the co-located g1 store's ``r_b.pt`` is a DIFFERENT tensor
+    (max|Δ| >= 1.0, plan-time verified) and swapping it would smuggle a second
+    variable (plan v6 §11). Assert-fails if the resolved path carries the g1
+    ``store_genre`` prefix (the plan §8 wrong-r_B risk).
+    """
     from huggingface_hub import hf_hub_download
 
+    if "store_genre" in I658_RB:
+        raise RuntimeError(f"r_B constant drifted to a genre store: {I658_RB}")
     p = hf_hub_download(HF_DATA_REPO, I658_RB, repo_type="dataset")
+    if "store_genre" in str(p):
+        raise RuntimeError(
+            f"r_B resolved to a genre store path ({p}) — the fixed direction must be the "
+            "parent's Betley store/r_b.pt in every cell (plan v6 §11)"
+        )
     blob = torch.load(p, weights_only=False)
     return blob["r_b"], blob.get("columns", list(blob["r_b"].keys()))
 
@@ -199,6 +225,42 @@ def _kept_contexts(summary, ctx_ids, coverage):
     return [c for c in ctx_ids if coverage[c].get(summary, 0) > 0]
 
 
+def _default_behaviors(e0: dict, args) -> list[str]:
+    """Behavior list with the plan-§5 quarantine applied to the default set.
+
+    The PARENT's harmful-compliance E0 is cache-contaminated — using it anywhere
+    but the contamination diagnostic is banned. The parent cell (betley, betley)
+    is REUSED, never re-fit, so the filter fires only on the NEW square cell
+    (g1 acts → parent E0); harmful compliance headlines only at E0_g1. An
+    explicit ``--behaviors`` overrides (a deliberate diagnostic read).
+    """
+    behaviors = args.behaviors or list(e0.keys())
+    if (
+        args.behaviors is None
+        and args.e0_genre == "betley"
+        and args.summaries_genre != "betley"
+        and "harmful_compliance" in behaviors
+    ):
+        behaviors = [b for b in behaviors if b != "harmful_compliance"]
+        logger.info(
+            "[phase=quarantine] harmful_compliance EXCLUDED from the (g1 acts -> parent E0) "
+            "cell — the parent target is quarantined (plan v6 §5); it headlines only at E0_g1"
+        )
+    return behaviors
+
+
+def _resolve_e0_path(e0_genre: str) -> Path:
+    """Default graded-E0 JSON per E0-target genre (explicit --e0-highm overrides).
+
+    betley → the parent's committed Phase-C output (branch issue-810; never
+    re-judged this round). g1 → this round's Phase C-g output under the
+    follow-up-label dir (written by ``issue810_batch_rejudge_highm.py --genre g1``).
+    """
+    if e0_genre == "betley":
+        return BETLEY_E0_HIGHM_FILE
+    return G1_OUT_DIR / "phase_c" / "e0_highm_graded.json"
+
+
 # ── read-out methods ──────────────────────────────────────────────────────────
 
 
@@ -241,15 +303,41 @@ def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 DV (b): behavior read-out rho")
     ap.add_argument(
+        "--summaries-genre",
+        choices=list(GENRES),
+        default="betley",
+        help="genre of the ACTIVATION side (v0 summaries + position store): 'betley' "
+        "(default — the parent's sources, bit-for-bit) or 'g1' (#658's UltraChat arm)",
+    )
+    ap.add_argument(
+        "--e0-genre",
+        choices=list(GENRES),
+        default="betley",
+        help="genre of the E0 TARGET side: 'betley' (the parent's committed Phase-C "
+        "graded E0) or 'g1' (this round's Phase C-g output). The 2x2 square = "
+        "--summaries-genre x --e0-genre (plan v6 §4.6 item 4)",
+    )
+    ap.add_argument(
         "--e0-highm",
-        default=str(PROJECT_ROOT / "eval_results" / "issue_810" / "e0_highm_graded.json"),
+        default=None,
+        help="explicit graded-E0 JSON path (overrides the --e0-genre default resolution)",
     )
     ap.add_argument("--e0-lowm", default=None, help="#763 graded E0 JSON (optional; in-flight)")
     ap.add_argument(
-        "--position-store-hf", default="issue658_theory_assumptions/answer_position_sweep"
+        "--position-store-hf",
+        default=None,
+        help="HF prefix of the aligned-subset position store (default: the "
+        "--summaries-genre's — answer_position_sweep[_<genre-tag>])",
     )
     ap.add_argument("--position-store-dir", default=None)
-    ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
+    ap.add_argument(
+        "--out",
+        default=None,
+        help="output dir (default: eval_results/issue_810 when BOTH genres are betley — "
+        "the parent path, bit-for-bit — else the follow-up round dir "
+        "eval_results/issue_810/ultrachat-genre-summary-sweep so a g1 run never "
+        "clobbers the parent's committed JSONs)",
+    )
     ap.add_argument("--summaries", nargs="*", default=None)
     ap.add_argument("--layers", nargs="*", type=int, default=None)
     ap.add_argument("--behaviors", nargs="*", default=None)
@@ -277,13 +365,32 @@ def main() -> int:
 
     from huggingface_hub import hf_hub_download
 
-    out_dir = Path(args.out)
+    any_g1 = "g1" in (args.summaries_genre, args.e0_genre)
+    out_dir = Path(
+        args.out or (G1_OUT_DIR if any_g1 else (PROJECT_ROOT / "eval_results" / "issue_810"))
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.position_store_hf is None:
+        args.position_store_hf = (
+            f"{HF_PREFIX}/answer_position_sweep"
+            if args.summaries_genre == "betley"
+            else f"{HF_PREFIX}/{G1_ANSWER_POSITION_SWEEP_SUBDIR}"
+        )
+    e0_path = Path(args.e0_highm) if args.e0_highm else _resolve_e0_path(args.e0_genre)
 
-    logger.info("[phase=load] manifest + summaries + r_B + E0 + tf_margin")
-    man = load_json(hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset"))
+    logger.info(
+        "[phase=load] manifest + summaries + r_B + E0 + tf_margin "
+        "(summaries_genre=%s e0_genre=%s e0=%s)",
+        args.summaries_genre,
+        args.e0_genre,
+        e0_path,
+    )
+    manifest_file = I658_STORE_MANIFEST if args.summaries_genre == "betley" else G1_STORE_MANIFEST
+    man = load_json(hf_hub_download(HF_DATA_REPO, manifest_file, repo_type="dataset"))
+    if args.summaries_genre == "g1":
+        assert_g1_probe_pool_hash(man, G1_STORE_MANIFEST)
     ctx_ids_all = context_ids_from_manifest(man)
-    free_summaries, capture_layers = _load_free_summaries()
+    free_summaries, capture_layers = _load_free_summaries(args.summaries_genre)
     rb, _rb_columns = _load_rb()
 
     local_dir = Path(args.position_store_dir) if args.position_store_dir else None
@@ -298,7 +405,7 @@ def main() -> int:
     ctx_ids = [c for c in pos_man["context_ids"] if c in ctx_ids_all]
     pos_summaries, coverage = _load_position_summaries(ctx_ids, args.position_store_hf, local_dir)
 
-    e0_highm = load_json(args.e0_highm)
+    e0_highm = load_json(e0_path)
     low_m = load_json(args.e0_lowm) if args.e0_lowm and Path(args.e0_lowm).is_file() else None
     if args.e0_lowm and low_m is None:
         logger.warning(
@@ -308,7 +415,7 @@ def main() -> int:
 
     summaries = args.summaries or summary_names()
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
-    behaviors = args.behaviors or list(e0.keys())
+    behaviors = _default_behaviors(e0, args)
     rng = np.random.default_rng(SHUFFLE_NULL_SEED)
 
     results: list[dict] = []
@@ -401,6 +508,9 @@ def main() -> int:
     dump_json(
         {
             "dv": "behavior_readout_rho_vs_graded_e0",
+            "summaries_genre": args.summaries_genre,
+            "e0_genre": args.e0_genre,
+            "e0_source": str(e0_path),
             "primary": "rho_graded (graded 0-100 E0)",
             "companion": "rho_binary_rate (judged rate >=50)",
             "n_contexts_grid": len(ctx_ids),
@@ -419,6 +529,8 @@ def main() -> int:
     dump_json(
         {
             "dv": "readout",
+            "summaries_genre": args.summaries_genre,
+            "e0_genre": args.e0_genre,
             "axes": "behavior -> method -> summary -> layer -> [per-draw rho]",
             "n_perms": args.n_perms,
             "seed": SHUFFLE_NULL_SEED,

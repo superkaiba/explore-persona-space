@@ -63,7 +63,12 @@ from issue810_batched_null import (  # noqa: E402
     make_perm_matrix,
 )
 from issue810_common import (  # noqa: E402
+    G1_ANSWER_POSITION_SWEEP_SUBDIR,
+    G1_STORE_MANIFEST,
+    G1_V0_SUMMARIES,
+    GENRES,
     HF_DATA_REPO,
+    HF_PREFIX,
     I594_CC_LAST_FILE,
     I594_PROBE_POOL_HASH,
     I658_STORE_MANIFEST,
@@ -71,6 +76,7 @@ from issue810_common import (  # noqa: E402
     PCA_TARGET_DIM_CAP,
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
+    assert_g1_probe_pool_hash,
     context_ids_from_manifest,
     dump_json,
     load_json,
@@ -99,17 +105,36 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 # ── inputs ────────────────────────────────────────────────────────────────────
 
 
-def _load_free_summaries():
-    """{recipe: {ctx_id: (28,H) fp32}} for mean/last/maxp from #658 v0_summaries.pt."""
-    from huggingface_hub import hf_hub_download
+_V0_BLOB_CACHE: dict[str, dict] = {}
 
-    p = hf_hub_download(HF_DATA_REPO, I658_V0_SUMMARIES, repo_type="dataset")
-    blob = torch.load(p, weights_only=False)
+
+def _load_v0_blob(genre: str) -> dict:
+    """Load (and memoize) a genre's ``v0_summaries.pt`` pack; g1 is hash-pinned."""
+    if genre not in _V0_BLOB_CACHE:
+        from huggingface_hub import hf_hub_download
+
+        v0_file = I658_V0_SUMMARIES if genre == "betley" else G1_V0_SUMMARIES
+        p = hf_hub_download(HF_DATA_REPO, v0_file, repo_type="dataset")
+        blob = torch.load(p, weights_only=False)
+        if genre == "g1":
+            assert_g1_probe_pool_hash(blob, G1_V0_SUMMARIES)
+        _V0_BLOB_CACHE[genre] = blob
+    return _V0_BLOB_CACHE[genre]
+
+
+def _load_free_summaries(genre: str = "betley"):
+    """{recipe: {ctx_id: (28,H) fp32}} for mean/last/maxp from the genre's v0_summaries.pt."""
+    blob = _load_v0_blob(genre)
     return blob["summaries"], blob["capture_layers"]
 
 
 def _load_cc(ctx_ids: list[str], capture_layers: list[int]) -> dict[str, np.ndarray]:
-    """#594 last-input-token c_C, {ctx_id: (Lc,H) fp32}, probe_pool_hash pinned."""
+    """#594 last-input-token c_C, {ctx_id: (Lc,H) fp32}, probe_pool_hash pinned.
+
+    BETLEY-ONLY (the #594 store is Betley-pinned by its own hash assert); the g1
+    arm's c_C comes from ``_load_cc_for_genre('g1', ...)`` instead — the #658
+    per-genre recomputed ``v0_summaries.pt::cc_last`` (plan v6 §4.6 item 3).
+    """
     from huggingface_hub import hf_hub_download
 
     p = hf_hub_download(HF_DATA_REPO, I594_CC_LAST_FILE, repo_type="dataset")
@@ -123,6 +148,39 @@ def _load_cc(ctx_ids: list[str], capture_layers: list[int]) -> dict[str, np.ndar
     if missing:
         raise RuntimeError(f"c_C store missing {len(missing)} contexts: {missing[:5]}")
     return {c: tensor[iid_to_row[c]][capture_layers].float().numpy() for c in ctx_ids}
+
+
+def _load_cc_for_genre(
+    genre: str, ctx_ids: list[str], capture_layers: list[int]
+) -> dict[str, np.ndarray]:
+    """The reconstruction predictor c_C per genre, {ctx_id: (Lc,H) fp32}.
+
+    betley → the #594 last-input-token HF store (``_load_cc``, hash-pinned to
+    ``ad687bec…``). g1 → the g1 store's per-genre recomputed
+    ``v0_summaries.pt::cc_last`` (hash-pinned to ``f277f8c3…`` via the pack's
+    ``probe_pool_hash``; #658 ``--cc-last-from-store`` precedent) — the #594
+    loader would smuggle Betley-pool context vectors into the g1 arm's input
+    side. Fail loud on a missing key / missing contexts (never a silent skip).
+    """
+    if genre == "betley":
+        return _load_cc(ctx_ids, capture_layers)
+    blob = _load_v0_blob("g1")
+    store_cc = blob.get("cc_last")
+    if not store_cc:
+        raise RuntimeError(
+            "g1 v0_summaries.pt has no cc_last key — the store was built without "
+            "--cc-recompute-last and cannot supply the per-genre c_C (plan v6 §4.6 item 3)"
+        )
+    missing = [c for c in ctx_ids if c not in store_cc]
+    if missing:
+        raise RuntimeError(f"g1 cc_last missing {len(missing)} contexts: {missing[:5]}")
+    blob_layers = list(blob["capture_layers"])
+    if blob_layers != list(capture_layers):
+        raise RuntimeError(
+            f"g1 cc_last capture_layers drift: store {blob_layers[:5]}... vs "
+            f"requested {list(capture_layers)[:5]}..."
+        )
+    return {c: store_cc[c].float().numpy() for c in ctx_ids}
 
 
 def _load_position_summaries(
@@ -315,7 +373,13 @@ def _cosine_turn_nl_cc_per_layer(
         for c in ctx_ids:
             if coverage[c].get("turn_nl", 0) <= 0:
                 continue
-            a = pos_summaries[c]["turn_nl"][li]
+            arr = pos_summaries[c]["turn_nl"]
+            if li >= arr.shape[0] or arr[li].shape != cc[c][li].shape:
+                # Mixed-model smoke only (0.5B position store vs 7B c_C): the
+                # cosine is undefined across hidden sizes / layer counts — skip
+                # EXPLICITLY. Production shapes always match (same 7B capture).
+                continue
+            a = arr[li]
             b = cc[c][li]
             na, nb = np.linalg.norm(a), np.linalg.norm(b)
             if na < 1e-9 or nb < 1e-9:
@@ -351,9 +415,18 @@ def _identity_sanity_check(
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 DV (a): reconstruction skill-over-mean R²")
     ap.add_argument(
+        "--genre",
+        choices=list(GENRES),
+        default="betley",
+        help="probe-corpus genre: 'betley' (default — the parent's sources, bit-for-bit: "
+        "#658 v0_summaries + the #594 c_C store) or 'g1' (#658's UltraChat arm: g1 "
+        "v0_summaries + the g1 store's per-genre cc_last; both f277f8c3-hash-pinned)",
+    )
+    ap.add_argument(
         "--position-store-hf",
-        default="issue658_theory_assumptions/answer_position_sweep",
-        help="HF prefix of the Phase B aligned-subset store",
+        default=None,
+        help="HF prefix of the Phase B aligned-subset store (default: the genre's — "
+        "answer_position_sweep for betley, answer_position_sweep_<genre-tag> for g1)",
     )
     ap.add_argument("--position-store-dir", default=None, help="local Phase B store (smoke)")
     ap.add_argument(
@@ -399,11 +472,22 @@ def main() -> int:
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.position_store_hf is None:
+        args.position_store_hf = (
+            f"{HF_PREFIX}/answer_position_sweep"
+            if args.genre == "betley"
+            else f"{HF_PREFIX}/{G1_ANSWER_POSITION_SWEEP_SUBDIR}"
+        )
 
-    logger.info("[phase=load] manifest + free summaries + c_C + position store")
-    man = load_json(hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset"))
+    logger.info(
+        "[phase=load] manifest + free summaries + c_C + position store (genre=%s)", args.genre
+    )
+    manifest_file = I658_STORE_MANIFEST if args.genre == "betley" else G1_STORE_MANIFEST
+    man = load_json(hf_hub_download(HF_DATA_REPO, manifest_file, repo_type="dataset"))
+    if args.genre == "g1":
+        assert_g1_probe_pool_hash(man, G1_STORE_MANIFEST)
     ctx_ids_all = context_ids_from_manifest(man)
-    free_summaries, capture_layers = _load_free_summaries()
+    free_summaries, capture_layers = _load_free_summaries(args.genre)
 
     # --free-only (Phase A): mean/last/maxp over ALL 50 manifest contexts; no
     # Phase B position store. Otherwise restrict to the position store's contexts.
@@ -426,7 +510,7 @@ def main() -> int:
         )
     logger.info("contexts: %d (free_only=%s)", len(ctx_ids), args.free_only)
 
-    cc = _load_cc(ctx_ids, capture_layers)
+    cc = _load_cc_for_genre(args.genre, ctx_ids, capture_layers)
 
     default_summaries = ["mean", "last", "maxp"] if args.free_only else summary_names()
     summaries = args.summaries or default_summaries
@@ -501,7 +585,12 @@ def main() -> int:
     dump_json(
         {
             "dv": "reconstruction_skill_over_mean_r2",
-            "predictor": "cc_last_input_token (#594)",
+            "genre": args.genre,
+            "predictor": (
+                "cc_last_input_token (#594)"
+                if args.genre == "betley"
+                else "cc_last_input_token (g1 store v0_summaries.pt::cc_last, per-genre)"
+            ),
             "n_contexts": n,
             "pca_target_dim": pca_dim,
             "capture_layers": capture_layers,
@@ -516,6 +605,7 @@ def main() -> int:
     dump_json(
         {
             "dv": "reconstruction",
+            "genre": args.genre,
             "axes": "summary -> layer -> [per-draw ridge skill]",
             "n_perms": args.n_perms,
             "seed": SHUFFLE_NULL_SEED,

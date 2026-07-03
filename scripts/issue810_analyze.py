@@ -98,6 +98,84 @@ def _plain_summary(s: str) -> str:
     return s
 
 
+# ── H1-g(iii) registered ordering statistic (plan v6 §3) ──────────────────────
+
+# Fixed late window L19–26 (the parent's pre-stated robustness window — matches
+# issue810_bootstrap_deltaskill.LATE_WINDOW) + the registered minimum effect.
+ORDERING_WINDOW_LAYERS = tuple(range(19, 27))
+ORDERING_MIN_EFFECT = 0.02
+
+
+def _ordering_statistic_D(recon: dict, null_recon: dict, pct: float = 97.5) -> dict:
+    """The REGISTERED H1-g(iii) ordering statistic D + its selection-symmetric null.
+
+    D = max over L in {19..26} of (skill_maxp[L] − skill_mean[L]), observed.
+    Null: the per-cell null draws in ``null_recon[summary][layer]`` are PAIRED
+    across cells by draw index (``_fit_null_draws`` seeds a fresh rng with the
+    SAME seed per cell, so draw d uses the SAME permutation for maxp@L and
+    mean@L), so the per-draw difference matrix diff[L][d] = maxp[L][d] −
+    mean[L][d] is well-defined; the SAME max-over-window is applied PER DRAW
+    (selection-symmetric — the observed max inherits its selection in every
+    draw). Confirms (plan §3 H1-g(iii)) when D >= 0.02 AND D clears the null's
+    97.5th percentile. This is the ONE governing read for the maxp-vs-mean
+    ordering claim; the bootstrap deltas are descriptive companions.
+    """
+    by = recon.get("by_summary", {})
+    if "mean" not in by or "maxp" not in by:
+        return {"available": False, "reason": "mean/maxp cells not both present"}
+    obs = {}
+    for s in ("mean", "maxp"):
+        obs[s] = {c["layer"]: c.get("ridge_skill") for c in by[s]}
+    window = [
+        layer
+        for layer in ORDERING_WINDOW_LAYERS
+        if obs["mean"].get(layer) is not None
+        and obs["maxp"].get(layer) is not None
+        and str(layer) in null_recon.get("mean", {})
+        and str(layer) in null_recon.get("maxp", {})
+    ]
+    if not window:
+        return {"available": False, "reason": "no L19-26 layer with both cells + null draws"}
+    d_obs_per_layer = {layer: obs["maxp"][layer] - obs["mean"][layer] for layer in window}
+    d_obs = max(d_obs_per_layer.values())
+    n_perms = min(
+        min(len(null_recon["mean"][str(layer)]), len(null_recon["maxp"][str(layer)]))
+        for layer in window
+    )
+    diff = np.array(
+        [
+            np.asarray(null_recon["maxp"][str(layer)][:n_perms])
+            - np.asarray(null_recon["mean"][str(layer)][:n_perms])
+            for layer in window
+        ]
+    )  # (n_window_layers, n_perms) paired per draw
+    d_null = diff.max(axis=0)  # (n_perms,) same max per draw
+    band_upper = float(np.percentile(d_null, pct))
+    p_value = float(np.mean(d_null >= d_obs))
+    clears = bool(d_obs > band_upper)
+    meets_min = bool(d_obs >= ORDERING_MIN_EFFECT)
+    return {
+        "available": True,
+        "statistic": "D = max over L19-26 of (skill_maxp[L] - skill_mean[L])",
+        "window_layers": list(window),
+        "observed_D": float(d_obs),
+        "observed_argmax_layer": int(max(d_obs_per_layer, key=d_obs_per_layer.get)),
+        "per_layer_observed_delta": {str(k): float(v) for k, v in d_obs_per_layer.items()},
+        "null_band_pctile": pct,
+        "null_band_upper": band_upper,
+        "p_value_ge_obs": p_value,
+        "n_perms": int(n_perms),
+        "min_effect_threshold": ORDERING_MIN_EFFECT,
+        "clears_null": clears,
+        "meets_min_effect": meets_min,
+        "confirms_h1g_iii": bool(clears and meets_min),
+        "pairing_note": (
+            "null draws are paired across cells by draw index (per-cell rng re-seeded "
+            "with the shared SHUFFLE_NULL_SEED => identical permutation sequence per cell)"
+        ),
+    }
+
+
 # ── honest selection-symmetric bands ──────────────────────────────────────────
 
 
@@ -378,6 +456,13 @@ def main() -> int:
     ap.add_argument("--in", dest="in_dir", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
     ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
     ap.add_argument("--fig-dir", default=str(PROJECT_ROOT / "figures" / "issue_810"))
+    ap.add_argument(
+        "--genre",
+        choices=["betley", "g1"],
+        default="betley",
+        help="probe-corpus genre label recorded in analysis_summary.json (the inputs are "
+        "whatever --in points at; g1 = the ultrachat-genre-summary-sweep round)",
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
 
@@ -388,7 +473,11 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    summary: dict = {"reproducibility": reproducibility_metadata(), "smoke": args.smoke}
+    summary: dict = {
+        "genre": args.genre,
+        "reproducibility": reproducibility_metadata(),
+        "smoke": args.smoke,
+    }
 
     # Reconstruction (DV a)
     recon_path = in_dir / "reconstruction_skill_by_summary.json"
@@ -398,6 +487,10 @@ def main() -> int:
         null_recon = load_json(null_recon_path)["reconstruction"]
         band = _honest_reconstruction_band(null_recon)
         summary["reconstruction_honest_band"] = band
+        # H1-g(iii) REGISTERED ordering statistic (plan v6 §3) — the ONE governing
+        # read for the maxp-vs-mean ordering claim on this arm's recon inputs.
+        summary["h1g_ordering_statistic"] = _ordering_statistic_D(recon, null_recon)
+        logger.info("[phase=ordering] %s", summary["h1g_ordering_statistic"])
         _hero1_reconstruction(recon, band, fig_dir)
         _hero2_position_heatmap(recon, fig_dir)
         _exploratory_cross_summary(recon, fig_dir)

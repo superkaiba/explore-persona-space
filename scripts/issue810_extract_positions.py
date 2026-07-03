@@ -48,6 +48,12 @@ Usage::
     uv run python scripts/issue810_extract_positions.py --smoke \\
         --model Qwen/Qwen2.5-0.5B-Instruct --n-ctx 1 --n-probes 2 \\
         --out-dir /tmp/i810_smoke --device cpu
+
+    # UltraChat genre arm (follow-up round `ultrachat-genre-summary-sweep`):
+    # --genre g1 switches the completions + manifest sources to #658's g1 arm
+    # (probe-pool-hash pinned), uploads to answer_position_sweep_<genre-tag>/,
+    # and runs the one-context cc_last recomputation parity probe FIRST.
+    uv run python scripts/issue810_extract_positions.py --genre g1 --gpu
 """
 
 from __future__ import annotations
@@ -80,12 +86,20 @@ from issue810_common import (  # noqa: E402
     DEFAULT_MODEL,
     EXPECTED_HIDDEN,
     EXPECTED_LAYERS,
+    G1_ANSWER_POSITION_SWEEP_SUBDIR,
+    G1_GENRE_TAG,
+    G1_PROBE_POOL_HASH,
+    G1_RAW_COMPLETIONS_PREFIX,
+    G1_STORE_MANIFEST,
+    G1_V0_SUMMARIES,
+    GENRES,
     HF_DATA_REPO,
     HF_PREFIX,
     I658_RAW_COMPLETIONS_PREFIX,
     I658_STORE_MANIFEST,
     IM_END_TOKEN_ID,
     TURN_NL_TOKEN_ID,
+    assert_g1_probe_pool_hash,
     assert_sha256,
     context_ids_from_manifest,
     dump_json,
@@ -391,18 +405,24 @@ def _resolve_battery(local_hint: Path | None) -> dict:
     return load_json(path)
 
 
-def _load_stored_completions(ctx_id: str) -> list[dict]:
+def _completions_prefix(genre: str) -> str:
+    """HF raw-completions prefix per genre (betley = the parent's, bit-for-bit)."""
+    return I658_RAW_COMPLETIONS_PREFIX if genre == "betley" else G1_RAW_COMPLETIONS_PREFIX
+
+
+def _load_stored_completions(ctx_id: str, genre: str = "betley") -> list[dict]:
     """The 48 stored (probe, completion) pairs for one context from HF.
 
-    Reads ``raw_completions/raw_completions/<ctx>.json`` (schema
-    ``{context_id, completions:[{probe, completion}, ...]}``) — the model's OWN
-    on-policy answers #658 generated + stored. NO regeneration (single-variable
-    discipline: the summary is the variable, the completions inherited).
+    Reads ``<genre raw_completions prefix>/<ctx>.json`` (schema
+    ``{context_id, completions:[{probe, completion}, ...]}`` — head-check
+    VERIFIED identical across genres) — the model's OWN on-policy answers #658
+    generated + stored. NO regeneration (single-variable discipline: the
+    probe-corpus genre is the variable, the completions inherited).
     """
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(
-        HF_DATA_REPO, f"{I658_RAW_COMPLETIONS_PREFIX}/{ctx_id}.json", repo_type="dataset"
+        HF_DATA_REPO, f"{_completions_prefix(genre)}/{ctx_id}.json", repo_type="dataset"
     )
     blob = load_json(path)
     if blob.get("context_id") != ctx_id:
@@ -413,11 +433,100 @@ def _load_stored_completions(ctx_id: str) -> list[dict]:
     return cells
 
 
-def _load_manifest_context_ids() -> list[str]:
+def _load_manifest_context_ids(genre: str = "betley") -> list[str]:
+    """The 50 store context_ids per genre; the g1 manifest is probe-pool-pinned."""
     from huggingface_hub import hf_hub_download
 
-    man = load_json(hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset"))
+    manifest_file = I658_STORE_MANIFEST if genre == "betley" else G1_STORE_MANIFEST
+    man = load_json(hf_hub_download(HF_DATA_REPO, manifest_file, repo_type="dataset"))
+    if genre == "g1":
+        assert_g1_probe_pool_hash(man, G1_STORE_MANIFEST)
     return context_ids_from_manifest(man)
+
+
+# ── g1 cc_last recomputation parity probe (plan v6 §11 standing note) ─────────
+
+
+def _cc_last_parity_probe(
+    model,
+    tokenizer,
+    capture: LayerCapture,
+    instance: dict,
+    first_probe: str,
+    ctx_id: str,
+    n_layers: int,
+    compare_store: bool,
+    min_cosine: float = 0.999,
+) -> dict:
+    """One-context recomputation parity probe for the g1 store's ``cc_last``.
+
+    Recomputes the per-genre c_C with the EXACT #658 ``--cc-recompute-last``
+    convention (``issue658_extract_base_store`` G3): ONE prompt-only forward over
+    ``apply_chat_template(messages_for_instance(inst, first_probe),
+    add_generation_prompt=True)``, residual at position ``prompt_len - 1`` (the
+    assistant-header newline — the #594 last-input-token slot) per layer, fp32.
+    With ``compare_store`` (production 7B only) it asserts per-layer cosine vs
+    the g1 ``v0_summaries.pt::cc_last[ctx]`` >= ``min_cosine`` — a ROBUSTNESS
+    assert certifying the store's cc_last is the quantity its ``cc_reuse_note``
+    claims, run BEFORE any fit consumes it; not a science gate. Smoke mode
+    (tiny model) runs the recompute path only (shape + non-degenerate norms) —
+    the 7B store values cannot match a 0.5B forward by construction.
+    """
+    tmpl = tokenizer.apply_chat_template(
+        messages_for_instance(instance, first_probe), tokenize=False, add_generation_prompt=True
+    )
+    pinputs = tokenizer(tmpl, return_tensors="pt", padding=False).to(model.device)
+    with torch.no_grad():
+        _ = model(**pinputs)
+    prompt_len = int(pinputs["input_ids"].shape[1])
+    fresh = torch.stack(
+        [capture.latest[li][0, prompt_len - 1, :].float().cpu() for li in range(n_layers)]
+    )  # (L, H) — the #658 last_prompt_stack convention
+    capture.latest.clear()
+    norms = fresh.norm(dim=1)
+    if not torch.isfinite(fresh).all() or (norms < 1e-6).any():
+        raise RuntimeError(f"cc_last recompute degenerate for {ctx_id} (norms {norms.tolist()})")
+    out: dict = {"ctx_id": ctx_id, "prompt_len": prompt_len, "n_layers": int(n_layers)}
+    if not compare_store:
+        out["compared_to_store"] = False
+        logger.info("[phase=cc_parity] recompute-only (smoke/non-7B): shape %s OK", fresh.shape)
+        return out
+    from huggingface_hub import hf_hub_download
+
+    p = hf_hub_download(HF_DATA_REPO, G1_V0_SUMMARIES, repo_type="dataset")
+    blob = torch.load(p, weights_only=False)
+    assert_g1_probe_pool_hash(blob, G1_V0_SUMMARIES)
+    store_cc_all = blob.get("cc_last") or {}
+    store_cc = store_cc_all.get(ctx_id)
+    if store_cc is None:
+        raise RuntimeError(f"g1 v0_summaries.pt has no cc_last[{ctx_id!r}] — parity impossible")
+    store_cc = store_cc.float()
+    if store_cc.shape != fresh.shape:
+        raise RuntimeError(f"cc_last shape drift: store {tuple(store_cc.shape)} vs {fresh.shape}")
+    cos = torch.nn.functional.cosine_similarity(fresh, store_cc, dim=1)  # (L,)
+    out.update(
+        {
+            "compared_to_store": True,
+            "min_layer_cosine": float(cos.min()),
+            "mean_layer_cosine": float(cos.mean()),
+            "min_cosine_threshold": min_cosine,
+        }
+    )
+    logger.info(
+        "[phase=cc_parity] ctx=%s min/mean layer cosine %.6f / %.6f (threshold %.3f)",
+        ctx_id,
+        out["min_layer_cosine"],
+        out["mean_layer_cosine"],
+        min_cosine,
+    )
+    if out["min_layer_cosine"] < min_cosine:
+        raise RuntimeError(
+            f"g1 cc_last parity probe FAILED for {ctx_id}: min layer cosine "
+            f"{out['min_layer_cosine']:.6f} < {min_cosine} — the store's cc_last does not "
+            "reproduce under the #658 --cc-recompute-last convention (procedure drift); "
+            "refusing to fit against it (plan v6 §11 c_C procedure parity)"
+        )
+    return out
 
 
 # ── HF model load ─────────────────────────────────────────────────────────────
@@ -442,17 +551,20 @@ def _load_model(model_name: str, device: str):
 # ── upload (fail-loud) ────────────────────────────────────────────────────────
 
 
-def _upload_store(out_dir: Path, ctx_ids: list[str], smoke: bool) -> str:
+def _upload_store(out_dir: Path, ctx_ids: list[str], smoke: bool, genre: str = "betley") -> str:
     """Bulk-commit the aligned-subset store to HF (one upload_folder commit).
 
-    Uploads ``answer_position_sweep/<ctx>.pt`` (+ manifest.json) via ONE
-    ``upload_folder`` commit (never a per-file loop — the #664 504-storm), then
-    verifies the per-context file count on a FRESH listing (fail loud on a
-    mismatch). Skipped for --smoke / --no-upload by the caller.
+    Uploads ``answer_position_sweep[_<genre-tag>]/<ctx>.pt`` (+ manifest.json)
+    via ONE ``upload_folder`` commit (never a per-file loop — the #664
+    504-storm), then verifies the per-context file count on a FRESH listing
+    (fail loud on a mismatch). Skipped for --smoke / --no-upload by the caller.
     """
     from huggingface_hub import HfApi, list_repo_files
 
-    subdir = ANSWER_POSITION_SWEEP_SUBDIR + ("_smoke" if smoke else "")
+    base_subdir = (
+        ANSWER_POSITION_SWEEP_SUBDIR if genre == "betley" else G1_ANSWER_POSITION_SWEEP_SUBDIR
+    )
+    subdir = base_subdir + ("_smoke" if smoke else "")
     path_in_repo = f"{HF_PREFIX}/{subdir}"
     api = HfApi()
     api.upload_folder(
@@ -511,10 +623,22 @@ def _write_sentinel(kind: str, note: dict, out_dir: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 Phase B: answer position sweep extraction")
+    ap.add_argument(
+        "--genre",
+        choices=list(GENRES),
+        default="betley",
+        help="probe-corpus genre: 'betley' (default — the parent's sources, bit-for-bit) or "
+        "'g1' (#658's UltraChat genre-generalization arm; plan v6 follow-up round)",
+    )
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--device", choices=["cuda", "cpu"], default=None)
     ap.add_argument("--gpu", action="store_true", help="force --device cuda")
-    ap.add_argument("--out-dir", default=str(PROJECT_ROOT / "data" / "issue_810" / "store"))
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="local store dir (default: data/issue_810/store for betley, "
+        "data/issue_810/store_g1 for g1 — per-genre so g1 never clobbers the parent store)",
+    )
     ap.add_argument("--battery", default=None, help="local battery.json fast path (sha-pinned)")
     ap.add_argument("--n-ctx", type=int, default=None, help="smoke: cap contexts")
     ap.add_argument("--n-probes", type=int, default=None, help="smoke: cap probes/context")
@@ -528,16 +652,17 @@ def main() -> int:
     args = ap.parse_args()
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
-    out_dir = Path(args.out_dir)
+    default_store = "store" if args.genre == "betley" else "store_g1"
+    out_dir = Path(args.out_dir or (PROJECT_ROOT / "data" / "issue_810" / default_store))
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
-    logger.info("[phase=setup] loading battery + manifest")
+    logger.info("[phase=setup] loading battery + manifest (genre=%s)", args.genre)
     battery = _resolve_battery(Path(args.battery) if args.battery else None)
     instances = {i["id"]: i for i in battery["instances"]}
     # In --smoke we cannot rely on the real 50-context manifest join, but the real
     # run pins to the manifest's 50 contexts (the LOCO fold order).
-    ctx_ids = _load_manifest_context_ids()
+    ctx_ids = _load_manifest_context_ids(args.genre)
     if args.n_ctx is not None:
         ctx_ids = ctx_ids[: args.n_ctx]
     logger.info("contexts to extract: %d (device=%s model=%s)", len(ctx_ids), device, args.model)
@@ -551,13 +676,34 @@ def main() -> int:
         assert model.config.hidden_size == args.expected_hidden, model.config.hidden_size
     capture = LayerCapture(model, n_layers)
 
+    # g1 cc_last recomputation parity probe (plan v6 §11): runs FIRST — before any
+    # capture — so a c_C procedure drift halts before GPU-hours are spent. Runs on
+    # the FIRST manifest context. Production (7B) compares against the g1 store;
+    # smoke/non-7B exercises the recompute path only.
+    cc_parity: dict | None = None
+    if args.genre == "g1":
+        ctx0 = ctx_ids[0]
+        if ctx0 not in instances:
+            raise RuntimeError(f"context {ctx0} absent from battery (coverage gap)")
+        cells0 = _load_stored_completions(ctx0, args.genre)
+        cc_parity = _cc_last_parity_probe(
+            model,
+            tokenizer,
+            capture,
+            instances[ctx0],
+            cells0[0]["probe"],
+            ctx0,
+            n_layers,
+            compare_store=(not args.smoke and args.model == DEFAULT_MODEL),
+        )
+
     per_ctx_diag: dict[str, dict] = {}
     try:
         for ci, ctx_id in enumerate(ctx_ids):
             logger.info("[phase=extract] context %d/%d %s", ci + 1, len(ctx_ids), ctx_id)
             if ctx_id not in instances:
                 raise RuntimeError(f"context {ctx_id} absent from battery (coverage gap)")
-            cells = _load_stored_completions(ctx_id)
+            cells = _load_stored_completions(ctx_id, args.genre)
             if args.n_probes is not None:
                 cells = cells[: args.n_probes]
             probes = [c["probe"] for c in cells]
@@ -618,16 +764,23 @@ def main() -> int:
         "reproducibility": reproducibility_metadata(),
         "smoke": args.smoke,
     }
+    if args.genre == "g1":
+        # Genre-arm provenance (plan v6 § Storage naming): tag + probe-pool pin +
+        # the cc_last parity read. Betley manifests stay parent-shaped (A14 parity).
+        manifest["genre_tag"] = G1_GENRE_TAG
+        manifest["probe_pool_hash"] = G1_PROBE_POOL_HASH
+        manifest["cc_last_parity"] = cc_parity
     dump_json(manifest, out_dir / "manifest.json")
     logger.info("wrote manifest (%d contexts) to %s", len(ctx_ids), out_dir)
 
     path_in_repo = None
     if not args.no_upload and not args.smoke:
         logger.info("[phase=upload] aligned-subset store")
-        path_in_repo = _upload_store(out_dir, ctx_ids, smoke=False)
+        path_in_repo = _upload_store(out_dir, ctx_ids, smoke=False, genre=args.genre)
 
     note = {
         "phase": "B_extract_positions",
+        "genre": args.genre,
         "n_contexts": len(ctx_ids),
         "positions": len(stored_position_names()),
         "hf_path": path_in_repo,

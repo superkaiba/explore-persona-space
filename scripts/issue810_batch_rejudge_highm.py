@@ -54,6 +54,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from issue810_common import (  # noqa: E402
+    G1_E0_GEN_PREFIX,
+    G1_STORE_MANIFEST,
+    GENRES,
     HF_DATA_REPO,
     HIGH_M_BEHAVIORS,
     I658_E0_GEN_PREFIX,
@@ -61,6 +64,7 @@ from issue810_common import (  # noqa: E402
     JUDGE_MODEL,
     SHUFFLE_NULL_SEED,
     SYCOPHANCY_SUBSAMPLE_PER_CONTEXT,
+    assert_g1_probe_pool_hash,
     context_ids_from_manifest,
     dump_json,
     load_json,
@@ -155,19 +159,21 @@ def _parse_graded_score(raw) -> float:
     return score
 
 
-def _load_e0_completions(ctx_id: str, behavior: str, n_completions: int | None) -> list[dict]:
-    """Load #658's stored e0_gen completions for one (context, behavior).
+def _load_e0_completions(
+    ctx_id: str, behavior: str, n_completions: int | None, genre: str = "betley"
+) -> list[dict]:
+    """Load #658's stored e0_gen completions for one (context, behavior, genre).
 
-    Schema: {context_id, column_id, ..., cells:[{probe, completions:[{text,logp_norm}]}]}.
-    Flattens to a list of {probe, text}; sycophancy subsamples to
-    ``SYCOPHANCY_SUBSAMPLE_PER_CONTEXT`` (of 2000) for a stable per-context mean.
-    ``n_completions`` (smoke) caps the flattened list.
+    Schema: {context_id, column_id, ..., cells:[{probe, completions:[{text,logp_norm}]}]}
+    (head-check VERIFIED identical across genres). Flattens to a list of
+    {probe, text}; sycophancy subsamples to ``SYCOPHANCY_SUBSAMPLE_PER_CONTEXT``
+    (of 2000) for a stable per-context mean. ``n_completions`` (smoke) caps the
+    flattened list.
     """
     from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(
-        HF_DATA_REPO, f"{I658_E0_GEN_PREFIX}/{ctx_id}__{behavior}.json", repo_type="dataset"
-    )
+    prefix = I658_E0_GEN_PREFIX if genre == "betley" else G1_E0_GEN_PREFIX
+    path = hf_hub_download(HF_DATA_REPO, f"{prefix}/{ctx_id}__{behavior}.json", repo_type="dataset")
     blob = load_json(path)
     if blob.get("context_id") != ctx_id or blob.get("column_id") != behavior:
         raise RuntimeError(
@@ -204,6 +210,8 @@ def rejudge_behavior(
     n_completions: int | None,
     force_batch: bool,
     force_sync: bool = False,
+    genre: str = "betley",
+    dry_run: bool = False,
 ) -> dict:
     """Graded re-judge one behavior across contexts; return per-context mean E0.
 
@@ -211,14 +219,28 @@ def rejudge_behavior(
     where probe_key is unique per completion so each completion's N draws are
     distinct judge calls. Reduces from ``save_raw``'s ``all_scores`` with
     drop-never-coerce (NOT the returned per_persona aggregate).
+
+    CACHE ISOLATION (the parent's contamination defect fix, plan v6 divergence
+    #3): the judge cache passed down is ``cache_dir / behavior`` — ``_JudgeCache``
+    keys on sha256(question+completion) ONLY, so two rubrics sharing a cache dir
+    silently cross-contaminate (99.3% of the parent's harmful-compliance
+    judgments were verbatim refusal-cache entries; upstream fix #882 not landed).
+    Applied to BOTH genres — no two rubrics may ever share a cache directory.
+
+    ``dry_run`` builds the full judge map (real e0_gen downloads — the
+    cross-phase schema contract) + resolves the per-behavior cache dir, then
+    returns a plan digest WITHOUT submitting any API call.
     """
     fmt = _format_user_msg_factory(behavior)
+    # Per-(behavior) cache subdir — one line, load-bearing (see docstring).
+    cache_dir_b = Path(cache_dir) / behavior
+    assert cache_dir_b.name == behavior and cache_dir_b.parent == Path(cache_dir), cache_dir_b
     # {ctx_id: {unique_key: [text repeated n_draws]}}. The unique_key encodes
     # (probe_idx, completion_idx) so replicate draws share a text but distinct cids.
     completions_map: dict[str, dict[str, list[str]]] = {}
     key_to_ctx: dict[str, str] = {}
     for ctx_id in ctx_ids:
-        flat = _load_e0_completions(ctx_id, behavior, n_completions)
+        flat = _load_e0_completions(ctx_id, behavior, n_completions, genre)
         qmap: dict[str, list[str]] = {}
         for ci, comp in enumerate(flat):
             key = f"{ctx_id}::c{ci:04d}"
@@ -226,13 +248,27 @@ def rejudge_behavior(
             key_to_ctx[key] = ctx_id
         completions_map[ctx_id] = qmap
     save_raw = out_dir / f"rejudge_raw_{behavior}.json"
+    n_total_completions = sum(len(v) for v in completions_map.values())
     logger.info(
-        "[phase=judge_%s] %d contexts, %d completions total (n_draws=%d)",
+        "[phase=judge_%s] %d contexts, %d completions total (n_draws=%d, genre=%s, cache=%s)",
         behavior,
         len(completions_map),
-        sum(len(v) for v in completions_map.values()),
+        n_total_completions,
         n_draws,
+        genre,
+        cache_dir_b,
     )
+    if dry_run:
+        return {
+            "behavior": behavior,
+            "dry_run": True,
+            "genre": genre,
+            "n_contexts": len(completions_map),
+            "n_completions": n_total_completions,
+            "n_judge_calls": n_total_completions * n_draws,
+            "cache_dir": str(cache_dir_b),
+            "save_raw": str(save_raw),
+        }
     # Force the Batch-API path in a live smoke by dropping the sync/batch
     # crossover to ~1 (effective_threshold = max(1, threshold_base*otpm/400k)),
     # so even a ~3-request submit routes through the real Batch request builder
@@ -245,7 +281,7 @@ def rejudge_behavior(
         format_user_msg=fmt,
         judge_model=JUDGE_MODEL,
         max_tokens=256,
-        cache_dir=str(cache_dir),
+        cache_dir=str(cache_dir_b),
         save_raw=str(save_raw),
         threshold_base=1 if force_batch else 2_000,
         force_sync=force_sync,
@@ -303,8 +339,22 @@ def rejudge_behavior(
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 Phase C: high-m graded re-judge")
+    ap.add_argument(
+        "--genre",
+        choices=list(GENRES),
+        default="betley",
+        help="e0_gen completion genre: 'betley' (default — the parent's sources) or 'g1' "
+        "(#658's UltraChat arm; plan v6 Phase C-g)",
+    )
     ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
-    ap.add_argument("--cache-dir", default=str(PROJECT_ROOT / "data" / "issue_810" / "judge_cache"))
+    ap.add_argument(
+        "--cache-dir",
+        default=None,
+        help="judge-cache ROOT (per-behavior subdirs are created under it — the parent's "
+        "shared-cache contamination fix). Default: data/issue_810/judge_cache for betley, "
+        "data/issue_810/judge_cache_g1 for g1 (fresh root; the parent's poisoned "
+        "judge_cache tarball is NEVER restored on the g1 path)",
+    )
     ap.add_argument("--behaviors", nargs="*", default=list(HIGH_M_BEHAVIORS))
     ap.add_argument("--n-draws", type=int, default=8)
     ap.add_argument("--n-ctx", type=int, default=None, help="smoke: cap contexts")
@@ -322,6 +372,12 @@ def main() -> int:
             "stuck/canceled batch; mutually exclusive with --force-batch)"
         ),
     )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="build the full judge map (real e0_gen downloads) + resolve per-behavior cache "
+        "dirs, write rejudge_dryrun_plan.json, and EXIT before any API submit",
+    )
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
     if args.force_batch and args.force_sync:
@@ -331,10 +387,14 @@ def main() -> int:
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    cache_dir = Path(args.cache_dir)
+    default_cache = "judge_cache" if args.genre == "betley" else "judge_cache_g1"
+    cache_dir = Path(args.cache_dir or (PROJECT_ROOT / "data" / "issue_810" / default_cache))
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    man = load_json(hf_hub_download(HF_DATA_REPO, I658_STORE_MANIFEST, repo_type="dataset"))
+    manifest_file = I658_STORE_MANIFEST if args.genre == "betley" else G1_STORE_MANIFEST
+    man = load_json(hf_hub_download(HF_DATA_REPO, manifest_file, repo_type="dataset"))
+    if args.genre == "g1":
+        assert_g1_probe_pool_hash(man, G1_STORE_MANIFEST)
     ctx_ids = context_ids_from_manifest(man)
     if args.n_ctx is not None:
         ctx_ids = ctx_ids[: args.n_ctx]
@@ -350,11 +410,39 @@ def main() -> int:
             args.n_completions,
             args.force_batch,
             force_sync=args.force_sync,
+            genre=args.genre,
+            dry_run=args.dry_run,
         )
+
+    if args.dry_run:
+        # Per-behavior cache-dir isolation assert (the plan v6 smoke contract):
+        # every behavior resolved a DISTINCT subdir directly under the cache root.
+        dirs = {b: r["cache_dir"] for b, r in results.items()}
+        assert len(set(dirs.values())) == len(dirs), f"cache dirs not disjoint: {dirs}"
+        for b, d in dirs.items():
+            assert Path(d) == cache_dir / b, (d, str(cache_dir / b))
+        dump_json(
+            {
+                "dv": "high_m_graded_e0_DRYRUN_PLAN",
+                "genre": args.genre,
+                "judge_model": JUDGE_MODEL,
+                "n_draws": args.n_draws,
+                "cache_root": str(cache_dir),
+                "by_behavior": results,
+                "reproducibility": reproducibility_metadata(),
+            },
+            out_dir / "rejudge_dryrun_plan.json",
+        )
+        logger.info(
+            "[phase=done] DRY RUN — no API calls submitted; plan digest at %s",
+            out_dir / "rejudge_dryrun_plan.json",
+        )
+        return 0
 
     dump_json(
         {
             "dv": "high_m_graded_e0",
+            "genre": args.genre,
             "judge_model": JUDGE_MODEL,
             "n_draws": args.n_draws,
             "rubric": "graded 0-100, anchored 0/50/100, reason-then-score, one-behavior-per-call",

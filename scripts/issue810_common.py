@@ -82,6 +82,53 @@ I658_E0_GEN_PREFIX = f"{HF_PREFIX}/raw_completions/e0_gen"
 I594_CC_LAST_FILE = "issue594_context_geometry/analysis_tensors/context_vectors_mean.pt"
 I594_PROBE_POOL_HASH = "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
 
+# ── UltraChat `_g1` genre arm (same-issue follow-up `ultrachat-genre-summary-sweep`) ──
+# #658's genre-generalization stores this round consumes (plan v6 §4.6 item 1;
+# all VERIFIED on HF 2026-07-02 via list_repo_files/list_repo_tree + head-checks).
+# The SINGLE manipulated variable is the probe-corpus genre (Betley → UltraChat);
+# `--genre betley` (the default everywhere) keeps the parent paths bit-for-bit.
+G1_GENRE_TAG = "genre-generalization-ultrachat"
+G1_STORE_PREFIX = f"{HF_PREFIX}/store_{G1_GENRE_TAG}"
+G1_V0_SUMMARIES = f"{G1_STORE_PREFIX}/v0_summaries.pt"
+G1_STORE_MANIFEST = f"{G1_STORE_PREFIX}/store_manifest.json"
+G1_RAW_COMPLETIONS_PREFIX = f"{HF_PREFIX}/raw_completions_{G1_GENRE_TAG}/raw_completions"
+G1_E0_GEN_PREFIX = f"{HF_PREFIX}/e0_gen_{G1_GENRE_TAG}"
+# g1 probe pool pin (data/issue594/probes_ultrachat.json, 48 UltraChat probes —
+# the probes ride inside the raw-completion files, so this pin is asserted on
+# every g1 store-manifest / v0_summaries load rather than on a pool fetch).
+G1_PROBE_POOL_HASH = "f277f8c3e2550b2ce3e4545a8ad6473498d070e7343eb7c9398a6aac31525455"
+# Phase B-g aligned-subset store destination (schema identical to the parent's
+# §13 store; plan v6 § Storage naming).
+G1_ANSWER_POSITION_SWEEP_SUBDIR = f"{ANSWER_POSITION_SWEEP_SUBDIR}_{G1_GENRE_TAG}"
+# Round out-dir / HF-mirror conventions (the follow-up-label convention).
+G1_FOLLOWUP_LABEL = "ultrachat-genre-summary-sweep"
+G1_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_810" / G1_FOLLOWUP_LABEL
+G1_HF_RESULTS_PREFIX = f"issue810_results/{G1_FOLLOWUP_LABEL}"
+# The parent's committed Phase-C graded E0 (branch issue-810) — the `betley`
+# E0-target axis of the read-out 2×2 square (never re-judged this round).
+BETLEY_E0_HIGHM_FILE = (
+    PROJECT_ROOT / "eval_results" / "issue_810" / "phase_c" / ("e0_highm_graded.json")
+)
+
+GENRES = ("betley", "g1")
+
+
+def assert_g1_probe_pool_hash(obj: dict, where: str) -> None:
+    """Fail loud unless ``obj['probe_pool_hash']`` matches the g1 pin (plan §4.6).
+
+    ``obj`` is a loaded g1 store manifest or v0_summaries pack (both carry the
+    key — VERIFIED at plan time). A missing key OR a drifted hash refuses: the
+    round would otherwise silently fit against a different probe pool.
+    """
+    pph = obj.get("probe_pool_hash")
+    if pph != G1_PROBE_POOL_HASH:
+        raise RuntimeError(
+            f"g1 probe_pool_hash pin drift in {where}: {pph!r} != {G1_PROBE_POOL_HASH} "
+            "(the reused #658 g1 artifact differs from the plan-verified generation — "
+            "refusing, .claude/rules/artifact-reuse.md (f))"
+        )
+
+
 # #722 tf_margin judge-validation reference (committed to main by §4.0 step 1).
 I722_TF_MARGIN_FILE = "eval_results/issue_722/tf_margin/margins.json"
 
