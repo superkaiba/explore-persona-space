@@ -44,12 +44,17 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE numpy freezes the BLAS pools.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 from issue810_common import (  # noqa: E402
     HF_DATA_REPO,
     I658_STORE_MANIFEST,

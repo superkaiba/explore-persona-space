@@ -14,13 +14,19 @@ import argparse
 import json
 from pathlib import Path
 
-import matplotlib
-import numpy as np
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE numpy freezes the BLAS pools.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib  # noqa: E402
+import numpy as np  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 
-from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style  # noqa: E402
 
 TRAITS = ["evil", "sycophancy", "hallucination"]
 READOUT = {"evil": 14, "sycophancy": 26, "hallucination": 17}
