@@ -703,6 +703,13 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
             "famq_tot": np.zeros((len(fams_present), grid.n_q)),
             "cell_res": np.full(n_cells, np.nan),
             "cell_tot": np.full(n_cells, np.nan),
+            "ss_res_ambient": 0.0,
+            "ss_tot_ambient": 0.0,
+            # per-cell scatter inputs (§6 exploratory dump): predicted vs actual
+            # projected on the fold's top target PC + per-cell centered cosine.
+            "cell_pred_pc1": np.full(n_cells, np.nan),
+            "cell_act_pc1": np.full(n_cells, np.nan),
+            "cell_cos": np.full(n_cells, np.nan),
         }
         for arm in [*arms, "arm_blend"]
     }
@@ -727,6 +734,10 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
         Yte = (Yte_amb - mu_y) @ Vy
         ymu = Ytr.mean(0, keepdim=True)
         ss_tot_cells = ((Yte - ymu) ** 2).sum(dim=1).cpu().numpy()
+        # Ambient-space secondary read (§6 DV table): back-project predictions
+        # with the fold basis; baseline = the same train mean in ambient space.
+        base_amb = mu_y + ymu @ Vy.T  # (1, H)
+        ss_tot_amb_cells = ((Yte_amb - base_amb) ** 2).sum(dim=1).cpu().numpy()
 
         # Fold-basis reduction of ALL valid cells (shared by every arm's nulls).
         if perm is not None:
@@ -747,6 +758,15 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
             a = acc[arm]
             a["ss_res"] += float(res_cells.sum())
             a["ss_tot"] += float(ss_tot_cells.sum())
+            pred_amb = mu_y + pred @ Vy.T
+            a["ss_res_ambient"] += float(((Yte_amb - pred_amb) ** 2).sum())
+            a["ss_tot_ambient"] += float(ss_tot_amb_cells.sum())
+            pc = (pred - ymu)[:, 0].cpu().numpy()
+            ac = (Yte - ymu)[:, 0].cpu().numpy()
+            cosv = torch.nn.functional.cosine_similarity(pred - ymu, Yte - ymu, dim=1).cpu().numpy()
+            a["cell_pred_pc1"][te] = pc
+            a["cell_act_pc1"][te] = ac
+            a["cell_cos"][te] = cosv
             for li in range(nlam):
                 a["ss_res_lambda"][li] += float(((Yte - fit["per_lambda_pred"][li]) ** 2).sum())
             fi = fam_index[fold["family"]]
@@ -818,6 +838,9 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
                 a = acc["arm_blend"]
                 a["ss_res"] += float(res_cells.sum())
                 a["ss_tot"] += float(ss_tot_cells.sum())
+                pred_amb = mu_y + pred_blend @ Vy.T
+                a["ss_res_ambient"] += float(((Yte_amb - pred_amb) ** 2).sum())
+                a["ss_tot_ambient"] += float(ss_tot_amb_cells.sum())
                 fi = fam_index[fold["family"]]
                 a["fam_res"][fi] += float(res_cells.sum())
                 a["fam_tot"][fi] += float(ss_tot_cells.sum())
@@ -883,6 +906,11 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
     for arm in [*arms, "arm_blend"]:
         a = acc[arm]
         a["skill"] = (1.0 - a["ss_res"] / a["ss_tot"]) if a["ss_tot"] > 0 else float("nan")
+        a["skill_ambient"] = (
+            (1.0 - a["ss_res_ambient"] / a["ss_tot_ambient"])
+            if a["ss_tot_ambient"] > 0
+            else float("nan")
+        )
         a["skill_per_lambda"] = [
             (1.0 - a["ss_res_lambda"][li] / a["ss_tot"]) if a["ss_tot"] > 0 else float("nan")
             for li in range(nlam)
@@ -1441,9 +1469,19 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                 "arms": {
                     arm: {
                         "skill": u["arms"][arm]["skill"],
+                        "skill_ambient": u["arms"][arm].get("skill_ambient"),
                         "skill_per_lambda": u["arms"][arm]["skill_per_lambda"],
                         "fam_res": u["arms"][arm]["fam_res"],
                         "fam_tot": u["arms"][arm]["fam_tot"],
+                        **(
+                            {
+                                "cell_pred_pc1": u["arms"][arm]["cell_pred_pc1"],
+                                "cell_act_pc1": u["arms"][arm]["cell_act_pc1"],
+                                "cell_cos": u["arms"][arm]["cell_cos"],
+                            }
+                            if layer == HEADLINE_LAYER or layer == max(layers)
+                            else {}
+                        ),
                     }
                     for arm in [*arms, "arm_blend"]
                 },
