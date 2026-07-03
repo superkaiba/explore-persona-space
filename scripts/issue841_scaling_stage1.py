@@ -171,23 +171,35 @@ def _retention_fast(pc_row, pc_ceil, samps) -> dict:
 
 
 def _assert_fast_matches_reference() -> None:
-    """Gate: the vectorized helpers reproduce the #779 references bit-for-bit."""
-    rng = np.random.default_rng(7)
-    cy = [rng.standard_normal(8) * 10 + 50 for _ in range(11)]
-    cx_a = [rng.standard_normal(8) for _ in range(11)]
-    cx_b = [rng.standard_normal(8) for _ in range(11)]
-    cx_c = [rng.standard_normal(8) for _ in range(11)]
-    samps = _resample_idx(0, len(cy), 200)
-    ref_d = bootstrap_delta_ci(cx_a, cx_b, cy, n_boot=200, seed=0)
-    fast_d = _delta_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_b, cy), samps)
-    for k in ("delta", "lo", "hi"):
-        assert abs((ref_d[k] or 0.0) - (fast_d[k] or 0.0)) < 1e-9, (k, ref_d[k], fast_d[k])
-    assert ref_d["excludes_zero"] == fast_d["excludes_zero"]
-    ref_r = B1.bootstrap_retention_ci(cx_a, cx_c, cy, n_boot=200, seed=0)
-    fast_r = _retention_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_c, cy), samps)
-    for k in ("point", "lo", "hi"):
-        assert abs((ref_r[k] or 0.0) - (fast_r[k] or 0.0)) < 1e-9, (k, ref_r[k], fast_r[k])
-    logger.info("[gate] vectorized bootstrap == #779 references (delta + retention)")
+    """Gate: the vectorized helpers reproduce the #779 references bit-for-bit.
+
+    Two shapes hard-fail on any >1e-9 divergence — a small tidy case AND a
+    production-shape leg (n_boot=997, a pass_a-shaped 4-8 condition count) so the
+    gate exercises the real bootstrap size, not just a toy draw count.
+    """
+
+    def _check_case(n_cond: int, n_rows: int, n_boot: int, seed_data: int) -> None:
+        rng = np.random.default_rng(seed_data)
+        cy = [rng.standard_normal(n_rows) * 10 + 50 for _ in range(n_cond)]
+        cx_a = [rng.standard_normal(n_rows) for _ in range(n_cond)]
+        cx_b = [rng.standard_normal(n_rows) for _ in range(n_cond)]
+        cx_c = [rng.standard_normal(n_rows) for _ in range(n_cond)]
+        # seed=0 MUST match the reference calls: _resample_idx(0, ...) reproduces
+        # the EXACT rng.choice draw sequence bootstrap_*_ci(seed=0) uses.
+        samps = _resample_idx(0, len(cy), n_boot)
+        ref_d = bootstrap_delta_ci(cx_a, cx_b, cy, n_boot=n_boot, seed=0)
+        fast_d = _delta_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_b, cy), samps)
+        for k in ("delta", "lo", "hi"):
+            assert abs((ref_d[k] or 0.0) - (fast_d[k] or 0.0)) < 1e-9, (k, ref_d[k], fast_d[k])
+        assert ref_d["excludes_zero"] == fast_d["excludes_zero"]
+        ref_r = B1.bootstrap_retention_ci(cx_a, cx_c, cy, n_boot=n_boot, seed=0)
+        fast_r = _retention_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_c, cy), samps)
+        for k in ("point", "lo", "hi"):
+            assert abs((ref_r[k] or 0.0) - (fast_r[k] or 0.0)) < 1e-9, (k, ref_r[k], fast_r[k])
+
+    _check_case(n_cond=11, n_rows=8, n_boot=200, seed_data=7)  # small tidy case
+    _check_case(n_cond=5, n_rows=8, n_boot=997, seed_data=13)  # production-shape leg
+    logger.info("[gate] vectorized bootstrap == #779 references (delta + retention, 2 shapes)")
 
 
 def benjamini_hochberg(pvals: list[float], q: float = 0.05) -> list[bool]:
@@ -571,14 +583,17 @@ def _real_inputs(traits, maps_dir, out_dir, capture_dir, ns_all, anchor_n, devic
     for trait in traits:
         mat = C.build_eval_traj_matrix(C.load_eval_cells(trait))
         trait_inputs[trait] = (mat, C.load_rb(trait))
+    # realized forward precision (Fold 1): prefer the realized field, fall back to the
+    # capture_dtype alias for a legacy/synthetic manifest that predates the split.
+    realized_dtype = cap.get("realized_capture_dtype", cap.get("capture_dtype"))
     logger.info(
         "[inputs] ridge n=%s mlp n=%s fit_pool=%d capture_dtype=%s",
         ns_all,
         mlp_ns,
         fit_pool.shape[0],
-        cap.get("capture_dtype"),
+        realized_dtype,
     )
-    return trait_inputs, ridge_maps_by_n, mlp_maps_by_n, fit_pool, cap.get("capture_dtype")
+    return trait_inputs, ridge_maps_by_n, mlp_maps_by_n, fit_pool, realized_dtype
 
 
 def main() -> int:

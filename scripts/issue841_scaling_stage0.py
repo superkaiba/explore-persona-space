@@ -354,13 +354,16 @@ def _load_bundle(args):
     pass_b = C.load_pass_b()
     capture = S.load_capture_local_or_hf(args.capture_dir)
     bundle = S.build_scaling_bundle(pass_b, capture)
+    # realized forward precision (Fold 1): prefer the realized field, fall back to the
+    # capture_dtype alias for a legacy/synthetic manifest that predates the split.
+    realized_dtype = capture.get("realized_capture_dtype", capture.get("capture_dtype"))
     logger.info(
         "[bundle] REAL fit_pool=%d val=%d test=%d drift_window=%d capture_dtype=%s",
         bundle["fit_pool"].shape[0],
         bundle["val"].shape[0],
         bundle["test"].shape[0],
         bundle["drift_window"].shape[0],
-        capture.get("capture_dtype"),
+        realized_dtype,
     )
     return (
         bundle["fit_pool"],
@@ -369,7 +372,7 @@ def _load_bundle(args):
         bundle["drift_window"],
         S.N_ANCHOR_FIT,
         PROJECT_ROOT / "eval_results" / "issue_841" / "stage0_atlas.json",
-        capture.get("capture_dtype"),
+        realized_dtype,
     )
 
 

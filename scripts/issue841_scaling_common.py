@@ -120,8 +120,15 @@ def write_one_shard(
     n_shards: int,
     source: str,
     capture_dtype: str,
+    requested_dtype: str | None = None,
 ) -> Path:
     """Write ONE cx_last shard + its ``.done.json`` resume marker (shard-as-you-go).
+
+    ``capture_dtype`` is the REALIZED forward precision (the label the resume key
+    matches on); ``requested_dtype`` is what the caller asked for (defaults to the
+    realized value). Both are recorded as ``realized_capture_dtype`` /
+    ``requested_capture_dtype`` so a silent up/downcast is legible downstream, with
+    ``capture_dtype`` kept as the realized alias for the resume-match key.
 
     Peak RAM stays ~one shard: the driver captures a shard's rows, calls this, and
     frees the chunk before the next shard. The marker (written LAST, after the .pt)
@@ -134,6 +141,7 @@ def write_one_shard(
         len(prompts_chunk),
         hi - lo,
     )
+    requested = requested_dtype if requested_dtype is not None else capture_dtype
     capture_dir.mkdir(parents=True, exist_ok=True)
     path = capture_dir / f"cx_last_shard{idx:03d}.pt"
     torch.save(
@@ -148,11 +156,22 @@ def write_one_shard(
             "layers": list(range(C.EXPECTED_LAYERS)),
             "source": source,
             "capture_dtype": capture_dtype,
+            "realized_capture_dtype": capture_dtype,
+            "requested_capture_dtype": requested,
         },
         path,
     )
     with open(_done_marker(capture_dir, idx), "w") as f:
-        json.dump({"row_lo": lo, "row_hi": hi, "capture_dtype": capture_dtype}, f)
+        json.dump(
+            {
+                "row_lo": lo,
+                "row_hi": hi,
+                "capture_dtype": capture_dtype,
+                "realized_capture_dtype": capture_dtype,
+                "requested_capture_dtype": requested,
+            },
+            f,
+        )
     return path
 
 
@@ -164,8 +183,15 @@ def write_capture_manifest(
     metadata: dict,
     *,
     shard_rows: int = SHARD_ROWS,
+    requested_dtype: str | None = None,
 ) -> Path:
-    """Write the capture ``manifest.json`` after all shards are present (verifies spans)."""
+    """Write the capture ``manifest.json`` after all shards are present (verifies spans).
+
+    ``capture_dtype`` is the REALIZED forward precision; ``requested_dtype`` is what
+    the caller asked for (defaults to the realized value). Both are recorded so a
+    silent up/downcast is legible; ``capture_dtype`` stays the realized alias.
+    """
+    requested = requested_dtype if requested_dtype is not None else capture_dtype
     spans = []
     for idx, lo, hi in shard_boundaries(n_total, shard_rows):
         name = f"cx_last_shard{idx:03d}.pt"
@@ -179,6 +205,8 @@ def write_capture_manifest(
                 "n_shards": len(spans),
                 "source": source,
                 "capture_dtype": capture_dtype,
+                "realized_capture_dtype": capture_dtype,
+                "requested_capture_dtype": requested,
                 "spans": spans,
                 "metadata": metadata,
             },
@@ -204,12 +232,14 @@ def write_capture_shards(
     *,
     shard_rows: int = SHARD_ROWS,
     capture_dtype: str = "synthetic",
+    requested_dtype: str | None = None,
 ) -> list[Path]:
     """Convenience: write ALL shards from an in-memory array + the manifest (test/dry-run).
 
     Production capture uses the shard-as-you-go path (``write_one_shard`` +
     ``write_capture_manifest``) to bound RAM; this all-at-once form is for the
-    ``--dry-run-io`` wiring test where the array is already tiny.
+    ``--dry-run-io`` wiring test where the array is already tiny. ``requested_dtype``
+    defaults to ``capture_dtype`` (synthetic realized == requested).
     """
     n = cx_last.shape[0]
     assert len(prompts) == n, (len(prompts), n)
@@ -228,9 +258,18 @@ def write_capture_shards(
                 n_shards=len(bounds),
                 source=source,
                 capture_dtype=capture_dtype,
+                requested_dtype=requested_dtype,
             )
         )
-    write_capture_manifest(capture_dir, n, source, capture_dtype, metadata, shard_rows=shard_rows)
+    write_capture_manifest(
+        capture_dir,
+        n,
+        source,
+        capture_dtype,
+        metadata,
+        shard_rows=shard_rows,
+        requested_dtype=requested_dtype,
+    )
     return written
 
 
@@ -238,7 +277,10 @@ def load_capture(capture_dir: Path) -> dict:
     """Load + concatenate the sharded new-context capture (local-first).
 
     Returns ``{"cx_last": (N,28,3584) fp32, "prompts": [str], "source": str,
-    "capture_dtype": str}``. Fail-loud on a missing manifest / row-count mismatch.
+    "capture_dtype": str, "realized_capture_dtype": str, "requested_capture_dtype":
+    str}``. ``capture_dtype`` == ``realized_capture_dtype`` (the realized forward
+    precision); both fall back to ``capture_dtype`` for a legacy manifest.
+    Fail-loud on a missing manifest / row-count mismatch.
     """
     manifest_path = capture_dir / "manifest.json"
     if not manifest_path.exists():
@@ -259,6 +301,12 @@ def load_capture(capture_dir: Path) -> dict:
         "prompts": prompts,
         "source": manifest.get("source"),
         "capture_dtype": manifest.get("capture_dtype"),
+        "realized_capture_dtype": manifest.get(
+            "realized_capture_dtype", manifest.get("capture_dtype")
+        ),
+        "requested_capture_dtype": manifest.get(
+            "requested_capture_dtype", manifest.get("capture_dtype")
+        ),
     }
 
 

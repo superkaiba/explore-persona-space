@@ -316,7 +316,7 @@ def equivalence_test() -> int:
 
 
 def dry_run_io(n: int, capture_dir: Path) -> int:
-    """Synthetic (n,28,3584) → shard/manifest write + load round-trip + resume predicate (no GPU)."""
+    """Synthetic (n,28,3584) → shard/manifest write + load round-trip + resume check."""
     rng = np.random.default_rng(0)
     cx = rng.standard_normal((n, C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN)).astype(np.float32)
     prompts = [f"synthetic prompt {i}" for i in range(n)]
@@ -330,6 +330,9 @@ def dry_run_io(n: int, capture_dir: Path) -> int:
     assert np.allclose(loaded["cx_last"], cx), "round-trip cx_last mismatch"
     assert loaded["prompts"] == prompts, "round-trip prompts mismatch"
     assert loaded["capture_dtype"] == "bf16", loaded["capture_dtype"]
+    # realized-dtype provenance round-trip (Fold 1): synthetic realized == requested.
+    assert loaded["realized_capture_dtype"] == "bf16", loaded["realized_capture_dtype"]
+    assert loaded["requested_capture_dtype"] == "bf16", loaded["requested_capture_dtype"]
     # resume predicate: every written shard reads done for the SAME dtype, NOT for another.
     for idx, lo, hi in S.shard_boundaries(n, shard_rows):
         assert S.shard_is_done(capture_dir, idx, lo, hi, "bf16"), (idx, "should be done")
@@ -366,6 +369,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #841 scaling-capture (GPU capture phase).")
     ap.add_argument("--model", default=C779.DEFAULT_MODEL)
     ap.add_argument("--capture-dtype", choices=list(DTYPES), default="bf16")
+    ap.add_argument(
+        "--allow-dtype-mismatch",
+        action="store_true",
+        help="permit a realized model dtype != requested (default: fail loud on any "
+        "silent up/downcast that would change the held fit-pool precision)",
+    )
     ap.add_argument("--tf32", action="store_true", help="enable TF32 (default OFF per plan)")
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument(
@@ -416,6 +425,32 @@ def main() -> int:
     else:
         model = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=dtype)
     model.eval()
+
+    # Realized-dtype provenance (code-review round 2, Fold 1): args.capture_dtype is
+    # what we REQUESTED; read the model's ACTUAL parameter dtype so a silent up/downcast
+    # (e.g. a model that ignores torch_dtype and loads fp32) is loud, not swallowed. The
+    # held fit-pool precision is the single manipulated variable, so an unnoticed cast is
+    # a confound. Normalize the realized torch dtype back to the CLI label vocab so the
+    # resume key + downstream labels stay in {bf16, fp32}.
+    requested_dtype_obj = DTYPES[args.capture_dtype]
+    realized_dtype_obj = next(model.parameters()).dtype
+    _dtype_labels = {v: k for k, v in DTYPES.items()}
+    realized_capture_dtype = _dtype_labels.get(
+        realized_dtype_obj, str(realized_dtype_obj).removeprefix("torch.")
+    )
+    if realized_dtype_obj != requested_dtype_obj and not args.allow_dtype_mismatch:
+        raise RuntimeError(
+            f"realized model dtype {realized_dtype_obj} != requested {requested_dtype_obj} "
+            f"(--capture-dtype {args.capture_dtype}); a silent up/downcast changes the held "
+            f"fit-pool precision. Pass --allow-dtype-mismatch to override deliberately."
+        )
+    logger.info(
+        "[dtype] requested=%s realized=%s (obj=%s)",
+        args.capture_dtype,
+        realized_capture_dtype,
+        realized_dtype_obj,
+    )
+
     n_layers = len(model.model.layers)
     assert n_layers == C.EXPECTED_LAYERS, (n_layers, C.EXPECTED_LAYERS)
     assert model.config.hidden_size == C.EXPECTED_HIDDEN, model.config.hidden_size
@@ -451,7 +486,7 @@ def main() -> int:
     n_total = len(target_new)
     bounds = S.shard_boundaries(n_total)
     for idx, lo, hi in bounds:
-        if S.shard_is_done(args.capture_dir, idx, lo, hi, args.capture_dtype):
+        if S.shard_is_done(args.capture_dir, idx, lo, hi, realized_capture_dtype):
             logger.info(
                 "[capture] shard %d/%d rows[%d:%d] already done — resume skip",
                 idx + 1,
@@ -475,7 +510,8 @@ def main() -> int:
             n_total=n_total,
             n_shards=len(bounds),
             source=source,
-            capture_dtype=args.capture_dtype,
+            capture_dtype=realized_capture_dtype,
+            requested_dtype=args.capture_dtype,
         )
         logger.info("[capture] wrote shard %d/%d rows[%d:%d]", idx + 1, len(bounds), lo, hi)
         del cx_chunk
@@ -483,7 +519,9 @@ def main() -> int:
     meta = C.reproducibility_metadata(
         {
             "phase": "scaling_capture",
-            "capture_dtype": args.capture_dtype,
+            "capture_dtype": realized_capture_dtype,
+            "requested_capture_dtype": args.capture_dtype,
+            "realized_capture_dtype": realized_capture_dtype,
             "tf32": args.tf32,
             "source": source,
             "n_new": n_total,
@@ -491,14 +529,23 @@ def main() -> int:
             "smoke": args.smoke,
         }
     )
-    S.write_capture_manifest(args.capture_dir, n_total, source, args.capture_dtype, meta)
+    S.write_capture_manifest(
+        args.capture_dir,
+        n_total,
+        source,
+        realized_capture_dtype,
+        meta,
+        requested_dtype=args.capture_dtype,
+    )
 
     # Durable capture summary (git, issue branch) — spot-gate + disjointness record.
     C.write_json_atomic(
         S.EVAL_SCALING_DIR / "capture_summary.json",
         {
             "n_new": len(target_new),
-            "capture_dtype": args.capture_dtype,
+            "capture_dtype": realized_capture_dtype,
+            "requested_capture_dtype": args.capture_dtype,
+            "realized_capture_dtype": realized_capture_dtype,
             "tf32": args.tf32,
             "source": source,
             "kill_a": spot,
@@ -511,7 +558,12 @@ def main() -> int:
         logger.info("[upload] cx_last shards → %s:%s", C.HF_DATA_REPO, S.HF_CAPTURE_BUCKET)
         upload_dataset_directory(args.capture_dir, S.HF_CAPTURE_BUCKET, pattern="*")
 
-    logger.info("[done] captured %d new contexts (dtype=%s)", len(target_new), args.capture_dtype)
+    logger.info(
+        "[done] captured %d new contexts (requested=%s realized=%s)",
+        len(target_new),
+        args.capture_dtype,
+        realized_capture_dtype,
+    )
     return 0
 
 
