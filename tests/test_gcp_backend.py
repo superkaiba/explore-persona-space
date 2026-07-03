@@ -4147,12 +4147,27 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "            fh.write(json.dumps({'kind': kind, **kw}) + '\\n')\n"
         "    def upload_file(self, *, path_or_fileobj, path_in_repo, repo_id, repo_type):\n"
         "        self._rec('file', path_in_repo=path_in_repo, repo_id=repo_id,\n"
-        "                  repo_type=repo_type)\n"
+        "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
         "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
         "                      ignore_patterns=None):\n"
+        "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
+        "        # relpath, with raw content for small files (else the size) so the\n"
+        "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
+        "        # actually uploaded.\n"
+        "        staged = {}\n"
+        "        for dp, _dns, fns in os.walk(folder_path):\n"
+        "            for fn in fns:\n"
+        "                p = os.path.join(dp, fn)\n"
+        "                rel = os.path.relpath(p, folder_path).replace(os.sep, '/')\n"
+        "                size = os.path.getsize(p)\n"
+        "                if size <= 4096:\n"
+        "                    with open(p, 'rb') as fh:\n"
+        "                        staged[rel] = fh.read().decode('utf-8', 'replace')\n"
+        "                else:\n"
+        "                    staged[rel] = size\n"
         "        self._rec('folder', folder_path=folder_path, path_in_repo=path_in_repo,\n"
         "                  repo_id=repo_id, repo_type=repo_type,\n"
-        "                  ignore_patterns=ignore_patterns)\n"
+        "                  ignore_patterns=ignore_patterns, staged=staged)\n"
     )
     (shim / "utils" / "__init__.py").write_text("")
 
@@ -4179,8 +4194,14 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         (root / "data" / "issue_137" / "sub" / "hf_dl" / "x.bin").write_text("y" * 64)
         (root / "data" / "issue137").mkdir(parents=True)
         (root / "data" / "issue137" / "battery.json").write_text("{}")
+        # #885: a per-worker fan-out log under $WORKLOAD_ROOT/logs/ (the
+        # worker-logs sweep target; small -> plain-copied, not tailed).
+        (root / "logs" / "issue_137").mkdir(parents=True)
+        (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
     else:
-        root.mkdir()
+        # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
+        # before invoking the harness with make_dirs=False.
+        root.mkdir(parents=True, exist_ok=True)
 
     env = dict(os.environ)
     env.update(
@@ -4192,6 +4213,10 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             "EPS_LOG_PATH": str(log) if make_crash else "",
             "WORKLOAD_ROOT": str(root),
             "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # #885: isolate the worker-logs staged tree per test — the
+            # production default is the shared literal /tmp/eps-worker-logs,
+            # which concurrent pytest sessions on this shared VM would race.
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
         }
     )
     env.update(env_overrides or {})
@@ -4212,25 +4237,29 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
 def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     """#854 behavioral (execution, not string-presence): the REAL heredoc,
     run exactly as production runs it, uploads crash_report → workload.log
-    → eval_results dir → data dirs → timestamped log copy → transcript,
-    passes the cache excludes to upload_folder, prunes nested caches from
-    the dir stats, and exits 0."""
+    → worker_logs (one staged-tree commit, #885) → eval_results dir →
+    data dirs → timestamped log copy → transcript, passes the cache
+    excludes to upload_folder, prunes nested caches from the dir stats,
+    and exits 0."""
     proc, calls, paths = _run_persist_heredoc(tmp_path)
     assert proc.returncode == 0, proc.stderr
     seq = [(c["kind"], c["path_in_repo"]) for c in calls]
     assert seq[0] == ("file", "issue137_partial/att-x/crash_report.json")
     assert seq[1] == ("file", "issue137_partial/att-x/workload.log")
-    assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
-    assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
-    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
+    assert seq[2] == ("folder", "issue137_partial/att-x/worker_logs")
+    assert seq[3] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
+    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue_137")
+    assert seq[5] == ("folder", "issue137_partial/att-x/data_issue137")
     assert (
-        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[5][1])
-        and seq[5][0] == "file"
+        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[6][1])
+        and seq[6][0] == "file"
     )
-    assert seq[6] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
-    assert len(seq) == 7, seq
+    assert seq[7] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
+    assert len(seq) == 8, seq
+    # The worker-logs commit staged the fixture worker log verbatim (#885).
+    assert calls[2]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
     # The data-dir upload carries the cache excludes (top-level AND nested).
-    data_call = calls[3]
+    data_call = calls[4]
     assert "hf_dl/**" in data_call["ignore_patterns"]
     assert "**/hf_dl/**" in data_call["ignore_patterns"]
     assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
@@ -4258,6 +4287,7 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP crash_report.json: no such file" in proc.stdout
     assert "[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing" in proc.stdout
+    assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
@@ -4283,6 +4313,101 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert proc2.returncode == 0, proc2.stderr
     assert "[crash-persist] SKIP data_issue_137: empty after cache excludes" in proc2.stdout
     assert not any(c["kind"] == "folder" for c in calls2)
+
+
+# ---------------------------------------------------------------------------
+# #885 — crash-persist worker-logs sweep ($WORKLOAD_ROOT/logs/**)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
+    """#885: the crash persist ALSO sweeps $WORKLOAD_ROOT/logs/** — the
+    per-worker fan-out logs carrying the real traceback (the canonical
+    workload.log ends at the fan-out line; two #779 crashes each needed a
+    manual boot-disk detach). Newest-first, per-file tail cap + file-count
+    bound at STAGE time, staged into /tmp/eps-worker-logs, uploaded as ONE
+    upload_folder commit (never a per-file upload_file loop — the #664
+    gotcha), ordered AFTER the canonical workload.log and BEFORE the
+    partial dirs."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "EPS_PERSIST_LOG_FILE_CAP_BYTES" in script
+    assert "EPS_PERSIST_LOG_MAX_FILES" in script
+    assert "/tmp/eps-worker-logs" in script
+    assert 'logs_root = root / "logs"' in script
+    # The worker-logs upload surface is exactly ONE upload_folder commit of
+    # the staged tree (acceptance criterion 6).
+    assert 'path_in_repo=f"{dest}/worker_logs"' in script
+    # The CALL, not just the def (a defined-but-never-called sweep is dead).
+    assert "\n_up_logs()" in script
+    # Ordering: canonical workload.log upload -> _up_logs() -> partial dirs.
+    assert (
+        script.index('_up_file(log_path, f"{dest}/workload.log")')
+        < script.index("\n_up_logs()")
+        < script.index("for local, name in (")
+    )
+
+
+def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) -> None:
+    """#885 behavioral (executed heredoc): with a 16-byte tail cap and a
+    1-file bound over two worker logs where the OLDER file is the LARGER
+    one, the sweep stages exactly the NEWER file (newest-by-mtime — a
+    size-sort mutant would stage the older one) and its staged bytes equal
+    the exact 16-byte tail sentinel (a dropped-seek head-read mutant would
+    stage head filler); the TAILED + dropped-count SKIP lines print AND
+    tee into the transcript."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    older = logs / "older_but_bigger.log"
+    newer = logs / "newer_crashing_worker.log"
+    older.write_bytes(b"H" * 200)  # LARGER but older; no sentinel
+    newer.write_bytes(b"h" * 64 + b"TAIL-SENTINEL-OK")  # 80 bytes; distinct 16-byte tail
+    base = os.stat(newer).st_mtime
+    os.utime(older, (base - 3600, base - 3600))
+    os.utime(newer, (base, base))
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={
+            "EPS_PERSIST_LOG_FILE_CAP_BYTES": "16",
+            "EPS_PERSIST_LOG_MAX_FILES": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    # Exactly ONE staged file == the NEWER one (kills a size-sort mutant);
+    # its content == the exact tail sentinel bytes (kills a dropped-seek
+    # head-read mutant).
+    assert folder_calls[0]["staged"] == {"issue_137/newer_crashing_worker.log": "TAIL-SENTINEL-OK"}
+    assert (
+        "[crash-persist] TAILED worker_logs/issue_137/newer_crashing_worker.log:"
+        " kept last 16 of 80 bytes"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] SKIP 1 older worker log(s) beyond EPS_PERSIST_LOG_MAX_FILES=1"
+    ) in proc.stdout
+    assert proc.returncode == 0
+    transcript_text = paths["transcript"].read_text()
+    assert "TAILED worker_logs/issue_137/newer_crashing_worker.log" in transcript_text
+    assert "SKIP 1 older worker log(s)" in transcript_text
+
+
+def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> None:
+    """#885: EPS_PERSIST_LOG_MAX_FILES < 1 is the documented disable — a
+    loud SKIP, never a silent empty sweep and never an upload."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    (logs / "w.log").write_text("worker traceback\n")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP worker_logs: EPS_PERSIST_LOG_MAX_FILES=0 < 1" in proc.stdout
+    assert not any(c["kind"] == "folder" for c in calls)
 
 
 # ---------------------------------------------------------------------------
