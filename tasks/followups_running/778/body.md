@@ -1,8 +1,7 @@
 ---
-title: On Qwen2.5-7B, a persona vector predicts trait expression no better than a
-  norm-matched random direction — Persona Vectors' prediction results replicate but
-  the trait-specificity does not survive the random baseline the paper never ran (MODERATE
-  confidence)
+title: On Qwen2.5-7B, a persona vector predicts trait expression better than trait-agnostic
+  random directions — family-wise significant for evil and sycophancy monitoring,
+  absent for hallucination at the paper's fixed layer (MODERATE confidence)
 kind: experiment
 backend: runpod
 tags:
