@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 919,
+  "highest_id": 920,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6050,6 +6050,13 @@
       "path": "tasks/archived/92",
       "status": "archived",
       "title": "Representation distance separates Big-5 axes but marker leakage does not; Agreeableness L1 is the lone dual outlier (LOW confidence)"
+    },
+    "920": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/920",
+      "status": "proposed",
+      "title": "Context\u00d7answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe generalization"
     },
     "94": {
       "has_clean_result": false,
