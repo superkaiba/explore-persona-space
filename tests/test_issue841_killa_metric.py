@@ -63,8 +63,13 @@ def test_bf16_noise_probe_passes():
     assert m["elem_rel_err"] > 1.0, m["elem_rel_err"]
 
 
-def test_wrong_position_fails_cosine():
-    """An unrelated row (wrong position / layer / normalization bug) collapses cosine."""
+def test_unrelated_row_fails_cosine():
+    """An unrelated row (gross wrong position / layer / normalization bug) collapses cosine.
+
+    NOTE: this is an UNRELATED row, NOT an adjacent off-by-one — an adjacent token stays
+    highly correlated (cosine ~0.9998, above the floor) and is caught by the norm-rel leg
+    instead, which the logged KILL-A adjacency audit measures on the live model.
+    """
     stored, _ = _stored_with_near_zeros(0)
     rng = np.random.default_rng(99)
     got = rng.standard_normal(stored.shape).astype(np.float32)

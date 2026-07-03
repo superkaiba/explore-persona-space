@@ -123,6 +123,50 @@ def capture_last_token_batched(
     return stacked.numpy()
 
 
+def _capture_last_two_batched(
+    model, input_ids: torch.Tensor, attn: torch.Tensor, layers: list[int]
+) -> tuple[np.ndarray, np.ndarray]:
+    """Last AND second-to-last real-token residuals from ONE left-padded forward.
+
+    Returns ``(last, adjacent)``, each ``(B, len(layers), H)`` fp32 numpy. ``last`` is
+    ``hs[:, -1, :]`` — bit-identical to ``capture_last_token_batched`` — and ``adjacent``
+    is ``hs[:, -2, :]`` (left-pad keeps real tokens right-aligned, so both columns are
+    real for any chat-templated prompt, whose generation suffix alone is 3 tokens). Used
+    ONLY by the logged-only KILL-A adjacency audit, which needs both positions from the
+    SAME forward to measure whether an off-by-one position slip would clear the triple;
+    it is NOT the hot path (that is ``capture_prompts`` → ``capture_last_token_batched``).
+    """
+    device = model.device
+    pos = _left_pad_position_ids(attn).to(device)
+    cap_last: dict[int, torch.Tensor] = {}
+    cap_adj: dict[int, torch.Tensor] = {}
+    handles = []
+
+    def _mk(li: int):
+        def _hook(_mod, _inp, out):
+            hs = out[0] if isinstance(out, tuple) else out  # (B, T, H)
+            cap_last[li] = hs[:, -1, :].detach().float().cpu()
+            cap_adj[li] = hs[:, -2, :].detach().float().cpu()
+
+        return _hook
+
+    for li in layers:
+        handles.append(model.model.layers[li].register_forward_hook(_mk(li)))
+    try:
+        model(
+            input_ids=input_ids.to(device),
+            attention_mask=attn.to(device),
+            position_ids=pos,
+            use_cache=False,
+        )
+    finally:
+        for h in handles:
+            h.remove()
+    last = torch.stack([cap_last[li] for li in layers], dim=1).numpy()
+    adj = torch.stack([cap_adj[li] for li in layers], dim=1).numpy()
+    return last, adj
+
+
 def _chat_texts(tokenizer, prompts: list[str]) -> list[str]:
     """Chat-template each user prompt with add_generation_prompt=True (parent frame)."""
     return [
@@ -175,11 +219,19 @@ def capture_prompts(
 # that is inherent + harmless (the anchor fit uses the STORED rows anyway). The old
 # max-ELEMENTWISE rel-error metric divides that noise by near-zero stored elements and
 # explodes (att-3: cosine 0.9998+ but elementwise rel 3.1e5). Robust triple instead:
-#   (a) cosine ≥ 0.999   — catches wrong position / layer / normalization / scaling
-#                          bugs (those collapse cosine well below 0.99; att-3 min was
-#                          0.99984, the empirical anchor for this floor);
+#   (a) cosine ≥ 0.999   — catches a GROSS wrong position / layer / normalization /
+#                          scaling slip: an UNRELATED row collapses cosine well below
+#                          0.99 (att-3 min for the correct row was 0.99984, the empirical
+#                          anchor for this floor). It does NOT by itself catch an ADJACENT
+#                          off-by-one — neighbouring tokens are highly correlated, so the
+#                          second-to-last token's cosine vs the stored last token sits
+#                          ~0.9998, ABOVE this floor (the logged KILL-A adjacency audit
+#                          below measures it per probe);
 #   (b) norm-rel ≤ 2e-2  — ‖recaptured−stored‖/‖stored‖; ~4× the expected ~5e-3 bf16
-#                          cross-hardware noise, so real corruption fails but noise passes;
+#                          cross-hardware noise, so real corruption fails but noise passes.
+#                          This is the leg that actually REJECTS an off-by-one: the
+#                          adjacent token's norm-rel exceeds 2e-2 even though its cosine
+#                          clears (a) — the adjacency audit confirms rejection per probe;
 #   (c) norm-ratio ∈ [0.99, 1.01] — global magnitude match (catches a dtype up/downcast
 #                          that leaves direction intact but rescales).
 # The old elementwise max is retained as a LOGGED diagnostic (``elem_rel_err``), never a gate.
@@ -251,8 +303,12 @@ def kill_a_spot_gate(
     texts = _chat_texts(tokenizer, batch_prompts)
     _assert_generation_suffix(tokenizer, texts[0])
     ids, attn = _tokenize_left_pad(tokenizer, texts)
-    captured = capture_last_token_batched(model, ids, attn, layers)  # (batch, L, H)
+    # ONE forward captures BOTH the last token (the gated read) and the second-to-last
+    # token (the adjacency-audit read) so the logged off-by-one audit below shares the
+    # probe forward — no extra pass, no cross-forward bf16 jitter.
+    captured, captured_adj = _capture_last_two_batched(model, ids, attn, layers)  # (batch, L, H)
     probe_captured = captured[:n_probe]  # rows 0..n_probe-1 are the parent probes
+    probe_captured_adj = captured_adj[:n_probe]  # same rows, second-to-last token
 
     checks = []
     for j, pidx in enumerate(probe_idx):
@@ -280,6 +336,52 @@ def kill_a_spot_gate(
         "worst_elem_rel_err": worst_elem,  # diagnostic (the old brittle metric)
         "checks": checks,
     }
+
+    # LOGGED-ONLY adjacency audit (concern killa-adjacent-position-off-by-one-unmeasured).
+    # Would an off-by-one position slip — capturing the second-to-last real token instead
+    # of the last — still clear the acceptance triple? Run _probe_accept on the adjacent
+    # (last-1) recapture vs the SAME stored last-token cx_last row and confirm it is
+    # REJECTED (expected: yes, on the norm-rel leg — see the threshold comment above).
+    # PURE DIAGNOSTICS: this never gates the run either way; it only annotates `summary`.
+    adj_checks = []
+    for j, pidx in enumerate(probe_idx):
+        a = _probe_accept(
+            stored_cx_last[pidx],
+            probe_captured_adj[j],
+            cos_floor=cos_floor,
+            norm_rel_tol=norm_rel_tol,
+            norm_ratio_band=norm_ratio_band,
+        )
+        a["parent_index"] = int(pidx)
+        adj_checks.append(a)
+        logger.info(
+            "[KILL-A adjacency audit] parent_index=%d off-by-one rejected=%s "
+            "(adjacent cosine %.5f, norm_rel %.4g)",
+            a["parent_index"],
+            not a["pass"],
+            a["cosine"],
+            a["norm_rel"],
+        )
+    off_by_one_rejected = sum(1 for a in adj_checks if not a["pass"])
+    adj_cos_lo = min((a["cosine"] for a in adj_checks), default=float("nan"))
+    adj_cos_hi = max((a["cosine"] for a in adj_checks), default=float("nan"))
+    adj_norm_rel_lo = min((a["norm_rel"] for a in adj_checks), default=float("nan"))
+    adj_norm_rel_hi = max((a["norm_rel"] for a in adj_checks), default=float("nan"))
+    logger.info(
+        "[KILL-A adjacency audit] off-by-one rejected %d/%d; adjacent cosine range [%.5f, %.5f]",
+        off_by_one_rejected,
+        n_probe,
+        adj_cos_lo,
+        adj_cos_hi,
+    )
+    summary["adjacency_audit"] = {
+        "off_by_one_rejected": off_by_one_rejected,
+        "n_probe": n_probe,
+        "adjacent_cosine_range": [adj_cos_lo, adj_cos_hi],
+        "adjacent_norm_rel_range": [adj_norm_rel_lo, adj_norm_rel_hi],
+        "checks": adj_checks,
+    }
+
     failed = [c for c in checks if not c["pass"]]
     if failed:
         logger.error(
