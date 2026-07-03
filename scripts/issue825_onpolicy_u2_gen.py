@@ -635,7 +635,7 @@ def run_wiring_check(args) -> None:
     allow_map = json.loads((args.out_dir / "row_allowlists.json").read_text())
     model, tokenizer, model_id = load_model(model_key, tiny_model_dir=args.tiny_model_dir)
     result: dict = {
-        "followup_label": "onpolicy-user-turn",
+        "followup_label": args.followup_label,
         "model": model_key,
         "model_id": model_id,
         "n_rows_requested": args.wiring_rows,
@@ -730,6 +730,14 @@ def main() -> None:
     )
     ap.add_argument("--wiring-check", action="store_true")
     ap.add_argument("--wiring-rows", type=int, default=200)
+    ap.add_argument(
+        "--followup-label",
+        default="onpolicy-user-turn",
+        help=(
+            "provenance label recorded in the wiring-check JSON (default preserves the "
+            "v7 onpolicy-user-turn behavior; the real-user-turn-null wrapper passes its own)"
+        ),
+    )
     args = ap.parse_args()
     if args.wiring_check:
         run_wiring_check(args)
