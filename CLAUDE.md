@@ -415,7 +415,7 @@ Known codebase traps — fragile HF Trainer monkey-patch (`train/trainer.py`),
 cluster-specific paths (`orchestrate/env.py`), silent empty-QA fail in
 `build_phase1_dataset()`, the Tulu-generalization caveat, the **`+gpu_id=N`
 CUDA_VISIBLE_DEVICES clobber** for parallel launches, the **RunPod MooseFS ~130 GB
-per-pod quota** (`OSError errno=122 EDQUOT`), and **vLLM worker-subprocess teardown**
+per-pod quota** (`OSError errno=122 EDQUOT`), the **MooseFS FUSE read-wedge on the pod `.venv`** (silent launch hang — see the discriminator probe in the rule), and **vLLM worker-subprocess teardown**
 — live in `.claude/rules/gotchas.md` (loads when you touch training / eval /
 orchestrate code). **Rerun discipline (don't blind-relaunch a failed run):** a
 vLLM `generate()` hang gets the on-pod py-spy / enforce_eager / prefix-caching
