@@ -213,7 +213,8 @@ background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
 - **Auto-fix now** — apply inline, per the Autonomy rules: status-
   drift corrections (automation-owned), stop + respawn a stalled/dead
   autonomous session (`spawn_session.py stop` + `spawn-issue --issue
-  <N> --auto`), terminate orphaned/EXITED pods (policy-backed; NEVER
+  <N> --auto`) (deliberate kills post the stop breadcrumb FIRST —
+  § Autonomy rules), terminate orphaned/EXITED pods (policy-backed; NEVER
   a pod with live work), zombie-session sweeps, cache/disk cleanup,
   `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
   fixes, re-push of unpushed commits.
@@ -707,6 +708,25 @@ same skill scans the awaiting_promotion list for similar entries.
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
   is the per-issue session's job.
 - Advance aim phase without explicit "yes advance".
+
+**Deliberate kills post a stop breadcrumb FIRST.** Before ANY deliberate
+kill of live work — `kill`/`kill -9`/`pkill` of a workload process, or
+`spawn_session.py stop` of a session that is mid-run — post a
+machine-readable breadcrumb on the OWNING task, BEFORE the kill:
+
+    uv run python scripts/task.py post-marker <N> epm:progress \
+      --note 'deliberate-stop pid=<PID> target=<process/session desc> reason=<one line>'
+
+`spawn_session.py stop` auto-posts this for issue-mapped sessions (you
+may add `--reason '<why>'`); the manual duty covers direct process kills
+— the #779 path, where three deliberate PM SIGKILLs with no record were
+mis-diagnosed as kernel OOM and dispatched a crash-fix round against a
+nonexistent bug. The breadcrumb is what step 4 of the exit-137
+kill-source checklist (`.claude/skills/issue/failure_patterns.md`)
+greps for. Structured `epm:progress` note, NOT a new marker kind. If
+no owning task is identifiable, post on the most-related active task
+(or the task whose worktree/pod hosts the process) — and either way
+the checklist treats a MISSING breadcrumb as non-exculpatory.
 
 ---
 
