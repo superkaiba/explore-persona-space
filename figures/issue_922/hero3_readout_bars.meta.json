@@ -1,41 +1,41 @@
 {
-  "commit": "068f46c8",
-  "created": "2026-07-03T22:19:14Z",
+  "commit": "7cb1e12430",
+  "created": "2026-07-03T23:46:27Z",
   "figsize": [
     11.5,
-    4.4
+    4.6
   ],
   "points": [
     {
-      "category": "evil\nfrozen",
+      "category": "evil\nfrozen read",
       "within-condition Pearson r": 0.4996336326448584,
       "error": 0.13440165550276717,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "evil\nrolled (hm)",
+      "category": "evil\nhorizon-mean roll",
       "within-condition Pearson r": 0.17827226823238496,
       "error": 0.16618624526223158,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "evil\nrolled b1",
+      "category": "evil\nadditive roll",
       "within-condition Pearson r": 0.14532218708828787,
       "error": 0.1314828949637223,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "evil\nrolled b2 (FiLM)",
+      "category": "evil\nFiLM roll",
       "within-condition Pearson r": 0.09212389752418342,
       "error": 0.18400226983818727,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "evil\ndirect-c",
+      "category": "evil\ndirect per-horizon",
       "within-condition Pearson r": 0.30153999550606675,
       "error": 0.1692275479219516,
       "_kind": "bar",
@@ -56,35 +56,35 @@
       "_group": 0
     },
     {
-      "category": "sycophancy\nfrozen",
+      "category": "sycophancy\nfrozen read",
       "within-condition Pearson r": 0.6023495304146909,
       "error": 0.0532079871311798,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "sycophancy\nrolled (hm)",
+      "category": "sycophancy\nhorizon-mean roll",
       "within-condition Pearson r": 0.4422128225929898,
       "error": 0.061026369585229195,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "sycophancy\nrolled b1",
+      "category": "sycophancy\nadditive roll",
       "within-condition Pearson r": 0.6435357323845305,
       "error": 0.04193496367452354,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "sycophancy\nrolled b2 (FiLM)",
+      "category": "sycophancy\nFiLM roll",
       "within-condition Pearson r": 0.2214598084070702,
       "error": 0.05537317376263168,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "sycophancy\ndirect-c",
+      "category": "sycophancy\ndirect per-horizon",
       "within-condition Pearson r": 0.6506469943540826,
       "error": 0.02440875435127038,
       "_kind": "bar",
@@ -105,35 +105,35 @@
       "_group": 0
     },
     {
-      "category": "hallucination\nfrozen",
+      "category": "hallucination\nfrozen read",
       "within-condition Pearson r": 0.45595581160174337,
       "error": 0.12638523899311335,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "hallucination\nrolled (hm)",
+      "category": "hallucination\nhorizon-mean roll",
       "within-condition Pearson r": 0.3811016897617998,
       "error": 0.10172797799665467,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "hallucination\nrolled b1",
+      "category": "hallucination\nadditive roll",
       "within-condition Pearson r": 0.3661752260586841,
       "error": 0.12406351566672612,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "hallucination\nrolled b2 (FiLM)",
+      "category": "hallucination\nFiLM roll",
       "within-condition Pearson r": 0.1540246778614432,
       "error": 0.1807587906827556,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "hallucination\ndirect-c",
+      "category": "hallucination\ndirect per-horizon",
       "within-condition Pearson r": 0.4304999277392686,
       "error": 0.09368144970697195,
       "_kind": "bar",
@@ -406,35 +406,35 @@
       "_group": 2
     },
     {
-      "category": "evil\nfrozen",
+      "category": "evil\nfrozen read",
       "within-condition Pearson r": 0.5727369800970761,
       "error": 0.14956650766590476,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "evil\nrolled (hm)",
+      "category": "evil\nhorizon-mean roll",
       "within-condition Pearson r": 0.5309383584344337,
       "error": 0.1391454303814173,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "evil\nrolled b1",
+      "category": "evil\nadditive roll",
       "within-condition Pearson r": 0.5622487647633643,
       "error": 0.14471496757571328,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "evil\nrolled b2 (FiLM)",
+      "category": "evil\nFiLM roll",
       "within-condition Pearson r": -0.142680340594049,
       "error": 0.32297674183202285,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "evil\ndirect-c",
+      "category": "evil\ndirect per-horizon",
       "within-condition Pearson r": 0.5258188364473191,
       "error": 0.1520398405525943,
       "_kind": "bar",
@@ -454,35 +454,35 @@
       "_group": 3
     },
     {
-      "category": "sycophancy\nfrozen",
+      "category": "sycophancy\nfrozen read",
       "within-condition Pearson r": 0.5519738362951138,
       "error": 0.03781525535231367,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "sycophancy\nrolled (hm)",
+      "category": "sycophancy\nhorizon-mean roll",
       "within-condition Pearson r": 0.5974565366374992,
       "error": 0.09662879013980497,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "sycophancy\nrolled b1",
+      "category": "sycophancy\nadditive roll",
       "within-condition Pearson r": 0.5372336576917827,
       "error": 0.05535384851400102,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "sycophancy\nrolled b2 (FiLM)",
+      "category": "sycophancy\nFiLM roll",
       "within-condition Pearson r": 0.23785509277421032,
       "error": 0.04791894803292593,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "sycophancy\ndirect-c",
+      "category": "sycophancy\ndirect per-horizon",
       "within-condition Pearson r": 0.6236424312404455,
       "error": 0.03693802090011872,
       "_kind": "bar",
@@ -503,35 +503,35 @@
       "_group": 3
     },
     {
-      "category": "hallucination\nfrozen",
+      "category": "hallucination\nfrozen read",
       "within-condition Pearson r": 0.30046210630890285,
       "error": 0.12513257233285452,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "hallucination\nrolled (hm)",
+      "category": "hallucination\nhorizon-mean roll",
       "within-condition Pearson r": 0.159685907574516,
       "error": 0.1631253971350073,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "hallucination\nrolled b1",
+      "category": "hallucination\nadditive roll",
       "within-condition Pearson r": 0.40353692988675505,
       "error": 0.08401956597723162,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "hallucination\nrolled b2 (FiLM)",
+      "category": "hallucination\nFiLM roll",
       "within-condition Pearson r": -0.18376017288006632,
       "error": 0.21791334189871575,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "hallucination\ndirect-c",
+      "category": "hallucination\ndirect per-horizon",
       "within-condition Pearson r": 0.27185851979901765,
       "error": 0.13506089889312603,
       "_kind": "bar",
