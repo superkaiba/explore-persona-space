@@ -82,6 +82,16 @@ MODES = ("system", "many_shot")
 LMSYS_NS = (100, 250, 500, 1000, 2000, 5000)
 BEHAV_NS = (50, 100, 250, 500, 1000, 2400)
 AXES = {"lmsys": LMSYS_NS, "behavior": BEHAV_NS}
+# The behavior-axis aggregation THIS script computes, recorded in the output
+# metadata so composition (issue779_scaling_grid --compose-edges) can route the
+# edge cells into the matching interior variant block instead of guessing:
+# ``Ctx.corpus_layer`` returns ``vb.mean(axis=1)`` (10-rollout-mean v(x)
+# targets) and ``run_edges`` uses ``np.nanmean(scores, axis=1)`` (per-context
+# mean judge labels) — the interior's SECONDARY (`mean_10rollout`) recipe, NOT
+# the headline single-rollout one. Must equal
+# issue779_scaling_grid.BEHAVIOR_AGG_SECONDARY (pinned by
+# tests/test_issue779_scaling_grid.py::test_r11_edges_producer_declares_behavior_agg).
+BEHAVIOR_AGG = "mean_10rollout"
 AXIS_ID = {"lmsys": 0, "behavior": 1}  # stable per-axis seed-sequence discriminator
 MIN_G_VALID = 30  # a draw with fewer valid judge labels records NaN + counts (never coerced)
 
@@ -709,6 +719,9 @@ def main() -> int:
             **params,
             "frozen_layers": FROZEN_LAYERS,
             "axes": {k: list(v) for k, v in AXES.items()},
+            # behavior-axis aggregation self-description (r11 permanent guard):
+            # compose-time routing asserts against this instead of guessing.
+            "behavior_agg": BEHAVIOR_AGG,
             "recon_protocol": "single 80/20 split per draw (test-fold-own-mean pooled R2)",
         }
     )

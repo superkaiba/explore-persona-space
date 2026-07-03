@@ -940,10 +940,17 @@ def _edge_draw(n, draw_idx, *, modes=("system", "many_shot"), point=0.5):
     }
 
 
-def _tiny_edges_doc(*, point=0.5):
-    """An issue779_edges doc covering the _tiny_grid_entry axes ((0,8) x (0,4))."""
+def _tiny_edges_doc(*, point=0.5, declare_agg=True):
+    """An issue779_edges doc covering the _tiny_grid_entry axes ((0,8) x (0,4)).
+
+    ``declare_agg=True`` mimics the r11+ self-describing producer (metadata
+    carries ``behavior_agg``); ``False`` mimics the legacy batch2_edges.json,
+    which requires the caller's ``edges_behavior_agg`` attestation."""
+    meta = {"git_commit": "deadbeef", "timestamp_utc": "t", "k_draws": 1}
+    if declare_agg:
+        meta["behavior_agg"] = "mean_10rollout"
     return {
-        "metadata": {"git_commit": "deadbeef", "timestamp_utc": "t", "k_draws": 1},
+        "metadata": meta,
         "edges": {
             "evil": {
                 "L3": {
@@ -1054,51 +1061,60 @@ def test_r10_completeness_flips_true_when_all_planned_cells_present():
 
 
 def test_r10_compose_edges_fills_edges_refuses_conflicts(tmp_path):
-    """v81 composition: pod edge cells fill the interior artifact's edge
-    coordinates (lmsys edges -> all 3 variant slots; behavior edges -> the
-    headline-agg slots only), idempotent on recompose, refuse-loud on a
-    conflicting overlap / missing leaf / wrong mode."""
+    """v81 composition (r11 remap): lmsys edges -> all 3 variant slots; the
+    mean_10rollout behavior edges -> the secondary_10rollout slot ONLY (the
+    matching aggregation — the pre-r11 inverse put them in the headline
+    blocks); idempotent on recompose, refuse-loud on a conflicting overlap /
+    missing leaf / wrong mode."""
     entry = _tiny_grid_entry()
     scaling = {"traits": {"evil": {"system": entry}}}
     edges = _tiny_edges_doc()
     summary = SG.compose_edges_into_scaling(scaling, edges, edges_path="e.json")
-    # natural + 1to1 gain both edge coords; secondary gains ONLY the lmsys edge
-    assert summary["per_block"]["evil/system/natural"] == 2
-    assert summary["per_block"]["evil/system/upsample_1to1"] == 2
-    assert summary["per_block"]["evil/system/secondary_10rollout"] == 1
+    assert summary["behavior_agg"] == "mean_10rollout"
+    # headline slots gain ONLY the lmsys edge; secondary gains BOTH edges
+    assert summary["per_block"]["evil/system/natural"] == 1
+    assert summary["per_block"]["evil/system/upsample_1to1"] == 1
+    assert summary["per_block"]["evil/system/secondary_10rollout"] == 2
     nat_cells = {
         (c["n_lmsys"], c["n_behavior"], c["subsample"]): c for c in entry["natural"]["cells"]
     }
     edge_cell = nat_cells[(8, 0, 0)]
     assert edge_cell["source"] == "pod_edges" and edge_cell["arm"] == "arm_a_lmsys"
+    assert edge_cell["edges_behavior_agg"] == "mean_10rollout"
     assert edge_cell["h_ridge_dot_r"]["system"]["point"] == 0.5
     assert np.isnan(edge_cell["h_ridge_dot_r"]["system"]["lo"])
     assert edge_cell["h_ridge_dot_r"]["system"]["n_boot_valid"] == 0
-    up_cell = {
-        (c["n_lmsys"], c["n_behavior"], c["subsample"]): c for c in entry["upsample_1to1"]["cells"]
-    }[(0, 4, 0)]
-    assert up_cell["upsample_1to1"] is True and up_cell["arm"] == "arm_b_behavior"
-    sec_keys = {
-        (c["n_lmsys"], c["n_behavior"]) for c in entry["secondary_10rollout"]["natural"]["cells"]
+    assert (0, 4, 0) not in nat_cells, "mean-10 behavior edges must NOT fill the headline agg"
+    up_keys = {(c["n_lmsys"], c["n_behavior"]) for c in entry["upsample_1to1"]["cells"]}
+    assert (0, 4) not in up_keys, "mean-10 behavior edges must NOT fill the headline agg"
+    assert (8, 0) in up_keys
+    sec_cells = {
+        (c["n_lmsys"], c["n_behavior"], c["subsample"]): c
+        for c in entry["secondary_10rollout"]["natural"]["cells"]
     }
-    assert (0, 4) not in sec_keys, "behavior-side edges must NOT fill the secondary agg"
+    beh_cell = sec_cells[(0, 4, 0)]
+    assert beh_cell["arm"] == "arm_b_behavior" and beh_cell["source"] == "pod_edges"
+    assert beh_cell["edges_behavior_agg"] == "mean_10rollout"
+    assert beh_cell["upsample_1to1"] is False
+    assert (8, 0, 0) in sec_cells, "lmsys edges are aggregation-invariant -> secondary too"
 
-    # completeness: natural/1to1 fully covered (k-shortfall recorded, not fatal);
-    # secondary still missing its behavior edge -> overall complete stays False
+    # completeness: secondary fully covered; natural/1to1 honestly missing (0,4)
     rec = SG.stamp_completeness(
         scaling,
         expected_traits=["evil"],
     )
-    nat_sys = rec["blocks"]["evil/system/natural"]
-    assert nat_sys["n_missing_coords"] == 0
-    assert sorted(map(tuple, nat_sys["coords_below_planned_k"])) == [(0, 4), (8, 0)]
-    assert rec["blocks"]["evil/system/secondary_10rollout"]["missing_coords"] == [[0, 4]]
-    assert rec["variants_complete"]["secondary_10rollout"] is False
+    sec_sys = rec["blocks"]["evil/system/secondary_10rollout"]
+    assert sec_sys["n_missing_coords"] == 0
+    assert sorted(map(tuple, sec_sys["coords_below_planned_k"])) == [(0, 4), (8, 0)]
+    assert rec["blocks"]["evil/system/natural"]["missing_coords"] == [[0, 4]]
+    assert rec["blocks"]["evil/system/upsample_1to1"]["missing_coords"] == [[0, 4]]
+    assert rec["variants_complete"]["natural"] is False
+    assert rec["variants_complete"]["secondary_10rollout"] is False  # many_shot entry absent
 
     # idempotent recompose: identical cells, no raise, no duplicates
-    n_before = len(entry["natural"]["cells"])
+    n_before = len(entry["secondary_10rollout"]["natural"]["cells"])
     SG.compose_edges_into_scaling(scaling, _tiny_edges_doc(), edges_path="e.json")
-    assert len(entry["natural"]["cells"]) == n_before
+    assert len(entry["secondary_10rollout"]["natural"]["cells"]) == n_before
 
     # conflicting overlap -> refuse loud
     with pytest.raises(ValueError, match="conflicting cell values"):
@@ -1115,9 +1131,84 @@ def test_r10_compose_edges_fills_edges_refuses_conflicts(tmp_path):
         SG.compose_edges_into_scaling({"traits": {"evil": {"system": _tiny_grid_entry()}}}, bad2)
 
 
+def test_r11_compose_edges_behavior_agg_resolution():
+    """r11 permanent guard: the edges' behavior-side aggregation is read from
+    metadata (self-describing producer) or an explicit caller attestation —
+    composing without either, or with a contradiction, or under an agg that
+    matches no variant block, REFUSES loud (never guesses)."""
+    # (a) legacy doc (no metadata field) + no attestation -> refuse
+    scaling = {"traits": {"evil": {"system": _tiny_grid_entry()}}}
+    with pytest.raises(ValueError, match="refusing to guess"):
+        SG.compose_edges_into_scaling(scaling, _tiny_edges_doc(declare_agg=False))
+
+    # (b) legacy doc + attestation -> composes; provenance records the source
+    entry = _tiny_grid_entry()
+    scaling = {"traits": {"evil": {"system": entry}}}
+    summary = SG.compose_edges_into_scaling(
+        scaling,
+        _tiny_edges_doc(declare_agg=False),
+        edges_path="e.json",
+        edges_behavior_agg="mean_10rollout",
+    )
+    assert summary["behavior_agg"] == "mean_10rollout"
+    assert summary["per_block"]["evil/system/secondary_10rollout"] == 2
+    prov = scaling["edges_composed"][-1]
+    assert prov["behavior_agg"] == "mean_10rollout"
+    assert prov["behavior_agg_source"] == "cli_attestation"
+
+    # declared metadata records source "metadata"
+    entry2 = _tiny_grid_entry()
+    scaling2 = {"traits": {"evil": {"system": entry2}}}
+    SG.compose_edges_into_scaling(scaling2, _tiny_edges_doc(), edges_path="e.json")
+    assert scaling2["edges_composed"][-1]["behavior_agg_source"] == "metadata"
+
+    # (c) declared field contradicting the attestation -> refuse
+    with pytest.raises(ValueError, match="contradictory"):
+        SG.compose_edges_into_scaling(
+            {"traits": {"evil": {"system": _tiny_grid_entry()}}},
+            _tiny_edges_doc(),
+            edges_behavior_agg="headline_1rollout",
+        )
+
+    # (d) generic agg routing: a (hypothetical) headline-agg edges artifact
+    # fills the HEADLINE slots and leaves the secondary behavior edge missing
+    entry3 = _tiny_grid_entry()
+    scaling3 = {"traits": {"evil": {"system": entry3}}}
+    summary3 = SG.compose_edges_into_scaling(
+        scaling3,
+        _tiny_edges_doc(declare_agg=False),
+        edges_behavior_agg="headline_1rollout",
+    )
+    assert summary3["per_block"]["evil/system/natural"] == 2
+    assert summary3["per_block"]["evil/system/upsample_1to1"] == 2
+    assert summary3["per_block"]["evil/system/secondary_10rollout"] == 1
+    sec_keys3 = {
+        (c["n_lmsys"], c["n_behavior"]) for c in entry3["secondary_10rollout"]["natural"]["cells"]
+    }
+    assert (0, 4) not in sec_keys3
+
+    # (e) behavior edges matching NO variant block of the entry -> refuse
+    entry4 = _tiny_grid_entry()
+    del entry4["secondary_10rollout"]
+    with pytest.raises(ValueError, match="match no variant block"):
+        SG.compose_edges_into_scaling({"traits": {"evil": {"system": entry4}}}, _tiny_edges_doc())
+
+
+def test_r11_edges_producer_declares_behavior_agg():
+    """The r11+ edges producer self-describes its behavior-side aggregation,
+    and the declared value equals the interior's SECONDARY recipe constant
+    (the compose-time equality guard's other half)."""
+    import issue779_edges as E
+    import issue779_scaling_grid as GRID
+
+    assert E.BEHAVIOR_AGG == GRID.BEHAVIOR_AGG_SECONDARY == "mean_10rollout"
+
+
 def test_r10_compose_edges_cli_roundtrip(tmp_path):
     """The --compose-edges CLI branch: reads <out-dir>/scaling_grid.json,
-    composes, stamps completeness + provenance, rewrites atomically."""
+    composes (legacy agg-less edges doc + the --edges-behavior-agg attestation,
+    mirroring the real batch2_edges.json invocation), stamps completeness +
+    provenance, rewrites atomically."""
     import json
     from types import SimpleNamespace
 
@@ -1128,26 +1219,47 @@ def test_r10_compose_edges_cli_roundtrip(tmp_path):
     grid_path = tmp_path / "scaling_grid.json"
     grid_path.write_text(json.dumps(scaling))
     edges_path = tmp_path / "edges.json"
-    edges_path.write_text(json.dumps(_tiny_edges_doc()))
-    ns = SimpleNamespace(out_dir=tmp_path, compose_edges=edges_path)
+    edges_path.write_text(json.dumps(_tiny_edges_doc(declare_agg=False)))
+    ns = SimpleNamespace(
+        out_dir=tmp_path, compose_edges=edges_path, edges_behavior_agg="mean_10rollout"
+    )
     assert GRID._compose_edges_cli(ns) == 0
     doc = json.loads(grid_path.read_text())
     assert doc["edges_composed"][0]["git_commit"] == "deadbeef"
+    assert doc["edges_composed"][0]["behavior_agg"] == "mean_10rollout"
+    assert doc["edges_composed"][0]["behavior_agg_source"] == "cli_attestation"
+    assert doc["completeness"]["last_write_run_flags"]["edges_behavior_agg"] == "mean_10rollout"
     assert "complete" in doc and "completeness" in doc
-    coords = {
+    nat_coords = {
         (c["n_lmsys"], c["n_behavior"]) for c in doc["traits"]["evil"]["system"]["natural"]["cells"]
     }
-    assert {(8, 0), (0, 4), (8, 4)} <= coords
+    assert {(8, 0), (8, 4)} <= nat_coords and (0, 4) not in nat_coords
+    sec_coords = {
+        (c["n_lmsys"], c["n_behavior"])
+        for c in doc["traits"]["evil"]["system"]["secondary_10rollout"]["natural"]["cells"]
+    }
+    assert {(8, 0), (0, 4)} <= sec_coords
+    # legacy agg-less edges doc WITHOUT the attestation -> refuse loud
+    grid_path.write_text(json.dumps({"traits": {"evil": {"system": _tiny_grid_entry()}}}))
+    with pytest.raises(ValueError, match="refusing to guess"):
+        GRID._compose_edges_cli(
+            SimpleNamespace(out_dir=tmp_path, compose_edges=edges_path, edges_behavior_agg=None)
+        )
     # missing artifact -> fail loud
     with pytest.raises(FileNotFoundError):
         GRID._compose_edges_cli(
-            SimpleNamespace(out_dir=tmp_path / "nope", compose_edges=edges_path)
+            SimpleNamespace(
+                out_dir=tmp_path / "nope",
+                compose_edges=edges_path,
+                edges_behavior_agg="mean_10rollout",
+            )
         )
 
 
 def test_r10_component_writes_preserve_prior_traits(tmp_path):
     """The non-grid component writers share the r6 overwrite class via --traits
-    subsets: a partial re-run must preserve prior traits/modes, not clobber."""
+    subsets: a partial re-run must preserve prior traits/modes, not clobber —
+    and (r11) a DIFFERING same-key recompute needs the explicit force flag."""
     import json
 
     import issue779_scaling_grid as GRID
@@ -1156,14 +1268,99 @@ def test_r10_component_writes_preserve_prior_traits(tmp_path):
     GRID._merge_component_traits(
         p, {"traits": {"evil": {"system": {"v": 1}, "many_shot": {"v": 2}}}, "meta": {"m": 1}}
     )
-    # a later single-(trait,mode) run: evil/system recomputed, many_shot kept
-    GRID._merge_component_traits(p, {"traits": {"evil": {"system": {"v": 9}}}, "meta": {"m": 2}})
+    # a later single-(trait,mode) FORCED recompute: evil/system replaced,
+    # many_shot kept (without force this differing rewrite refuses — r11 test)
+    GRID._merge_component_traits(
+        p, {"traits": {"evil": {"system": {"v": 9}}}, "meta": {"m": 2}}, force=True
+    )
     doc = json.loads(p.read_text())
     assert doc["traits"]["evil"] == {"system": {"v": 9}, "many_shot": {"v": 2}}
     assert doc["meta"] == {"m": 2}
-    # trait-grain (layer_matrix shape): prior trait preserved, recomputed wins
+    # trait-grain (layer_matrix shape): prior trait preserved, disjoint add OK
     q = tmp_path / "scaling_grid_layer_matrix.json"
     GRID._merge_component_traits(q, {"traits": {"evil": {"rows": 1}}}, mode_nested=False)
     GRID._merge_component_traits(q, {"traits": {"sycophancy": {"rows": 2}}}, mode_nested=False)
     doc2 = json.loads(q.read_text())
     assert doc2["traits"] == {"evil": {"rows": 1}, "sycophancy": {"rows": 2}}
+
+
+def test_r11_component_writer_refuses_conflicting_entry(tmp_path):
+    """r11 (Codex-review Major, checkpoint-conflict bug-class sibling): a
+    non-grid component write whose existing trait/mode entry DIFFERS refuses
+    loud; identical (NaN-aware) rewrites are idempotent; force overrides."""
+    import json
+
+    import issue779_scaling_grid as GRID
+
+    p = tmp_path / "arm_comparison.json"
+    GRID._merge_component_traits(
+        p, {"traits": {"evil": {"system": {"v": 1, "nanv": float("nan")}}}, "meta": {"m": 1}}
+    )
+    # identical rewrite (incl. NaN == NaN) -> idempotent, no raise
+    GRID._merge_component_traits(
+        p, {"traits": {"evil": {"system": {"v": 1, "nanv": float("nan")}}}, "meta": {"m": 2}}
+    )
+    # differing same-(trait, mode) entry -> refuse loud
+    with pytest.raises(ValueError, match="conflicting entry at traits/evil/system"):
+        GRID._merge_component_traits(
+            p, {"traits": {"evil": {"system": {"v": 9, "nanv": float("nan")}}}}
+        )
+    doc = json.loads(p.read_text())
+    assert doc["traits"]["evil"]["system"]["v"] == 1, "refused write must not land"
+    # force -> deliberate recompute wins
+    GRID._merge_component_traits(
+        p, {"traits": {"evil": {"system": {"v": 9, "nanv": float("nan")}}}}, force=True
+    )
+    assert json.loads(p.read_text())["traits"]["evil"]["system"]["v"] == 9
+    # trait-grain (mode_nested=False) sibling: same refuse/force semantics
+    q = tmp_path / "scaling_grid_layer_matrix.json"
+    GRID._merge_component_traits(q, {"traits": {"evil": {"rows": 1}}}, mode_nested=False)
+    with pytest.raises(ValueError, match="conflicting entry at traits/evil"):
+        GRID._merge_component_traits(q, {"traits": {"evil": {"rows": 2}}}, mode_nested=False)
+    GRID._merge_component_traits(
+        q, {"traits": {"evil": {"rows": 2}}}, mode_nested=False, force=True
+    )
+    assert json.loads(q.read_text())["traits"]["evil"] == {"rows": 2}
+
+
+def test_r11_grid_checkpoint_refuses_conflicting_cell(tmp_path):
+    """r11 (Codex-review Critical): the canonical scaling_grid.json checkpoint
+    write refuses a same-(nL, nB, subsample) cell whose values DIFFER from the
+    prior artifact (a partial rerun must never silently mutate the canonical
+    artifact); identical rewrites — the within-run checkpoint cadence — stay
+    idempotent; --force-overwrite-cells restores new-wins and is recorded in
+    the artifact's run_flags."""
+    import copy
+    import json
+
+    import issue779_scaling_grid as GRID
+
+    entry = _tiny_grid_entry()
+    path = tmp_path / "scaling_grid.json"
+    scaling = {"traits": {"evil": {"system": entry}}, "meta": {"m": 1}}
+    run_flags = {"grid_variants": ["natural"], "force_overwrite_cells": False}
+    GRID._write_grid_checkpoint(path, scaling, run_flags=run_flags)
+
+    # identical rewrite of the SAME in-memory doc (the per-(trait,mode)
+    # checkpoint cadence re-writes earlier entries verbatim after a JSON
+    # round-trip) -> idempotent, no raise
+    GRID._write_grid_checkpoint(path, scaling, run_flags=run_flags)
+
+    # same cell key, changed metric -> refuse loud; the artifact keeps the old value
+    conflicting = copy.deepcopy(scaling)
+    cell0 = conflicting["traits"]["evil"]["system"]["natural"]["cells"][0]
+    old_point = cell0["h_ridge_dot_r"]["system"]["point"]
+    cell0["h_ridge_dot_r"]["system"]["point"] = 0.123456
+    with pytest.raises(ValueError, match="conflicting cell values"):
+        GRID._write_grid_checkpoint(path, conflicting, run_flags=run_flags)
+    doc = json.loads(path.read_text())
+    kept = doc["traits"]["evil"]["system"]["natural"]["cells"][0]
+    assert kept["h_ridge_dot_r"]["system"]["point"] == old_point
+
+    # force flag -> deliberate overwrite wins + run_flags record it
+    forced_flags = {**run_flags, "force_overwrite_cells": True}
+    GRID._write_grid_checkpoint(path, conflicting, run_flags=forced_flags, force=True)
+    doc2 = json.loads(path.read_text())
+    got = doc2["traits"]["evil"]["system"]["natural"]["cells"][0]
+    assert got["h_ridge_dot_r"]["system"]["point"] == 0.123456
+    assert doc2["completeness"]["last_write_run_flags"]["force_overwrite_cells"] is True

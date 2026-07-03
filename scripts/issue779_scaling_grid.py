@@ -543,24 +543,38 @@ def _shuffle_within_condition(
 # ── canonical-write guard + edges composition (r10; r6 BLOCKER fix) ──────────
 
 
-def _write_grid_checkpoint(out_path: Path, scaling: dict, *, run_flags: dict) -> None:
+def _write_grid_checkpoint(
+    out_path: Path, scaling: dict, *, run_flags: dict, force: bool = False
+) -> None:
     """Merge-safe canonical ``scaling_grid.json`` checkpoint write.
 
     r6-review BLOCKER (`partial-scaling-grid-overwrite`) fix: a --skip-edges /
     --grid-variants-subset run must never clobber prior traits/modes/variants/
-    cells at the canonical path — an existing artifact is LOADED and MERGED
-    (new cells win on key collision; axis / frozen-layer mismatches fail loud
-    via ``SG.merge_scaling_traits``), and every write stamps a top-level
-    ``complete`` bool + machine-readable ``completeness`` record (omitted
-    variants/coordinates, realized-vs-planned cell counts) derived from the
-    MERGED artifact. The default full path (no skip, all variants, all traits)
-    therefore flips ``complete: true`` exactly when all planned cells land."""
+    cells at the canonical path — an existing artifact is LOADED and MERGED,
+    and every write stamps a top-level ``complete`` bool + machine-readable
+    ``completeness`` record (omitted variants/coordinates, realized-vs-planned
+    cell counts) derived from the MERGED artifact. The default full path (no
+    skip, all variants, all traits) therefore flips ``complete: true`` exactly
+    when all planned cells land.
+
+    Conflict policy (r11, Codex-review Critical): a same-key
+    (n_lmsys, n_behavior, subsample) cell whose values DIFFER from the prior
+    artifact REFUSES loud (``on_collision="refuse"``) — a partial rerun must
+    never silently mutate the canonical artifact. IDENTICAL rewrites stay
+    allowed (the within-run per-(trait,mode) checkpoint cadence re-writes
+    earlier entries verbatim; ``_cells_equal`` is NaN-aware and JSON
+    round-trip-safe). Axis / frozen-layer mismatches fail loud via
+    ``SG.merge_scaling_traits`` as before. ``force=True``
+    (--force-overwrite-cells, recorded in the artifact's run_flags) restores
+    the old new-wins overwrite for a DELIBERATE recompute."""
     merged = dict(scaling)
     if out_path.exists():
         with open(out_path) as f:
             prev = json.load(f)
         merged["traits"] = SG.merge_scaling_traits(
-            prev.get("traits", {}), scaling.get("traits", {})
+            prev.get("traits", {}),
+            scaling.get("traits", {}),
+            on_collision="new_wins" if force else "refuse",
         )
         if "edges_composed" in prev:
             merged["edges_composed"] = prev["edges_composed"]
@@ -568,24 +582,49 @@ def _write_grid_checkpoint(out_path: Path, scaling: dict, *, run_flags: dict) ->
     C.write_json_atomic(out_path, merged)
 
 
-def _merge_component_traits(out_path: Path, doc: dict, *, mode_nested: bool = True) -> None:
+def _merge_component_traits(
+    out_path: Path, doc: dict, *, mode_nested: bool = True, force: bool = False
+) -> None:
     """Shallow no-clobber merge-write for the NON-grid component JSONs.
 
     Same overwrite class as the r6 grid BLOCKER, reachable via a --traits
     subset: arm_comparison / g_holdout_question / scaling_grid_layer_matrix
     used to be written unconditionally, so a partial re-run replaced prior
     traits wholesale. Prior traits (and, for mode-nested docs, prior modes)
-    absent from THIS run are preserved; recomputed entries win. The grid keeps
-    its own cell-grain, axis-guarded merge (``_write_grid_checkpoint``)."""
+    absent from THIS run are preserved.
+
+    Conflict policy (r11, Codex-review Major — the checkpoint writer's
+    bug-class sibling): an existing trait (mode-nested: trait/mode) entry
+    whose value DIFFERS from the recomputed one REFUSES loud; an IDENTICAL
+    rewrite (NaN-aware deep equality, ``SG._cells_equal``) is idempotent and
+    allowed. ``force=True`` (--force-overwrite-cells) restores new-wins for a
+    deliberate recompute. The grid keeps its own cell-grain, axis-guarded
+    merge (``_write_grid_checkpoint``)."""
+
+    def _guard(key: str, prev_v, new_v) -> None:
+        if not force and not SG._cells_equal(prev_v, new_v):
+            raise ValueError(
+                f"{out_path.name}: conflicting entry at {key} — refusing to overwrite a "
+                "differing prior entry (pass --force-overwrite-cells for a deliberate "
+                "recompute)"
+            )
+
     merged = dict(doc)
     if out_path.exists():
         with open(out_path) as f:
             prev = json.load(f)
         traits = {t: v for t, v in prev.get("traits", {}).items()}
         for t, tv in doc.get("traits", {}).items():
-            if mode_nested and t in traits and isinstance(traits[t], dict):
-                traits[t] = {**traits[t], **tv}
+            if mode_nested and t in traits and isinstance(traits[t], dict) and isinstance(tv, dict):
+                merged_t = dict(traits[t])
+                for m, mv in tv.items():
+                    if m in merged_t:
+                        _guard(f"traits/{t}/{m}", merged_t[m], mv)
+                    merged_t[m] = mv
+                traits[t] = merged_t
             else:
+                if t in traits:
+                    _guard(f"traits/{t}", traits[t], tv)
                 traits[t] = tv
         merged["traits"] = traits
     C.write_json_atomic(out_path, merged)
@@ -609,11 +648,20 @@ def _compose_edges_cli(args) -> int:
         scaling = json.load(f)
     with open(args.compose_edges) as f:
         edges_doc = json.load(f)
-    summary = SG.compose_edges_into_scaling(scaling, edges_doc, edges_path=args.compose_edges)
+    summary = SG.compose_edges_into_scaling(
+        scaling,
+        edges_doc,
+        edges_path=args.compose_edges,
+        edges_behavior_agg=args.edges_behavior_agg,
+    )
     rec = SG.stamp_completeness(
         scaling,
         expected_traits=list(C.TRAITS),
-        run_flags={"mode": "compose_edges", "edges_path": str(args.compose_edges)},
+        run_flags={
+            "mode": "compose_edges",
+            "edges_path": str(args.compose_edges),
+            "edges_behavior_agg": summary["behavior_agg"],
+        },
     )
     C.write_json_atomic(grid_path, scaling)
     logger.info(
@@ -748,6 +796,31 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
         ),
     )
     ap.add_argument(
+        "--edges-behavior-agg",
+        type=str,
+        default=None,
+        choices=[BEHAVIOR_AGG_HEADLINE, BEHAVIOR_AGG_SECONDARY],
+        help=(
+            "--compose-edges only: caller ATTESTATION of the behavior-side aggregation "
+            "the edges artifact was computed under, for a legacy artifact whose metadata "
+            "lacks the self-describing 'behavior_agg' field (batch2_edges.json: pass "
+            "mean_10rollout — issue779_edges computes 10-rollout-mean v(x) + per-context "
+            "mean judge labels). Composition refuses to guess without either signal, and "
+            "refuses a contradiction between the two"
+        ),
+    )
+    ap.add_argument(
+        "--force-overwrite-cells",
+        action="store_true",
+        help=(
+            "restore new-wins overwrite semantics for a DELIBERATE recompute: by default "
+            "every canonical checkpoint write (grid cells AND the non-grid component "
+            "trait/mode entries) REFUSES loud when a same-key entry differs from the "
+            "existing artifact (identical idempotent rewrites always allowed). Recorded "
+            "in the artifact's run_flags"
+        ),
+    )
+    ap.add_argument(
         "--mmap-corpus",
         action="store_true",
         help=(
@@ -842,6 +915,7 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
         "smoke": bool(args.smoke),
         "max_lmsys": max_lmsys,
         "max_behavior": max_behavior,
+        "force_overwrite_cells": bool(args.force_overwrite_cells),
     }
 
     def _grid(src_v, eval_mat, rb_l, **kw):
@@ -987,14 +1061,25 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
             # skipped component's JSON is never clobbered with an empty skeleton),
             # and every write is merge-safe against a prior artifact (r10).
             if "arm_comparison" in components:
-                _merge_component_traits(args.out_dir / "arm_comparison.json", arm_comparison)
+                _merge_component_traits(
+                    args.out_dir / "arm_comparison.json",
+                    arm_comparison,
+                    force=args.force_overwrite_cells,
+                )
             if "grid" in components:
                 # r6 BLOCKER fix: merge-safe, completeness-stamped canonical write
                 _write_grid_checkpoint(
-                    args.out_dir / "scaling_grid.json", scaling, run_flags=grid_run_flags
+                    args.out_dir / "scaling_grid.json",
+                    scaling,
+                    run_flags=grid_run_flags,
+                    force=args.force_overwrite_cells,
                 )
             if "g_holdout" in components:
-                _merge_component_traits(args.out_dir / "g_holdout_question.json", g_holdout)
+                _merge_component_traits(
+                    args.out_dir / "g_holdout_question.json",
+                    g_holdout,
+                    force=args.force_overwrite_cells,
+                )
             logger.info(
                 "[%s/%s] block done in %.1fs (RSS %.1f GB)",
                 trait,
@@ -1023,7 +1108,10 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
                 cb=corpus_bundle,
             )
             _merge_component_traits(
-                args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix, mode_nested=False
+                args.out_dir / "scaling_grid_layer_matrix.json",
+                layer_matrix,
+                mode_nested=False,
+                force=args.force_overwrite_cells,
             )
         # single-bundle-resident invariant: free this trait's multi-GB bundle
         # BEFORE the next trait's torch.load.

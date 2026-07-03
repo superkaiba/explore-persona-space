@@ -844,7 +844,9 @@ def merge_grid_block(prev: dict | None, new: dict | None, *, on_collision: str =
         new.get("skip_edges", False)
     )
     if n_collide:
-        logger.info("[grid-merge] %d colliding cells overwritten (new wins)", n_collide)
+        # only reachable under on_collision="new_wins" (a forced overwrite);
+        # identical rewrites are not collisions, so any hit is a REAL data change.
+        logger.warning("[grid-merge] %d colliding cells overwritten (new wins)", n_collide)
     return merged
 
 
@@ -988,14 +990,19 @@ def stamp_completeness(scaling: dict, *, expected_traits, run_flags: dict | None
     return rec
 
 
-def _edge_draw_to_cell(draw: dict, *, n_lmsys: int, n_behavior: int, upsample_1to1: bool) -> dict:
+def _edge_draw_to_cell(
+    draw: dict, *, n_lmsys: int, n_behavior: int, upsample_1to1: bool, edges_behavior_agg: str
+) -> dict:
     """Adapt one issue779_edges draw into the run_scaling_grid cell schema.
 
     The pod edges carry per-mode point reads (no bootstrap CI — lo/hi are NaN
     with n_boot_valid=0) and a different recon protocol (kept under
     ``edges_extra``, never faked into ``recon_heldout``); composed cells are
     stamped ``source: "pod_edges"`` so the analyzer can tell them from
-    VM-interior cells (which carry no ``source`` key)."""
+    VM-interior cells (which carry no ``source`` key), plus
+    ``edges_behavior_agg`` — the behavior-side aggregation the producing edges
+    artifact was computed under (r11; inert for nL-axis cells, which contain no
+    behavior rows, but recorded uniformly for provenance)."""
     assert (n_lmsys == 0) != (n_behavior == 0), (n_lmsys, n_behavior)
 
     def _read(field: str) -> dict:
@@ -1034,6 +1041,7 @@ def _edge_draw_to_cell(draw: dict, *, n_lmsys: int, n_behavior: int, upsample_1t
         "g_labels_dropped_nan": int(draw.get("g_n_dropped", 0)),
         "has_labels": bool(draw.get("g_n_valid", 0)),
         "source": "pod_edges",
+        "edges_behavior_agg": edges_behavior_agg,
         "edges_extra": {
             k: draw.get(k)
             for k in ("h_cos", "h_gcv_lambda", "g_gcv_lambda", "h_recon_r2", "g_recon_r2")
@@ -1041,7 +1049,9 @@ def _edge_draw_to_cell(draw: dict, *, n_lmsys: int, n_behavior: int, upsample_1t
     }
 
 
-def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=None) -> dict:
+def compose_edges_into_scaling(
+    scaling: dict, edges_doc: dict, *, edges_path=None, edges_behavior_agg: str | None = None
+) -> dict:
     """Merge pod-computed edge cells into a scaling_grid artifact IN PLACE (v81).
 
     ``edges_doc`` is the ``issue779_edges`` format
@@ -1052,11 +1062,25 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
       - ``lmsys_axis[N]`` draws -> (N, 0) Arm-A edge cells in ALL THREE variant
         slots (an nB==0 cell contains no behavior rows, so it is
         aggregation-invariant AND 1to1-upsampling-invariant).
-      - ``behavior_axis[N]`` draws -> (0, N) Arm-B edge cells in the
-        headline-agg slots only (natural + upsample_1to1); the
-        secondary_10rollout variant aggregates the behavior side differently,
-        so its behavior edges CANNOT be honestly filled from headline-agg pod
-        edges and stay missing (recorded by the completeness stamp).
+      - ``behavior_axis[N]`` draws -> (0, N) Arm-B edge cells in EXACTLY the
+        variant slot(s) whose declared ``behavior_agg`` MATCHES the aggregation
+        the edges were computed under. The operative batch2_edges.json pod
+        edges are ``mean_10rollout`` (10-rollout-mean v(x) + per-context mean
+        judge labels — issue779_edges.corpus_layer / run_edges), i.e. the
+        interior's SECONDARY recipe, so they fill ``secondary_10rollout``'s
+        natural sub-block ONLY; the headline (``headline_1rollout``) slots'
+        (0, N) coordinates stay HONESTLY missing (recorded by the completeness
+        stamp). A hypothetical headline-agg edges artifact would route to
+        natural + upsample_1to1 instead by the same rule.
+
+    Aggregation resolution (r11 permanent guard): the edges' behavior-side
+    aggregation is read from ``edges_doc["metadata"]["behavior_agg"]``
+    (self-described by the r11+ producer). For a legacy artifact lacking the
+    field (the existing batch2_edges.json), the caller MUST pass an explicit
+    ``edges_behavior_agg`` attestation — composing without either REFUSES loud
+    rather than guessing; a declared field that CONTRADICTS a passed
+    attestation refuses too. Behavior-axis edges whose aggregation matches NO
+    variant slot declared by an entry refuse loud as well.
 
     Fail-loud validation: missing ``edges[trait]["L<frozen_layer>"]`` leaf, or
     ``mode`` not read at that layer -> ValueError. An edge coordinate outside
@@ -1070,6 +1094,24 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
     if not isinstance(edges, dict):
         raise ValueError("edges doc has no 'edges' tree (expected issue779_edges format)")
     meta = edges_doc.get("metadata", {})
+    declared_agg = meta.get("behavior_agg")
+    if declared_agg is None and edges_behavior_agg is None:
+        raise ValueError(
+            "edges doc metadata declares no 'behavior_agg' and no attestation was passed — "
+            "refusing to guess which behavior-side aggregation the edges were computed "
+            "under (verify the producer's recipe, then pass "
+            "edges_behavior_agg=... / --edges-behavior-agg)"
+        )
+    if (
+        declared_agg is not None
+        and edges_behavior_agg is not None
+        and (declared_agg != edges_behavior_agg)
+    ):
+        raise ValueError(
+            f"edges doc declares behavior_agg={declared_agg!r} but the caller attested "
+            f"{edges_behavior_agg!r} — refusing the contradictory composition"
+        )
+    behavior_agg = declared_agg if declared_agg is not None else edges_behavior_agg
     n_added, n_extra, per_block = 0, 0, {}
     for trait, modes_tree in scaling.get("traits", {}).items():
         for mode, entry in modes_tree.items():
@@ -1085,6 +1127,23 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
                     f"edges leaf {trait}/L{layer} was not read in mode {mode!r} "
                     f"(modes: {leaf.get('modes')})"
                 )
+            # behavior-axis routing: ONLY variant slots whose declared
+            # aggregation equals the edges' aggregation may receive (0, N)
+            # cells (the r11 remap — the pre-r11 inverse put mean-10 pod edges
+            # into the headline blocks).
+            entry_variant_aggs = {
+                "natural": entry.get("behavior_agg"),
+                "upsample_1to1": entry.get("behavior_agg"),
+                "secondary_10rollout": (entry.get("secondary_10rollout") or {}).get("behavior_agg"),
+            }
+            behavior_variants = {v for v, a in entry_variant_aggs.items() if a == behavior_agg}
+            if leaf.get("behavior_axis") and not behavior_variants:
+                raise ValueError(
+                    f"{trait}/{mode}: behavior-axis edges computed under behavior_agg="
+                    f"{behavior_agg!r} match no variant block of this entry "
+                    f"(entry declares {entry_variant_aggs}) — refusing the "
+                    "cross-aggregation composition"
+                )
             for axis_name, coord_of in (
                 ("lmsys_axis", lambda n: (n, 0)),
                 ("behavior_axis", lambda n: (0, n)),
@@ -1092,8 +1151,8 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
                 for n_str, node in (leaf.get(axis_name) or {}).items():
                     nL, nB = coord_of(int(n_str))
                     for variant in GRID_VARIANT_SLOTS:
-                        if variant == "secondary_10rollout" and axis_name == "behavior_axis":
-                            continue  # headline-agg edges cannot fill the secondary agg
+                        if axis_name == "behavior_axis" and variant not in behavior_variants:
+                            continue  # aggregation mismatch: this slot's (0,N) stays missing
                         block = _variant_block(entry, variant)
                         if block is None:
                             continue  # variant never computed; completeness records it
@@ -1118,6 +1177,7 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
                                 n_lmsys=nL,
                                 n_behavior=nB,
                                 upsample_1to1=(variant == "upsample_1to1"),
+                                edges_behavior_agg=behavior_agg,
                             )
                             for d in node.get("draws", [])
                         ]
@@ -1134,9 +1194,16 @@ def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=Non
         "git_commit": meta.get("git_commit"),
         "timestamp_utc": meta.get("timestamp_utc"),
         "k_draws": meta.get("k_draws"),
+        "behavior_agg": behavior_agg,
+        "behavior_agg_source": "metadata" if declared_agg is not None else "cli_attestation",
         "n_cells_added": n_added,
         "n_extra_coord_composes": n_extra,
     }
     scaling.setdefault("edges_composed", []).append(provenance)
     logger.info("[compose-edges] %s", provenance)
-    return {"n_cells_added": n_added, "n_extra_coord_composes": n_extra, "per_block": per_block}
+    return {
+        "n_cells_added": n_added,
+        "n_extra_coord_composes": n_extra,
+        "per_block": per_block,
+        "behavior_agg": behavior_agg,
+    }
