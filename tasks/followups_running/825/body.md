@@ -148,7 +148,7 @@ What is plotted (underlying data): the 1000 bootstrap ΔR² draws per cell-layer
 
 What is plotted: best frozen-layer held-out R² for the linear ridge vs the MLP probe, paired bars for all 10 MLP-probed cells across both rounds (2 single-turn, 2 chat assistant, 2 naturalistic assistant, 4 user), with the follow-up plan's 0.2 recoverability line drawn.
 
-![Ridge versus MLP held-out R-squared for all ten probed cells with the 0.2 recoverability line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/c5236717d580ec38824e2cd9c103089c0dcc566d/figures/issue_825/ridge_vs_mlp_all_cells.png)
+![Ridge versus MLP held-out R-squared for all ten probed cells with the 0.2 recoverability line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a302438d6890ec953c39be72a5f0e9865ad695fe/figures/issue_825/ridge_vs_mlp_all_cells.png)
 
 > **Figure.** *The nonlinear map extends to every two-turn cell.* MLP recovers 0.50–0.53 in naturalistic assistant cells (≈ chat siblings) and 0.19–0.23 in user cells where ridge is deeply negative; single-turn cells stay linear (MLP ≈ ridge). n = 2000 per two-turn cell.
 
