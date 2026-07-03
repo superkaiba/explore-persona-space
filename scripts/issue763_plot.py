@@ -467,7 +467,16 @@ def main() -> int:
         "deception record missing from results/compare-results — the hero figure "
         "is a deception before/after"
     )
-    e0_v2_path = args.e0_json or (args.results_json.parent / "E0_deception_v2.json")
+    if args.e0_json is not None:
+        e0_v2_path = args.e0_json
+    else:
+        # round-dir default: newest rubric bucket present (the v2p1 round writes
+        # E0_deception_v2p1.json; the reanchor round E0_deception_v2.json).
+        candidates = [
+            args.results_json.parent / name
+            for name in ("E0_deception_v2p1.json", "E0_deception_v2.json")
+        ]
+        e0_v2_path = next((p for p in candidates if p.exists()), candidates[-1])
     e0_v2 = load_json(e0_v2_path)
     e0_v1 = load_json(args.base_e0)
     hero_path = FIGURE_DIR / f"fig_763_{prefix}_graded_vs_binary.png"

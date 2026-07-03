@@ -118,12 +118,6 @@ def _per_probe_graded_map(e0: dict) -> dict[tuple[str, str], float | None]:
     return out
 
 
-def _exemplar_items(e0: dict) -> set[tuple[str, str]]:
-    return {
-        (it["context_id"], it["probe_sha256"]) for it in e0.get("exemplar_excluded_items") or []
-    }
-
-
 def _drop_rate(e0: dict) -> dict:
     """Cell-0 read: draw-level kept/dropped totals + the drop rate for one arm."""
     kept = dropped = 0
@@ -502,7 +496,25 @@ def _plot_exploratory(
 # ── the decision computation ─────────────────────────────────────────────────
 
 
-def compute_verdict(  # noqa: C901  # the §6 enumeration is one cohesive decision tree
+def cell1_verdict(leg_a_pass: bool, leg_b_pass: bool | None, rate_defined: bool) -> str:
+    """The §6 cell-1 manipulation-check 2×2 mapping (pure; unit-tested).
+
+    Undefined leg-(b) rate (below the ≥100 high-draw minimum denominator)
+    collapses to leg (a): pass ⇒ ENGAGED-by-collapse, fail ⇒
+    PARTIAL-ENGAGEMENT-B (plan §6 cell 1, pre-registered).
+    """
+    if not rate_defined:
+        return "ENGAGED-by-collapse" if leg_a_pass else "PARTIAL-ENGAGEMENT-B"
+    if leg_a_pass and leg_b_pass:
+        return "ENGAGED"
+    if not leg_a_pass and not leg_b_pass:
+        return "KILL"
+    if leg_a_pass and not leg_b_pass:
+        return "PARTIAL-ENGAGEMENT-A"
+    return "PARTIAL-ENGAGEMENT-B"
+
+
+def compute_verdict(  # the §6 enumeration is one cohesive decision tree
     *,
     e0_v2: dict,
     e0_v2p1: dict,
@@ -577,18 +589,8 @@ def compute_verdict(  # noqa: C901  # the §6 enumeration is one cohesive decisi
         "pass": leg_b_pass,
     }
 
-    if not rate_defined:
-        # pre-registered undefined-rate collapse (plan §6 cell 1)
-        cell1_verdict = "ENGAGED-by-collapse" if leg_a_pass else "PARTIAL-ENGAGEMENT-B"
-    elif leg_a_pass and leg_b_pass:
-        cell1_verdict = "ENGAGED"
-    elif not leg_a_pass and not leg_b_pass:
-        cell1_verdict = "KILL"
-    elif leg_a_pass and not leg_b_pass:
-        cell1_verdict = "PARTIAL-ENGAGEMENT-A"
-    else:
-        cell1_verdict = "PARTIAL-ENGAGEMENT-B"
-    cell1 = {"leg_a": leg_a, "leg_b": leg_b, "verdict": cell1_verdict}
+    cell1_v = cell1_verdict(bool(leg_a_pass), leg_b_pass, bool(rate_defined))
+    cell1 = {"leg_a": leg_a, "leg_b": leg_b, "verdict": cell1_v}
 
     # ── the paired Δρ read (cell 2's stability split) ──
     ctx_a = list(loco_v2p1["ctx_ids"])
@@ -692,14 +694,14 @@ def compute_verdict(  # noqa: C901  # the §6 enumeration is one cohesive decisi
     if not cell0_pass:
         final = "INSTRUMENT-INCONCLUSIVE-HALT"
         attribution = None
-    elif cell1_verdict == "KILL":
+    elif cell1_v == "KILL":
         final = "KILL"
         attribution = None
-    elif cell1_verdict == "PARTIAL-ENGAGEMENT-B":
+    elif cell1_v == "PARTIAL-ENGAGEMENT-B":
         final = "PARTIAL-ENGAGEMENT-B"
         attribution = None
     else:
-        qualified = cell1_verdict == "PARTIAL-ENGAGEMENT-A"
+        qualified = cell1_v == "PARTIAL-ENGAGEMENT-A"
         if meets_band and significant and control:
             sub = "SUCCESS-robust" if delta_boot["includes_zero"] else "SUCCESS-attenuated"
             final = f"SUCCESS-qualified ({sub})" if qualified else sub
