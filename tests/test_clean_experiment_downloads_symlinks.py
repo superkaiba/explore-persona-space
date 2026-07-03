@@ -54,7 +54,9 @@ def fake_repo(tmp_path, monkeypatch):
     referencing ``data/issue_761/`` would otherwise (correctly) SKIP the reap
     and break these sandboxed tests (same pattern as
     ``tests/test_clean_experiment_downloads_parity.py``)."""
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    # syspath_prepend (not a bare sys.path.insert) so the entry is restored
+    # at teardown instead of accumulating once per test.
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1] / "src"))
     import explore_persona_space.task_workflow as tw
 
     tw.invalidate_cache()
@@ -407,3 +409,170 @@ def test_target_rmtree_failure_link_survives(fake_repo, disk_root, monkeypatch):
         assert (disk_root / "user" / "eps-data" / "issue_761" / name / "blob.bin").exists()
     # res.failed non-empty is the CLI exit-2 driver.
     assert res.failed
+
+
+# ─── 14 (MF2 round-2 regression): DOUBLE link — parent AND child both links ───
+# Round-1 computed `parent_linked = (not cache_dir.is_symlink()) and
+# cache_dir.parent.is_symlink()`, so when the parent issue dir was a link AND
+# the cache entry inside its target tree was ITSELF a link,
+# cache_dir.is_symlink() was True through the parent link, parent_linked came
+# out False, the case classified as a DIRECT link, and apply-mode unlink()
+# resolved through the shared parent link and removed the child entry INSIDE
+# the external unmanaged tree — violating the plan §2 MF2 row "symlinked
+# parent + external target: SKIP entirely — nothing deleted, nothing
+# unlinked". Concern id: double-link-unlink-through-parent-mf2.
+
+
+def test_double_link_parent_and_child_external_target_kept(fake_repo, disk_root):
+    data_root = fake_repo / "data"
+    data_root.mkdir(parents=True)
+    # data/issue_761 -> external tree, whose hf_dl entry is ITSELF a symlink
+    # to another external dir (the double-link topology).
+    ext_issue = fake_repo / "external" / "issue_761"
+    ext_issue.mkdir(parents=True)
+    ext_target = fake_repo / "external" / "real_hf_dl"
+    ext_target.mkdir(parents=True)
+    (ext_target / "blob.bin").write_bytes(b"x" * 1024)
+    (ext_issue / "hf_dl").symlink_to(ext_target)
+    parent_link = data_root / "issue_761"
+    parent_link.symlink_to(ext_issue)
+
+    res = ced.clean_issue_downloads(761, apply=True, data_root=data_root)
+
+    # BOTH links survive: the shared parent link AND the child link entry
+    # inside the external tree (round-1 unlinked the child THROUGH the
+    # parent link). The external tree is byte-untouched.
+    assert parent_link.is_symlink()
+    assert os.path.lexists(ext_issue / "hf_dl")
+    assert (ext_issue / "hf_dl").is_symlink()
+    assert (ext_target / "blob.bin").exists()
+    assert res.symlink_external_kept == [("data/issue_761/hf_dl", str(ext_target))]
+    assert res.removed == []
+    assert res.failed == []
+
+    rows = _read_sidecar(fake_repo)
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "symlink-external-target-kept"
+    # Parent-link ownership dominates: via is "parent" even though the child
+    # entry is itself a link.
+    assert rows[0]["via"] == "parent"
+
+
+def test_double_link_parent_and_child_dangling_kept(fake_repo, disk_root):
+    """Double-link variant with a DANGLING child target: nothing to reap and
+    the child entry inside the parent's target tree is not ours to unlink —
+    kept + sidecar-escalated, never unlinked."""
+    data_root = fake_repo / "data"
+    data_root.mkdir(parents=True)
+    ext_issue = fake_repo / "external" / "issue_761"
+    ext_issue.mkdir(parents=True)
+    (ext_issue / "hf_dl").symlink_to(fake_repo / "external" / "gone")  # dangling
+    parent_link = data_root / "issue_761"
+    parent_link.symlink_to(ext_issue)
+
+    res = ced.clean_issue_downloads(761, apply=True, data_root=data_root)
+
+    assert parent_link.is_symlink()
+    assert os.path.lexists(ext_issue / "hf_dl")  # dangling child link NOT unlinked
+    assert [rel for rel, _ in res.symlink_external_kept] == ["data/issue_761/hf_dl"]
+    assert res.removed == []
+    assert res.failed == []
+
+    rows = _read_sidecar(fake_repo)
+    assert len(rows) == 1
+    assert rows[0]["via"] == "parent"
+
+
+def test_double_link_managed_parent_child_link_target_reaped_links_survive(fake_repo, disk_root):
+    """Managed variant of the double-link topology (parent link resolves
+    INSIDE the managed data disk; the child entry there is itself a link to a
+    fully-validated managed cache dir): the resolved TARGET is reaped, but
+    neither link is unlinked — the parent link is shared and the child link
+    entry lives inside its target tree."""
+    data_root = fake_repo / "data"
+    data_root.mkdir(parents=True)
+    disk_issue = disk_root / "user" / "eps-data" / "issue_761"
+    real = disk_issue / "real" / "hf_dl"  # names issue_761, cache-shaped dir
+    real.mkdir(parents=True)
+    (real / "blob.bin").write_bytes(b"x" * 1024)
+    (disk_issue / "hf_dl").symlink_to(real)
+    parent_link = data_root / "issue_761"
+    parent_link.symlink_to(disk_issue)
+
+    res = ced.clean_issue_downloads(761, apply=True, data_root=data_root)
+
+    assert res.removed == ["data/issue_761/hf_dl"]
+    assert res.failed == []
+    assert not real.exists()  # fully-validated managed target reaped
+    assert parent_link.is_symlink()  # parent link intact
+    # The child link entry inside the managed tree is NOT unlinked through
+    # the parent link (left dangling in the managed tree).
+    assert os.path.lexists(disk_issue / "hf_dl")
+
+
+# ─── 17: direct link, renamed-basename / eval_results targets kept ────────────
+
+
+def test_symlink_renamed_basename_target_kept(fake_repo, disk_root):
+    """A direct link whose managed-root target has a DIFFERENT basename
+    (hf_dl -> .../issue_761/hf_dl_old) fails the name-preserving cache-shape
+    prong: link unlinked, target KEPT."""
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_761"
+    issue_dir.mkdir(parents=True)
+    tgt = disk_root / "user" / "eps-data" / "issue_761" / "hf_dl_old"
+    tgt.mkdir(parents=True)
+    (tgt / "blob.bin").write_bytes(b"x" * 1024)
+    (issue_dir / "hf_dl").symlink_to(tgt)
+
+    res = ced.clean_issue_downloads(761, apply=True, data_root=data_root)
+
+    assert (tgt / "blob.bin").exists()  # renamed target KEPT
+    assert not os.path.lexists(issue_dir / "hf_dl")  # direct link unlinked
+    assert res.symlink_external_kept == [("data/issue_761/hf_dl", str(tgt))]
+    assert res.removed == []
+    assert res.failed == []
+
+
+def test_symlink_to_eval_results_target_kept(fake_repo, disk_root):
+    """A direct link resolving to an eval_results/ dir (durable artifacts,
+    never a cache) is kept via the basename prong (fail-toward-keep)."""
+    data_root = fake_repo / "data"
+    issue_dir = data_root / "issue_761"
+    issue_dir.mkdir(parents=True)
+    tgt = disk_root / "user" / "eps-data" / "issue_761" / "eval_results"
+    tgt.mkdir(parents=True)
+    (tgt / "metrics.json").write_text("{}")
+    (issue_dir / "hf_dl").symlink_to(tgt)
+
+    res = ced.clean_issue_downloads(761, apply=True, data_root=data_root)
+
+    assert (tgt / "metrics.json").exists()  # durable artifacts KEPT
+    assert not os.path.lexists(issue_dir / "hf_dl")
+    assert res.symlink_external_kept == [("data/issue_761/hf_dl", str(tgt))]
+    assert res.removed == []
+    assert res.failed == []
+
+
+# ─── 18: CLI exit-code contract (main() returns 2 iff res.failed) ─────────────
+
+
+def test_cli_exit_code_2_on_failed_reap(fake_repo, disk_root, monkeypatch):
+    data_root = fake_repo / "data"
+    _make_symlinked_issue(data_root, disk_root)
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+
+    def _boom(path, *a, **k):
+        raise OSError(f"simulated rmtree failure on {path}")
+
+    monkeypatch.setattr(ced.shutil, "rmtree", _boom)
+
+    assert ced.main(["761", "--apply"]) == 2
+
+
+def test_cli_exit_code_0_on_clean_run(fake_repo, disk_root, monkeypatch):
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+    data_root = fake_repo / "data"
+    _make_symlinked_issue(data_root, disk_root)
+
+    assert ced.main(["761", "--apply"]) == 0
