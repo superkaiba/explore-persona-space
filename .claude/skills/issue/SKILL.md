@@ -955,7 +955,7 @@ an `epm:progress` note naming the repair: re-post the scope with a
 proper kebab-slug `followup_label`; the pseudo-label stays visible in
 every future scan until repaired or retro-closed). The loop runs one
 round and re-parks; the next `/issue <N>` entry picks up the next unrun
-label. If present AND the status is
+label. If ≥1 unrun label is present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
 case: the loop holds that status, so a crashed round re-enters here) —
@@ -977,12 +977,25 @@ equals the label; or a status/step note carrying the exact parenthesized
 return, post the retroactive `epm:same-issue-followup-run v1`
 (`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
 and move to the NEXT unrun label instead of re-running a completed round
-(legacy tasks like #658 carry such ghost labels). On None — including
-any merely-prose mention of the label — do NOT close: skip the label
-this entry and surface it for manual disposition (autonomous mode:
-continue to the next dispatchable label; the skipped label stays queued
-and visible). Retro-close markers do NOT count toward the same-issue
-round caps (Step 9b loop step 5 / block C2).
+(legacy tasks like #658 carry such ghost labels). **This check is a
+GHOST-label filter, NOT an execution gate.** A None return means NO
+prior-run evidence exists — for a normal fresh never-run label this is
+the EXPECTED result (no run happened, so no evidence can exist by
+construction) and the label EXECUTES as the dispatched round: that is
+the whole point of the queue (the #763 `neutral-contrast-and-cofit`
+dispatch is the canonical fresh case). The skip-and-surface disposition
+applies ONLY when the orchestrator has independent reason to suspect
+the label ALREADY RAN — a legacy ghost-label task like #658, e.g. the
+label's round is visibly recorded in the body / status history yet none
+of the mechanical evidence classes can confirm it. In that
+suspected-stale case do NOT close on prose suspicion (a merely-prose
+mention of the label NEVER closes — closing takes mechanical evidence
+only): skip the label this entry and surface it for manual disposition
+(autonomous mode: continue to the next dispatchable label; the skipped
+label stays queued and visible) rather than either re-running a
+completed round or wrongly closing a queued one. Retro-close markers do
+NOT count toward the same-issue round caps (Step 9b loop step 5 /
+block C2).
 
 **Set the launch title now.** As soon as the slug (task `title`) is known,
 call `set_title(N, <status>)` (helper defined in the "Chat title updates"
@@ -6439,7 +6452,7 @@ orchestrators driving one round is the #778 root cause.
    the verbatim proposal spec (or the user's verbatim chat request),
    and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
    for one issue may exist** — corrections are WITHIN-label: the
-   authoritative scope for a round is the highest-(`version`, `ts`)
+   authoritative scope for a round is the latest-(`ts`, `version`)
    entry AMONG the entries carrying THIS ROUND'S `followup_label` (an
    unlabeled correction note attributes to the immediately-preceding
    label — `task_workflow.followup_label_groups`; see #658's
@@ -7946,8 +7959,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label highest-(`version`,`ts`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): dispatch ONE label per entry — the queue head (user-initiated first, then oldest armed ts); set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the round's label-scoped scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
-| `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label highest-(`version`,`ts`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): dispatch ONE label per entry — the queue head (user-initiated first, then oldest armed ts); set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the round's label-scoped scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
