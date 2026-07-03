@@ -30,11 +30,13 @@ Check catalog (id — classification — kind scope)
       batched commitment         (analysis), conditional   analysis
   c13 empirical-null gate        FAIL (experiment) / WARN  experiment +
       p-floor attainability      (analysis), conditional   analysis
+  c14 hypothesis branch         WARN-only, conditional    experiment +
+      coherence                                           analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13) also SKIP when their
-content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14) also SKIP when
+their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -1489,6 +1491,194 @@ def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 14 — hypothesis confirm/falsify branch coherence (WARN-only) ────
+
+# Branch anchors: `**Confirm:**`, `**Confirm (ridge stands):**`,
+# `**Confirm-the-null:**`, `**Falsify:**`, `**Falsify (positive surprise):**`
+# — all observed corpus shapes.
+_BRANCH_ANCHOR_RE = re.compile(r"(?i)\*\*\s*(confirm|falsif)")
+# Shared bounded token: a normalized `var = value` pair present in BOTH
+# branch segments (the #922 H4 `k = 32` horizon shape). Comparator-bearing
+# bounds (`k ≤ 4`) are deliberately NOT harvested — requiring exact-pair
+# identity in both segments is the main false-positive guard.
+_BOUND_TOKEN_RE = re.compile(r"\b([A-Za-z]\w{0,8})\s*=\s*(\d+(?:\.\d+)?)\b")
+# Tendency-class comparator (does not pin an end-state). Deliberately
+# minimal: a bare "declines" without "toward" is an accepted false negative
+# (prefer false negatives); "approaches"/"converges" excluded in v1
+# ("two approaches" false-fires on the noun).
+_TENDENCY_RE = re.compile(r"(?i)\btowards?\b")
+# State-class comparator (pins a region through the horizon).
+_STATE_RE = re.compile(
+    r"(?i)\b(?:stays?|remains?|holds?)\s+(?:strictly\s+)?(?:above|below|at|within)\b"
+)
+# Vague layer-scope tokens ("mid/late layers", "most layers", incl. "at most
+# layers"). "a majority of layers" is deliberately EXCLUDED (a quantifier
+# over a universe; in the observed corpus it co-occurs with a pinned one).
+_VAGUE_SCOPE_RE = re.compile(
+    r"(?i)\b(?:(?:early|mid|middle|late|deep|shallow)"
+    r"(?:\s*[/-]\s*(?:early|mid|middle|late|deep|shallow))?|most)\s+layers\b"
+)
+# Pinned-anchor escape (same block): "layers 1-28" (any dash), "layer 20",
+# "layers {18, 21}", "L18", the pre-registered layer symbol (script small l,
+# U+2113, followed by *), or the literal "pre-registered".
+_PINNED_SCOPE_RE = re.compile(
+    r"(?i)\blayers?\s*\d|\blayers?\s+\{|\bL\d{1,2}\b|\u2113\*|\bpre-registered\b"
+)
+# Per-hypothesis block starts: top-level list items (sub-headings are
+# detected via _HEADING_RE).
+_C14_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*]|\d+\.)\s")
+# Bold span used to label an offending block in the WARN detail.
+_C14_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")
+
+
+def _hypothesis_blocks(section_text: str) -> list[str]:
+    """Split a (fence-stripped) hypothesis-section text into per-hypothesis
+    blocks at top-level list-item starts and heading lines; continuation
+    lines join the preceding block. The section heading line starts the
+    first block (it carries no branch anchors, so it is ignored downstream).
+    Matches the observed corpus: one bullet per `**H<k>**` (#922 v2, #841
+    v12, #810 v6 all use single-bullet hypothesis blocks)."""
+    blocks: list[list[str]] = []
+    current: list[str] = []
+    for line in section_text.splitlines():
+        if _C14_LIST_ITEM_RE.match(line) or _HEADING_RE.match(line.strip()):
+            if current:
+                blocks.append(current)
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        blocks.append(current)
+    return ["\n".join(b) for b in blocks]
+
+
+def _confirm_falsify_segments(block: str) -> tuple[str, str] | None:
+    """``(confirm_segment, falsify_segment)`` for a hypothesis block, or
+    ``None`` when the block has no falsify anchor (nothing to compare —
+    c8 owns branches missing entirely; a lone ``**Confirm`` block is also
+    ignored). Falsify segment = first falsify anchor to the next anchor or
+    block end. Confirm segment = explicit confirm anchor to the next anchor
+    when one exists; otherwise the block text BEFORE the falsify anchor
+    (the hypothesis statement itself is the implicit confirm branch — the
+    #922 H4 shape, which has no ``**Confirm:**`` label)."""
+    anchors = list(_BRANCH_ANCHOR_RE.finditer(block))
+    falsifies = [m for m in anchors if m.group(1).casefold().startswith("falsif")]
+    if not falsifies:
+        return None
+    f0 = falsifies[0]
+    after_f = [m for m in anchors if m.start() > f0.start()]
+    falsify_seg = block[f0.start() : after_f[0].start() if after_f else len(block)]
+    confirms = [m for m in anchors if m.group(1).casefold().startswith("confirm")]
+    if confirms:
+        c0 = confirms[0]
+        after_c = [m for m in anchors if m.start() > c0.start()]
+        confirm_seg = block[c0.start() : after_c[0].start() if after_c else len(block)]
+    else:
+        confirm_seg = block[: f0.start()]
+    return confirm_seg, falsify_seg
+
+
+def _shared_bound_tokens(confirm_seg: str, falsify_seg: str) -> list[str]:
+    """Normalized ``var = value`` pairs present in BOTH segments, rendered
+    as sorted ``"var = value"`` strings (identity on the normalized pair,
+    whitespace-insensitive)."""
+
+    def _toks(seg: str) -> set[tuple[str, str]]:
+        return {(m.group(1).casefold(), m.group(2)) for m in _BOUND_TOKEN_RE.finditer(seg)}
+
+    return sorted(f"{var} = {val}" for var, val in _toks(confirm_seg) & _toks(falsify_seg))
+
+
+def _c14_block_label(block: str) -> str:
+    """Short human label for a hypothesis block: the first bold span that is
+    not itself a branch anchor (e.g. ``**H4 (rollout).**``), else the first
+    line truncated."""
+    for m in _C14_BOLD_LABEL_RE.finditer(block):
+        if not re.match(r"(?i)\s*(?:confirm|falsif)", m.group(1)):
+            return f"**{m.group(1)}**"
+    first_line = block.strip().splitlines()[0] if block.strip() else "(unnamed)"
+    return first_line[:60]
+
+
+def check_hypothesis_branch_coherence(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: hypothesis confirm/falsify branch coherence.
+    Two token-level offender predicates per anchor-bearing hypothesis
+    block: (a) a jointly-satisfiable tendency-vs-state comparator pair on a
+    shared bounded ``var = value`` token across the confirm/falsify
+    segments ("decays toward ... by k = 32" confirm vs "stays above ...
+    through k = 32" falsify — one above-but-declining curve satisfies
+    both); (b) a vague layer-scope token ("mid/late layers", "most layers")
+    with no pinned layer list/numeral in the same block. NEVER FAILs — a
+    heuristic text check must not hard-block a legitimately-worded plan;
+    joint satisfiability beyond these two token shapes stays with the
+    Statistics critic (c8's form-only charter). Crisp state-vs-state pairs
+    (``≤`` vs ``>``, win-count comparators — the #841 v12 / #810 v6 shapes)
+    carry no tendency token and stay silent. Incident: #922 v2 H4 (caught
+    only by the Codex statistics critic; the same defect class reached
+    execution in #488 round 10)."""
+    cid, name = "c14_hypothesis_branch_coherence", "hypothesis branch coherence"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: hypothesis blocks are an experiment|analysis plan shape"
+        )
+    section = section_text_by_keywords(plan, ("hypothesis",))
+    if section is None:
+        return _skip(cid, name, "no hypothesis section detected")
+    text = strip_fences(section)
+    anchored: list[tuple[str, tuple[str, str]]] = []
+    for block in _hypothesis_blocks(text):
+        segments = _confirm_falsify_segments(block)
+        if segments is not None:
+            anchored.append((block, segments))
+    if not anchored:
+        return _skip(
+            cid, name, "hypothesis section present but no **Confirm/**Falsify branch anchors"
+        )
+    offenders: list[str] = []
+    for block, (confirm_seg, falsify_seg) in anchored:
+        clauses: list[str] = []
+        shared = _shared_bound_tokens(confirm_seg, falsify_seg)
+        if shared:
+            c_tend = _TENDENCY_RE.search(confirm_seg)
+            f_state = _STATE_RE.search(falsify_seg)
+            c_state = _STATE_RE.search(confirm_seg)
+            f_tend = _TENDENCY_RE.search(falsify_seg)
+            pair: tuple[str, str] | None = None
+            if c_tend and f_state:
+                pair = (c_tend.group(0), f_state.group(0))
+            elif c_state and f_tend:
+                pair = (c_state.group(0), f_tend.group(0))
+            if pair:
+                clauses.append(
+                    f"(a) comparator-pair — confirm says '{pair[0]}' while falsify says "
+                    f"'{pair[1]}' on shared token '{shared[0]}', jointly satisfiable by "
+                    "one outcome"
+                )
+        vague = _VAGUE_SCOPE_RE.search(block)
+        if vague and not _PINNED_SCOPE_RE.search(block):
+            clauses.append(
+                f"(b) vague-scope — '{vague.group(0)}' with no pinned layer list/numeral "
+                "in the block"
+            )
+        if clauses:
+            offenders.append(f"block '{_c14_block_label(block)}': " + "; ".join(clauses))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchored)} hypothesis block(s) scanned; no c14 trigger detected "
+            "(no jointly-satisfiable comparator pair, no unpinned vague-scope token)",
+        )
+    extra = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    detail = (
+        "; ".join(offenders[:3])
+        + extra
+        + " — tighten the branch comparators (e.g. '≤ vs >') and/or pin the layer set; "
+        "semantic verdict stays with the Statistics critic"
+    )
+    return _warn(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1505,6 +1695,7 @@ CHECKS = [
     check_dryrun_test_coverage,
     check_battery_multiplier,
     check_empirical_gate_attainability,
+    check_hypothesis_branch_coherence,
 ]
 
 

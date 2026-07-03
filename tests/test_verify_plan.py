@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10) ────
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-14) ─
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -150,10 +150,11 @@ def test_good_plan_passes_all():
         "c11_dryrun_test_coverage": "SKIP",
         "c12_battery_multiplier": "SKIP",
         "c13_empirical_gate_attainability": "SKIP",
+        "c14_hypothesis_branch_coherence": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 14
+    assert len(results) == 15
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1353,6 +1354,139 @@ def test_c13_fail_detail_names_clean_pass_remedy_bound():
     assert "clean PASS" in r.detail
 
 
+# ─── Check 14 — hypothesis confirm/falsify branch coherence ────────────────
+
+# Verbatim bullets from the real corpus (embedded as literals — NEVER read
+# from tasks/ at test runtime; tasks move between status folders). The REAL
+# plan files are exercised by the §4 pre-commit calibration, not this suite.
+C14_HEADING = "## 3. Hypothesis"
+# #922 v2 line 47 — the incident offender: implicit confirm (no **Confirm:**
+# label), tendency "toward" vs state "stays above" on shared `k = 32`, plus
+# the unpinned "mid/late layers" scope.
+H922_H4 = "- **H4 (rollout).** The context-only autoregressive roll beats the frozen-state null (ĥ_{T+k} = h_T) for small horizons (k ≤ 4) at mid/late layers, and decays toward/below it by k = 32 (feature drift, 2506.03566). **Falsify (positive surprise):** rollout skill stays above the frozen null through k = 32."
+# #922 v2 line 45 — vague-shaped "early to late layers" ESCAPED by the pinned
+# "layers 1-28" (en dash in the verbatim string) / "layer 0" in the same block.
+H922_H2 = "- **H2 (depth profile).** The carried-context share rises with depth: the ratio r2_id(context-only)/r2_id(token-informed) increases from early to late layers (Spearman ρ(layer, ratio) > 0 over layers 1–28, both spaces). At layer 0 (embedding stream) the context-only map fails by construction (h_{0,t+1} is exactly the injected token embedding) — a built-in sanity anchor. **Falsify:** flat or decreasing profile."
+# #841 v12 line 29 — crisp `≤` vs `>` count comparators, no tendency token.
+H841_H1 = "- **H1 (Stage-0 fit, matched information).** The source-only GRU's held-out r2_id on Δ_ℓ does NOT beat the affine ridge on the data-limited late-layer band (transitions 17–25) or on a majority of the 27 transitions. **Confirm (ridge stands):** source-only GRU r2_id ≤ ridge r2_id on ≥ 14/27 transitions (raw space), consistent with the prefix-GRU's 27/27 loss. **Falsify (GRU wins):** source-only GRU r2_id > ridge r2_id on a majority of transitions, especially the late-layer band. Directional prior: LOSS or TIE (removing prefix information from an already-losing GRU should not lift it above ridge)."
+# #810 v6 line 35 — band/threshold wording (Confirm-the-null vs clears-the-
+# band), no tendency token.
+H810_H2G = "- **H2-g (read-out).** No summary rescues behavior read-out on generic-genre activations either. **Confirm-the-null:** the two-method conjunction statistic sits inside its max-selected band for each new combo. **Falsify:** a summary clears the band on g1 → the Betley corpus was suppressing read-out (rewrites the parent's read-out takeaway)."
+
+
+def _hyp_plan(*bullets: str) -> str:
+    """GOOD_PLAN + a Hypothesis section carrying ``bullets`` in order."""
+    return GOOD_PLAN + "\n" + C14_HEADING + "\n\n" + "\n".join(bullets) + "\n"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c14_kind_infra_skips(kind):
+    assert _status(_hyp_plan(H922_H4), "c14_hypothesis_branch_coherence", kind=kind) == "SKIP"
+
+
+def test_c14_no_hypothesis_section_skips():
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no hypothesis section" in r.detail
+
+
+def test_c14_hypothesis_without_branch_anchors_skips():
+    plan = _hyp_plan("- **H1.** The read-out improves with depth (prose only, no branch labels).")
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no **Confirm/**Falsify branch anchors" in r.detail
+
+
+def test_c14_922_h4_toward_vs_stays_above_warns():
+    # H4 carries NO explicit **Confirm:** label — the implicit-confirm rule
+    # (block text before the falsify anchor is the confirm branch) is
+    # REQUIRED for this to fire (plan §4 test 14, folded in here).
+    ok, by_id = _run(_hyp_plan(H922_H4))
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "k = 32" in r.detail
+    assert "toward" in r.detail
+    assert "stays above" in r.detail
+    assert ok is True  # WARN never flips exit 0 (success criterion 6)
+
+
+def test_c14_922_h4_vague_scope_in_detail():
+    r = _run(_hyp_plan(H922_H4))[1]["c14_hypothesis_branch_coherence"]
+    assert "mid/late layers" in r.detail
+    assert "(b) vague-scope" in r.detail
+
+
+def test_c14_vague_scope_alone_warns():
+    # Predicate (b) fires without (a): no shared bounded token anywhere.
+    plan = _hyp_plan(
+        "- **H1.** Read-out improves at mid/late layers. **Falsify:** no improvement at any layer."
+    )
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "(b) vague-scope" in r.detail
+    assert "mid/late layers" in r.detail
+    assert "(a) comparator-pair" not in r.detail
+
+
+def test_c14_841_v12_crisp_comparators_pass():
+    assert _status(_hyp_plan(H841_H1), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_810_v6_band_wording_passes():
+    assert _status(_hyp_plan(H810_H2G), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_vague_scope_with_pinned_layer_range_passes():
+    assert _status(_hyp_plan(H922_H2), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_toward_without_shared_token_passes():
+    # Deliberate shared-token conservatism (accepted false negative): the
+    # falsify names `k = 32` but the confirm does not, so no comparator pair
+    # is evaluated even though tendency + state tokens are both present.
+    plan = _hyp_plan(
+        "- **H1.** Rollout skill decays toward the null at long horizons at layer 20. "
+        "**Falsify:** rollout skill stays above the frozen null through k = 32."
+    )
+    assert _status(plan, "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_fenced_hypothesis_does_not_trigger():
+    plan = GOOD_PLAN + "\n" + C14_HEADING + "\n\n```\n" + H922_H4 + "\n```\n"
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no **Confirm/**Falsify branch anchors" in r.detail
+
+
+def test_c14_kind_analysis_warns_not_skips():
+    ok, by_id = _run(_hyp_plan(H922_H4), kind="analysis")
+    assert by_id["c14_hypothesis_branch_coherence"].status == "WARN"
+    assert ok is True  # WARN-only under BOTH in-scope kinds (criterion 6)
+
+
+def test_c14_comparator_pair_alone_warns():
+    # (a)-ALONE positive (round-1 critic Must-Fix, alternatives lens): shared
+    # token + tendency-vs-state comparators, NO vague-scope token. A coupled
+    # implementation where comparator detection only evaluates when
+    # vague-scope also fires would pass the H4 tests (H4 fires both) and the
+    # shared-token-conservatism test (nothing evaluates) — this fixture is
+    # the only one that fails such a mutant.
+    plan = _hyp_plan(
+        "- **H1.** Skill decays toward the null by k = 32 at layer 20. "
+        "**Falsify:** skill stays above the null through k = 32."
+    )
+    ok, by_id = _run(plan)
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "(a) comparator-pair" in r.detail
+    assert "k = 32" in r.detail
+    assert "toward" in r.detail
+    assert "stays above" in r.detail
+    assert "(b) vague-scope" not in r.detail
+    assert ok is True
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1402,12 +1536,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 7
+    assert payload["n_skip"] == 8
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 14
-    assert len({c["id"] for c in payload["checks"]}) == 14
+    assert len(payload["checks"]) == 15
+    assert len({c["id"] for c in payload["checks"]}) == 15
 
 
 def test_cli_exit_one_on_fail(tmp_path):
