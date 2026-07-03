@@ -1254,7 +1254,9 @@ def _n_draws_declarations(plan: str) -> list[tuple[str, int]]:
             row_text = lines[k]
             if cols and not _C13_EXCLUDE_RE.search(row_text):
                 row = _split_table_row(row_text)
-                label = row[0].strip("*").strip() if row else ""
+                # replace("**", "") drops INTERIOR bold markers (e.g.
+                # `**Cross-trait** (ref)`) that a bare strip("*") keeps.
+                label = row[0].replace("**", "").strip("*").strip() if row else ""
                 for col in cols:
                     if col >= len(row):
                         continue
@@ -1340,6 +1342,10 @@ def _c13_evaluate(gates: list[dict], decls: list[tuple[str, int]]) -> dict:
     """Per-gate attainability arithmetic. Offender iff floor > alpha OR
     (floor == alpha AND the gate comparator is strict ``<`` — then the gate
     is unattainable, not boundary); floor == alpha under ``<=`` is boundary.
+    A nonpositive alpha (``p ≤ 0.00``) is in-domain: floor = 1/(n+1) > 0 ≥
+    alpha for EVERY draw count, so the same arithmetic classifies every
+    in-scope declaration an offender (fail_capable per the normal
+    family-vocab rule; the alpha ≤ 0 remedy lives in the detail builder).
     A gate whose scope qualifier excludes EVERY declaration is vacuous (an
     empty in-scope set must not yield an affirmative PASS with an undefined
     min)."""
@@ -1375,7 +1381,10 @@ def _c13_offender_detail(offenders: list[tuple[dict, str, int, Fraction]]) -> st
     """Bounded FAIL/WARN detail: the first offending gate line (truncated)
     + its alpha, at most 6 offenders, and the remedy menu (raise n_draws to
     >= ceil(1/alpha) for a clean PASS — n = 1/alpha - 1 exactly lands on the
-    boundary WARN)."""
+    boundary WARN). A nonpositive alpha (e.g. a registered ``p ≤ 0.00`` —
+    the limiting case of the unattainable-gate class) gets a dedicated
+    remedy instead of ``ceil(1/alpha)``, which would ZeroDivisionError on
+    ``Fraction(1, 0)`` — a parseable gate must never crash the module."""
     g0 = offenders[0][0]
     alpha0: Fraction = g0["alpha"]
     # Display-dedupe on (label, n): two gates sharing an offending family
@@ -1390,13 +1399,21 @@ def _c13_offender_detail(offenders: list[tuple[dict, str, int, Fraction]]) -> st
     )
     if len(uniq) > 6:
         shown += ", …"
+    if alpha0 <= 0:
+        remedy = (
+            "alpha ≤ 0 — no finite n_draws attains it (the p-floor 1/(n_draws+1) is "
+            "positive for every draw count); raise the alpha or fix the gate"
+        )
+    else:
+        remedy = (
+            f"raise n_draws to ≥ {math.ceil(1 / alpha0)} for a clean PASS "
+            "(n = 1/alpha - 1 exactly lands on the floor == alpha boundary WARN)"
+        )
     return (
         f'plan registers an empirical-p gate ("{g0["line"][:90]}", alpha={float(alpha0):g}) '
         f"over families whose p-floor 1/(n_draws+1) exceeds alpha: {shown} — the gate is "
-        f"structurally unattainable (#816 v5 class); raise n_draws to ≥ "
-        f"{math.ceil(1 / alpha0)} for a clean PASS (n = 1/alpha - 1 exactly lands on the "
-        "floor == alpha boundary WARN), scope the gate (e.g. 'n_draws ≥ 50'), mark the "
-        "family outside the test set on its row, or declare "
+        f"structurally unattainable (#816 v5 class); {remedy}, scope the gate "
+        "(e.g. 'n_draws ≥ 50'), mark the family outside the test set on its row, or declare "
         "'N/A — no empirical-null gate' on its own line"
     )
 
