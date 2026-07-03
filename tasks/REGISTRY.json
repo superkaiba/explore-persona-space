@@ -6220,8 +6220,8 @@
     "942": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/942",
-      "status": "proposed",
+      "path": "tasks/planning/942",
+      "status": "planning",
       "title": "workflow-fix: audit-availability check misses quota-held denial family + store/maps artifact classes"
     },
     "943": {
