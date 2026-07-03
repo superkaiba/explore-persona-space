@@ -69,6 +69,7 @@ __all__ = [
     "deltas_at",
     "fit_depth_gru",
     "fit_direct_hop_ridge",
+    "fit_ridge_primal",
     "fit_ridge_split",
     "fit_split_mlps",
     "gru_roll",
@@ -304,6 +305,106 @@ def fit_ridge_split(
     mse = _press_loo_mse_per_lambda(Xtr_n, Ytr_c, lambdas)
     best_lam = lambdas[int(torch.argmin(mse).item())]
     w = _ridge_dual_weights(Xtr_n, Ytr_c, best_lam)  # (d, p) fp64, on the centered target
+    Xev = torch.from_numpy(np.ascontiguousarray(x_eval)).to(device=dev, dtype=torch.float64)
+    Xev_n = (Xev - mu) / sd
+    eval_pred = (ymu + Xev_n @ w).detach().cpu().numpy()  # fit-space eval prediction (WITH bias)
+    rmap = RidgeMap(
+        mu=mu.to(torch.float32),
+        sd=sd.to(torch.float32),
+        w=w.to(torch.float32),
+        bias=ymu.to(torch.float32),
+        best_lam=float(best_lam),
+        sigma=float(sigma),
+    )
+    return eval_pred, rmap
+
+
+def fit_ridge_primal(
+    x_train: np.ndarray,
+    y_train_fit: np.ndarray,
+    x_eval: np.ndarray,
+    *,
+    sigma: float,
+    device: str,
+    lambdas: list[float] = RIDGE_LAMBDAS,
+    gram_chunk: int = 20000,
+) -> tuple[np.ndarray, RidgeMap]:
+    """Primal closed-form ridge for n ≫ d — a numeric drop-in for ``fit_ridge_split``.
+
+    ``fit_ridge_split`` builds the dual m×m Gram (m = n_fit); at n=100000 that is
+    100000² fp64 ≈ 80 GB, infeasible. This primal path forms the d×d
+    ``XₙᵀXₙ`` (d=3584, fp64 ≈ 103 MB) via a chunked GEMM and does the EXACT
+    leave-one-out (PRESS) λ-selection in the PRIMAL eigenbasis — mathematically
+    identical to the dual (both evaluate the SAME n×n hat matrix
+    ``H(λ) = Xₙ(XₙᵀXₙ+λI)⁻¹Xₙᵀ`` via its closed form), so at a shared n the two
+    solvers agree to fp64 precision (the KILL-B parity/cross-check gates that).
+
+    Contract identical to ``fit_ridge_split``: AFFINE with bias — X standardized
+    on train (ddof=0), the target train-mean-centered (``ymu``), the intercept
+    ``ymu`` added back at prediction (unpenalized), λ by exact PRESS-LOO over the
+    centered target, RETURNS ``(eval_pred_fitspace (n_eval,p), RidgeMap)`` whose
+    ``apply`` un-scales by ``sigma`` to raw. ``y_train_fit`` is Δ in the chosen
+    fit space (raw or RMS-normalized). fp64 throughout for parity with the dual.
+
+    PRESS-LOO identity (primal eigenbasis). With ``XₙᵀXₙ = V diag(s) Vᵀ``
+    (``eigh``, computed ONCE and reused across λ) and ``Z = Xₙ V`` (n×d):
+
+        diag(H(λ))_k = Σ_j Z[k,j]² / (s_j+λ)              # = (Z² @ 1/(s+λ))_k
+        Ŷ(λ)         = Z diag(1/(s+λ)) (Vᵀ XₙᵀYc)          # (n,P)
+        LOO_resid_k  = (Yc_k − Ŷ_k) / (1 − diag(H)_k)
+
+    The selected-λ weights reuse the SAME eigenbasis:
+    ``w = V diag(1/(s+λ)) Vᵀ (XₙᵀYc)`` (d,P).
+    """
+    dev = torch.device(device)
+    Xt = torch.from_numpy(np.ascontiguousarray(x_train)).to(device=dev, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(y_train_fit)).to(device=dev, dtype=torch.float64)
+    n, d = Xt.shape
+    assert n > 0 and d > 0, (n, d)
+    mu = Xt.mean(0)
+    sd = Xt.std(0, correction=0) + 1e-9  # #658 numpy ddof=0 convention (matches the dual path)
+    ymu = Yt.mean(0)  # (P,) train-mean of Δ = the affine intercept c_ℓ
+    p = Yt.shape[1]
+
+    # Chunked accumulation of XₙᵀXₙ (d,d) and XₙᵀYc (d,P) — never materialize a
+    # (n,d) standardized design when n is large; the reduction is streamed in
+    # row-chunks so peak extra memory is O(chunk·d) beyond the d×d / d×P Grams.
+    XtX = torch.zeros(d, d, dtype=torch.float64, device=dev)
+    XtY = torch.zeros(d, p, dtype=torch.float64, device=dev)
+    for lo in range(0, n, gram_chunk):
+        xc = (Xt[lo : lo + gram_chunk] - mu) / sd  # (c,d) standardized
+        yc = Yt[lo : lo + gram_chunk] - ymu  # (c,P) centered
+        XtX += xc.t() @ xc
+        XtY += xc.t() @ yc
+    evals, V = torch.linalg.eigh(XtX)  # XₙᵀXₙ = V diag(evals) Vᵀ ; O(d³) ONCE
+    evals = evals.clamp(min=0.0)  # PSD; guard tiny negative eigenvalues from round-off
+    VtXtY = V.t() @ XtY  # (d,P), reused across λ and for the final weights
+
+    # Exact PRESS-LOO, streamed in the SAME row-chunks (holds only a (c,d) Zc per
+    # chunk, never the full (n,d) Z). Zc = xc @ V is computed ONCE per chunk and
+    # reused across all λ (the λ-loop is the CHEAP inner loop), so the O(n·d²)
+    # projection is paid once, not once-per-λ — at n=100k that is a 6× GEMM save.
+    filts = [1.0 / (evals + lam) for lam in lambdas]  # each (d,)
+    yhat_coefs = [f.unsqueeze(1) * VtXtY for f in filts]  # each (d,P)
+    sse = [0.0] * len(lambdas)
+    cnt = 0
+    for lo in range(0, n, gram_chunk):
+        xc = (Xt[lo : lo + gram_chunk] - mu) / sd  # (c,d)
+        yc = Yt[lo : lo + gram_chunk] - ymu  # (c,P)
+        zc = xc @ V  # (c,d) — ONCE per chunk
+        z2 = zc * zc  # (c,d) reused across λ for diag(H)
+        for li in range(len(lambdas)):
+            h_diag = z2 @ filts[li]  # (c,)
+            yhat = zc @ yhat_coefs[li]  # (c,P)
+            denom = (1.0 - h_diag).clamp(min=1e-8).unsqueeze(1)  # (c,1)
+            loo = (yc - yhat) / denom
+            sse[li] += float((loo * loo).sum().item())
+        cnt += yc.numel()
+    best_li = int(np.argmin([s / cnt for s in sse]))
+    best_lam = lambdas[best_li]
+
+    filt = 1.0 / (evals + best_lam)
+    w = V @ (filt.unsqueeze(1) * VtXtY)  # (d,P) selected-λ weights on the centered target
     Xev = torch.from_numpy(np.ascontiguousarray(x_eval)).to(device=dev, dtype=torch.float64)
     Xev_n = (Xev - mu) / sd
     eval_pred = (ymu + Xev_n @ w).detach().cpu().numpy()  # fit-space eval prediction (WITH bias)
