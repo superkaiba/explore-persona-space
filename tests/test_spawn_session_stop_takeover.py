@@ -148,7 +148,15 @@ def test_spawn_issue_auto_ignores_stale_sentinel(takeover_registry, monkeypatch)
 
 
 def _stop_ns(*, kill: bool) -> argparse.Namespace:
-    return argparse.Namespace(session_id=_SID, kill=kill)
+    # stop_source="watcher" skips main's deliberate-stop breadcrumb block
+    # (added concurrently on main), keeping these tests focused on the #903
+    # _stop_fallback path; reason rides along for parser parity.
+    return argparse.Namespace(
+        session_id=_SID,
+        kill=kill,
+        stop_source="watcher",
+        reason="test",
+    )
 
 
 @pytest.fixture
