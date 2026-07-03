@@ -1,6 +1,6 @@
 ---
-title: 'Context/query decomposability of the on-policy answer mapping: M_A (context->answer)
-  + M_B (query->answer) vs M_C (context+query->answer)'
+title: 'Context/query decomposition of the mean answer activation: ridge read-outs
+  from disjoint last-context / last-query vectors vs the full-prompt vector (no training)'
 kind: experiment
 tags: []
 created_at: '2026-07-03T10:36:02Z'
