@@ -55,6 +55,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
     KINDS,
     STATUSES,
+    WORKFLOW_VERSIONS,
     NewTaskRequest,
     ReconcileReport,
     add_tag,
@@ -301,6 +302,7 @@ def cmd_create(args: argparse.Namespace) -> None:
         status=args.status,
         goal=goal_value,
         origin_prompt=(args.origin_prompt or "").strip() or None,
+        workflow=getattr(args, "workflow", None),
     )
     new_id = create_task(req)
     # Track: explicit --track wins; otherwise derive a human track from the
@@ -1194,6 +1196,15 @@ def main() -> None:
                 "(SPEC.md; verify_task_body.py check 17). Optional — when the "
                 "prompt is long or there are several, a `## Provenance` body "
                 "section (see task #611) works too."
+            ),
+        )
+        p.add_argument(
+            "--workflow",
+            default=None,
+            choices=list(WORKFLOW_VERSIONS),
+            help=(
+                "workflow pipeline: v1 (default) or v2 (report-only); "
+                "resolved as this flag > env EPM_DEFAULT_WORKFLOW > v1."
             ),
         )
         # Sagan-compatibility: accept --runpod-account but ignore it.

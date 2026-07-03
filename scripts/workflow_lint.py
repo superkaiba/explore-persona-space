@@ -4825,6 +4825,251 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
     return errors
 
 
+# ── --check-api-dispatch-routing (workflow v2, plan §5) ──────────────────────
+# All Anthropic API calls (judges + generation) should route through the
+# multi-org dispatcher src/explore_persona_space/llm/api_dispatch.py so
+# cross-session headroom routing + AIMD back-off + batch-vs-sync apply. A NEW
+# direct call site is a bypass. The routing / sanctioned-client layer is exempt;
+# scripts/archive/** is frozen dead code and excluded wholesale; the current
+# tree's existing direct callers are grandfathered below (enumerated when the
+# check landed via the SAME AST predicate the check uses). A NEW file that
+# constructs anthropic.Anthropic(...) / .AsyncAnthropic(...) or calls
+# <client>.messages[...].create(...) and is not exempt/grandfathered FAILs.
+# Waive a genuinely-correct non-dispatcher caller with a file-level
+# '# API_DISPATCH_ROUTING_EXEMPT: <reason>' comment. Adding to the grandfather
+# set requires an inline reason (a new direct caller should almost always be a
+# dispatcher route instead). Mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style.
+API_DISPATCH_ROUTING_LAYER: frozenset[str] = frozenset(
+    {"api_dispatch.py", "judge_dispatch.py", "batch_judge.py", "anthropic_client.py"}
+)
+API_DISPATCH_ROUTING_WAIVER = "API_DISPATCH_ROUTING_EXEMPT"
+API_DISPATCH_ROUTING_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "scripts/analyze_axis_tails.py",
+        "scripts/build_canonical_persona_pool.py",
+        "scripts/build_i181_data.py",
+        "scripts/eval_language_inversion.py",
+        "scripts/eval_source_persona_issue112.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/generate_a3_data.py",
+        "scripts/generate_issue356_data.py",
+        "scripts/generate_issue376_marker_install.py",
+        "scripts/generate_issue404_json_neg.py",
+        "scripts/generate_leakage_data.py",
+        "scripts/generate_sdf_neutral_ai.py",
+        "scripts/generate_sdf_variants.py",
+        "scripts/generate_trait_transfer_data_v2.py",
+        "scripts/i504_probe_bank_geometry.py",
+        "scripts/i528_phase0_preflight.py",
+        "scripts/i528_phase1_generate_RNeg.py",
+        "scripts/i528_phase1_generate_RPos.py",
+        "scripts/i528_phase2_smoke_judge.py",
+        "scripts/i528_phase4_judge.py",
+        "scripts/issue404_outcome_eval.py",
+        "scripts/issue404_predictor_incontext.py",
+        "scripts/issue404_predictor_kldiv.py",
+        "scripts/issue502_generate_probes.py",
+        "scripts/issue545_judge_refusal_diag.py",
+        "scripts/issue559_cross_behavior_self_scoring.py",
+        "scripts/issue594_build_battery.py",
+        "scripts/issue623_extract_sycophancy_vector.py",
+        "scripts/issue658_judge_e0.py",
+        "scripts/issue661_freeze_instructions.py",
+        "scripts/issue779_common.py",
+        "scripts/issue_188_evolutionary_trigger.py",
+        "scripts/issue_331_phase1_evolutionary.py",
+        "scripts/issue_642/i642_common.py",
+        "scripts/issue_653/i653_dispatch.py",
+        "scripts/judge_with_claude.py",
+        "scripts/poll_lmsys_taxonomy.py",
+        "scripts/reanalyze_issue444_5way.py",
+        "scripts/regenerate_issue404_medical.py",
+        "scripts/rejudge_issue_389_c_strict.py",
+        "scripts/run_a3_leakage.py",
+        "scripts/run_a3b_experiment.py",
+        "scripts/run_em_multiseed.py",
+        "scripts/run_experiment_389.py",
+        "scripts/run_experiment_444.py",
+        "scripts/run_issue_156.py",
+        "scripts/run_issue_203.py",
+        "scripts/run_issue_213_part_b.py",
+        "scripts/run_parallel_jobs.py",
+        "scripts/run_proximity_transfer.py",
+        "scripts/translate_to_italian.py",
+        "scripts/translate_ultrachat.py",
+        "scripts/validate_italian_translation.py",
+        "scripts/validate_translation.py",
+        "src/explore_persona_space/eval/alignment.py",
+        "src/explore_persona_space/eval/belief.py",
+        "src/explore_persona_space/eval/refusal.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/judges_545.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_472/persona_bank.py",
+        "src/explore_persona_space/experiments/issue503/advbench_judge.py",
+        "src/explore_persona_space/experiments/issue503/broad_syco_dataset.py",
+        "src/explore_persona_space/experiments/issue503/topic_strip.py",
+        "src/explore_persona_space/experiments/issue559/judge_rubrics.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/judge.py",
+        "src/explore_persona_space/orchestrate/fleet.py",
+    }
+)
+
+
+def _attr_chain_contains(node: ast.AST, name: str) -> bool:
+    """True iff ``name`` appears as an attr / base Name in an attribute chain."""
+    while isinstance(node, ast.Attribute):
+        if node.attr == name:
+            return True
+        node = node.value
+    return isinstance(node, ast.Name) and node.id == name
+
+
+def _file_calls_anthropic_directly(tree: ast.AST) -> bool:
+    """True iff the module AST contains a direct Anthropic client construction
+    (``anthropic.Anthropic(`` / ``.AsyncAnthropic(``) OR a
+    ``<client>.messages[...].create(`` call.
+
+    AST-based (not a line/regex scan) so a comment / docstring describing the
+    pattern — this lint's own prose, a post-mortem note — never false-positives.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute):
+            if f.attr in ("Anthropic", "AsyncAnthropic"):
+                return True
+            if f.attr == "create" and _attr_chain_contains(f.value, "messages"):
+                return True
+    return False
+
+
+def check_api_dispatch_routing(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a NEW direct-Anthropic call site outside the dispatcher route.
+
+    Walks ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``. A file
+    that constructs the Anthropic client or calls ``.messages...create(...)``
+    directly FAILs UNLESS it is (a) a routing/sanctioned-client layer file
+    (:data:`API_DISPATCH_ROUTING_LAYER`), (b) under ``**/archive/`` (frozen),
+    (c) in :data:`API_DISPATCH_ROUTING_ALLOWLIST` (grandfathered), or (d)
+    carrying a ``# API_DISPATCH_ROUTING_EXEMPT: <reason>`` waiver. New Anthropic
+    calls route through ``src/explore_persona_space/llm/api_dispatch.py`` (the
+    multi-org headroom-routing + AIMD + batch-vs-sync dispatcher). ``repo_root``
+    is a unit-test override; production callers pass None. Bundled into the
+    no-flags default run (workflow v2, plan §5).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for base in ("scripts", "src/explore_persona_space"):
+        base_dir = root / base
+        if not base_dir.is_dir():
+            continue
+        for path in sorted(base_dir.rglob("*.py")):
+            if path.name in API_DISPATCH_ROUTING_LAYER:
+                continue
+            rel = path.relative_to(root).as_posix()
+            if "/archive/" in rel:
+                continue
+            if rel in API_DISPATCH_ROUTING_ALLOWLIST:
+                continue
+            try:
+                text = path.read_text()
+            except (OSError, UnicodeDecodeError):
+                continue
+            if API_DISPATCH_ROUTING_WAIVER in text:
+                continue
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                continue
+            if _file_calls_anthropic_directly(tree):
+                errors.append(
+                    f"{rel}: constructs/calls the Anthropic client directly "
+                    f"(anthropic.Anthropic(...) / .messages...create(...)) outside the routing "
+                    f"layer. Route new Anthropic calls through "
+                    f"src/explore_persona_space/llm/api_dispatch.py (multi-org headroom routing "
+                    f"+ AIMD + batch-vs-sync), or waive a genuinely-correct non-dispatcher "
+                    f"caller with a '# {API_DISPATCH_ROUTING_WAIVER}: <reason>' comment."
+                )
+    return errors
+
+
+# ── --check-lens-coverage (workflow v2, plan §3) ─────────────────────────────
+# The four EXACT State-column prefixes a lens-coverage-map.md row may declare.
+_LENS_STATE_PREFIXES: tuple[str, ...] = ("v2-owner:", "v1-only", "retired:", "GAP:")
+_LENS_MAP_REL = ".claude/rules/lens-coverage-map.md"
+
+
+def check_lens_coverage(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """Validate the workflow-v2 lens-coverage ledger (plan §3).
+
+    Two FAIL modes: (a) a table DATA row in ``.claude/rules/lens-coverage-map.md``
+    whose State (last) column does not start with one of the four exact prefixes
+    :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
+    ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
+    ``.claude/rules/LESSONS.md`` (the ``- **<name>**`` bullets) with NO row in
+    the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
+    provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
+    enter the returned FAIL list. ``repo_root`` is a unit-test override; a
+    separate lint from ``--check-lessons-index``. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    lens_map = root / ".claude" / "rules" / "lens-coverage-map.md"
+    if not lens_map.is_file():
+        errors.append(f"{_LENS_MAP_REL}: missing — the workflow-v2 lens-coverage ledger.")
+        return errors
+
+    covered_items: set[str] = set()
+    for raw in lens_map.read_text().splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        # Skip the markdown separator row (every cell is dashes/colons).
+        if all(c and set(c) <= set("-: ") for c in cells):
+            continue
+        # Skip the table header row.
+        if cells[0] == "Item" and cells[-1] == "State":
+            continue
+        item, state = cells[0], cells[-1]
+        covered_items.add(item)
+        if not state.startswith(_LENS_STATE_PREFIXES):
+            errors.append(
+                f"{_LENS_MAP_REL}: row '{item}' has State '{state}' — the State column MUST "
+                f"start with one of {list(_LENS_STATE_PREFIXES)}."
+            )
+        elif state.startswith("GAP:"):
+            _warn(f"{_LENS_MAP_REL}: row '{item}' is a GAP (no v2 owner yet): {state}")
+
+    lessons = root / ".claude" / "rules" / "LESSONS.md"
+    if not lessons.is_file():
+        errors.append(".claude/rules/LESSONS.md: missing — cannot cross-check lens coverage.")
+        return errors
+    rule_names = {m.group("name") for m in _LESSONS_ROW_RE.finditer(lessons.read_text())}
+    for rule in sorted(rule_names - covered_items):
+        errors.append(
+            f"{_LENS_MAP_REL}: LESSONS.md rule '{rule}' has no coverage row in the map — add a "
+            f"'| {rule} | LESSONS.md | <state> |' row so no lesson is silently uncovered."
+        )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -5162,6 +5407,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         action="store_true",
         help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
     )
+    parser.add_argument(
+        "--check-api-dispatch-routing",
+        action="store_true",
+        help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
+        ".AsyncAnthropic(...) / <client>.messages...create(...)) under scripts/ or "
+        "src/explore_persona_space/ outside the routing layer (api_dispatch.py / "
+        "judge_dispatch.py / batch_judge.py / anthropic_client.py). New Anthropic "
+        "calls route through the multi-org dispatcher api_dispatch.py (headroom "
+        "routing + AIMD + batch-vs-sync). scripts/archive/** + the current tree's "
+        "existing callers (API_DISPATCH_ROUTING_ALLOWLIST) are grandfathered; waive "
+        "a new non-dispatcher caller with '# API_DISPATCH_ROUTING_EXEMPT: <reason>'. "
+        "Bundled into the no-flags default run (workflow v2, plan §5).",
+    )
+    parser.add_argument(
+        "--check-lens-coverage",
+        action="store_true",
+        help="Validate .claude/rules/lens-coverage-map.md (workflow v2, plan §3): "
+        "FAIL a table row whose State column does not start with one of v2-owner: / "
+        "v1-only / retired: / GAP:, and FAIL a .claude/rules/LESSONS.md rule with no "
+        "coverage row in the map. GAP: rows PASS but print as WARN. A separate lint "
+        "from --check-lessons-index. Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -5208,6 +5475,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
         or args.check_agent_spec_size
+        or args.check_api_dispatch_routing
+        or args.check_lens_coverage
     )
 
     errors: list[str] = []
@@ -5290,6 +5559,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_vm_thread_cap_guidance())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
+    if args.check_api_dispatch_routing or no_flags:
+        errors.extend(check_api_dispatch_routing())
+    if args.check_lens_coverage or no_flags:
+        errors.extend(check_lens_coverage())
 
     if errors:
         for err in errors:
