@@ -126,3 +126,8 @@ The substrate-swap null exists only at layer 14, so these profiles are descripti
 
 (The plan grounded the target basis at the parent protocol's top-64, superseding the prompt's "PCA-48"; the run used 64.)
 
+<!-- concern-deferred: perlayer-npz-key-coverage-preflight -->
+<!-- concern-deferred: perlayer-resume-stale-regime -->
+<!-- Both concerns are rerun-hygiene guards on the per-layer driver (NPZ key-coverage preflight; resume-skip regime validation). This round's 12/12 committed profiles were verified by execution at the pinned HF revision with the layer-14 equivalence gate PASS and uniform git_sha, so the committed outputs are unaffected; the guards bind any future rerun of scripts/issue813_perlayer_profile.py. -->
+
+
