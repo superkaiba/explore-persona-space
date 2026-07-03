@@ -1,0 +1,642 @@
+{
+  "commit": "36bd9eef3e",
+  "created": "2026-07-03T08:02:26Z",
+  "figsize": [
+    13.0,
+    5.0
+  ],
+  "points": [
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.00011293520481998071,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.05162102766646656,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.10629767461463917,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.28441153365232813,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.40271584583183495,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5438228927210897,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.6461665988770621,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.7291901421227165,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.8204320481131582,
+      "series": "evil r_B captured (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.06051001347912183,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.09689208867377316,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.15292177731317444,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.21595918669934908,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.29833563602615387,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.43579304455078194,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5585331033160148,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.6888958133699217,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.8536442883274078,
+      "series": "evil map output-energy (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.008700547314044705,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.012118943498116905,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.10679321413117963,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.2682755740910885,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.35988870279562846,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.4898832704048379,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5543067634956955,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.6444568988492749,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.771125688335958,
+      "series": "sycophancy r_B captured (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.054832665169029744,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.0927201431349271,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.13754887759216383,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.18047600186304186,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.2406946752054467,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.3520869304029683,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.46132195134289805,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5967171175796796,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.7942831347228324,
+      "series": "sycophancy map output-energy (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.4160921664524725,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.4575052339484812,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5637684789721094,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5905402856812004,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.6589793287489207,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.7678650714408487,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.8275755746878583,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.8656341766311341,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.9147981013441395,
+      "series": "hallucination r_B captured (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.06362035747792252,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.10528892012324417,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.16563227659904528,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.23279165640449886,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.321608527625279,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.46170428426019183,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.5796734213041076,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.7025302959674572,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.8587818114587705,
+      "series": "hallucination map output-energy (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.00027901785714285713,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.0005580357142857143,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.0013950892857142857,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.0027901785714285715,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.005580357142857143,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.013950892857142858,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.027901785714285716,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.05580357142857143,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass captured  /  output-energy fraction": 0.13950892857142858,
+      "series": "random direction (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.99988706479518,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.9483789723335334,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.8937023253853609,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.7155884663476719,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.597284154168165,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.45617710727891025,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.35383340112293793,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.2708098578772835,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.17956795188684183,
+      "series": "evil (L14)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.9912994526859553,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.9878810565018831,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.8932067858688204,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.7317244259089115,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.6401112972043715,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.5101167295951621,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.4456932365043045,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.35554310115072507,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.22887431166404204,
+      "series": "sycophancy (L26)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k  (top-k output singular subspace of h)": 1.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.5839078335475275,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 2.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.5424947660515188,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 5.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.43623152102789065,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 10.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.4094597143187996,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 20.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.34102067125107927,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 50.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.2321349285591513,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 100.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.17242442531214175,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 200.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.13436582336886593,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k  (top-k output singular subspace of h)": 500.0,
+      "fraction of r_B mass OUTSIDE top-k output subspace": 0.08520189865586048,
+      "series": "hallucination (L17)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 90
+}
