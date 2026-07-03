@@ -74,6 +74,24 @@ the tree as clean for removal (rescue strictly precedes removal). Dirt
 outside ``RESCUE_DIRTY_ALLOWLIST``, any real (non-orphan) holder, and
 non-terminal statuses keep today's behavior unchanged.
 
+Venv-reap arm (2026-07-03, #912): a KEPT worktree's ``.venv`` is a pure
+build artifact ``uv run``/``uv sync`` regenerates in minutes from the shared
+uv cache (``pyproject.toml`` + ``uv.lock`` are checked in at every worktree
+root), yet every keep reason (dirty / active issue / human-named) retained it
+indefinitely — 34 of 35 worktrees carried one on the 95%-full boot disk. On
+every sweep the plain-KEEP branch now additionally deletes JUST the
+``.venv`` (rename-aside to ``.venv.reap-tmp-<pid>`` first, post-rename
+holder re-check, then rmtree — never the worktree itself) when the worktree
+has been idle >= ``DEFAULT_VENV_IDLE_DAYS`` (7d; 2d under the same
+disk-pressure predicate as the grace window; env
+``EPM_WORKTREE_VENV_IDLE_DAYS``) AND no process holds it — cwd/argv harvest
+PLUS a dedicated ``/proc/<pid>/exe`` probe catching interpreters exec'd from
+the venv itself. Underscore-prefixed managed worktrees (``_task-main-pin``),
+symlinked roots, symlinked ``.venv``\\s, and any worktree whose idleness
+cannot be established are never touched; deletion never widens beyond
+``<wt>/.venv`` + ``<wt>/.venv.reap-tmp-*``. Dry-run only classifies
+(would-reap candidates). Kill switch: ``EPM_WORKTREE_VENV_REAP=0``.
+
 Default is dry-run. Pass ``--apply`` to actually remove (the cron wrapper
 does). Removal uses ``git worktree remove --force`` (after ``git worktree
 unlock`` for locked agent worktrees); a worktree git refuses to remove is
@@ -131,6 +149,23 @@ DEFAULT_GRACE_HOURS = 6.0
 # tightens to PRESSURE_GRACE_HOURS. Threshold overridable via env.
 DEFAULT_PRESSURE_THRESHOLD_PCT = 90.0
 PRESSURE_GRACE_HOURS = 1.0
+
+# Venv-reap arm (#912): a KEPT worktree's .venv is a pure build artifact,
+# regenerable by `uv run`/`uv sync` from the shared uv cache (pyproject.toml
+# + uv.lock are checked in at every worktree root). Reap it when the
+# worktree has been idle past this window and NOTHING is running in it.
+# Pressure tightens the window via effective_venv_idle_days (same predicate
+# as PRESSURE_GRACE_HOURS). Kill switch: EPM_WORKTREE_VENV_REAP=0.
+DEFAULT_VENV_IDLE_DAYS = 7.0  # env: EPM_WORKTREE_VENV_IDLE_DAYS
+PRESSURE_VENV_IDLE_DAYS = 2.0  # tightened under the SAME disk-pressure predicate
+_VENV_DIRNAME = ".venv"
+_VENV_REAP_TMP_PREFIX = ".venv.reap-tmp-"
+
+# Worktree-name component followed by a `.venv`-PREFIXED path component —
+# deliberately also matches `.venv.reap-tmp-*` leftovers so a process
+# exec'd from a renamed-aside venv still protects it (post-rename gate).
+# The char class is the same one harvest() extracts.
+_VENV_EXE_RE = re.compile(r"([A-Za-z0-9_.\-]+)/\.venv")
 
 # Single source for the tracked-changes keep reason: emitted by should_remove
 # / _classify and matched by tracked_changes_backlog, so the backlog counter
@@ -215,6 +250,19 @@ class AuditResult:
     # a half-mounted boot state where a worktree would silently land on `/`.
     # Escalate-only (loud warning), never a reap trigger.
     bind_missing: bool = False
+    # Venv-reap arm (#912) — additive reporting fields, defaults keep every
+    # existing consumer (cron log, main() stub tests) unchanged.
+    venv_enabled: bool = True
+    venv_idle_days_effective: float = DEFAULT_VENV_IDLE_DAYS
+    venv_reaped: list[str] = field(default_factory=list)
+    venv_candidates: list[str] = field(default_factory=list)  # dry-run would-reap
+    venv_failed: list[str] = field(default_factory=list)
+    # has-venv but kept, with reason (the silent no-venv majority excluded).
+    venv_skipped: list[Decision] = field(default_factory=list)
+    # du of .venv (apparent bytes; hardlink-overcounted like every size this
+    # report prints). Measured pre-verify; dropped on a became-unsafe skip.
+    # Leftover-sweep entries ("<name>/<tmp>") carry None (unmeasured).
+    venv_bytes: dict[str, int | None] = field(default_factory=dict)
 
 
 def _data_disk_bind_missing(wt_dir: Path) -> bool:
@@ -259,6 +307,25 @@ def _pressure_threshold_pct() -> float:
     return float(
         os.environ.get("EPM_WORKTREE_DISK_PRESSURE_PCT", str(DEFAULT_PRESSURE_THRESHOLD_PCT))
     )
+
+
+def effective_venv_idle_days(idle_days: float, disk_pct: float, threshold_pct: float) -> float:
+    """Pure pressure rule mirroring ``effective_grace_hours``: at/above the
+    threshold the venv idle window tightens to ``PRESSURE_VENV_IDLE_DAYS``;
+    an explicitly tighter ``idle_days`` is never loosened."""
+    if disk_pct >= threshold_pct:
+        return min(idle_days, PRESSURE_VENV_IDLE_DAYS)
+    return idle_days
+
+
+def _venv_idle_days() -> float:
+    """Venv idle window in days, env-overridable (mirrors _pressure_threshold_pct)."""
+    return float(os.environ.get("EPM_WORKTREE_VENV_IDLE_DAYS", str(DEFAULT_VENV_IDLE_DAYS)))
+
+
+def _venv_reap_enabled() -> bool:
+    """Kill switch for the venv arm (default ON; EPM_WORKTREE_VENV_REAP=0 disables)."""
+    return os.environ.get("EPM_WORKTREE_VENV_REAP", "1") != "0"
 
 
 def _disk_usage_pct(path: str) -> float:
@@ -325,6 +392,58 @@ def should_remove(
         return Decision(name, False, _TRACKED_CHANGES_REASON)
     detail = f"status={status}" if status is not None else "ephemeral agent/workflow worktree"
     return Decision(name, True, f"idle and reapable ({detail})")
+
+
+def should_reap_venv(
+    name: str,
+    *,
+    worktree_kept: bool,  # the worktree itself survived should_remove
+    has_venv: bool,  # (wt/.venv).is_dir() and not is_symlink()
+    venv_is_symlink: bool,  # (wt/.venv).is_symlink()
+    is_live: bool,  # name in the cwd/argv holder snapshot
+    exe_in_venv: bool,  # name in the /proc/<pid>/exe venv snapshot
+    newest_activity_ts: float | None,  # None = could not be established
+    now: float,
+    idle_days_required: float,
+) -> Decision:
+    """Pure venv-reap decision (unit-tested; #912). ``Decision.remove=True``
+    means 'reap this worktree's .venv' — the worktree itself is NEVER removed
+    by this arm. Gate order is strictly fail-toward-keep. Deliberately
+    keep-reason-INDEPENDENT: every plain-keep class (human-named,
+    status-not-reapable, tracked-changes) is eligible; the live-process class
+    is blocked by ``is_live``/``exe_in_venv``; grace-window keeps are
+    auto-excluded because a fresh root mtime makes ``newest_activity_ts``
+    fresh (plan §11 D4)."""
+    if not worktree_kept:
+        return Decision(name, False, "venv: worktree itself is being removed")
+    if not has_venv and not venv_is_symlink:
+        return Decision(name, False, "venv: none present")
+    if name.startswith("_"):
+        # _task-main-pin (task_workflow._MANAGED_MAIN_WORKTREE_NAME) and any
+        # future managed worktree — the leading underscore is its contract
+        # (task_workflow.py, _MANAGED_MAIN_WORKTREE_NAME comment). An
+        # anti-drift test pins the constant + its underscore prefix.
+        return Decision(name, False, "venv: managed worktree (never touched)")
+    if venv_is_symlink:
+        return Decision(name, False, "venv: .venv is a symlink (never followed)")
+    if is_live:
+        return Decision(name, False, f"venv: {_LIVE_PROCESS_REASON}")
+    if exe_in_venv:
+        return Decision(name, False, "venv: a running process executes from this .venv")
+    if newest_activity_ts is None:
+        return Decision(name, False, "venv: idleness could not be established")
+    idle_days = (now - newest_activity_ts) / 86400.0
+    if idle_days < idle_days_required:
+        return Decision(
+            name,
+            False,
+            f"venv: active {idle_days:.1f}d ago (< {idle_days_required:g}d idle)",
+        )
+    return Decision(
+        name,
+        True,
+        f"venv: idle {idle_days:.1f}d (>= {idle_days_required:g}d), reapable",
+    )
 
 
 def tracked_changes_backlog(
@@ -469,6 +588,70 @@ def _format_holders(live: dict[str, list[tuple[int, str]]]) -> dict[str, list[st
         name: [f"pid {pid}: {cmd[:120] or '?'}" for pid, cmd in entries]
         for name, entries in live.items()
     }
+
+
+def _venv_exe_holders() -> set[str]:
+    """Worktree names whose ``.venv*`` contains a RUNNING executable:
+    ``/proc/<pid>/exe`` resolves under ``.claude/worktrees/<name>/.venv...``.
+    Complements ``_live_worktree_holders`` (cwd/argv): a process exec'd FROM
+    the venv interpreter whose cwd and argv reference neither path (e.g. a
+    daemonized ``python`` with cwd ``/``) is invisible to the harvest but
+    would crash if its ``sys.path``/stdlib under ``.venv`` vanished.
+    Unreadable /proc entries (vanished pid, other-uid EPERM) are skipped —
+    same posture as the existing harvest. ``_VENV_EXE_RE`` matches any
+    ``.venv``-prefixed component so ``.venv.reap-tmp-*`` leftovers are also
+    protected."""
+    found: set[str] = set()
+    marker = ".claude/worktrees/"
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        with contextlib.suppress(OSError):
+            exe = os.readlink(f"/proc/{pid}/exe")
+            idx = exe.find(marker)
+            if idx != -1:
+                m = _VENV_EXE_RE.match(exe[idx + len(marker) :])
+                if m:
+                    found.add(m.group(1))
+    return found
+
+
+def _venv_newest_activity_ts(child: Path) -> float | None:
+    """Newest activity timestamp for the venv-reap idle test (#912): max of
+    (a) worktree root dir mtime (the existing age signal, ``_classify``),
+    (b) ``.venv`` dir mtime via lstat (venv creation / uv sync churn; a
+        symlinked or missing ``.venv`` is skipped — the pure gate handles
+        those cases on its own flags),
+    (c) the worktree's git-admin activity — mtime of ``HEAD`` and ``index``
+        under the gitdir the worktree's ``.git`` FILE points at
+        (``gitdir: <path>``), which captures commits / checkouts /
+        status-refreshes that touch no top-level entry (root dir mtime only
+        moves on direct-child churn). Missing individual admin files are
+        skipped, not an error.
+    Returns ``None`` when the ``.git`` file is absent / unreadable /
+    unparseable or any required signal cannot be read — the pure gate then
+    fails toward keep."""
+    try:
+        signals = [child.stat().st_mtime]
+        venv = child / _VENV_DIRNAME
+        # A missing .venv is skipped (the pure gate short-circuits on has_venv).
+        with contextlib.suppress(FileNotFoundError):
+            signals.append(venv.lstat().st_mtime)
+        gitfile = child / ".git"
+        text = gitfile.read_text()
+        if not text.startswith("gitdir:"):
+            return None
+        gitdir = Path(text.split(":", 1)[1].strip())
+        if not gitdir.is_absolute():
+            gitdir = child / gitdir
+        for admin in ("HEAD", "index"):
+            try:
+                signals.append((gitdir / admin).stat().st_mtime)
+            except FileNotFoundError:
+                continue
+        return max(signals)
+    except OSError:
+        return None
 
 
 def _read_cmdline(pid: int) -> str | None:
@@ -744,6 +927,196 @@ def _execute_remediation(
     return Decision(name, True, f"{killed_note}idle and reapable (status={status})")
 
 
+def _reap_venv(
+    child: Path,
+    wt_root_rel: str,
+    *,
+    exe_holders=_venv_exe_holders,
+    live_holders=_live_worktree_holders,
+) -> str | None:
+    """Rename ``.venv`` aside, POST-RENAME holder re-check, then rmtree the
+    renamed dir; restore the worktree root dir's ``(atime, mtime)`` afterwards.
+    Returns None on success, else an error string.
+
+    Rename-first makes the rename the SERIALIZATION POINT: a process can
+    start from ``.venv/bin/python`` in the sub-second window AFTER the fresh
+    pre-rename probes but BEFORE the rename; after the rename its
+    ``/proc/<pid>/exe`` resolves under ``.venv.reap-tmp-*``, which
+    ``_VENV_EXE_RE`` deliberately matches — so the post-rename
+    ``exe_holders()`` + ``live_holders()`` re-check catches it, and on ANY
+    holder we do NOT rmtree: the renamed tmp dir is left as a PROTECTED
+    leftover (the next apply sweep's leftover pass re-attempts it, under the
+    same holder gates). A partial delete can never leave a half-broken dir
+    NAMED ``.venv`` — after the rename the worktree simply has no venv, and
+    the next ``uv run`` recreates it from the shared cache. The mtime restore
+    keeps this arm from resetting the MAIN removal arm's root-mtime idleness
+    signal (deleting a direct child bumps the parent dir mtime). The holder
+    probes are injectable keyword-default callables for fault-injection
+    tests."""
+    venv = child / _VENV_DIRNAME
+    tmp = child / f"{_VENV_REAP_TMP_PREFIX}{os.getpid()}"
+    name = child.name
+    try:
+        st = child.stat()
+        os.rename(venv, tmp)
+    except OSError as exc:
+        return f"rename failed: {exc}"
+    # POST-RENAME, PRE-RMTREE holder re-check — the race-closing gate.
+    if name in exe_holders() or name in live_holders(wt_root_rel):
+        with contextlib.suppress(OSError):
+            os.utime(child, (st.st_atime, st.st_mtime))
+        return f"holder appeared post-rename; left protected leftover {tmp.name}"
+    try:
+        shutil.rmtree(tmp)
+    except OSError as exc:
+        with contextlib.suppress(OSError):
+            os.utime(child, (st.st_atime, st.st_mtime))
+        return f"rmtree failed (leftover at {tmp.name}): {exc}"
+    with contextlib.suppress(OSError):
+        os.utime(child, (st.st_atime, st.st_mtime))
+    return None
+
+
+def _sweep_venv_leftovers(
+    child: Path,
+    res: AuditResult,
+    wt_root_rel: str,
+    *,
+    exe_holders=_venv_exe_holders,
+    live_holders=_live_worktree_holders,
+) -> None:
+    """APPLY-MODE ONLY: rmtree pre-existing ``.venv.reap-tmp-*`` leftovers
+    (condemned by a prior apply run that crashed / was vetoed post-rename)
+    under one KEPT worktree — but only when FRESH probes show no holder (a
+    leftover whose interpreter is STILL running stays protected, matching
+    the post-rename gate in ``_reap_venv``). Restores the worktree root
+    ``(atime, mtime)`` after each delete, exactly as ``_reap_venv`` does.
+    Never called in dry-run."""
+    name = child.name
+    leftovers = sorted(
+        p
+        for p in child.iterdir()
+        if p.name.startswith(_VENV_REAP_TMP_PREFIX) and p.is_dir() and not p.is_symlink()
+    )
+    if not leftovers:
+        return
+    if name in exe_holders() or name in live_holders(wt_root_rel):
+        res.venv_skipped.append(
+            Decision(
+                name,
+                False,
+                f"venv: {len(leftovers)} protected leftover(s) kept ({_LIVE_PROCESS_REASON})",
+            )
+        )
+        return
+    for tmp in leftovers:
+        entry = f"{name}/{tmp.name}"
+        try:
+            st = child.stat()
+        except OSError as exc:
+            res.venv_skipped.append(
+                Decision(name, False, f"venv: leftover reap FAILED ({tmp.name}): {exc}")
+            )
+            continue
+        try:
+            shutil.rmtree(tmp)
+        except OSError as exc:
+            with contextlib.suppress(OSError):
+                os.utime(child, (st.st_atime, st.st_mtime))
+            res.venv_skipped.append(
+                Decision(name, False, f"venv: leftover reap FAILED ({tmp.name}): {exc}")
+            )
+            continue
+        with contextlib.suppress(OSError):
+            os.utime(child, (st.st_atime, st.st_mtime))
+        res.venv_reaped.append(entry)
+        res.venv_bytes[entry] = None  # unmeasured — condemned by a prior run
+
+
+def _venv_arm(
+    child: Path,
+    live: dict[str, list[tuple[int, str]]],
+    venv_exe: set[str],
+    res: AuditResult,
+    apply: bool,
+    idle_days_required: float,
+    wt_root_rel: str,
+    now: float,
+    *,
+    exe_holders=_venv_exe_holders,
+    live_holders=_live_worktree_holders,
+) -> None:
+    """Venv-reap arm for one KEPT worktree (#912). Dry-run: classify + record
+    only — NEVER deletes. Apply: leftover sweep, then classification against
+    the audit-start snapshots, then a fresh re-verify (liveness + exe +
+    idleness re-derived against fresh state, mirroring the pre-removal fresh
+    ``_classify``), then rename-aside + rmtree via ``_reap_venv``. Never
+    touches the worktree itself. Fires only from the plain-KEEP branch of
+    ``audit()`` — removal / remediation paths never call it."""
+    if not res.venv_enabled:
+        return
+    name = child.name
+    if child.is_symlink():
+        # Root-symlink containment: a symlinked entry under .claude/worktrees/
+        # (e.g. `manual-link -> ~/other-project`) passes the loop's is_dir()
+        # (which follows symlinks); the venv arm must NEVER classify or delete
+        # THROUGH it — the target's .venv is outside the physical worktree
+        # area and not established as our regenerable artifact. Fail-closed
+        # BEFORE any venv classification or leftover sweep.
+        res.venv_skipped.append(
+            Decision(name, False, "venv: worktree root is a symlink (never followed)")
+        )
+        return
+    if apply:
+        _sweep_venv_leftovers(
+            child, res, wt_root_rel, exe_holders=exe_holders, live_holders=live_holders
+        )
+    venv = child / _VENV_DIRNAME
+    d = should_reap_venv(
+        name,
+        worktree_kept=True,
+        has_venv=venv.is_dir() and not venv.is_symlink(),
+        venv_is_symlink=venv.is_symlink(),
+        is_live=name in live,
+        exe_in_venv=name in venv_exe,
+        newest_activity_ts=_venv_newest_activity_ts(child),
+        now=now,
+        idle_days_required=idle_days_required,
+    )
+    if not d.remove:
+        if d.reason != "venv: none present":  # silence the no-venv majority
+            res.venv_skipped.append(d)
+        return
+    res.venv_bytes[name] = _worktree_size_bytes(str(venv))  # measure BEFORE
+    if not apply:
+        res.venv_candidates.append(name)
+        return
+    # APPLY: fresh re-verify immediately before the destructive call.
+    fresh = should_reap_venv(
+        name,
+        worktree_kept=True,
+        has_venv=venv.is_dir() and not venv.is_symlink(),
+        venv_is_symlink=venv.is_symlink(),
+        is_live=name in live_holders(wt_root_rel),
+        exe_in_venv=name in exe_holders(),
+        newest_activity_ts=_venv_newest_activity_ts(child),
+        now=now,
+        idle_days_required=idle_days_required,
+    )
+    if not fresh.remove:
+        res.venv_skipped.append(
+            Decision(name, False, f"venv: became unsafe mid-audit: {fresh.reason}")
+        )
+        res.venv_bytes.pop(name, None)  # drop the stale pre-verify size entry
+        return
+    err = _reap_venv(child, wt_root_rel, exe_holders=exe_holders, live_holders=live_holders)
+    if err is None:
+        res.venv_reaped.append(name)
+    else:
+        res.venv_failed.append(name)
+        res.venv_skipped.append(Decision(name, False, f"venv: reap FAILED ({err})"))
+
+
 def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditResult:
     now = time.time() if now is None else now
     root = repo_root()
@@ -772,6 +1145,14 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
     statuses = _issue_statuses()
     live = _live_worktree_holders(wt_root_rel)
     res.live_holders = _format_holders(live)
+    # Venv-reap arm (#912) snapshots: the /proc exe pass is skipped entirely
+    # when the kill switch is off; the idle window tightens under the SAME
+    # pressure predicate as the grace window (7d -> 2d).
+    res.venv_enabled = _venv_reap_enabled()
+    res.venv_idle_days_effective = effective_venv_idle_days(
+        _venv_idle_days(), res.disk_pct, res.pressure_threshold_pct
+    )
+    venv_exe = _venv_exe_holders() if res.venv_enabled else set()
     rescue_root = (
         root
         / ".claude"
@@ -802,6 +1183,20 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
             )
             if remediation is None:
                 res.kept.append(decision)
+                # Venv-reap arm (#912): plain-KEEP branch ONLY. Removal /
+                # remediation paths reap the whole worktree (venv included)
+                # or fail toward keep this pass; the arm's own first guards
+                # handle the kill switch + root-symlink containment.
+                _venv_arm(
+                    child,
+                    live,
+                    venv_exe,
+                    res,
+                    apply,
+                    res.venv_idle_days_effective,
+                    wt_root_rel,
+                    now,
+                )
                 continue
             kind, detail = remediation
             if not apply:
@@ -875,6 +1270,34 @@ def acquire_single_instance_lock(lock_path: Path | None = None) -> object | None
     return fd
 
 
+def _print_venv_report(res: AuditResult, apply: bool) -> None:
+    """Text-report block for the venv-reap arm (#912). Bytes are du-APPARENT:
+    venv content is hardlink-deduplicated against ~/.cache/uv, so freed <=
+    this (shared blocks free only when the uv cache itself is pruned)."""
+    if not res.venv_enabled:
+        print("worktree_audit venv-reap: DISABLED (EPM_WORKTREE_VENV_REAP=0)")
+        return
+    acted = res.venv_reaped if apply else res.venv_candidates
+    venv_total = sum(res.venv_bytes.get(n) or 0 for n in acted)
+    venv_verb = "reaped" if apply else "candidates (would reap)"
+    print(
+        f"worktree_audit venv-reap: idle window "
+        f"{res.venv_idle_days_effective:g}d | {venv_verb} {len(acted)} "
+        f"(~{_fmt_size(venv_total)} apparent; hardlinked vs uv cache — "
+        f"freed <= this) | skipped {len(res.venv_skipped)} | "
+        f"failed {len(res.venv_failed)}"
+    )
+    for entry in res.venv_reaped:
+        label = "venv leftover reaped" if "/" in entry else "venv reaped"
+        print(f"  - {label}: {entry} [{_fmt_size(res.venv_bytes.get(entry))} apparent]")
+    for name in res.venv_candidates:
+        print(f"  - venv would-reap: {name} [{_fmt_size(res.venv_bytes.get(name))} apparent]")
+    for name in res.venv_failed:
+        print(f"  ! venv reap FAILED: {name}")
+    for d in res.venv_skipped:
+        print(f"  . venv kept: {d.name} ({d.reason})")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Stale-worktree sweep (safety net).")
     ap.add_argument(
@@ -934,6 +1357,17 @@ def main(argv: list[str] | None = None) -> int:
                         "count": backlog_count,
                         "bytes": backlog_bytes,
                     },
+                    # Venv-reap arm (#912). bytes_apparent is du-apparent —
+                    # hardlink-deduplicated vs ~/.cache/uv, so freed <= this.
+                    "venv_reap": {
+                        "enabled": res.venv_enabled,
+                        "idle_days_effective": res.venv_idle_days_effective,
+                        "reaped": res.venv_reaped,
+                        "candidates": res.venv_candidates,
+                        "failed": res.venv_failed,
+                        "skipped": [{"name": d.name, "reason": d.reason} for d in res.venv_skipped],
+                        "bytes_apparent": res.venv_bytes,
+                    },
                 }
             )
         )
@@ -982,6 +1416,7 @@ def main(argv: list[str] | None = None) -> int:
                 # terminal-status worktree is identifiable from the log alone.
                 for holder in res.live_holders.get(d.name, []):
                     print(f"      # held by {holder}")
+        _print_venv_report(res, args.apply)
 
     # Exit 2 when something was (or would be) removed, mirroring pod_audit;
     # the cron wrapper swallows it so cron does not email on every sweep.
