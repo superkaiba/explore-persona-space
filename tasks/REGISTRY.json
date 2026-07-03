@@ -5857,8 +5857,8 @@
     "896": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/896",
-      "status": "running",
+      "path": "tasks/reviewing/896",
+      "status": "reviewing",
       "title": "Reconcile diverged shared repo-root main (~65 local / ~176 remote) + harden root sync against concurrent-rebase corruption"
     },
     "897": {
