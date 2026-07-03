@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 950,
+  "highest_id": 951,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6288,6 +6288,13 @@
       "path": "tasks/proposed/950",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 splitlines() shreds JSONL with raw U+2028/NEL"
+    },
+    "951": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/951",
+      "status": "proposed",
+      "title": "workflow-fix: zombie-GPU stalled override needs a material-CPU-delta veto"
     },
     "96": {
       "has_clean_result": true,
