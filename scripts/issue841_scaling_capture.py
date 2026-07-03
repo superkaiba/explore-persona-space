@@ -721,8 +721,6 @@ def _verify_imports() -> int:
         Qwen2ForCausalLM,
     )
 
-    from explore_persona_space.orchestrate.hub import upload_dataset_directory  # noqa: F401
-
     logger.info("[verify-imports] all deferred imports resolved")
     return 0
 

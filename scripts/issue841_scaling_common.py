@@ -386,10 +386,14 @@ def _write_overflow_pointer_dataset(
     canonical_repo: str, path_in_repo: str, overflow_repo: str, reason: str
 ) -> None:
     """Upload an ``OVERFLOW_POINTER.json`` breadcrumb to the canonical DATASET repo at
-    ``<path_in_repo>/`` (non-LFS — succeeds over the public LFS quota). Fail-soft: a
-    pointer-write failure logs loudly but never fails the already-verified LFS upload.
-    (hub._write_overflow_pointer targets repo_type='model'; this is the dataset twin
-    with the team-lead's {overflow_repo, path_in_repo, ts, reason} schema.)"""
+    ``<path_in_repo>/`` (non-LFS — succeeds over the public LFS quota). FAIL-LOUD: the
+    pointer is LOAD-BEARING — ``fetch_capture_from_hf`` / ``hf_download_pt_maybe_overflow``
+    read it to locate the rerouted ``.pt`` on the overflow repo, so a silently-missing
+    pointer makes a fresh-instance durability fetch treat the bucket as public and return
+    a partial/empty shard set while the run reads green (Codex #841 v11 review). Raises
+    RuntimeError on any upload miss or exception. (hub._write_overflow_pointer targets
+    repo_type='model'; this is the dataset twin with the {overflow_repo, path_in_repo,
+    ts, reason} schema.)"""
     from explore_persona_space.orchestrate import hub
 
     payload = {
@@ -399,28 +403,23 @@ def _write_overflow_pointer_dataset(
         "reason": reason,
     }
     tmp = Path(tempfile.gettempdir()) / f"OVERFLOW_POINTER_{os.getpid()}.json"
+    dest = (
+        f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
+        if path_in_repo
+        else "OVERFLOW_POINTER.json"
+    )
     try:
         tmp.write_text(json.dumps(payload, indent=2))
-        dest = (
-            f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
-            if path_in_repo
-            else "OVERFLOW_POINTER.json"
-        )
         url = hub._upload(tmp, canonical_repo, "dataset", dest, upload_as_file=True)
-        if url:
-            logger.info(
-                "[upload] overflow pointer → %s/%s → %s", canonical_repo, dest, overflow_repo
-            )
-        else:
-            logger.warning(
-                "[upload] overflow pointer write returned empty (%s/%s)", canonical_repo, dest
-            )
-    except Exception as e:
-        logger.warning(
-            "[upload] overflow pointer write failed (%s); LFS remains at %s", e, overflow_repo
-        )
     finally:
         tmp.unlink(missing_ok=True)
+    if not url:
+        raise RuntimeError(
+            f"overflow pointer write to {canonical_repo}:{dest} failed (verification miss) — "
+            f"the pointer is load-bearing (fetch reads it to locate rerouted .pt on "
+            f"{overflow_repo}); refusing to report LFS-reroute success without it"
+        )
+    logger.info("[upload] overflow pointer → %s/%s → %s", canonical_repo, dest, overflow_repo)
 
 
 def upload_split_lfs_to_overflow(
@@ -474,6 +473,10 @@ def upload_split_lfs_to_overflow(
         if not hub._upload(f, OVERFLOW_REPO, "dataset", dest, upload_as_file=True, private=True):
             raise RuntimeError(f"LFS overflow upload failed: {f} → {OVERFLOW_REPO}:{dest}")
 
+    # The pointer is LOAD-BEARING when LFS was rerouted (the fetch path reads it to
+    # locate the .pt on the overflow repo), so this is FAIL-LOUD: it RAISES on a write
+    # miss, short-circuiting the success return below. Never report a rerouted-LFS
+    # success without a landed pointer (Codex #841 v11 review).
     if lfs:
         _write_overflow_pointer_dataset(canonical, prefix, OVERFLOW_REPO, reason)
     return {

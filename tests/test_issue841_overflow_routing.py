@@ -100,6 +100,37 @@ def test_split_fail_loud_on_upload_miss(tmp_path, monkeypatch):
         S.upload_split_lfs_to_overflow(f, "issue841_scaling/cx_last_shards")
 
 
+def test_split_fail_loud_on_pointer_write_miss(tmp_path, monkeypatch):
+    """The OVERFLOW_POINTER.json is LOAD-BEARING (the fetch path reads it to locate the
+    rerouted .pt); a silently-failed pointer write (upload returns "") must NOT be
+    reported as a rerouted-LFS success — the helper must RAISE (Codex #841 v11 review)."""
+
+    def fake_upload(f, repo, rt, dest, **kw):  # .pt uploads fine; the pointer write MISSES
+        return "" if dest.endswith("OVERFLOW_POINTER.json") else f"{repo}/{dest}"
+
+    monkeypatch.setattr(hub, "_upload", fake_upload)
+    f = tmp_path / "cx_last_shard000.pt"
+    f.write_bytes(b"\x00" * 16)
+    with pytest.raises(RuntimeError, match="pointer write"):
+        S.upload_split_lfs_to_overflow(f, "issue841_scaling/cx_last_shards")
+
+
+def test_split_fail_loud_on_pointer_write_raise(tmp_path, monkeypatch):
+    """Same load-bearing invariant when the pointer write RAISES (not returns "") — the
+    exception must propagate, not be swallowed."""
+
+    def fake_upload(f, repo, rt, dest, **kw):
+        if dest.endswith("OVERFLOW_POINTER.json"):
+            raise RuntimeError("simulated pointer upload crash")
+        return f"{repo}/{dest}"
+
+    monkeypatch.setattr(hub, "_upload", fake_upload)
+    f = tmp_path / "cx_last_shard000.pt"
+    f.write_bytes(b"\x00" * 16)
+    with pytest.raises(RuntimeError, match="crash"):
+        S.upload_split_lfs_to_overflow(f, "issue841_scaling/cx_last_shards")
+
+
 def test_hf_download_pt_prefers_overflow_when_pointer_present(monkeypatch):
     import huggingface_hub
 
