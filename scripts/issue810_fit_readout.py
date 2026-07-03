@@ -57,11 +57,19 @@ from __future__ import annotations
 
 import argparse
 import logging
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import sys
 from pathlib import Path
 
-import numpy as np
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -232,7 +240,10 @@ def _load_uh_summaries(spec: str) -> tuple[dict, dict, dict]:
         row: {c: t.float().numpy() for c, t in per_ctx.items()}
         for row, per_ctx in blob["summaries"].items()
     }
-    meta = {k: blob.get(k) for k in ("smoke", "context_ids", "capture_layers", "model")}
+    meta = {
+        k: blob.get(k)
+        for k in ("smoke", "context_ids", "capture_layers", "model", "ablate_answer", "rows")
+    }
     return rows, blob["coverage"], meta
 
 

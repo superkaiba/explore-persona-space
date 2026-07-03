@@ -151,6 +151,40 @@ UH_HF_RESULTS_PREFIX = f"issue810_results/{UH_FOLLOWUP_LABEL}"
 # 50 ctx × 9 rows × 28 layers × 3584 dims).
 UH_SUMMARIES_HF_FILE = f"{UH_HF_RESULTS_PREFIX}/uh_summaries.pt"
 
+# ── `_he` header-echo ablation arm (same-issue follow-up `header-echo-ablation-capture`) ──
+# Round 4 (plan v15) re-captures the SAME 50-ctx × 48-probe grid with the answer
+# span ABLATED: the teacher-forced sequence is `prompt + BOUNDARY_BLOCK_IDS`
+# (the assistant turn opens and ends immediately with no content). The SINGLE
+# manipulated variable is the answer span (present → EMPTY); `--ablate-answer`
+# OFF (the default everywhere) keeps the round-3 paths bit-for-bit.
+HE_FOLLOWUP_LABEL = "header-echo-ablation-capture"
+# Phase B-he aligned-subset store destination (plan v15 § Storage naming).
+ANSWER_POSITION_SWEEP_HE_SUBDIR = "answer_position_sweep_header_echo"
+HE_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_810" / HE_FOLLOWUP_LABEL
+HE_HF_RESULTS_PREFIX = f"issue810_results/{HE_FOLLOWUP_LABEL}"
+# Compact empty-answer summaries pack (the CPU-chain input; same shape/schema
+# as uh_summaries.pt — 50 ctx × 9 rows × 28 layers × 3584 fp16).
+HE_SUMMARIES_HF_FILE = f"{HE_HF_RESULTS_PREFIX}/he_summaries.pt"
+# The 9 empty-answer analysis rows. Row NAMES are deliberately UNCHANGED from
+# the committed round-1/round-3 rows (H1-he pairing is by name); the whole-turn
+# xbnd pools + tail/head answer positions are DROPPED — mechanically undefined
+# at ans_len=0 (plan v15 §4 divergence 2).
+HE_POSITION_NAMES: list[str] = ["im_end", "turn_nl", *UH_POSITION_NAMES]
+HE_POOL_NAMES: list[str] = ["uh_mean3", "uh_max3", "bnd_mean5", "bnd_max5"]
+HE_SUMMARY_NAMES: list[str] = HE_POSITION_NAMES + HE_POOL_NAMES
+
+
+def he_stored_position_names() -> list[str]:
+    """The per-position keys stored in ``answer_position_sweep_header_echo/<ctx>.pt``.
+
+    The cc predictor position (``cc_last``, the #594 last-input-token slot at
+    ``prompt_len - 1`` — it RIDES the same ablated forward and feeds the #594
+    store parity probe, plan v15 §0/§11) + the 5 boundary singles + the 4
+    header/boundary pools = 10 rows per context. NO tail/head/xbnd rows
+    (undefined at ans_len=0).
+    """
+    return ["cc_last", *HE_POSITION_NAMES, *HE_POOL_NAMES]
+
 
 def uh_stored_position_names() -> list[str]:
     """The per-position keys stored in ``answer_position_sweep_user_header/<ctx>.pt``.

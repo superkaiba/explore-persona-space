@@ -48,11 +48,19 @@ from __future__ import annotations
 
 import argparse
 import logging
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import sys
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -84,6 +92,7 @@ from issue810_common import (  # noqa: E402
     PCA_TARGET_DIM_CAP,
     SHUFFLE_NULL_PERMS,
     SHUFFLE_NULL_SEED,
+    UH_SUMMARIES_HF_FILE,
     UH_SUMMARY_NAMES,
     assert_g1_probe_pool_hash,
     battery_family_map,
@@ -481,23 +490,19 @@ def _committed_mean_skill_by_layer(committed_recon_path: str) -> dict[int, float
     return out
 
 
-def _parity_gate(args, cm: dict, ctx_ids_all, capture_layers, free_summaries) -> dict:
-    """Recompute 2 OLD cells' per-draw nulls and byte-compare vs the committed matrix.
+def _parity_cells(args, cm: dict, cell_specs, y_of, ctx_ids_all, capture_layers) -> dict:
+    """Recompute the given cells' per-draw nulls and byte-compare vs a committed matrix.
 
-    The union-join validity gate (plan v11 §6): valid ONLY if the permutation
-    sequence is row-set-independent — ``_fit_null_draws`` seeds a fresh
-    ``default_rng(seed)`` per cell (fact-checked, A5), so a like-seeded
-    recompute of ``mean@L18`` / ``maxp@L21`` over the SAME 50 contexts must
-    reproduce the committed vectors to ≤ ``tolerance`` abs. Gate cells are free
-    rows (v0), so the full-manifest context set is used regardless of any
-    position-store subset.
+    ``cell_specs`` = [(summary, layer)]; ``y_of(summary, layer_index)`` returns
+    the (n, H) target matrix over ``ctx_ids_all``. Shared engine of the
+    per-matrix union-join parity gates (plan v11 §6 / v15 §4.6 item 3).
     """
     tolerance = float(args.parity_tolerance)
     gate_cc = _load_cc_for_genre(args.genre, list(ctx_ids_all), capture_layers)
     record: dict = {"tolerance": tolerance, "cells": [], "pass": True}
-    for s, layer in (("mean", 18), ("maxp", 21)):
+    for s, layer in cell_specs:
         li = capture_layers.index(layer)
-        Yv = np.stack([free_summaries[s][c][li].numpy() for c in ctx_ids_all])
+        Yv = y_of(s, li)
         Xc = np.stack([gate_cc[c][li] for c in ctx_ids_all])
         cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(ctx_ids_all) - 2))
         draws = np.asarray(
@@ -523,6 +528,75 @@ def _parity_gate(args, cm: dict, ctx_ids_all, capture_layers, free_summaries) ->
             "PASS" if ok else "FAIL",
         )
     return record
+
+
+def _parity_gate(args, cm: dict, ctx_ids_all, capture_layers, free_summaries) -> dict:
+    """Recompute 2 OLD cells' per-draw nulls and byte-compare vs the committed matrix.
+
+    The union-join validity gate (plan v11 §6): valid ONLY if the permutation
+    sequence is row-set-independent — ``_fit_null_draws`` seeds a fresh
+    ``default_rng(seed)`` per cell (fact-checked, A5), so a like-seeded
+    recompute of ``mean@L18`` / ``maxp@L21`` over the SAME 50 contexts must
+    reproduce the committed vectors to ≤ ``tolerance`` abs. Gate cells are free
+    rows (v0), so the full-manifest context set is used regardless of any
+    position-store subset.
+    """
+
+    def y_of(s, li):
+        return np.stack([free_summaries[s][c][li].numpy() for c in ctx_ids_all])
+
+    return _parity_cells(args, cm, (("mean", 18), ("maxp", 21)), y_of, ctx_ids_all, capture_layers)
+
+
+def _committed_best_layer(committed_recon_path: str, row: str) -> int:
+    """The committed argmax-ridge_skill layer for one row (fail loud on absence)."""
+    blob = load_json(committed_recon_path)
+    cells = [c for c in blob["by_summary"].get(row, []) if c.get("ridge_skill") is not None]
+    if not cells:
+        raise RuntimeError(f"{committed_recon_path} has no fitted cells for row {row!r}")
+    return int(max(cells, key=lambda c: float(c["ridge_skill"]))["layer"])
+
+
+def _load_uh_pack_matrix(spec: str, ctx_ids_all, capture_layers) -> dict:
+    """{row: {ctx: (Lc, H) fp32 np}} from the round-3 uh_summaries pack, validated.
+
+    The Y source for the round-3 committed matrix's parity-gate cells + the
+    parity-FAIL full-rerun fallback (plan v15 §4.6 item 3). Pack values are
+    bit-identical to the round-3 position store the committed nulls were fit
+    from (both are fp16 casts of the same in-forward fp32 probe-means —
+    verified byte-equal at plan/implementation time). Production-validated via
+    ``validate_uh_pack`` (a smoke-provenance pack refuses).
+    """
+    from issue810_common import validate_uh_pack
+    from issue810_fit_readout import _load_uh_summaries  # deferred: readout imports THIS module
+
+    uh_rows, uh_cov, meta = _load_uh_summaries(spec)
+    validate_uh_pack(
+        {r: {c: torch.from_numpy(v) for c, v in per.items()} for r, per in uh_rows.items()},
+        uh_cov,
+        meta,
+        requested_rows=list(UH_SUMMARY_NAMES),
+        ctx_ids=list(ctx_ids_all),
+        expected_capture_layers=list(capture_layers),
+    )
+    return uh_rows
+
+
+def _parity_gate_uh(args, cm: dict, ctx_ids_all, capture_layers, uh_rows: dict) -> dict:
+    """2-cell parity gate for the round-3 committed matrix (plan v15 §4.6 item 3).
+
+    Gate cells = ``uh_mean3`` + ``uh_nl`` at their COMMITTED best layers (read
+    from ``--committed-recon-uh`` by argmax, never hardcoded); Y from the
+    round-3 uh_summaries pack over the full manifest context set.
+    """
+    specs = tuple(
+        (s, _committed_best_layer(args.committed_recon_uh, s)) for s in ("uh_mean3", "uh_nl")
+    )
+
+    def y_of(s, li):
+        return np.stack([uh_rows[s][c][li] for c in ctx_ids_all])
+
+    return _parity_cells(args, cm, specs, y_of, ctx_ids_all, capture_layers)
 
 
 def _fallback_full_null_rerun(
@@ -604,6 +678,7 @@ def _fallback_full_null_rerun(
 
 def _null_join_and_bands(
     args,
+    null_join_path: str,
     null_matrix_new: dict,
     results: dict,
     free_summaries: dict,
@@ -629,7 +704,7 @@ def _null_join_and_bands(
     present, the fresh LOFO identity ceiling. A band at/above the ceiling is
     verdicted failure-to-reject (never evidence of absence).
     """
-    committed = load_json(args.null_join)
+    committed = load_json(null_join_path)
     if committed.get("seed") != SHUFFLE_NULL_SEED or committed.get("n_perms") != args.n_perms:
         raise RuntimeError(
             f"--null-join seed/n_perms mismatch: committed ({committed.get('seed')}, "
@@ -770,6 +845,305 @@ def _band_rows_from_union(
     }
 
 
+# ── multi-matrix union join (`_he` round, plan v15 §4.6 item 3) ──────────────
+
+# The production 55-row union: 37 round-1 + 9 round-3 + 9 fresh empty rows.
+UNION_EXPECTED_ROWS = 55
+FRESH_MATRIX_ID = "fresh"
+
+
+def _load_committed_matrix(args, path: str) -> tuple[str, dict]:
+    """(matrix_id, per-draw matrix) for one committed --null-join path.
+
+    ``matrix_id`` = the filename stem (stable, human-legible — e.g.
+    ``null_matrix_reconstruction`` / ``null_matrix_user_header``); the
+    seed/n_perms provenance is asserted per matrix.
+    """
+    committed = load_json(path)
+    if committed.get("seed") != SHUFFLE_NULL_SEED or committed.get("n_perms") != args.n_perms:
+        raise RuntimeError(
+            f"--null-join {path}: seed/n_perms mismatch — committed "
+            f"({committed.get('seed')}, {committed.get('n_perms')}) vs run "
+            f"({SHUFFLE_NULL_SEED}, {args.n_perms})"
+        )
+    return Path(path).stem, committed["reconstruction"]
+
+
+def _union_cells_from(cells: dict, matrix_id: str, matrix: dict, n_perms: int) -> None:
+    """Fold one matrix's complete per-draw cells into the COMPOSITE-keyed union.
+
+    Keys are ``(matrix_id, summary, layer_str)`` — collision-safe by
+    construction (plan v15 Must-Fix): the 9 fresh empty rows reuse committed
+    row NAMES (im_end/turn_nl collide with round-1; uh_*/bnd_* with round-3),
+    so a bare-name-keyed join would silently overwrite committed rows and
+    SHRINK the 55-row family (moving the max-selected band). A duplicate
+    composite key fails loud.
+    """
+    for s, per_layer in matrix.items():
+        for lstr, draws in per_layer.items():
+            if len(draws) != n_perms:
+                continue
+            key = (matrix_id, s, str(lstr))
+            if key in cells:
+                raise RuntimeError(f"union join: duplicate composite key {key}")
+            cells[key] = np.asarray(draws, dtype=np.float64)
+
+
+def _fallback_full_rerun_multi(
+    args, committed: dict, ctx_ids_all, capture_layers, free_summaries, uh_rows: dict
+) -> dict:
+    """Registered ANY-parity-FAIL fallback: recompute EVERY committed row's nulls in-run.
+
+    Never a silent mixed join (plan v15 §6/§8): round-1 rows (free recipes from
+    v0 + the 34 position rows from the ROUND-1 store, downloaded per-context)
+    and round-3 rows (from the uh pack) each get a fresh per-draw null AND a
+    fresh point skill compared against their committed recon JSONs (>1e-6
+    disagreement = the comparator itself is unstable → kill criterion,
+    ``failure_class: data``). Returns the composite-keyed committed-cells dict
+    (fresh rows are folded in by the caller).
+    """
+    r1_pos, r1_cov = _load_position_summaries(
+        list(ctx_ids_all), f"{HF_PREFIX}/answer_position_sweep", None
+    )
+    committed_points = {
+        "round1": load_json(args.committed_recon)["by_summary"],
+        "round3": load_json(args.committed_recon_uh)["by_summary"],
+    }
+    cells: dict = {}
+    worst_point_diff = 0.0
+    for mid, cm in committed.items():
+        source = "round1" if "mean" in cm else "round3"
+        points = committed_points[source]
+        for s, per_layer in cm.items():
+            for lstr in per_layer:
+                layer = int(lstr)
+                li = capture_layers.index(layer)
+                if source == "round3":
+                    Yv = np.stack([uh_rows[s][c][li] for c in ctx_ids_all])
+                    kept = list(ctx_ids_all)
+                else:
+                    Yv, kept = _summary_matrix(
+                        s, li, list(ctx_ids_all), free_summaries, r1_pos, r1_cov
+                    )
+                if Yv.shape[0] < 4:
+                    continue
+                gate_cc = _load_cc_for_genre(args.genre, kept, capture_layers)
+                Xc = np.stack([gate_cc[c][li] for c in kept])
+                cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(kept) - 2))
+                cells[(mid, s, lstr)] = np.asarray(
+                    _fit_null_draws(Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, args.device),
+                    dtype=np.float64,
+                )
+                fit, _ = _fit_one_cell(Xc, Yv, cell_pca)
+                ref_cells = {int(c["layer"]): c for c in points.get(s, []) if "layer" in c}
+                ref_cell = ref_cells.get(layer) or {}
+                ref = ref_cell.get("ridge_skill")
+                ref_n = ref_cell.get("n_kept", ref_cell.get("n"))
+                if ref is not None and ref_n == len(kept):
+                    diff = abs(float(fit["ridge_skill"]) - float(ref))
+                    worst_point_diff = max(worst_point_diff, diff)
+                    if diff > 1e-6:
+                        raise RuntimeError(
+                            f"multi-join parity FAIL fallback: recomputed {s}@L{layer} "
+                            f"({source}) point skill differs from committed by {diff:.2e} "
+                            "(>1e-6) — the comparator itself is unstable (plan v15 kill "
+                            "criterion; failure_class: data)"
+                        )
+                elif ref is not None:
+                    logger.warning(
+                        "[phase=null_fallback] %s@L%d point compare SKIPPED "
+                        "(n=%d != committed n=%s)",
+                        s,
+                        layer,
+                        len(kept),
+                        ref_n,
+                    )
+            logger.info("[phase=null_fallback] %s/%s re-nulled", mid, s)
+    logger.info(
+        "[phase=null_fallback] full %d-cell committed rerun complete (worst point |Δ| %.2e)",
+        len(cells),
+        worst_point_diff,
+    )
+    return cells
+
+
+def _band_rows_from_union_multi(
+    args, cells: dict, committed: dict, null_matrix_new: dict, results: dict, diag: dict
+) -> dict:
+    """Enlarged-axis band + difference read over the COMPOSITE-keyed union.
+
+    Mirrors ``_band_rows_from_union`` on ``(matrix_id, summary, layer)`` keys:
+    the max-selected band is over ALL union cells; the observed statistic is
+    the best FRESH empty-row LOCO skill; the difference read (``D_he``, the
+    v11-shape companion — the v15 PRIMARY paired read lives in
+    ``paired_full_minus_empty.json``) subtracts the round-1 ``mean`` row's
+    per-draw vectors per layer. Every band row carries the recomputed ceiling.
+    """
+    if not cells:
+        raise RuntimeError("multi union band: no complete per-draw cells to reduce")
+    stack = np.stack(list(cells.values()))  # (n_cells, n_perms)
+    per_draw_max = stack.max(axis=0)
+    band_97_5 = float(np.percentile(per_draw_max, 97.5))
+
+    loco_ceiling = max(
+        (c["ridge_skill"] for c in diag["identity_sanity_check"] if c["ridge_skill"] is not None),
+        default=None,
+    )
+    lofo_ceiling = None
+    if diag.get("lofo_identity_ceiling"):
+        lofo_ceiling = max(
+            (c["lofo_skill"] for c in diag["lofo_identity_ceiling"] if c["lofo_skill"] is not None),
+            default=None,
+        )
+
+    new_rows = sorted(null_matrix_new)
+    obs_new: list[tuple[str, int, float]] = []
+    for s in new_rows:
+        for cell in results.get(s, []):
+            if cell.get("ridge_skill") is not None:
+                obs_new.append((s, int(cell["layer"]), float(cell["ridge_skill"])))
+    obs_max = max((v for (_s, _L, v) in obs_new), default=None)
+    obs_arg = max(obs_new, key=lambda t: t[2]) if obs_new else None
+
+    mean_bench = _committed_mean_skill_by_layer(args.committed_recon)
+    d_terms = [(s, L, v - mean_bench[L]) for (s, L, v) in obs_new if L in mean_bench]
+    d_obs = max((t[2] for t in d_terms), default=None)
+    d_arg = max(d_terms, key=lambda t: t[2]) if d_terms else None
+    # Per-draw D null: fresh-row draws minus the round-1 mean row's draws.
+    mean_mid = next((mid for mid, cm in committed.items() if "mean" in cm), None)
+    diff_rows = []
+    for s in new_rows:
+        for lstr, draws in null_matrix_new.get(s, {}).items():
+            mean_key = (mean_mid, "mean", str(lstr))
+            if mean_mid is not None and mean_key in cells and len(draws) == args.n_perms:
+                diff_rows.append(np.asarray(draws, dtype=np.float64) - cells[mean_key])
+    d_null_draws = np.stack(diff_rows).max(axis=0) if diff_rows else None
+    d_band = float(np.percentile(d_null_draws, 97.5)) if d_null_draws is not None else None
+
+    def _verdict(stat, band, ceiling):
+        if stat is None or band is None:
+            return "not_computable"
+        v = "clears_band" if stat > band else "within_band"
+        if ceiling is not None and band >= ceiling:
+            v += "; band_at_or_above_ceiling -> failure_to_reject"
+        return v
+
+    band_rows = {
+        "enlarged_axis_max_selected": {
+            "statistic": obs_max,
+            "arg_cell": list(obs_arg) if obs_arg else None,
+            "band_97_5": band_97_5,
+            "ceiling": loco_ceiling,
+            "verdict": _verdict(obs_max, band_97_5, loco_ceiling),
+        },
+        "D_he_difference": {
+            "statistic": d_obs,
+            "arg_cell": list(d_arg) if d_arg else None,
+            "band_97_5": d_band,
+            "ceiling": (
+                (loco_ceiling - max(mean_bench.values())) if loco_ceiling is not None else None
+            ),
+            "note": (
+                "v11-shape companion (best empty row minus the committed mean benchmark); "
+                "the v15 PRIMARY read is the paired bootstrap in paired_full_minus_empty.json"
+            ),
+            "verdict": _verdict(d_obs, d_band, None),
+        },
+        "lofo_identity_ceiling": lofo_ceiling,
+    }
+    return {
+        "n_union_cells": len(cells),
+        "union_rows": sorted({f"{mid}::{s}" for (mid, s, _l) in cells}),
+        "union_key_schema": "(matrix_id, summary, layer)",
+        "per_draw_max": [float(x) for x in per_draw_max],
+        "d_null_draws": ([float(x) for x in d_null_draws] if d_null_draws is not None else None),
+        "band_rows": band_rows,
+    }
+
+
+def _null_join_and_bands_multi(
+    args,
+    null_matrix_new: dict,
+    results: dict,
+    free_summaries: dict,
+    ctx_ids_all,
+    capture_layers,
+    diag: dict,
+) -> dict:
+    """Multi-matrix parity-gated union (plan v15 §4.6 item 3 / §6).
+
+    Each committed matrix gets its OWN 2-cell byte-parity gate (round-1:
+    mean@L18 + maxp@L21 from v0; round-3: uh_mean3 + uh_nl at their committed
+    best layers from the uh pack); ANY gate FAIL flips to the registered full
+    committed-rows rerun (never a mixed join). The union is COMPOSITE-keyed
+    ``(matrix_id, summary, layer)`` and asserts unique keys AND — on a
+    production run — exactly 55 rows × 28 layers == 1540 cells BEFORE any band
+    is emitted (a name-keyed join would silently shrink the family).
+    """
+    committed: dict[str, dict] = {}
+    for path in args.null_join:
+        mid, cm = _load_committed_matrix(args, path)
+        if mid in committed:
+            raise RuntimeError(f"--null-join: duplicate matrix id {mid!r} (paths must differ)")
+        committed[mid] = cm
+    uh_rows = _load_uh_pack_matrix(args.uh_summaries, ctx_ids_all, capture_layers)
+    parities: dict[str, dict] = {}
+    for mid, cm in committed.items():
+        if "mean" in cm:
+            parities[mid] = _parity_gate(args, cm, ctx_ids_all, capture_layers, free_summaries)
+        elif "uh_mean3" in cm:
+            parities[mid] = _parity_gate_uh(args, cm, ctx_ids_all, capture_layers, uh_rows)
+        else:
+            raise RuntimeError(
+                f"--null-join {mid}: unrecognized committed matrix (no registered gate cells — "
+                f"rows {sorted(cm)[:5]}...)"
+            )
+    all_pass = all(p["pass"] for p in parities.values())
+    cells: dict = {}
+    if all_pass:
+        for mid, cm in committed.items():
+            _union_cells_from(cells, mid, cm, args.n_perms)
+        mode = "union_join_multi"
+    else:
+        logger.warning(
+            "[phase=parity_gate] FAIL on >=1 matrix — flipping to the registered full "
+            "committed-rows null rerun (plan v15 §6/§8 fallback; never a mixed join)"
+        )
+        cells = _fallback_full_rerun_multi(
+            args, committed, ctx_ids_all, capture_layers, free_summaries, uh_rows
+        )
+        mode = "full_rerun_fallback_multi"
+    _union_cells_from(cells, FRESH_MATRIX_ID, null_matrix_new, args.n_perms)
+    n_rows = len({(mid, s) for (mid, s, _l) in cells})
+    n_bare_names = len({s for (_m, s, _l) in cells})
+    if not args.smoke:
+        expected_cells = UNION_EXPECTED_ROWS * len(capture_layers)
+        if n_rows != UNION_EXPECTED_ROWS:
+            raise RuntimeError(
+                f"union row count {n_rows} != {UNION_EXPECTED_ROWS} (37 round-1 + 9 round-3 "
+                f"+ 9 fresh; bare names {n_bare_names}) — a shrunken family moves the "
+                "max-selected band (plan v15 Must-Fix)"
+            )
+        if len(cells) != expected_cells:
+            raise RuntimeError(
+                f"n_union_cells {len(cells)} != {UNION_EXPECTED_ROWS} * "
+                f"{len(capture_layers)} == {expected_cells} (plan v15 Must-Fix)"
+            )
+    else:
+        logger.info(
+            "[phase=union] smoke: %d composite rows / %d cells (production asserts 55/1540)",
+            n_rows,
+            len(cells),
+        )
+    return {
+        "mode": mode,
+        "parity_gates": parities,
+        "parity_gate": {"pass": all_pass},  # sentinel-compat summary field
+        **_band_rows_from_union_multi(args, cells, committed, null_matrix_new, results, diag),
+        "union_matrix_new_rows_only": True,  # committed rows stay in git rounds 1/3
+    }
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
@@ -885,13 +1259,36 @@ def main() -> int:
     )
     ap.add_argument(
         "--null-join",
+        nargs="*",
         default=None,
-        help="path to the COMMITTED round-1 per-draw recon null matrix "
-        "(null_matrix_reconstruction.json). Recomputes 2 OLD cells (mean@L18, maxp@L21) "
-        "with the same seed and byte-compares (<=1e-12) their per-draw vectors as the "
-        "union-validity parity gate; on PASS joins committed + new rows into the "
-        "enlarged-axis union band; on FAIL falls back to a full enlarged-grid null "
-        "rerun (registered fallback, plan v11 §6/§8) — never a silent mixed join.",
+        help="path(s) to COMMITTED per-draw recon null matrices. ONE path (round-3 "
+        "behavior, byte-for-bit): recomputes 2 OLD cells (mean@L18, maxp@L21) with the "
+        "same seed and byte-compares (<=1e-12) their per-draw vectors as the "
+        "union-validity parity gate; PASS joins committed + new rows into the "
+        "enlarged-axis union band; FAIL falls back to a full enlarged-grid null rerun "
+        "(registered fallback, plan v11 §6/§8) — never a silent mixed join. MULTIPLE "
+        "paths (the `_he` round, plan v15 §4.6 item 3): each matrix gets its OWN 2-cell "
+        "gate (round-1: mean@L18/maxp@L21; round-3: uh_mean3/uh_nl at committed best "
+        "layers, Y from --uh-summaries) and the union is COMPOSITE-keyed "
+        "(matrix_id, summary, layer) with the 55-row/1540-cell production assert.",
+    )
+    ap.add_argument(
+        "--committed-recon-uh",
+        default=str(
+            PROJECT_ROOT
+            / "eval_results"
+            / "issue_810"
+            / "user-header-newline-summary"
+            / "reconstruction_skill_user_header.json"
+        ),
+        help="the committed round-3 recon point-skill JSON (gate-cell best layers + the "
+        "multi-join fallback point-skill comparator for the round-3 rows)",
+    )
+    ap.add_argument(
+        "--uh-summaries",
+        default=UH_SUMMARIES_HF_FILE,
+        help="round-3 uh_summaries pack (local path or HF data-repo path) — the Y source "
+        "for the round-3 matrix's parity-gate cells + the multi-join fallback rerun",
     )
     ap.add_argument(
         "--parity-tolerance",
@@ -1054,24 +1451,38 @@ def main() -> int:
         ]
 
     # Enlarged-axis union band via --null-join (plan v11 §4.6 item 3 / §6):
-    # parity gate on 2 OLD cells, then join committed + new per-draw matrices;
-    # FAIL → registered full enlarged-grid rerun fallback (never a mixed join).
+    # per-matrix parity gate on 2 OLD cells, then join committed + new per-draw
+    # matrices; FAIL → registered full rerun fallback (never a mixed join).
+    # ONE path = the round-3 single-matrix behavior byte-for-bit; MULTIPLE
+    # paths = the `_he` composite-keyed 55-row union (plan v15 §4.6 item 3).
     union_band: dict | None = None
     if args.null_join:
-        union_band = _null_join_and_bands(
-            args,
-            null_matrix,
-            results,
-            free_summaries,
-            pos_summaries,
-            coverage,
-            cc,
-            ctx_ids,
-            ctx_ids_all,
-            capture_layers,
-            layers,
-            diag,
-        )
+        if len(args.null_join) == 1:
+            union_band = _null_join_and_bands(
+                args,
+                args.null_join[0],
+                null_matrix,
+                results,
+                free_summaries,
+                pos_summaries,
+                coverage,
+                cc,
+                ctx_ids,
+                ctx_ids_all,
+                capture_layers,
+                layers,
+                diag,
+            )
+        else:
+            union_band = _null_join_and_bands_multi(
+                args,
+                null_matrix,
+                results,
+                free_summaries,
+                ctx_ids_all,
+                capture_layers,
+                diag,
+            )
 
     recon_name = (
         f"reconstruction_skill_{args.out_suffix}.json"

@@ -73,14 +73,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib  # noqa: E402
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 # Cross-script helper imports hoisted to module top so a missing symbol crashes
 # at process start, never inside a smoke-skipped branch (gotchas.md #606).
-from issue594_common import messages_for_instance  # noqa: E402
+from issue404_common import fetch_betley_main_8, fetch_preregistered_probes  # noqa: E402
+from issue594_common import messages_for_instance, probes_hash  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402
 from issue810_common import (  # noqa: E402
+    ANSWER_POSITION_SWEEP_HE_SUBDIR,
     ANSWER_POSITION_SWEEP_SUBDIR,
     ANSWER_POSITION_SWEEP_UH_SUBDIR,
     BATTERY50_HF_FILE,
@@ -96,8 +106,12 @@ from issue810_common import (  # noqa: E402
     G1_STORE_MANIFEST,
     G1_V0_SUMMARIES,
     GENRES,
+    HE_SUMMARIES_HF_FILE,
+    HE_SUMMARY_NAMES,
     HF_DATA_REPO,
     HF_PREFIX,
+    I594_CC_LAST_FILE,
+    I594_PROBE_POOL_HASH,
     I658_RAW_COMPLETIONS_PREFIX,
     I658_STORE_MANIFEST,
     I658_V0_SUMMARIES,
@@ -109,6 +123,7 @@ from issue810_common import (  # noqa: E402
     assert_sha256,
     context_ids_from_manifest,
     dump_json,
+    he_stored_position_names,
     load_json,
     reproducibility_metadata,
     sha256_file,
@@ -215,32 +230,63 @@ def _positions_for_span(
     return idx
 
 
-def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id, extended=False):
-    """Tokenize one (prompt + answer + boundary block) probe → capture inputs.
+# The exact decoded ablated boundary tail (plan v15 §4.6 item 2 decode assert).
+ABLATED_TAIL_TEXT = "<|im_end|>\n<|im_start|>user\n"
+
+
+def _build_probe_row(
+    model, tokenizer, instance, q, ans, stored_names, nl_id, extended=False, ablate=False
+):
+    """Tokenize one (prompt [+ answer] + boundary block) probe → capture inputs.
 
     Boundary block = ``<|im_end|> \\n`` (parent, 2 tokens) or the full
     assistant-turn continuation ``<|im_end|> \\n <|im_start|> user \\n``
     (``extended``, 5 tokens — ``BOUNDARY_BLOCK_IDS``, every fed id asserted).
+    ``ablate`` (plan v15 §4.6 item 2, requires ``extended``): the answer span
+    is EMPTY — ``ans`` must be None (code-truth: no completions consumed), the
+    full sequence is exactly ``prompt_ids + BOUNDARY_BLOCK_IDS`` (asserted, plus
+    a decoded-tail string assert), ans_len == 0 with NO ``None`` return, and the
+    ``cc_last`` predictor slot (``prompt_len - 1``) rides the same forward.
 
     Returns ``(full_ids (L,), tgt [abs-idx|None per stored pos], valid [bool per
-    pos], prompt_len, ans_len)`` or ``None`` for an empty completion. The target
-    indices are PRE-PAD absolute indices into the real sequence (the batch flush
-    shifts them by the left-pad amount). Fails loud on ANY boundary-token id
-    mismatch (a wrong id would silently capture the wrong slot).
+    pos], prompt_len, ans_len)`` or ``None`` for an empty completion (non-ablate
+    only). The target indices are PRE-PAD absolute indices into the real
+    sequence (the batch flush shifts them by the left-pad amount). Fails loud on
+    ANY boundary-token id mismatch (a wrong id would silently capture the wrong
+    slot).
     """
     messages = messages_for_instance(instance, q)
     prompt_text = tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
     prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
-    ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
-    if ans_ids.shape[1] == 0:
-        return None
     prompt_len = int(prompt_ids.shape[1])
-    ans_len = int(ans_ids.shape[1])
-    bids = list(BOUNDARY_BLOCK_IDS) if extended else [IM_END_TOKEN_ID, nl_id]
-    boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
-    full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1)[0]  # (full_len,)
+    if ablate:
+        assert extended, "--ablate-answer implies the 5-token extended boundary block"
+        assert ans is None, "ablate mode must not receive completion text (code-truth: plan §10)"
+        ans_len = 0
+        bids = list(BOUNDARY_BLOCK_IDS)
+        boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
+        full_ids = torch.cat([prompt_ids, boundary], dim=1)[0]  # (prompt_len + 5,)
+        # Full-sequence equality + decoded-tail asserts (plan v15 §4.6 item 2 /
+        # kill criterion 1): the fed sequence is EXACTLY prompt + the 5-id block.
+        assert full_ids.tolist() == prompt_ids[0].tolist() + bids, (
+            f"ablated full sequence != prompt_ids + BOUNDARY_BLOCK_IDS for "
+            f"{instance['id']} {q[:30]!r}"
+        )
+        decoded_tail = tokenizer.decode(full_ids[prompt_len:].tolist())
+        assert decoded_tail == ABLATED_TAIL_TEXT, (
+            f"ablated boundary tail decodes to {decoded_tail!r} != {ABLATED_TAIL_TEXT!r} "
+            f"for {instance['id']} {q[:30]!r}"
+        )
+    else:
+        ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
+        if ans_ids.shape[1] == 0:
+            return None
+        ans_len = int(ans_ids.shape[1])
+        bids = list(BOUNDARY_BLOCK_IDS) if extended else [IM_END_TOKEN_ID, nl_id]
+        boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
+        full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1)[0]  # (full_len,)
     fed = full_ids[prompt_len + ans_len : prompt_len + ans_len + len(bids)].tolist()
     # Fail-loud per-probe id asserts (round-1 pattern, extended to ALL fed
     # boundary ids — plan v11 §4.6 item 2 / kill criterion 1).
@@ -253,7 +299,11 @@ def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id, ex
     assert fed[1] == nl_id, f"turn_nl slot fed id {fed[1]} != {nl_id} (\\n)"
     # Union span starts at answer content = prompt_len; boundary block at
     # prompt_len+ans_len+k; tail/head relative to the answer content start.
+    # At ans_len=0 (ablate) this yields the 5 boundary singles ONLY; the
+    # cc_last predictor slot (rel −1 → abs prompt_len − 1) rides along.
     pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=extended)
+    if ablate:
+        pos_idx = {**pos_idx, "cc_last": -1}
     tgt: list = []
     valid: list[bool] = []
     for name in stored_names:
@@ -316,6 +366,7 @@ def _run_forward_batch(
     lc,
     H,
     extended: bool = False,
+    ablate: bool = False,
 ) -> int:
     """Left-pad + one batched forward + GPU-side gather + accumulate; return #probes.
 
@@ -361,20 +412,28 @@ def _run_forward_batch(
     pool_names = [n for n in stored_names if n in _POOL_SPECS]
     pools: dict[str, torch.Tensor] = {}
     if extended:
-        pool_names = [*pool_names, "mean_ans"]  # internal parity pool rides along
+        if not ablate:
+            pool_names = [*pool_names, "mean_ans"]  # internal parity pool rides along
         # Span masks over the padded batch: content [start, start+ans_len),
         # boundary block [start+ans_len, start+ans_len+5), header = last 3 of it.
+        # In ablate mode ONLY bnd5/uh3 are requested (both always 5/3 tokens —
+        # plan v15 §12 A9); the ans/xbnd masks would be EMPTY at ans_len=0 and
+        # are never built, so _gather_pools_gpu's non-empty assert holds.
         pos = torch.arange(max_len).unsqueeze(0)  # (1, T)
         st = ans_starts.unsqueeze(1)
         en = (ans_starts + ans_lens_t).unsqueeze(1)  # content end == boundary start
         n_bnd = len(BOUNDARY_BLOCK_IDS)
         masks_cpu = {
-            "ans": (pos >= st) & (pos < en),
             "bnd5": (pos >= en) & (pos < en + n_bnd),
             "uh3": (pos >= en + 2) & (pos < en + n_bnd),
         }
-        masks_cpu["xbnd"] = masks_cpu["ans"] | masks_cpu["bnd5"]
-        masks = {k: v.to(device) for k, v in masks_cpu.items()}
+        if not ablate:
+            masks_cpu["ans"] = (pos >= st) & (pos < en)
+            masks_cpu["xbnd"] = masks_cpu["ans"] | masks_cpu["bnd5"]
+        kinds_needed = {_POOL_SPECS[n][0] for n in pool_names}
+        missing_kinds = kinds_needed - set(masks_cpu)
+        assert not missing_kinds, f"pool span kinds {missing_kinds} have no mask (ablate={ablate})"
+        masks = {k: v.to(device) for k, v in masks_cpu.items() if k in kinds_needed}
         # Pools reduced BEFORE _gather_positions_gpu clears capture.latest.
         pools = _gather_pools_gpu(capture, capture_layers, masks, pool_names)
     picked = _gather_positions_gpu(capture, capture_layers, abs_pos_dev)  # (b, T, Lc, H) cpu
@@ -401,18 +460,24 @@ def capture_positions_for_context(
     tokenizer,
     instance: dict,
     probes: list[str],
-    completions: list[str],
+    completions: list[str] | None,
     capture: LayerCapture,
     n_layers: int,
     capture_layers: list[int],
     batch_probes: int,
     extended: bool = False,
+    ablate: bool = False,
 ) -> tuple[dict[str, torch.Tensor], dict[str, int], dict, dict[str, torch.Tensor]]:
-    """Teacher-force each (prompt + answer + boundary block); capture positions.
+    """Teacher-force each (prompt [+ answer] + boundary block); capture positions.
 
     Boundary block = 2 tokens (parent) or the 5-token assistant-turn
     continuation (``extended`` — plan v11 §4), which ALSO computes the 6
     in-forward span pools + the internal ``mean_ans`` parity pool per probe.
+    ``ablate`` (plan v15 §4): the answer span is EMPTY — ``completions`` must be
+    None (no completion text ever enters this path), the stored rows are the 10
+    ``he_stored_position_names()`` (cc_last + 5 boundary singles + 4 bnd5/uh3
+    pools; NO tail/head/xbnd/mean_ans), and every row is covered on every probe
+    (the boundary block always exists — zero skips, plan v15 success criterion).
 
     Returns ``(pos_summaries, coverage, diag, extras)`` where
       pos_summaries[position] = (Lc, H) probe-MEAN summary vector for that
@@ -444,7 +509,10 @@ def capture_positions_for_context(
     lc = len(capture_layers)
     H = model.config.hidden_size
     # Accumulators: sum over probes + count per position (probe-mean at the end).
-    stored_names = uh_stored_position_names() if extended else stored_position_names()
+    if ablate:
+        stored_names = he_stored_position_names()
+    else:
+        stored_names = uh_stored_position_names() if extended else stored_position_names()
     accum: dict[str, torch.Tensor] = {}
     coverage: dict[str, int] = {p: 0 for p in stored_names}
     ans_lens: list[int] = []
@@ -469,9 +537,22 @@ def capture_positions_for_context(
     batch = max(1, int(batch_probes))
     built = []  # (full_ids, tgt, valid, prompt_len, ans_len) per non-empty probe
     empty = 0
-    for q, ans in zip(probes, completions, strict=True):
+    if ablate:
+        assert completions is None, "ablate mode must not receive completions (plan v15 §10)"
+        pairs: list[tuple[str, str | None]] = [(q, None) for q in probes]
+    else:
+        pairs = list(zip(probes, completions, strict=True))
+    for q, ans in pairs:
         item = _build_probe_row(
-            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=extended
+            model,
+            tokenizer,
+            instance,
+            q,
+            ans,
+            stored_names,
+            nl_id,
+            extended=extended,
+            ablate=ablate,
         )
         if item is None:
             empty += 1
@@ -497,21 +578,26 @@ def capture_positions_for_context(
             lc,
             H,
             extended=extended,
+            ablate=ablate,
         )
 
     if n_used == 0:
         raise RuntimeError(f"context {instance['id']}: every probe produced an empty answer")
     pos_summaries = {name: (accum[name] / coverage[name]) for name in accum}
     extras: dict[str, torch.Tensor] = {}
-    if extended:
+    if extended and not ablate:
         # mean_ans is an INTERNAL parity vector (the #658 v0 `mean` recipe
-        # recomputed in-forward), never a stored summary row.
+        # recomputed in-forward), never a stored summary row. Undefined in
+        # ablate mode (ans_len=0) — the cc_last row is the drift tripwire there.
         extras["mean_ans"] = pos_summaries.pop("mean_ans")
         coverage.pop("mean_ans", None)
     # Assert boundary positions/pools are ALWAYS covered (span_len-independent).
-    always_covered = ["im_end", "turn_nl"]
-    if extended:
-        always_covered += UH_SUMMARY_NAMES
+    if ablate:
+        always_covered = list(stored_names)  # all 10 rows exist on every probe
+    else:
+        always_covered = ["im_end", "turn_nl"]
+        if extended:
+            always_covered += UH_SUMMARY_NAMES
     for b in always_covered:
         if coverage[b] != n_used:
             raise RuntimeError(
@@ -694,7 +780,7 @@ def _per_layer_min_cosine(a: torch.Tensor, b: torch.Tensor) -> tuple[float, floa
 
 
 def _numpy_reference_capture(
-    model, tokenizer, capture, instance, probes, completions, capture_layers, nl_id
+    model, tokenizer, capture, instance, probes, completions, capture_layers, nl_id, ablate=False
 ) -> dict[str, np.ndarray]:
     """Batch-1 FULL-hidden-state numpy reference for singles + pools (smoke oracle).
 
@@ -702,16 +788,19 @@ def _numpy_reference_capture(
     layer is pulled to CPU fp32 and reduced in NUMPY (mean / per-dim max over
     the span slices; singles by direct indexing), then probe-meaned — an
     implementation-independent oracle for the in-forward GPU-side reductions.
-    Returns {name: (Lc, H) fp32 np.ndarray} over the 43 stored rows + mean_ans.
+    Returns {name: (Lc, H) fp32 np.ndarray} over the 43 stored rows + mean_ans
+    (extended) or the 10 he rows incl. cc_last (``ablate`` — plan v15 §4.6 item
+    2 smoke pool oracle; no ans/xbnd spans exist at ans_len=0).
     """
-    stored_names = uh_stored_position_names()
-    names_all = [*stored_names, "mean_ans"]
+    stored_names = he_stored_position_names() if ablate else uh_stored_position_names()
+    names_all = list(stored_names) if ablate else [*stored_names, "mean_ans"]
     sums: dict[str, np.ndarray] = {}
     counts: dict[str, int] = {n: 0 for n in names_all}
     n_bnd = len(BOUNDARY_BLOCK_IDS)
-    for q, ans in zip(probes, completions, strict=True):
+    pairs = [(q, None) for q in probes] if ablate else list(zip(probes, completions, strict=True))
+    for q, ans in pairs:
         item = _build_probe_row(
-            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=True
+            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=True, ablate=ablate
         )
         if item is None:
             continue
@@ -723,12 +812,15 @@ def _numpy_reference_capture(
         )  # (Lc, T, H)
         capture.latest.clear()
         spans = {
-            "ans": (prompt_len, prompt_len + ans_len),
             "bnd5": (prompt_len + ans_len, prompt_len + ans_len + n_bnd),
             "uh3": (prompt_len + ans_len + 2, prompt_len + ans_len + n_bnd),
-            "xbnd": (prompt_len, prompt_len + ans_len + n_bnd),
         }
+        if not ablate:
+            spans["ans"] = (prompt_len, prompt_len + ans_len)
+            spans["xbnd"] = (prompt_len, prompt_len + ans_len + n_bnd)
         pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=True)
+        if ablate:
+            pos_idx = {**pos_idx, "cc_last": -1}
         for name in names_all:
             if name in _POOL_SPECS:
                 kind, op = _POOL_SPECS[name]
@@ -754,9 +846,10 @@ def _extended_smoke_asserts(
     capture_layers,
     n_layers,
     pos_batched: dict[str, torch.Tensor],
-    mean_ans_batched: torch.Tensor,
+    mean_ans_batched: torch.Tensor | None,
     min_cos: float = 0.999,
     max_rel_l2: float = 5e-3,
+    ablate: bool = False,
 ) -> dict:
     """Smoke oracle triplet for the extended-boundary capture (plan v11 §4.6 item 2).
 
@@ -769,6 +862,11 @@ def _extended_smoke_asserts(
         relative L2 ≤ ``max_rel_l2`` — the fp16 PCIe transport bound).
     (c) the 5 boundary ids are asserted per probe inside ``_build_probe_row``
         on every path above (fails loud before any comparison).
+
+    ``ablate`` (plan v15 §4.6 item 2): the same triplet over the 10 he rows
+    (cc_last + 5 singles + 4 pools; NO mean_ans — ``mean_ans_batched`` is None),
+    plus the ablate-mode full-sequence/decoded-tail asserts firing per probe
+    inside ``_build_probe_row`` on every path.
 
     Returns a summary dict for the manifest. Raises on any violation.
     """
@@ -783,6 +881,7 @@ def _extended_smoke_asserts(
         capture_layers,
         batch_probes=1,
         extended=True,
+        ablate=ablate,
     )
     ref = _numpy_reference_capture(
         model,
@@ -793,11 +892,13 @@ def _extended_smoke_asserts(
         completions,
         capture_layers,
         nl_id=TURN_NL_TOKEN_ID,
+        ablate=ablate,
     )
     all_batched = dict(pos_batched)
-    all_batched["mean_ans"] = mean_ans_batched
     all_b1 = dict(pos_b1)
-    all_b1["mean_ans"] = extras1["mean_ans"]
+    if not ablate:
+        all_batched["mean_ans"] = mean_ans_batched
+        all_b1["mean_ans"] = extras1["mean_ans"]
     out = {"rows_checked": 0, "min_cos_batched_vs_b1": 1.0, "min_cos_b1_vs_numpy": 1.0}
     for name, vec_b in all_batched.items():
         vec_1 = all_b1.get(name)
@@ -912,6 +1013,75 @@ def _round1_store_drift_check(
     return {"ctx_id": ctx_id, "positions_checked": checked, "worst_min_layer_cosine": worst}
 
 
+# ── ablate-mode probe pool + cc_last drift tripwire (plan v15 §4.6 item 2) ───
+
+
+def _betley_probe_pool(battery: dict) -> list[str]:
+    """The 48 Betley probes WITHOUT reading any stored completions (ablate mode).
+
+    Rebuilds the #594 builder pool (Betley preregistered paraphrases minus the
+    main-8) and asserts the ordered-pool hash against BOTH the sha-pinned
+    battery's ``meta.probe_pool_hash`` AND the #594 store pin
+    (``I594_PROBE_POOL_HASH``) — fail loud on any drift. CODE-TRUTH for the
+    plan v15 §10 'NO completions consumed' claim: the ablate path never touches
+    the raw-completions prefix (the probes are the only per-probe input).
+    """
+    main8 = set(fetch_betley_main_8())
+    probes = fetch_preregistered_probes(n=200, exclude=main8)
+    got = probes_hash(probes)
+    battery_pin = (battery.get("meta") or {}).get("probe_pool_hash")
+    if got != I594_PROBE_POOL_HASH or got != battery_pin:
+        raise RuntimeError(
+            f"ablate-mode probe pool hash drift: rebuilt {got[:16]}… vs #594 pin "
+            f"{I594_PROBE_POOL_HASH[:16]}… / battery meta {str(battery_pin)[:16]}… — "
+            "refusing to capture on a drifted probe grid (plan v15 §10 grid pin)"
+        )
+    if len(probes) != 48:
+        raise RuntimeError(f"ablate-mode probe pool has {len(probes)} probes, expected 48")
+    return probes
+
+
+_CC594_CACHE: dict[str, object] = {}
+
+
+def _cc594_store_parity(
+    cc_mean: torch.Tensor, ctx_id: str, capture_layers: list[int], min_cos: float = 0.999
+) -> dict:
+    """Assert the in-forward probe-mean ``cc_last`` matches the #594 c_C store.
+
+    The ablate-mode capture-drift tripwire (plan v15 §5 / kill criterion 2 —
+    the ``mean_ans`` tripwire is undefined at ans_len=0): ``cc_last`` is
+    prompt-side and ABLATION-INVARIANT by causal attention, so its probe-mean
+    over the SAME 48 probes must reproduce the #594 store row — the EXACT
+    tensor the recon fits consume as the predictor — at per-layer cosine
+    ≥ ``min_cos``. Production-only caller gate (7B model, uncapped probes);
+    the pool hash pin is asserted on the store blob before any compare.
+    """
+    if "blob" not in _CC594_CACHE:
+        from huggingface_hub import hf_hub_download
+
+        p = hf_hub_download(HF_DATA_REPO, I594_CC_LAST_FILE, repo_type="dataset")
+        blob = torch.load(p, weights_only=False)
+        pph = blob.get("probe_pool_hash")
+        if pph != I594_PROBE_POOL_HASH:
+            raise RuntimeError(f"#594 c_C probe_pool_hash drift: {pph} != {I594_PROBE_POOL_HASH}")
+        _CC594_CACHE["blob"] = blob
+        _CC594_CACHE["iid_to_row"] = {iid: i for i, iid in enumerate(blob["instance_ids"])}
+    blob = _CC594_CACHE["blob"]
+    row = _CC594_CACHE["iid_to_row"].get(ctx_id)  # type: ignore[union-attr]
+    if row is None:
+        raise RuntimeError(f"#594 c_C store has no row for {ctx_id!r} — cc parity impossible")
+    store = blob["tensor"][row][capture_layers].float()  # type: ignore[index]
+    c_min, c_mean = _per_layer_min_cosine(cc_mean, store)
+    if c_min < min_cos:
+        raise RuntimeError(
+            f"cc_last parity FAILED for {ctx_id}: min layer cosine {c_min:.6f} < {min_cos} — "
+            "the ablated capture's prompt-side read does not reproduce the #594 c_C store "
+            "(inter-round capture drift; halt before any fit — plan v15 kill criterion 2)"
+        )
+    return {"ctx_id": ctx_id, "min_layer_cosine": c_min, "mean_layer_cosine": c_mean}
+
+
 # ── HF model load ─────────────────────────────────────────────────────────────
 
 
@@ -935,7 +1105,12 @@ def _load_model(model_name: str, device: str):
 
 
 def _upload_store(
-    out_dir: Path, ctx_ids: list[str], smoke: bool, genre: str = "betley", extended: bool = False
+    out_dir: Path,
+    ctx_ids: list[str],
+    smoke: bool,
+    genre: str = "betley",
+    extended: bool = False,
+    ablate: bool = False,
 ) -> str:
     """Bulk-commit the aligned-subset store to HF (one upload_folder commit).
 
@@ -943,11 +1118,14 @@ def _upload_store(
     via ONE ``upload_folder`` commit (never a per-file loop — the #664
     504-storm), then verifies the per-context file count on a FRESH listing
     (fail loud on a mismatch). Skipped for --smoke / --no-upload by the caller.
-    ``extended`` routes to the `_uh` store subdir (plan v11 § Storage naming).
+    ``extended`` routes to the `_uh` store subdir (plan v11 § Storage naming);
+    ``ablate`` to the `_he` subdir (plan v15 § Storage naming).
     """
     from huggingface_hub import HfApi, list_repo_files
 
-    if extended:
+    if ablate:
+        base_subdir = ANSWER_POSITION_SWEEP_HE_SUBDIR
+    elif extended:
         base_subdir = ANSWER_POSITION_SWEEP_UH_SUBDIR
     else:
         base_subdir = (
@@ -983,12 +1161,13 @@ def _upload_store(
     return path_in_repo
 
 
-def _upload_uh_summaries(pack_path: Path) -> str:
+def _upload_uh_summaries(pack_path: Path, hf_file: str = UH_SUMMARIES_HF_FILE) -> str:
     """Upload the compact new-row summaries tensor (fail-loud single-file commit).
 
-    ``uh_summaries.pt`` (~90 MB: 50 ctx × 9 rows × 28 layers × 3584 fp16) is the
-    CPU-chain input (plan v11 §6.5) — it lands at ``UH_SUMMARIES_HF_FILE`` on
-    the data repo BEFORE the GPU is released, verified on a FRESH listing.
+    The pack (~90 MB: 50 ctx × 9 rows × 28 layers × 3584 fp16) is the CPU-chain
+    input (plan v11/v15 §6.5) — it lands at ``hf_file`` (``UH_SUMMARIES_HF_FILE``
+    for the `_uh` round, ``HE_SUMMARIES_HF_FILE`` for the ablate round) on the
+    data repo BEFORE the GPU is released, verified on a FRESH listing.
     Single-file `upload_file` is correct here (ONE file, not a per-file loop).
     """
     from huggingface_hub import HfApi, list_repo_files
@@ -996,19 +1175,19 @@ def _upload_uh_summaries(pack_path: Path) -> str:
     api = HfApi()
     api.upload_file(
         path_or_fileobj=str(pack_path),
-        path_in_repo=UH_SUMMARIES_HF_FILE,
+        path_in_repo=hf_file,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        commit_message="issue #810 user-header-newline-summary: uh_summaries.pt (CPU-chain input)",
+        commit_message=f"issue #810: {hf_file} (CPU-chain input pack)",
     )
     remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
-    if UH_SUMMARIES_HF_FILE not in remote:
+    if hf_file not in remote:
         raise RuntimeError(
-            f"uh_summaries upload verification FAILED: {UH_SUMMARIES_HF_FILE} missing on a "
+            f"summaries-pack upload verification FAILED: {hf_file} missing on a "
             "fresh Hub listing — refusing to treat a partial upload as success"
         )
-    logger.info("uh_summaries verified at %s", UH_SUMMARIES_HF_FILE)
-    return UH_SUMMARIES_HF_FILE
+    logger.info("summaries pack verified at %s", hf_file)
+    return hf_file
 
 
 # ── sentinel (poll_pipeline contract) ─────────────────────────────────────────
@@ -1057,37 +1236,53 @@ def _finalize_extended_outputs(
     ctx_ids: list[str],
     out_dir: Path,
     compare_store: bool,
+    cc_parity: dict | None = None,
 ) -> Path:
-    """Extended-boundary manifest provenance + the compact uh_summaries pack.
+    """Extended-boundary manifest provenance + the compact summaries pack.
 
-    Mutates ``manifest`` (plan v11 § Storage naming: `extended_boundary`,
-    `boundary_block_ids`, pool semantics, the parity records) and writes the
-    CPU-chain input pack (plan v11 §6.5) next to the store dir. Returns the
-    pack path.
+    Mutates ``manifest`` (plan v11/v15 § Storage naming: `extended_boundary`,
+    `ablate_answer`, `boundary_block_ids`, pool semantics, the parity records)
+    and writes the CPU-chain input pack (uh_summaries.pt, or he_summaries.pt in
+    ablate mode — plan §6.5) next to the store dir. Returns the pack path.
     """
+    ablate = bool(args.ablate_answer)
+    pack_rows_names = HE_SUMMARY_NAMES if ablate else UH_SUMMARY_NAMES
     manifest["extended_boundary"] = True
+    manifest["ablate_answer"] = ablate
     manifest["boundary_block_ids"] = list(BOUNDARY_BLOCK_IDS)
-    manifest["uh_pool_semantics"] = (
-        "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
-        "bnd_mean5/bnd_max5: over all 5 boundary tokens; mean_xbnd/maxp_xbnd: over "
-        "(answer content union 5 boundary tokens) — computed IN the forward per probe "
-        "(GPU-side, fp32 reduce, fp16 transport), then probe-meaned like the singles."
-    )
-    manifest["v0_store_mean_parity"] = v0_parity or {"skipped": not compare_store}
-    manifest["round1_store_drift_check"] = drift_check or {"skipped": not compare_store}
+    if ablate:
+        manifest["uh_pool_semantics"] = (
+            "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
+            "bnd_mean5/bnd_max5: over all 5 boundary tokens — computed IN the forward "
+            "per probe (GPU-side, fp32 reduce, fp16 transport), then probe-meaned. "
+            "ANS/XBND pools + tail/head positions UNDEFINED at ans_len=0 (plan v15 §4); "
+            "cc_last = the #594 last-input-token predictor slot, riding the same forward."
+        )
+        manifest["cc594_parity"] = cc_parity or {"skipped": True}
+    else:
+        manifest["uh_pool_semantics"] = (
+            "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
+            "bnd_mean5/bnd_max5: over all 5 boundary tokens; mean_xbnd/maxp_xbnd: over "
+            "(answer content union 5 boundary tokens) — computed IN the forward per probe "
+            "(GPU-side, fp32 reduce, fp16 transport), then probe-meaned like the singles."
+        )
+        manifest["v0_store_mean_parity"] = v0_parity or {"skipped": not compare_store}
+        manifest["round1_store_drift_check"] = drift_check or {"skipped": not compare_store}
     if smoke_asserts is not None:
         manifest["smoke_asserts"] = smoke_asserts
-    uh_pack_path = Path(args.uh_summaries_out or (out_dir.parent / "uh_summaries.pt"))
+    default_pack = "he_summaries.pt" if ablate else "uh_summaries.pt"
+    uh_pack_path = Path(args.uh_summaries_out or (out_dir.parent / default_pack))
     uh_pack_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
             "summaries": uh_pack_rows,  # {row: {ctx: (Lc, H) fp16}}
             "coverage": uh_pack_cov,  # {row: {ctx: probe count}}
-            "rows": UH_SUMMARY_NAMES,
+            "rows": pack_rows_names,
             "capture_layers": capture_layers,
             "context_ids": ctx_ids,
             "model": args.model,
             "extended_boundary": True,
+            "ablate_answer": ablate,
             "boundary_block_ids": list(BOUNDARY_BLOCK_IDS),
             "battery_sha256": BATTERY50_SHA256,
             "smoke": args.smoke,
@@ -1095,7 +1290,7 @@ def _finalize_extended_outputs(
         },
         uh_pack_path,
     )
-    logger.info("wrote uh_summaries pack (%d rows) to %s", len(UH_SUMMARY_NAMES), uh_pack_path)
+    logger.info("wrote summaries pack (%d rows) to %s", len(pack_rows_names), uh_pack_path)
     return uh_pack_path
 
 
@@ -1111,29 +1306,44 @@ def _resolve_out_dir(args) -> Path:
             "--extended-boundary supports --genre betley only (the uh round's single "
             "variable is the captured span; UltraChat is out of scope — plan v11 §0)"
         )
+    if args.ablate_answer and not args.extended_boundary:
+        raise SystemExit(
+            "--ablate-answer requires --extended-boundary (the ablated sequence appends the "
+            "full 5-token BOUNDARY_BLOCK_IDS — plan v15 §4.6 item 2)"
+        )
     default_store = "store" if args.genre == "betley" else "store_g1"
-    if args.extended_boundary:
+    if args.ablate_answer:
+        default_store = "store_he"
+    elif args.extended_boundary:
         default_store = "store_uh"
     return Path(args.out_dir or (PROJECT_ROOT / "data" / "issue_810" / default_store))
 
 
-def _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov):
+def _collect_uh_pack_rows(
+    ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov, row_names=None
+):
     """Collect this context's 9 new-row probe-mean summaries into the compact pack."""
-    for n in UH_SUMMARY_NAMES:
+    for n in row_names if row_names is not None else UH_SUMMARY_NAMES:
         uh_pack_rows[n][ctx_id] = pos_summaries[n].to(torch.float16)
         uh_pack_cov[n][ctx_id] = coverage[n]
 
 
 def _do_uploads(args, out_dir: Path, ctx_ids: list[str], uh_pack_path: Path | None):
-    """Store (+ uh_summaries pack) uploads, gated on --no-upload/--smoke by the caller."""
+    """Store (+ summaries pack) uploads, gated on --no-upload/--smoke by the caller."""
     logger.info("[phase=upload] aligned-subset store")
     path_in_repo = _upload_store(
-        out_dir, ctx_ids, smoke=False, genre=args.genre, extended=args.extended_boundary
+        out_dir,
+        ctx_ids,
+        smoke=False,
+        genre=args.genre,
+        extended=args.extended_boundary,
+        ablate=args.ablate_answer,
     )
     uh_pack_hf = None
     if uh_pack_path is not None:
-        logger.info("[phase=upload] uh_summaries pack")
-        uh_pack_hf = _upload_uh_summaries(uh_pack_path)
+        logger.info("[phase=upload] summaries pack")
+        pack_hf_file = HE_SUMMARIES_HF_FILE if args.ablate_answer else UH_SUMMARIES_HF_FILE
+        uh_pack_hf = _upload_uh_summaries(uh_pack_path, hf_file=pack_hf_file)
     return path_in_repo, uh_pack_hf
 
 
@@ -1192,6 +1402,80 @@ def _extended_context_hooks(
     return drift_check, smoke_asserts
 
 
+def _ablate_context_hooks(
+    args,
+    ci: int,
+    ctx_id: str,
+    instance: dict,
+    probes: list[str],
+    model,
+    tokenizer,
+    capture,
+    capture_layers: list[int],
+    n_layers: int,
+    pos_summaries: dict,
+    compare_cc: bool,
+    cc_parity: dict,
+) -> dict | None:
+    """Per-context ablate-mode hooks: cc_last drift tripwire + smoke oracles.
+
+    Mutates ``cc_parity`` (per-context #594-store parity record — the
+    production capture-drift gate, plan v15 §5) and returns ``smoke_asserts``
+    (first context only, --smoke). Raises on any parity violation (kill
+    criterion 2: halt before any fit on drifted activations). On a non-compare
+    run (smoke / non-7B / probe-capped) the cc_last recompute path is still
+    exercised: shape + non-degenerate norms are asserted (the
+    ``_cc_last_parity_probe`` smoke precedent).
+    """
+    smoke_asserts: dict | None = None
+    cc_vec = pos_summaries["cc_last"]
+    if not torch.isfinite(cc_vec).all() or (cc_vec.norm(dim=1) < 1e-6).any():
+        raise RuntimeError(f"cc_last probe-mean degenerate for {ctx_id}")
+    if compare_cc:
+        cc_parity[ctx_id] = _cc594_store_parity(cc_vec, ctx_id, capture_layers)
+    elif ci == 0:
+        logger.info(
+            "[phase=cc_parity] #594-store compare SKIPPED (model=%s, n_probes=%s) — "
+            "recompute path exercised (shape + norms); the 7B store cannot match a "
+            "non-7B / probe-capped run by construction",
+            args.model,
+            args.n_probes,
+        )
+    if args.smoke and ci == 0:
+        smoke_asserts = _extended_smoke_asserts(
+            model,
+            tokenizer,
+            capture,
+            instance,
+            probes,
+            None,
+            capture_layers,
+            n_layers,
+            pos_summaries,
+            None,
+            ablate=True,
+        )
+    return smoke_asserts
+
+
+def _store_position_names(args) -> list[str]:
+    """The per-context stored position list for this run's mode."""
+    if args.ablate_answer:
+        return he_stored_position_names()
+    return uh_stored_position_names() if args.extended_boundary else stored_position_names()
+
+
+def _probes_for_context(args, ctx_id: str, probe_pool: list[str] | None):
+    """(probes, completions) for one context — ablate mode never reads completions."""
+    if args.ablate_answer:
+        probes = list(probe_pool[: args.n_probes] if args.n_probes else probe_pool)
+        return probes, None
+    cells = _load_stored_completions(ctx_id, args.genre)
+    if args.n_probes is not None:
+        cells = cells[: args.n_probes]
+    return [c["probe"] for c in cells], [c["completion"] for c in cells]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #810 Phase B: answer position sweep extraction")
     ap.add_argument(
@@ -1227,10 +1511,20 @@ def main() -> int:
         f"{ANSWER_POSITION_SWEEP_UH_SUBDIR}/. Default OFF = parent behavior byte-for-byte.",
     )
     ap.add_argument(
+        "--ablate-answer",
+        action="store_true",
+        help="follow-up `header-echo-ablation-capture` (plan v15): teacher-force "
+        "`prompt + BOUNDARY_BLOCK_IDS` with the answer span EMPTY (requires "
+        "--extended-boundary; Betley-only). Captures cc_last + the 5 boundary singles + "
+        "the 4 bnd5/uh3 pools (NO tail/head/xbnd — undefined at ans_len=0), reads NO "
+        f"stored completions, stores to {ANSWER_POSITION_SWEEP_HE_SUBDIR}/, packs to "
+        "he_summaries.pt. Default OFF = round-3 behavior byte-for-byte.",
+    )
+    ap.add_argument(
         "--uh-summaries-out",
         default=None,
         help="local path for the compact new-row summaries pack (extended-boundary only; "
-        "default: <out-dir parent>/uh_summaries.pt)",
+        "default: <out-dir parent>/uh_summaries.pt, or he_summaries.pt with --ablate-answer)",
     )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
@@ -1284,25 +1578,35 @@ def main() -> int:
     per_ctx_diag: dict[str, dict] = {}
     # Extended-boundary parity records (plan v11 §5) + the compact new-row pack.
     v0_parity: dict[str, dict] = {}
+    cc594_parity: dict[str, dict] = {}
     drift_check: dict | None = None
     smoke_asserts: dict | None = None
-    uh_pack_rows: dict[str, dict[str, torch.Tensor]] = {n: {} for n in UH_SUMMARY_NAMES}
-    uh_pack_cov: dict[str, dict[str, int]] = {n: {} for n in UH_SUMMARY_NAMES}
+    pack_row_names = HE_SUMMARY_NAMES if args.ablate_answer else UH_SUMMARY_NAMES
+    uh_pack_rows: dict[str, dict[str, torch.Tensor]] = {n: {} for n in pack_row_names}
+    uh_pack_cov: dict[str, dict[str, int]] = {n: {} for n in pack_row_names}
     # The v0 store-mean / round-1 drift comparisons are meaningful ONLY on the
     # production model with the full probe set (a 0.5B smoke or a capped probe
     # subset cannot match the 7B 48-probe store means by construction — the
-    # `_cc_last_parity_probe` precedent above).
-    compare_store = args.extended_boundary and args.model == DEFAULT_MODEL and args.n_probes is None
+    # `_cc_last_parity_probe` precedent above). In ablate mode BOTH are
+    # undefined (no answer span; the recaptured boundary rows deliberately
+    # DIFFER from the full-answer stores) — the cc_last #594-store parity is
+    # the drift tripwire instead (plan v15 §5 divergence 3).
+    compare_store = (
+        args.extended_boundary
+        and not args.ablate_answer
+        and args.model == DEFAULT_MODEL
+        and args.n_probes is None
+    )
+    compare_cc = args.ablate_answer and args.model == DEFAULT_MODEL and args.n_probes is None
+    # Ablate mode reads NO stored completions (code-truth for the plan v15 §10
+    # claim): the probe grid comes from the hash-pinned Betley pool instead.
+    probe_pool = _betley_probe_pool(battery) if args.ablate_answer else None
     try:
         for ci, ctx_id in enumerate(ctx_ids):
             logger.info("[phase=extract] context %d/%d %s", ci + 1, len(ctx_ids), ctx_id)
             if ctx_id not in instances:
                 raise RuntimeError(f"context {ctx_id} absent from battery (coverage gap)")
-            cells = _load_stored_completions(ctx_id, args.genre)
-            if args.n_probes is not None:
-                cells = cells[: args.n_probes]
-            probes = [c["probe"] for c in cells]
-            completions = [c["completion"] for c in cells]
+            probes, completions = _probes_for_context(args, ctx_id, probe_pool)
             pos_summaries, coverage, diag, extras = capture_positions_for_context(
                 model,
                 tokenizer,
@@ -1314,8 +1618,29 @@ def main() -> int:
                 capture_layers,
                 args.batch_probes,
                 extended=args.extended_boundary,
+                ablate=args.ablate_answer,
             )
-            if args.extended_boundary:
+            if args.ablate_answer:
+                sa = _ablate_context_hooks(
+                    args,
+                    ci,
+                    ctx_id,
+                    instances[ctx_id],
+                    probes,
+                    model,
+                    tokenizer,
+                    capture,
+                    capture_layers,
+                    n_layers,
+                    pos_summaries,
+                    compare_cc,
+                    cc594_parity,
+                )
+                smoke_asserts = sa or smoke_asserts
+                _collect_uh_pack_rows(
+                    ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov, pack_row_names
+                )
+            elif args.extended_boundary:
                 dc, sa = _extended_context_hooks(
                     args,
                     ci,
@@ -1337,9 +1662,7 @@ def main() -> int:
                 drift_check = dc or drift_check
                 smoke_asserts = sa or smoke_asserts
                 _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov)
-            names = (
-                uh_stored_position_names() if args.extended_boundary else stored_position_names()
-            )
+            names = _store_position_names(args)
             # Stack positions into (n_positions, Lc, H) fp16; a position missing
             # for EVERY probe (impossible for boundary; possible for a deep
             # tail_k on all-short answers) is recorded as absent in coverage and
@@ -1365,9 +1688,7 @@ def main() -> int:
 
     # Manifest (plan §13): positions list, dtype, coverage semantics, provenance.
     manifest = {
-        "positions": (
-            uh_stored_position_names() if args.extended_boundary else stored_position_names()
-        ),
+        "positions": _store_position_names(args),
         "capture_layers": capture_layers,
         "dtype": "float16",
         "pos_vectors_shape": ["n_positions", len(capture_layers), model.config.hidden_size],
@@ -1406,6 +1727,16 @@ def main() -> int:
             ctx_ids,
             out_dir,
             compare_store,
+            cc_parity=(
+                {
+                    "per_context": cc594_parity,
+                    "min_layer_cosine": min(
+                        (v["min_layer_cosine"] for v in cc594_parity.values()), default=None
+                    ),
+                }
+                if args.ablate_answer
+                else None
+            ),
         )
     dump_json(manifest, out_dir / "manifest.json")
     logger.info("wrote manifest (%d contexts) to %s", len(ctx_ids), out_dir)
@@ -1419,12 +1750,16 @@ def main() -> int:
         "phase": "B_extract_positions",
         "genre": args.genre,
         "extended_boundary": bool(args.extended_boundary),
+        "ablate_answer": bool(args.ablate_answer),
         "n_contexts": len(ctx_ids),
         "positions": len(manifest["positions"]),
         "hf_path": path_in_repo,
         "uh_summaries_hf": uh_pack_hf,
         "v0_store_mean_parity_min_cos": (
             min((v["min_layer_cosine"] for v in v0_parity.values()), default=None)
+        ),
+        "cc594_parity_min_cos": (
+            min((v["min_layer_cosine"] for v in cc594_parity.values()), default=None)
         ),
         "round1_drift_worst_cos": (drift_check or {}).get("worst_min_layer_cosine"),
         "elapsed_s": round(time.time() - t0, 1),
