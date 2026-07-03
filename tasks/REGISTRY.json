@@ -5948,8 +5948,8 @@
     "907": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/907",
-      "status": "approved",
+      "path": "tasks/running/907",
+      "status": "running",
       "title": "workflow-fix: wire OOD-folds (LOFO) rule into planner \u00a76 + critic Statistics lens"
     },
     "908": {
