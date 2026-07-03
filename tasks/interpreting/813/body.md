@@ -1,5 +1,7 @@
 ---
-title: 'Map-change substrate-dependence: generic vs behavior-eliciting vs mix queries'
+title: Fine-tune-induced map change is indistinguishable across query substrates for
+  three of four behaviors, and the emergent-misalignment exception clears question-resampling
+  noise but not context-family variance (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-01T18:56:55Z'
