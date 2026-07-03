@@ -6033,8 +6033,8 @@
     "918": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/918",
-      "status": "proposed",
+      "path": "tasks/planning/918",
+      "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 HF data-repo staging must use scoped list_repo_tree, not snapshot_download"
     },
     "919": {
