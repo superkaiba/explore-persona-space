@@ -139,6 +139,47 @@ def test_small_n_all_serial_fallback(monkeypatch):
     assert rel.max() <= 1e-9, rel  # fallback IS the serial computation (assoc-only noise)
 
 
+def test_rank_deficient_target_all_serial_fallback(monkeypatch):
+    """A structurally rank-deficient Y (< target_dim) routes wholesale to serial.
+
+    Mirrors the real m0/shift floors (#833: V0 centered rank ≈ 29 < 64) where the
+    registered estimator is algorithm-coupled (gesdd null-basis is part of the
+    floor) — the batched path must detect it via the full-data pre-check and
+    reproduce serial exactly through the fallback.
+    """
+    rng = np.random.default_rng(3)
+    n, d, rank, target_dim, n_pairs = 40, 32, 5, 8, 3
+    B = rng.normal(size=(rank, d))
+    Y = rng.normal(size=(n, rank)) @ B  # rank 5 < target_dim 8
+    X = rng.normal(size=(n, d))
+    grid = rng.normal(size=(6, d))
+    r = rng.normal(size=d)
+    r_hat = r / np.linalg.norm(r)
+    families = [f"f{i % 4}" for i in range(n)]
+    assert not bf._full_data_certifiable(Y, target_dim)
+    monkeypatch.setattr(fitM, "TARGET_DIM", target_dim)
+    stats_s = make_refit_pair(
+        X, Y, fitM._refit_ridge_fn(grid), grid, r_hat, families, n_pairs=n_pairs, seed=0
+    )
+    stats_b, det = bf.make_refit_pair_batched(
+        X,
+        Y,
+        grid,
+        r_hat,
+        families,
+        n_pairs=n_pairs,
+        seed=0,
+        target_dim=target_dim,
+        return_details=True,
+    )
+    assert det["n_fallback_serial"] == 2 * n_pairs
+    scale = float(np.abs(stats_s).max())
+    degenerate = np.abs(stats_s) <= 1e-12 * scale
+    assert np.all(np.abs(stats_b[degenerate]) <= 1e-12 * scale)
+    rel = np.abs(stats_b[~degenerate] - stats_s[~degenerate]) / np.abs(stats_s[~degenerate])
+    assert rel.max() <= 1e-9, rel
+
+
 # ── joined-design cache (issue833_fit_onpolicy) ────────────────────────────────
 
 

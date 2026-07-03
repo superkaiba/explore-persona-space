@@ -46,6 +46,15 @@ per-resample factorization moved into n×n dual (Gram) space and batched over al
   ``fit658`` PRESS/dual-ridge, the exact calls ``_refit_ridge_fn`` makes). A
   ``np.linalg.LinAlgError`` in that fallback skips the PAIR, mirroring
   ``make_refit_pair``'s skip semantics (``skip_counter`` contract preserved).
+  STRUCTURALLY rank-deficient targets take this path WHOLESALE via a one-shot
+  full-data pre-check (``_full_data_certifiable``): the #833 m0 / shift floors
+  fit a target whose centered rank is ≈ n_targets − 1 ≈ 29 < TARGET_DIM = 64
+  (V0 = base-era answer profiles are target-keyed only), so the registered
+  top-64 estimator there is ALGORITHM-COUPLED — the serial gesdd's arbitrary
+  null-basis selection is genuinely part of the measured refit noise — and no
+  alternative factorization can reproduce it; only the on/off/ctrl floors
+  (full-rank targets, verified s64/s1 ~ 1e-3..1e-4 on the real store) get the
+  batched speedup.
 
 The serial ``make_refit_pair`` is deliberately UNTOUCHED (#722/#811/#813 import
 it) and stays selectable via ``issue833_fit_onpolicy.py --floors-impl serial``;
@@ -227,6 +236,27 @@ def _chunk_batched_chains(
     )
 
 
+def _full_data_certifiable(Y: np.ndarray, target_dim: int) -> bool:
+    """Fast pre-check: is the FULL-data centered target's top-k boundary healthy?
+
+    One n×n ``eigvalsh`` of the centered Gram (~ms at n=480). If the FULL data
+    already fails the eigenvalue/gap floors at k, every resample fails too
+    (resampled rows span a subset of the full row space), so the caller can skip
+    the batched attempts and go straight to the serial fallback. A PASS here is
+    only a fast-path heuristic — the per-resample certification inside
+    ``_chunk_batched_chains`` remains the binding gate.
+    """
+    n = Y.shape[0]
+    if n < target_dim + 2:
+        return False
+    Yc = Y - Y.mean(axis=0, keepdims=True)
+    ev = np.linalg.eigvalsh(Yc @ Yc.T)  # ascending
+    s_max = max(float(ev[-1]), 1e-300)
+    s_k = float(ev[-target_dim])
+    gap = s_k - float(ev[-target_dim - 1])
+    return s_k > _REL_EIG_FLOOR * s_max and gap > _REL_GAP_FLOOR * s_max
+
+
 def _run_batched_chunks(
     X: np.ndarray,
     Y: np.ndarray,
@@ -254,6 +284,23 @@ def _run_batched_chunks(
     if n < target_dim + 2:
         # Too few unique rows for a certified batched top-k boundary (also the
         # tiny-smoke shape): every resample goes through the serial fallback.
+        return chains, lam_idx, press_out, [True] * n_resamples
+    if not _full_data_certifiable(Y, target_dim):
+        # The FULL-data target is rank-deficient / boundary-degenerate at k, so
+        # every resample inherits it (a resample's row space is a subset of the
+        # full rows'): the registered estimator is ALGORITHM-COUPLED there (the
+        # serial gesdd's arbitrary null-basis selection is part of the floor's
+        # refit noise) and only the serial path reproduces it. Skip the wasted
+        # per-chunk batched attempts entirely. Known structural case: the m0 /
+        # shift floors — V0 (base-era answer profiles) is target-keyed only, so
+        # its centered rank ≈ n_targets − 1 ≈ 29 < TARGET_DIM = 64 (#833 r5).
+        logger.info(
+            "[phase=fit_M] make_refit_pair_batched: FULL-data top-%d boundary "
+            "uncertifiable (rank-deficient target) — all %d resamples via the "
+            "bit-faithful serial path",
+            target_dim,
+            n_resamples,
+        )
         return chains, lam_idx, press_out, [True] * n_resamples
     dev = torch.device(device)
     Xt = torch.from_numpy(X).to(device=dev, dtype=torch.float64)
