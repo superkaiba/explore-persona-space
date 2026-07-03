@@ -7243,5 +7243,271 @@
     "cuda_visible_devices": "all",
     "script": "issue779_batch2 d4",
     "smoke": false
+  },
+  "final_token_map": {
+    "note": "scalar map c_last -> final-answer-token projection (r2_last) vs c_last -> response-mean projection (oracle); ridge LOCO within mode (ridge_predict_loco_raw); baseline = fit-free pv_raw = <c_last, r_B>. within-condition r uses min_y_std=1e-9 (projection target).",
+    "traits": {
+      "evil": {
+        "system": {
+          "layer": 14,
+          "r2_last": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.6933461081630834,
+              "lo": 0.6168105137556394,
+              "hi": 0.7608086093813371,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9724921741608187,
+            "pvraw_within_r": {
+              "point": 0.3300772078749321,
+              "lo": 0.13820481976072974,
+              "hi": 0.4868745624346966,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.8866727400874118
+          },
+          "oracle": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.8290700002083735,
+              "lo": 0.718416105758661,
+              "hi": 0.9148837289102529,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9674162100127568,
+            "pvraw_within_r": {
+              "point": 0.4970010741221231,
+              "lo": 0.4045954863074607,
+              "hi": 0.5883496065314129,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.8208856049478989
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "r2_last": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.6228538303623276,
+              "lo": 0.43026845374243294,
+              "hi": 0.7406906314219178,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.910368977747826,
+            "pvraw_within_r": {
+              "point": 0.06609250786644273,
+              "lo": -0.1364710796698197,
+              "hi": 0.27924288990381485,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": -0.14420678136433
+          },
+          "oracle": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.835165317082262,
+              "lo": 0.7711906616395323,
+              "hi": 0.8884033777027408,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9034924943329816,
+            "pvraw_within_r": {
+              "point": 0.6632499091146205,
+              "lo": 0.6259970062564335,
+              "hi": 0.6939585755658975,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.7178040158224959
+          }
+        }
+      },
+      "sycophancy": {
+        "system": {
+          "layer": 26,
+          "r2_last": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.5097313473920887,
+              "lo": 0.3240053991390192,
+              "hi": 0.6770011174758812,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9293444285465208,
+            "pvraw_within_r": {
+              "point": 0.3091789562500261,
+              "lo": 0.12118299243486763,
+              "hi": 0.47542773534521093,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.5570308148319079
+          },
+          "oracle": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.9703854217998612,
+              "lo": 0.9510210205372471,
+              "hi": 0.983273820299053,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9868050371748639,
+            "pvraw_within_r": {
+              "point": 0.5343303793029085,
+              "lo": 0.4935687292331386,
+              "hi": 0.5754871645328954,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.8143393236458167
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "r2_last": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.5860835730889125,
+              "lo": 0.434808018984097,
+              "hi": 0.6841703777884518,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9206796291022594,
+            "pvraw_within_r": {
+              "point": 0.2353074288479609,
+              "lo": 0.08435792061966992,
+              "hi": 0.4464575150939277,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": -0.10426746943696642
+          },
+          "oracle": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.9788278069220855,
+              "lo": 0.9692877343057068,
+              "hi": 0.9876548015471329,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.975566844188202,
+            "pvraw_within_r": {
+              "point": 0.6152026636065971,
+              "lo": 0.5970064000781424,
+              "hi": 0.6333989271350519,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.6086583020734406
+          }
+        }
+      },
+      "hallucination": {
+        "system": {
+          "layer": 17,
+          "r2_last": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.9004760161479599,
+              "lo": 0.8714578134222756,
+              "hi": 0.9279092135120515,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9532854649375235,
+            "pvraw_within_r": {
+              "point": 0.7612606964665969,
+              "lo": 0.694023264362861,
+              "hi": 0.8256591786670174,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.8476332125803503
+          },
+          "oracle": {
+            "n": 160,
+            "loco_within_r": {
+              "point": 0.9088546470894904,
+              "lo": 0.8897895430448869,
+              "hi": 0.9304144778936766,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9212112020130055,
+            "pvraw_within_r": {
+              "point": 0.775085376320201,
+              "lo": 0.7081567591755864,
+              "hi": 0.8292938537815127,
+              "n_conditions": 8,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.6719526485197966
+          }
+        },
+        "many_shot": {
+          "layer": 27,
+          "r2_last": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.4975661058072037,
+              "lo": 0.4214376734326278,
+              "hi": 0.5795162617656093,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.7093432102243813,
+            "pvraw_within_r": {
+              "point": 0.1877294638653914,
+              "lo": -0.030708963687741547,
+              "hi": 0.3688680262219232,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.18473971055514218
+          },
+          "oracle": {
+            "n": 100,
+            "loco_within_r": {
+              "point": 0.9695685190835004,
+              "lo": 0.95036384369144,
+              "hi": 0.9830297211259473,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "loco_overall_r": 0.9433554345720084,
+            "pvraw_within_r": {
+              "point": 0.6151529119960838,
+              "lo": 0.6029240963838777,
+              "hi": 0.6254328361371208,
+              "n_conditions": 5,
+              "n_boot_valid": 1000
+            },
+            "pvraw_overall_r": 0.5890426188752838
+          }
+        }
+      }
+    }
+  },
+  "metadata_d5": {
+    "git_commit": "f11f5083f03170332647a7d9ad6fbacb7b718b37",
+    "timestamp_utc": "2026-07-03T01:29:50.714677Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_batch2 d5",
+    "smoke": false
   }
 }
