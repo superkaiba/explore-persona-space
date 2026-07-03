@@ -5244,8 +5244,8 @@
       "goal": "Determine whether the finetuning-induced context->answer map change (M0 base vs M+ trained, per #537 behavior) depends on the query substrate, by fitting + comparing M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes, mix) on the shared 50-context battery, reporting floor-normalized function-change and chain-rho per substrate.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/813",
-      "status": "interpreting",
+      "path": "tasks/followups_running/813",
+      "status": "followups_running",
       "title": "Fine-tune-induced map change is indistinguishable across query substrates for three of four behaviors, and the emergent-misalignment exception clears question-resampling noise but not context-family variance (LOW confidence)"
     },
     "814": {
