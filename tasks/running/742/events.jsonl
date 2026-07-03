@@ -247,6 +247,5 @@
 {"ts": "2026-07-03T09:11:47Z", "kind": "epm:progress", "version": 95, "by": "unknown", "note": "[poll-tick] 5th launch 25h45m. 6/8 cells done; ultrachat sycophancy grinding. Disk 33G free."}
 {"ts": "2026-07-03T10:04:38Z", "kind": "epm:progress", "version": 96, "by": "unknown", "note": "[poll-tick] 5th launch 26h35m. 6/8 cells done; ultrachat sycophancy ~6h in. Disk pressure (26G) — pruned uv cache."}
 {"ts": "2026-07-03T10:59:33Z", "kind": "epm:progress", "version": 97, "by": "unknown", "note": "[poll-tick] 5th launch 27h25m. 6/8 cells done; ultrachat sycophancy ~7h in. Disk 23G — ran guard; crash-resume protects my run regardless."}
-{"ts": "2026-07-03T10:59:33Z", "kind": "epm:progress", "version": 97, "by": "unknown", "note": "[poll-tick] 5th launch 27h25m. 6/8 cells done; ultrachat sycophancy ~7h in. Disk 23G — ran guard; crash-resume protects my run regardless."}
 {"ts": "2026-07-03T11:50:53Z", "kind": "epm:progress", "version": 98, "by": "unknown", "note": "[poll-tick] 5th launch 28h15m. 6/8 cells done; ultrachat sycophancy ~8h in. Disk 41G free."}
 {"ts": "2026-07-03T12:42:11Z", "kind": "epm:progress", "version": 99, "by": "unknown", "note": "[poll-tick] 5th launch 29h05m. 6/8 cells done; ultrachat sycophancy ~9h in (betley's took ~8-10h w/ resume). Disk 26G."}
