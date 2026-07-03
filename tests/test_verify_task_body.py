@@ -110,10 +110,11 @@ def test_good_body_passes_all():
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
     # `check_data_subset_disclosure`, check 19b
     # `check_data_unwrapped_example_table` WARN, check 20
-    # `check_v3_word_caps`), the FOUR v4-gated body-only checks (check 18
-    # `check_v4_methodology_shape`, check 20 `check_v4_word_caps`, check
+    # `check_v3_word_caps`), the THREE v4-gated body-only checks (check 18
+    # `check_v4_methodology_shape`, check
     # 21 `check_v4_results_beat` WARN, check 27
-    # `check_v4_no_bare_issue_refs`) — each
+    # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
+    # moved to the appended-outside set — it needs `issue`, #921) — each
     # a PASS-skip on this non-v3/non-v4 fixture — PLUS the FOUR
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
@@ -130,12 +131,14 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (32 functions), then appends the Goal soft check, the Lens 14
+    # (31 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
-    # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), AND the
+    # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
+    # check-20 word caps (needs `issue` for the events-based round budget,
+    # #921; PASS-skip: not a v4 body), AND the
     # #732 judge-API-error denominator check (PASS-skip: legacy body) →
-    # 40 results total (2 prepended + CHECKS[1:]=32 + 6 appended). The
+    # 40 results total (2 prepended + CHECKS[1:]=31 + 7 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
@@ -2429,15 +2432,17 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 33 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 32 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
-    v3-gated body-only checks added 2026-W24, and the FOUR v4-gated
+    v3-gated body-only checks added 2026-W24, and the THREE v4-gated
     body-only checks (`check_v4_methodology_shape`,
-    `check_v4_word_caps`, `check_v4_results_beat`, plus check 27
+    `check_v4_results_beat`, plus check 27
     `check_v4_no_bare_issue_refs` — bare `#K` refs in the standalone
-    sections, #900). The four
+    sections, #900; check 20 v4 `check_v4_word_caps` joined the
+    appended-outside set — it needs `issue` for the events-based
+    folded-round budget scaling, #921). The four
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
@@ -2463,12 +2468,14 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
-    and the #732 judge-API-error denominator check (needs eval JSONs).
-    So `verify_text` returns 40 results (2 prepended + CHECKS[1:]=32 +
-    6 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 33.
+    the v4 check-20 word caps (needs `issue` for the events-based
+    folded-round budget scaling, #921), and the #732 judge-API-error
+    denominator check (needs eval JSONs).
+    So `verify_text` returns 40 results (2 prepended + CHECKS[1:]=31 +
+    7 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 32.
     """
-    assert len(verify_task_body.CHECKS) == 33
+    assert len(verify_task_body.CHECKS) == 32
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -4170,6 +4177,12 @@ def test_v3_total_prose_budget_scales_with_followup_rounds():
         )
         == 2
     )
+    # Budget formula pin: 2 extra rounds -> 800 + 2 x 250 = 1300.
+    assert (
+        verify_task_body.V3_TOTAL_PROSE_BASE_WORDS
+        + 2 * verify_task_body.V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
+        == 1300
+    )
 
 
 # ─── check 21: body Parameters ⊆ methodology-doc §2 table ─────────────────
@@ -4664,6 +4677,187 @@ def test_v4_per_result_prose_over_180_words_fails():
     r = _results_by_name(results)["v4 conciseness caps"]
     assert not r.passed
     assert "result" in r.detail
+
+
+# ─── check 20 (v4): folded-round budget scaling (#921) ─────────────────────
+#
+# v4 bodies carry no `## What I ran` Rounds table, so the v3 round counter
+# always scored 0 (incident #763: a 2-round body WARNed at budget 800).
+# The v4 counter max-reconciles two signals: footer round clauses +
+# non-retroactive `epm:same-issue-followup-run` events markers.
+
+
+def _v4_fat_body(n_blocks: int = 6) -> str:
+    """Inflate `_V4_GOOD_BODY` with `n_blocks` extra `### <result>` blocks
+    (~150 prose words each, every block under the 180-word hard cap) so
+    total content prose lands above the 800-word base budget. 6 blocks
+    lands strictly in (800, 1300); 10 blocks exceeds 1300."""
+    filler = "".join(
+        f"\n### Extra result heading {i}\n\n"
+        "Plotted: filler.\n\n"
+        "![alt](https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_999/hero.png)\n\n"
+        "> **Figure.** filler.\n\n" + " ".join(["word"] * 150) + "\n"
+        for i in range(n_blocks)
+    )
+    return _V4_GOOD_BODY.replace("\n---\n**Repro:**", filler + "\n---\n**Repro:**")
+
+
+def test_v4_round_count_footer_two_labels():
+    """Two labeled footer round clauses -> extra_rounds 2, source `footer`."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt: origin prompt not recorded\n"
+        "- same-issue follow-up round `round-a` (proposer-initiated) — run 2026-07-01 · "
+        "same-issue follow-up round `round-b` (user-directed) — run 2026-07-02",
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (2, "footer")
+
+
+def test_v4_round_count_dedupes_labels_and_ignores_plural_and_prose():
+    """Repeated label counts once; plural 'rounds' prose counts zero; a
+    clause OUTSIDE the footer (Goal/Methodology prose, the #811 shape)
+    counts zero."""
+    # (a) same label twice in the footer -> 1; (b) plural in footer -> +0.
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- same-issue follow-up round `round-a` — re-verified as "
+        "same-issue follow-up round `round-a` · same-issue follow-up rounds "
+        "also name each round",
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (1, "footer")
+    # (c) phrase in body prose, not footer -> 0.
+    body2 = _V4_GOOD_BODY.replace(
+        "- **Design:**",
+        "- A same-issue follow-up round then folded that sweep. **Design:**",
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body2, None) == (0, "none")
+
+
+def test_v4_round_count_footer_numbered_variant_case_insensitive():
+    """Corpus-replay pin (Methodology-critic catch, round 1): #685's footer
+    carries the sentence-initial numbered variant — the regex must match it
+    (IGNORECASE + the `<n> (label: ` infix), capturing the backticked label."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt: origin prompt not recorded\n"
+        "- Same-issue follow-up round 2 (label: `signed-cosine-matched-position-u`, "
+        "folded 2026-07-01).",
+    )
+    assert verify_task_body._count_extra_followup_rounds_v4(body, None) == (1, "footer")
+
+
+def test_v4_round_count_events_leg_excludes_retroactive_close(monkeypatch):
+    """(events) Run markers count distinct labels; retroactive-close
+    bookkeeping (line-leading AND the single-line mid-line corpus shape)
+    and non-run kinds are excluded; max() reconciles with the footer."""
+    import explore_persona_space.task_workflow as tw
+
+    fake = [
+        {
+            "kind": "epm:same-issue-followup-run",
+            "note": "followup_label: r-a\nsource: user-chat\noutcome: folded new results",
+        },
+        {
+            "kind": "epm:same-issue-followup-run",
+            "note": "followup_label: r-ghost\noutcome: retroactive-close — evidence",
+        },
+        # SINGLE-LINE note (the real corpus shape, fact-check 2026-07-03):
+        # outcome is mid-line — only the mid-line fallback can see it.
+        {
+            "kind": "epm:same-issue-followup-run",
+            "note": "followup_label: r-ghost2 source: proposer-9b outcome: retroactive-close — ev",
+        },
+        {"kind": "epm:progress", "note": "followup_label: not-a-run"},
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: fake)
+    assert verify_task_body._followup_run_marker_rounds(123) == 1
+    # Fixture footer carries no round clause -> events leg wins.
+    assert verify_task_body._count_extra_followup_rounds_v4(_V4_GOOD_BODY, 123) == (1, "events")
+
+
+def test_v4_round_count_graceful_when_issue_unknown(monkeypatch):
+    """Unknown issue id -> events leg 0, no crash (bare `--file` under a
+    numeric tmp dir); registry corruption (`StaleTaskPathError`, a
+    FileNotFoundError SUBCLASS) still propagates."""
+    import explore_persona_space.task_workflow as tw
+
+    def _boom(n):
+        raise FileNotFoundError(n)
+
+    monkeypatch.setattr(tw, "list_events", _boom)
+    assert verify_task_body._followup_run_marker_rounds(999999) == 0
+    assert verify_task_body._count_extra_followup_rounds_v4(_V4_GOOD_BODY, 999999) == (0, "none")
+
+    def _stale(n):
+        raise tw.StaleTaskPathError("registry entry stale for task")
+
+    monkeypatch.setattr(tw, "list_events", _stale)
+    with pytest.raises(tw.StaleTaskPathError):
+        verify_task_body._followup_run_marker_rounds(999999)
+
+
+def test_v4_total_prose_budget_scales_with_folded_rounds():
+    """(End-to-end, the #763 incident shape.) Same >800-word body: with two
+    footer round clauses the total-prose WARN clears at budget 1300;
+    without them it fires naming budget 800 [none]. A >1300-word variant
+    WITH the clauses pins the message shape: budget 1300 + [footer]."""
+    fat = _v4_fat_body(6)  # >800 and <1300 total-prose words
+
+    def _with_rounds(body: str) -> str:
+        return body.replace(
+            "- Originating prompt: origin prompt not recorded",
+            "- Originating prompt: origin prompt not recorded\n"
+            "- same-issue follow-up round `round-a` — run 2026-07-01 · "
+            "same-issue follow-up round `round-b` — run 2026-07-02",
+        )
+
+    _ok, res = verify_task_body.verify_text(_with_rounds(fat))
+    assert "total content prose" not in _results_by_name(res)["v4 conciseness caps"].detail
+    _ok2, res2 = verify_task_body.verify_text(fat)
+    detail2 = _results_by_name(res2)["v4 conciseness caps"].detail
+    assert "budget 800" in detail2
+    assert "[none]" in detail2
+    # Message-shape pin: >1300 words + 2 footer rounds -> WARN names the
+    # scaled budget and the winning source tag.
+    _ok3, res3 = verify_task_body.verify_text(_with_rounds(_v4_fat_body(10)))
+    detail3 = _results_by_name(res3)["v4 conciseness caps"].detail
+    assert "budget 1300" in detail3
+    assert "[footer]" in detail3
+
+
+def test_v4_prose_budget_events_leg_through_verify_text(monkeypatch):
+    """(MUST-FIX, round-1 alternatives reconcile) Issue-mode WIRING pin:
+    the events leg must flow through the PUBLIC dispatch path
+    `verify_text(body, issue=...) -> check_v4_word_caps(body, issue=issue)`.
+    Kills the mutant that drops `issue=issue` at the verify_text call site —
+    under that mutation every other test still passes (helpers are tested
+    directly; the footer end-to-end needs no issue), and #685-shaped
+    events-only bodies would silently keep the zero-round budget."""
+    import explore_persona_space.task_workflow as tw
+
+    fake = [
+        {
+            "kind": "epm:same-issue-followup-run",
+            "note": "followup_label: r-a source: proposer-9b outcome: folded",
+        },
+        {
+            "kind": "epm:same-issue-followup-run",
+            "note": "followup_label: r-b source: proposer-9b outcome: folded",
+        },
+    ]
+    monkeypatch.setattr(tw, "list_events", lambda n: fake)
+    fat = _v4_fat_body(6)  # >800 and <1300 words; NO footer round clauses
+    _ok, res = verify_task_body.verify_text(fat, issue=123)
+    detail = _results_by_name(res)["v4 conciseness caps"].detail
+    assert "total content prose" not in detail  # events leg engaged via verify_text
+    _ok2, res2 = verify_task_body.verify_text(fat)  # no issue -> footer-only -> 800
+    assert "budget 800" in _results_by_name(res2)["v4 conciseness caps"].detail
+    # Message-shape pin: >1300 words, events-only -> budget 1300 + [events].
+    _ok3, res3 = verify_task_body.verify_text(_v4_fat_body(10), issue=123)
+    detail3 = _results_by_name(res3)["v4 conciseness caps"].detail
+    assert "budget 1300" in detail3
+    assert "[events]" in detail3
 
 
 def test_v4_lr_reconciles_from_methodology(tmp_path):
