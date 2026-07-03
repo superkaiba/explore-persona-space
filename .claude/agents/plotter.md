@@ -160,7 +160,7 @@ repo root stays on `main`):
        "manifest_figure_id": "<the planned-figure id this satisfies>"
      },
      {
-       "plot_name": "Marker log-prob per source persona",
+       "plot_name": "Marker log-prob per source persona (per-unit)",
        "view": "per-unit",
        "stem": "issue_<N>/marker_logprob_per_persona_points",
        "png_relpath": "figures/issue_<N>/marker_logprob_per_persona_points.png",
@@ -169,6 +169,12 @@ repo root stays on `main`):
      }
    ]
    ```
+
+   `plot_name` MUST be UNIQUE across the whole captions JSON — it becomes the
+   report's `### <plot name>` heading, so two views of one figure need
+   distinct names (append the view, e.g. `(per-unit)`); duplicate H3s are not
+   caught by verify_report.py's duplicate-section check, which covers only the
+   six required `## ` headings.
 
    The `manifest_figure_id` links each produced view back to a planned figure so
    the report-verifier's completeness check can confirm every planned figure is

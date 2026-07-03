@@ -480,7 +480,9 @@ def _load_manifest(manifest_path: Path) -> dict:
     return json.loads(manifest_path.read_text())
 
 
-def check_manifest(body: str, sections: list[Section], manifest_path: Path) -> list[CheckResult]:
+def check_manifest(
+    blanked_body: str, sections: list[Section], manifest_path: Path
+) -> list[CheckResult]:
     # jsonschema is imported lazily: only a --manifest run needs it, so the core
     # structural verifier carries no dependency on it (it is transitive-only).
     import jsonschema
@@ -502,7 +504,7 @@ def check_manifest(body: str, sections: list[Section], manifest_path: Path) -> l
         loc = "/".join(str(p) for p in e.absolute_path) or "<root>"
         return [CheckResult("manifest-schema", False, f"schema violation at {loc}: {e.message}")]
 
-    low_body = body.lower()
+    low_body = blanked_body.lower()
 
     def _coverage(name: str, items: list[str]) -> CheckResult:
         # Word-boundary match, not bare substring, so a planned name that is
@@ -526,7 +528,7 @@ def check_manifest(body: str, sections: list[Section], manifest_path: Path) -> l
         for ln in sec.content_lines
         if ln.startswith("### ") and ln.strip()[4:].strip()
     }
-    body_lines_low = [ln.lower() for ln in body.splitlines()]
+    body_lines_low = [ln.lower() for ln in blanked_body.splitlines()]
     fig_missing: list[str] = []
     for fig in manifest.get("figures", []):
         fid = str(fig.get("id", "")).strip()
@@ -594,7 +596,7 @@ def verify_report_text(
         results.append(check_tldr_filled(sections))
 
     if manifest_path is not None:
-        results.extend(check_manifest(body, sections, manifest_path))
+        results.extend(check_manifest(blanked_body, sections, manifest_path))
 
     overall = all(r.passed for r in results)
     return overall, results
