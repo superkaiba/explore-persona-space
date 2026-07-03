@@ -918,7 +918,11 @@ def main() -> int:
         _stage_round_inputs(args.behaviors)
 
     # HARD exactness gates before any behavior is fit (batched-path discipline).
-    gate_cofit = assert_cofit_matches_reference()
+    # The cofit gate runs ON FIT_DEVICE (crash-fix r4): it builds its LayerCache
+    # on the lane's device, so kernel_loco_preds — which derives its device from
+    # the cache — is exercised on cuda at start-up; a device-threading miss on
+    # the battery path fails HERE in seconds, not at battery time.
+    gate_cofit = assert_cofit_matches_reference(device=FIT_DEVICE)
     gate_option_a = assert_option_a_contract()
     logger.info("[gate] cofit exactness %s | option-A contract %s", gate_cofit, gate_option_a)
 

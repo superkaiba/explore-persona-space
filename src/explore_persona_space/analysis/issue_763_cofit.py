@@ -127,6 +127,17 @@ class LayerCache:
     G_folds: list[np.ndarray]  # per fold: (n, n-1) cross-Gram for diff-means
     n: int
 
+    @property
+    def device(self) -> torch.device:
+        """The device every cached kernel tensor lives on — THE battery fit device.
+
+        Every label/target tensor entering the battery math derives its device
+        from here (crash-fix r4, pod-763: labels built on a default-"cpu"
+        ``device`` kwarg crashed ``Q.t() @ Ytr`` against cuda:0 kernels).
+        """
+        assert self.folds and self.folds[0].kernels, "empty LayerCache — no device to derive"
+        return self.folds[0].kernels[0][0].device
+
     @staticmethod
     def build(
         x_layer: np.ndarray,
@@ -168,7 +179,7 @@ class LayerCache:
             # RBF kernels at c × median heuristic (train pairwise distances)
             d2 = torch.cdist(Xtr_n, Xtr_n).pow(2)  # (t, t)
             dists = d2.sqrt()
-            triu = torch.triu_indices(d2.shape[0], d2.shape[1], offset=1)
+            triu = torch.triu_indices(d2.shape[0], d2.shape[1], offset=1, device=dev)
             off = dists[triu[0], triu[1]]
             pos = off[off > 0]
             med = float(pos.median()) if pos.numel() else 1.0
@@ -190,7 +201,6 @@ def kernel_loco_preds(
     *,
     kernel_labels: tuple[str, ...],
     lambdas: tuple[float, ...] = COFIT_LAMBDAS,
-    device: str = "cpu",
 ) -> np.ndarray:
     """Batched PRESS-selected (kernel, λ) LOCO predictions for all P draws.
 
@@ -201,8 +211,13 @@ def kernel_loco_preds(
     ``α = (K + λI)⁻¹ Y`` — draws grouped by their selected pair so each distinct
     pair solves ONE batched system. ``kernel_labels=("linear",)`` is the ridge
     method; ``("rbf_c0.5", "rbf_c1.0", "rbf_c2.0")`` is the kernel-ridge method.
+
+    The compute device is DERIVED from the cache (``cache.device``) — there is
+    deliberately NO ``device`` kwarg a caller could desync: the r4 production
+    crash (pod-763) came from a default-"cpu" kwarg leaving ``Ytr`` on cpu
+    against cuda:0 cached kernels under ``EPM_FIT_DEVICE=cuda``.
     """
-    dev = torch.device(device)
+    dev = cache.device
     P, n, _t = R.shape
     lam_t = torch.tensor(lambdas, dtype=torch.float64, device=dev)
     out = torch.empty(P, n, dtype=torch.float64, device=dev)
@@ -360,7 +375,9 @@ def _serial_direction_reference(s: np.ndarray, y: np.ndarray) -> np.ndarray:
     return preds
 
 
-def assert_cofit_matches_reference(seed: int = 0, n: int = 18, h: int = 30) -> dict:
+def assert_cofit_matches_reference(
+    seed: int = 0, n: int = 18, h: int = 30, *, device: str = "cpu"
+) -> dict:
     """HARD exactness gate: batched co-fit paths vs naive serial oracles.
 
     Small synthetic LOCO problem, 2-draw batch (identity + one shuffle):
@@ -369,6 +386,12 @@ def assert_cofit_matches_reference(seed: int = 0, n: int = 18, h: int = 30) -> d
     (b) batched per-fold 1-D direction fit vs the serial oracle — tol 1e-10.
     Raises AssertionError on any miss; the driver runs this at start-up before
     any behavior is fit (the batched-path-never-trusted-ungated discipline).
+
+    ``device`` is the ON-LANE leg (crash-fix r4): the driver passes
+    ``FIT_DEVICE`` so the cache is built — and ``kernel_loco_preds`` therefore
+    runs — on the SAME device the production battery uses, while the serial
+    oracles stay cpu. A future device-threading miss on the battery path fails
+    HERE (seconds, at start-up), not at battery time.
     """
     rng = np.random.default_rng(seed)
     z = rng.standard_normal((n, 3))
@@ -378,7 +401,7 @@ def assert_cofit_matches_reference(seed: int = 0, n: int = 18, h: int = 30) -> d
     perm = rng.permutation(n)
     y_batch = np.stack([y, y[perm]])
     R = fold_rank_targets(y_batch)
-    cache = LayerCache.build(x, dim=5)
+    cache = LayerCache.build(x, dim=5, device=device)
 
     ridge_bat = kernel_loco_preds(cache, R, kernel_labels=("linear",))
     ridge_ref0 = _serial_rank_ridge_reference(x, y, COFIT_LAMBDAS, dim=5)
@@ -399,4 +422,4 @@ def assert_cofit_matches_reference(seed: int = 0, n: int = 18, h: int = 30) -> d
         float(np.max(np.abs(dir_bat[1] - dir_ref1))),
     )
     assert d_d <= 1e-10, f"batched direction-fit exactness FAILED: max|Δpred|={d_d:.3e} > 1e-10"
-    return {"ridge_delta": d_r, "direction_delta": d_d}
+    return {"ridge_delta": d_r, "direction_delta": d_d, "device": str(cache.device)}
