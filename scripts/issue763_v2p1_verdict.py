@@ -731,6 +731,20 @@ def compute_verdict(  # the §6 enumeration is one cohesive decision tree
         "cell0_instrument_health": cell0,
         "cell1_manipulation_check": cell1,
         "cell2_success": cell2,
+        # §6 cell 3 named explicitly: point estimate survives the band but the
+        # null/control machinery does not certify it (active iff so).
+        "cell3_indeterminate": {
+            "active": bool(meets_band and not (significant and control)),
+            "reason": (
+                None
+                if not meets_band
+                else (
+                    "shuffle p >= 0.05"
+                    if not significant
+                    else ("control-task fail" if not control else None)
+                )
+            ),
+        },
         "cell4_falsified": cell4,
         "stability_reads": stability,
         "final_verdict": final,
