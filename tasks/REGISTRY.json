@@ -5955,8 +5955,8 @@
     "908": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/908",
-      "status": "running",
+      "path": "tasks/reviewing/908",
+      "status": "reviewing",
       "title": "workflow-fix: GCP gate-park teardown leg + terminal-phase reconnect refusal"
     },
     "909": {
