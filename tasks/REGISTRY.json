@@ -6164,8 +6164,8 @@
     "935": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/935",
-      "status": "running",
+      "path": "tasks/reviewing/935",
+      "status": "reviewing",
       "title": "workflow-fix: GCE self-poweroff missing on the [phase=done] path (post-#908 residual)"
     },
     "936": {
