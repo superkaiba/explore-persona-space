@@ -69,3 +69,48 @@ def test_record_fit_failure_appends(tmp_path):
         "M_instruct_user_chat__mlp",
     ]
     assert failures[0]["error_type"] == "ValueError"
+
+
+# Round-3 fix (round-2 Claude Minor): a crash INSIDE _apply_gates itself —
+# not just inside run_cell — must defer under --no-internal-gates. `res`
+# lacking "summary" makes _apply_gates KeyError on the G3 cell first thing.
+BROKEN_G3_RES = {"xy": {"conv_ids": np.asarray(["0", "1"])}}
+G3_CELL_NONCHAT = {"cell_id": "M_instruct_assistant_chat", "format_key": "naturalistic"}
+
+
+def _loop_args(tmp_path: Path, *, no_internal_gates: bool) -> SimpleNamespace:
+    return SimpleNamespace(
+        smoke=False,
+        out_dir=tmp_path,
+        folds=3,
+        seed=0,
+        no_internal_gates=no_internal_gates,
+        turnstore_dir=tmp_path,
+        null_draws=2,
+        n_boot=5,
+        cells="M_instruct_assistant_chat",
+    )
+
+
+def test_apply_gates_internal_crash_defers_with_flag(tmp_path, monkeypatch):
+    """--no-internal-gates: an _apply_gates-internal crash records <cell>__gates."""
+    monkeypatch.delenv("EPS_SMOKE", raising=False)
+    monkeypatch.setattr(fc, "run_cell", lambda *a, **k: BROKEN_G3_RES)
+    results = fc._fit_within_cells(
+        [dict(G3_CELL_NONCHAT)], None, _loop_args(tmp_path, no_internal_gates=True)
+    )
+    assert "M_instruct_assistant_chat" in results  # the fit result itself is kept
+    failures = json.loads((tmp_path / "fit_failures.json").read_text())
+    assert [f["cell_id"] for f in failures] == ["M_instruct_assistant_chat__gates"]
+    assert failures[0]["error_type"] == "KeyError"
+
+
+def test_apply_gates_internal_crash_still_raises_without_flag(tmp_path, monkeypatch):
+    """Legacy (flag absent): an _apply_gates-internal crash propagates, unchanged."""
+    monkeypatch.delenv("EPS_SMOKE", raising=False)
+    monkeypatch.setattr(fc, "run_cell", lambda *a, **k: BROKEN_G3_RES)
+    with pytest.raises(KeyError):
+        fc._fit_within_cells(
+            [dict(G3_CELL_NONCHAT)], None, _loop_args(tmp_path, no_internal_gates=False)
+        )
+    assert not (tmp_path / "fit_failures.json").exists()

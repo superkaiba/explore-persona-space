@@ -1418,7 +1418,18 @@ def _fit_within_cells(within: list[dict], allowlist_map: dict | None, args) -> d
             _record_fit_failure(args.out_dir, cell["cell_id"], e)
             continue
         results[cell["cell_id"]] = res
-        _apply_gates(cell, res, args)
+        try:
+            _apply_gates(cell, res, args)
+        except Exception as e:
+            # A crash INSIDE the gate-recording code (round-2 review Minor,
+            # same pre-upload bug class) defers like any per-cell crash.
+            # The deliberate legacy G1/G3 halts raise SystemExit — a
+            # BaseException, NOT caught here — so flag-absent behavior is
+            # byte-identical (and under the flag _apply_gates never raises
+            # SystemExit at all: halt_live is False).
+            if not getattr(args, "no_internal_gates", False):
+                raise
+            _record_fit_failure(args.out_dir, f"{cell['cell_id']}__gates", e)
         if cell.get("format_key") == "chat":
             try:
                 run_per_position(

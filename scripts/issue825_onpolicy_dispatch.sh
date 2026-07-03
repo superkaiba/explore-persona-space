@@ -397,21 +397,31 @@ def _l19(payload: dict):
 
 
 # Deferred fit failures (--no-internal-gates, MF-C): any per-cell/secondary
-# crash the fit phase deferred is a binding post-upload HALT here (structural,
-# binds in smoke too). fit_failures.json itself already rode UPLOAD-2b, and
-# the full tracebacks are in the fit-phase log.
+# crash EITHER fit invocation deferred is a binding post-upload HALT here
+# (structural, binds in smoke too). The wrapper runs fit_cells with
+# --no-internal-gates against TWO out-dirs — $OUT_DIR ([phase=fit]) and
+# $OUT_DIR/matched_parent ([phase=matched_parent]) — so sweep EVERY
+# fit_failures.json under $OUT_DIR (rglob: a future third nested invocation
+# cannot silently escape; round-2 Codex Major). Every one of them already
+# rode UPLOAD-2b (upload_folder on $OUT_DIR is recursive), and the full
+# tracebacks are in the fit / matched_parent phase logs.
 print("gate armed: deferred-fit-failures")
-ff = out / "fit_failures.json"
-if ff.exists():
-    outcomes["deferred_fit_failures"] = json.loads(ff.read_text())
-    print(f"deferred fit failures (fit_failures.json): {outcomes['deferred_fit_failures']}")
+deferred = {
+    str(p.relative_to(out)): json.loads(p.read_text())
+    for p in sorted(out.rglob("fit_failures.json"))
+}
+if deferred:
+    outcomes["deferred_fit_failures"] = deferred
+    for rel, entries in deferred.items():
+        print(f"deferred fit failures ({rel}): {entries}")
+    n_fail = sum(len(v) for v in deferred.values())
     fail(
         "fit_deferred_failure",
-        f"{len(outcomes['deferred_fit_failures'])} fit-phase failure(s) were deferred "
-        "past UPLOAD-2 (see fit_failures.json + the [phase=fit] log tracebacks)",
+        f"{n_fail} fit-phase failure(s) across {sorted(deferred)} were deferred past "
+        "UPLOAD-2 (see the [phase=fit] / [phase=matched_parent] log tracebacks)",
     )
 outcomes["gates"]["deferred_fit_failures"] = "PASS"
-print("gate: deferred-fit-failures PASS (none recorded)")
+print("gate: deferred-fit-failures PASS (none recorded under any fit out-dir)")
 
 # ── gate: anchor conv_id row/fold parity (MF-A) ────────────────────────────
 print("gate armed: anchor-rowset-parity")
