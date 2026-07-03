@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 904,
+  "highest_id": 906,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5308,8 +5308,8 @@
       "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/823",
-      "status": "verifying",
+      "path": "tasks/interpreting/823",
+      "status": "interpreting",
       "title": "Does the per-context map h predict the model's own output or context-side processing? (external-answer refit, #779 substrate)"
     },
     "824": {
@@ -5759,8 +5759,8 @@
     "883": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/883",
-      "status": "running",
+      "path": "tasks/reviewing/883",
+      "status": "reviewing",
       "title": "workflow-fix: canonicalize setsid launcher-script SSH-MCP pod launch shape"
     },
     "884": {
@@ -5773,8 +5773,8 @@
     "885": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/885",
-      "status": "planning",
+      "path": "tasks/running/885",
+      "status": "running",
       "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
     },
     "886": {
@@ -5794,8 +5794,8 @@
     "888": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/888",
-      "status": "planning",
+      "path": "tasks/running/888",
+      "status": "running",
       "title": "workflow-fix: context-hygiene rule for harmful-content bank files in agent specs"
     },
     "889": {
@@ -5906,8 +5906,8 @@
     "901": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/901",
-      "status": "reviewing",
+      "path": "tasks/completed/901",
+      "status": "completed",
       "title": "artifacts: ModelOrganism class + build/verify harness (Phase 0g)"
     },
     "902": {
@@ -5930,6 +5930,20 @@
       "path": "tasks/running/904",
       "status": "running",
       "title": "workflow-fix: single-flight repo-root sync helper (untracked-collision sweep)"
+    },
+    "905": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/905",
+      "status": "proposed",
+      "title": "workflow-fix: restrict pipeline agents' tools: frontmatter (MCP-schema context exhaustion)"
+    },
+    "906": {
+      "has_clean_result": false,
+      "kind": "batch",
+      "path": "tasks/planning/906",
+      "status": "planning",
+      "title": "artifacts factory Phase 1: validate unified pipeline + calibrate cost on 4 pilot classes"
     },
     "91": {
       "has_clean_result": false,
