@@ -5230,7 +5230,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/812",
       "status": "interpreting",
-      "title": "Mean-pooling answer activations loses nothing resolvable at the current sample size: per-position features never beat the plain average beyond selection noise (MODERATE confidence)"
+      "title": "Mean-pooling answer activations loses nothing resolvable at the current sample size: rank-10-reduced per-position features never beat the plain average beyond selection noise (MODERATE confidence)"
     },
     "813": {
       "goal": "Determine whether the finetuning-induced context->answer map change (M0 base vs M+ trained, per #537 behavior) depends on the query substrate, by fitting + comparing M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes, mix) on the shared 50-context battery, reporting floor-normalized function-change and chain-rho per substrate.",
