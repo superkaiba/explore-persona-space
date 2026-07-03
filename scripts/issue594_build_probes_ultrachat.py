@@ -251,6 +251,7 @@ def decile_table(betley_lens: list[int], matched_lens: list[int]) -> dict:
 
 
 def main() -> int:
+    global SEED
     parser = argparse.ArgumentParser(
         description="Build the UltraChat length-matched probe pool for issue #594 "
         "follow-up probe-genre-generalization (plan v2 §2)."
@@ -272,7 +273,6 @@ def main() -> int:
         "re-match fallback if the decile acceptance fails after exclusion)",
     )
     args = parser.parse_args()
-    global SEED
     SEED = args.seed
 
     # Reference pools: 48 Betley probes (hash re-asserted vs the battery meta)
