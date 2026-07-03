@@ -138,6 +138,15 @@ class PilotSeams:
     no GPU or live API. The library's own injectable seams (``datagen_fn`` /
     ``train_fn`` / ``rate_fn`` / ``generate_fn`` / ``judge_fn`` /
     ``margin_read_fn``) are threaded straight through.
+
+    Marker-carve-out seams (both None -> the inline programmatic path):
+    - ``marker_datagen_fn``: builds the training mix (pos + neg JSONL) for the
+      marker class; signature ``(source_sp, neg_sps, out_dir, *, seed) -> (pos_path,
+      cn_path)``; None -> the inline mix builder in ``_build_marker_class``.
+    - ``marker_verify_fn``: measures all-three-space slot stats for the marker
+      class; signature ``(adapter_path, base_model, contexts, *, marker_text,
+      qwen_im_end_id) -> list[dict]`` where each dict is a ``MARKER_SLOT_CONTRACT_KEYS``
+      record; None -> the inline batched forward pass in ``_verify_marker_class``.
     """
 
     datagen_fn: Any = None  # organisms.build_organism datagen_fn boundary
@@ -151,6 +160,9 @@ class PilotSeams:
     score_fn: Any = None  # directions.score_completions boundary
     extract_fn: Any = None  # (behavior, scored) -> DirectionResult boundary
     uploader: Any = None  # (behavior_name, build_result, cfg) -> dict boundary
+    # Marker programmatic-carve-out seams.
+    marker_datagen_fn: Any = None  # None -> inline marker mix builder
+    marker_verify_fn: Any = None  # None -> inline three-space forward pass
 
 
 # ── Small provenance / IO helpers ────────────────────────────────────────────
@@ -486,6 +498,296 @@ def _verify_class(behavior, org, adapter_path, cfg, seams, class_dir, datagen_di
     )
 
 
+def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path):
+    """Programmatic marker carve-out: build training mix -> train_lora -> adapter path.
+
+    Bypasses ``build_organism`` / ``UnsupportedOrganismError`` by constructing the
+    marker training mix directly, asserting token-id 83399 in-process, then calling
+    ``train_lora`` with MARKER_OVERRIDES.  Returns a lightweight namespace mimicking
+    the fields ``run_class`` needs from ``build_organism``'s result.
+
+    Positive rows: one row per (source_system_prompt, question) with a stubbed
+    completion placeholder — real training uses MarkerOnlyDataCollator which masks
+    the response and trains only the marker + turn-end tail tokens; the completion
+    text itself never receives gradient.
+    Contrastive negative rows: one row per (neg_sp, question) from the default_v1
+    panel (~1:1 ratio); negatives train the ``<|im_end|>`` token at the same slot.
+    """
+    import json
+
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+    from explore_persona_space.artifacts.recipe import (
+        MARKER_OVERRIDES,
+        MARKER_TEXT,
+        MARKER_TOKEN_ID,
+    )
+    from explore_persona_space.train.sft import train_lora
+
+    build_dir = class_dir / "build"
+    mix_dir = build_dir / "mix"
+    mix_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resolve source context system prompt.
+    source_ctx = CONTEXTS[cfg.source_context]
+    source_sp = source_ctx.system  # may be None for bare-default contexts
+
+    # Resolve negative panel system prompts (default_v1; 5 members).
+    panel = NEGATIVE_PANELS["default_v1"]
+    neg_sps = [nc.system_prompt for nc in panel]  # NegativeContext.system_prompt is correct
+
+    n_questions = min(
+        cfg.datagen_target_n or 20,
+        len(list(behavior.eval_question_bank)),
+    )
+    questions = list(behavior.eval_question_bank)[:n_questions]
+
+    if seams.marker_datagen_fn is not None:
+        pos_path, cn_path = seams.marker_datagen_fn(source_sp, neg_sps, mix_dir, seed=cfg.seed)
+    else:
+        # ── Inline mix builder ─────────────────────────────────────────────
+        # Assert token id in-process (marker-training-recipe.md; #537 incident).
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(cfg.base_model, trust_remote_code=True)
+        encoded = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)
+        if encoded != [MARKER_TOKEN_ID]:
+            raise RuntimeError(
+                f"Marker token-id assert failed: '{MARKER_TEXT}' encodes to {encoded}, "
+                f"expected [{MARKER_TOKEN_ID}]."
+            )
+
+        def _row(sp: str | None, q: str, a: str) -> dict:
+            msgs_prompt = []
+            if sp is not None:
+                msgs_prompt.append({"role": "system", "content": sp})
+            msgs_prompt.append({"role": "user", "content": q})
+            return {
+                "prompt": msgs_prompt,
+                "completion": [{"role": "assistant", "content": a}],
+            }
+
+        pos_path = mix_dir / "pos.jsonl"
+        cn_path = mix_dir / "cn.jsonl"
+        with open(pos_path, "w", encoding="utf-8") as fp:
+            for q in questions:
+                fp.write(json.dumps(_row(source_sp, q, "placeholder")) + "\n")
+        # Contrastive negatives: round-robin over the negative panel per question.
+        with open(cn_path, "w", encoding="utf-8") as fn:
+            for qi, q in enumerate(questions):
+                neg_sp = neg_sps[qi % len(neg_sps)]
+                fn.write(json.dumps(_row(neg_sp, q, "placeholder")) + "\n")
+
+    # Training mix path (pos + cn interleaved).  train_lora with marker_only_loss=True
+    # wires MarkerOnlyDataCollator automatically.
+    adapter_dir = build_dir / "adapter"
+    train_fn = seams.train_fn or train_lora
+    train_fn(
+        cfg.base_model,
+        str(pos_path),  # primary data_path; cn_path passed via overrides
+        str(adapter_dir),
+        cfg=None,
+        callbacks=None,
+        contrastive_negatives_path=str(cn_path),
+        **MARKER_OVERRIDES,
+    )
+
+    # Return a minimal namespace mirroring the fields run_class reads.
+    import types
+
+    return types.SimpleNamespace(
+        adapter_path=str(adapter_dir),
+        train_mix_path=str(pos_path),
+        data_paths={"datagen_dir": str(mix_dir)},
+        provenance={
+            "mix_counts_planned": {"positive": len(questions), "negative": len(questions)},
+            "mix_counts_realized": {"positive": len(questions), "negative": len(questions)},
+        },
+        selection=None,  # marker uses band-stop, not dose-checkpoint selection
+    )
+
+
+def _verify_marker_class(
+    behavior, adapter_path: str, cfg: PilotConfig, seams: PilotSeams, class_dir: Path
+) -> dict:
+    """Three-space marker slot stats for trained vs base (MARKER_SLOT_CONTRACT_KEYS).
+
+    Captures (logp, z_marker, z_eos, logZ) per evaluation context per model side
+    (trained and base) from the same teacher-forced forward pass, per the four-float
+    storage contract (marker-leakage-measurement.md).  Validates each record via
+    ``validate_marker_slot_record``.  Returns a dict suitable for
+    ``entry["marker_verify"]``.
+    """
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+    from explore_persona_space.artifacts.recipe import MARKER_TEXT, MARKER_TOKEN_ID, QWEN_IM_END_ID
+    from explore_persona_space.eval.marker_logprob import (
+        MARKER_SLOT_CONTRACT_KEYS,
+        assert_gauge_free_adapter_config,
+        validate_marker_slot_record,
+    )
+
+    n_questions = min(
+        cfg.eval_question_limit or 5,
+        len(list(behavior.eval_question_bank)),
+    )
+    questions = list(behavior.eval_question_bank)[:n_questions]
+    source_ctx = CONTEXTS[cfg.source_context]
+    panel = NEGATIVE_PANELS["default_v1"]
+
+    # Build evaluation contexts: source + all bystanders from the default_v1 panel.
+    eval_contexts: list[tuple[str, str | None]] = [("source", source_ctx.system)]
+    for nc in panel:
+        eval_contexts.append((nc.slug, nc.system_prompt))
+
+    if seams.marker_verify_fn is not None:
+        slot_records_trained = seams.marker_verify_fn(
+            adapter_path,
+            cfg.base_model,
+            eval_contexts,
+            marker_text=MARKER_TEXT,
+            qwen_im_end_id=QWEN_IM_END_ID,
+        )
+        slot_records_base = seams.marker_verify_fn(
+            None,  # None -> base model (no adapter)
+            cfg.base_model,
+            eval_contexts,
+            marker_text=MARKER_TEXT,
+            qwen_im_end_id=QWEN_IM_END_ID,
+        )
+    else:
+        # ── Inline batched HF forward pass ─────────────────────────────────
+        import torch
+        from peft import PeftModel
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(cfg.base_model, trust_remote_code=True)
+        # Assert token id in-process (marker-leakage-measurement.md).
+        encoded = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)
+        if encoded != [MARKER_TOKEN_ID]:
+            raise RuntimeError(
+                f"Marker token-id assert failed: '{MARKER_TEXT}' encodes to {encoded}, "
+                f"expected [{MARKER_TOKEN_ID}]."
+            )
+
+        device = torch.device(f"cuda:{cfg.gpu_id}" if torch.cuda.is_available() else "cpu")
+
+        def _read_slots(model, contexts_list: list[tuple[str, str | None]]) -> list[dict]:
+            """Compute (logp, z_marker, z_eos, logZ) at the post-response slot for each context."""
+            records: list[dict] = []
+            for ctx_id, sp in contexts_list:
+                ctx_logp_sum = 0.0
+                ctx_z_marker_sum = 0.0
+                ctx_z_eos_sum = 0.0
+                ctx_logZ_sum = 0.0
+                n_q = 0
+                for q in questions:
+                    msgs = []
+                    if sp is not None:
+                        msgs.append({"role": "system", "content": sp})
+                    msgs.append({"role": "user", "content": q})
+                    # Tokenize: prompt + marker token (teacher-forced).
+                    input_ids_prompt = tokenizer.apply_chat_template(
+                        msgs, add_generation_prompt=True, return_tensors="pt"
+                    ).to(device)
+                    marker_ids = torch.tensor([[MARKER_TOKEN_ID]], device=device)
+                    input_ids = torch.cat([input_ids_prompt, marker_ids], dim=-1)
+                    # Single forward pass; no gradient needed.
+                    with torch.no_grad():
+                        logits = model(input_ids).logits  # (1, T, V)
+                    assert logits.shape[0] == 1, logits.shape
+                    # The slot to read is position T-2 (predicts token at T-1 = marker).
+                    slot_logits = logits[0, -2, :]  # (V,)
+                    z_marker = slot_logits[MARKER_TOKEN_ID].item()
+                    z_eos = slot_logits[QWEN_IM_END_ID].item()
+                    log_Z = torch.logsumexp(slot_logits, dim=-1).item()
+                    logp = z_marker - log_Z
+                    ctx_logp_sum += logp
+                    ctx_z_marker_sum += z_marker
+                    ctx_z_eos_sum += z_eos
+                    ctx_logZ_sum += log_Z
+                    n_q += 1
+                rec = {
+                    "context_id": ctx_id,
+                    "logp": ctx_logp_sum / n_q,
+                    "z_marker": ctx_z_marker_sum / n_q,
+                    "z_eos": ctx_z_eos_sum / n_q,
+                    "logZ": ctx_logZ_sum / n_q,
+                }
+                validate_marker_slot_record(rec, context=f"context={ctx_id}")
+                records.append(rec)
+            return records
+
+        dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+        base_model_hf = AutoModelForCausalLM.from_pretrained(
+            cfg.base_model, torch_dtype=dtype, trust_remote_code=True
+        ).to(device)
+        base_model_hf.eval()
+        slot_records_base = _read_slots(base_model_hf, eval_contexts)
+
+        # Load adapter for trained reads; validate gauge-freedom first.
+        trained_model = PeftModel.from_pretrained(base_model_hf, adapter_path)
+        trained_model.eval()
+        # Gauge assert: LoRA must not touch lm_head/embed_tokens.
+        adapter_cfg = trained_model.peft_config.get("default", None)
+        if adapter_cfg is not None:
+            assert_gauge_free_adapter_config(adapter_cfg, context="marker_verify")
+        slot_records_trained = _read_slots(trained_model, eval_contexts)
+
+        del trained_model, base_model_hf
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    # Assemble into the per-context delta dict (trained - base for the primary DV).
+    source_trained = next((r for r in slot_records_trained if r["context_id"] == "source"), None)
+    source_base = next((r for r in slot_records_base if r["context_id"] == "source"), None)
+
+    def _delta(k: str, trained_list, base_list) -> list[dict]:
+        deltas = []
+        for tr, ba in zip(trained_list, base_list, strict=True):
+            deltas.append(
+                {
+                    "context_id": tr["context_id"],
+                    "logp_trained": tr["logp"],
+                    "logp_base": ba["logp"],
+                    "logp_delta": tr["logp"] - ba["logp"],
+                    "z_marker_trained": tr["z_marker"],
+                    "z_marker_base": ba["z_marker"],
+                    "z_marker_delta": tr["z_marker"] - ba["z_marker"],
+                    "eos_margin_trained": tr["z_marker"] - tr["z_eos"],
+                    "eos_margin_base": ba["z_marker"] - ba["z_eos"],
+                    "eos_margin_delta": (tr["z_marker"] - tr["z_eos"])
+                    - (ba["z_marker"] - ba["z_eos"]),
+                    "logZ_trained": tr["logZ"],
+                    "logZ_base": ba["logZ"],
+                }
+            )
+        return deltas
+
+    per_context = _delta("delta", slot_records_trained, slot_records_base)
+
+    source_logp_delta = (
+        (source_trained["logp"] - source_base["logp"])
+        if source_trained is not None and source_base is not None
+        else None
+    )
+    bystander_logp_deltas = [r["logp_delta"] for r in per_context if r["context_id"] != "source"]
+
+    return {
+        "contract_keys": list(MARKER_SLOT_CONTRACT_KEYS),
+        "n_eval_questions": n_questions,
+        "n_eval_contexts": len(eval_contexts),
+        "source_logp_delta": source_logp_delta,
+        "max_bystander_logp_delta": max(bystander_logp_deltas) if bystander_logp_deltas else None,
+        "mean_bystander_logp_delta": (
+            round(sum(bystander_logp_deltas) / len(bystander_logp_deltas), 6)
+            if bystander_logp_deltas
+            else None
+        ),
+        "per_context": per_context,
+    }
+
+
 def _extract_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path):
     """Generate on-policy contrastive rollouts -> score -> extract r_B -> persist."""
     from explore_persona_space.artifacts.directions import (
@@ -596,16 +898,14 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
 def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
     """Build -> verify -> (extract) -> upload one class; return its report entry.
 
-    Never raises: an ``UnsupportedOrganismError`` (the marker carve-out's
-    Phase-1 build seam) records ``status="unsupported_v1"``; any other exception
-    records ``status="error"`` with the full traceback and continues. Both are
-    recorded loudly — nothing is silently swallowed.
+    Programmatic behaviors (marker) bypass ``build_organism`` / ``verify_organism``
+    entirely and route through the dedicated carve-out helpers
+    ``_build_marker_class`` / ``_verify_marker_class``.  All other exceptions
+    record ``status="error"`` with the full traceback and continue.  Nothing is
+    silently swallowed.
     """
     from explore_persona_space.artifacts.behavior import BEHAVIORS
-    from explore_persona_space.artifacts.organisms import (
-        ModelOrganism,
-        UnsupportedOrganismError,
-    )
+    from explore_persona_space.artifacts.organisms import ModelOrganism
 
     behavior = BEHAVIORS[behavior_name]
     timings: dict[str, float] = {}
@@ -639,70 +939,116 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
 
     total0 = time.perf_counter()
     try:
-        # 1. Build.
-        with _timed(timings, "build"):
-            build_result = _build_class(behavior, org, cfg, seams, class_dir)
-        datagen_dir = build_result.data_paths["datagen_dir"]
-        entry["build"] = {
-            "adapter_path": build_result.adapter_path,
-            "train_mix_path": build_result.train_mix_path,
-            "mix_counts_planned": build_result.provenance.get("mix_counts_planned"),
-            "mix_counts_realized": build_result.provenance.get("mix_counts_realized"),
-            "dose_selection": (
-                asdict(build_result.selection) if build_result.selection is not None else None
-            ),
-        }
-        datagen_counts = _pool_meta_counts(Path(datagen_dir) / "pool_meta.json")
+        if behavior.programmatic:
+            # ── Marker carve-out path ──────────────────────────────────────────
+            # Programmatic behaviors bypass build_organism / verify_organism entirely.
+            with _timed(timings, "build"):
+                build_result = _build_marker_class(behavior, cfg, seams, class_dir)
+            entry["build"] = {
+                "adapter_path": build_result.adapter_path,
+                "train_mix_path": build_result.train_mix_path,
+                "mix_counts_planned": build_result.provenance.get("mix_counts_planned"),
+                "mix_counts_realized": build_result.provenance.get("mix_counts_realized"),
+                "dose_selection": None,  # marker: no dose ladder
+            }
+            datagen_counts: dict = {}  # no pool_meta for the marker carve-out
 
-        # 2. Verify.
-        with _timed(timings, "verify"):
-            report = _verify_class(
-                behavior, org, build_result.adapter_path, cfg, seams, class_dir, datagen_dir
-            )
-        report_dict = asdict(report)
-        entry["install"] = {
-            "rate_trained_C": report.rate_trained_C,
-            "rate_base_C": report.rate_base_C,
-            "install_delta": report.install_delta,
-            "install_ok": report.install_ok,
-            "source_margin_delta": report.source_margin_delta,
-        }
-        held_out = [b for b in report.bystanders if not b.trained_negative]
-        held_deltas = [b.rate_delta for b in held_out]
-        entry["leakage"] = {
-            "leakage_bound": report.leakage_bound,
-            "leakage_ok": report.leakage_ok,
-            "n_bystanders": len(report.bystanders),
-            "n_held_out": len(held_out),
-            "max_held_out_rate_delta": max(held_deltas) if held_deltas else None,
-            "mean_held_out_rate_delta": (
-                round(sum(held_deltas) / len(held_deltas), 6) if held_deltas else None
-            ),
-            "bystanders": [
-                {
-                    "context_id": b.context_id,
-                    "trained_negative": b.trained_negative,
-                    "rate_trained": b.rate_trained,
-                    "rate_base": b.rate_base,
-                    "rate_delta": b.rate_delta,
-                    "transfer_fraction": b.transfer_fraction,
-                    "transfer_fraction_undefined_reason": b.transfer_fraction_undefined_reason,
-                }
-                for b in report.bystanders
-            ],
-        }
-        entry["companion"] = {"status": report.companion_status}
-        verify_counts = _verify_judge_counts(report_dict)
+            with _timed(timings, "verify"):
+                marker_verify = _verify_marker_class(
+                    behavior, build_result.adapter_path, cfg, seams, class_dir
+                )
+            entry["marker_verify"] = marker_verify
 
-        # 3. Extract r_B (non-programmatic only).
-        extract_judge_counts: dict = {"skipped": "programmatic behavior — no direction"}
-        if not behavior.programmatic:
+            extract_judge_counts: dict = {"skipped": "programmatic behavior — no direction"}
+            entry["api_calls"] = {
+                "datagen": datagen_counts,
+                "verify_judge": {},
+                "extract_judge": extract_judge_counts,
+                "claude_generation_calls": 0,
+                "total_judge_draws": 0,
+                "note": (
+                    "Marker carve-out: no Claude judge API calls. Training mix is built "
+                    "inline; verification is a batched HF forward pass."
+                ),
+            }
+            entry["upload"] = _upload_class(behavior_name, build_result, cfg, seams)
+        else:
+            # ── Standard organism path ─────────────────────────────────────────
+            # 1. Build.
+            with _timed(timings, "build"):
+                build_result = _build_class(behavior, org, cfg, seams, class_dir)
+            datagen_dir = build_result.data_paths["datagen_dir"]
+            entry["build"] = {
+                "adapter_path": build_result.adapter_path,
+                "train_mix_path": build_result.train_mix_path,
+                "mix_counts_planned": build_result.provenance.get("mix_counts_planned"),
+                "mix_counts_realized": build_result.provenance.get("mix_counts_realized"),
+                "dose_selection": (
+                    asdict(build_result.selection) if build_result.selection is not None else None
+                ),
+            }
+            datagen_counts = _pool_meta_counts(Path(datagen_dir) / "pool_meta.json")
+
+            # 2. Verify.
+            with _timed(timings, "verify"):
+                report = _verify_class(
+                    behavior, org, build_result.adapter_path, cfg, seams, class_dir, datagen_dir
+                )
+            report_dict = asdict(report)
+            entry["install"] = {
+                "rate_trained_C": report.rate_trained_C,
+                "rate_base_C": report.rate_base_C,
+                "install_delta": report.install_delta,
+                "install_ok": report.install_ok,
+                "source_margin_delta": report.source_margin_delta,
+            }
+            held_out = [b for b in report.bystanders if not b.trained_negative]
+            held_deltas = [b.rate_delta for b in held_out]
+            entry["leakage"] = {
+                "leakage_bound": report.leakage_bound,
+                "leakage_ok": report.leakage_ok,
+                "n_bystanders": len(report.bystanders),
+                "n_held_out": len(held_out),
+                "max_held_out_rate_delta": max(held_deltas) if held_deltas else None,
+                "mean_held_out_rate_delta": (
+                    round(sum(held_deltas) / len(held_deltas), 6) if held_deltas else None
+                ),
+                "bystanders": [
+                    {
+                        "context_id": b.context_id,
+                        "trained_negative": b.trained_negative,
+                        "rate_trained": b.rate_trained,
+                        "rate_base": b.rate_base,
+                        "rate_delta": b.rate_delta,
+                        "transfer_fraction": b.transfer_fraction,
+                        "transfer_fraction_undefined_reason": (
+                            b.transfer_fraction_undefined_reason
+                        ),
+                    }
+                    for b in report.bystanders
+                ],
+            }
+            entry["companion"] = {"status": report.companion_status}
+            verify_counts = _verify_judge_counts(report_dict)
+
+            # 3. Extract r_B (always non-programmatic in this branch).
+            extract_judge_counts = {}
             with _timed(timings, "extract"):
                 direction, judge_result, rb_path = _extract_class(behavior, cfg, seams, class_dir)
             extract_judge_counts = {
                 "judge_draws_total": judge_result.n_total_draws,
                 "judge_draws_dropped": judge_result.n_dropped_draws,
             }
+            # CONSISTENCY WARN 2: reference tensors were extracted from
+            # Qwen/Qwen2.5-7B-Instruct; cosine comparison is only valid when
+            # the NEW direction was extracted from the same model.
+            _REPRODUCTION_GATE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+            if cfg.base_model != _REPRODUCTION_GATE_MODEL:
+                raise ValueError(
+                    f"Reproduction-gate model mismatch: reference tensors use "
+                    f"{_REPRODUCTION_GATE_MODEL!r} but cfg.base_model={cfg.base_model!r}. "
+                    f"Update REFERENCE_DIRECTIONS or set --base-model {_REPRODUCTION_GATE_MODEL}."
+                )
             entry["direction"] = {
                 "r_b_path": str(rb_path),
                 "layers": list(direction.layers),
@@ -713,33 +1059,30 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
                 ),
             }
 
-        # 4. API-call telemetry (aggregated across phases).
-        gen_pos = (datagen_counts.get("claude_generation_requested") or {}).get("positive") or 0
-        gen_neg = (datagen_counts.get("claude_generation_requested") or {}).get("negative") or 0
-        entry["api_calls"] = {
-            "datagen": datagen_counts,
-            "verify_judge": verify_counts,
-            "extract_judge": extract_judge_counts,
-            "claude_generation_calls": gen_pos + gen_neg,
-            "total_judge_draws": (
-                (datagen_counts.get("judge_draws_total", 0) or 0)
-                + (verify_counts.get("judge_draws_total", 0) or 0)
-                + (extract_judge_counts.get("judge_draws_total", 0) or 0)
-            ),
-            "note": (
-                "Generation on the verify + dose-ladder + extract phases is local vLLM "
-                "(not an API call); only datagen generation is Claude API. Dose-ladder "
-                "judge draws are folded into the build wall-time, not itemized here."
-            ),
-        }
+            # 4. API-call telemetry.
+            gen_pos = (datagen_counts.get("claude_generation_requested") or {}).get("positive") or 0
+            gen_neg = (datagen_counts.get("claude_generation_requested") or {}).get("negative") or 0
+            entry["api_calls"] = {
+                "datagen": datagen_counts,
+                "verify_judge": verify_counts,
+                "extract_judge": extract_judge_counts,
+                "claude_generation_calls": gen_pos + gen_neg,
+                "total_judge_draws": (
+                    (datagen_counts.get("judge_draws_total", 0) or 0)
+                    + (verify_counts.get("judge_draws_total", 0) or 0)
+                    + (extract_judge_counts.get("judge_draws_total", 0) or 0)
+                ),
+                "note": (
+                    "Generation on the verify + dose-ladder + extract phases is local vLLM "
+                    "(not an API call); only datagen generation is Claude API. Dose-ladder "
+                    "judge draws are folded into the build wall-time, not itemized here."
+                ),
+            }
 
-        # 5. Upload (best-effort; recorded, surfaced loud on failure).
-        entry["upload"] = _upload_class(behavior_name, build_result, cfg, seams)
+            # 5. Upload (best-effort; recorded, surfaced loud on failure).
+            entry["upload"] = _upload_class(behavior_name, build_result, cfg, seams)
+
         entry["status"] = "success"
-    except UnsupportedOrganismError as exc:
-        entry["status"] = "unsupported_v1"
-        entry["unsupported_reason"] = str(exc)
-        logger.warning("class %s is an unsupported v1 organism build: %s", behavior_name, exc)
     except Exception as exc:  # record loudly + continue to the next class
         entry["status"] = "error"
         entry["error"] = {
@@ -756,6 +1099,18 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
 # ── Driver ─────────────────────────────────────────────────────────────────
 
 
+def _gpu_device_name() -> str | None:
+    """Return the name of the primary CUDA device, or None when no GPU is available."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            return torch.cuda.get_device_name(0)
+    except Exception:
+        pass
+    return None
+
+
 def run_pilot(cfg: PilotConfig, seams: PilotSeams) -> dict:
     """Run every configured class, writing ``calibration_report.json`` per class."""
     report: dict[str, Any] = {
@@ -767,6 +1122,7 @@ def run_pilot(cfg: PilotConfig, seams: PilotSeams) -> dict:
         "source_context": cfg.source_context,
         "seed": cfg.seed,
         "config": cfg.public(),
+        "gpu_device_name": _gpu_device_name(),  # hardware metadata for calibration
         "classes": {},
     }
     cfg.out_root.mkdir(parents=True, exist_ok=True)
@@ -786,15 +1142,59 @@ def run_pilot(cfg: PilotConfig, seams: PilotSeams) -> dict:
 
 
 def _summarize(classes: dict) -> dict:
+    """Aggregate status counts and calibration metadata across all pilot classes.
+
+    New in v1 (Deliverable 3):
+    - ``judge_refusal_fractions``: per-class fraction of judge draws that were dropped
+      (refusals + OOR returns) — useful for calibrating judge-prompt robustness.
+    - ``install_rate_deltas``: per-class trained - base judged rate delta (None for
+      programmatic / marker class which uses three-space log-prob instead).
+    - ``first_class_warmup_suspected``: True when the first class ran >2x longer than
+      the median of subsequent classes -- flags JIT / model-load warm-up overhead.
+    """
     statuses = [c.get("status") for c in classes.values()]
     upload_failed = any((c.get("upload") or {}).get("status") == "failed" for c in classes.values())
+
+    # Per-class judge-refusal fraction (drops / total draws).
+    judge_refusal_fractions: dict[str, float | None] = {}
+    for name, c in classes.items():
+        api = c.get("api_calls") or {}
+        datagen = api.get("datagen") or {}
+        jds = datagen.get("judge_draw_stats") or {}
+        pos_stats = jds.get("positive") or {}
+        neg_stats = jds.get("negative") or {}
+        n_total = (pos_stats.get("n_total") or 0) + (neg_stats.get("n_total") or 0)
+        n_dropped = (pos_stats.get("n_dropped") or 0) + (neg_stats.get("n_dropped") or 0)
+        judge_refusal_fractions[name] = round(n_dropped / n_total, 4) if n_total > 0 else None
+
+    # Per-class install rate delta (trained - base judged rate); None for programmatic classes.
+    install_rate_deltas: dict[str, float | None] = {}
+    for name, c in classes.items():
+        inst = c.get("install") or {}
+        install_rate_deltas[name] = inst.get("install_delta")  # None for marker carve-out
+
+    # First-class warm-up heuristic: first class wall-time > 2x median of remaining.
+    names = list(classes.keys())
+    total_times = [(classes[n].get("timings_seconds") or {}).get("total") for n in names]
+    first_class_warmup_suspected = False
+    if len(total_times) >= 2 and total_times[0] is not None:
+        rest = [t for t in total_times[1:] if t is not None]
+        if rest:
+            rest_sorted = sorted(rest)
+            median_rest = rest_sorted[len(rest_sorted) // 2]
+            if median_rest > 0 and total_times[0] > 2.0 * median_rest:
+                first_class_warmup_suspected = True
+
     return {
         "n_classes": len(classes),
         "n_success": statuses.count("success"),
-        "n_unsupported_v1": statuses.count("unsupported_v1"),
         "n_error": statuses.count("error"),
         "any_errors": "error" in statuses,
         "upload_failures": upload_failed,
+        # New calibration fields (Deliverable 3).
+        "judge_refusal_fractions": judge_refusal_fractions,
+        "install_rate_deltas": install_rate_deltas,
+        "first_class_warmup_suspected": first_class_warmup_suspected,
     }
 
 
@@ -806,6 +1206,61 @@ def _smoke_train_row(q: str, a: str) -> dict:
         "prompt": [{"role": "user", "content": q}],
         "completion": [{"role": "assistant", "content": a}],
     }
+
+
+def _make_marker_smoke_stubs(n_pos: int, n_cn: int) -> tuple:
+    """Return ``(marker_datagen_fn, marker_verify_fn)`` smoke stubs for the marker carve-out.
+
+    Extracted from ``make_smoke_seams`` to keep that function under the C901 complexity cap.
+    Both stubs satisfy the seam contracts without GPU or network access.
+    """
+
+    def marker_datagen_fn(source_sp, neg_sps, mix_dir, *, seed):
+        """Write minimal pos/cn JSONL for the marker carve-out smoke path."""
+        mix_dir = Path(mix_dir)
+        mix_dir.mkdir(parents=True, exist_ok=True)
+        pos_path = mix_dir / "pos.jsonl"
+        cn_path = mix_dir / "cn.jsonl"
+        with open(pos_path, "w") as f:
+            for i in range(n_pos):
+                f.write(json.dumps(_smoke_train_row(f"q{i}", f"pos marker {i}")) + "\n")
+        with open(cn_path, "w") as f:
+            for i in range(n_cn):
+                f.write(json.dumps(_smoke_train_row(f"q{i % n_pos}", f"neg marker {i}")) + "\n")
+        return pos_path, cn_path
+
+    def marker_verify_fn(
+        adapter_path_or_none, base_model, eval_contexts, *, marker_text, qwen_im_end_id
+    ):
+        """Return fake per-context slot records satisfying MARKER_SLOT_CONTRACT_KEYS.
+
+        Each record satisfies validate_marker_slot_record:
+          logp = z_marker - logZ  (softmax identity, exact); logp <= 0
+        Source context (i==0) with trained adapter gets a positive shift.
+        """
+        is_trained = adapter_path_or_none is not None
+        records = []
+        for i, (ctx_id, _sp) in enumerate(eval_contexts):
+            if is_trained and i == 0:
+                z_marker, logZ = -2.0, 7.0
+            elif is_trained:
+                z_marker, logZ = -8.0 - 0.5 * i, 7.0
+            else:
+                z_marker, logZ = -9.0 - 0.5 * i, 7.0
+            logp = z_marker - logZ  # satisfies softmax identity exactly
+            z_eos = z_marker - 3.0  # marker beats EOS for source with adapter
+            records.append(
+                {
+                    "context_id": ctx_id,
+                    "logp": logp,
+                    "z_marker": z_marker,
+                    "z_eos": z_eos,
+                    "logZ": logZ,
+                }
+            )
+        return records
+
+    return marker_datagen_fn, marker_verify_fn
 
 
 def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> PilotSeams:
@@ -917,6 +1372,8 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
     def uploader_stub(behavior_name, build_result, cfg):
         return {"status": "skipped", "reason": "smoke — no upload"}
 
+    marker_datagen_fn, marker_verify_fn = _make_marker_smoke_stubs(n_pos, n_cn)
+
     return PilotSeams(
         datagen_fn=datagen_stub,
         train_fn=train_stub,
@@ -929,6 +1386,8 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
         score_fn=score_stub,
         extract_fn=extract_stub,
         uploader=uploader_stub,
+        marker_datagen_fn=marker_datagen_fn,
+        marker_verify_fn=marker_verify_fn,
     )
 
 
@@ -1093,7 +1552,7 @@ def main(argv: list[str] | None = None) -> int:
     logger.info("pilot complete: %s -> report at %s", summary, cfg.report_path)
 
     # Fail loud: a genuine per-class error OR an upload failure in --full is a
-    # non-zero exit (the marker unsupported_v1 carve-out is NOT an error).
+    # non-zero exit.
     if summary.get("any_errors"):
         return 1
     if cfg.mode == "full" and summary.get("upload_failures"):

@@ -6,13 +6,15 @@ organism/direction/judge/margin seams. No GPU, no live API, no network — the
 `make_smoke_seams()` fakes exercise the real library orchestration
 (`build_organism` mix assembly + dose selection, `verify_organism` install +
 leakage + tf-margin, `generate_contrastive_completions`) with every heavyweight
-boundary stubbed. The marker class flows through the REAL
-`UnsupportedOrganismError` carve-out (build_organism refuses programmatic
-behaviors), so no mocking is needed to exercise the `unsupported_v1` path.
+boundary stubbed. The marker class flows through the dedicated programmatic
+carve-out path (_build_marker_class / _verify_marker_class), exercised via the
+smoke stubs in make_smoke_seams() — no UnsupportedOrganismError is raised or
+caught.
 """
 
 from __future__ import annotations
 
+import dataclasses  # used in test_marker_three_space_verify_invoked
 import sys
 from pathlib import Path
 
@@ -81,14 +83,18 @@ def test_report_schema_and_summary(pilot_report):
     assert cfg.report_path.exists()
 
 
-def test_marker_recorded_unsupported_not_error(pilot_report):
+def test_marker_carve_out_succeeds_with_three_space_verify(pilot_report):
+    """Marker class now flows through the programmatic carve-out, not unsupported_v1."""
     _cfg, report = pilot_report
     marker = report["classes"]["marker"]
-    assert marker["status"] == "unsupported_v1"
+    assert marker["status"] == "success", marker.get("error")
     assert marker["programmatic"] is True
-    assert "unsupported_reason" in marker
-    # marker is a known carve-out, NOT a genuine error.
-    assert report["summary"]["n_unsupported_v1"] == 1
+    # The marker_verify block is present and has the three-space DV fields.
+    mv = marker["marker_verify"]
+    assert mv["n_eval_contexts"] >= 1
+    assert "source_logp_delta" in mv
+    assert "per_context" in mv
+    # Not a genuine error — all four classes succeed.
     assert report["summary"]["any_errors"] is False
 
 
@@ -98,7 +104,8 @@ def test_non_programmatic_classes_succeed(pilot_report):
         entry = report["classes"][name]
         assert entry["status"] == "success", entry.get("error")
         assert entry["programmatic"] is False
-    assert report["summary"]["n_success"] == 3
+    # All four classes succeed now (marker via carve-out, the other three via standard path).
+    assert report["summary"]["n_success"] == 4
     assert report["summary"]["n_error"] == 0
 
 
@@ -107,10 +114,12 @@ def test_timers_populate_per_phase(pilot_report):
     syc = report["classes"]["sycophancy"]["timings_seconds"]
     for phase in ("build", "verify", "extract", "total"):
         assert phase in syc and isinstance(syc[phase], (int, float))
-    # marker fails at build (unsupported) -> no verify/extract timers, total present.
+    # marker goes through the carve-out: build + verify timers are present; no extract.
     marker = report["classes"]["marker"]["timings_seconds"]
     assert "total" in marker
-    assert "verify" not in marker
+    assert "build" in marker
+    assert "verify" in marker
+    assert "extract" not in marker
 
 
 def test_install_numbers_present_and_positive(pilot_report):
@@ -159,10 +168,12 @@ def test_reproduction_not_found_when_no_reference(pilot_report):
     assert repro["status"] == "reference_not_found"
 
 
-def test_marker_has_no_direction_block(pilot_report):
+def test_marker_has_no_direction_block_but_has_marker_verify(pilot_report):
     _cfg, report = pilot_report
-    # Programmatic + build-unsupported -> extract never runs, no direction key.
+    # Programmatic carve-out: extract never runs -> no direction key.
+    # Instead the three-space marker_verify block is present.
     assert "direction" not in report["classes"]["marker"]
+    assert "marker_verify" in report["classes"]["marker"]
 
 
 # ── Focused helper tests ──────────────────────────────────────────────────────
@@ -269,13 +280,61 @@ def test_generate_contrastive_completions_shape():
     assert all(c.response.startswith("c") for c in comps)
 
 
-def test_run_class_marker_unsupported(tmp_path):
+def test_run_class_marker_carve_out_path(tmp_path):
+    """Marker runs the dedicated programmatic carve-out; status is success."""
     cfg = _smoke_config(tmp_path, classes=("marker",))
     seams = pilot.make_smoke_seams(cfg.reference_root)
     entry = pilot.run_class("marker", cfg, seams)
-    assert entry["status"] == "unsupported_v1"
+    assert entry["status"] == "success", entry.get("error")
+    assert entry["programmatic"] is True
     # recipe is still recorded for calibration completeness.
     assert entry["recipe"]["stopping_kind"] == "marker_band_stop"
+    # The three-space verify block is present.
+    mv = entry["marker_verify"]
+    assert "source_logp_delta" in mv
+    assert "per_context" in mv
+    for rec in mv["per_context"]:
+        for k in (
+            "context_id",
+            "logp_trained",
+            "logp_base",
+            "logp_delta",
+            "z_marker_trained",
+            "z_marker_base",
+            "eos_margin_trained",
+            "logZ_trained",
+        ):
+            assert k in rec, f"missing key {k!r} in per_context record"
+
+
+def test_marker_three_space_verify_invoked(tmp_path):
+    """Smoke stub for marker_verify_fn is called twice (trained + base) and results assembled."""
+    cfg = _smoke_config(tmp_path, classes=("marker",))
+
+    calls = []
+
+    def tracking_verify_stub(
+        adapter_path_or_none, base_model, eval_contexts, *, marker_text, qwen_im_end_id
+    ):
+        calls.append(adapter_path_or_none)
+        # Delegate to the real smoke stub for correct record shape.
+        real_seams = pilot.make_smoke_seams(cfg.reference_root)
+        return real_seams.marker_verify_fn(
+            adapter_path_or_none,
+            base_model,
+            eval_contexts,
+            marker_text=marker_text,
+            qwen_im_end_id=qwen_im_end_id,
+        )
+
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    seams = dataclasses.replace(seams, marker_verify_fn=tracking_verify_stub)
+    entry = pilot.run_class("marker", cfg, seams)
+    assert entry["status"] == "success", entry.get("error")
+    # verify_fn called exactly twice: once with adapter path, once with None (base).
+    assert len(calls) == 2
+    assert calls[0] is not None  # trained pass
+    assert calls[1] is None  # base model pass
 
 
 def test_config_from_args_smoke_defaults_shrink():
