@@ -2,10 +2,10 @@
 
 Thin per-issue helpers on TOP of the reused #778 surface (``scripts/issue778_lib``):
 
-- ``fetch_rb`` : download + SHA256-pin the reused #778 ``r_B`` tensors from HF
+- ``fetch_rb`` : download + SHA256-pin the reused #778 v2 ``r_B`` tensors from HF
   (``superkaiba1/explore-persona-space-data`` @
-  ``issue778_persona_vectors/analysis_tensors/rb/{trait}.pt``, each ``(28, 3584)``);
-  layer 20 (1-indexed) == index 19.
+  ``issue778_persona_vectors/analysis_tensors_v2/rb_v2/{trait}.pt``, each
+  ``(28, 3584)``); layer 20 (1-indexed) == index 19.
 - ``norm_matched_random_dirs`` : the #778 randnorm null draws (covariance-realistic
   N(0,Sigma), diagonal shrinkage lambda=0.1, renormalized to ‖r_B[layer]‖) via
   ``null_battery`` — seeded DETERMINISTICALLY per draw index, saved so the analysis
@@ -38,9 +38,14 @@ logger = logging.getLogger("issue816.lib")
 
 # Reused #778 r_B directions on the HF DATA repo.
 DATA_REPO = "superkaiba1/explore-persona-space-data"
-# v2 paths: corrected r_B with coherence gate + unpaired filtering fix
-RB_PREFIX = "issue778_persona_vectors/analysis_tensors_v2/rb"
-NEUTRAL_COV_PREFIX = "issue778_persona_vectors/analysis_tensors_v2"
+# v2 paths: corrected r_B with coherence gate + paired filtering fix. #778's v2
+# upload contract (issue778_v2_upload.py, issue-778-v2rerun branch) writes the
+# r_B tensors under rb_v2/ and NO precomputed neutral_cov tensors — the neutral
+# covariance derives from neutral/neutral_response_avg.pt (see fetch_neutral_cov).
+RB_PREFIX = "issue778_persona_vectors/analysis_tensors_v2/rb_v2"
+NEUTRAL_RESP_AVG_FILE = (
+    "issue778_persona_vectors/analysis_tensors_v2/neutral/neutral_response_avg.pt"
+)
 # Layer 20 (1-indexed, the paper's steering layer) == 0-indexed block-output index 19.
 LAYER_20_IDX = 19
 LAYER_20_1IDX = 20
@@ -66,8 +71,11 @@ def sha256_file(path: Path) -> str:
 def fetch_rb(trait: str, *, cache_dir: Path):
     """Download the v2 #778 ``r_B[trait]`` tensor from HF and return (tensor, sha256).
 
-    v2 paths: ``issue778_persona_vectors/analysis_tensors_v2/rb/{trait}.pt`` —
-    corrected r_B with coherence gate + unpaired filtering fix (plan §4.C Must-Fix B).
+    v2 paths: ``issue778_persona_vectors/analysis_tensors_v2/rb_v2/{trait}.pt`` —
+    corrected r_B with coherence gate + paired filtering fix (plan §4.C Must-Fix B).
+    A trait can be ABSENT under rb_v2/ (#778's K1 gate: < 5 kept judge pairs ⇒ no
+    r_B v2 written) — hf_hub_download then raises, which is the correct fail-loud
+    behavior (the Phase-0 poll exits 4 on that case before any cell consumes).
 
     Returns a torch tensor of shape ``(N_LAYERS, HIDDEN_DIM)`` == ``(28, 3584)``
     (0-indexed by block; ``r_B[19]`` == the paper's layer 20) plus the SHA256 of
@@ -75,9 +83,9 @@ def fetch_rb(trait: str, *, cache_dir: Path):
     Fails loud on a shape mismatch or a missing file.
 
     NOTE: the #778-uploaded r_B tensors are keyed by the PLAIN-ENGLISH trait slug
-    (``rb/evil.pt`` / ``rb/sycophancy.pt`` / ``rb/hallucination.pt``), NOT the
-    paper's released file name (``sycophantic`` / ``hallucinating``). Verified via
-    ``list_repo_files``.
+    (``rb_v2/evil.pt`` / ``rb_v2/sycophancy.pt`` / ``rb_v2/hallucination.pt``), NOT
+    the paper's released file name (``sycophantic`` / ``hallucinating``) — per
+    #778's writer (issue778_extract.py judge_and_build_v2).
     """
     import torch
     from huggingface_hub import hf_hub_download
@@ -104,51 +112,76 @@ def fetch_rb(trait: str, *, cache_dir: Path):
     return rb.float(), sha
 
 
+# The neutral corpus is trait-independent, so the derived covariance is computed
+# once per process and shared across the three per-trait calls.
+_NEUTRAL_COV_CACHE: dict[str, tuple] = {}
+
+
 def fetch_neutral_cov(trait: str, *, cache_dir: Path):
-    """Download the v2 neutral covariance tensor for ``trait`` and return (tensor, sha256).
+    """Derive the v2 neutral covariance from #778's neutral corpus activations.
 
-    Path: ``issue778_persona_vectors/analysis_tensors_v2/neutral_cov_{trait}.pt``
-    Shape: ``(N_LAYERS, HIDDEN_DIM, HIDDEN_DIM)`` full covariance matrix, OR
-           ``(N_LAYERS, HIDDEN_DIM)`` diagonal approximation — both accepted.
-    dtype: float32.
+    #778 v2 uploads NO precomputed neutral_cov tensors: the honest neutral-cov
+    null derives from ``neutral/neutral_response_avg.pt`` — shape
+    ``(n, N_LAYERS, HIDDEN_DIM)`` fp32, one response-averaged activation row per
+    neutral UltraChat prompt (issue778_neutral_capture.py). Per layer:
+    ``Sigma_emp = np.cov(acts64, rowvar=False)`` then shrunk
+    ``Sigma = (1-lam)*Sigma_emp + lam*diag(Sigma_emp)`` with
+    ``lam = null_battery.PRIMARY_LAMBDA`` — the SAME construction #778's honest
+    null ladder applies via ``null_battery._shrunk_cholesky``, so the null
+    construct matches across the two tasks. Shrinkage is applied exactly ONCE
+    here; downstream consumers (screening family 2, steering e2/e4_neutral_cov)
+    Cholesky the returned matrix directly with only a tiny PD jitter.
 
-    The neutral covariance is used to construct the honest null family (2)
-    independent/neutral-cov draws: N(0, Sigma_neutral_l) renormed to ||r_B[l]||,
-    per plan §4.C honest null ladder.
+    ``trait`` is accepted for call-site compatibility but ignored for the data —
+    all traits share ONE covariance (computed once, cached per process).
+
+    Returns ``(cov, sha256)``: cov ``(N_LAYERS, HIDDEN_DIM, HIDDEN_DIM)`` float32
+    torch tensor; sha256 of the SOURCE neutral_response_avg.pt file (content-
+    identity pin per plan §12 (f)).
     """
+    import numpy as np
     import torch
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.analysis.null_battery import PRIMARY_LAMBDA
+
     if trait not in TRAITS:
         raise ValueError(f"unknown trait {trait!r}; expected one of {TRAITS}")
-    filename = f"{NEUTRAL_COV_PREFIX}/neutral_cov_{trait}.pt"
+    if "cov" in _NEUTRAL_COV_CACHE:
+        return _NEUTRAL_COV_CACHE["cov"]
     local = hf_hub_download(
         repo_id=DATA_REPO,
         repo_type="dataset",
-        filename=filename,
+        filename=NEUTRAL_RESP_AVG_FILE,
         revision="main",
         local_dir=str(cache_dir),
     )
     local_path = Path(local)
-    # hf_hub_download may nest; find the actual file
-    if not local_path.exists():
-        candidate = cache_dir / Path(filename).name
-        local_path = candidate if candidate.exists() else cache_dir / filename
     sha = sha256_file(local_path)
-    t = torch.load(local_path, map_location="cpu", weights_only=True)
-    if not isinstance(t, torch.Tensor):
-        raise ValueError(f"neutral_cov[{trait}]: expected tensor, got {type(t)}")
-    t = t.float()
-    # Accept full (N_LAYERS, D, D) or diagonal (N_LAYERS, D)
-    ok_full = tuple(t.shape) == (N_LAYERS, HIDDEN_DIM, HIDDEN_DIM)
-    ok_diag = tuple(t.shape) == (N_LAYERS, HIDDEN_DIM)
-    if not (ok_full or ok_diag):
+    acts = torch.load(local_path, map_location="cpu", weights_only=True)
+    if not isinstance(acts, torch.Tensor):
+        raise ValueError(f"neutral_response_avg: expected tensor, got {type(acts)}")
+    if acts.ndim != 3 or tuple(acts.shape[1:]) != (N_LAYERS, HIDDEN_DIM):
         raise ValueError(
-            f"neutral_cov[{trait}] shape {tuple(t.shape)} is neither "
-            f"({N_LAYERS},{HIDDEN_DIM},{HIDDEN_DIM}) nor ({N_LAYERS},{HIDDEN_DIM})"
+            f"neutral_response_avg shape {tuple(acts.shape)} != (n, {N_LAYERS}, {HIDDEN_DIM})"
         )
-    logger.info("fetched neutral_cov[%s] shape=%s sha256=%s", trait, tuple(t.shape), sha[:16])
-    return t, sha
+    acts_np = acts.numpy()
+    cov = torch.empty((N_LAYERS, HIDDEN_DIM, HIDDEN_DIM), dtype=torch.float32)
+    for layer in range(N_LAYERS):
+        acts64 = acts_np[:, layer, :].astype(np.float64)
+        cov_emp = np.cov(acts64, rowvar=False)  # (D, D)
+        shrunk = (1.0 - PRIMARY_LAMBDA) * cov_emp + PRIMARY_LAMBDA * np.diag(np.diag(cov_emp))
+        cov[layer] = torch.from_numpy(shrunk).float()
+    logger.info(
+        "derived neutral_cov from %s (n=%d) shape=%s lam=%.3f source_sha=%s",
+        NEUTRAL_RESP_AVG_FILE,
+        acts.shape[0],
+        tuple(cov.shape),
+        PRIMARY_LAMBDA,
+        sha[:16],
+    )
+    _NEUTRAL_COV_CACHE["cov"] = (cov, sha)
+    return cov, sha
 
 
 def norm_matched_random_dirs(
