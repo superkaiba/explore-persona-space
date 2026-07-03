@@ -204,6 +204,31 @@ Three distinct GCP-failure paths, ALL ending at the same
   DISTINCT from a workload crash (a queue that never advanced is not a
   crash) and from a capacity MISS at create time (this create succeeded).
 
+**Intent translation at the terminal rung (#940).** The RunPod launch
+paths (the terminal rung — all four fallback/failover paths above funnel
+through it — AND the explicit `backend: runpod` override) translate a
+GCP-only GPU intent to its nearest same-or-narrower RunPod-provisionable
+intent via the router-owned `RUNPOD_INTENT_FOR_GCP_INTENT` map
+(`capture-7b` → `eval`, `lora` / `lora-7b-h100` → `lora-7b`; identity
+rows for shared intents, no marker record) BEFORE building the RunPod
+spec — pre-#940 the rung passed the intent verbatim and
+`gpu_heuristics.resolve_intent` KeyError'd, voiding the sanctioned last
+rung (#841: `provision --issue 841 --intent capture-7b` exit 1 →
+`NoComputeAvailableError` despite live RunPod 1-GPU capacity). A real
+translation rides the `epm:backend-selected` marker `extra` as
+`runpod_intent_translation: {"from": ..., "to": ...}`. A GCP GPU intent
+with NO row — `eval-h100`, listed in
+`RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS` (2× H100: no same-width
+RunPod intent exists, and narrowing 2→1 would silently break a
+2-GPU-sharded workload mid-run) — fails loud PRE-launch naming the
+missing map row, inside the existing `no_compute_available` terminal on
+the rung (raw `ValueError` on the override — a config error). A
+completeness test (`test_translation_map_total_over_gcp_gpu_intents`)
+pins map ∪ gaps == the `gpu_count > 0` keys of `gcp.INTENT_TO_MACHINE`,
+so a future GCP intent added without deciding its RunPod fate fails CI
+at the adding PR. CPU intents are untouched — the #677/#747
+`RUNPOD_CPU_INSTANCE_FOR_INTENT` guard runs BEFORE translation.
+
 **Bound — no infinite RunPod cascade.** A genuinely-broken job runs on
 RunPod AT MOST ONCE more. If it crashes again, the poller surfaces
 `failure_class: code` → `status:blocked`. The autonomous-session watcher's
