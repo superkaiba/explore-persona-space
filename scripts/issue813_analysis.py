@@ -52,11 +52,14 @@ import argparse
 import json
 import logging
 import math
+import os
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
+import torch
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -352,6 +355,435 @@ def _pseudo_delta_over_floor(
     return delta_med, dof
 
 
+# ── Batched substrate-swap-null engine (Gram/dual-space; B3 vectorization) ──────
+#
+# The serial battery costs ~2-3.6h/cell: n_resamples × 2 pseudo-arms × (2 observed
+# ridge fits + 3 floors × n_refit_pairs pairs × 2 refits) ≈ 488k tiny fits, each a
+# fresh numpy→torch round-trip + a handful of (n≈50, HIDDEN) GEMMs — the
+# `.claude/rules/vectorize-many-cell-fits.md` perm/bootstrap-battery pattern
+# (overhead-bound, not FLOP-bound). The batched engine reproduces the SAME math
+# with the fit axis batched:
+#
+# - The Y side (PCA basis + Y64 + r̂/‖·‖ projections) never touches HIDDEN space:
+#   the per-fit basis is computed from the (row × row) Gram of the arm-level
+#   stacks (eigh of the double-centered Gram == the SVD route on the non-null
+#   spectrum), and every downstream product (Y64, pca@r̂, cross-basis Grams for
+#   the marker ‖·‖ read) reduces to gathers of arm-level (n, n) Grams.
+# - The X side (per-fit column standardization) is irreducibly HIDDEN-dim (each
+#   fit divides by its OWN per-column sd), so each fit standardizes the arm's
+#   combined [C0; C⁺] stack once and takes ONE batched (2n, HIDDEN) GEMM; the
+#   per-fit design Gram + grid cross-terms are then gathers of that (2n, 2n)
+#   weighted Gram.
+# - Ridge PRESS / λ-selection / dual solve run batched in zero-padded row space:
+#   padding is EXACT for the dual ridge (padded rows carry zero design + zero
+#   target ⇒ zero dual coefficients) and leaves the PRESS argmin unchanged
+#   (padding rescales the mean LOO-MSE by a λ-independent constant).
+#
+# Fidelity tier (b) DISTRIBUTIONAL, not bit-exact: the serial `_pca_basis_v0`
+# keeps k = min(dim, rows) SVD rows even when the mean-centered stack has rank
+# < k (always true: rank ≤ distinct_rows − 1), so the serial tail basis rows are
+# numerically arbitrary null-space directions (gesdd noise scaled by 1/s at
+# s ≈ 0). The batched Gram route TRUNCATES those null directions (relative
+# eigenvalue threshold `_EIG_TRUNC_REL`) instead of reproducing gesdd's
+# arbitrary ones — the non-null (real-signal) basis matches the serial SVD to
+# float tolerance; only the serial tail noise differs. The rng draw SEQUENCES
+# (question resamples, family-clustered floor resamples) are reproduced exactly.
+
+_EIG_TRUNC_REL = 1e-10  # relative eigenvalue (s²) cutoff for null-space truncation
+
+
+def _resolve_null_device(requested: str) -> str:
+    """'auto' → cuda when available else cpu; explicit 'cpu'/'cuda' pass through."""
+    if requested == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    return requested
+
+
+def _serial_battery_tombstone(name: str) -> None:
+    """Tombstone guard for the SUPERSEDED serial battery (Supersede contract,
+    `.claude/rules/vectorize-many-cell-fits.md`): warn loudly, and refuse under
+    EPM_FORBID_SERIAL_FITS=1 so a follow-up round cannot silently re-run it."""
+    if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+        raise RuntimeError(
+            f"{name}: the serial per-fit battery is superseded by the batched Gram-space "
+            "engine (the default). EPM_FORBID_SERIAL_FITS=1 forbids the serial path; drop "
+            "--serial-null (or unset the env) to proceed."
+        )
+    warnings.warn(
+        f"{name}: running the SUPERSEDED serial battery (tombstoned twin, kept only as the "
+        "--serial-null verification escape hatch; the batched Gram-space engine is the "
+        "default and ~50-100x faster)",
+        FutureWarning,
+        stacklevel=3,
+    )
+
+
+def _floor_resample_indices(
+    fams: list[str], n_pairs: int, seed: int = 0
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Replicate ``make_refit_pair`` / ``_refit_pair_norm``'s rng consumption EXACTLY.
+
+    Returns the ``n_pairs`` (idx_a, idx_b) row-index arrays the serial harness draws
+    with ``default_rng(seed=0)`` — the family-clustered double resample (or the iid
+    fallback for <2 families), INCLUDING the two per-pair ``rng.integers`` draws the
+    serial code spends on refit-init seeds (the ridge fit ignores them, but they
+    advance the stream). The sequence depends only on (fams, n_pairs, seed), so it
+    is shared across every arm with the same kept-family signature AND across the
+    three floor targets (each serial floor call constructs its own default_rng(0)).
+    """
+    n = len(fams)
+    fams_arr = np.asarray(list(fams), dtype=object)
+    uniq = sorted({str(f) for f in fams_arr})
+    clustered = len(uniq) >= 2
+    fam_to_idx = {f: np.where(fams_arr.astype(str) == f)[0] for f in uniq}
+    rng = np.random.default_rng(seed)
+    out: list[tuple[np.ndarray, np.ndarray]] = []
+    for _ in range(n_pairs):
+        if clustered:
+            chosen_a = rng.choice(uniq, size=len(uniq), replace=True)
+            idx_a = np.concatenate([fam_to_idx[str(f)] for f in chosen_a])
+            chosen_b = rng.choice(uniq, size=len(uniq), replace=True)
+            idx_b = np.concatenate([fam_to_idx[str(f)] for f in chosen_b])
+        else:
+            idx_a = rng.integers(0, n, size=n)
+            idx_b = rng.integers(0, n, size=n)
+        rng.integers(0, 2**31 - 1)  # the serial pair's rng_a init seed (discarded here)
+        rng.integers(0, 2**31 - 1)  # rng_b
+        out.append((np.asarray(idx_a, dtype=np.int64), np.asarray(idx_b, dtype=np.int64)))
+    return out
+
+
+def _gather_sub(G: torch.Tensor, idx_r: torch.Tensor, idx_c: torch.Tensor) -> torch.Tensor:
+    """Sub-matrix gather: G (B, n, n), idx_r (B, mr), idx_c (B, mc) → (B, mr, mc)."""
+    n = G.shape[-1]
+    rows = torch.gather(G, 1, idx_r.unsqueeze(-1).expand(-1, -1, n))
+    return torch.gather(rows, 2, idx_c.unsqueeze(1).expand(-1, rows.shape[1], -1))
+
+
+def _masked_median(x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    """np.median semantics (average the two middle order stats) along the LAST dim."""
+    big = torch.finfo(x.dtype).max
+    xm = torch.where(mask, x, torch.full_like(x, big))
+    s, _ = torch.sort(xm, dim=-1)
+    cnt = mask.sum(dim=-1)
+    lo = ((cnt - 1) // 2).clamp(min=0)
+    hi = (cnt // 2).clamp(min=0)
+    a = torch.gather(s, -1, lo.unsqueeze(-1)).squeeze(-1)
+    b = torch.gather(s, -1, hi.unsqueeze(-1)).squeeze(-1)
+    return (a + b) / 2.0
+
+
+def _right_center(Gs: torch.Tensor, wcol: torch.Tensor, colmask: torch.Tensor) -> torch.Tensor:
+    """[Yb Ycᵀ]_{ij} = y_i·(y_j − μ) from the plain product Gram (center the 2nd factor).
+
+    Gs (B, m, m') = Yb Yᵀ; wcol (B, m') = mean weights over the CENTERED factor's real
+    rows (sum 1); colmask (B, m') zeroes padded columns. Padded Yb rows are already
+    zero rows of Gs, so they stay zero.
+    """
+    rc = Gs - torch.einsum("bij,bj->bi", Gs, wcol).unsqueeze(-1)
+    return rc * colmask.to(rc.dtype).unsqueeze(1)
+
+
+def _gram_pca_coeff(
+    Gy_sub: torch.Tensor,
+    imask: torch.Tensor,
+    m_real: torch.Tensor,
+    k_cap: torch.Tensor,
+    kmax: int,
+) -> torch.Tensor:
+    """Row-coefficient PCA basis from a masked/padded Y Gram (the `_pca_basis_v0` twin).
+
+    Gy_sub (B, m, m) = Yb Ybᵀ over the resampled rows (padded rows/cols zero); returns
+    C (B, kmax, m) with pca_basis == C @ Yc (row-coefficient form): the top-k
+    right-singular-vector basis of the mean-centered Yc via eigh of the
+    double-centered Gram. Rows beyond min(k_cap, numerical rank) are ZERO
+    (truncated) — the tier-(b) deviation from gesdd's arbitrary null-space tails.
+    """
+    w = imask.to(Gy_sub.dtype) / m_real.clamp(min=1.0).unsqueeze(-1)
+    rm = torch.einsum("bij,bj->bi", Gy_sub, w)  # row means == col means (Gs symmetric)
+    gm = torch.einsum("bi,bi->b", rm, w)
+    Gc = Gy_sub - rm.unsqueeze(-1) - rm.unsqueeze(-2) + gm.unsqueeze(-1).unsqueeze(-1)
+    mask2 = imask.unsqueeze(-1) & imask.unsqueeze(-2)
+    Gc = torch.where(mask2, Gc, torch.zeros_like(Gc))
+    evals, U = torch.linalg.eigh(Gc)  # ascending
+    evals = evals.flip(-1)[:, :kmax]  # (B, kmax) top eigenvalues (== s²)
+    U = U.flip(-1)[:, :, :kmax]  # (B, m, kmax)
+    ev_max = evals[:, :1].clamp(min=0.0)
+    j = torch.arange(kmax, device=evals.device).unsqueeze(0)
+    valid = (j < k_cap.unsqueeze(-1)) & (evals > _EIG_TRUNC_REL * ev_max) & (evals > 0)
+    inv_s = torch.where(valid, evals.clamp(min=1e-300).rsqrt(), torch.zeros_like(evals))
+    C = inv_s.unsqueeze(-1) * U.transpose(-1, -2)  # (B, kmax, m)
+    return C * imask.to(C.dtype).unsqueeze(1)
+
+
+def _batched_press_ridge(
+    Gd: torch.Tensor, Y: torch.Tensor, Ks: list[torch.Tensor], lambdas: list[float]
+) -> list[torch.Tensor]:
+    """Batched PRESS λ-selection + dual-ridge predictions (padded rows exact-zero).
+
+    Mirrors ``fit658._press_loo_mse_per_lambda`` + ``_ridge_dual_weights``: ONE eigh
+    of the standardized design Gram Gd (B, m, m) reused across the λ grid; per-fit
+    argmin λ; alpha = Q diag(1/(ev+λ*)) Qᵀ Y; pred = K @ alpha per grid cross-Gram K
+    (B, g, m). Zero-padded rows are exact: they carry zero design + zero target, so
+    alpha_pad = 0 and the PRESS mean is rescaled by a λ-independent constant
+    (argmin unchanged).
+    """
+    evals, Q = torch.linalg.eigh(Gd)
+    QtY = Q.transpose(-1, -2) @ Y
+    Qsq = Q * Q
+    mses = torch.empty((Gd.shape[0], len(lambdas)), dtype=Gd.dtype, device=Gd.device)
+    for li, lam in enumerate(lambdas):
+        filt = evals / (evals + lam)
+        h_diag = torch.einsum("bmj,bj->bm", Qsq, filt)
+        Yhat = Q @ (filt.unsqueeze(-1) * QtY)
+        resid = Y - Yhat
+        denom = (1.0 - h_diag).clamp(min=1e-8).unsqueeze(-1)
+        loo = resid / denom
+        mses[:, li] = (loo * loo).mean(dim=(-1, -2))
+    lam_t = torch.tensor(lambdas, dtype=Gd.dtype, device=Gd.device)
+    lam_sel = lam_t[torch.argmin(mses, dim=1)]
+    alpha = Q @ (QtY / (evals + lam_sel.unsqueeze(-1)).unsqueeze(-1))
+    return [K @ alpha for K in Ks]
+
+
+def _batched_arm_dofs(
+    arms: list[dict],
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+    device: str,
+    pair_chunk: int = 4,
+) -> list[tuple[float, float] | None]:
+    """(Δ_med, Δ/floor) for a CHUNK of pseudo-arms — the batched `_pseudo_delta_over_floor`.
+
+    ``arms``: dicts with c0/cplus/v0/vplus ((m_i, HIDDEN) float64 arrays) + fams
+    (list[str], one label per row). Returns one (delta_med, dof) tuple per arm (dof
+    NaN where the floor underflows, matching the serial 1e-12 gate), or None where
+    the arm's linear algebra degenerated — the serial LinAlgError-skip analog. On a
+    batched linear-algebra failure the whole chunk FALLS BACK to the serial
+    reference per arm (exact serial semantics, incl. per-arm skips).
+    """
+    try:
+        return _batched_arm_dofs_inner(
+            arms, r_hat, n_refit_pairs=n_refit_pairs, device=device, pair_chunk=pair_chunk
+        )
+    except (RuntimeError, np.linalg.LinAlgError) as e:
+        logger.warning(
+            "[phase=analysis] batched arm engine failed on a %d-arm chunk (%s); "
+            "falling back to the serial reference for this chunk",
+            len(arms),
+            e,
+        )
+        out: list[tuple[float, float] | None] = []
+        for a in arms:
+            try:
+                out.append(
+                    _pseudo_delta_over_floor(
+                        a["c0"],
+                        a["cplus"],
+                        a["v0"],
+                        a["vplus"],
+                        a["fams"],
+                        r_hat,
+                        n_refit_pairs=n_refit_pairs,
+                    )
+                )
+            except np.linalg.LinAlgError:
+                out.append(None)
+        return out
+
+
+def _batched_arm_dofs_inner(
+    arms: list[dict],
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+    device: str,
+    pair_chunk: int,
+) -> list[tuple[float, float] | None]:
+    """The batched engine body (see the section comment above for the math)."""
+    dev = torch.device(device)
+    dt = torch.float64
+    n_arms = len(arms)
+    n = max(a["c0"].shape[0] for a in arms)
+    h = arms[0]["c0"].shape[1]
+
+    def _pad(key: str) -> torch.Tensor:
+        out = torch.zeros((n_arms, n, h), dtype=dt, device=dev)
+        for i, a in enumerate(arms):
+            out[i, : a[key].shape[0]] = torch.from_numpy(np.ascontiguousarray(a[key])).to(
+                device=dev, dtype=dt
+            )
+        return out
+
+    stack_c0, stack_cp, stack_v0, stack_vp = _pad("c0"), _pad("cplus"), _pad("v0"), _pad("vplus")
+    m = torch.tensor([a["c0"].shape[0] for a in arms], dtype=torch.long, device=dev)
+    mask = torch.arange(n, device=dev).unsqueeze(0) < m.unsqueeze(1)  # (A, n)
+    mf = mask.to(dt)
+    w_full = mf / m.to(dt).unsqueeze(1)
+
+    # Floor resample indices, shared per kept-family signature + across floor targets.
+    sig_cache: dict[tuple, list[tuple[np.ndarray, np.ndarray]]] = {}
+    per_arm_pairs = []
+    m_fit_max = 1
+    for a in arms:
+        sig = tuple(a["fams"])
+        if sig not in sig_cache:
+            sig_cache[sig] = _floor_resample_indices(list(sig), n_refit_pairs)
+        pairs = sig_cache[sig]
+        per_arm_pairs.append(pairs)
+        m_fit_max = max(m_fit_max, max(max(len(ia), len(ib)) for ia, ib in pairs))
+    fit_idx = torch.zeros((n_arms, n_refit_pairs, 2, m_fit_max), dtype=torch.long, device=dev)
+    fit_msk = torch.zeros((n_arms, n_refit_pairs, 2, m_fit_max), dtype=torch.bool, device=dev)
+    for ai, pairs in enumerate(per_arm_pairs):
+        for pi, (ia, ib) in enumerate(pairs):
+            fit_idx[ai, pi, 0, : len(ia)] = torch.from_numpy(ia).to(dev)
+            fit_msk[ai, pi, 0, : len(ia)] = True
+            fit_idx[ai, pi, 1, : len(ib)] = torch.from_numpy(ib).to(dev)
+            fit_msk[ai, pi, 1, : len(ib)] = True
+
+    lambdas = [float(x) for x in fit658.RIDGE_LAMBDAS]
+
+    # ── Observed pseudo-arm read (the fit_cell/fit_marker_layer numerator) ──
+    gram_v0 = stack_v0 @ stack_v0.transpose(1, 2)  # (A, n, n)
+    gram_vp = stack_vp @ stack_vp.transpose(1, 2)
+    gram_vpv0 = stack_vp @ stack_v0.transpose(1, 2)
+    obs_dim = TARGET_DIM  # the 813 module global (the serial _pseudo path uses the same)
+    obs_cap = torch.minimum(torch.full_like(m, obs_dim), m)
+    k_obs = int(min(obs_dim, n))
+    c_obs = _gram_pca_coeff(gram_v0, mask, m.to(dt), obs_cap, k_obs)  # (A, k_obs, n)
+    y64_v0 = _right_center(gram_v0, w_full, mask) @ c_obs.transpose(1, 2)  # (A, n, k)
+    y64_vp = _right_center(gram_vpv0, w_full, mask) @ c_obs.transpose(1, 2)
+
+    comb = torch.cat([stack_c0, stack_cp], dim=1)  # (A, 2n, H)
+    mask2n = torch.cat([mask, mask], dim=1)
+
+    def _obs_gram(src: torch.Tensor) -> torch.Tensor:
+        """Combined [C0; C⁺] Gram standardized by the FULL-stack moments of `src`."""
+        mu = torch.einsum("an,anh->ah", w_full, src)
+        e2 = torch.einsum("an,anh->ah", w_full, src * src)
+        sd = (e2 - mu * mu).clamp(min=0).sqrt() + 1e-9
+        z = (comb - mu.unsqueeze(1)) / sd.unsqueeze(1)
+        z = z * mask2n.to(dt).unsqueeze(-1)
+        return z @ z.transpose(1, 2)  # (A, 2n, 2n)
+
+    g0 = _obs_gram(stack_c0)
+    m064, m0cp64 = _batched_press_ridge(
+        g0[:, :n, :n], y64_v0, [g0[:, :n, :n], g0[:, n:, :n]], lambdas
+    )
+    g1 = _obs_gram(stack_cp)
+    (mplus64,) = _batched_press_ridge(g1[:, n:, n:], y64_vp, [g1[:, :n, n:]], lambdas)
+    delta64 = mplus64 - m064  # (A, n, k_obs)
+    if r_hat is not None:
+        r_t = torch.from_numpy(np.ascontiguousarray(r_hat)).to(device=dev, dtype=dt)
+        v0r = stack_v0 @ r_t  # (A, n)
+        vpr = stack_vp @ r_t
+        v0rc = (v0r - (w_full * v0r).sum(1, keepdim=True)) * mf
+        q_obs = torch.einsum("akn,an->ak", c_obs, v0rc)  # pca_obs @ r̂ in coeff space
+        proj = torch.einsum("ank,ak->an", delta64, q_obs).abs()
+    else:
+        # ‖d64 @ pca‖ == ‖d64‖ (orthonormal basis rows; truncated rows are zero).
+        proj = delta64.norm(dim=-1)
+    delta_med = _masked_median(proj, mask)  # (A,)
+
+    # Shifted target M0(C⁺) lives in obs-basis coefficients — its Gram + r̂ read are
+    # basis-free (orthonormal rows), so the fl_sh floor needs no HIDDEN-dim work.
+    gram_sh = m0cp64 @ m0cp64.transpose(1, 2)  # (A, n, n)
+    gy_by_t = [gram_v0, gram_vp, gram_sh]
+    if r_hat is not None:
+        yr_by_t = [v0r, vpr, torch.einsum("ank,ak->an", m0cp64, q_obs)]
+    src_off = [0, n, n]  # design block per floor target: fl_m0 → C0; fl_mp/fl_sh → C⁺
+
+    # ── The three refit floors, batched over (arm × pair × member) ──
+    refit_dim = fitM.TARGET_DIM  # the serial _refit_ridge_fn reads issue722_fit_M's global
+    k_ref = int(min(refit_dim, m_fit_max))
+    stats = torch.zeros((n_arms, 3, n_refit_pairs), dtype=dt, device=dev)
+    for t in range(3):
+        gy = gy_by_t[t]
+        off = src_off[t]
+        src = stack_c0 if t == 0 else stack_cp
+        for p0 in range(0, n_refit_pairs, pair_chunk):
+            pc = list(range(p0, min(p0 + pair_chunk, n_refit_pairs)))
+            n_p = len(pc)
+            idx = fit_idx[:, pc]  # (A, P, 2, mF)
+            imsk = fit_msk[:, pc]
+            bsz = n_arms * n_p * 2
+            idxf = idx.reshape(bsz, m_fit_max)
+            imskf = imsk.reshape(bsz, m_fit_max)
+            m_real = imskf.sum(-1).to(dt)
+            wf = imskf.to(dt) / m_real.clamp(min=1.0).unsqueeze(-1)
+            cnt = torch.zeros((bsz, n), dtype=dt, device=dev)
+            cnt.scatter_add_(1, idxf, wf)  # per-arm-row weights (multiplicity/m)
+            armrep = torch.arange(n_arms, device=dev).repeat_interleave(n_p * 2)
+            src_b = src[armrep]  # (B, n, H)
+            mu = torch.einsum("bn,bnh->bh", cnt, src_b)
+            e2 = torch.einsum("bn,bnh->bh", cnt, src_b * src_b)
+            sd = (e2 - mu * mu).clamp(min=0).sqrt() + 1e-9
+            z = (comb[armrep] - mu.unsqueeze(1)) / sd.unsqueeze(1)
+            z = z * mask2n[armrep].to(dt).unsqueeze(-1)
+            gw = z @ z.transpose(1, 2)  # (B, 2n, 2n) — the ONE HIDDEN-dim GEMM per fit
+            didx = idxf + off
+            gm2 = imskf.unsqueeze(-1) & imskf.unsqueeze(-2)
+            gd = torch.where(
+                gm2, _gather_sub(gw, didx, didx), torch.zeros((), dtype=dt, device=dev)
+            )
+            k_cross = torch.gather(gw[:, :n, :], 2, didx.unsqueeze(1).expand(-1, n, -1)) * imskf.to(
+                dt
+            ).unsqueeze(1)  # (B, n, mF) grid × design
+            gs = torch.where(
+                gm2, _gather_sub(gy[armrep], idxf, idxf), torch.zeros((), dtype=dt, device=dev)
+            )
+            cap = torch.minimum(m_real.long(), torch.full_like(m_real.long(), refit_dim))
+            c_f = _gram_pca_coeff(gs, imskf, m_real, cap, k_ref)  # (B, k_ref, mF)
+            y64f = _right_center(gs, wf, imskf) @ c_f.transpose(1, 2)  # (B, mF, k_ref)
+            (pred64,) = _batched_press_ridge(gd, y64f, [k_cross], lambdas)  # (B, n, k_ref)
+            if r_hat is not None:
+                g = torch.gather(yr_by_t[t][armrep], 1, idxf) * imskf.to(dt)
+                gmean = g.sum(-1) / m_real.clamp(min=1.0)
+                ycr = (g - gmean.unsqueeze(-1)) * imskf.to(dt)
+                qf = torch.einsum("bkm,bm->bk", c_f, ycr)
+                predr = torch.einsum("bgk,bk->bg", pred64, qf).view(n_arms, n_p, 2, n)
+                d = (predr[:, :, 0] - predr[:, :, 1]).abs()  # (A, P, n)
+            else:
+                pred64v = pred64.view(n_arms, n_p, 2, n, k_ref)
+                pa, pb = pred64v[:, :, 0], pred64v[:, :, 1]
+                t1 = (pa * pa).sum(-1)
+                t2 = (pb * pb).sum(-1)
+                c_v = c_f.view(n_arms, n_p, 2, k_ref, m_fit_max)
+                ia = idx[:, :, 0].reshape(n_arms * n_p, m_fit_max)
+                ib = idx[:, :, 1].reshape(n_arms * n_p, m_fit_max)
+                ma_ = imsk[:, :, 0]
+                mb_ = imsk[:, :, 1]
+                gy_e = gy.unsqueeze(1).expand(-1, n_p, -1, -1).reshape(n_arms * n_p, n, n)
+                gab = _gather_sub(gy_e, ia, ib).view(n_arms, n_p, m_fit_max, m_fit_max)
+                wa = ma_.to(dt) / ma_.sum(-1, keepdim=True).clamp(min=1)
+                wb = mb_.to(dt) / mb_.sum(-1, keepdim=True).clamp(min=1)
+                cm = torch.einsum("apij,api->apj", gab, wa)
+                rm2 = torch.einsum("apij,apj->api", gab, wb)
+                gmn = torch.einsum("api,api->ap", rm2, wa)
+                gc_ab = gab - cm.unsqueeze(-2) - rm2.unsqueeze(-1) + gmn.unsqueeze(-1).unsqueeze(-1)
+                gc_ab = gc_ab * ma_.to(dt).unsqueeze(-1) * mb_.to(dt).unsqueeze(-2)
+                m_ab = torch.einsum("apki,apij,aplj->apkl", c_v[:, :, 0], gc_ab, c_v[:, :, 1])
+                t12 = torch.einsum("apgk,apkl,apgl->apg", pa, m_ab, pb)
+                d = (t1 + t2 - 2.0 * t12).clamp(min=0).sqrt()
+            stats[:, t, pc] = _masked_median(d, mask.unsqueeze(1).expand(-1, n_p, -1))
+
+    if r_hat is not None:
+        # em/fact/syco: SD-combined floor (floor_sd == np.std ddof=1; <2 pairs → 0.0).
+        if n_refit_pairs >= 2:
+            fl = stats.std(dim=-1, correction=1)
+        else:
+            fl = torch.zeros((n_arms, 3), dtype=dt, device=dev)
+        floor = fl.max(dim=1).values
+    else:
+        # marker read-1: p95-combined floor (np.percentile linear == torch.quantile).
+        floor = torch.quantile(stats, 0.95, dim=-1).max(dim=1).values
+    dof = torch.where(floor >= 1e-12, delta_med / floor, torch.full_like(delta_med, float("nan")))
+    dm = delta_med.cpu().numpy()
+    dofn = dof.cpu().numpy()
+    return [(float(dm[i]), float(dofn[i])) for i in range(n_arms)]
+
+
 def substrate_swap_null(
     behavior: str,
     substrate: str,
@@ -360,6 +792,10 @@ def substrate_swap_null(
     n_resamples: int,
     *,
     n_refit_pairs: int = NULL_REFIT_PAIRS,
+    serial: bool = False,
+    device: str = "cpu",
+    arm_chunk: int = 16,
+    pair_chunk: int = 4,
 ) -> dict:
     """Matched-n substrate-swap null in the REGISTERED Δ/floor space (B2).
 
@@ -377,6 +813,11 @@ def substrate_swap_null(
 
     Matched-n: both pseudo-arms use the SAME per-half question count, so em's small
     pool yields a WIDE (conservative) null, never an artificially tight one.
+
+    The DEFAULT implementation is the batched Gram-space engine (see the engine
+    section above); ``serial=True`` runs the tombstoned per-fit reference (the
+    ``--serial-null`` verification escape hatch). Both draw the identical rng
+    sequences; ``null_impl`` records which produced the artifact.
     """
     pq_path = reduced_root / behavior / substrate / f"per_question_L{HEADLINE_LAYER}.npz"
     if not pq_path.exists():
@@ -407,6 +848,91 @@ def substrate_swap_null(
     if n_q < 4:
         return {**empty, "note": "too few questions (<4) for a matched-n split"}
 
+    impl = "serial" if serial else "batched_gram_v1"
+    if serial:
+        _serial_battery_tombstone("substrate_swap_null")
+        diffs, dof_diffs = _substrate_swap_null_serial(
+            c0,
+            cp,
+            v0,
+            vp,
+            row_ctx,
+            row_q,
+            ctx_families,
+            q_ids,
+            n_q,
+            n_resamples,
+            r_hat,
+            n_refit_pairs=n_refit_pairs,
+        )
+    else:
+        diffs, dof_diffs = _substrate_swap_null_batched(
+            c0,
+            cp,
+            v0,
+            vp,
+            row_ctx,
+            row_q,
+            ctx_families,
+            q_ids,
+            n_q,
+            n_resamples,
+            r_hat,
+            n_refit_pairs=n_refit_pairs,
+            device=device,
+            arm_chunk=arm_chunk,
+            pair_chunk=pair_chunk,
+        )
+    if not dof_diffs:
+        return {**empty, "null_impl": impl, "note": "all resamples degenerate or floor-underflowed"}
+    raw = np.asarray(diffs, dtype=np.float64)
+    dof = np.asarray(dof_diffs, dtype=np.float64)
+    return {
+        # REGISTERED Δ/floor null (the band the verdict + pairwise diff are judged against)
+        "null_space": "delta_over_floor",
+        "null_over_floor_p95": float(np.percentile(dof, 95)),
+        "null_over_floor_p975": float(np.percentile(dof, 97.5)),
+        "null_over_floor_median": float(np.median(dof)),
+        # full per-resample Δ/floor null array (post-hoc band reconstruction)
+        "null_delta_over_floor_diffs": dof.tolist(),
+        "n_over_floor_resamples_used": len(dof_diffs),
+        # raw Δ_med null (diagnostic / continuity only — NOT the registered band)
+        "null_p95": float(np.percentile(raw, 95)) if raw.size else None,
+        "null_p975": float(np.percentile(raw, 97.5)) if raw.size else None,
+        "null_median": float(np.median(raw)) if raw.size else None,
+        "n_questions": n_q,
+        "n_resamples_used": len(diffs),
+        "n_refit_pairs": n_refit_pairs,
+        # Regime stamp so every future artifact self-describes (resume-predicate keying).
+        "n_null_resamples_requested": n_resamples,
+        # Which engine produced this artifact (additive; the resume predicate ignores it).
+        "null_impl": impl,
+    }
+
+
+def _substrate_swap_null_serial(
+    c0: np.ndarray,
+    cp: np.ndarray,
+    v0: np.ndarray,
+    vp: np.ndarray,
+    row_ctx: np.ndarray,
+    row_q: np.ndarray,
+    ctx_families: list[str],
+    q_ids: list[int],
+    n_q: int,
+    n_resamples: int,
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+) -> tuple[list[float], list[float]]:
+    """The SUPERSEDED serial per-fit battery — kept VERBATIM as the tombstoned twin.
+
+    One `_pseudo_delta_over_floor` (≈ 2 observed ridge fits + 3 floors ×
+    n_refit_pairs × 2 refits) per pseudo-arm per resample, serially. Reached only
+    via ``--serial-null`` (equivalence verification) and the batched engine's
+    rare per-chunk linear-algebra fallback; `_serial_battery_tombstone` guards the
+    flag path. Returns (raw Δ_med diffs, Δ/floor diffs).
+    """
     # Map (context, question) → row index for fast per-half question-averaging.
     rc_index: dict[tuple[int, int], int] = {}
     for i in range(len(row_ctx)):
@@ -454,29 +980,110 @@ def substrate_swap_null(
         diffs.append(abs(da_med - db_med))
         if not (np.isnan(da_dof) or np.isnan(db_dof)):
             dof_diffs.append(abs(da_dof - db_dof))
-    if not dof_diffs:
-        return {**empty, "note": "all resamples degenerate or floor-underflowed"}
-    raw = np.asarray(diffs, dtype=np.float64)
-    dof = np.asarray(dof_diffs, dtype=np.float64)
-    return {
-        # REGISTERED Δ/floor null (the band the verdict + pairwise diff are judged against)
-        "null_space": "delta_over_floor",
-        "null_over_floor_p95": float(np.percentile(dof, 95)),
-        "null_over_floor_p975": float(np.percentile(dof, 97.5)),
-        "null_over_floor_median": float(np.median(dof)),
-        # full per-resample Δ/floor null array (post-hoc band reconstruction)
-        "null_delta_over_floor_diffs": dof.tolist(),
-        "n_over_floor_resamples_used": len(dof_diffs),
-        # raw Δ_med null (diagnostic / continuity only — NOT the registered band)
-        "null_p95": float(np.percentile(raw, 95)) if raw.size else None,
-        "null_p975": float(np.percentile(raw, 97.5)) if raw.size else None,
-        "null_median": float(np.median(raw)) if raw.size else None,
-        "n_questions": n_q,
-        "n_resamples_used": len(diffs),
-        "n_refit_pairs": n_refit_pairs,
-        # Regime stamp so every future artifact self-describes (resume-predicate keying).
-        "n_null_resamples_requested": n_resamples,
-    }
+    return diffs, dof_diffs
+
+
+def _substrate_swap_null_batched(
+    c0: np.ndarray,
+    cp: np.ndarray,
+    v0: np.ndarray,
+    vp: np.ndarray,
+    row_ctx: np.ndarray,
+    row_q: np.ndarray,
+    ctx_families: list[str],
+    q_ids: list[int],
+    n_q: int,
+    n_resamples: int,
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+    device: str,
+    arm_chunk: int,
+    pair_chunk: int,
+) -> tuple[list[float], list[float]]:
+    """Batched twin of `_substrate_swap_null_serial` (same draws, same skip semantics).
+
+    Reproduces the serial question-draw sequence EXACTLY (one ``rng.choice`` per
+    resample from ``default_rng(NULL_SEED)``), builds every pseudo-arm's
+    question-averaged stacks as batched weighted means over a dense
+    (context × question × HIDDEN) pool, and evaluates arms through
+    `_batched_arm_dofs` in ``arm_chunk``-sized chunks. A resample is skipped iff
+    either half keeps <4 contexts (checked BEFORE any fit, like the serial loop)
+    or its arm degenerates in the engine's serial fallback (the LinAlgError-skip
+    analog). Returns (raw Δ_med diffs, Δ/floor diffs).
+    """
+    dev = torch.device(device)
+    contexts = sorted(set(row_ctx.tolist()))
+    n_ctx = len(contexts)
+    ctx_pos = {int(c): i for i, c in enumerate(contexts)}
+    q_pos = {int(q): i for i, q in enumerate(q_ids)}
+    h = c0.shape[1]
+    pool = np.zeros((4, n_ctx, n_q, h), dtype=np.float64)
+    present = np.zeros((n_ctx, n_q), dtype=np.float64)
+    for r in range(len(row_ctx)):
+        ci = ctx_pos[int(row_ctx[r])]
+        qi = q_pos[int(row_q[r])]
+        pool[0, ci, qi] = c0[r]
+        pool[1, ci, qi] = cp[r]
+        pool[2, ci, qi] = v0[r]
+        pool[3, ci, qi] = vp[r]
+        present[ci, qi] = 1.0
+    fams_by_pos = [str(ctx_families[c]) for c in contexts]
+
+    # Exact serial draw sequence: one choice call per resample, nothing else consumes rng.
+    rng = np.random.default_rng(NULL_SEED)
+    half = n_q // 2
+    draw_counts = np.zeros((n_resamples, 2, n_q), dtype=np.float64)
+    for ri in range(n_resamples):
+        drawn = rng.choice(q_ids, size=n_q, replace=True).tolist()
+        for q in drawn[:half]:
+            draw_counts[ri, 0, q_pos[int(q)]] += 1.0
+        for q in drawn[half : 2 * half]:
+            draw_counts[ri, 1, q_pos[int(q)]] += 1.0
+
+    pool_t = torch.from_numpy(pool).to(dev)
+    present_t = torch.from_numpy(present).to(dev)
+    cnt_t = torch.from_numpy(draw_counts.reshape(n_resamples * 2, n_q)).to(dev)
+    totals = cnt_t @ present_t.T  # (2R, n_ctx) — per-context drawn-question multiplicity
+    kept = totals > 0
+    kept_counts = kept.sum(-1)
+
+    # Serial semantics: skip the RESAMPLE when either half keeps <4 contexts.
+    results: list[tuple[float, float] | None] = [None] * (n_resamples * 2)
+    arm_ids = [
+        i
+        for i in range(n_resamples * 2)
+        if int(kept_counts[i]) >= 4 and int(kept_counts[i ^ 1]) >= 4
+    ]
+    for start in range(0, len(arm_ids), arm_chunk):
+        ids = arm_ids[start : start + arm_chunk]
+        arms = []
+        for i in ids:
+            kmask = kept[i]
+            wrow = cnt_t[i].unsqueeze(0) * present_t  # (n_ctx, n_q) multiplicities
+            num = torch.einsum("cq,scqh->sch", wrow, pool_t)  # (4, n_ctx, H)
+            stack = (num / totals[i].clamp(min=1.0).unsqueeze(-1))[:, kmask]
+            st = stack.cpu().numpy()
+            fams_a = [fams_by_pos[j] for j in range(n_ctx) if bool(kmask[j])]
+            arms.append({"c0": st[0], "cplus": st[1], "v0": st[2], "vplus": st[3], "fams": fams_a})
+        out = _batched_arm_dofs(
+            arms, r_hat, n_refit_pairs=n_refit_pairs, device=device, pair_chunk=pair_chunk
+        )
+        for i, res in zip(ids, out, strict=True):
+            results[i] = res
+
+    diffs: list[float] = []
+    dof_diffs: list[float] = []
+    for ri in range(n_resamples):
+        ra, rb = results[2 * ri], results[2 * ri + 1]
+        if ra is None or rb is None:
+            continue  # kept<4 half, or a degenerate arm (serial LinAlgError-skip analog)
+        da_med, da_dof = ra
+        db_med, db_dof = rb
+        diffs.append(abs(da_med - db_med))
+        if not (math.isnan(da_dof) or math.isnan(db_dof)):
+            dof_diffs.append(abs(da_dof - db_dof))
+    return diffs, dof_diffs
 
 
 def _r_hat_for(
@@ -510,6 +1117,46 @@ def _headline_stacks(
     return c0, cplus, v0, vplus, families, context_ids
 
 
+def _pairwise_signed_diffs_batched(
+    drawn_all: list[list[str] | None],
+    stack_for,
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+    device: str,
+    arm_chunk: int,
+    pair_chunk: int,
+) -> list[float]:
+    """Batched twin of the serial pairwise-CI resample loop (same skip semantics).
+
+    ``drawn_all`` holds the pre-drawn context resample per resample (None = the
+    <4-distinct skip); ``stack_for(ctx_subset, side)`` assembles one side's
+    (c0, cplus, v0, vplus, fams) stacks. Every (resample, side) arm runs through
+    `_batched_arm_dofs` in chunks (stacks built lazily per chunk to bound memory);
+    a resample contributes iff BOTH sides produced a non-NaN Δ/floor (the serial
+    LinAlgError / floor-underflow skip analog). Returns the signed Δ/floor diffs.
+    """
+    jobs = [(ri, side) for ri, d in enumerate(drawn_all) if d is not None for side in ("a", "b")]
+    per_res: dict[int, list[float]] = {}
+    for start in range(0, len(jobs), 2 * arm_chunk):
+        chunk_jobs = jobs[start : start + 2 * arm_chunk]
+        arms = []
+        for ri, side in chunk_jobs:
+            s = stack_for(drawn_all[ri], side)
+            arms.append({"c0": s[0], "cplus": s[1], "v0": s[2], "vplus": s[3], "fams": s[4]})
+        out = _batched_arm_dofs(
+            arms, r_hat, n_refit_pairs=n_refit_pairs, device=device, pair_chunk=pair_chunk
+        )
+        for (ri, _side), res in zip(chunk_jobs, out, strict=True):
+            per_res.setdefault(ri, []).append(float("nan") if res is None else res[1])
+    signed_diffs: list[float] = []
+    for ri in sorted(per_res):
+        vals = per_res[ri]
+        if len(vals) == 2 and not (math.isnan(vals[0]) or math.isnan(vals[1])):
+            signed_diffs.append(float(vals[0] - vals[1]))
+    return signed_diffs
+
+
 def pairwise_diff_ci(
     behavior: str,
     sub_a: str,
@@ -520,6 +1167,10 @@ def pairwise_diff_ci(
     n_resamples: int = N_NULL_RESAMPLES,
     n_refit_pairs: int = NULL_REFIT_PAIRS,
     seed: int = NULL_SEED,
+    serial: bool = False,
+    device: str = "cpu",
+    arm_chunk: int = 16,
+    pair_chunk: int = 4,
 ) -> dict:
     """Family-clustered bootstrap CI on the PAIRED Δ/floor difference for one substrate pair.
 
@@ -588,6 +1239,10 @@ def pairwise_diff_ci(
             return c0a[rows], cpa[rows], v0a[rows], vpa[rows], fams
         return c0b[rows], cpb[rows], v0b[rows], vpb[rows], fams
 
+    # Pre-draw the context resamples with the EXACT serial rng consumption (one choice
+    # call per resample; the <4-distinct check happens AFTER the draw, so a skipped
+    # resample still consumed its draw). Both branches below use the same sequence.
+    drawn_all: list[list[str] | None] = []
     for _ in range(n_resamples):
         if clustered:
             chosen_fams = rng.choice(uniq_fams, size=len(uniq_fams), replace=True)
@@ -595,22 +1250,39 @@ def pairwise_diff_ci(
         else:
             drawn_ctx = list(rng.choice(shared_ctx, size=len(shared_ctx), replace=True))
         # Need enough distinct contexts on BOTH arms to fit (the refit needs >=4 rows).
-        if len(set(drawn_ctx)) < 4:
-            continue
-        try:
-            sa = _stack_for(drawn_ctx, "a")
-            sb = _stack_for(drawn_ctx, "b")
-            _, da_dof = _pseudo_delta_over_floor(
-                sa[0], sa[1], sa[2], sa[3], sa[4], r_hat, n_refit_pairs=n_refit_pairs
-            )
-            _, db_dof = _pseudo_delta_over_floor(
-                sb[0], sb[1], sb[2], sb[3], sb[4], r_hat, n_refit_pairs=n_refit_pairs
-            )
-        except np.linalg.LinAlgError:
-            continue  # degenerate resample geometry — skip (bootstrap noise)
-        if np.isnan(da_dof) or np.isnan(db_dof):
-            continue  # a floor underflowed on this resample — excluded
-        signed_diffs.append(float(da_dof - db_dof))
+        drawn_all.append(drawn_ctx if len(set(drawn_ctx)) >= 4 else None)
+
+    if serial:
+        # SUPERSEDED serial reference (tombstoned twin — the --serial-null escape hatch).
+        _serial_battery_tombstone("pairwise_diff_ci")
+        for drawn_ctx in drawn_all:
+            if drawn_ctx is None:
+                continue
+            try:
+                sa = _stack_for(drawn_ctx, "a")
+                sb = _stack_for(drawn_ctx, "b")
+                _, da_dof = _pseudo_delta_over_floor(
+                    sa[0], sa[1], sa[2], sa[3], sa[4], r_hat, n_refit_pairs=n_refit_pairs
+                )
+                _, db_dof = _pseudo_delta_over_floor(
+                    sb[0], sb[1], sb[2], sb[3], sb[4], r_hat, n_refit_pairs=n_refit_pairs
+                )
+            except np.linalg.LinAlgError:
+                continue  # degenerate resample geometry — skip (bootstrap noise)
+            if np.isnan(da_dof) or np.isnan(db_dof):
+                continue  # a floor underflowed on this resample — excluded
+            signed_diffs.append(float(da_dof - db_dof))
+    else:
+        # Batched default: every (resample, side) arm through the Gram-space engine.
+        signed_diffs = _pairwise_signed_diffs_batched(
+            drawn_all,
+            _stack_for,
+            r_hat,
+            n_refit_pairs=n_refit_pairs,
+            device=device,
+            arm_chunk=arm_chunk,
+            pair_chunk=pair_chunk,
+        )
     if not signed_diffs:
         return {**empty, "note": "all resamples degenerate or floor-underflowed"}
     arr = np.asarray(signed_diffs, dtype=np.float64)
@@ -638,6 +1310,10 @@ def pairwise_substrate_diff_cis(
     *,
     n_resamples: int = N_NULL_RESAMPLES,
     n_refit_pairs: int = NULL_REFIT_PAIRS,
+    serial: bool = False,
+    device: str = "cpu",
+    arm_chunk: int = 16,
+    pair_chunk: int = 4,
 ) -> list[dict]:
     """Pairwise Δ/floor difference + family-clustered bootstrap CI across substrate pairs (D1).
 
@@ -689,6 +1365,10 @@ def pairwise_substrate_diff_cis(
                     r_hat,
                     n_resamples=n_resamples,
                     n_refit_pairs=n_refit_pairs,
+                    serial=serial,
+                    device=device,
+                    arm_chunk=arm_chunk,
+                    pair_chunk=pair_chunk,
                 )
                 rec.update(
                     {
@@ -815,6 +1495,32 @@ def main() -> int:
         help="force full recompute of every cell (default: resume-skip cells whose "
         "delta_floor + substrate_swap_null JSONs are already present and complete)",
     )
+    ap.add_argument(
+        "--serial-null",
+        action="store_true",
+        help="run the TOMBSTONED serial per-fit substrate-swap battery + pairwise CIs "
+        "(verification escape hatch; the batched Gram-space engine is the default and "
+        "~50-100x faster; refuses under EPM_FORBID_SERIAL_FITS=1)",
+    )
+    ap.add_argument(
+        "--null-device",
+        choices=("auto", "cpu", "cuda"),
+        default="auto",
+        help="device for the batched null/pairwise engine (auto → cuda when available)",
+    )
+    ap.add_argument(
+        "--null-arm-chunk",
+        type=int,
+        default=16,
+        help="pseudo-arms per batched engine chunk (memory dial; see the engine comment)",
+    )
+    ap.add_argument(
+        "--null-pair-chunk",
+        type=int,
+        default=4,
+        help="refit-floor pairs per inner fit chunk (memory dial: the peak transient is "
+        "~arm_chunk x 2*pair_chunk x 2n_ctx x HIDDEN float64 for the standardized stacks)",
+    )
     args = ap.parse_args()
 
     # r_B artifacts (em/syco from #658 r_b.pt; fact from #667 r_b_fact.pt; marker W_U[※]).
@@ -827,6 +1533,22 @@ def main() -> int:
     null_dir = args.out_dir / "substrate_swap_null"
     for d in (delta_dir, chain_dir, null_dir):
         d.mkdir(parents=True, exist_ok=True)
+
+    # Batched-vs-serial engine selection for the null battery + pairwise CIs (B3).
+    null_impl = "serial" if args.serial_null else "batched_gram_v1"
+    null_kw = {
+        "serial": args.serial_null,
+        "device": _resolve_null_device(args.null_device),
+        "arm_chunk": args.null_arm_chunk,
+        "pair_chunk": args.null_pair_chunk,
+    }
+    logger.info(
+        "[phase=analysis] null battery impl=%s device=%s arm_chunk=%d pair_chunk=%d",
+        null_impl,
+        null_kw["device"],
+        args.null_arm_chunk,
+        args.null_pair_chunk,
+    )
 
     per_behavior: dict[str, dict] = {}
     for behavior in args.behaviors:
@@ -913,6 +1635,7 @@ def main() -> int:
                 r_hat,
                 args.n_null_resamples,
                 n_refit_pairs=args.null_refit_pairs,
+                **null_kw,
             )
             null_by_sub[substrate] = null
             (null_dir / f"{behavior}__{substrate}.json").write_text(
@@ -929,6 +1652,7 @@ def main() -> int:
             r_hat,
             n_resamples=args.n_null_resamples,
             n_refit_pairs=args.null_refit_pairs,
+            **null_kw,
         )
         per_behavior[behavior] = {
             "observed": observed_by_sub,
@@ -976,6 +1700,8 @@ def main() -> int:
         "verdict_decision_rule": _DECISION_RULE,
         "n_null_resamples": args.n_null_resamples,
         "null_refit_pairs": args.null_refit_pairs,
+        # Which engine produced the null/pairwise batteries (B3 vectorization; additive).
+        "null_impl": null_impl,
         "null_seed": NULL_SEED,
         "git_commit": _git_sha(),
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

@@ -287,11 +287,11 @@ def _run_main_two_cells(tmp_path, monkeypatch, *, no_resume: bool):
         computed.append(substrate)
         return _obs(substrate, 0.4)  # elicit computes dof=0.4
 
-    def _stub_null(behavior, substrate, reduced_root, r_hat, n_resamples, *, n_refit_pairs):
+    def _stub_null(behavior, substrate, reduced_root, r_hat, n_resamples, *, n_refit_pairs, **_kw):
         return _full_null(p95=0.35)
 
     def _stub_pairwise(
-        observed_by_sub, behavior, reduced_root, r_hat, *, n_resamples, n_refit_pairs
+        observed_by_sub, behavior, reduced_root, r_hat, *, n_resamples, n_refit_pairs, **_kw
     ):
         # A minimal pairwise record for the two substrates present (no bootstrap fit needed).
         subs = [s for s in an.SUBSTRATES if s in observed_by_sub]
