@@ -29,6 +29,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_812.md](https://github.com/superkaiba/explore-persona-space/blob/ca463418c27052145afe22575d4e2d620d0d9e94/docs/methodology/issue_812.md) · [gist](https://gist.github.com/superkaiba/a1a12ccc095001347d267323b324050b)
+
 ## Takeaways
 
 - **Unpooled never clears its null:** best-layer gains over the mean pool run **−0.09 to +0.29** held-out ρ, seven behaviors, n=50 contexts; inside the shuffle null (**p ≥ 0.20**); rank-10-PCA arm.
