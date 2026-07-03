@@ -176,6 +176,13 @@ def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> No
     record).
     """
     show = ["cofit_ridge", "pv_rC", "pv_neutral"]
+    # Compact plain-English panel names (label discipline: no bare method slugs
+    # on reader-facing figure text; the slug lives only in the results JSON).
+    panel_names = {
+        "cofit_ridge": "learned ridge",
+        "pv_rC": "stripped opposite-contrast direction",
+        "pv_neutral": "neutral-contrast direction",
+    }
     n_b = len(behaviors)
     fig, axes = plt.subplots(n_b, len(show), figsize=(3.6 * len(show), 3.0 * n_b), squeeze=False)
     for bi, behavior in enumerate(behaviors):
@@ -190,8 +197,8 @@ def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> No
             v = rec["methods"].get(m, {})
             preds = v.get("preds_chosen_layer")
             if not preds or not graded:
-                ax.text(0.5, 0.5, "N/A", ha="center", va="center")
-                ax.set_title(f"{behavior} — {m} (N/A)", fontsize=8)
+                ax.text(0.5, 0.5, "not buildable", ha="center", va="center")
+                ax.set_title(f"{behavior} — {panel_names.get(m, m)} (not buildable)", fontsize=8)
                 continue
             for fam in fam_names:
                 cs = [c for c in kept if str(fams.get(c)) == fam]
@@ -200,13 +207,14 @@ def plot_pred_scatter(results: dict, behaviors: list[str], out_path: Path) -> No
                 ax.scatter(xs, ys, s=14, color=fam_color[fam], label=fam, alpha=0.85)
                 for c, x, yv in zip(cs, xs, ys, strict=True):
                     ax.annotate(c[:10], (x, yv), fontsize=4, alpha=0.7)
-            ax.set_title(f"{behavior} — {m}", fontsize=8)
+            ax.set_title(f"{behavior} — {panel_names.get(m, m)}", fontsize=8)
             ax.set_xlabel("graded E0 (0-100)")
-            ax.set_ylabel("held-out prediction (rank scale)")
+            ax.set_ylabel("held-out prediction (fit scale; ρ is rank-based)")
             if bi == 0 and si == 0:
                 ax.legend(fontsize=5, title="context family", title_fontsize=5)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
@@ -240,8 +248,15 @@ def plot_cos_curves(manifest: dict, behaviors: list[str], out_path: Path) -> Non
     plt.close(fig)
 
 
-def plot_nonlinear_panels(nl: dict, behaviors: list[str], out_path: Path) -> None:
-    """dCor null histograms (observed + control marked) + paired-error scatter."""
+def plot_nonlinear_panels(
+    nl: dict, behaviors: list[str], out_path: Path, corrected: dict | None = None
+) -> None:
+    """dCor null histograms (observed + control marked) + per-behavior test stats.
+
+    ``corrected`` is the rank-scale sign-flip correction JSON
+    (``signflip_rankscale_corrected.json``); when present its stats REPLACE the
+    as-run (scale-contaminated) sign-flip numbers in the side panel.
+    """
     n_b = len(behaviors)
     fig, axes = plt.subplots(n_b, 2, figsize=(9, 2.8 * n_b), squeeze=False)
     for bi, behavior in enumerate(behaviors):
@@ -253,27 +268,41 @@ def plot_nonlinear_panels(nl: dict, behaviors: list[str], out_path: Path) -> Non
             ax.hist(null, bins=30, color="steelblue", alpha=0.7, label="refit-per-draw null")
             ax.axvline(d10.get("dcor_observed"), color="black", lw=1.5, label="observed dCor")
             ax.axvline(
-                d10.get("control_task_dcor"), color="firebrick", ls="--", lw=1.2, label="control"
+                d10.get("control_task_dcor"),
+                color="firebrick",
+                ls="--",
+                lw=1.2,
+                label="shuffled-labels control",
             )
-        ax.set_title(
-            f"{behavior} — Option-A dCor (verdict: {d10.get('verdict', 'N/A')})", fontsize=8
-        )
+        ax.set_title(f"{behavior} — post-LEACE dCor, d=10 (refit-per-draw null)", fontsize=8)
         if bi == 0:
             ax.legend(fontsize=6)
         ax2 = axes[bi][1]
-        sf = cell.get("signflip", {})
-        ax2.text(
-            0.05,
-            0.6,
-            f"paired sign-flip p = {sf.get('p_value')}\n"
-            f"mean(err_lin − err_krr) = {sf.get('statistic_mean_err_diff')}\n"
-            f"Δρ (krr − ridge) = {cell.get('paired_delta_rho_krr_minus_ridge')}",
-            fontsize=8,
-            transform=ax2.transAxes,
-        )
+        dcor_p = d10.get("dcor_p_value")
+        ctrl_p = d10.get("control_task_p_value")
+        lines = [
+            f"post-LEACE dCor = {d10.get('dcor_observed'):.3f} (p = {dcor_p:.4g})"
+            if dcor_p is not None
+            else "post-LEACE dCor: n/a",
+            f"shuffled-labels control dCor = {d10.get('control_task_dcor'):.3f} (p = {ctrl_p:.4g})"
+            if ctrl_p is not None
+            else "control: n/a",
+        ]
+        corr_cell = (corrected or {}).get("by_behavior", {}).get(behavior, {})
+        sfr = corr_cell.get("signflip_rankscale")
+        if sfr:
+            lines.append(
+                f"kernel-vs-linear sign-flip (rank scale): p = {sfr['p_value']:.4g}, "
+                f"mean err diff = {sfr['statistic_mean_err_diff']:+.4f}"
+            )
+        drho = cell.get("paired_delta_rho_krr_minus_ridge")
+        if drho is not None:
+            lines.append(f"held-out ρ, kernel − linear = {drho:+.3f}")
+        ax2.text(0.02, 0.55, "\n".join(lines), fontsize=8, transform=ax2.transAxes)
         ax2.set_axis_off()
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
@@ -341,6 +370,76 @@ def plot_h2_and_checks(results: dict, behaviors: list[str], out_path: Path) -> N
     ax.set_title("continuity: graded vs binary ridge column", fontsize=9)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_h2_neutral(results: dict, manifest: dict, behaviors: list[str], out_path: Path) -> None:
+    """The H2 (neutral-contrast) read in one figure, plain-English labels only.
+
+    (a) pooled held-out ρ for the neutral-contrast vs the stripped
+    opposite-contrast direction, each also recomputed with the default-family
+    contexts held out (the pole-overlap check); (b) neutral-arm judge yield
+    (kept / rejected / unscoreable) with the keep-floor branch; (c) per-layer
+    cosine between the stripped opposite-contrast and neutral-contrast
+    directions.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
+    x = np.arange(len(behaviors))
+    # (a) neutral vs stripped opposite, full + default-family-held-out
+    ax = axes[0]
+    w = 0.2
+    series = [
+        ("pv_neutral", "rho", "neutral contrast (all 50 contexts)"),
+        ("pv_neutral", "rho_leave_default_family_out", "neutral contrast (default family out)"),
+        ("pv_rC", "rho", "stripped opposite contrast (all 50)"),
+        ("pv_rC", "rho_leave_default_family_out", "stripped opposite (default family out)"),
+    ]
+    cols = _palette(len(series))
+    for oi, (m, field, lab) in enumerate(series):
+        vals = [
+            _nan_if_none(results["by_behavior"][b]["methods"].get(m, {}).get(field))
+            for b in behaviors
+        ]
+        ax.bar(x + (oi - 1.5) * w, vals, width=w, label=lab, color=cols[oi])
+    ax.set_xticks(x)
+    ax.set_xticklabels(behaviors, rotation=20, ha="right", fontsize=7)
+    ax.set_ylabel("held-out LOCO ρ")
+    ax.legend(fontsize=6)
+    ax.set_title("neutral vs stripped opposite contrast", fontsize=9)
+    # (b) neutral-arm yield
+    ax = axes[1]
+    kept, rej, drop, branches = [], [], [], []
+    for b in behaviors:
+        rec = manifest.get("by_behavior", {}).get(b, {})
+        kept.append(rec.get("kept_n_used", 0))
+        rej.append(rec.get("rejected_above_threshold", 0))
+        drop.append(rec.get("dropped_unscoreable", 0))
+        branches.append(rec.get("keep_floor_branch", "?"))
+    ax.bar(x, kept, label="kept (trait-absent, score < 50)")
+    ax.bar(x, rej, bottom=kept, label="rejected (trait present)")
+    ax.bar(x, drop, bottom=[k + r for k, r in zip(kept, rej, strict=True)], label="unscoreable")
+    for i, br in enumerate(branches):
+        ax.annotate(br, (i, kept[i] + rej[i] + drop[i]), ha="center", fontsize=7)
+    ax.set_xticks(x)
+    ax.set_xticklabels(behaviors, rotation=20, ha="right", fontsize=7)
+    ax.set_ylabel("rollouts (of 1000)")
+    ax.legend(fontsize=6)
+    ax.set_title("neutral-arm judge yield", fontsize=9)
+    # (c) cos(stripped opposite, neutral) per layer
+    ax = axes[2]
+    cols_b = _palette(max(len(behaviors), 2))
+    for bi, b in enumerate(behaviors):
+        rec = manifest.get("by_behavior", {}).get(b, {})
+        c2 = rec.get("cos_rC_rneutral_per_layer")
+        if c2:
+            ax.plot(c2, color=cols_b[bi], lw=1.3, label=b)
+    ax.set_xlabel("layer")
+    ax.set_ylabel("cosine")
+    ax.legend(fontsize=6)
+    ax.set_title("cos(stripped opposite, neutral) per layer", fontsize=9)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
 
 
@@ -412,11 +511,16 @@ def main() -> int:
     manifest = load_json(manifest_path)
     plot_cos_curves(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_cos_curves.png")
     plot_neutral_yield(manifest, behaviors, FIGURE_DIR / "fig_763_cofit_neutral_yield.png")
+    plot_h2_neutral(results, manifest, behaviors, FIGURE_DIR / "fig_763_cofit_h2_neutral.png")
 
     nl_path = COFIT_DIR / "nonlinear_tests.json"
     if nl_path.exists():
         nl = load_json(nl_path)
-        plot_nonlinear_panels(nl, behaviors, FIGURE_DIR / "fig_763_cofit_nonlinear.png")
+        corrected_path = COFIT_DIR / "signflip_rankscale_corrected.json"
+        corrected = load_json(corrected_path) if corrected_path.exists() else None
+        plot_nonlinear_panels(
+            nl, behaviors, FIGURE_DIR / "fig_763_cofit_nonlinear.png", corrected=corrected
+        )
     else:
         logger.warning("nonlinear_tests.json absent — nonlinear panels skipped")
 
