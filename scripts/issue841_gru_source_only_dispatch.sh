@@ -74,8 +74,12 @@ uv run python scripts/issue841_gru_source_only_stage1.py --device "$DEVICE" --ou
   --n-boot "${EPM_I841GSO_NBOOT:-1000}" $SMOKE
 
 # ── plots ────────────────────────────────────────────────────────────────────────
+# FAIL-LOUD (no `||` swallow): the per-unit scatter is a hard requirement (Lens-11
+# companion). Plots run AFTER the result JSONs are checkpointed, so a loud abort here
+# loses nothing but prevents a "successful" run whose sentinel fires without the
+# required per-unit figure (which the analyzer would otherwise build the body without).
 log_phase plots "start"
-uv run python scripts/issue841_gru_source_only_plots.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR" || true
+uv run python scripts/issue841_gru_source_only_plots.py --out-dir "$OUT_DIR" --fig-dir "$FIG_DIR"
 
 # ── upload state-dicts (PRIVATE overflow repo, FAIL-LOUD; skip in smoke) ───────────
 # The account-wide HF public-LFS quota 403 is live, so the >10 MB state-dicts (LFS)
@@ -96,23 +100,25 @@ from huggingface_hub import HfApi, list_repo_files
 from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, DEFAULT_OVERFLOW_REPO
 out_dir, sub = sys.argv[1], 'issue841_gru_source_only'
 api = HfApi(token=os.environ.get('HF_TOKEN'))
-# 1. LFS state-dicts -> PRIVATE overflow repo (public-LFS quota 403 is live; private has headroom)
-api.create_repo(DEFAULT_OVERFLOW_REPO, repo_type='model', private=True, exist_ok=True)
+# 1. LFS state-dicts -> PRIVATE overflow DATASET repo (public-LFS quota 403 is live; private has
+#    headroom). DATASET repo_type (NOT model) so the committed dataset-to-dataset pointer reader
+#    (scaling_common._overflow_repo_for_bucket / hf_download_pt_maybe_overflow) can resolve the .pt.
+api.create_repo(DEFAULT_OVERFLOW_REPO, repo_type='dataset', private=True, exist_ok=True)
 api.upload_folder(folder_path=out_dir, path_in_repo=sub, repo_id=DEFAULT_OVERFLOW_REPO,
-                  repo_type='model', allow_patterns=['*.pt'])
-present = sorted(f for f in list_repo_files(DEFAULT_OVERFLOW_REPO, repo_type='model')
+                  repo_type='dataset', allow_patterns=['*.pt'])
+present = sorted(f for f in list_repo_files(DEFAULT_OVERFLOW_REPO, repo_type='dataset')
                  if f.startswith(sub + '/') and f.endswith('.pt'))
 assert len(present) >= 2, f'overflow state-dict upload incomplete (expected >=2 .pt): {present}'
 # 2. non-LFS pointer breadcrumb -> CANONICAL dataset repo (small JSON rides the non-LFS path,
 #    which succeeds over the public-storage quota) so a consumer/verifier finds the real location.
-pointer = {'overflow_repo': DEFAULT_OVERFLOW_REPO, 'overflow_repo_type': 'model',
+pointer = {'overflow_repo': DEFAULT_OVERFLOW_REPO, 'overflow_repo_type': 'dataset',
            'path_in_repo': sub, 'files': present, 'ts': time.time(),
            'reason': 'GRU state-dicts (LFS >10MB) rerouted to the private overflow repo; '
                      'public-LFS quota 403 live'}
 api.upload_file(path_or_fileobj=io.BytesIO(json.dumps(pointer, indent=2).encode('utf-8')),
                 repo_id=DEFAULT_DATASET_REPO, path_in_repo=sub + '/OVERFLOW_POINTER.json',
                 repo_type='dataset')
-print('[upload] state-dicts ->', DEFAULT_OVERFLOW_REPO, '(private, model)', present,
+print('[upload] state-dicts ->', DEFAULT_OVERFLOW_REPO, '(private, dataset)', present,
       '; pointer ->', DEFAULT_DATASET_REPO, sub + '/OVERFLOW_POINTER.json')
 " "$OUT_DIR"
   UPLOAD_STATUS="overflow-private"
@@ -137,7 +143,7 @@ json.dump({
       'fidelity': os.environ['OUT_DIR'] + '/transport_fidelity_gru_source_only.json',
       'projections': os.environ['OUT_DIR'] + '/gru_source_only_projections.npz',
       'state_dicts_hf': 'PRIVATE overflow superkaiba1/explore-persona-space-overflow '
-                        '(model): issue841_gru_source_only/gru_source_only_{raw,rmsnorm}.pt; '
+                        '(dataset): issue841_gru_source_only/gru_source_only_{raw,rmsnorm}.pt; '
                         'pointer: <data-repo>/issue841_gru_source_only/OVERFLOW_POINTER.json',
     },
     'state_dict_upload': os.environ['UPLOAD_STATUS'],
