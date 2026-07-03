@@ -563,7 +563,9 @@ such corpora or banks:
    `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
    ops target the same canonical
    `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
-   per-prefix file count on the Hub (`list_repo_files`) before
+   per-prefix file count on the Hub (scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before
    `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
    gate (`code-reviewer.md`). Whichever shape,
    the per-cell completion files MUST land on

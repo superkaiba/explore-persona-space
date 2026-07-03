@@ -134,7 +134,10 @@ run.finish()
 After every upload, confirm the artifact is reachable:
 ```python
 # HF
-api.list_repo_files("superkaiba1/explore-persona-space[-data]")  # contains target path
+api.list_repo_files("superkaiba1/explore-persona-space")  # model repo: contains target path
+# DATA repo (~1M files): bare list_repo_files times out (>90 s, #833) — use
+# api.file_exists("superkaiba1/explore-persona-space-data", <path>, repo_type="dataset")
+# or scoped api.list_repo_tree(..., path_in_repo=<prefix>, repo_type="dataset")
 # WandB
 wandb.Api().artifact("superkaiba/explore-persona-space/<name>:<ver>").wait()
 ```

@@ -262,7 +262,7 @@ Unsure whether a sentence is methodology or interpretation? Test: "Would it chan
 
 ## Worked-example data rules
 
-- **Read the actual artifact files** for verbatim quotes — never invent or paraphrase a row. Read the JSONL at `eval_results/issue_<N>/.../foo.jsonl` (or `git show <sha>:<path>` if removed locally); for HF-Hub raw completions, `huggingface_hub.list_repo_files(...)` to confirm the path, then read the row.
+- **Read the actual artifact files** for verbatim quotes — never invent or paraphrase a row. Read the JSONL at `eval_results/issue_<N>/.../foo.jsonl` (or `git show <sha>:<path>` if removed locally); for HF-Hub raw completions, `HfApi().file_exists(...)` / scoped `list_repo_tree(path_in_repo=...)` to confirm the path (bare data-repo `list_repo_files` times out — gotchas.md), then read the row.
 - **Cherry-picked is fine** (illustrations, not aggregates) — label the disclosure inside the block: `<!-- cherry-picked for illustration; full data at <HF Hub link> -->`, or use a deterministic sample (`random.seed(42)` + `random.choice`).
 - **Truncate long completions** with `...` + a "tail" hint (`"...a more effective and empathetic listener. ※"`) — presentation, not a finding. **Preserve formatting** (valid JSON; token strings carry their leading space, `" ※"` not `"※"`).
 - **Harmful-content sources ship SANITIZED — corpora AND banks.** When a worked
