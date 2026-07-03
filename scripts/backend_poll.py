@@ -2687,6 +2687,18 @@ def main(argv: list[str] | None = None) -> int:
             "with a legacy <cwd>/.claude/cache/ fallback probe)."
         ),
     )
+    parser.add_argument(
+        "--lane-suffix",
+        default=None,
+        help=(
+            "Per-lane instance-name suffix (#934): resolve the per-lane handle "
+            "sidecar issue-<N>-<suffix>-handle.json. Ignored when --handle-file "
+            "is given. Pass the SAME suffix the launch used — a forgotten "
+            "suffix silently polls the unsuffixed lane's handle instead; "
+            "multi-lane orchestrators should prefer --handle-file from the "
+            "launch JSON's handle_sidecar_path."
+        ),
+    )
     parser.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")
     args = parser.parse_args(argv)
 
@@ -2711,9 +2723,17 @@ def main(argv: list[str] | None = None) -> int:
     # loop would spin forever on "stalled"; that is the exact failure
     # mode the missing-sidecar fast path below exists to close).
     try:
-        sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
-    except RuntimeError as exc:
-        fallback = Path(".claude/cache") / f"issue-{int(args.issue)}-handle.json"
+        sidecar, probed = resolve_handle_sidecar_path(
+            args.issue, args.handle_file, lane_suffix=args.lane_suffix
+        )
+    except (RuntimeError, ValueError) as exc:
+        # RuntimeError: git missing / not a checkout (the pre-#934 case).
+        # ValueError (#934): a malformed --lane-suffix failed
+        # ``validate_lane_suffix`` inside ``default_handle_sidecar_path`` —
+        # fail LOUD but keep the never-empty-stdout contract (an empty
+        # stdout spins the bg-Bash poll loop forever).
+        stem = f"issue-{int(args.issue)}" + (f"-{args.lane_suffix}" if args.lane_suffix else "")
+        fallback = Path(".claude/cache") / f"{stem}-handle.json"
         logging.warning(
             "backend_poll: sidecar path unresolvable (%s); emitting status=dead infra", exc
         )
