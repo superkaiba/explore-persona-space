@@ -156,6 +156,8 @@ all current items). The items I own:
     published paper's OWN eval set is the point (`.claude/rules/replication-fidelity.md`);
     (b) marker-at-slot measurement, where the DV is read at the fixed trained slot
     by construction (`.claude/rules/marker-leakage-measurement.md`).
+14. Fail-loud acceptance claims backed by committed tests (per-claim coverage;
+    grep gates are not tests).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a

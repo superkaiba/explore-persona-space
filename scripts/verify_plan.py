@@ -32,11 +32,13 @@ Check catalog (id — classification — kind scope)
       p-floor attainability      (analysis), conditional   analysis
   c14 hypothesis branch         WARN-only, conditional    experiment +
       coherence                                           analysis
+  c15 fail-loud acceptance      WARN-only, conditional    infra + batch only
+      claim backed by test
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14) also SKIP when
-their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15) also SKIP
+when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -48,6 +50,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no dry-run smoke`` (check 11)
   - ``N/A — no draw battery`` (check 12)
   - ``N/A — no empirical-null gate`` (check 13)
+  - ``N/A — no fail-loud acceptance claim`` /
+    ``N/A — fail-loud claim not test-backable`` (check 15)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1679,6 +1683,141 @@ def check_hypothesis_branch_coherence(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, detail)
 
 
+# ─── Check 15 — fail-loud acceptance claim backed by a committed test ──────
+
+# Trigger anchor: an acceptance/success-criteria mention. Deliberately
+# NARROWER than c8's _SUCCESS_RE — "decision rule|decision gate" is excluded
+# because gates/failure-mode sections carry failure-MODE descriptions
+# ("silently provisioned" risk rows), not acceptance claims (corpus probe on
+# all 230 infra|batch plans, task #932).
+_FAILLOUD_ANCHOR_RE = re.compile(r"(?i)acceptance criteri|success criteri")
+
+# Claim vocabulary, scanned over the fence-stripped window below an anchor.
+# Letter-lookarounds (not \b) around "loud" exclude "cloud"/"Cloudflare".
+# The bare transitive "raises" is deliberately absent ("raises the
+# concurrency cap" is a real infra acceptance sentence); the narrow raise
+# forms + swallow/silent cover the genuine raise-claims in the corpus.
+_FAILLOUD_CLAIM_RE = re.compile(
+    r"(?i)fail[- ]?loud|fail[- ]?fast"
+    r"|(?<![a-z])loud(?:ly)?(?![a-z])"
+    r"|swallow"
+    r"|silent"
+    r"|warn(?:ing)?[- ]and[- ]continue"
+    r"|except\s+(?:Exception|BaseException)|bare\s+except|try\s*/\s*except|except\s*:"
+    r"|(?:must|shall|should)\s+raise\b"
+    r"|raises?\s+(?:an?\s+)?[A-Z][A-Za-z]*(?:Error|Exception)\b|raises?\s+SystemExit"
+    r"|non-?zero\s+exit|exits?\s+non-?zero"
+)
+
+# Committed-test evidence vocabulary. Letter-lookarounds so identifier-
+# internal tokens match (test_length_mismatch_raises, test_no_silent_swallow).
+# "exit code" is deliberately absent — "pytest ... exit code 0" is a generic
+# success-path verification line and self-certified in the corpus probe.
+_FAILLOUD_TEST_EVIDENCE_RE = re.compile(
+    r"(?i)(?<![a-z])rais(?:e|es|ed|ing)(?![a-z])|swallow|silent"
+    r"|fail[- ]?loud|fail[- ]?fast|(?<![a-z])loud(?![a-z])"
+    r"|(?<![a-z])except(?![a-z])|systemexit|non-?zero\s+exit|exits?\s+non-?zero"
+)
+
+# Evidence-side exclusion: a run-book grep gate over a test file would
+# otherwise self-certify (`grep -n 'except Exception' tests/test_foo.py`).
+_FAILLOUD_GREP_LINE_RE = re.compile(r"(?i)\bgrep\b")
+
+# Anchor carriers that never bind: §0.0 TL;DR / §0 Plan Summary restate
+# criteria as summary prose (same rationale as c8's _tldr_ranges exclusion).
+_FAILLOUD_SUMMARY_HEAD_RE = re.compile(r"(?i)tl;dr|plan summary|^(?:§\s*)?0(?:\.0)?\b")
+
+_FAILLOUD_WINDOW_LINES = 30
+
+_FAILLOUD_NA_RE = re.compile(
+    NA_RE + r"(?:no fail[- ]?loud acceptance claim|fail[- ]?loud claim not test-backable)"
+)
+
+
+def _failloud_claim_hits(plan: str) -> list[tuple[str, str]]:
+    """(section heading, matched vocabulary) per acceptance/success anchor
+    whose fence-stripped 30-line window carries a fail-loud claim. Anchors in
+    fences, in §0/TL;DR/Plan-Summary regions, or with an H1/preamble carrier
+    are dropped (corpus-probe noise classes, task #932)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    hits: list[tuple[str, str]] = []
+    for i, line in enumerate(lines):
+        if mask[i] or not _FAILLOUD_ANCHOR_RE.search(line):
+            continue
+        h = _innermost_section(headings, i)
+        if h is None or h.level < 2 or _FAILLOUD_SUMMARY_HEAD_RE.search(h.text.strip()):
+            continue
+        end = min(h.end, i + 1 + _FAILLOUD_WINDOW_LINES)
+        m = _FAILLOUD_CLAIM_RE.search(strip_fences("\n".join(lines[i:end])))
+        if m:
+            hits.append((h.text, m.group(0)))
+    return hits
+
+
+def _failloud_test_evidence_lines(plan: str) -> list[str]:
+    """RAW-plan lines naming a committed fail-loud-exercising test: a
+    ``test_`` identifier (also matches tests/<file>.py paths) co-located with
+    fail-loud vocabulary, grep-command lines excluded."""
+    out: list[str] = []
+    for line in plan.splitlines():
+        if _FAILLOUD_GREP_LINE_RE.search(line):
+            continue
+        if _TEST_IDENT_RE.search(line) and _FAILLOUD_TEST_EVIDENCE_RE.search(line):
+            out.append(line.strip())
+    return out
+
+
+def check_failloud_test_coverage(plan: str, kind: str) -> CheckResult:
+    """``kind: infra|batch`` plans whose acceptance/success criteria assert
+    fail-loud / no-silent-swallow behavior must name a committed test pinning
+    it — run-book grep gates verify the invariant once at review time, and a
+    differently-worded re-swallow ships green past all committed tests
+    (#913). WARN not FAIL: trigger and evidence are line heuristics; the
+    Phase 2 critics adjudicate (Statistics lens item 14 owns the per-claim
+    coverage judgment this check cannot make — the mechanical layer catches
+    only the zero-fail-loud-test case, and PASSes a plan naming a fail-loud
+    test for a different claim). Extending kind scope to ``analysis`` is a
+    future calibration decision if an incident arises there (the corpus
+    replay covered infra|batch only)."""
+    cid, name = "c15_failloud_test_coverage", "fail-loud acceptance claim backed by a test"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: the fail-loud acceptance-claim pattern is an infra|batch shape",
+        )
+    hits = _failloud_claim_hits(plan)
+    if not hits:
+        return _skip(cid, name, "no fail-loud claim in an acceptance/success-criteria window")
+    if _FAILLOUD_NA_RE.search(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (incidental vocabulary or not test-backable)"
+        )
+    evidence = _failloud_test_evidence_lines(plan)
+    if evidence:
+        sec, tok = hits[0]
+        return _pass(
+            cid,
+            name,
+            f"fail-loud claim ({tok!r} in §{sec[:40]!r}) + fail-loud test named "
+            f"({evidence[0][:80]!r})",
+        )
+    sec, tok = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"acceptance/success criteria assert fail-loud behavior ({tok!r} in §{sec[:40]!r}) but "
+        "no line names a committed test carrying fail-loud vocabulary (a `test_` identifier or "
+        "tests/<file> path alongside raise/swallow/silent/except vocabulary; grep-gate lines do "
+        "not count) — a run-book grep verifies the invariant once at review time, and a "
+        "differently-worded re-swallow ships green past all committed tests (#913). Name the "
+        "pinning test, or declare `N/A — no fail-loud acceptance claim` / "
+        "`N/A — fail-loud claim not test-backable`",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1696,6 +1835,7 @@ CHECKS = [
     check_battery_multiplier,
     check_empirical_gate_attainability,
     check_hypothesis_branch_coherence,
+    check_failloud_test_coverage,
 ]
 
 
