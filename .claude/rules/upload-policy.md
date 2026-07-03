@@ -96,7 +96,9 @@ pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
 `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf
 repo-files` only exposes `delete`, not `list`. Use:
-`set -a && source .env && set +a && uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>`
+`set -a && source .env && set +a && uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<bucket>', repo_type='dataset', recursive=True, revision='main')))"`
+(scoped `list_repo_tree` — a bare `list_repo_files` full listing of the
+~1M-file data repo times out (>90 s, #833); gotchas.md)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3
@@ -297,3 +299,48 @@ raw-completion paths are deliberately un-routed (non-LFS JSON keeps flowing;
 sharding stays the big-text remedy). New per-issue scripts should prefer
 `upload_model` over direct `HfApi` calls for LFS artifacts so they inherit
 this guard.
+
+## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
+
+For a task whose frontmatter carries `workflow: v2`, the upload policy has NO
+policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
+
+- **Text / JSON — always, unconditionally.** Raw responses at every stage,
+  judge outputs, metrics, configs upload to the data repo on the non-LFS path,
+  which is quota-immune (#541 gates only LFS). Text is NEVER discardable — not
+  even under both-quota exhaustion — and NEVER a valid `discarded_artifacts:`
+  entry (Step 3 generation-discard gate stays binding).
+
+- **Tensors / activation stores — main repo → overflow repo, no ceiling.**
+  Every store attempts the canonical repo first, then reroutes to the private
+  overflow repo (`superkaiba1/explore-persona-space-overflow`, the existing
+  `EPM_HF_OVERFLOW_ROUTING` mechanism) on a quota-403, dropping an
+  `OVERFLOW_POINTER.json` breadcrumb on the canonical repo. There is no
+  100 GB-style policy cap; the 128 GB per-issue ext4 quota / ~130 GB MooseFS
+  quota are PHYSICAL limits, handled by incremental sharding below, not a
+  policy ceiling.
+
+- **Big stores upload INCREMENTALLY (upload → verify → delete-local).** A store
+  larger than the disk quota is uploaded per shard so local footprint stays
+  bounded to ~one shard: `orchestrate.upload_sharded.upload_dir_sharded`
+  (reuses the hub overflow mechanism + `list_repo_files_complete` verify).
+  Stream-reduce phases PREFER shard-and-upload now that uploads are unbounded;
+  where materialization is genuinely infeasible, persist the source rollout
+  text (regenerable via one teacher-forced pass) — the #666/#772 stream-reduce
+  memory-safety contract is unchanged.
+
+- **Discard-to-regen-recipe fires ONLY when BOTH quotas are exhausted, always
+  alerted.** A discard is licensed only for a large intermediate TENSOR, only
+  after the main AND overflow repos both refuse (the `upload_dir_sharded`
+  both-refused `RuntimeError`), and only with a plan `discarded_artifacts:`
+  `{name, reason, regen_recipe}` entry + an alert naming which gate closed.
+  Generations / rollout text / judge outputs / metrics / configs are never
+  discardable.
+
+- **Registry append at PASS.** On upload-verification PASS the verifier appends
+  one `artifacts/registry.jsonl` row per produced artifact via
+  `scripts/artifact_registry.py` — the reuse registry the planner +
+  methodology-writer read before any retrain/regenerate.
+
+- **#664 sequencing unchanged.** The GPU pod is released before the FINAL bulk
+  upload; incremental shard uploads may overlap compute (they cost no GPU).

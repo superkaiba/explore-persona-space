@@ -143,6 +143,24 @@ allowlisted runtime-noise dirt (agent memories, `pods.conf`,
 `pods_ephemeral.json`) to `.claude/cache/worktree-rescue-<date>/` BEFORE
 removal; dry-run only classifies, never kills or rescues.
 
+**Venv-reap arm (#912).** On every `--apply` sweep, a KEPT worktree (dirty /
+active issue / human-named — every plain-keep class) additionally gets its
+`.venv` reaped when the worktree has been idle ≥7 days (2 days under the same
+disk-pressure predicate; env `EPM_WORKTREE_VENV_IDLE_DAYS`) AND no process
+holds it — the cwd/argv harvest plus a dedicated `/proc/<pid>/exe` probe that
+catches interpreters exec'd from the venv itself; idleness is
+max(root mtime, `.venv` mtime, git-admin `HEAD`/`index` mtime), failing
+toward keep when unreadable. The delete is rename-aside
+(`.venv.reap-tmp-<pid>`) → post-rename holder re-check → rmtree, never wider
+than `<wt>/.venv` + its own leftovers; underscore-prefixed managed worktrees
+(`_task-main-pin`) and symlinked roots/venvs are never touched; a `.venv` is
+a pure build artifact `uv run` regenerates from the shared uv cache in
+minutes. Kill switch: `EPM_WORKTREE_VENV_REAP=0`. Note the interaction with
+the daily `uv cache prune` cron: reaping a venv only drops worktree-side
+hardlinks — the shared blocks free when `uv cache prune` later drops
+unreferenced cache-side entries, so the two crons' combined reclaim is the
+number to watch (per-venv byte figures are du-apparent).
+
 `codex_task.py` complements this by pinning every codex-companion dispatch to
 the main checkout root (`DISPATCH_ROOT`), so new codex workers never root
 themselves in a worktree.
@@ -152,7 +170,7 @@ themselves in a worktree.
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the gate-push pass, the program-orchestrator recovery pass, the
-stale-registration pass, and three session reapers — the session-vs-status
+stale-registration pass, the CPU/memory-pressure guard pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
@@ -470,6 +488,47 @@ session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unr
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
+**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).**
+(Scope: this sentinel is a short-TTL session-TAKEOVER shield,
+NOT a user pause — an indefinite user "pause <N>" routes to
+`task.py set-status <N> on_hold` (the watcher PARK set; holds indefinitely)
+per `.claude/skills/issue/SKILL.md` § User pause affordance; a stale
+sentinel FAILS OPEN at ~`EPS_TAKEOVER_TTL_H`.) To take
+over a stalled autonomous session WITHOUT racing the watcher, rename its
+registration: `~/.eps-autonomous/issue-<N>.json` →
+`issue-<N>.json.paused-takeover-<YYYYMMDD>` (any suffix after the literal
+`.paused-takeover-`; `manual-issue-` same shape). While the sentinel is FRESH
+(file mtime < `EPS_TAKEOVER_TTL_H`, default 6h; `touch` it to renew a longer
+takeover): the orphan-respawn pass SKIPS the issue (logged, no state mutation),
+and `spawn-issue --auto` suppresses with a rc-0 `TAKEOVER-SENTINEL HELD` line
+(recognized by `spawn_output_suppressed`, so the crash-recovery, stalled,
+orphan, infra-drain, capacity-retry arms + `file_infra_task.py` all book
+nothing). Manual spawns warn-and-proceed (the #843 lease posture). A STALE
+sentinel is ignored everywhere — FAIL OPEN: crash recovery resumes at the TTL,
+so an abandoned takeover costs at most ~6h of un-watched active task. The
+registration-KEYED passes (crash-recovery, stalled, stale-registration,
+gate-push, reconcile) need no sentinel check: the rename removes the very file
+they key on. Ending a takeover — ORDER MATTERS: FIRST re-establish a
+registration (`spawn_session.py register-current --issue N` from the session
+that now owns the issue, or rename the sentinel back), THEN delete the
+sentinel — deleting first opens a one-tick window where the frozen `missed`
+count (already ≥ threshold in the #866 shape) respawns immediately.
+Alternatively just delete the sentinel and deliberately let the orphan sweep
+respawn a fresh `--auto` driver on its next stale tick. Three operational
+notes: (a) `EPS_TAKEOVER_TTL_H` is a FLEET-LEVEL knob — a session-local
+export never reaches the watcher's cron env; renew a >6h takeover by
+`touch`ing the sentinel, not by exporting the var. (b) Before renaming,
+check for a fresh `issue-<N>.json` / dispatch lease — a respawn may have
+JUST fired (the rename cannot recall an in-flight spawn; bounded to one
+tick). (c) During a takeover the `/issue` Step 0 single-orchestrator guard
+is registration-keyed and therefore BLIND — a human hand-driving the issue
+should check for the sentinel first. Stopping the superseded session:
+`spawn_session.py stop --session-id <sid>` — on a daemon-untracked sid it now
+resolves the wrapper pid via the `~/.happy/logs` reverse map and reports a
+verified kill-by-pid recipe (or SIGTERMs it under `--kill`; comm re-verified,
+never auto-SIGKILL). Stale sentinels are GC'd after `max(7 days, the
+configured TTL)`.
+
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
 (`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
@@ -519,6 +578,51 @@ disambiguation via `daemon.state.json`). `--happy-patch-only` runs just this
 pass (pair with `--dry-run` for a live smoke). Pinned by
 `tests/test_happy_patch_check.py` (`test_watcher_pass_*`).
 
+**CPU/memory-pressure guard pass (task #849, `cpu_guard_pass`).** A
+daemon-INDEPENDENT, escalate-only pass (runs every 10-min tick in the
+daemon-independent block right after `happy_patch_pass`) giving the fleet a
+CPU/memory-pressure detection + attribution channel on the shared 32-core VM
+(2026-07-02 incident: load 186-226 for hours; earlyoom SIGTERM sweeps silently
+killed 4-7 GB analysis workers — exit 143, no traceback, misattributed for
+hours). **Signals + thresholds** (each leg skips cleanly when its source is
+unreadable — a missing signal never fires and never masks the others):
+load5 > 1.5x nproc (`EPM_VM_CPU_GUARD_LOAD_FACTOR`), PSI cpu `some avg10` > 50
+(`EPM_VM_CPU_GUARD_PSI_CPU_PCT`), PSI memory `full avg10` > 10
+(`EPM_VM_CPU_GUARD_PSI_MEM_PCT`) — these three are RATE signals and need
+**2 consecutive hot ticks** (~20 min at the 10-min cron,
+`EPM_VM_CPU_GUARD_TICKS`) so a healthy short burst never alerts — PLUS a
+**SINGLE-TICK urgent MemAvailable floor** at < 20% of MemTotal
+(`EPM_VM_CPU_GUARD_MEMAVAIL_PCT`): memory can collapse 15%→3% inside one
+10-min interval, and 20% sits one band above earlyoom's 10% kill floor, so
+this leg fires while culprits are still alive — the fire stores a rolling
+**pre-kill top-process snapshot** (top-CPU ∪ top-RSS via one `ps` call,
+pid → issue via `/proc/<pid>/cwd` + cmdline hints) in the state file. A fire
+writes ONE attributed `kind=vm-cpu-pressure` row to the DEDICATED sidecar
+`.claude/cache/cpu-guard-events.jsonl` + a deduped `_telegram_push` (digest
+queue); in-episode repeats are suppressed unless load5 grows > 25% or the
+reason set changes, and recovery (no hot signals) resets the episode so a
+later re-overload fires afresh. **earlyoom kill surfacing** runs EVERY tick,
+threshold-independent: new journal kill lines (persistent cursor + key dedup;
+first-run lookback deliberately ~30 min — the watcher is a monitor, not a
+backfill tool; post-outage re-scan capped at 24 h) each produce one
+`kind=earlyoom-kill` row carrying an explicit **`attribution_status:
+attributed | unattributed`** — `attributed` (with `attribution_source:
+pre-kill-snapshot`) only when the killed pid (or a unique comm) matches the
+rolling snapshot; a sudden sub-tick collapse that beat the snapshot yields an
+honest `unattributed` row (visibility guaranteed, attribution best-effort).
+A failing/missing `journalctl` degrades the kill arm VISIBLY (stderr line +
+`kill_arm: "unavailable"` on any pressure row that tick, cursor not
+advanced), never silently. **WARN-ONLY:** never kills, never renices, never
+signals any process (pinned by
+`tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills`). State singleton
+`~/.eps-autonomous/vm-cpu-guard.json` (atomic write; `isinstance` type-guards
+on every field read back). Kill switch `EPM_DISABLE_CPU_GUARD_PASS=1`;
+`--cpu-guard-only` runs just this pass (pair with `--dry-run` for a live
+smoke — dry-run performs zero writes and zero `subprocess.run`). NOTE: the
+disk-guard ack-sentinel mechanism is DELIBERATELY omitted here — CPU/memory
+episodes self-terminate on recovery (unlike a persistently-full disk), so the
+recovery reset already bounds re-alert churn.
+
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (`.claude/worktrees/` — every `issue-<N>`
@@ -552,6 +656,25 @@ next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
 escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
 `repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
 the mount is absent (before / without the cutover).
+
+**Non-canonical caches + the /workspace hub-cache arm (#911).** The guard's
+tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level `/tmp/` dirs
+named `i<N>*` / `issue<N>*` / `issue-<N>*` / `issue_<N>*` / `*_<N>`, and `data/`
+dirs named `issue…<N>…{_dl,_hfstage,_cache}` — under the same terminal-reap /
+active-escalate contract PLUS a 48 h recency keep, a nested
+`store/`+`eval_results/` block, and a positive re-downloadability-evidence gate
+(hub-layout markers or data-repo-prefix mirror verification; predicate failures
+escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
+pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
+`EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
+OR pod-side detection refuses) so it can never run where `/workspace` is a real
+volume. The `/tmp/` + `/workspace` opt-in lives ONLY in the two CLI `main()`
+bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
+construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
+report-only runs surface their evidence via the `--json` structured fields
+(`active_cache_attributions` / `noncanonical_candidates` /
+`total_discovered_bytes`) — never the sidecar. Kill switch:
+`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`.
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The

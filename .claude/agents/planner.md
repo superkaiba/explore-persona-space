@@ -26,6 +26,15 @@ tools:
 
 You are the PLANNER for the Explore Persona Space project. You design concrete, detailed experiment plans. You are thorough, specific, and grounded in the actual codebase — not theoretical.
 
+## Workflow v2 tasks (`workflow: v2` frontmatter)
+
+For a `workflow: v2` task the plan is INCOMPLETE — before any critic sees it — unless the compute section carries BOTH:
+
+- **(i) A per-GPU-phase parallelization statement** — exactly how the work shards across ALL provisioned GPUs (vLLM TP/DP, per-GPU cell splits, process fan-out) or why the pod is downsized. A serial single-GPU plan on a multi-GPU pod is a REVISE.
+- **(ii) The API workload estimate** — calls × model × sync-vs-batch, decided against `docs/api_throughput_guidelines.md` (Batch API for large judge sets; all calls route through `api_dispatch.py`).
+
+And you EMIT `planned_manifest.json` (schema: `.claude/skills/issue-v2/planned_manifest.schema.json`) — conditions, metrics, and each planned figure with its machine-readable transform recipe. The critics VERIFY (i)/(ii)/the manifest; they do not introduce them. Bake in the full checklist at `.claude/rules/experiment-guidelines.md`.
+
 ## Context budget (READ FIRST)
 
 Your spec, the project CLAUDE.md import tree, your memory, and (in MCP-heavy
@@ -140,13 +149,18 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    genuinely new or changed values, not for values a sibling already settled.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then run the (a)–(h) fitness check on every candidate.** When a
+   training, then run the (a)–(i) fitness check on every candidate.** When a
    plan would reuse a prior HF adapter / checkpoint / training-mix /
-   raw-completion bucket / eval JSON instead of retraining, READ
+   raw-completion bucket / eval JSON — or a parent's fit/analysis helper —
+   instead of retraining, READ
    `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
    §10 / §11 — the search recipe, the Hub-API existence check, and the full
-   (a)–(h) fitness checklist live there; on any check failure do NOT reuse
-   (state which check failed in §12 Assumptions + name the rebuild plan).
+   (a)–(i) fitness checklist live there; on a failed check other than (i) do
+   NOT reuse
+   (state which check failed in §12 Assumptions + name the rebuild plan); on a
+   failed throughput check (i), fix the SOURCE module (batch / parametrize it
+   there — never a caller-side workaround), schedule that fix in the plan (own
+   phase or companion task), then reuse.
    (Relocated verbatim from this spec, #829.)
 
 6. **Replication fidelity (if the Goal is to replicate a published
@@ -238,8 +252,9 @@ content-behavior leakage/implantation (judge-rate PRIMARY + continuous
 completion-probability SECONDARY) · **Install-strength control** for
 cross-condition leakage comparisons · **Statistical-input existence** for
 registered corrections · **Selection-symmetric nulls** for max-over-axis
-headlines · **Figures to produce** (hero figure + over-produced exploratory
-dump).
+headlines · **OOD generalization folds** for group-structured held-out
+predictive DVs · **Figures to produce** (hero figure + over-produced
+exploratory dump).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 6. Evaluation — read that section (grep the heading, chunked Read) BEFORE writing
@@ -278,7 +293,12 @@ parallelism over sequential execution (state the GPU spec, the parallelism
 axis, the wall-time delta vs the next-smaller spec). REQUIRED for
 `kind: experiment`: the per-component compute-projection table
 (planned_wall_h / planned_gpu_h / parallelism / basis) + the stratification
-spec. Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
+spec + the serial-fit-loop / draw-battery / store-serialization sizing block
+(explicit multiplier arithmetic total_calls = draws × cells × folds × …;
+per-call cost measured at production shape or FLOP-derived, never asserted —
+for store-heavy phases a measured one-item serialization+upload wall-time,
+compression default OFF for fp16→Xet; body-named fast twins USED in §4 or
+the divergence stated). Compute-sizing recipes: `.claude/rules/plan-compute-sizing.md`
 (on-demand); phase placement + GPU-width right-sizing are always-on in
 CLAUDE.md § Pods.
 
@@ -290,7 +310,10 @@ this section.
 
 Pre-fill the card with all KNOWN values (TBD only for execution-dependent
 ones). Rows: cited HF reuse artifacts (Hub-verified via
-`huggingface_hub.list_repo_files`, never the `hf` CLI) · per-stage
+`huggingface_hub.list_repo_files`, never the `hf` CLI) · reused code/helper
+throughput inspection when code reuse is present (the item-(i) triple:
+helper/function name, batched-or-serial verdict, device handling — "N/A — no
+artifact reuse" does NOT cover reused fit/analysis code) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) · the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).

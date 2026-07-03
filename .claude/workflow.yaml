@@ -489,7 +489,7 @@ gates:
       step: "4b"
       condition: "plan body contains '### TDD: yes' OR user explicitly requested TDD"
       reason: |
-        Implementer posts `epm:proposed-tests v1`, EXITs awaiting an
+        Implementer posts `epm:proposed-tests v<n>` (max+1), EXITs awaiting an
         `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
         after approval resumes Step 4b normally. (See `markers.md` and the
         implementer agent specs.)
@@ -530,17 +530,30 @@ gates:
       step: "5.bis(a) (whack-a-mole detector position, post-code-review-PASS)"
       condition: |
         Fires only when pivot_criteria.compute_deviation_over_2x's
+        step-0 vectorize-first lever is RESOLVED (the vectorize fix
+        round has run for the component, or a negative overhead-bound
+        signature finding is recorded on the marker) AND the
         auto-descope path fails: no descope dimension keeps projected
         ratio ≤ 1.5× while preserving statistical power per the
-        planner's §9 stratification spec.
+        planner's §9 stratification spec. A marker arriving
+        pre-resolved without a lever-0 record does NOT satisfy this
+        condition (pivot_criteria pre-resolved-marker rule).
       reason: |
         Two-option prompt: `continue_as_is` (accept extra cost; quote
-        the projected ratio inline) vs `accept_descope_to_<X>_with_caveats`
+        the projected ratio inline — at ratio ≥ 5× this option
+        additionally REQUIRES the recorded quantified irreducibility
+        finding per pivot_criteria clause 0c: roofline arithmetic, a
+        true sequential dependency, or a quantified named non-compute
+        bottleneck) vs `accept_descope_to_<X>_with_caveats`
         (named caveats inline). 2-option cap per CLAUDE.md "No 4+ option
-        menus" + Fix #7 from the #397 post-mortem. Post-mortem trigger:
-        task #397 round 6 (2026-05-27) — projection was 3-4× plan §12
-        but surfaced as "needs human eyeball" rather than a structural
-        pivot, costing ~17h before the user noticed.
+        menus" + Fix #7 from the #397 post-mortem — the vectorize round
+        is a pre-gate auto-action lever, NEVER a third gate option.
+        Post-mortem triggers: task #397 round 6 (2026-05-27) —
+        projection was 3-4× plan §12 but surfaced as "needs human
+        eyeball" rather than a structural pivot, costing ~17h before
+        the user noticed; #722/#763 (2026-06-29 / 2026-07-01) —
+        `continue_as_is` auto-resolved at 10×/80× when the deviations
+        were overhead-bound and later vectorized ~1000-4400×.
 
         <!-- gate: gates.conditional.compute_deviation_resolution -->
     - id: 13
@@ -790,7 +803,82 @@ pivot_criteria:
       the row's `planned_wall_h`. Computed at implementer-report-time
       from the resolved per-cell parameters in the dispatcher.
 
-      Auto-action: attempt auto-descope to the largest sub-grid keeping
+      Auto-action 0 — vectorize-first signature check (REQUIRED first
+      lever, before any descope). From the marker's `basis:` +
+      `component:` text and the same round's implementer report,
+      classify the deviation. It is OVERHEAD-BOUND when the projected
+      wall is dominated by a SERIAL LOOP of individually-small units —
+      a per-cell/fold/layer/draw/row Python loop of small fits, solves,
+      or reductions; batch-1 model forwards where batching is possible;
+      per-draw re-reduction of a fixed pool; per-row IO/compression; or
+      sequential execution of shard-independent cells while a
+      parallelism axis (multi-GPU pod, N processes, vLLM batching)
+      sits unused. The canonical signature definition is
+      `.claude/rules/vectorize-many-cell-fits.md` (this enumeration is
+      illustrative; the rule file governs as it evolves). On a match,
+      the REQUIRED response is ONE vectorize/parallelize fix round:
+      spawn experiment-implementer with a brief naming the marker, that
+      rule + the canonical helpers
+      (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+      `src/explore_persona_space/analysis/null_battery.py`), and an
+      equivalence gate against a SEEDED serial oracle (vectorized
+      output == serial output on 2-3 cells within a stated
+      per-workload float tolerance) — the #761/#810/#834 pattern
+      (~1-2h rounds that saved 200+h). The round is a NORMAL
+      implementer round (code-review applies) and posts
+      `epm:compute-deviation v<next>` with `action: vectorize_fix_round`,
+      the post-fix projection, AND the residual classification — when
+      the residual work is genuinely FLOP-bound or dependency-bound,
+      that post-fix arithmetic CONSTITUTES the clause-0c finding and is
+      recorded in `flop_bound_finding:`. Re-posts reuse the planner-§9
+      row name VERBATIM in `component:` (the loop guard and routing key
+      on it; free-text drift bypasses or over-applies the guard).
+      Descope and `continue_as_is` are NOT eligible for the component
+      until this round has run OR a negative finding is recorded on the
+      marker (`signature_check: negative` + 1-3 lines of arithmetic: a
+      FLOP/roofline estimate, a true sequential dependency, or a NAMED
+      QUANTIFIED non-compute bottleneck — API rate caps, download
+      bandwidth, GPU-capacity wait, contention on an ALREADY-vectorized
+      job with the vectorized state cited). A marker arriving
+      PRE-RESOLVED (`action: continue_as_is`,
+      `action: auto_descope_to_<spec>`, or any other resolution)
+      WITHOUT a lever-0 record in the component's chain
+      (`vectorize_fix_round` ran, or `signature_check: negative`) is
+      treated as UNRESOLVED and routed through this step — a descope
+      never resolves lever 0; at ratio ≥ 5×
+      without a valid clause-0c finding the pre-resolution is VOID
+      (covers legacy markers, poster-side pre-resolution, and
+      crash-recovery replays — BOTH incident markers arrived
+      pre-resolved: #722 v2, #763 v2). An AMBIGUOUS basis is treated as
+      overhead-bound: the fix round's first action is the rule's
+      diagnostic (FLOP back-of-envelope, cputime/walltime ratio), and
+      the round may return the negative finding instead of a code
+      change. A plan's pinned hyperparameters NEVER exempt this lever —
+      vectorization is recipe-preserving by construction (same math,
+      equivalence-gated); pinning justified skipping DESCOPE in #722,
+      not skipping vectorization. There is deliberately NO de-minimis
+      floor above the 2× trigger: the lever's cost is bounded by the
+      once-per-component guard + 0b pod release, and the asymmetry
+      (~1-2h fix round vs 10-80× serial burns) is accepted. Loop guard:
+      at most ONE mandatory fix round per component (idempotent on
+      `action: vectorize_fix_round` for that component); if the
+      post-fix ratio is still > 2×, proceed to Auto-action 1 with the
+      post-fix projection and the round's residual classification.
+
+      Auto-action 0b — GPU-pod release: if the deviating serial phase
+      HOLDS a GPU pod (or the pending launch would hold one idle
+      through it), stop/release the pod while the fix round runs
+      (`pod.py stop --issue <N>`; CLAUDE.md "CPU-only phases don't
+      hold GPU pods" + the GPU-width right-sizing carve-out). The
+      orchestrator that issued the stop OWNS `pod.py resume` at
+      fix-round completion, before any re-dispatch (no stranded
+      stopped pod). This is work CONTINUING toward the Goal, not
+      parking — the autonomous "never stop a pod to PARK" rule is not
+      violated. (#763: a 1× GPU pod sat idle ~24 wall-h through a
+      serial CPU fit phase.)
+
+      Auto-action 1 — descope (existing lever, unchanged, now second):
+      attempt auto-descope to the largest sub-grid keeping
       projected ratio ≤ 1.5× AND preserving statistical power per the
       planner's §9 stratification spec. Descope dimensions in priority
       order: seeds (drop from N to floor(N/2) if pre-registered seeds
@@ -799,13 +887,30 @@ pivot_criteria:
       stratification allows). On success, post `epm:compute-deviation v1`
       with `action: auto_descope_to_<spec>` and continue.
 
-      Escalation: when no descope keeps ratio ≤ 1.5× while preserving
-      statistical power, surface
+      Escalation: when the step-0 lever is resolved (fix round run, or
+      negative finding recorded) AND no descope keeps ratio ≤ 1.5×
+      while preserving statistical power, surface
       gates.conditional.compute_deviation_resolution (id=12) with two
       options: `continue_as_is` (accept extra cost) vs
       `accept_descope_to_<X>_with_caveats` (descope drops below
-      planner's §9 min-N-for-power; named caveats inline). Post-mortem
-      trigger: task #397 round 6 (2026-05-27).
+      planner's §9 min-N-for-power; named caveats inline). Clause 0c:
+      `continue_as_is` at ratio ≥ 5× additionally REQUIRES a recorded
+      QUANTIFIED finding on the marker (`flop_bound_finding:`, or a
+      `signature_check: negative` record already meeting this bar)
+      that the deviation is irreducible, via any of: (i) the workload
+      is genuinely FLOP-bound at the hardware roofline — cite the
+      arithmetic; (ii) a true sequential dependency makes it not
+      batchable/parallelizable — cite the dependency; or (iii) a NAMED
+      non-compute bottleneck of the step-0 negative-signature classes,
+      quantified to account for the ratio — API rate caps, download
+      bandwidth, GPU-capacity wait, or shared-VM contention, the
+      latter valid ONLY with the already-vectorized state cited plus
+      load numbers (bare "contention" explains at most ~2-5× and never
+      carries a ≥5× finding alone). Post-mortem triggers: task #397
+      round 6 (2026-05-27); #722 10× / #763 80× `continue_as_is`
+      (2026-06-29 / 2026-07-01), both later vectorized ~1000-4400×
+      (stranded-branch graft / user override — the gate itself never
+      offered the lever).
   - trigger: plan_contradiction_replan
     pivot_action: |
       Fires when a subagent (`experiment-implementer`, `code-reviewer`,
@@ -1011,6 +1116,18 @@ subagent_halt_conditions:
 # orthogonal: `reviewer_pairs.pairs.*.markers` MUST exist in the
 # `markers` list, and `ensemble_review.doubled_steps[*].reconcile_marker`
 # (mode=marker) MUST also exist in the `markers` list.
+#
+# No-show definition (all doubled steps): a reviewer is a no-show ONLY
+# when NO durable verdict exists — no posted verdict marker at the
+# round's version AND no conforming, round-fresh output file at the
+# dispatch-config path — or when the Codex wrapper itself posted
+# `epm:failure` (codex-output-malformed | infra). An Agent-tool
+# error/thrash result alone NEVER constitutes a no-show: the durable
+# post regularly survives a thrash-killed summary turn (incident #810
+# r4). A Claude reviewer with no durable verdict is re-spawned once
+# (same round version, counter unchanged), never replaced by a
+# unilateral single-reviewer decision. Canonical procedure: /issue
+# SKILL.md Step 5b "Durable-verdict-first rule".
 # ──────────────────────────────────────────────────────────────────────
 ensemble_review:
   doubled_steps:
@@ -1567,25 +1684,66 @@ markers:
       when unification is genuinely impossible (e.g., per-cell vLLM
       that can't reset in-process).
   - kind: "epm:compute-deviation"
-    posted_by: skill (via experiment-implementer)
+    posted_by: "skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)"
     when: "Step 4b (implementer report-time, before code-review)"
     fields: |
       Posted when the implementer's resolved per-cell parameters project
       a wall-time deviation exceeding 2× any row in the planner's §9
       per-component compute-projection table. Body shape:
       `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
-      Optional: `action: auto_descope_to_<spec>` when the orchestrator's
-      pivot_criteria.compute_deviation_over_2x logic identifies a
-      descope that keeps ratio ≤ 1.5× AND preserves statistical power
-      per the planner's §9 stratification spec. When `action` is
-      present, the orchestrator continues with the descoped sweep.
-      When absent, the orchestrator surfaces
+      Optional note fields: `action: auto_descope_to_<spec> |
+      vectorize_fix_round`, `signature_check: positive|negative` (+ 1-3
+      lines of arithmetic when negative), `flop_bound_finding:
+      <quantified finding>` (required for `continue_as_is` at ratio
+      ≥ 5×, per pivot_criteria clause 0c: roofline arithmetic |
+      sequential dependency | quantified non-compute bottleneck).
+      Re-posts reuse the planner-§9 row name verbatim in `component:`
+      (the once-per-component loop guard keys on it).
+      When `action:` is absent — or the marker arrives PRE-RESOLVED
+      (`action: continue_as_is`, `action: auto_descope_to_<spec>`, or
+      any other resolution) WITHOUT a lever-0 record in the
+      component's chain (`action: vectorize_fix_round` ran, or
+      `signature_check: negative`), which is treated as UNRESOLVED (a
+      ≥5× pre-resolution without a valid clause-0c finding is VOID; a
+      descope never resolves lever 0) — the orchestrator FIRST applies
+      pivot_criteria.compute_deviation_over_2x auto-action 0
+      (vectorize-first signature check; overhead-bound → one mandatory
+      vectorize fix round, else a recorded negative finding), then
+      auto-descope, and only then surfaces
       gates.conditional.compute_deviation_resolution (id=12) with the
-      2-option pivot prompt. Rationale: task #397 round 6 (2026-05-27) —
+      2-option pivot prompt. When `action: auto_descope_to_<spec>` is
+      present WITH a lever-0 record in the component's chain, the
+      orchestrator continues with the descoped sweep.
+      Rationale: task #397 round 6 (2026-05-27) —
       projection was 3-4× plan §12 but surfaced as "needs human
       eyeball" rather than as a structural pivot, costing ~17h before
       the user noticed. Per the 2026-05-22 workflow.yaml PHILOSOPHY
       directive, auto-pivot is the default; halt is the rare exception.
+
+      POLLER VARIANT (#873): scripts/poll_pipeline.py's phase-ETA
+      runtime tripwire ALSO posts this kind MID-RUN, with extras
+      `source: poller`, `basis: elapsed-vs-plan`. Its `component` is a
+      §9-TOTAL-based label ("run total" or "phase '<name>'" — elapsed
+      wall vs the SUMMED planned_wall_h over ALL §9 tables, never a
+      per-row match), so a SMALL phase inside a large-total plan fires
+      only past ETA_DEVIATION_MULT (default 2.0x, env
+      EPM_ETA_DEVIATION_MULT) times the WHOLE plan's estimate —
+      deliberate conservatism; no per-row precision is implied. Dedup:
+      one marker per (task, phase) + one run-level `__run_total__` key,
+      both RUN-SCOPED (a fresh epm:run-launched re-arms them). Poller
+      markers carry NO `action:` field and are NEVER an auto-descope
+      input — mid-run advisory evidence only (elapsed-so-far is a lower
+      bound on final wall, so `continue_as_is` is nearly always the
+      right mid-run resolution). LIVE consumer: the per-tick
+      PollResult/main() JSON fields `eta_deviation_posted` /
+      `gpu_width_advisory_posted` read by the polling orchestrator
+      session (SKILL.md Step 6d.2), plus the durable events.jsonl marker
+      for post-hoc / dashboard reads — the Step 5.bis(a) scan keys on
+      markers posted in the CURRENT implementer round and structurally
+      never sees a mid-run poller marker. Coordination (#870): its
+      § pivot_criteria rewrite shares this file; whichever lands second
+      re-checks this addendum's wording + re-runs
+      workflow_lint.py --emit-tables.
   - kind: "epm:new-bug-class"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b (implementer report-time, before code-review)"
@@ -1670,8 +1828,8 @@ markers:
     posted_by: experimenter
     when: "Step 7"
     fields: |
-      Records the actual `nohup ... &` launch (PID + timestamp); paired
-      with epm:launch. REQUIRED payload fields (note shape):
+      Records the actual detached launch (setsid launcher script; PID +
+      timestamp); paired with epm:launch. REQUIRED payload fields (note shape):
       `pod=<name> pid=<pid> log_abs=<absolute_log_path>
       cmd='<dispatch>'`. The experimenter MUST call `os.path.abspath()`
       on the log path before posting AND verify with `ls -la <log_abs>`
@@ -2071,7 +2229,13 @@ markers:
       prior run, eval, falsification>,
       gpu_hours_estimate: <number>`. A followup-scope marker is UNRUN
       until a matching `epm:same-issue-followup-run v1` with the same
-      `followup_label` exists; `/issue` Step 0 dispatches a task at a
+      `followup_label` exists. Multiple DISTINCT `followup_label`s may
+      be queued concurrently (same kind, append-only versions);
+      `/issue` Step 0 dispatches ONE unrun label per loop entry —
+      user-initiated (`user-chat`/`step-10b-pick`) first, then oldest
+      armed ts (`task_workflow.unrun_followup_labels`); same-label
+      re-posts are corrections, and the label's run marker closes ALL
+      of them. `/issue` Step 0 dispatches a task at a
       post-result status (`interpreting` / `reviewing` /
       `awaiting_promotion` / `completed` — or `followups_running`
       itself, the mid-round resume case) carrying an unrun
@@ -2102,6 +2266,10 @@ markers:
       (`est_gpu_hours >= 20`, autonomous only). User-initiated rounds
       (`user-chat`, `step-10b-pick`) are explicitly requested and gated
       by interactive plan approval, so they do not consume either cap.
+      Run markers whose `outcome` begins `retroactive-close` do NOT
+      count toward either round cap — they record bookkeeping closure
+      of a round that already ran (or was superseded), not a new
+      auto-run (SKILL.md Step 0 § Stale-label disposition rule).
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
@@ -2498,6 +2666,22 @@ markers:
     posted_by: campaign skill (Step 2)
     when: "a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed)"
     fields: "stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1."
+  - kind: "epm:plan-revision-log"
+    posted_by: issue-v2 skill (post-approval critic rounds)
+    when: "workflow: v2 tasks only. Once PER post-approval critic round (Step 3 of .claude/skills/issue-v2/SKILL.md), after the plan + planned_manifest.json are auto-revised in response to that round's critic panel"
+    fields: "round (integer), changes (what the revision changed + why, per critic — statistics / methodology-baselines / efficiency / consistency), manifest_diff (the diff to planned_manifest.json: conditions / metrics / planned figures added/removed/changed, or 'none'). The audit surface for post-approval critic drift (Thomas approves the pre-critique draft; this log is how he sees what the critics changed). v1."
+  - kind: "epm:methodology-check"
+    posted_by: issue-v2 skill (via methodology-critic)
+    when: "workflow: v2 tasks only. After each methodology-critic round over the assembled report's Motivation / Methodology / Metrics sections (Step 8 report loop); round cap 5"
+    fields: "verdict (PASS|FAIL), round, untraceable/incorrect claims (each with the ground-truth source checked — config / code @ SHA / run_result.json / adapter_config.json / dashboard row count) OR 'all claims trace'. Link-liveness (every link resolves at the pinned SHA) folded in. v1."
+  - kind: "epm:report"
+    posted_by: issue-v2 skill
+    when: "workflow: v2 tasks only. When the report body (<!-- report-v1 --> sentinel) is mechanically assembled — methodology-writer REPORT MODE sections + plotter figures/captions spliced into the template, with TLDR / Next steps placeholders intact (Step 8)"
+    fields: "report body path, sections filled (Motivation / Methodology / Metrics / Results), figure count, placeholders left for Thomas (TLDR, Next steps). v1."
+  - kind: "epm:report-verified"
+    posted_by: issue-v2 skill (via report-verifier)
+    when: "workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 5. PASS advances the task to awaiting_promotion"
+    fields: "verdict (PASS|FAIL), round, per-figure recompute results (≥1 plotted value re-derived from source JSON via the manifest transform recipe), completeness-vs-manifest (every planned condition/metric/figure present or explicitly 'not run'), interpretivity-lens result (hypothesis-framing allowed / asserted-conclusion banned; Thomas's TLDR + Next steps never reviewed), verify_report.py --mode generation output. v1."
 steps:
   - id: "0"
     name: load_state

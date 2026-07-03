@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact reuse fitness check (a)-(h) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON vs retrain, with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(i) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact reuse — the fitness check (a)-(h)
+# Trained-artifact (and code) reuse — the fitness check (a)-(i)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(h); this file is the full checklist AND, as of
+summary naming checks (a)-(i); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -69,6 +69,10 @@ errors to stderr; piping into `| grep` swallows the error as a false
 "0 files" / "missing" result; the `#458` post-mortem nearly drew a
 wrong "checkpoints don't exist" conclusion from this silent CLI 0).
 Full Hub-API verification recipe: `.claude/rules/upload-policy.md`.
+On the ~1M-file DATA repo a bare `list_repo_files` listing itself times out
+(>90 s, #833) — use `HfApi().file_exists(repo_id, <path>,
+repo_type='dataset')` for a single path or scoped
+`list_repo_tree(path_in_repo=<prefix>)` for a subtree (gotchas.md).
 
 On a miss (the cited artifact does NOT resolve, or the expected files
 are not present at the cited path): mark the artifact UNVERIFIED, do
@@ -162,11 +166,16 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   column-shape / version-tag / encoding drift are OUT of scope and covered —
   where covered at all — by `(f)` byte-content identity. AND **(iii)
   target-backend fetchability** — the backend named in §9 can actually STAGE
-  it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈
+  it. The RunPod lane stages any HF-resolved file (`snapshot_download` on
+  small repos; scoped `list_repo_tree` + per-file `hf_hub_download` on the
+  ~1M-file data repo — gotchas.md; its HF leg ≈
   (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/`
   — the GCE startup `git clone`s the repo at the cited branch (so committed
   `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo
-  files need an explicit `snapshot_download` step in the workload — so a mix
+  files need an explicit staging step in the workload (scoped
+  `list_repo_tree(path_in_repo=...)` + per-file `hf_hub_download` on the
+  ~1M-file data repo — `snapshot_download` full-tree-enumerates there;
+  gotchas.md) — so a mix
   the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and
   the pre-train `assert data_path.exists()` crashes phase2. The check FAILS
   when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/
@@ -186,8 +195,47 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   planning + 3 review rounds and crashed phase2 at the pre-train assert on the
   GCP lane because the lane cannot stage a VM-local-only mix AND no file
   resolved at the asserted path.)
+- **(i) Throughput fitness (reused CODE — fit / analysis / eval helpers; N/A
+  for data-only reuse):** the code-reuse default (CLAUDE.md "Reuse existing
+  experiment code" / "Reuse existing in-repo tools/helpers") inherits a
+  parent's fit/analysis code path — a `scripts/issue<M>_*` fit / predictor /
+  null-battery module, an `analysis/` helper, an eval harness the new run
+  imports rather than rewrites. Before recording that reuse, READ the
+  inherited helper's inner loop and device routing. Two checks: **(1) batched
+  inner axis** — the per-cell / per-fold / per-draw / per-row axis is
+  vectorized into batched tensor ops per
+  `.claude/rules/vectorize-many-cell-fits.md`; a serial Python loop over
+  cells, folds, draws, or rows is the 50-100× overhead-bound signature and
+  FAILS (#761 reused #658's `_ridge_predict_loco` — a serial loop over 50
+  LOCO folds, eigh+solve per fold — at ~100× over plan, 0.3h → ~30h/behavior
+  projected; #667's inline analysis reused #722's serial per-cell
+  `fit_cell`); **(2) parametrized device** — the compute device is a
+  call-time parameter / flag / env lookup, not a hardcoded module constant; a
+  `DEVICE = "cpu"` pin or an implicit CPU default FAILS (#763 and #812
+  inherited `issue658_fit_predictors.py`'s module-level `DEVICE = "cpu"` and
+  ran batched-but-on-CPU for hours until the `EPM_FIT_DEVICE=cuda` cutover).
+  On a failure, the remedy is NOT retrain/regenerate and NOT a caller-side
+  workaround (wrapping the serial loop, monkey-patching the constant): **fix
+  at the SOURCE module** — batch / parametrize it there, so every future
+  reuser inherits the fix — applying the vectorize-first law (vectorize
+  before reaching for GPU or a bigger machine). SCHEDULE that source-module
+  fix in the plan: as its own phase, or as a companion infra task filed in
+  the same batch (the #876 pattern), with the source fix landing BEFORE the
+  consuming run; a caller-side wrapper is admissible only as
+  explicitly-temporary scaffolding named in the plan with the source fix
+  already filed. This check binds at PLAN time (the reuse-recording step) —
+  inline / ad-hoc analyses that run without a plan stay covered by
+  `.claude/rules/vectorize-many-cell-fits.md` (code-time `paths:` trigger)
+  and the review-side named-helper checks (#869 Fix D) — and a check-(i)
+  failure never disqualifies the reuse CLASS; it routes to the source-module
+  fix, then reuse. Record the inspection result — helper/function name,
+  batched-or-serial verdict, device handling — in the plan's reuse map
+  (§10 / §11) and reflect the implied wall-time in the corresponding §9
+  compute row.
 
-Any check that fails → retrain / regenerate, and say why in the plan.
+A failing check other than (i) → retrain / regenerate; a failing throughput
+check (i) → fix the SOURCE module (batch / parametrize it there — never a
+caller-side workaround), then reuse. Say why in the plan either way.
 
 ## Enforcement chain
 

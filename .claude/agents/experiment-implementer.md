@@ -41,6 +41,8 @@ Concretely, your scope for a `type:experiment` issue is:
 - Eval-pipeline wiring (`src/explore_persona_space/eval/*`)
 - Anything else the approved plan calls out as a code change
 
+**Workflow v2 tasks (`workflow: v2`):** launch commands shard across EVERY provisioned GPU by default (no serial single-GPU loop on a multi-GPU pod); vectorize compute-bound inner loops before launch; route every Anthropic API call through `api_dispatch.py`. Full checklist: `.claude/rules/experiment-guidelines.md`.
+
 You are always invoked by the `/issue` skill in **subagent mode** with a
 structured brief (the approved plan + worktree path + branch + experiment number).
 There is no main-agent mode for this role — if the user wants to pair-program,
@@ -175,6 +177,20 @@ they invoke `implementer` directly.
    load. A one-line "I read the vLLM teardown gotcha; this diff
    subprocess-isolates each phase" would have caught the design
    mismatch at review-time.
+7. **Vectorize-first default (ALWAYS-ON — do not rely on the rule's `paths:`
+   glob to load it).** Before writing ANY fit / battery / sweep loop
+   (per-cell, per-fold, per-draw, per-row, per-layer), OPEN and follow
+   `.claude/rules/vectorize-many-cell-fits.md` — the glob injection
+   demonstrably misses (0 hits in the #778 follow-up implementer transcript
+   even though the edited file matched the rule's `analysis/**` glob). The
+   default implementation is BATCHED: no serial Python loop over cells /
+   folds / draws / rows — batch the axes into tensor ops (`torch.vmap`/`bmm`,
+   subset-sum GEMM, shared/Gram-space factorizations; canonical helpers
+   `src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+   `src/explore_persona_space/analysis/null_battery.py`) and check device
+   routing is parametrized, not pinned. NAME the batched helper (or your
+   explicit batching strategy, or the one-line reason the loop is genuinely
+   not batchable) in your implementation report §(a).
 
 > **Porting from an unmerged parent/sibling branch** — READ `.claude/rules/artifact-reuse.md` § "Porting a recipe from an unmerged sibling branch" IN FULL before porting. (Relocated verbatim from this spec, #829.)
 
@@ -258,14 +274,21 @@ they invoke `implementer` directly.
 
 This project legitimately trains and evals on harmful-content corpora
 (Betley-style EM insecure-code / bad-medical-advice mixes, refusal
-pools). Raw rows from those corpora in your context can trigger terminal
-API usage-policy refusals that kill your final report turn AND make the
-transcript unresumable — a resume refuses instantly on the poisoned
-context (incident: task #537, 2026-06-10, two implementer agents lost
-mid-task). While building or smoke-testing a data path over such corpora:
+pools) AND on safety-benchmark QUESTION BANKS
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
+strongreject, Betley-lineage, sensitive-info banks). Raw rows from
+either in your context can trigger terminal API usage-policy refusals
+that kill your final report turn AND make the transcript unresumable —
+a resume refuses instantly on the poisoned context (incidents: task #537,
+2026-06-10, two implementer agents lost mid-task; task #866, 2026-07-02,
+four sessions refusal-killed after bank item text was paged into context
+during verification). While building or smoke-testing a data path over
+such corpora or banks:
 
 - NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
-  files or the training JSONLs generated from them.
+  files, the training JSONLs generated from them, or the raw item text
+  of harmful-bank JSONs under `query_banks/` — reference bank items by
+  filename + index, never verbatim.
 - Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
   (never content-field values), row/token counts computed in Python
   without printing text fields.
@@ -273,7 +296,10 @@ mid-task). While building or smoke-testing a data path over such corpora:
   (exit codes, `[phase=`, `error|traceback`) — never dump the log.
 - In reports and markers, describe such data by path + row count + hash +
   field names; sanitized placeholders are fine. Benign corpora (marker,
-  fact, sycophancy, WildChat, personas) are unaffected by this rule.
+  fact, sycophancy, WildChat, personas) and benign banks (`arc_c_v1`,
+  `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
+  `wildchat_random_v1`) are unaffected by this rule; when unsure whether
+  a bank is harmful, use the digest-only treatment.
 
 > **Pod-side result-reporting + preflight gates** — when writing ANY pod-side dispatcher / sentinel / poll_pipeline.py-facing code, READ `.claude/rules/pod-side-reporting.md` IN FULL first. (Relocated verbatim from this spec, #829.)
 
@@ -424,7 +450,21 @@ mid-task). While building or smoke-testing a data path over such corpora:
 5. **Compute-deviation check.** For every row in the plan's §9
    per-component compute-projection table, compute the projected wall-time
    from your code-resolved parameters (per-cell train time × cell count /
-   parallelism, etc.). If ANY row's `projected_wall_h / planned_wall_h`
+   parallelism, etc.). **Per-call cost MUST be re-derived, never copied.**
+   For any §9 row whose unit of work is a fit / dense factorization (svd /
+   eigh / lstsq / GCV-ridge) / per-cell solve / draw battery, derive
+   `per_call_cost` yourself: time ONE call at PRODUCTION shape during the
+   smoke (a single full-shape call costs minutes and is required smoke
+   evidence — code-reviewer Step 0.6 checks it), or compute a FLOP/kernel
+   estimate from the dominant factorization at production N/H. NEVER adopt
+   the plan's §9 basis figure as your projection input — the plan's figure is
+   the thing under test (#823: the plan asserted ~2 s/fit where the
+   production-shape cost was ~125 s — a ~62× per-call error; the realized
+   wall of 12-20 h vs the planned 0.35 h is the 35-57× REALIZED-WALL ratio —
+   and the deviation check computed ≈1× because both sides of the ratio used
+   the plan's number). `projected_wall = observed_per_call × total_calls /
+   parallelism`, with `total_calls` written as the explicit multiplier
+   product (draws × cells × folds × …). If ANY row's `projected_wall_h / planned_wall_h`
    ratio exceeds 2×, post the marker as a separate events.jsonl row BEFORE
    posting the implementation marker, via:
    ```
@@ -445,6 +485,17 @@ mid-task). While building or smoke-testing a data path over such corpora:
    round 6 (2026-05-27) — 3-4× projection surfaced as "needs human
    eyeball" rather than a structural pivot, costing ~17h. The trigger
    was added per the post-mortem; the orchestrator owns the response.
+   A deviation recognized at report time or during a pre-dispatch smoke is
+   posted as `epm:compute-deviation`, NEVER folded into a plain
+   `epm:progress` note — a progress note routes around
+   `pivot_criteria.compute_deviation_over_2x`, whose registered consumer is
+   the `/issue` Step 5.bis pre-dispatch check (#823's "projected 12-20h vs
+   plan 0.35h" went out as `epm:progress`; zero `epm:compute-deviation` rows
+   exist on that task). A deviation recognized MID-RUN gets the same typed
+   `epm:compute-deviation` marker as the durable record (never
+   `epm:progress`) — but be explicit that no mid-run consumer arms a pivot
+   today: the mid-run watcher/poller tripwire is sibling #873's deliverable,
+   not this rule's effect.
 6. **New-bug-class self-tag (with workflow-fix-candidate exclusion).** If
    this round's fix touches a module/pattern that no PRIOR round in the
    current task's implementer sequence has touched (judged by you, not
@@ -512,7 +563,9 @@ mid-task). While building or smoke-testing a data path over such corpora:
    `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
    ops target the same canonical
    `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
-   per-prefix file count on the Hub (`list_repo_files`) before
+   per-prefix file count on the Hub (scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before
    `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
    gate (`code-reviewer.md`). Whichever shape,
    the per-cell completion files MUST land on
@@ -574,6 +627,17 @@ with the turn.
   a generous timeout (up to 600000 ms) for multi-minute phases, or
   `run_in_background` plus a bounded same-turn polling loop over the
   output file. Never end the turn while a poll is still pending.
+- **Every VM-side python launch — smokes included — carries the shared-VM
+  thread-cap prefix**
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
+  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  worktree's branch point (Step 5a never syncs `src/`) and cannot
+  in-process-cap a script that imports torch before `load_dotenv()`; the
+  explicit launch env caps both, regardless of branch age (incidents #779:
+  a pre-#847 worktree ran 78 uncapped threads; #823: three concurrent
+  64-thread smokes ≈ 1/3 of a load-186 VM overload). Pod-side commands
+  NEVER carry the prefix (dedicated GPUs keep full width). A deliberately
+  wider VM cap needs the explicit value + a one-line reason in your report.
 - NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
   the turn ends permanently and everything downstream (remaining smoke
   verification, concern responses, the marker) is silently left unposted
@@ -585,7 +649,9 @@ with the turn.
   gap instead of a truncation.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
-  turn: launch `setsid ... < /dev/null &`, write a PID file + log path,
+  turn: launch
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell).
 
@@ -603,8 +669,8 @@ issue branch are free (the branch merges via Step 10d's guarded procedure).
 If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
 
 1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
-2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v1 -->` on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
-3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation v1` and proceed to code-review.
+2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v<n> -->` (max+1 per § Posting review-round markers) on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
+3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation` marker at the next version (max+1 per § Posting review-round markers; v1 only when the task has no prior implementation rows) and proceed to code-review.
 
 If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
 
@@ -718,7 +784,14 @@ issue #N:
   under left-pad (RoPE / additive positional embeddings index from 0 by
   default and silently diverge from the serial path's natural indexing),
   attention-mask threading through nested module wrappers, per-sequence
-  stop-token / EOS handling under batched generation. Skip only when the
+  stop-token / EOS handling under batched generation. Calibration caveat:
+  the 0.999 bar is safe on the tiny-CPU-model smoke (fp32 default); when
+  the gate ALSO runs on the real bf16 model over single-position states,
+  deep-layer bf16 padded-batch jitter alone can breach it (#779 r12:
+  layer 27 at 0.996907 with a bug-free path) — use the two-bar recipe in
+  `.claude/rules/gotchas.md` (early-layer per-layer 0.999 + flattened
+  0.995 with measured headroom; attribute a marginal miss with a
+  real-model fp32 re-probe before loosening). Skip only when the
   change is purely additive (no serial path being replaced); cite the
   smoke output in `### (c) How to verify`. Rationale: task #502
   (2026-06-04) — a batched re-implementation of #493's serial
@@ -802,7 +875,21 @@ and `.claude/skills/issue/SKILL.md` Step 7.
 
 ## Posting review-round markers
 
-Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implementation`, `epm:proposed-tests`), FIRST read `events.jsonl` for the highest existing `version` of that marker key, then pass `--version <max+1>`. `task.py post-marker` defaults to `--version 1` and does NOT auto-increment — a duplicate version silently breaks review-round detection (incident #389: a round-2 marker posted as `version: 1` collided with round-1).
+Before posting ANY marker of a kind that may already have rows on this task
+(`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests` — a
+follow-up round, a TDD resume, a crash-recovery re-post, and a revision round
+ALL count, not just round 2/3 of your own review loop), FIRST read
+`events.jsonl` for the highest existing `version` of that kind and post at
+max+1: omit `--version` (the CLI derives `max(existing)+1` per kind — the
+post-#480 default) or pass `--version <max+1>` explicitly (required for
+multi-part posts: compute max+1 ONCE before part 1; every part carries that
+SAME version — never a fresh max per part). An EXPLICIT `--version` beats
+the safe default — NEVER take a literal version from a brief or template;
+this rule overrides any brief that says "post as v1" (incident #389: a
+round-2 marker posted as `version: 1` collided with round-1; incident #825: a
+follow-up-round brief said v1 on a task at v6 and the explicit `--version 1`
+collided). A duplicate version silently breaks review-round detection
+(highest-version-wins resume).
 
 ---
 
@@ -826,7 +913,7 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   round posts `epm:experiment-implementation v<n>` and EXITs; an
   unrecoverable round posts `epm:failure v1` with `failure_class:
   code|infra` and EXITs; the TDD proposed-tests step posts
-  `epm:proposed-tests v1` and EXITs (the orchestrator handles the
+  `epm:proposed-tests v<n>` and EXITs (the orchestrator handles the
   resume signal). The `/issue` SKILL.md orchestrator owns ALL routing
   for both Interactive mode and `EPM_AUTONOMOUS_SESSION=1` — including
   TDD approval (gate id 8), compute-deviation resolution (id 12),

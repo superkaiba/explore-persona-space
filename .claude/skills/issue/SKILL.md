@@ -311,6 +311,57 @@ Abort affordance: any state, user runs `task.py set-status <N> blocked`
 -> skill posts abort request via `epm:abort`, watcher kills run if one
 exists.
 
+User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
+pause is a DURABLE park, never a prose-only marker. The session driving <N>
+(or the PM/chat session receiving the directive) executes IN THIS ORDER —
+the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
+LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
+the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
+`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
+whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
+(`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
+alert fires too:
+
+1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
+   backstop cron must not outlive the pause), then Step 8-bis: stop any
+   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; volume
+   preserved until the daily stale-pod audit terminates EXITED pods >24h —
+   add the `keep-running` tag if the volume must outlive that) and post
+   `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
+   self-terminates at its `--max-run-duration` fence, or run
+   `uv run python scripts/dispatch_issue.py finalize --issue <N>`. The
+   autonomous "never stop a pod to PARK" ban does not apply here: a user
+   pause is a user directive, not an autonomous park.
+2. LAST — the commit point: `uv run python scripts/task.py set-status <N>
+   on_hold --note "USER PAUSE (verbatim: '<user words>');
+   paused_from=<prior status>; resume: task.py set-status <N>
+   <prior status> && spawn_session.py spawn-issue --issue <N> --auto"`.
+   `on_hold` is in the watcher PARK set (`autonomous_session_watch.py`
+   `PARK`): no orphan-respawn, no auto-dispatch, registration kept. The
+   transition is legal from EVERY status WITHOUT `--force-followup-exit`
+   (`on_hold` is not in `FOLLOWUP_HELD_BLOCKED_STATUSES`); pausing a
+   `followups_running` round abandons that round's in-flight subagents —
+   record `paused_from` so resume restores the held status.
+3. EXIT the turn. Do NOT leave status at an ACTIVE value with a prose
+   hold note — the watcher's orphan-respawn pass cannot parse prose and
+   will respawn against the hold (incident #816, 2026-07-02).
+
+Resume is user-greenlight ONLY: `task.py set-status <N> <paused_from>` (or
+`proposed` for a full re-triage), then `spawn_session.py spawn-issue
+--issue <N> --auto`; the events.jsonl markers re-enter the loop at the same
+point (a resumed `followups_running` round may re-park at
+`awaiting_promotion` via the round-complete re-park — Step 9b § Same-issue
+follow-up loop — expected, not a bug). Distinct mechanism: the
+`.paused-takeover-*` registration sentinel
+(`.claude/rules/background-automation.md` § Deliberate session takeover) is
+a short-TTL (~6h, FAIL-OPEN) session-TAKEOVER shield — it does NOT
+implement a user pause. Known carve-out: a PROGRAM daemon that hardcodes
+task revival (e.g. `run_program_orchestrator.sh`, the #660 leakage program,
+revives its four pinned tasks from `on_hold`) can override the park for
+exactly those pinned ids — pausing a program-pinned task additionally
+requires the program's STOP sentinel.
+
 ---
 
 ## Orchestration Procedure
@@ -471,13 +522,28 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     just re-invoke the planner with the status held; on
     `continue-as-planned`: continue to Step 6); do NOT state the Decision
     and then end the turn.
-  - `compute_deviation_resolution` → pick `accept_descope_to_<X>_with_caveats`
-    if any descope dimension preserves majority statistical power (≥0.6 of
-    the planned cells); else `continue_as_is` and quote the projected ratio
-    inline. State `Decision: <choice> because <reason>` and EXECUTE the
-    resolved action in this same turn (post `epm:compute-deviation v2`
-    with the chosen `action:` + advance to Step 5.bis(b)); do NOT state
-    the Decision and then end the turn.
+  - `compute_deviation_resolution` → (reachable only after pivot_criteria
+    auto-action 0 is resolved: the vectorize-first fix round ran, or a
+    negative signature finding is recorded — Step 5.bis(a); a marker
+    that arrived pre-resolved without a lever-0 record is UNRESOLVED
+    and routes through step 0 first). Pick
+    `accept_descope_to_<X>_with_caveats` if any descope dimension
+    preserves majority statistical power (≥0.6 of the planned cells);
+    else `continue_as_is` and quote the projected ratio inline — at
+    ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+    quantified clause-0c finding (`flop_bound_finding:` on the marker,
+    or a `signature_check: negative` record meeting the 0c bar). If it
+    is missing at ≥ 5×: when NO `action: vectorize_fix_round` exists in
+    the component's chain, do NOT pick `continue_as_is` — execute the
+    step-0 vectorize fix round; when the fix round HAS run, NEVER
+    re-run step 0 (once-per-component loop guard) — its post-fix
+    re-post's residual classification is the 0c record (the fix-round
+    brief requires it); if that re-post omitted the classification,
+    obtain ONE corrective re-post recording it (no second fix round),
+    then resolve. State `Decision: <choice> because <reason>` and
+    EXECUTE the resolved action in this same turn (post
+    `epm:compute-deviation v2` with the chosen `action:` + advance to
+    Step 5.bis(b)); do NOT state the Decision and then end the turn.
   - `concern_deferral_request` → bounce to implementer for one more round
     targeting the open CONCERN(s); never defer in autonomous mode (deferral
     is a user-rationale-required action by spec). State
@@ -487,7 +553,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     the open concern_id); do NOT state the Decision and then end the turn.
   <!-- gate: gates.tdd_gate -->
   - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
-    the implementer posts `epm:proposed-tests v1` and exits; the resume
+    the implementer posts `epm:proposed-tests v<n>` and exits; the resume
     signal is `epm:approve-tests` posted via `task.py post-marker`). In
     autonomous mode, auto-post `epm:approve-tests` IF the proposed-tests
     body lists ≥1 test per acceptance criterion from the original task
@@ -831,6 +897,21 @@ deferred variant.
 
 ### Step 0: Load state
 
+**Workflow-version dispatch (run BEFORE anything else).** Read the task's
+`workflow` frontmatter field and, if it is `v2`, hand the whole task off to the
+v2 skill and EXIT this skill immediately — v1 does nothing further for a v2 task.
+This is a read-only probe (no markers, no mutation); the v2 skill re-runs the
+same Step-0 guards itself.
+
+```bash
+uv run python scripts/task.py view <N> --json | uv run python -c \
+  "import json,sys; print((json.load(sys.stdin).get('frontmatter') or {}).get('workflow') or 'v1')"
+# → "v2"  : announce "Task #<N> is workflow: v2 — delegating to issue-v2." then
+#           invoke the Skill tool `issue-v2` with the same task number <N> and STOP
+#           (do NOT run any step below; issue-v2 owns the whole lifecycle).
+# → "v1" / absent / empty : continue below UNCHANGED (v1 path, byte-for-byte).
+```
+
 **Single-orchestrator guard (run FIRST).** Exactly ONE session may drive
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python
@@ -922,11 +1003,25 @@ From the result, derive:
    version per kind.
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
-normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
-entry for this issue (tie-break newest `ts`; corrections land
-append-only) whose `followup_label` has no matching
-`epm:same-issue-followup-run v1`. If present AND the status is
+normal status dispatch, scan ALL `epm:followup-scope` entries for this
+issue (NOT the highest-version-per-kind marker map — distinct queued
+follow-ups share the kind under different `followup_label`s, #894/#763)
+grouped by `followup_label`: within a label the authoritative scope is
+the latest-(`ts`, `version`) entry (corrections land append-only — the
+#658 v3→v7 `persona-vectors-style-rb` chain), and a LABEL is UNRUN iff
+it has no matching `epm:same-issue-followup-run v1`. Canonical
+implementation: `task_workflow.unrun_followup_labels(list_events(N))`.
+When ≥1 DISPATCHABLE unrun label exists, dispatch EXACTLY ONE label per
+loop entry — the queue head: user-initiated labels (`source: user-chat`
+/ `step-10b-pick`) first, then oldest armed ts (a label's arming ts is
+its FIRST scope entry's ts). A `dispatchable: false` group (an
+unlabeled non-correction scope → pseudo-label `unlabeled-<ts>`) is
+NEVER executed as a round — surface it loudly instead (one chat line +
+an `epm:progress` note naming the repair: re-post the scope with a
+proper kebab-slug `followup_label`; the pseudo-label stays visible in
+every future scan until repaired or retro-closed). The loop runs one
+round and re-parks; the next `/issue <N>` entry picks up the next unrun
+label. If ≥1 unrun label is present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
 case: the loop holds that status, so a crashed round re-enters here) —
@@ -937,6 +1032,36 @@ how chat-requested follow-ups execute: the chat session posts
 `/issue <N>`, and the dispatcher lands here. An unrun followup-scope
 on a task still mid-pipeline (any other status) waits — the loop only
 fires from a post-result state.
+
+**Stale-label disposition rule (mechanical evidence only).** Before
+executing a dispatched label, run
+`task_workflow.followup_retro_close_evidence(events, label)` — the
+exact-label mechanical evidence predicate (a 9a-quater `extends=<label>`
+record; an `epm:free-analysis-followup-run` whose `followup_ref` EXACTLY
+equals the label; or a status/step note carrying the exact parenthesized
+`(<label>)` round token plus a round-completion word). On a NON-None
+return, post the retroactive `epm:same-issue-followup-run v1`
+(`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
+and move to the NEXT unrun label instead of re-running a completed round
+(legacy tasks like #658 carry such ghost labels). **This check is a
+GHOST-label filter, NOT an execution gate.** A None return means NO
+prior-run evidence exists — for a normal fresh never-run label this is
+the EXPECTED result (no run happened, so no evidence can exist by
+construction) and the label EXECUTES as the dispatched round: that is
+the whole point of the queue (the #763 `neutral-contrast-and-cofit`
+dispatch is the canonical fresh case). The skip-and-surface disposition
+applies ONLY when the orchestrator has independent reason to suspect
+the label ALREADY RAN — a legacy ghost-label task like #658, e.g. the
+label's round is visibly recorded in the body / status history yet none
+of the mechanical evidence classes can confirm it. In that
+suspected-stale case do NOT close on prose suspicion (a merely-prose
+mention of the label NEVER closes — closing takes mechanical evidence
+only): skip the label this entry and surface it for manual disposition
+(autonomous mode: continue to the next dispatchable label; the skipped
+label stays queued and visible) rather than either re-running a
+completed round or wrongly closing a queued one. Retro-close markers do
+NOT count toward the same-issue round caps (Step 9b loop step 5 /
+block C2).
 
 **Set the launch title now.** As soon as the slug (task `title`) is known,
 call `set_title(N, <status>)` (helper defined in the "Chat title updates"
@@ -1386,7 +1511,11 @@ plans missing any):**
 - Method delta (what differs from prior related work)
 - File paths + concrete diffs / config overrides
 - **Reproducibility Card** (mandatory per CLAUDE.md) — all hparams, seeds,
-  data, env versions, exact `nohup` command for experiments
+  data, env versions, exact workload command for experiments (the
+  workload/dispatcher command(s) plus any required env-var pins — NOT a
+  detachment/env-source launch wrapper (`nohup`/`source .env`); at launch
+  the experimenter wraps it in the canonical setsid launcher script,
+  `experimenter.md` § "During Execution")
 - Success criteria with quantitative thresholds
 - Kill criteria (what result would kill the thesis)
 - Compute estimate in GPU-hours — MUST include a machine-readable total line
@@ -1840,6 +1969,18 @@ Brief passed to the implementer:
   `experiment-implementer.md` § "Deferred production-path TODOs are
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
+- **Marker-version discipline — a brief NEVER instructs a literal marker
+  version.** Any brief line about posting `epm:experiment-implementation` /
+  `epm:results` / `epm:proposed-tests` says: "post at the next version —
+  read `events.jsonl` for the highest existing version of the kind and use
+  max+1, or omit `--version` (the CLI derives max+1)". Never "post as `v1`"
+  or any literal `v<k>`: on a fresh task max+1 IS 1, but on a follow-up
+  round / TDD resume / crash-recovery re-post prior rows exist, and an
+  explicit `--version` beats the CLI's safe default (incident #825: a
+  follow-up-round brief instructed a literal `v1` for the implementation
+  marker on a task already at v6 — the #389 collision class). See
+  `experiment-implementer.md` / `implementer.md` § Posting review-round
+  markers.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
@@ -1853,7 +1994,7 @@ Brief passed to the implementer:
   (a) the approved plan body contains a literal `### TDD: yes` line, OR
   (b) the task body / latest user comment in `comments.jsonl` contains
   `request-tdd`. When `tdd_mode=true`, the implementer writes tests
-  first, posts them as `epm:proposed-tests v1`, and EXITs without writing
+  first, posts them as `epm:proposed-tests v<n>` (max+1), and EXITs without writing
   implementation. This skill then parks at `running` (implementing
   sub-phase) and waits — see Resume semantics below: an `approve-tests`
   marker posted via `task.py post-marker <N> epm:approve-tests` **after**
@@ -1988,7 +2129,13 @@ adds its own `scripts/issue<N>_*.py` + tests). Operational rule
 instead: a workflow test that FAILs inside a long-lived issue worktree
 but PASSes at the repo root on `main` is worktree-staleness, not this
 issue's breakage — cross-check at the repo root before chasing it; the
-Step 10d merge resolves it (observed on #542, 2026-06-11).
+Step 10d merge resolves it (observed on #542, 2026-06-11). (A shared-infra
+`src/` fix with fleet-wide blast radius — e.g. the #847 thread caps — gets a
+LAUNCH-TIME fallback instead of a sync: the VM-side launch surfaces carry the
+explicit thread-cap env prefix, Step 9 entry guard § "Detached VM-side long
+compute phases"; #891. Do not extend this sync to `src/` allowlists — a synced
+`env.py` would still miss torch-before-dotenv importers in-process, which the
+launch prefix caps unconditionally.)
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -2090,6 +2237,77 @@ codex_marker=$(echo "$events_json" | jq '... epm:code-review-codex v<n> ...')
 
 Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 `CONCERNS`, `FAIL`. PASS-class = {PASS, CONCERNS}; FAIL-class = {FAIL}.
+
+**Durable-verdict-first rule (fires at EVERY ensemble verdict collection:
+5b here, Step 9a, Step 9a-bis, Step 9b VC, and any reconciler read).**
+An Agent-tool completion result that reports an error for a reviewer /
+critic / reconciler subagent — autocompact thrash death, tool-use crash,
+or a garbage/empty return — is NOT, by itself, a no-show. These agents'
+deliverable is DURABLE state (a marker on events.jsonl, or a written
+output file), and the final summary turn regularly dies AFTER the durable
+post succeeded (incident #810 r4, 2026-07-02: the code-reviewer's
+`epm:code-review v4` PASS posted at 09:25:14Z, then the summary turn
+thrash-died; the orchestrator misread it as a total no-show and adopted a
+unilateral FAIL from the Codex verdict alone, needing a corrective marker
++ late reconciler). BEFORE invoking any no-show fallback or
+single-reviewer decision:
+
+1. Re-read canonical task state (`uv run python scripts/task.py view <N>
+   --json`) for the round's expected verdict marker at the CURRENT
+   version — `epm:code-review[-codex] v<n>`, `epm:interp-critique[-codex]
+   v<n>`, `epm:clean-result-critique[-codex] v<n>`,
+   `epm:followup-value-critique[-codex]`, or `epm:review-reconcile v<n>`.
+2. If no marker: check the role's durable output file — the EXACT
+   `--output-file` path this round's dispatch config named
+   (role+round-specific conventions:
+   `/tmp/codex-code-reviewer-<N>-r<round>-output.md`,
+   `/tmp/codex-interp-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-clean-result-critic-<N>-r<round>-output.md`,
+   `/tmp/codex-followup-critic-<N>-output.md`; NEVER a guessed generic
+   path). The file counts as a durable verdict ONLY if BOTH: (i) it
+   carries the role's expected marker start/end tags at the CURRENT
+   round version, AND (ii) it is round-fresh — a current-round
+   `epm:codex-task-completed` marker exists for this dispatch, OR the
+   file mtime postdates this round's `stage-dispatch` breadcrumb /
+   `epm:codex-task-spawned`. A file failing either test is NOT a durable
+   verdict — a conforming-looking file from a PRIOR round is the trap
+   this clause exists to block.
+3. If a durable verdict exists and CONFORMS (expected marker kind +
+   current version + a parseable `**Verdict:**` line), the reviewer
+   RETURNED: use the durable verdict and apply the normal ensemble rule
+   — reconciler on disagreement, never a unilateral decision. A
+   truncated file (a FAIL-class `**Verdict:**` line with no blocker
+   body) is MALFORMED, not a verdict — route it to the role's
+   malformed-output handling, never adopt it. Precedence when signals
+   coexist: a current-round posted verdict MARKER wins over everything;
+   a current-round posted `epm:failure` from the wrapper wins over a
+   bare conforming FILE (the wrapper inspected its own output and
+   judged it malformed); a conforming round-fresh file wins over
+   nothing.
+4. Only when NO durable verdict exists does the role's no-show handling
+   fire. For a Codex twin: the Step 5d fallback (single-Claude
+   decision), exactly as if `epm:failure` had been posted. For a CLAUDE
+   reviewer/critic: there is NO fallback — first diagnose the death
+   (e.g. an over-budget diff per `.claude/rules/diff-size-budget.md`;
+   thin the brief accordingly), then re-spawn it ONCE per
+   role+round+version — the re-spawn posts at the SAME `v<n>` and does
+   NOT increment the per-reviewer round counter (a 429-kill is already
+   covered by the SubagentStop retry rule and consumes the same
+   allowance). If the re-spawn ALSO ends with no durable verdict, fail
+   LOUD: interactive — surface to the user; autonomous — post
+   `epm:failure v1` (`failure_class: infra`, reason:
+   reviewer no durable verdict after bounded re-spawn), set
+   `status:blocked`, PushNotification, CRON-TEARDOWN. NEVER adopt a
+   unilateral decision from the surviving reviewer.
+
+The existing marker-keyed no-show path — the Codex wrapper POSTING
+`epm:failure v<m>` (`failure_class: codex-output-malformed` or `infra`)
+— is itself durable state and is UNCHANGED: that marker IS a confirmed
+no-show. This rule governs only the Agent-tool-RESULT-keyed inference.
+(The dispatch-side sibling is the Step 9 pre-dispatch dedup /
+`stage_dispatch_should_skip`; the resume table is already
+durable-marker-keyed. This rule closes the live verdict-collection gap
+between them.)
 
 **5c. Apply ensemble decision rule.**
 
@@ -2326,7 +2544,14 @@ the same logic.
 single-reviewer (Claude-only) decision-making for that round. Do NOT
 block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
-this round; using Claude reviewer only.`
+this round; using Claude reviewer only.` This fallback fires ONLY on the
+posted `epm:failure` marker, or after the Step 5b durable-verdict-first
+rule confirms NO durable verdict exists (no `epm:code-review-codex v<n>`
+marker AND no conforming, round-fresh output file). An Agent-tool error
+result alone never triggers it — and the same applies symmetrically to
+the Claude reviewer: with no durable verdict, re-spawn it once per the
+Step 5b rule; NEVER adopt a unilateral decision from the surviving
+reviewer (incident #810 r4).
 
 ##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
 
@@ -2340,26 +2565,92 @@ current implementer round (highest version with the same round number).
 If present:
 
 1. Parse the marker's body for `component`, `planned_wall_h`,
-   `projected_wall_h`, `ratio`, `basis`. If the marker carries
-   `action: auto_descope_to_<spec>`, the implementer (or a prior
-   orchestrator tick) already accepted an auto-descope — log the
-   descope to chat as one line and advance to Step 5.bis(b).
-2. Otherwise, attempt auto-descope per
+   `projected_wall_h`, `ratio`, `basis`. Route on the component's
+   marker CHAIN (re-posts reuse the planner-§9 row name verbatim in
+   `component:` — the loop guard and this routing key on it):
+   - `action: auto_descope_to_<spec>` present AND the component's
+     chain also carries a lever-0 record (`action: vectorize_fix_round`
+     ran, or `signature_check: negative`) → a prior tick already
+     accepted an auto-descope with lever 0 resolved; log one line and
+     advance to Step 5.bis(b). An `auto_descope_to_<spec>` WITHOUT a
+     lever-0 record is a pre-resolution like any other — treat as
+     UNRESOLVED and proceed to step 2 (a descope never resolves
+     lever 0; legacy and implementer self-descope markers arrive
+     exactly this way).
+   - `action: vectorize_fix_round` present (the fix round ran) and the
+     post-fix ratio ≤ 2× → log one line and advance to Step 5.bis(b).
+     Post-fix ratio still > 2× → SKIP step 2 (one mandatory fix round
+     per component) and go to step 3 with the post-fix numbers plus
+     the round's residual classification.
+   - ANY pre-resolution (`action: continue_as_is`,
+     `action: auto_descope_to_<spec>` per the bullet above, or any
+     other legacy, poster-side, or crash-replay resolution) WITHOUT a
+     lever-0 record (`vectorize_fix_round` ran, or
+     `signature_check: negative`) → treat as UNRESOLVED and proceed to
+     step 2; at ratio ≥ 5× without a valid clause-0c finding the
+     pre-resolution is VOID.
+2. **Vectorize-first signature check (pivot_criteria auto-action 0 +
+   0b — REQUIRED before any descope).** From `basis:` + the round's
+   implementer report, classify the deviation:
+   - **Overhead-bound** (matches the `.claude/rules/vectorize-many-cell-fits.md`
+     trigger — the canonical definition; illustratively: a serial
+     per-cell/fold/layer/draw/row loop of small fits/solves/reductions,
+     batch-1 model forwards, per-draw re-reduction of a fixed pool,
+     per-row IO, or sequential shard-independent cells with an unused
+     parallelism axis) → dispatch ONE vectorize/parallelize fix round:
+     spawn `experiment-implementer` with a brief naming the marker,
+     the rule + canonical helpers
+     (`src/explore_persona_space/analysis/vectorized_mlp_skill.py`,
+     `src/explore_persona_space/analysis/null_battery.py`), the
+     equivalence gate against a SEEDED serial oracle (2-3 cells, a
+     stated per-workload float tolerance), and the requirement that
+     its closing `epm:compute-deviation v<next>` re-post carry
+     `action: vectorize_fix_round`, the post-fix projection, AND the
+     residual classification (a genuinely FLOP-bound / dependency-
+     bound residual is recorded in `flop_bound_finding:` — that
+     post-fix arithmetic constitutes the clause-0c finding). Dispatch
+     for the component HALTS while the fix round runs — Step 6 is not
+     reached for it this round; the round flows through code-review
+     (Step 5) normally. Descope and `continue_as_is` are NOT eligible
+     for the component until this round has run or a negative finding
+     is recorded. Pinned plan hyperparameters do NOT exempt the lever —
+     vectorization is recipe-preserving (equivalence-gated); pinning
+     blocks descope, not vectorization (#722).
+   - **Not overhead-bound** (`basis` names a genuinely FLOP-bound /
+     API-latency / bandwidth / capacity-wait / already-vectorized-
+     contention cause) → post `epm:compute-deviation v<next>` with
+     `signature_check: negative` + 1-3 lines of arithmetic or the
+     named quantified bottleneck, and proceed to step 3.
+   - **Ambiguous basis** → treat as overhead-bound; the fix round's
+     first action is the rule's diagnostic (FLOP back-of-envelope,
+     cputime/walltime ratio) and the round may return the negative
+     finding instead of a code change.
+   **Pod release (0b):** if the deviating serial phase holds a GPU pod
+   (or the pending dispatch would hold one idle through it), run
+   `pod.py stop --issue <N>` while the fix round runs; the
+   orchestrator that issued the stop owns `pod.py resume` at fix-round
+   completion, before any re-dispatch (CLAUDE.md "CPU-only phases
+   don't hold GPU pods"; this is continuing work, not parking).
+3. Otherwise, attempt auto-descope per
    `workflow.yaml § pivot_criteria.compute_deviation_over_2x`:
    walk the planner's §9 stratification dimensions in priority order
    (seeds → framings → cells-per-stratum); for each dimension, compute
    the descoped projection (drop the dimension to its min-N-for-power
    per the planner's §9 stratification spec). The first descope whose
    ratio ≤ 1.5× AND keeps every dimension ≥ its min-N wins.
-3. **Auto-descope success.** Post `epm:compute-deviation v2` with
+4. **Auto-descope success.** Post `epm:compute-deviation v2` with
    `action: auto_descope_to_<spec>`, update the implementer's per-cell
    parameters in the launch command, log to chat as one line, advance.
-4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
+5. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
    staying above min-N): branch on session mode.
 
    - **Interactive mode** (`EPM_AUTONOMOUS_SESSION` unset/falsy): surface
      `gates.conditional.compute_deviation_resolution` (id=12) with the
-     2-option prompt. Quote the ratio inline. On `continue_as_is`,
+     2-option prompt. Quote the ratio inline. At ratio ≥ 5×,
+     `continue_as_is` requires the recorded quantified clause-0c
+     finding (`flop_bound_finding:` on the marker, or a
+     `signature_check: negative` record meeting the 0c bar) — state it
+     inline. On `continue_as_is`,
      advance to Step 5.bis(b) with the original parameters. On
      `accept_descope_to_<X>_with_caveats`, post `epm:compute-deviation v2`
      with the chosen descope spec + caveats and advance.
@@ -2369,14 +2660,22 @@ If present:
    - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): NEVER raise the
      ask AND never print the two options as a text menu. Auto-resolve
      per § Autonomous session behavior →
-     `compute_deviation_resolution`: pick
+     `compute_deviation_resolution` (reachable only after the step-0
+     lever is resolved; see that bullet for the full rule): pick
      `accept_descope_to_<X>_with_caveats` if any descope dimension
      preserves majority statistical power (≥0.6 of the planned cells);
-     else `continue_as_is` and quote the projected ratio inline. State
-     `Decision: <choice> because <reason>` AND EXECUTE the resolved
-     action in this same turn (post `epm:compute-deviation v2` with the
-     chosen `action:` and advance to Step 5.bis(b)); do NOT state the
-     Decision and then end the turn.
+     else `continue_as_is` and quote the projected ratio inline — at
+     ratio ≥ 5×, `continue_as_is` additionally requires the recorded
+     quantified clause-0c finding (`flop_bound_finding:` on the marker,
+     or a `signature_check: negative` record meeting the 0c bar); if it
+     is missing and no fix round ran, execute step 2's vectorize fix
+     round instead; if the
+     fix round ran but its re-post omitted the residual classification,
+     obtain ONE corrective re-post (no second fix round), then resolve.
+     State `Decision: <choice> because <reason>` AND EXECUTE the
+     resolved action in this same turn (post `epm:compute-deviation v2`
+     with the chosen `action:` and advance to Step 5.bis(b)); do NOT
+     state the Decision and then end the turn.
 
 **5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
 for `epm:new-bug-class v1` markers posted in the trailing 5
@@ -2843,6 +3142,12 @@ that sidecar tick after tick (Step 6d.2); Step 8's
 `confirm_artifacts` + `teardown` (the same RunHandle from launch all
 the way through teardown).
 
+Before this launch call, run the Step 9 entry guard § Pre-dispatch
+external-marker triage and post its `external-markers triaged:` line in an
+`epm:progress` note immediately before dispatching (the launch posts
+`epm:run-launched` / `epm:cluster-launched`, not a stage-dispatch
+breadcrumb).
+
 The operational command:
 
 ```bash
@@ -3010,7 +3315,8 @@ EXIT. User fixes, re-runs.
 #### Step 6d: Dispatch experimenter (launch-only), then orchestrator polling loop
 
 The experimenter agent is **launch-and-exit only** — it syncs the pod,
-preflights, launches the job via `nohup`, posts `epm:run-launched`, and
+preflights, launches the job via its setsid launcher script
+(`experimenter.md` § "During Execution"), posts `epm:run-launched`, and
 exits its turn within ~60 seconds. The orchestrator (this skill) owns
 all subsequent monitoring via a bg-Bash polling loop chained through
 `scripts/poll_pipeline.py`. This split is mandatory: subagents have ONE
@@ -3097,7 +3403,7 @@ session may have finished the run while this session was mid-review):
    dispatch; re-derive scope from the markers (the run may already be
    done) or re-provision via Step 6b.
 2. **Run still pending.** `uv run python scripts/task.py latest-marker
-   <N>` + the recent `events.jsonl` tail: if `epm:results v1` +
+   <N>` + the recent `events.jsonl` tail: if `epm:results v<n>` +
    `epm:upload-verification PASS` (or `epm:pod-terminated v1`) postdate
    the failure being recovered, the (re)launch is STALE — the work
    already completed. Do not dispatch; reduce the brief to the genuinely
@@ -3115,11 +3421,25 @@ then dispatched a relaunch brief asserting "pod alive; run pending"
 ~10 min after `epm:pod-terminated`; only the experimenter's agent-side
 defense caught it.)
 
+**3. External markers triaged.** Run the Step 9 entry guard
+§ Pre-dispatch external-marker triage check before spawning. Pod/backend
+launches post no `stage-dispatch` breadcrumb, so the
+`external-markers triaged:` line goes in an `epm:progress` note posted
+immediately before the experimenter spawn.
+
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
-- The exact `nohup` launch command from the plan's Reproducibility Card
+- The exact workload command from the plan's Reproducibility Card (the
+  workload/dispatcher invocation plus any required env-var pins; the
+  experimenter wraps it in its canonical setsid launcher script —
+  `experimenter.md` § "During Execution". NEVER put a literal top-level
+  `source .env` + bare `nohup`-backgrounded launch line in the brief:
+  the SSH-MCP shell is `sh` (`source: not found`, #545) and an
+  un-setsid'd background launch risks SIGHUP reaping (#444/#541; the
+  #841 brief carried exactly this shape and the experimenter had to
+  deviate)
 - When the plan names a "regenerate locally via prep script"
   prerequisite (e.g. the Turner JSONLs): the prep-script invocation AND
   its OUTPUT dataset path(s), so the experimenter's input-data gate
@@ -3356,6 +3676,32 @@ to PARK, it is NOT a mid-run cost gate). Like the advisory, the escalation
 NEVER changes the status verdict and the poller NEVER stops the pod — it
 surfaces the leak loudly for action. This handling is additive to the
 `status=running` branch.
+
+**ETA-deviation / GPU-width advisory handling.** When a tick's JSON reports
+`eta_deviation_posted: true`, the poller has just posted an
+`epm:compute-deviation` marker (`source: poller`, `basis: elapsed-vs-plan`):
+elapsed wall-time for the current phase or the whole run exceeded
+`EPM_ETA_DEVIATION_MULT` (default 2.0) × the plan §9 `planned_wall_h` TOTAL —
+the #763 class (an ~80× overrun a human caught ~16h late). Surface it in the
+session text and weigh the run's remaining value: whether the plan's own
+compute-deviation machinery should engage — a mid-run `continue_as_is`
+acknowledgment, or a deliberate descope ONLY where the planner's §9
+stratification spec permits one. Elapsed-so-far is a lower bound on final
+wall, so `continue_as_is` is nearly always the right mid-run resolution; the
+poller variant carries no `action:` field and is never an auto-descope input.
+When a tick's JSON reports `gpu_width_advisory_posted: true`, the poller has
+posted a `[gpu-width-advisory]` `epm:progress` marker (plus a
+`gpu_width_advisory=True` extra): a STABLE strict subset of GPUs sat idle ≥
+`EPM_GPU_WIDTH_ADVISORY_MIN` (default 45) min on a multi-GPU pod while the run
+is healthy — the #813 idle-width / #664 spend-leak class. Apply the CLAUDE.md
+per-phase GPU-WIDTH right-sizing judgment (widen the parallelism to fill the
+pod, or release/downsize it) under the SAME three hard constraints as the
+idle advisory: (a) never kill un-checkpointable in-RAM work, (b) autonomous
+sessions never stop a pod to PARK, (c) this is NOT a mid-run cost gate — the
+trigger is the idle-width / elapsed-vs-plan fact, never "this is getting
+expensive". Both are advisory-only: neither changes the status verdict, and
+the poller stops nothing. This handling is additive to the `status=running`
+branch.
 
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
@@ -3607,9 +3953,72 @@ The orchestrator handles the named gate inline rather than continuing to
 poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
 (`fact-candidates`): the pipeline is waiting on a user answer, so the
 orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
-exception: the orchestrator resolves it itself (a pod-cycle around an
-off-pod step) and resumes the loop in the same turn — see the per-gate
-handlers below.
+exception: the orchestrator resolves it itself (on the RunPod lane a
+pod-cycle around an off-pod step; on the GCP lane finalize + fresh
+dispatch — see the GCP-lane teardown leg below) and resumes the loop in
+the same turn — see the per-gate handlers below.
+
+**GCP-lane blocking gates — instance-teardown leg (EVERY handler, PARK-mode
+and auto-resolving; #908/#763/#935).** On the GCP lane a blocking-gate exit is
+a CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
+does NOT power the VM off — the GCE instance stays RUNNING only within the
+bounded done-grace window (default 90 min,
+`EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; the #935 self-poweroff best-effort
+persists the undrained sentinel set to HF `issue<N>_done/<attempt_id>/` at
+expiry, then powers off; the clean-exit path keeps it alive only for sentinel
+draining — `backends/gcp.py` `teardown` docstring). The finalize teardown leg
+below remains PRIMARY — never wait out the grace. Two operational lines
+(REQUIRED — the only defense on the DELETE outcome): (a) on a
+`workload_done_self_poweroff` poll (TERMINATED + guest `eps/phase=done` — the
+grace expired on the STOP outcome) OR a post-expiry `dead("instance not
+found")` poll, CHECK the HF data-repo prefix `issue<N>_done/<attempt_id>/`
+BEFORE any crash-fix routing — the run SUCCEEDED and self-powered-off;
+recover the undrained completion/gate sentinels from that prefix and run
+finalize with `--skip-confirm-artifacts`. (b) Gate sentinels persist to that
+same prefix at grace expiry on a BEST-EFFORT basis (one retry) — the prefix
+is NOT guaranteed to exist, and the persist also never fires on a mid-grace
+preemption or manual stop, so an ABSENT prefix does NOT distinguish "poller
+drained normally" from "expiry persist failed"; on a STOP-outcome instance
+the `eps/done_persist` guest attribute (`ok|failed`, a SEPARATE key from
+`eps/phase`) disambiguates. Pre-existing residual (unworsened by #935): a
+#908 stale reclaim at a FRESH dispatch during the grace deletes the VM
+before the expiry persist fires. By the time `status=gate` reaches
+this step the sentinel is already drained (the poller drained it to post the
+gate marker), and the VM holds NOTHING a later gate resolution needs — so
+tear the instance down at the earliest point after the drain, split by gate
+class: **PARK-mode gates** run the finalize command after the gate marker is
+posted and BEFORE the park — before raising the user question, before
+posting `step-completed parked`, before exiting — NEVER leave the instance
+up through the user-wait window (the user's pick is NOT a teardown
+precondition); **auto-resolving gates** (including a PARK-mode gate's
+autonomous auto-resolve branch) run it after the auto-resolve step completes
+and BEFORE dispatching any off-pod phase or the fresh tail dispatch:
+
+```bash
+uv run python scripts/dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts
+```
+
+`finalize` DELETEs the instance AND retires the handle sidecar
+(`.claude/cache/issue-<N>-handle.json` → `<name>.finalized`); a raw `gcloud
+compute instances delete` leaves a stale sidecar the next launch would
+misread — use it only when no sidecar exists. `--skip-confirm-artifacts` is
+REQUIRED at a mid-pipeline gate: the run's declared final artifacts do not
+exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction. The
+instance stays up ONLY for sentinel draining — never through an off-pod
+phase or a park (Step 8-bis: a pod must not idle on a halt; incident #763:
+an A100-80 idled ~40 min after the `cofit_phaseA_done` gate-park). The next
+pipeline phase provisions FRESH via the normal Step 6d.1 dispatch. There is
+no GCP analogue of the RunPod `pod.py stop`/`resume` cycle (`pv_phase1_done`
+below): GCE instances are ephemeral by design, and a STOPPED instance would
+be deleted by the next launch's stale reclaim anyway — the GCP phase-cycle
+is teardown + fresh dispatch. Backstop only (never the plan):
+`backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
+`eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
+reclaim deletes it, so a missed teardown no longer silently no-ops the next
+dispatch (#763 leg 2) — but the zombie still bills until the #935 done-grace
+self-poweroff (default 90 min), that next dispatch, or the daily janitor
+sweep, so the handler-side teardown stays mandatory (never wait out the
+grace).
 
 Gate handlers (one per registered `<name>`):
 
@@ -3661,7 +4070,10 @@ Gate handlers (one per registered `<name>`):
   marker, materialises `fact_pick.json` on disk, and the next pipeline
   phase proceeds. In autonomous mode the orchestrator resumes the
   polling loop directly without a re-invocation. (See plan §4.2 of any
-  fact-teaching task for the on-pod resume contract.)
+  fact-teaching task for the on-pod resume contract. GCP lane: the
+  instance was already finalized per the GCP-lane teardown leg above —
+  the resume is a FRESH Step 6d.1 dispatch of the fact-pick tail, never
+  a poll against the old instance.)
 
 - **`pv_phase1_done`** (issue #763 persona-vector extraction —
   off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
@@ -3688,13 +4100,20 @@ Gate handlers (one per registered `<name>`):
      stop --issue <N>`. This frees the GPU through the deadline-bounded
      stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
      monitoring stack"); the PV rollouts are already on HF, so nothing on
-     the pod's ephemeral disk is lost.
+     the pod's ephemeral disk is lost. (RunPod lane. On the GCP lane there
+     is no stop/resume — apply the GCP-lane instance-teardown leg above:
+     `finalize --skip-confirm-artifacts` once the phase-1 artifacts are
+     confirmed on HF, then re-dispatch the tail as a fresh launch.)
   2. **Run the judge OFF-POD on the VM**: `uv run python
      scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
      ships on the `issue-763` branch — it lands on `main` when #763 merges;
      the reference is a forward / sibling-branch one, not a dead tool.)
      This is VM-safe by construction and NOT a `task.py` pod-shellout: it
-     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     fetches the PV rollouts from HF via `snapshot_download` (NOTE: on the
+     ~1M-file data repo `snapshot_download` wedges in full-tree
+     enumeration — `.claude/rules/gotchas.md`; patch the script to scoped
+     `list_repo_tree(path_in_repo=...)` staging before re-running this
+     phase on a #763 follow-up), batch-judges
      through
      `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
      `messages.batches.create` + deadline-less poller), and uploads the
@@ -3721,10 +4140,14 @@ Gate handlers (one per registered `<name>`):
      `pid`/`log` from that marker.
 
   Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
-  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
-  the pod is burning GPU again after resume, so the `/issue-tick <N>`
-  backstop cron stays armed and the bg-Bash poll chain continues against
-  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved.
+  (RunPod lane — the stop/judge/resume cycle above keeps ONE pod across
+  phases, so the pod is burning GPU again after resume. GCP lane: there
+  is no stop/resume — the instance was finalized per the GCP-lane
+  teardown leg above, and the tail runs as a FRESH dispatch, so the poll
+  loop resumes against the NEW handle, never the old instance.) Either
+  way the `/issue-tick <N>` backstop cron stays armed and the bg-Bash
+  poll chain continues. (Contrast with `fact-candidates` above, which parks
   for a user pick and tears the cron down.) **Idempotency on re-entry:**
   if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
   by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
@@ -3750,16 +4173,21 @@ Gate handlers (one per registered `<name>`):
 **PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
 branch): the tail below applies ONLY to gates that EXIT the skill to wait
 on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
-their own continuation — they do NOT teardown and do NOT EXIT; their
-handler resumes the polling loop in the same turn, so it skips this whole
-paragraph.
+their own continuation — they do NOT tear down the RUNPOD pod mid-cycle
+(the stop/judge/resume cycle IS the continuation) and do NOT EXIT; on the
+GCP lane the auto-resolve handler DOES tear the instance down (finalize +
+fresh dispatch, per the GCP-lane teardown leg above) — "no teardown" is
+RunPod-scoped. Their handler resumes the polling loop in the same turn,
+so it skips this whole paragraph.
 
 For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
 Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
-burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
+burning GPU (on the GCP lane because the teardown leg above already
+finalized the instance BEFORE this park), so the backstop should not keep
+re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
@@ -3826,9 +4254,9 @@ sources contribute to `running`-phase progress:
 - **Entry script on the pod**: writes `[phase=done]` to its log on
   graceful completion AND writes a JSON sentinel file at
   `/workspace/logs/issue-<N>-results.json` containing the
-  `epm:results v1` payload. The orchestrator's polling-loop terminal
+  `epm:results` payload. The orchestrator's polling-loop terminal
   tick (Step 6d.2) reads the sentinel on its next poll and posts
-  `epm:results v1` from the local VM via `task.py post-marker`. The
+  the `epm:results` marker from the local VM via `task.py post-marker`. The
   pod NEVER calls `task.py` directly — enforced by
   `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
   "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
@@ -3868,7 +4296,7 @@ sources contribute to `running`-phase progress:
 
   **Orchestrator-composed fallback.** When the driver emits only
   granular per-cell / per-shard sentinels (no single results sentinel)
-  and the orchestrator composes the `epm:results v1` payload itself
+  and the orchestrator composes the `epm:results` payload itself
   from the drained pieces, the composed payload obeys the SAME contract
   above — in particular the `reproducibility_card` structured-field
   requirement. Composing the card's adapter / WandB info as prose is
@@ -4655,6 +5083,146 @@ same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
 
+**Pre-dispatch external-marker triage (REQUIRED — every COMPUTE-stage
+dispatch; sibling of the pre-dispatch dedup above).** Cross-session markers
+are the sanctioned advisory channel, but a mailbox with no read-gate is how
+#779 launched an 18–20h serial grid 4 minutes after finishing its prior
+phase while a measured audit saying "must NOT launch as-is" sat unread on
+its own events.jsonl (2026-07-02: 10 external audit/directive markers,
+16:12–17:47Z; the 20:46Z `stage=followup-grid` breadcrumb claimed
+"vectorized" while the fixes were unapplied; killed by PM-chat at 12 min).
+Immediately BEFORE posting the dispatch breadcrumb for any stage that
+launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
+(Step 6b / 6d, crash-fix relaunches included), any stage the
+Compute-character pre-launch statement binds (a fit / sweep / statistical
+battery: Step 9a-ter, the Step 9b same-issue follow-up loop), or a detached
+VM-side phase (§ below) — run the mechanical enumerator:
+
+```bash
+uv run python - <<'PY'
+from explore_persona_space.task_workflow import (
+    list_events, triage_candidates_since_last_dispatch)
+for e in triage_candidates_since_last_dispatch(list_events(<N>)):
+    print(e["ts"], e["kind"], (e.get("note") or "").splitlines()[0][:140])
+PY
+```
+
+It returns every non-machine marker posted since the PREVIOUS DUTY-BOUND
+dispatch record — a compute-launch marker (`epm:run-launched` /
+`epm:cluster-launched`) or a record carrying the
+`external-markers triaged:` line; task start if none. A non-compute
+breadcrumb (review / analyzer / verifier stage) never closes the window —
+those dispatches have no triage duty, so an advisory posted before one
+still surfaces at the next compute dispatch — and an untriaged compute
+breadcrumb (pre-fix / concurrent session) doesn't either
+(fail-toward-triage). READ each candidate's full note (`task.py view <N>
+--json` + jq by `ts`); classify EXTERNAL = not posted by this session — the
+`by` field does NOT discriminate (measured on #779: self and PM-chat posts
+both carry `by: unknown`); use session context plus the in-the-wild
+signatures ("PM-chat", "user-raised", "user directive", "# Audit",
+"AMENDMENT", "SCOPE RESTORE"); a successor/recovery session that cannot
+attribute a candidate treats it as external (fail-toward-triage). Then
+TRIAGE each external advisory/directive: APPLY it (fix the code, adjust or
+re-scope the dispatch) BEFORE dispatching, or EXPLICITLY DEFER with a
+one-line reason. If applying took non-trivial time, RE-RUN the enumerator
+immediately before posting the breadcrumb (markers can land mid-apply).
+Record the outcome as ONE line in the dispatch breadcrumb note — or, for
+pod/backend launches that post no breadcrumb, in an immediately-adjacent
+`epm:progress` note:
+
+    external-markers triaged: <N> applied / <M> deferred (<one-line reasons>)
+
+or `external-markers triaged: none` when there are no external candidates.
+This is NOT a gate: triage is apply-or-defer, decided by this session,
+auto-continue preserved — but deferring a marker that contradicts the
+dispatch (e.g. "do not launch as-is") must state WHY the launch is sound
+anyway, and a dispatch note asserting a property an unapplied external
+audit contradicts (#779's "vectorized") without a triage line is the
+regression this rule closes. Triage is BOUNDED to the window; a marker
+already covered by a prior triage line is not re-enumerated (its
+disposition is on the record). Accepted residuals (named, not silent): a
+marker posted in the seconds between the final enumerator run and the
+breadcrumb post lands before the new boundary and is not re-enumerated;
+markers posted after a task's LAST compute dispatch are never enumerated
+(they can no longer avert a launch); a legacy launch marker
+(`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
+still closes the window.
+
+**Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
+Any VM-LOCAL compute phase with projected wall-time >~15 min that the
+orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
+aggregation / permutation battery) MUST be launched fully detached:
+
+    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
+                                  # recover via pgrep -f '<distinctive invocation>'
+
+The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
+shell runs with job control ON, where `setsid` forks and a bare `$!` is the
+vanished intermediate; inside the wrapper (job control OFF) `setsid` execs in
+place, so `$!` is the workload pid. A plain bg-Bash child stays in the
+session's kill domain (script-launched children share the launcher's process
+group + session id; even a top-level child with its own pgid shares the sid),
+and a watcher force-stop / `spawn_session.py stop` kills that tree — #833's
+healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
+signal kill). `setsid` gives the phase its own session + process group (group
+kills miss it; it reparents to PID 1 when the launching shell exits);
+`< /dev/null >> log` drops every fd tether to the dying session. The phase's
+stage-dispatch breadcrumb MUST carry two additional fields:
+`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+`key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
+log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
+— this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
+genuinely new field), and the `external-markers triaged:` line
+(§ Pre-dispatch external-marker triage above).
+
+**The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
+shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
+the WORKTREE's branch point — the Step 5a spec-freshness sync deliberately
+never syncs `src/` — so an in-flight worktree cut before an infra fix launches
+with the pre-fix library (incident #779, 2026-07-02: a pre-#847 worktree's grid
+ran 78 uncapped threads ~20h after the fix landed on main). The explicit prefix
+is branch-age-independent AND caps torch/BLAS regardless of the script's import
+order (the env.py hook cannot in-process-cap a script that imports torch before
+`load_dotenv()`; the launch env can). `env` execs `<cmd>` in place, so `$!` pid
+capture and the `ps -o args=` identity verify are unchanged. env.py's
+setdefault never clobbers these values. A phase that genuinely needs a wider
+cap on the shared VM states the wider explicit value + a one-line reason in its
+breadcrumb. Pod / GCE / SLURM launches NEVER carry the prefix — dedicated boxes
+keep full width (the #847 scope invariant).
+
+EXEMPT: work that COMPLETES within a subagent's own
+bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
+returns follows this SAME detach shape — the phase sits in the session's kill
+domain either way), pod-side workloads (the pod launch contract / #883), the
+deadline-bounded off-pod `batch_judge` poll, and quick probes / plots
+(< ~15 min). Off-VM routing (CLAUDE.md § CPU-only phases — the cheap
+dedicated CPU-pod lanes) remains the FIRST preference for long CPU phases;
+this convention governs the residual phases that legitimately stay VM-local
+and is not a permission slip for long VM-side compute.
+
+**Successor / re-entry rule (overrides the freshness window below).** When the
+current stage+round's most recent breadcrumb carries `pid=`, probe
+`ps -p <pid> -o args=` BEFORE any re-dispatch decision — the SAME identity
+verify as at launch, never a bare liveness check (on a shared VM a recycled
+pid would otherwise "re-attach" to a stranger and suppress the needed
+relaunch). Alive AND args match the distinctive invocation → the phase is IN
+FLIGHT regardless of breadcrumb age (a detached multi-hour phase posts no
+markers while computing): RE-ATTACH — poll the pid, `tail` the breadcrumb's
+`log=` for real progress (alive ≠ progressing; the log is the progress
+signal), post a liveness `epm:progress` note — never relaunch. Dead — or an
+args MISMATCH (recycled pid: treat as dead) — with its completion sentinel /
+output present → stage done; proceed. Dead with no completion output →
+genuinely failed: run the kill-before-relaunch probe
+(`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch), then relaunch.
+`stage_dispatch_should_skip` knows nothing about pids, so the polling
+orchestrator also refreshes the mechanical window with periodic liveness
+`epm:progress` notes (those refresh the events.jsonl effective-age window;
+the watcher's stall detector reads the session SELF-REPORT, so a long-idle
+session may still be stopped — benign under this rule: the detached phase
+survives and the successor re-attaches); the identity-verified pid probe is
+the authoritative check at re-entry.
+
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
 1. Read the most recent events.jsonl marker via
@@ -4790,7 +5358,14 @@ discarded by Step 8's gap-fill decision rule).
    | PASS | PASS | `final_verdict = PASS`. Concatenate suggestions for analyzer's optional polish. |
    | REVISE | REVISE | `final_verdict = REVISE`. Union the revision requests (dedup exact-same). |
    | PASS vs REVISE (or vice versa) | (the other) | Spawn `reconciler` (marker mode). Brief: role=`interpretation-critic`, both event bodies, interpretation body path, eval JSON paths, figure paths. Reconciler posts `epm:review-reconcile v<n>` with binding PASS or REVISE. `final_verdict = reconciler's verdict`. |
-   | Codex no-show (`epm:failure`) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+   | Codex no-show (`epm:failure` posted, or NO durable verdict per the Step 5b durable-verdict-first rule) | (any) | Fallback: `final_verdict = Claude verdict`. Surface "Codex twin no-show round <n>" to chat. |
+
+   An Agent-tool error for EITHER critic first triggers the Step 5b
+   durable-verdict-first check (re-read events.jsonl for
+   `epm:interp-critique[-codex] v<n>`, then the round-fresh Codex output
+   file): a thrash-killed summary turn with a posted verdict is a RETURNED
+   reviewer; a Claude critic with no durable verdict is re-spawned once
+   per the Step 5b bound, not skipped.
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
@@ -4991,6 +5566,35 @@ within the same task; the second free-analysis follow-up surfaces in
 the body as a regular bullet for a future human pass. Across tasks the
 mechanism stays fresh (each task gets its own one round).
 
+**Compute-character pre-launch statement (REQUIRED — one paragraph, not a
+planner round, not a gate).** "0 GPU-h" does not mean "0 compute review":
+this step, the Step 9b same-issue follow-up loop, and the CLAUDE.md
+§ Routing "User-chat inline free analysis" carve-out are the workflow's
+PLANNERLESS paths — they skip the planner+critic stack, where all
+compute-character review lives (incidents #667/#722/#778: reused serial
+parent code burned hours on "0 GPU-h" work, caught only by ad-hoc human
+watches). Before dispatching any stage that launches a fit, sweep, or
+statistical battery (permutation/bootstrap/null-draw batteries,
+per-cell/per-fold fits, per-row model calls), the dispatcher STATES, in
+the stage-dispatch `epm:progress` breadcrumb note (or an
+immediately-adjacent `epm:progress` marker): (1) the ops arithmetic —
+cells × folds × draws × epochs and the projected wall-time it implies;
+(2) the NAMED batched helper implementing the inner loop (e.g.
+`analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
+`analysis/null_battery.py`), or why the work is genuinely not batchable;
+(3) for reused parent code, that its inner loop + device routing were
+INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
+wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
+realized implementation later adds a fit/battery the dispatch statement
+did not cover — or materially changes its arithmetic — an updated
+statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+A statement covering a VM-side phase >~15 min ALSO names the detached launch
+shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
+or the wider explicit value + one-line reason) per the Step 9 entry-guard
+§ "Detached VM-side long compute phases" convention.
+Routing, auto-continue behavior, and the marker schema are unchanged.
+
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
 the analyzer flagged `headline_affecting: yes` — still a useful priority
@@ -5002,6 +5606,12 @@ explicit eval-data path):
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
+   When the follow-up runs any fit/battery, this breadcrumb (or an
+   immediately-following `epm:progress` note) carries the
+   § Compute-character pre-launch statement above. Every 9a-ter dispatch
+   breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
+   entry guard § Pre-dispatch external-marker triage) — the free-analysis
+   run is a VM-side compute phase.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -5190,8 +5800,11 @@ dispatching this round's critics.
    root, never an issue-worktree cwd. Posts
    `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
-   union, reconciler on disagreement), BUT first run the
-   procedural-only strip below.
+   union, reconciler on disagreement; on any Agent-tool error, the Step
+   5b durable-verdict-first rule applies — check
+   `epm:clean-result-critique[-codex] v<n>` + the round-fresh Codex
+   output file before any no-show fallback or re-spawn), BUT first run
+   the procedural-only strip below.
 
    **Procedural-only verdict strip (clean-result analogue of Step
    5c-bis).** Before applying the ensemble rule, parse each critic's
@@ -5742,7 +6355,10 @@ autonomous block step 2-bis, and Step 10b):
 >    `not-redundant | redundant`; it posts the canonical
 >    `epm:review-reconcile` marker). A Codex twin no-show falls back to
 >    the single-Claude `follow-up-critic` verdict (workflow.yaml §
->    ensemble_review). An UNCITED `redundant` verdict (no concrete
+>    ensemble_review; no-show confirmed per the Step 5b
+>    durable-verdict-first rule — check `epm:followup-value-critique-codex`
+>    + the round-fresh output file before declaring it). An UNCITED
+>    `redundant` verdict (no concrete
 >    duplicate named) is non-binding — treat it as `not-redundant` for
 >    that proposal (cite-or-drop, mirrors the reconciler's ungrounded-
 >    blocker rule).
@@ -5822,7 +6438,11 @@ C1. **Select the cheap-band candidate.** Among the surviving
      the headline.
 C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    per task, counted by `epm:same-issue-followup-run v1` markers with
-   `source: proposer-9b-cheap`. Beyond the cap, further cheap `same`
+   `source: proposer-9b-cheap`. Run markers whose `outcome` begins
+   `retroactive-close` do NOT count toward this cap — they record
+   bookkeeping closure of a round that already ran (or was superseded),
+   not a new auto-run (Step 0 § Stale-label disposition rule). Beyond
+   the cap, further cheap `same`
    proposals survive in `epm:follow-ups v1` for manual pick. (This cap
    is INDEPENDENT of the autonomous `auto_run`/expensive-band cap, which
    counts `source: proposer-9b`. The natural breakpoint is the re-park
@@ -6069,7 +6689,11 @@ backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
 Step 6d.2) before dispatching its first planner / implementer / stage
 subagent, and must post every stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
-`worktree=` field. These `stage=followup-<phase>` breadcrumbs are bound
+`worktree=` field **and a `label=<followup_label>` field naming the
+round's label** (consumed by `task_workflow.executing_followup_label`
+for mid-round resume and by the watcher's on-behalf run-marker post;
+breadcrumbs predating this contract lack it — consumers fall back to
+the head of the unrun queue). These `stage=followup-<phase>` breadcrumbs are bound
 by the SAME Step 9 entry-guard predicate AND the same NON-SKIPPABLE
 pre-dispatch dedup check (§ Step 9 entry guard) — the status being held
 at `followups_running` does not exempt them (#778, 2026-07-01: the
@@ -6106,10 +6730,16 @@ orchestrators driving one round is the #778 root cause.
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
    and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
-   for one issue may exist** (corrections land append-only, each
-   superseding the prior — see #658's `persona-vectors-style-rb`
-   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
-   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   for one issue may exist** — corrections are WITHIN-label: the
+   authoritative scope for a round is the latest-(`ts`, `version`)
+   entry AMONG the entries carrying THIS ROUND'S `followup_label` (an
+   unlabeled correction note attributes to the immediately-preceding
+   label — `task_workflow.followup_label_groups`; see #658's
+   `persona-vectors-style-rb` v3→v7 chain — NOTE v8 carries a DIFFERENT
+   label, `a35-mlp-downstream-chain`, a separately-queued round, not
+   part of the chain). A later entry with a DIFFERENT label is a
+   separately-QUEUED round (the #763 shape), never a supersession. Do
+   NOT cache the
    entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
@@ -6167,32 +6797,63 @@ orchestrators driving one round is the #778 root cause.
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
    - **Immediately before the planner snapshots the scope, RE-READ the
-     latest `epm:followup-scope` for this issue** (highest top-level
-     `version`, tie-break newest `ts`) — never plan against an
-     entry-time snapshot, or a session that entered on `v3` and
-     snapshotted before a `v5`/`v6` correction landed plans stale (the
-     #658 bug). The `followup_label` lives inside the marker NOTE body
-     as free text (its format even differs across versions —
-     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
-     v3+), NOT as a top-level event key (top-level keys are
-     `{by, kind, note, ts, version}` only). So the selector does NOT
-     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
-     and takes the max `(version, ts)`, relying on the Step 0
-     entry-predicate having already filtered this issue to UNRUN status
-     (an `epm:followup-scope` whose label has no matching
-     `epm:same-issue-followup-run`) — so entering the loop means the
-     latest scope IS the active one. This is the SAME convention the
-     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
-     keys on `ts` only, never `followup_label`) and the Step 0
-     highest-version-per-kind marker map. Mechanical recipe:
+     authoritative scope FOR THIS ROUND'S LABEL** —
+     `task_workflow.executing_followup_label` (the newest
+     `stage-dispatch stage=followup-*` breadcrumb's `label=` field newer
+     than the newest run marker; fallback: the head of the dispatchable
+     `unrun_followup_labels`) — never the bare latest scope: under
+     label-grouped dispatch (#894) the latest entry may be a DIFFERENT
+     queued label. A mid-round correction to the SAME label is still
+     picked up (it raises that label's authoritative `(ts, version)`);
+     never plan against an entry-time snapshot, or a session that
+     entered on `v3` and snapshotted before a `v5`/`v6` correction
+     landed plans stale (the #658 bug). The `followup_label` lives
+     inside the marker NOTE body as free text (its format even differs
+     across versions — `- followup_label: ...` dash-bullet, bare
+     `followup_label: ...`, bold `**followup_label:** ...`), NOT as a
+     top-level event key (top-level keys are `{by, kind, note, ts,
+     version}` only) — `task_workflow.parse_followup_note_field` handles
+     every observed form. The step-4 completion marker's
+     `followup_label` derives from THIS SAME executing group
+     (`group['followup_label']` verbatim) — never re-parsed from "the
+     scope marker" independently, so the completion label can never
+     diverge from the round that ran. This is the SAME shared helper the
+     watcher uses (`autonomous_session_watch._post_followup_run_marker`
+     resolves the round via `task_workflow.executing_followup_label`).
+     Mechanical recipe:
      ```bash
-     uv run python scripts/task.py view <N> --json \
-       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     uv run python -c "
+     import json
+     from explore_persona_space.task_workflow import list_events, executing_followup_label
+     g = executing_followup_label(list_events(<N>))
+     print(json.dumps(g and g['authoritative'], indent=2))
+     "
      ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
+   - **Compute-character pre-launch statement** (canonical block: Step
+     9a-ter § Compute-character pre-launch statement — same three
+     elements, same > ~1h stop-and-vectorize rule): REQUIRED in the
+     `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
+     `epm:progress` note) before dispatching ANY stage of the round that
+     launches a fit, sweep, or statistical battery — INCLUDING
+     planner-exempt re-runs (step 2), which skip the amendment plan and
+     its §9 sizing entirely, and analysis / re-fold stages reusing parent
+     code. An amendment plan's §9 sizing does NOT substitute for it: the
+     plan schedules the battery, the executor states the implementation's
+     compute shape — #778's round re-ran the parent's serial 1000-draw
+     null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
+     plan that never said "serial".
+   - **Pre-dispatch external-marker triage** (canonical block: Step 9
+     entry guard § Pre-dispatch external-marker triage): REQUIRED — the
+     same `stage=followup-<phase>` dispatch breadcrumb (or adjacent
+     `epm:progress` note) carries the `external-markers triaged:` line
+     before dispatching ANY compute-launching stage of the round. #779's
+     `stage=followup-grid` dispatch (2026-07-02 20:46Z) is the founding
+     incident — 10 unread external audit markers, an 18–20h serial
+     launch.
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
@@ -6203,7 +6864,12 @@ orchestrators driving one round is the #778 root cause.
      `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and park at `plan_pending` over
      the cap; interactive sessions ask.
    - `experiment-implementer` + `code-reviewer` if the diff needs code
-     changes (same ensemble shape as Step 5).
+     changes (same ensemble shape as Step 5). The round's implementer brief
+     follows the Step 4b brief contract INCLUDING its marker-version-
+     discipline bullet — on a follow-up round prior
+     `epm:experiment-implementation` rows ALWAYS exist, so a brief
+     instructing a literal `v1` reproduces the #825 collision; the brief
+     defers to max+1 (or tells the implementer to omit `--version`).
    - Fresh compute dispatch on the SAME issue, through the slice-6
      router exactly like the parent run: read the task's `backend:`
      frontmatter and run `dispatch_issue.py launch --issue <N>
@@ -6236,7 +6902,9 @@ orchestrators driving one round is the #778 root cause.
      whole updated body; a previously-promoted (`completed`) task that
      looped re-parks here and the user re-promotes.
 4. **Completion marker.** Post `epm:same-issue-followup-run v1`
-   (`followup_label` matching the scope marker, `source`, `round`,
+   (`followup_label` matching the scope marker — derive the label from
+   the executing group per step 3's re-read, never a fresh independent
+   parse — `source`, `round`,
    one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched.
@@ -6257,10 +6925,14 @@ orchestrators driving one round is the #778 root cause.
    `epm:follow-ups v1` for manual pick. USER-REQUESTED rounds
    (`source: user-chat` or `step-10b-pick`) do NOT count against either
    cap — the user asked explicitly, and interactive plan approval
-   still gates each one.
+   still gates each one. Run markers whose `outcome` begins
+   `retroactive-close` do NOT count toward either round cap — they
+   record bookkeeping closure of a round that already ran (or was
+   superseded), not a new auto-run (Step 0 § Stale-label disposition
+   rule).
 
 Status-machine summary: `interpreting` / `reviewing` /
-`awaiting_promotion` / `completed` + unrun followup-scope →
+`awaiting_promotion` / `completed` + ≥1 unrun followup label →
 `followups_running` (tag `followup-auto` | `followup-manual`; held
 for the whole round) → `awaiting_promotion`. Never a child task.
 (`followups_running` also retains its legacy meaning — parent
@@ -6326,21 +6998,41 @@ suite directly and posts an `epm:test-verdict` event with the result.
    subset). The full ~5800-test suite has no xdist parallelism and is
    harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
    `pytest tests/` wholesale by default.
-   a. Compute the subset:
-      `uv run python scripts/select_step9c_tests.py --base main`
-      It prints the exact `uv run pytest <files> -v --tb=short` command and
-      any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
-      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
-      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
-      with zero collected tests) is a **FAIL, never a PASS**: it is the
-      signature of a failed `cd` that ran pytest in a directory with no tests
-      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
-      on `no tests ran ... pytest exit: 0` and was silently skipped).
+   a. Compute the subset FROM THE ISSUE WORKTREE — a branch-new test file
+      exists ONLY there until the Step 10d merge, and the helper diffs the
+      INVOKING checkout (incident #851: run from the main repo root it saw an
+      empty diff and silently dropped the branch's own test files from the
+      gate; the helper now emits a stderr `NOTE — empty diff` in that shape —
+      on a worktree-based task whose branch HAS commits ahead of the base,
+      that NOTE means wrong cwd, re-run from the worktree; from a correct
+      worktree with no commits ahead of the base it also fires and is then
+      expected and benign):
       ```bash
-      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
-      # the wrong dir on a silent cd failure:
-      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+      WT="$REPO_ROOT/.claude/worktrees/issue-<N>"   # same-issue follow-up rounds use
+                                                    # their own issue-<N>-<suffix> worktree
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      uv run python scripts/select_step9c_tests.py --base main
+      ```
+      It prints the exact `uv run pytest <files> -v --tb=short` command, plus
+      stderr diagnostics: a one-line work-root + branch provenance breadcrumb
+      on every run, any `untested touched file: <path>` WARN lines, and the
+      empty-diff NOTE described above. (A code-change task with NO worktree
+      runs both from the repo root; the empty-diff NOTE is then expected and
+      benign.)
+   b. Run the printed command from the SAME worktree cwd (paths are
+      repo-relative). Record pass/fail + ALL selector stderr lines (the
+      provenance breadcrumb, the NOTE if any, and any WARN lines). Two
+      anti-silent-pass guards are LOAD-BEARING here — a `no tests ran` outcome
+      (pytest exit 0 with zero collected tests) is a **FAIL, never a PASS**:
+      it is the signature of a failed `cd` that ran pytest in a directory with
+      no tests (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate
+      reported PASS on `no tests ran ... pytest exit: 0` and was silently
+      skipped).
+      ```bash
+      # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
+      # never let the gate run in the wrong dir on a silent cd failure:
+      #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
       echo "$PYTEST_OUT"
       # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
@@ -6350,20 +7042,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
-      `## Test scope` H2 names `full`, run the FULL suite instead — but as
-      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
-      capture `tail -50` of the run log so the stall surfaces actionable
-      evidence (this is the #665/#736 regression — keep it visible, never a
-      silent kill). Default scope is `touched`.
+      `## Test scope` H2 names `full`, run the FULL suite instead — from the
+      SAME issue-worktree cwd (the branch's own test files exist only there) —
+      but as `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on
+      timeout/kill, capture `tail -50` of the run log so the stall surfaces
+      actionable evidence (this is the #665/#736 regression — keep it visible,
+      never a silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
-the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped). A
-zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
-exit 0) per step 1b's guard.
+the files run, pass/fail counts, and ALL selector stderr diagnostics — the
+work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
+any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
+and coverage gaps — never silently skipped). A zero-collected / `no tests ran`
+outcome is recorded as FAIL (never PASS on exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
@@ -7359,7 +8053,10 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
-  xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --
+  # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
+  # (#897): the hook's working-tree-revert detector would bounce the bare
+  # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
+  xargs -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
@@ -7529,7 +8226,7 @@ dedicated "working" statuses):
 | `plan_pending` | `epm:plan` exists | awaiting user approval | show plan path, EXIT |
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
-| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
+| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation` at the next version (max+1 per § Posting review-round markers; omit `--version` and the CLI derives it) as normal |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
@@ -7557,8 +8254,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
-| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): dispatch ONE label per entry — the queue head (user-initiated first, then oldest armed ts); set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the round's label-scoped scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
@@ -7593,7 +8290,10 @@ schema:
 
 Convenience: the `task.py post-marker` / `task.py latest-marker`
 helpers wrap the read/write side. The skill reads the highest-version
-row per `(kind)` as authoritative.
+row per `(kind)` as authoritative (EXCEPTION: `epm:followup-scope` —
+distinct queued follow-ups share the kind under different
+`followup_label`s; group by label per
+`task_workflow.unrun_followup_labels`, #894).
 
 **Rules:**
 - Never edit or delete a row in `events.jsonl` — always append a new row

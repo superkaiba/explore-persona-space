@@ -271,6 +271,23 @@ For each phase the implementer should record a sub-section under
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
+**Many-call fit/battery phases: production-shape unit timing + full-scale
+extrapolation (REQUIRED).** When the pipeline contains a phase that loops a
+fit / dense factorization (svd/eigh/lstsq/GCV-ridge) / draw battery over
+cells × folds × layers × arms × draws, that phase's `## Smoke run`
+sub-section MUST additionally report: (a) the wall-time of ONE unit call at
+PRODUCTION shape (full N/H — a tiny-slice per-call time does not scale;
+#823's smoke hid a ~62× per-call error — 2 s asserted vs ~125 s measured —
+exactly this way), and (b) the extrapolation
+`smoke_per_call_wall × full_call_count / parallelism` compared against the
+plan §9 row. A >2× gap with NO separate `epm:compute-deviation` row in
+`events.jsonl` is a FAIL with a `substantive` blocker (NOT
+`smoke-run-missing` — the smoke ran; the projection contract was skipped). A
+phase genuinely unable to run one production-shape unit call locally uses the
+GPU-bound carve-out's substitute-coverage form with a FLOP/kernel-derived
+per-call estimate instead. N/A when no phase loops a
+fit/factorization/battery.
+
 **Harmful-content corpora digest note.** For phases over EM / refusal-bait /
 harmful-advice corpora the digest is path + row count + hash + field names
 ONLY — the implementer spec forbids pasting row text
@@ -454,8 +471,10 @@ Two checks:
 a test or smoke that regenerates files under `eval_results/` /
 `figures/`, afterwards run
 `git status --porcelain -- eval_results/ figures/`, restore the committed
-artifacts YOUR OWN command modified (`git checkout -- <paths>` scoped to
-those files, never a blanket revert) and delete the untracked outputs it
+artifacts YOUR OWN command modified
+(`git -C <tree-root> checkout -- <paths>` — the `-C` both names the tree
+deliberately and passes the repo-root guard (#897) — never a blanket
+revert) and delete the untracked outputs it
 left; leaving them dirty plants the clobber for the next explicit-path
 commit (#722 instance 2 was exactly this). Binds BOTH ensemble
 reviewers (rides into the Codex twin via the inlined Step 0.6 rubric).
@@ -475,8 +494,9 @@ final sentinel write, via ANY of the three accepted call shapes:
 3. a batched `HfApi.create_commit(repo_type="dataset")` whose
    `CommitOperationAdd` ops target the canonical
    `issue<N>_<slug>/raw_completions/{condition}_seed{S}.json` paths, with
-   post-commit Hub-side verification (e.g. per-prefix `list_repo_files`
-   counts) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
+   post-commit Hub-side verification (e.g. per-prefix counts via scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
    throttle (#591) the batched shape is PREFERABLE to the per-file loop
    for large file counts — one commit instead of N. Do NOT FAIL an
    implementation for batching its uploads (incident #606: a functionally
@@ -574,6 +594,9 @@ parallelism is exposed by one launcher argument the eval/generation library
 already threads, so it does not slip the way data parallelism does. If §9
 declares ONLY TP or single-GPU, record `Step 0.67: N/A — plan declares
 TP-only / single-GPU, no data-parallel shape` in the verdict body and proceed.
+The N/A covers the EXPOSURE CONTRACT only — the work-conserving schedule
+sub-check below still applies whenever the diff itself schedules >1
+independent cell on a multi-GPU pod/provision.
 
 **If the plan DOES declare a DP/sharded shape**, verify the dispatcher
 script(s) in the diff actually expose it. Grep each pod-side dispatcher in the
@@ -664,7 +687,9 @@ implementer wires the DP path or descopes the plan. (Same family as
 
 If the plan declares no DP/sharded shape (TP-only, single-GPU, or a
 CPU-only/analysis task), this gate is N/A; record that one-line conclusion in
-the verdict body and proceed.
+the verdict body and proceed. The N/A covers the EXPOSURE CONTRACT only — the
+work-conserving schedule sub-check below still applies whenever the diff
+itself schedules >1 independent cell on a multi-GPU pod/provision.
 
 Incident: task #779 round 6 (2026-07-01) — the approved plan §9 declared "one
 8×H100 pod, data-parallel (8 single-GPU CUDA_VISIBLE_DEVICES workers)" and the
@@ -675,6 +700,93 @@ code-review PASSed (Claude + Codex + reconciler); the `sweep-8g-h100` (8×H100)
 pod was provisioned and the first util reading showed all 8 GPUs at 0%. Round 7
 descoped to `lora-7b` (1×H100). No reviewer checked plan-declared shape ↔
 dispatcher-exposed shape.
+
+**Work-conserving schedule sub-check (diff-read; applies whenever the diff
+schedules >1 independent cell on a multi-GPU pod/provision — reached via the
+§9 trigger above OR by finding the scheduling code in the diff; the exposure
+gate's N/A does NOT close it).** Exposure is necessary but not sufficient: a
+dispatcher can satisfy (a)/(b)/(c) and still idle most of the pod through a
+non-work-conserving SCHEDULE. Whenever the diff schedules multiple
+independent cells for a run whose plan/provision names >1 GPU or worker —
+including a plain serial `for cell in cells:` loop on a multi-GPU pod (a
+degenerate single-worker schedule) — READ the schedule loop and verify it is
+work-conserving: whenever a worker/GPU is idle and a pending cell with
+satisfied dependencies exists, it dispatches. Flag as **Major** (tag
+`substantive` when it drives a FAIL — NOT `compute-shape-mismatch`, which
+stays reserved for the exposure contract above) any strict wave/stage barrier
+that drains ALL in-flight work before starting independent cells (`for wave
+in waves: pool.map(...); pool.join()`, a fresh joined pool per stage, a
+per-lane `Popen` + wait-all loop, or a barrier between shards with no data
+dependency) AND any degenerate serial schedule of independent cells on a
+multi-GPU provision. A barrier or reduced width is acceptable ONLY for a
+justification the plan states: a genuine cross-cell dependency (cell B
+consumes cell A's output) OR a named resource/capacity constraint (HBM
+footprint, per-pod disk quota, model residency) that makes wider concurrent
+dispatch infeasible — name whichever you credit in the verdict. Note a
+GPU-width cap justifies concurrency WIDTH, not a drain barrier: a shared
+queue with `wave_size` persistent workers satisfies a width contract AND
+work-conservation. Suggest the work-conserving shapes: one shared task queue
+with N persistent workers (`Pool.imap_unordered` over ALL cells, one pool for
+the whole run), or dependency-keyed dispatch (launch each cell the moment its
+inputs land). Unlike the exposure contract, this is a Step-2-family diff-read
+finding housed here for discoverability — the Step 0.7 "pre-diff contract
+check" framing applies to the exposure check above, not to this sub-check,
+and a plausible-but-unconfirmed schedule is a CONCERNS, not a FAIL.
+
+Incident #813 (2026-07-01): the dispatcher ran two STRICTLY SEQUENTIAL waves
+— wave 2 (~55% of remaining rows) would not start until wave 1 fully drained
+— leaving GPUs 1/2/4/7 idle 6.7h on a billing 8×H100 pod (true remaining
+~38-52h vs the projected 18-20h); review PASSed because the shape was exposed
+and nobody read the schedule. Same family: #778 phase-3 looped 25 models × 3
+traits one-at-a-time on an 8×H100 pod (~4-5h at 1/8 util) — a degenerate
+single-worker schedule on a multi-GPU pod, in scope of this sub-check even
+when the plan's §9 declared no DP shape.
+
+### Step 0.68: Named-helper adherence check (`type:experiment` only; hollow-gate sub-check: any diff type)
+
+For each helper the task body's reuse map or the approved plan (§4 pseudocode
+/ §10 Reproducibility Card / §11) names by `module::fn` or file-path
+reference as THE implementation for a step — especially a fast / batched /
+verified-equivalent twin (e.g. `_ridge_fit_predict_fast`,
+`vectorized_mlp_skill.py`, batched `perm_null_draws`) — grep the diff AND the
+final driver the dispatcher invokes for that helper's import and call site.
+Substituting a slower sibling (the serial original, a fresh reimplementation
+of the same math) without a plan-documented substitution note is a
+substantive finding at Major severity (blocker tag `substantive`): the named
+twin usually carries a validated equivalence gate and a measured cost
+profile, and dropping it silently is how #823 turned a ~125 s/call fast-twin
+phase into ~3780 serial full-SVD fits (12-20 h) that round-1 plan-adherence
+review blessed ("ridge, not MLP" ✓) — no check compared the plan's import
+against the body-named twin. PASS requires the named helper imported+called,
+OR a documented substitution. Record `Step 0.68: N/A — no ::fn-level helper
+named` when neither body nor plan names any function/file-path-level helper
+(module-level "reuse #M's pipeline" claims are the consistency-checker's
+plan-time check, not this one).
+
+**Hollow-verification-gate sub-check.** Whenever the diff carries or invokes
+a verification / equivalence / vectorization gate (a `--verify-X` flag, an
+`assert_*_equivalence` / `assert_matches_reference`-style self-check), or
+modifies the dispatch path of a stage guarded by such a gate, confirm the
+GATED function is the one the entrypoint actually dispatches on the live
+path: trace flag → gate call → gated callee, then grep the dispatch path for
+that same callee — object identity (`gated_fn is dispatched_fn`) OR
+`__module__` + `__qualname__` match (a bare `__qualname__` match
+false-verifies a same-name wrong-module sibling); for grep evidence, quote
+both the import source and the call site proving the same object is
+dispatched. A gate asserting on an unused sibling is a hollow gate — a
+substantive finding at Major severity, blocker tag `hollow-verification-gate`
+(SUBSTANTIVE, never `marker-shape` / `smoke-run-missing` / `git-provenance`,
+never stripped by Step 5c-bis): its green PASS launders an unverified hot
+loop as verified (incident #779: `--verify-vectorized` gated the unused
+`vectorized_mlp_skill.assert_matches_reference()` while the dispatched ridge
+hot loop — ~17k fits, 18-20h — had zero verification coverage; the launch
+note claimed "vectorized" and rounds 6/7 PASSed). This sub-check fires
+whenever such a gate is present — even when the named-helper trigger above is
+otherwise N/A, and for any diff type, not only `type:experiment` (same
+pattern as Step 0.67's work-conserving sub-check: the parent gate's N/A does
+not close it). Record the gate→dispatch trace (gated fn, dispatched fn,
+evidence `file.py:LINE`) or `hollow-gate sub-check: N/A — no verification
+gate in diff`.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
@@ -762,7 +874,12 @@ weight-bandwidth-bound and leaves the GPU ~idle; (b) GPU→CPU transfers of
 reduction — keep the reduction GPU-resident and ship only the reduced
 scalars/summaries; (c) HF `model.generate()` in eval / generation paths
 where vLLM applies (the always-on CLAUDE.md "Use vLLM for generation"
-rule). These are throughput bugs, not style nits: #522 ran ~94h on
+rule); (d) per-row compression/serialization/upload inside the inner loop
+when it dominates row wall-time — write the cheap format per row and
+compress/upload out-of-band or batched (#813: `np.savez_compressed` took
+103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at only
+1.29× size, and Xet dedup already delivered −59% on upload). These are
+throughput bugs, not style nits: #522 ran ~94h on
 1× H100 for a job with a ~4-6h FLOPs floor (409,600 batch-1 forwards,
 full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
 reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
@@ -821,6 +938,60 @@ launch crashed at trajectory eval with `KeyError: "R_eval missing persona
 If neither (a) nor (b), FAIL substantive with blocker tag
 `cached-artifact-coverage-unverified` and a Critical issue naming each
 consumer site whose coverage you could not verify.
+
+### Step 3.6: Long-loop restartability (> ~1h serial loops must persist + resume)
+
+**Trigger:** the diff contains a loop over independent units (cells / arms / layers /
+folds / seeds / draws / rows) whose projected wall-time exceeds ~1h — per the approved
+plan's §9 sizing (the per-component compute-projection table or §9 prose), the
+implementer's smoke-extrapolated per-call cost (Step 0.6's measured-per-call
+re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 basis is
+exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
+can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
+is presumed >~1h absent measured evidence otherwise (the
+`.claude/rules/plan-compute-sizing.md` many-call floor). Applies to every task type (a
+long analysis loop is as restart-prone as an experiment dispatcher). No such loop in
+the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
+proceed.
+
+**Check — verify BOTH by READING the loop (a grep hit alone is insufficient):**
+
+1. **Per-unit persistence:** each completed unit's result is durably written when it
+   completes — atomic JSONL append or per-unit files + a done-sentinel — NOT accumulated
+   in memory (`results.append(...)` / dict-accumulate) with a single write after the loop.
+2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
+   completed units, keyed on every output-affecting regime key (a resume that ignores an
+   output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+
+**Verdict routing:**
+
+- BOTH present → note which mechanism satisfied it and proceed.
+- Either missing, with NO plan-stated justification → **Major** finding, blocker tag
+  `substantive` when it drives a FAIL. This is a SUBSTANTIVE finding, NOT a mechanical
+  gate — the SKILL.md Step 5c-bis strip list is limited to `marker-shape` /
+  `smoke-run-missing` / `git-provenance`, so it stands until the implementer adds the
+  per-unit persistence + resume predicate or the plan justifies its absence. Acceptable plan-stated
+  justifications: the loop is already decomposed into < ~1h phases each persisted per
+  the checkpoint-per-phase rule; the units are genuinely sequentially dependent (no
+  independent-unit structure to checkpoint); an explicit plan-stated atomicity argument.
+- Persistence/resume plausibly lives in an imported helper you cannot confirm from the
+  diff → CONCERNS, not FAIL; persist it via `task.py raise-concern <N> --concern-id
+  long-loop-restartability-unverified --severity CONCERN --summary '<≤200c>' --by
+  code-reviewer --round <n>` (per Step 0.8 / Rule 11 — unpersisted prose bullets do not
+  reach the dispatch gate).
+
+Rule surface: `.claude/rules/code-style.md` § "Checkpoint per phase" (intra-phase grain).
+Sibling: Step 0.67's work-conserving schedule sub-check reads the SCHEDULE of a long
+loop; this step reads its PERSISTENCE — a loop can be perfectly work-conserving and
+still forfeit everything on restart.
+
+Incident #823 phase 4 (2026-07-02): `run_823.py::phase4_ridge_refit` (lines 1449–1708)
+accumulated ~20h unpatched / ~3.7h patched of serial ridge fits in `r2_refit` /
+`per_ctx_r2` / `r2_transfer_vals` with a single terminal write (lines 1704–1706). Five
+code-review rounds PASSed it; both GCE crashes forfeited all phase-4 progress; a
+user-directed restart-with-optimization was refused solely because restart forfeits
+unpersisted fits. Same family: #722 r2 (per-unit atomic writes + `--resume` for ≥1h
+analysis loops), #399 (per-phase eval-rig checkpoint).
 
 ### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
 
@@ -990,7 +1161,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -1060,7 +1231,7 @@ Red flags:
 12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
 13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
 14. **Every finding is a bug CLASS, not a line.** For every Critical/Major finding you MUST run the Step 3.7 sibling sweep and enumerate ALL load-bearing sibling instances under a `### Bug-class sweep: <class>` heading; each load-bearing sibling is its own Critical, each secondary one a standing rec. A verdict that fixes/flags the cited instance but leaves a load-bearing sibling of the same class unenumerated is the whack-a-mole failure mode — FAIL only when a load-bearing sibling is left un-named; a finding with no siblings adds a one-line "no siblings" note (never balloon output on a trivial finding). See Step 3.7 for the sweep procedure.
-15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure.
+15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure. Exposure is necessary, not sufficient: Step 0.67's work-conserving schedule sub-check additionally reads the schedule loop whenever the diff schedules >1 independent cell on a multi-GPU pod/provision — a strict wave/stage barrier or degenerate serial schedule idling workers while independent cells wait is a Major `substantive` finding (#813: two sequential waves idled 4/8 H100s for 6.7h), acceptable only for a plan-stated cross-cell dependency or named resource/capacity constraint.
 
 ---
 

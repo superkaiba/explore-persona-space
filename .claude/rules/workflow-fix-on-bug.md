@@ -82,7 +82,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `pm_queue_report.py`,
   `recent_clean_results.py`, `task_state.py`,
   `post_step_completed.py`,
-  `spawn_session.py`,
+  `spawn_session.py`, `sync_repo_root.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
@@ -696,3 +696,10 @@ branch while the #722 session ran the OLD serial CPU script with a ~38h ETA — 
 fast path existed but was stranded off main, so it changed nothing. CLAUDE.md
 already cites that helper as canonical; this lesson is the coordination half:
 "canonical helper named in a rule" ⇒ also ensure it is on main and called.
+
+For VECTORIZATION rewrites specifically, the mechanism half of this lesson is
+codified as the "Supersede contract" in
+`.claude/rules/vectorize-many-cell-fits.md` — batched helper on `main` in the
+same round, serial twin tombstoned (`FutureWarning` +
+`EPM_FORBID_SERIAL_FITS=1` raise), and an open-task check before starting a
+rewrite (#722, #778, #834).

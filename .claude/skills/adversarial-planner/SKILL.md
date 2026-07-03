@@ -115,7 +115,11 @@ Run the structural verifier against the plan version just persisted:
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
-  mention is incidental, not the plan's own acceptance smoke).
+  mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
+  (check 12), `N/A — no empirical-null gate` (check 13), and
+  `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
+  (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
+  the target is a doc/prose file no pytest can exercise).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -306,6 +310,31 @@ After all 6 critics return, for EACH lens independently:
 | APPROVE | REVISE/REJECT (or vice versa) | **Disagreement.** Spawn `reconciler` (in-context mode) with brief: `mode: in-context`, role=`critic`, lens=`<lens>`, both verdict bodies, plan_body. Reconciler prints `<!-- epm:plan-critique-reconcile v<n> --> ... <!-- /epm:plan-critique-reconcile -->` to stdout with role-specific verdict (`APPROVE` / `REVISE` / `REJECT` per `.claude/agents/reconciler.md` Step 4 table). Reconciler is required to **preserve REJECT severity** when siding with a REJECT reviewer — it does not silently downgrade to REVISE. Manager parses the printed marker's `**Verdict:**` line directly into `lens_verdict[lens]`. |
 | Codex no-show (BLOCKER printed) | (any) | Fall back to single-Claude-critic for this lens this round. Surface a one-line note in the merged critique: "Codex {{lens}} twin no-show this round." |
 
+**Durable-output-first (Phase 2 analogue of /issue Step 5b's
+durable-verdict-first rule).** A bg-Bash error exit or a wrapper
+Agent-tool error is NOT itself a Codex no-show: the expected output file
+(`/tmp/codex-critic-<N>-<lens>-output.md`, or the round-suffixed variant
+the composer's dispatch config named) is the durable deliverable — read
+it first; only an absent/malformed marker block there synthesizes the
+`BLOCKER: codex no-show`. If the WRAPPER (`codex-critic`) errors before
+returning its dispatch config, check the conventional prompt file
+(`/tmp/codex-critic-<N>-<lens>-prompt.md`): if present AND fresh for
+this round (mtime postdating the composer spawn; when in doubt,
+recompose rather than dispatch a stale prompt), dispatch
+`codex_task.py` against it with the conventional output path rather
+than declaring a no-show. A CLAUDE lens critic whose Agent-tool result
+errors has NO durable output by design (in-context mode) — re-spawn
+that lens critic once before any fallback; never drop the lens. The
+in-context RECONCILER is covered too: on a reconciler Agent-tool error,
+FIRST parse whatever text it returned for the
+`<!-- epm:plan-critique-reconcile v<n> -->` block (a parseable block =
+the reconciler returned; use its verdict); if none, re-spawn the
+reconciler once; if still none, do NOT adjudicate the disagreement
+yourself — adopt the MORE SEVERE of the two lens verdicts as a
+fail-safe (biasing toward revision, never toward shipping) and record
+the unresolved reconcile in the merged critique handed to the
+plan-approval gate.
+
 **Cross-lens merge (after per-lens reconciliation):**
 
 - **Overall verdict = worst of the three lens verdicts.** REJECT > REVISE > APPROVE.
@@ -467,6 +496,9 @@ c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-tas
 #     If the agent returned `BLOCKER: ...` instead (missing lens, missing
 #     plugin, malformed brief), skip dispatch — the Codex no-show
 #     fallback in Step 5 will fire.
+#     (Agent-tool ERROR ≠ BLOCKER: on an error result, first try the
+#     conventional prompt-file path if round-fresh — durable-output-first,
+#     see the paragraph after the Phase 2 decision table.)
 codex_dispatches = {}  # lens -> (output_file, bg_bash_handle)
 for lens, codex_agent_out in (("methodology", m_codex),
                               ("statistics",  s_codex),

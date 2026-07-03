@@ -100,12 +100,89 @@ stall window (`max(EPM_ZOMBIE_VETO_FRESH_SEC=60, stall_sec)`) for 2
 consecutive ticks — on host-PID-namespace containers nvidia-smi reports
 host PIDs unresolvable in the container's `/proc`, so the bare signature
 is false-positive on healthy runs (#816/#778); a fresh-log zombie flag is
-a namespace artifact, not a hang. The emit surface
+a namespace artifact, not a hang — and (since #864) only when the
+dead-in-/proc signature is namespace-informative: zero-resolvable compute
+PIDs with live in-container `/dev/nvidia-uvm` holders (exact fd-target
+match) are a PID-namespace artifact and are vetoed regardless of log
+staleness (#813: a healthy ~29-min CPU-bound quiet stretch outlived the
+#826 stale-log veto). The #864 veto ships default-OFF
+(`EPM_ZOMBIE_NAMESPACE_VETO=1` arms it; read at poller import) per its
+pre-merge live-pod gate — a cuInit'd parent/coordinator holding exact uvm
+while absent from compute-apps would suppress a genuine total collapse if
+armed unverified. The emit surface
 is `scripts/poll_pipeline.py` + `scripts/backend_poll.py`; the
 known-reason set is `STALL_REASON_INFRA` in `failure_classifier.py`; the
 recovery brief + recipe references are SKILL.md Step 7 § "Zombie-GPU
 stall recovery brief". Precedence: an explicit `failure_class:` field
 still wins over `--stall-reason`.
+
+**exit-137/143 / silent-`Killed` kill-source verification (workflow-fix
+#902, incident #779 r9).** The infra pattern `OOM-killer|Killed\b`
+matches a DELIBERATE SIGKILL's log line just as well as a kernel-OOM
+one, and exit 137 (= 128+9) alone does not attribute the killer (an
+exit-143 / SIGTERM death gets the same protocol — earlyoom's first
+strike is SIGTERM). On the shared VM a process can be killed by at
+least four sources: the kernel OOM killer, earlyoom (SIGTERM below 10%
+MemAvailable, SIGKILL below 5% — see `.claude/rules/gotchas.md`,
+earlyoom entry), systemd-oomd / cgroup-confined OOM (`memory.max`), or
+a deliberate operator/PM/watcher kill. The `infra` ROUTING may still be
+correct; what this protocol gates is the DIAGNOSIS CONTENT — before an
+`epm:failure` body names OOM as the cause, and before any crash-fix
+round is dispatched against a memory hypothesis, verify the kill
+source. The four checks are read CONJUNCTIVELY — no single step
+short-circuits the others:
+
+1. **cgroup `memory.events` `oom_kill` DELTA over the run window.** The
+   login-session cgroup scope hosts MANY fleet processes — absolute
+   counters (`memory.peak`, a historical `oom_kill` count) do NOT
+   attribute to your process. A counter that did not increment across
+   the run window RULES OOM OUT; an INCREMENTING counter takes
+   PRECEDENCE over step 2's floor read (cgroup-confined OOM kills at
+   high host MemAvailable). If no run-start baseline was captured, the
+   absolute counter attributes nothing — rely on step 3.
+2. **MemAvailable floor over the run window.** A floor > 20 GB rules
+   out GLOBAL memory-pressure kills only (kernel global OOM killer,
+   earlyoom — floors ~10%/5% of the 128 GB total). It does NOT rule
+   out cgroup-confined OOM (`memory.max`, systemd-oomd cgroup
+   pressure); when step 1's delta increments, step 1 wins.
+3. **Kill-line journals at the death timestamp.** `journalctl -u
+   earlyoom` / `journalctl -u systemd-oomd` / `dmesg | grep -i oom`. The
+   watcher's CPU-guard pass also pre-attributes earlyoom kills as
+   `kind=earlyoom-kill` rows (with `attribution_status:`) in
+   `.claude/cache/cpu-guard-events.jsonl`
+   (`.claude/rules/background-automation.md`).
+4. **A deliberate-stop record MATCHED to the death window.** Check the
+   task's events.jsonl for a `deliberate-stop` breadcrumb — match on
+   the LEADING structured token (a `note` BEGINNING `deliberate-stop `),
+   e.g. `grep '"note": "deliberate-stop' "$(uv run python
+   scripts/task.py find <N>)/events.jsonl"` — and treat it as
+   attribution ONLY when it is TIME-PROXIMATE to the death (minutes,
+   not "any prior note") AND its `target=`/`pid=` matches the dead
+   process/session. A stale or non-matching breadcrumb is CONTEXTUAL
+   evidence only, never attribution; note a `target=happy-session:<sid>`
+   stop does NOT itself kill detached (`setsid`) workloads, which
+   outlive their session by design. `spawn_session.py stop` auto-posts
+   the breadcrumb for issue-mapped OPERATOR stops; WATCHER-driven stops
+   post nothing here — check the watcher registries/sidecars under
+   `~/.eps-autonomous/` for force-stop records instead. PM manual kills
+   MUST post one BEFORE the kill (`.claude/agents/research-pm.md`
+   § Autonomy rules). **Absence is NOT exculpatory:** manual kills,
+   unmapped sessions, raw terminals, and non-PM killers can all leave
+   no marker.
+
+**Terminal disposition:** if steps 1-4 jointly fail to attribute the
+killer, record `killer unknown` in the `epm:failure` body — do NOT name
+OOM, and do NOT dispatch a crash-fix round against a memory hypothesis
+on back-derived arithmetic alone. Additionally: sanity-check any
+back-derived memory arithmetic against the code's ACTUAL allocation
+sites before it drives a fix round. #779 r9 diagnosed kernel OOM from
+shared-scope counters plus a hypothesized 1100-draw materialization
+that did not exist in the code, and dispatched a crash-fix round
+against a nonexistent bug — all three deaths were deliberate PM-session
+SIGKILLs (MemAvailable floor 47 GB; the counter never incremented).
+**Classifier behavior is UNCHANGED by this protocol** — it is a
+diagnosis-verification step layered on top of the `infra` route, not a
+routing change.
 
 ## Infra patterns (regex, case-insensitive)
 
