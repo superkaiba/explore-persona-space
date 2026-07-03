@@ -29,9 +29,15 @@ Inputs: ``pooling_inputs.pt`` (HF data repo
 ``issue812_pooling/gpu_leg_inputs/pooling_inputs.pt``, or ``--inputs`` local
 path) + the committed graded E0 JSONs + ``pooling_fit_results.json``.
 Output: ``eval_results/issue_812/fixed_layer_paired_contrast.json`` (atomic
-per-behavior checkpointing) + ``figures/issue_812/fixed_layer_paired_delta.png``
-(paper_plots style — observed Delta point per behavior over its paired-null
-2.5-97.5% band; no annotation overlays). CPU-only, 0 GPU-h, minutes on the VM.
+per-behavior checkpointing; per behavior it also persists the full 1,000-value
+paired-null draw array behind the p, plus the 50 per-context held-out
+predictions of BOTH arms with their graded targets and context ids) +
+``figures/issue_812/fixed_layer_paired_delta.png`` (paper_plots style —
+observed Delta point per behavior over its paired-null 2.5-97.5% band;
+reader-facing behavior labels; no annotation overlays) +
+``figures/issue_812/fixed_layer_perctx_scatter_refusal.png`` (the per-unit data
+view: both arms' held-out predictions vs the graded target at refusal's fixed
+layer, all 50 context points labeled). CPU-only, 0 GPU-h, minutes on the VM.
 """
 
 from __future__ import annotations
@@ -73,6 +79,21 @@ logger = logging.getLogger("issue812.fixed_layer_contrast")
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_INPUTS_PATH = "issue812_pooling/gpu_leg_inputs/pooling_inputs.pt"
+
+# Reader-facing behavior labels for anything rendered on a figure (paper-plots §3.5:
+# no snake_case slugs on axes/ticks/legends; slugs stay in JSON keys + sidecars only).
+BEH_LABELS = {
+    "sycophancy": "sycophancy",
+    "refusal": "refusal",
+    "harmful_compliance": "harmful compliance",
+    "deception": "deception",
+    "fact_expression": "fact expression",
+    "format_style": "format/style",
+    "self_report": "self-report",
+    "persona_drift": "persona drift",
+}
+
+SCATTER_BEHAVIOR = "refusal"  # headline cell for the per-context data view
 
 
 def _unit_ranks(v: np.ndarray, name: str) -> np.ndarray:
@@ -182,12 +203,65 @@ def _make_figure(results: dict[str, dict], fig_dir: Path) -> None:
     ax.axhline(0.0, color="gray", lw=0.8, ls=":")
     ax.set_xticks(range(len(behs)))
     ax.set_xticklabels(
-        [f"{b}\n(L{results[b]['fixed_layer']})" for b in behs], rotation=30, ha="right", fontsize=8
+        [f"{BEH_LABELS.get(b, b)}\n(layer {results[b]['fixed_layer']})" for b in behs],
+        rotation=30,
+        ha="right",
+        fontsize=8,
     )
     ax.set_ylabel(r"$\Delta\rho$ (unpooled $-$ mean), held-out")
     ax.set_title("Fixed best-mean-layer paired unpooled-vs-mean contrast")
     ax.legend(fontsize=8, loc="lower right")
     savefig_paper(fig, "fixed_layer_paired_delta", dir=str(fig_dir))
+    plt.close(fig)
+
+
+def _make_perctx_scatter(results: dict[str, dict], beh: str, fig_dir: Path) -> None:
+    """Per-unit data view at one headline cell: both arms' 50 labeled held-out points.
+
+    Two panels (mean pool | unpooled), x = LOCO held-out prediction, y = graded 0-100
+    expression score; every context point carries its context-id label so the
+    aggregate rho is readable back to individual contexts.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette_role,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    r = results[beh]
+    pc = r["per_context"]
+    y = np.asarray(pc["graded_target"], dtype=np.float64)
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.6), sharey=True)
+    panels = (
+        ("Mean pool", np.asarray(pc["preds_mean"], dtype=np.float64), r["rho_mean"]),
+        (
+            "Unpooled (rank-10 PCA)",
+            np.asarray(pc["preds_unpooled"], dtype=np.float64),
+            r["rho_unpooled"],
+        ),
+    )
+    for ax, (name, preds, rho) in zip(axes, panels, strict=True):
+        ax.scatter(preds, y, s=18, color=paper_palette_role("primary"), alpha=0.85, zorder=3)
+        for xi, yi, cid in zip(preds, y, pc["ctx_ids"], strict=True):
+            ax.text(xi, yi, f" {cid}", fontsize=4.2, va="center", ha="left", alpha=0.8)
+        ax.set_xlabel("held-out predicted expression score")
+        ax.set_title(f"{name} (layer {r['fixed_layer']})", fontsize=10)
+        ax.text(
+            0.03,
+            0.95,
+            f"held-out Spearman rho = {rho:.2f}",
+            transform=ax.transAxes,
+            fontsize=8,
+            va="top",
+        )
+    axes[0].set_ylabel(f"graded {BEH_LABELS.get(beh, beh)} score (judge, 0-100)")
+    savefig_paper(fig, f"fixed_layer_perctx_scatter_{beh}", dir=str(fig_dir))
     plt.close(fig)
 
 
@@ -293,6 +367,15 @@ def main() -> int:
             "null_p97_5": float(np.percentile(delta_null, 97.5)),
             "p_two_sided": float((1 + n_extreme) / (1 + args.n_draws)),
             "n_draws": int(args.n_draws),
+            # Full per-draw paired-null array behind the p (low-level data contract).
+            "null_draws": [round(float(v), 6) for v in delta_null],
+            # Per-context data view: both arms' held-out predictions + the target.
+            "per_context": {
+                "ctx_ids": list(kept_ctx),
+                "graded_target": [round(float(v), 4) for v in y],
+                "preds_mean": [round(float(v), 4) for v in preds_mean],
+                "preds_unpooled": [round(float(v), 4) for v in preds_unp],
+            },
         }
         logger.info(
             "[%s] L%d rho_mean=%.3f rho_unpooled=%.3f delta=%.3f p=%.4f",
@@ -307,7 +390,15 @@ def main() -> int:
         _atomic_write_json(out_path, {"meta": meta, "results": results})
 
     _make_figure(results, Path(args.fig_dir))
-    logger.info("wrote %s + %s/fixed_layer_paired_delta.png", out_path, args.fig_dir)
+    if SCATTER_BEHAVIOR in results:
+        _make_perctx_scatter(results, SCATTER_BEHAVIOR, Path(args.fig_dir))
+    logger.info(
+        "wrote %s + %s/fixed_layer_paired_delta.png + %s/fixed_layer_perctx_scatter_%s.png",
+        out_path,
+        args.fig_dir,
+        args.fig_dir,
+        SCATTER_BEHAVIOR,
+    )
     return 0
 
 
