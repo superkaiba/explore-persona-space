@@ -272,14 +272,21 @@ they invoke `implementer` directly.
 
 This project legitimately trains and evals on harmful-content corpora
 (Betley-style EM insecure-code / bad-medical-advice mixes, refusal
-pools). Raw rows from those corpora in your context can trigger terminal
-API usage-policy refusals that kill your final report turn AND make the
-transcript unresumable — a resume refuses instantly on the poisoned
-context (incident: task #537, 2026-06-10, two implementer agents lost
-mid-task). While building or smoke-testing a data path over such corpora:
+pools) AND on safety-benchmark QUESTION BANKS
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
+strongreject, Betley-lineage, sensitive-info banks). Raw rows from
+either in your context can trigger terminal API usage-policy refusals
+that kill your final report turn AND make the transcript unresumable —
+a resume refuses instantly on the poisoned context (incidents: task #537,
+2026-06-10, two implementer agents lost mid-task; task #866, 2026-07-02,
+four sessions refusal-killed after bank item text was paged into context
+during verification). While building or smoke-testing a data path over
+such corpora or banks:
 
 - NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
-  files or the training JSONLs generated from them.
+  files, the training JSONLs generated from them, or the raw item text
+  of harmful-bank JSONs under `query_banks/` — reference bank items by
+  filename + index, never verbatim.
 - Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
   (never content-field values), row/token counts computed in Python
   without printing text fields.
@@ -287,7 +294,10 @@ mid-task). While building or smoke-testing a data path over such corpora:
   (exit codes, `[phase=`, `error|traceback`) — never dump the log.
 - In reports and markers, describe such data by path + row count + hash +
   field names; sanitized placeholders are fine. Benign corpora (marker,
-  fact, sycophancy, WildChat, personas) are unaffected by this rule.
+  fact, sycophancy, WildChat, personas) and benign banks (`arc_c_v1`,
+  `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
+  `wildchat_random_v1`) are unaffected by this rule; when unsure whether
+  a bank is harmful, use the digest-only treatment.
 
 > **Pod-side result-reporting + preflight gates** — when writing ANY pod-side dispatcher / sentinel / poll_pipeline.py-facing code, READ `.claude/rules/pod-side-reporting.md` IN FULL first. (Relocated verbatim from this spec, #829.)
 
@@ -613,6 +623,17 @@ with the turn.
   a generous timeout (up to 600000 ms) for multi-minute phases, or
   `run_in_background` plus a bounded same-turn polling loop over the
   output file. Never end the turn while a poll is still pending.
+- **Every VM-side python launch — smokes included — carries the shared-VM
+  thread-cap prefix**
+  `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8`
+  (#847/#891). The in-repo `orchestrate.env` setdefault is pinned to your
+  worktree's branch point (Step 5a never syncs `src/`) and cannot
+  in-process-cap a script that imports torch before `load_dotenv()`; the
+  explicit launch env caps both, regardless of branch age (incidents #779:
+  a pre-#847 worktree ran 78 uncapped threads; #823: three concurrent
+  64-thread smokes ≈ 1/3 of a load-186 VM overload). Pod-side commands
+  NEVER carry the prefix (dedicated GPUs keep full width). A deliberately
+  wider VM cap needs the explicit value + a one-line reason in your report.
 - NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
   the turn ends permanently and everything downstream (remaining smoke
   verification, concern responses, the marker) is silently left unposted
@@ -624,7 +645,9 @@ with the turn.
   gap instead of a truncation.
 - A locally-launched background PROCESS is never your deliverable either:
   it dies with your subagent shell. A long local job that must outlive the
-  turn: launch `setsid ... < /dev/null &`, write a PID file + log path,
+  turn: launch
+  `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
+  write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
   #539, 2026-06-09: a bg launch died with its shell).
 

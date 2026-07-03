@@ -1828,8 +1828,8 @@ markers:
     posted_by: experimenter
     when: "Step 7"
     fields: |
-      Records the actual `nohup ... &` launch (PID + timestamp); paired
-      with epm:launch. REQUIRED payload fields (note shape):
+      Records the actual detached launch (setsid launcher script; PID +
+      timestamp); paired with epm:launch. REQUIRED payload fields (note shape):
       `pod=<name> pid=<pid> log_abs=<absolute_log_path>
       cmd='<dispatch>'`. The experimenter MUST call `os.path.abspath()`
       on the log path before posting AND verify with `ls -la <log_abs>`
@@ -2229,7 +2229,13 @@ markers:
       prior run, eval, falsification>,
       gpu_hours_estimate: <number>`. A followup-scope marker is UNRUN
       until a matching `epm:same-issue-followup-run v1` with the same
-      `followup_label` exists; `/issue` Step 0 dispatches a task at a
+      `followup_label` exists. Multiple DISTINCT `followup_label`s may
+      be queued concurrently (same kind, append-only versions);
+      `/issue` Step 0 dispatches ONE unrun label per loop entry —
+      user-initiated (`user-chat`/`step-10b-pick`) first, then oldest
+      armed ts (`task_workflow.unrun_followup_labels`); same-label
+      re-posts are corrections, and the label's run marker closes ALL
+      of them. `/issue` Step 0 dispatches a task at a
       post-result status (`interpreting` / `reviewing` /
       `awaiting_promotion` / `completed` — or `followups_running`
       itself, the mid-round resume case) carrying an unrun
@@ -2260,6 +2266,10 @@ markers:
       (`est_gpu_hours >= 20`, autonomous only). User-initiated rounds
       (`user-chat`, `step-10b-pick`) are explicitly requested and gated
       by interactive plan approval, so they do not consume either cap.
+      Run markers whose `outcome` begins `retroactive-close` do NOT
+      count toward either round cap — they record bookkeeping closure
+      of a round that already ran (or was superseded), not a new
+      auto-run (SKILL.md Step 0 § Stale-label disposition rule).
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"

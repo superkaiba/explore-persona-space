@@ -937,11 +937,25 @@ From the result, derive:
    version per kind.
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
-normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
-entry for this issue (tie-break newest `ts`; corrections land
-append-only) whose `followup_label` has no matching
-`epm:same-issue-followup-run v1`. If present AND the status is
+normal status dispatch, scan ALL `epm:followup-scope` entries for this
+issue (NOT the highest-version-per-kind marker map — distinct queued
+follow-ups share the kind under different `followup_label`s, #894/#763)
+grouped by `followup_label`: within a label the authoritative scope is
+the latest-(`ts`, `version`) entry (corrections land append-only — the
+#658 v3→v7 `persona-vectors-style-rb` chain), and a LABEL is UNRUN iff
+it has no matching `epm:same-issue-followup-run v1`. Canonical
+implementation: `task_workflow.unrun_followup_labels(list_events(N))`.
+When ≥1 DISPATCHABLE unrun label exists, dispatch EXACTLY ONE label per
+loop entry — the queue head: user-initiated labels (`source: user-chat`
+/ `step-10b-pick`) first, then oldest armed ts (a label's arming ts is
+its FIRST scope entry's ts). A `dispatchable: false` group (an
+unlabeled non-correction scope → pseudo-label `unlabeled-<ts>`) is
+NEVER executed as a round — surface it loudly instead (one chat line +
+an `epm:progress` note naming the repair: re-post the scope with a
+proper kebab-slug `followup_label`; the pseudo-label stays visible in
+every future scan until repaired or retro-closed). The loop runs one
+round and re-parks; the next `/issue <N>` entry picks up the next unrun
+label. If ≥1 unrun label is present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
 case: the loop holds that status, so a crashed round re-enters here) —
@@ -952,6 +966,36 @@ how chat-requested follow-ups execute: the chat session posts
 `/issue <N>`, and the dispatcher lands here. An unrun followup-scope
 on a task still mid-pipeline (any other status) waits — the loop only
 fires from a post-result state.
+
+**Stale-label disposition rule (mechanical evidence only).** Before
+executing a dispatched label, run
+`task_workflow.followup_retro_close_evidence(events, label)` — the
+exact-label mechanical evidence predicate (a 9a-quater `extends=<label>`
+record; an `epm:free-analysis-followup-run` whose `followup_ref` EXACTLY
+equals the label; or a status/step note carrying the exact parenthesized
+`(<label>)` round token plus a round-completion word). On a NON-None
+return, post the retroactive `epm:same-issue-followup-run v1`
+(`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
+and move to the NEXT unrun label instead of re-running a completed round
+(legacy tasks like #658 carry such ghost labels). **This check is a
+GHOST-label filter, NOT an execution gate.** A None return means NO
+prior-run evidence exists — for a normal fresh never-run label this is
+the EXPECTED result (no run happened, so no evidence can exist by
+construction) and the label EXECUTES as the dispatched round: that is
+the whole point of the queue (the #763 `neutral-contrast-and-cofit`
+dispatch is the canonical fresh case). The skip-and-surface disposition
+applies ONLY when the orchestrator has independent reason to suspect
+the label ALREADY RAN — a legacy ghost-label task like #658, e.g. the
+label's round is visibly recorded in the body / status history yet none
+of the mechanical evidence classes can confirm it. In that
+suspected-stale case do NOT close on prose suspicion (a merely-prose
+mention of the label NEVER closes — closing takes mechanical evidence
+only): skip the label this entry and surface it for manual disposition
+(autonomous mode: continue to the next dispatchable label; the skipped
+label stays queued and visible) rather than either re-running a
+completed round or wrongly closing a queued one. Retro-close markers do
+NOT count toward the same-issue round caps (Step 9b loop step 5 /
+block C2).
 
 **Set the launch title now.** As soon as the slug (task `title`) is known,
 call `set_title(N, <status>)` (helper defined in the "Chat title updates"
@@ -1401,7 +1445,11 @@ plans missing any):**
 - Method delta (what differs from prior related work)
 - File paths + concrete diffs / config overrides
 - **Reproducibility Card** (mandatory per CLAUDE.md) — all hparams, seeds,
-  data, env versions, exact `nohup` command for experiments
+  data, env versions, exact workload command for experiments (the
+  workload/dispatcher command(s) plus any required env-var pins — NOT a
+  detachment/env-source launch wrapper (`nohup`/`source .env`); at launch
+  the experimenter wraps it in the canonical setsid launcher script,
+  `experimenter.md` § "During Execution")
 - Success criteria with quantitative thresholds
 - Kill criteria (what result would kill the thesis)
 - Compute estimate in GPU-hours — MUST include a machine-readable total line
@@ -2003,7 +2051,13 @@ adds its own `scripts/issue<N>_*.py` + tests). Operational rule
 instead: a workflow test that FAILs inside a long-lived issue worktree
 but PASSes at the repo root on `main` is worktree-staleness, not this
 issue's breakage — cross-check at the repo root before chasing it; the
-Step 10d merge resolves it (observed on #542, 2026-06-11).
+Step 10d merge resolves it (observed on #542, 2026-06-11). (A shared-infra
+`src/` fix with fleet-wide blast radius — e.g. the #847 thread caps — gets a
+LAUNCH-TIME fallback instead of a sync: the VM-side launch surfaces carry the
+explicit thread-cap env prefix, Step 9 entry guard § "Detached VM-side long
+compute phases"; #891. Do not extend this sync to `src/` allowlists — a synced
+`env.py` would still miss torch-before-dotenv importers in-process, which the
+launch prefix caps unconditionally.)
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -3010,6 +3064,12 @@ that sidecar tick after tick (Step 6d.2); Step 8's
 `confirm_artifacts` + `teardown` (the same RunHandle from launch all
 the way through teardown).
 
+Before this launch call, run the Step 9 entry guard § Pre-dispatch
+external-marker triage and post its `external-markers triaged:` line in an
+`epm:progress` note immediately before dispatching (the launch posts
+`epm:run-launched` / `epm:cluster-launched`, not a stage-dispatch
+breadcrumb).
+
 The operational command:
 
 ```bash
@@ -3177,7 +3237,8 @@ EXIT. User fixes, re-runs.
 #### Step 6d: Dispatch experimenter (launch-only), then orchestrator polling loop
 
 The experimenter agent is **launch-and-exit only** — it syncs the pod,
-preflights, launches the job via `nohup`, posts `epm:run-launched`, and
+preflights, launches the job via its setsid launcher script
+(`experimenter.md` § "During Execution"), posts `epm:run-launched`, and
 exits its turn within ~60 seconds. The orchestrator (this skill) owns
 all subsequent monitoring via a bg-Bash polling loop chained through
 `scripts/poll_pipeline.py`. This split is mandatory: subagents have ONE
@@ -3282,11 +3343,25 @@ then dispatched a relaunch brief asserting "pod alive; run pending"
 ~10 min after `epm:pod-terminated`; only the experimenter's agent-side
 defense caught it.)
 
+**3. External markers triaged.** Run the Step 9 entry guard
+§ Pre-dispatch external-marker triage check before spawning. Pod/backend
+launches post no `stage-dispatch` breadcrumb, so the
+`external-markers triaged:` line goes in an `epm:progress` note posted
+immediately before the experimenter spawn.
+
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
-- The exact `nohup` launch command from the plan's Reproducibility Card
+- The exact workload command from the plan's Reproducibility Card (the
+  workload/dispatcher invocation plus any required env-var pins; the
+  experimenter wraps it in its canonical setsid launcher script —
+  `experimenter.md` § "During Execution". NEVER put a literal top-level
+  `source .env` + bare `nohup`-backgrounded launch line in the brief:
+  the SSH-MCP shell is `sh` (`source: not found`, #545) and an
+  un-setsid'd background launch risks SIGHUP reaping (#444/#541; the
+  #841 brief carried exactly this shape and the experimenter had to
+  deviate)
 - When the plan names a "regenerate locally via prep script"
   prerequisite (e.g. the Turner JSONLs): the prep-script invocation AND
   its OUTPUT dataset path(s), so the experimenter's input-data gate
@@ -4848,12 +4923,77 @@ same field applies to every dispatch breadcrumb that follows this
 convention, including the same-issue follow-up loop's
 `stage=followup-<phase>` dispatches.
 
+**Pre-dispatch external-marker triage (REQUIRED — every COMPUTE-stage
+dispatch; sibling of the pre-dispatch dedup above).** Cross-session markers
+are the sanctioned advisory channel, but a mailbox with no read-gate is how
+#779 launched an 18–20h serial grid 4 minutes after finishing its prior
+phase while a measured audit saying "must NOT launch as-is" sat unread on
+its own events.jsonl (2026-07-02: 10 external audit/directive markers,
+16:12–17:47Z; the 20:46Z `stage=followup-grid` breadcrumb claimed
+"vectorized" while the fixes were unapplied; killed by PM-chat at 12 min).
+Immediately BEFORE posting the dispatch breadcrumb for any stage that
+launches COMPUTE — a pod/GCP/SLURM provision or workload (re)launch
+(Step 6b / 6d, crash-fix relaunches included), any stage the
+Compute-character pre-launch statement binds (a fit / sweep / statistical
+battery: Step 9a-ter, the Step 9b same-issue follow-up loop), or a detached
+VM-side phase (§ below) — run the mechanical enumerator:
+
+```bash
+uv run python - <<'PY'
+from explore_persona_space.task_workflow import (
+    list_events, triage_candidates_since_last_dispatch)
+for e in triage_candidates_since_last_dispatch(list_events(<N>)):
+    print(e["ts"], e["kind"], (e.get("note") or "").splitlines()[0][:140])
+PY
+```
+
+It returns every non-machine marker posted since the PREVIOUS DUTY-BOUND
+dispatch record — a compute-launch marker (`epm:run-launched` /
+`epm:cluster-launched`) or a record carrying the
+`external-markers triaged:` line; task start if none. A non-compute
+breadcrumb (review / analyzer / verifier stage) never closes the window —
+those dispatches have no triage duty, so an advisory posted before one
+still surfaces at the next compute dispatch — and an untriaged compute
+breadcrumb (pre-fix / concurrent session) doesn't either
+(fail-toward-triage). READ each candidate's full note (`task.py view <N>
+--json` + jq by `ts`); classify EXTERNAL = not posted by this session — the
+`by` field does NOT discriminate (measured on #779: self and PM-chat posts
+both carry `by: unknown`); use session context plus the in-the-wild
+signatures ("PM-chat", "user-raised", "user directive", "# Audit",
+"AMENDMENT", "SCOPE RESTORE"); a successor/recovery session that cannot
+attribute a candidate treats it as external (fail-toward-triage). Then
+TRIAGE each external advisory/directive: APPLY it (fix the code, adjust or
+re-scope the dispatch) BEFORE dispatching, or EXPLICITLY DEFER with a
+one-line reason. If applying took non-trivial time, RE-RUN the enumerator
+immediately before posting the breadcrumb (markers can land mid-apply).
+Record the outcome as ONE line in the dispatch breadcrumb note — or, for
+pod/backend launches that post no breadcrumb, in an immediately-adjacent
+`epm:progress` note:
+
+    external-markers triaged: <N> applied / <M> deferred (<one-line reasons>)
+
+or `external-markers triaged: none` when there are no external candidates.
+This is NOT a gate: triage is apply-or-defer, decided by this session,
+auto-continue preserved — but deferring a marker that contradicts the
+dispatch (e.g. "do not launch as-is") must state WHY the launch is sound
+anyway, and a dispatch note asserting a property an unapplied external
+audit contradicts (#779's "vectorized") without a triage line is the
+regression this rule closes. Triage is BOUNDED to the window; a marker
+already covered by a prior triage line is not re-enumerated (its
+disposition is on the record). Accepted residuals (named, not silent): a
+marker posted in the seconds between the final enumerator run and the
+breadcrumb post lands before the new boundary and is not re-enumerated;
+markers posted after a task's LAST compute dispatch are never enumerated
+(they can no longer avert a launch); a legacy launch marker
+(`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
+still closes the window.
+
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
 orchestrator launches DIRECTLY as bg-Bash (a Phase-D-style fit, an
 aggregation / permutation battery) MUST be launched fully detached:
 
-    PHASE_PID=$(bash -c 'setsid nohup <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
+    PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
 
@@ -4873,7 +5013,25 @@ stage-dispatch breadcrumb MUST carry two additional fields:
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
-genuinely new field). EXEMPT: work that COMPLETES within a subagent's own
+genuinely new field), and the `external-markers triaged:` line
+(§ Pre-dispatch external-marker triage above).
+
+**The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
+shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
+the WORKTREE's branch point — the Step 5a spec-freshness sync deliberately
+never syncs `src/` — so an in-flight worktree cut before an infra fix launches
+with the pre-fix library (incident #779, 2026-07-02: a pre-#847 worktree's grid
+ran 78 uncapped threads ~20h after the fix landed on main). The explicit prefix
+is branch-age-independent AND caps torch/BLAS regardless of the script's import
+order (the env.py hook cannot in-process-cap a script that imports torch before
+`load_dotenv()`; the launch env can). `env` execs `<cmd>` in place, so `$!` pid
+capture and the `ps -o args=` identity verify are unchanged. env.py's
+setdefault never clobbers these values. A phase that genuinely needs a wider
+cap on the shared VM states the wider explicit value + a one-line reason in its
+breadcrumb. Pod / GCE / SLURM launches NEVER carry the prefix — dedicated boxes
+keep full width (the #847 scope invariant).
+
+EXEMPT: work that COMPLETES within a subagent's own
 bounded turn (a subagent that bg-launches a VM-local >~15-min phase and
 returns follows this SAME detach shape — the phase sits in the session's kill
 domain either way), pod-side workloads (the pod launch contract / #883), the
@@ -5272,7 +5430,9 @@ realized implementation later adds a fit/battery the dispatch statement
 did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
-shape + log path per the Step 9 entry-guard § "Detached VM-side long compute phases" convention.
+shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
+or the wider explicit value + one-line reason) per the Step 9 entry-guard
+§ "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
 **Auto-run procedure.** For the single highest-priority unran entry
@@ -5288,7 +5448,10 @@ explicit eval-data path):
    ```
    When the follow-up runs any fit/battery, this breadcrumb (or an
    immediately-following `epm:progress` note) carries the
-   § Compute-character pre-launch statement above.
+   § Compute-character pre-launch statement above. Every 9a-ter dispatch
+   breadcrumb ALSO carries the `external-markers triaged:` line (Step 9
+   entry guard § Pre-dispatch external-marker triage) — the free-analysis
+   run is a VM-side compute phase.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -6115,7 +6278,11 @@ C1. **Select the cheap-band candidate.** Among the surviving
      the headline.
 C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    per task, counted by `epm:same-issue-followup-run v1` markers with
-   `source: proposer-9b-cheap`. Beyond the cap, further cheap `same`
+   `source: proposer-9b-cheap`. Run markers whose `outcome` begins
+   `retroactive-close` do NOT count toward this cap — they record
+   bookkeeping closure of a round that already ran (or was superseded),
+   not a new auto-run (Step 0 § Stale-label disposition rule). Beyond
+   the cap, further cheap `same`
    proposals survive in `epm:follow-ups v1` for manual pick. (This cap
    is INDEPENDENT of the autonomous `auto_run`/expensive-band cap, which
    counts `source: proposer-9b`. The natural breakpoint is the re-park
@@ -6362,7 +6529,11 @@ backstop cron (same `CronList`/`CronCreate` ARM-GUARD shape as Step 0 /
 Step 6d.2) before dispatching its first planner / implementer / stage
 subagent, and must post every stage-dispatch breadcrumb
 (`stage=followup-<phase>`, Step 9 entry-guard convention) with the
-`worktree=` field. These `stage=followup-<phase>` breadcrumbs are bound
+`worktree=` field **and a `label=<followup_label>` field naming the
+round's label** (consumed by `task_workflow.executing_followup_label`
+for mid-round resume and by the watcher's on-behalf run-marker post;
+breadcrumbs predating this contract lack it — consumers fall back to
+the head of the unrun queue). These `stage=followup-<phase>` breadcrumbs are bound
 by the SAME Step 9 entry-guard predicate AND the same NON-SKIPPABLE
 pre-dispatch dedup check (§ Step 9 entry guard) — the status being held
 at `followups_running` does not exempt them (#778, 2026-07-01: the
@@ -6399,10 +6570,16 @@ orchestrators driving one round is the #778 root cause.
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
    and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
-   for one issue may exist** (corrections land append-only, each
-   superseding the prior — see #658's `persona-vectors-style-rb`
-   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
-   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   for one issue may exist** — corrections are WITHIN-label: the
+   authoritative scope for a round is the latest-(`ts`, `version`)
+   entry AMONG the entries carrying THIS ROUND'S `followup_label` (an
+   unlabeled correction note attributes to the immediately-preceding
+   label — `task_workflow.followup_label_groups`; see #658's
+   `persona-vectors-style-rb` v3→v7 chain — NOTE v8 carries a DIFFERENT
+   label, `a35-mlp-downstream-chain`, a separately-queued round, not
+   part of the chain). A later entry with a DIFFERENT label is a
+   separately-QUEUED round (the #763 shape), never a supersession. Do
+   NOT cache the
    entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
@@ -6460,27 +6637,37 @@ orchestrators driving one round is the #778 root cause.
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
    - **Immediately before the planner snapshots the scope, RE-READ the
-     latest `epm:followup-scope` for this issue** (highest top-level
-     `version`, tie-break newest `ts`) — never plan against an
-     entry-time snapshot, or a session that entered on `v3` and
-     snapshotted before a `v5`/`v6` correction landed plans stale (the
-     #658 bug). The `followup_label` lives inside the marker NOTE body
-     as free text (its format even differs across versions —
-     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
-     v3+), NOT as a top-level event key (top-level keys are
-     `{by, kind, note, ts, version}` only). So the selector does NOT
-     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
-     and takes the max `(version, ts)`, relying on the Step 0
-     entry-predicate having already filtered this issue to UNRUN status
-     (an `epm:followup-scope` whose label has no matching
-     `epm:same-issue-followup-run`) — so entering the loop means the
-     latest scope IS the active one. This is the SAME convention the
-     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
-     keys on `ts` only, never `followup_label`) and the Step 0
-     highest-version-per-kind marker map. Mechanical recipe:
+     authoritative scope FOR THIS ROUND'S LABEL** —
+     `task_workflow.executing_followup_label` (the newest
+     `stage-dispatch stage=followup-*` breadcrumb's `label=` field newer
+     than the newest run marker; fallback: the head of the dispatchable
+     `unrun_followup_labels`) — never the bare latest scope: under
+     label-grouped dispatch (#894) the latest entry may be a DIFFERENT
+     queued label. A mid-round correction to the SAME label is still
+     picked up (it raises that label's authoritative `(ts, version)`);
+     never plan against an entry-time snapshot, or a session that
+     entered on `v3` and snapshotted before a `v5`/`v6` correction
+     landed plans stale (the #658 bug). The `followup_label` lives
+     inside the marker NOTE body as free text (its format even differs
+     across versions — `- followup_label: ...` dash-bullet, bare
+     `followup_label: ...`, bold `**followup_label:** ...`), NOT as a
+     top-level event key (top-level keys are `{by, kind, note, ts,
+     version}` only) — `task_workflow.parse_followup_note_field` handles
+     every observed form. The step-4 completion marker's
+     `followup_label` derives from THIS SAME executing group
+     (`group['followup_label']` verbatim) — never re-parsed from "the
+     scope marker" independently, so the completion label can never
+     diverge from the round that ran. This is the SAME shared helper the
+     watcher uses (`autonomous_session_watch._post_followup_run_marker`
+     resolves the round via `task_workflow.executing_followup_label`).
+     Mechanical recipe:
      ```bash
-     uv run python scripts/task.py view <N> --json \
-       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     uv run python -c "
+     import json
+     from explore_persona_space.task_workflow import list_events, executing_followup_label
+     g = executing_followup_label(list_events(<N>))
+     print(json.dumps(g and g['authoritative'], indent=2))
+     "
      ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
@@ -6499,6 +6686,14 @@ orchestrators driving one round is the #778 root cause.
      compute shape — #778's round re-ran the parent's serial 1000-draw
      null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
      plan that never said "serial".
+   - **Pre-dispatch external-marker triage** (canonical block: Step 9
+     entry guard § Pre-dispatch external-marker triage): REQUIRED — the
+     same `stage=followup-<phase>` dispatch breadcrumb (or adjacent
+     `epm:progress` note) carries the `external-markers triaged:` line
+     before dispatching ANY compute-launching stage of the round. #779's
+     `stage=followup-grid` dispatch (2026-07-02 20:46Z) is the founding
+     incident — 10 unread external audit markers, an 18–20h serial
+     launch.
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
@@ -6542,7 +6737,9 @@ orchestrators driving one round is the #778 root cause.
      whole updated body; a previously-promoted (`completed`) task that
      looped re-parks here and the user re-promotes.
 4. **Completion marker.** Post `epm:same-issue-followup-run v1`
-   (`followup_label` matching the scope marker, `source`, `round`,
+   (`followup_label` matching the scope marker — derive the label from
+   the executing group per step 3's re-read, never a fresh independent
+   parse — `source`, `round`,
    one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched.
@@ -6563,10 +6760,14 @@ orchestrators driving one round is the #778 root cause.
    `epm:follow-ups v1` for manual pick. USER-REQUESTED rounds
    (`source: user-chat` or `step-10b-pick`) do NOT count against either
    cap — the user asked explicitly, and interactive plan approval
-   still gates each one.
+   still gates each one. Run markers whose `outcome` begins
+   `retroactive-close` do NOT count toward either round cap — they
+   record bookkeeping closure of a round that already ran (or was
+   superseded), not a new auto-run (Step 0 § Stale-label disposition
+   rule).
 
 Status-machine summary: `interpreting` / `reviewing` /
-`awaiting_promotion` / `completed` + unrun followup-scope →
+`awaiting_promotion` / `completed` + ≥1 unrun followup label →
 `followups_running` (tag `followup-auto` | `followup-manual`; held
 for the whole round) → `awaiting_promotion`. Never a child task.
 (`followups_running` also retains its legacy meaning — parent
@@ -7885,8 +8086,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
-| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): dispatch ONE label per entry — the queue head (user-initiated first, then oldest armed ts); set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the round's label-scoped scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
@@ -7921,7 +8122,10 @@ schema:
 
 Convenience: the `task.py post-marker` / `task.py latest-marker`
 helpers wrap the read/write side. The skill reads the highest-version
-row per `(kind)` as authoritative.
+row per `(kind)` as authoritative (EXCEPTION: `epm:followup-scope` —
+distinct queued follow-ups share the kind under different
+`followup_label`s; group by label per
+`task_workflow.unrun_followup_labels`, #894).
 
 **Rules:**
 - Never edit or delete a row in `events.jsonl` — always append a new row

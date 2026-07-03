@@ -165,12 +165,20 @@ interpretation-critic adjudicates.
 #### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
 
 Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait
-pools) in context trigger terminal API usage-policy refusals (#537): the
+pools) AND safety-benchmark question banks
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench /
+strongreject / Betley-lineage / sensitive-info; #866) in context trigger
+terminal API usage-policy refusals (#537): the
 spot check AND Step 3.6 selection run SANITIZED — field-filtered `jq`
 slices only (never whole files or full text fields); a ~15-word excerpt +
 `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]`;
 labels, indices, permanent raw links verbatim; each block labeled
-"sanitized for context hygiene". Benign corpora keep verbatim treatment.
+"sanitized for context hygiene". Harmful BANK probe items get the same
+sanitized treatment — reference by bank filename + index (excerpt only
+when a worked example strictly needs one, ≤15 words). Benign corpora keep
+verbatim treatment, as do benign banks (`arc_c_v1`, `fact_questions_v1`,
+`marker_eval_v1`, `sycophancy_claims_v1`, `wildchat_random_v1`);
+when unsure whether a bank is harmful, sanitize.
 
 Full text: `analyzer-section-reference.md`
 § Step 1.5: Load top-N promoted clean-results as in-context exemplars (grep heading, chunked Read).

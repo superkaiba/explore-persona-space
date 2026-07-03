@@ -129,7 +129,11 @@ gate, no `status:blocked` path).
 #### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
 
 When the run's raw completions come from a harmful-content corpus
-(Betley-style EM, bad-medical-advice, refusal-bait pools), verbatim rows
+(Betley-style EM, bad-medical-advice, refusal-bait pools), OR the run's
+probe set comes from a harmful safety-benchmark question bank
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
+strongreject, Betley-lineage, sensitive-info banks; incident #866),
+verbatim rows
 in your context can trigger terminal API usage-policy refusals that kill
 your final turn and make the transcript unresumable (incident: task
 #537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
@@ -144,8 +148,10 @@ sample selection run in sanitized mode:
   the permanent raw link verbatim — that is what carries the evidence.
 - Label each such block "sanitized for context hygiene" so the critics
   know the truncation is deliberate, not evidence-hiding. Benign corpora
-  (marker, fact, sycophancy, WildChat, personas) keep the standard
-  verbatim treatment.
+  (marker, fact, sycophancy, WildChat, personas) and benign banks
+  (`arc_c_v1`, `fact_questions_v1`, `marker_eval_v1`,
+  `sycophancy_claims_v1`, `wildchat_random_v1`) keep the standard
+  verbatim treatment; when unsure whether a bank is harmful, sanitize.
 
 ## Step 1.6: Planned-control-arm presence gate (run BEFORE interpreting / plotting / authoring)
 
@@ -289,12 +295,12 @@ deliberate — see plan §2.
 
 ```bash
 # launch — sentinel records the exit code regardless of where the harness runs the job
-nohup bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' >/tmp/issue-<N>-<job>.log 2>&1 &
+nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 bash -c 'uv run python scripts/<analysis>.py ...; echo "RC=$? DONE" > /tmp/issue-<N>-<job>.sentinel' >/tmp/issue-<N>-<job>.log 2>&1 &
 # then, as a SEPARATE run_in_background=true Bash call, block on the sentinel (NOT the bg stdout):
 until [ -f /tmp/issue-<N>-<job>.sentinel ]; do sleep 30; done; cat /tmp/issue-<N>-<job>.sentinel
 ```
 
-Read `RC=` from the sentinel for the exit code (non-zero → inspect the log and fail loud — never narrate a result off a job that did not finish cleanly). The `until` loop is the single completion signal; the log is for diagnosis only.
+Read `RC=` from the sentinel for the exit code (non-zero → inspect the log and fail loud — never narrate a result off a job that did not finish cleanly). The `until` loop is the single completion signal; the log is for diagnosis only. The thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8) is REQUIRED on these VM-side launches — a stale worktree's `env.py` setdefault may predate the caps and cannot in-process-cap a torch-before-dotenv importer (#891/#779); `env` wraps the `bash -c` so the caps reach the inner `uv run python`.
 
 For every comparison:
 - Mean across seeds
