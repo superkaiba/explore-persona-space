@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 914,
+  "highest_id": 915,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6008,6 +6008,13 @@
       "path": "tasks/on_hold/914",
       "status": "on_hold",
       "title": "Measure the finetuned map M+ on the finetuned model's own generations (parked: duplicates #833)"
+    },
+    "915": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/915",
+      "status": "proposed",
+      "title": "workflow-fix: janitors fail rmtree on symlinked per-issue cache dirs"
     },
     "92": {
       "has_clean_result": false,
