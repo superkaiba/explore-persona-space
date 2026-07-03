@@ -135,9 +135,22 @@ def _null_regime_matches(null: dict, n_resamples: int, n_refit_pairs: int) -> bo
     rather than corrupting summary.json under the current run's metadata.
 
     Degenerate nulls (``note`` present AND ``n_over_floor_resamples_used == 0``) encode a
-    STRUCTURAL property of the cell (too few questions / every resample degenerate) — not
-    a scale choice — so both regime checks pass vacuously: no refits contributed and the
-    resample count is not a comparable quantity for a cell that produced no usable band.
+    STRUCTURAL property of the cell (too few questions / every resample degenerate) — no
+    usable band was produced. Their handling splits on whether the null is STAMPED with the
+    regime it was produced under (``n_null_resamples_requested`` present):
+
+    - A STAMPED degenerate must pass the SAME exact-match regime checks as a full-success
+      null (n_refit_pairs exact AND n_null_resamples_requested exact). ``issue813_dispatch.sh
+      --smoke`` writes into the SAME ``eval_results/issue_813`` out-dir at ``max_questions=2``,
+      which produces "too few questions" degenerate nulls — and post-r3 those carry the
+      regime stamp, so a production resume MUST regime-check them and RECOMPUTE the smoke
+      degenerate rather than preserve a smoke ``note`` JSON under production metadata (Codex
+      round-2 Major blocker: smoke-in-shared-out-dir hole). Post-fix smokes always stamp, so
+      every FUTURE smoke degenerate is regime-checked here.
+    - An UNSTAMPED degenerate keeps the vacuous bypass. Those are LEGACY production artifacts
+      that predate the regime stamp (a real too-few-questions cell from before r3): there is
+      no scale to compare, no refits contributed, and the cell produced no usable band, so the
+      regime checks are not comparable quantities for it and it stays resumable.
 
     ``n_refit_pairs`` check: the loaded value must equal ``n_refit_pairs``; a null MISSING
     that key (a legacy full-success artifact predating the regime stamp) FAILS the check
@@ -151,7 +164,11 @@ def _null_regime_matches(null: dict, n_resamples: int, n_refit_pairs: int) -> bo
     never clear the floor against a production ``n_resamples`` (e.g. 1000).
     """
     is_degenerate = "note" in null and null.get("n_over_floor_resamples_used", 0) == 0
-    if is_degenerate:
+    # A STAMPED degenerate (written post-r3, carries n_null_resamples_requested) falls through
+    # to the SAME exact-match regime checks below as a full-success null — so a smoke degenerate
+    # (max_questions=2) sharing the production out-dir is REJECTED, not preserved. Only an
+    # UNSTAMPED (legacy, pre-stamp) degenerate keeps the vacuous bypass.
+    if is_degenerate and "n_null_resamples_requested" not in null:
         return True
     # refit-pairs must match exactly (a legacy full-success null missing the key fails).
     if null.get("n_refit_pairs") != n_refit_pairs:

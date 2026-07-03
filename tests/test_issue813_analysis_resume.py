@@ -214,6 +214,51 @@ def test_resume_cell_recomputes_unstamped_smoke_scale_null(tmp_path):
     assert _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES) is None
 
 
+def test_resume_cell_recomputes_stamped_degenerate_from_shared_outdir_smoke(tmp_path):
+    """(v) a STAMPED degenerate (a `--smoke` max_questions=2 cell in the SHARED out-dir,
+    post-r3 so it carries the regime stamp) → recompute, NOT skip.
+
+    Codex round-2 Major blocker (smoke-in-shared-out-dir hole): `issue813_dispatch.sh --smoke`
+    writes "too few questions" `note` nulls into `eval_results/issue_813`; a production resume
+    must regime-check the stamped degenerate and recompute it rather than preserve the smoke
+    delta_floor/null JSONs under production summary.json metadata.
+    """
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    stamped_deg = _degenerate_null()  # note-only, n_over_floor absent
+    # A smoke run at max_questions=2: 20 resamples requested, 8 refit-pairs, both STAMPED.
+    stamped_deg["n_null_resamples_requested"] = 20
+    stamped_deg["n_refit_pairs"] = 8
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), stamped_deg)
+    # Current production run: 1000 resamples, 40 refit-pairs → the stamped smoke degenerate
+    # fails the exact-match regime check and recomputes.
+    assert (
+        _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES, n_refit_pairs=40)
+        is None
+    )
+
+
+def test_resume_cell_skips_unstamped_legacy_degenerate(tmp_path):
+    """(vi) an UNSTAMPED degenerate (a real too-few-questions cell predating the r3 stamp,
+    no n_null_resamples_requested) keeps the vacuous bypass → SKIP.
+
+    The legacy production degenerate has no scale to compare and produced no usable band, so
+    the regime checks are not comparable quantities for it and it stays resumable (preserves
+    the existing degenerate-cell resume contract for pre-r3 artifacts).
+    """
+    delta_dir = tmp_path / "delta_floor"
+    null_dir = tmp_path / "substrate_swap_null"
+    delta_dir.mkdir()
+    null_dir.mkdir()
+    legacy_deg = _degenerate_null()  # note-only, UNSTAMPED (no n_null_resamples_requested)
+    assert "n_null_resamples_requested" not in legacy_deg
+    _write_cell(delta_dir, null_dir, "generic", _obs("generic", 0.5), legacy_deg)
+    got = _resume("generic", delta_dir, null_dir, n_resamples=_PROD_RESAMPLES, n_refit_pairs=40)
+    assert got is not None and "note" in got[1]
+
+
 # ── main(): mixed loaded + computed cells, summary includes BOTH ───────────────
 
 
