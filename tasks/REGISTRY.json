@@ -6085,8 +6085,8 @@
     "924": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/924",
-      "status": "proposed",
+      "path": "tasks/planning/924",
+      "status": "planning",
       "title": "workflow-fix: clean_experiment_downloads degrades gracefully off-main"
     },
     "94": {
