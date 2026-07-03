@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 936,
+  "highest_id": 937,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6174,6 +6174,13 @@
       "path": "tasks/planning/936",
       "status": "planning",
       "title": "workflow-fix: gotchas.md \u2014 bf16 single-position equivalence-gate calibration"
+    },
+    "937": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/937",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan check \u2014 re-extracted reference arms never silently replace a committed headline"
     },
     "94": {
       "has_clean_result": false,
