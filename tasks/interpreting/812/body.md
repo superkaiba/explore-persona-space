@@ -1,7 +1,7 @@
 ---
 title: 'Mean-pooling answer activations loses nothing resolvable at the current sample
   size: rank-10-reduced per-position features never beat the plain average beyond
-  selection noise (MODERATE confidence)'
+  selection noise and are significantly worse at a fixed layer (MODERATE confidence)'
 kind: experiment
 tags:
 - answer-summary-sweep
