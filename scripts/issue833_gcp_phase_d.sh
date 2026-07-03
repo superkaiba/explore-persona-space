@@ -125,9 +125,13 @@ run_lane() {
 }
 
 echo "[phase=fit] 3 lanes x 3 cells ($(date -u +%H:%M:%S))" | tee -a "$MAIN_LOG"
-run_lane G1 em:7 em:14 em:21 &
-run_lane G2 sycophancy:7 sycophancy:14 sycophancy:21 &
-run_lane G3 fact:7 fact:14 fact:21 &
+# Round 7d: lane cell lists overridable via env (space-separated beh:layer
+# tokens; defaults reproduce the round-7c grid verbatim) so a tail instance
+# can run a re-ordered / scoped grid; per-cell cached-skip in the fit script
+# makes any overlap resume-safe.
+run_lane G1 ${LANE_CELLS_G1:-em:7 em:14 em:21} &
+run_lane G2 ${LANE_CELLS_G2:-sycophancy:7 sycophancy:14 sycophancy:21} &
+run_lane G3 ${LANE_CELLS_G3:-fact:7 fact:14 fact:21} &
 wait
 
 CHAINS=$(ls eval_results/issue_833/chain_rho/*.json 2>/dev/null | wc -l)
