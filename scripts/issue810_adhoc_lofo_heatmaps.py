@@ -22,13 +22,21 @@ from __future__ import annotations
 
 import json
 import logging
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import sys
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
-import torch
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from scipy.stats import spearmanr  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))

@@ -19,12 +19,21 @@ Read-only over committed eval JSONs (0 GPU-h). Run from the issue-810 worktree:
 from __future__ import annotations
 
 import json
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 
-from explore_persona_space.analysis.paper_plots import (
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,

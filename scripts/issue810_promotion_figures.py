@@ -20,13 +20,22 @@ numbers quoted in the clean-result body.
 from __future__ import annotations
 
 import json
+
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
 import subprocess
 
 import matplotlib.pyplot as plt
-import numpy as np
-from issue810_common import reader_context_labels
 
-from explore_persona_space.analysis.paper_plots import (
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+from issue810_common import reader_context_labels  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,

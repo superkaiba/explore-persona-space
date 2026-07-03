@@ -32,12 +32,20 @@ from pathlib import Path
 os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ["OMP_NUM_THREADS"] = "4"
 
-import numpy as np
-import torch
+# Shared-VM thread caps (#847): load_dotenv() must bind BEFORE the first
+# numpy/torch import (torch freezes its BLAS/intra-op pools at import time).
+import pathlib
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(pathlib.Path(__file__).resolve().parent.parent / ".env"))
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 torch.set_num_threads(4)
 
-import sys
+import sys  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from issue810_common import (  # noqa: E402
