@@ -44,6 +44,16 @@ origin_prompt: 'Help me to plan this:
 
   Evaluate mappings on LOFO context + OOD queries'
 workflow: v1
+goal: 'Determine whether the (context, query) -> answer conditional of Qwen-2.5-7B-Instruct
+  decomposes additively into context-only and query-only components: train three matched
+  LoRA mappings on on-policy base-model answers over a diverse-contexts x UltraChat
+  grid (M_A: context->answer; M_B: query->answer with blank context; M_C: context+query->answer)
+  and measure (1) how much of the [best-single-mapping -> base-full-conditional] cross-entropy
+  gap a combination of M_A and M_B closes on held-out cells (LOFO context families
+  x held-out/OOD queries; primary DV: length-normalized teacher-forced cross-entropy
+  of fresh on-policy reference answers; secondary DV: judge-scored behavioral-profile
+  agreement), and (2) the relationship of M_C to {M_A, M_B} in function space and
+  weight space (per-layer regression of dW_C onto span{dW_A, dW_B}).'
 ---
 ## Overview / Motivation
 
@@ -51,7 +61,7 @@ Is the base model's context-conditioned answer mapping (context, query) → answ
 
 ## Goal
 
-Determine whether the (context, query) → answer conditional of Qwen-2.5-7B-Instruct decomposes additively into context-only and query-only components: train three matched LoRA mappings on on-policy base-model answers over a diverse-contexts × UltraChat grid — M_A: context→answer, M_B: query→answer (blank context), M_C: (context, query)→answer — and measure (1) how much of the [best-single-mapping → base-full-conditional] cross-entropy gap a combination of M_A and M_B closes on held-out cells (LOFO context families × held-out/OOD queries), with primary DV the length-normalized teacher-forced cross-entropy of fresh on-policy reference answers and secondary DV judge-scored behavioral-profile agreement of free generations; and (2) the relationship of M_C to {M_A, M_B} in function space (per-cell divergence between M_C and the best combination) and weight space (per-layer regression of ΔW_C onto span{ΔW_A, ΔW_B}).
+Determine whether the (context, query) -> answer conditional of Qwen-2.5-7B-Instruct decomposes additively into context-only and query-only components: train three matched LoRA mappings on on-policy base-model answers over a diverse-contexts x UltraChat grid (M_A: context->answer; M_B: query->answer with blank context; M_C: context+query->answer) and measure (1) how much of the [best-single-mapping -> base-full-conditional] cross-entropy gap a combination of M_A and M_B closes on held-out cells (LOFO context families x held-out/OOD queries; primary DV: length-normalized teacher-forced cross-entropy of fresh on-policy reference answers; secondary DV: judge-scored behavioral-profile agreement), and (2) the relationship of M_C to {M_A, M_B} in function space and weight space (per-layer regression of dW_C onto span{dW_A, dW_B}).
 
 ## Design sketch (pre-plan; /adversarial-planner refines every value)
 
