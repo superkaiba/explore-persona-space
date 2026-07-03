@@ -161,16 +161,25 @@ PARENT_CHECK_HARD = 0.25
 
 
 def _stage_round_inputs(behaviors: list[str]) -> None:
-    """Stage the round's non-v0 inputs from HF when absent (per-file, fail-loud).
+    """Stage EVERY ``write_inputs_manifest`` frozen input from HF (fail-loud).
 
-    v0 shards stage lazily via ``_load_v0``; E0 + rb shards via the parent's
-    ``_stage_fit_inputs_from_hf``; the round's own pv_directions_v2 + c0 shards
-    (produced by Phases A/B) stage here from the round's HF prefixes. The
-    ``write_inputs_manifest`` frozen-input pins (pv_rollouts + pv_judge_v2 —
-    gitignored ``data/`` paths a fresh eval-lane clone lacks) stage here too
-    (review r1 C2), then get validated against the ABSOLUTE plan-registered
-    pool size so a stale mock at a canonical path can never be sha256-pinned
-    into ``inputs_manifest.json`` as a "frozen input" (review r1 C1(iii)).
+    v0 shards stage EAGERLY here via the parent's ``_stage_v0_shards_from_hf``
+    — ``write_inputs_manifest`` (fit-start step 0) sha256-pins them BEFORE the
+    first lazy ``_load_v0`` read at battery time, so lazy-only staging crashes
+    any fresh lane with no local worktree copy at manifest step 0 (r3
+    crash-fix; ``_load_v0``'s lazy staging stays as a no-op backstop). E0 + rb
+    shards stage via the parent's ``_stage_fit_inputs_from_hf``; the round's
+    own pv_directions_v2 + c0 shards (produced by Phases A/B) stage here from
+    the round's HF prefixes. The remaining ``write_inputs_manifest``
+    frozen-input pins (pv_rollouts + pv_judge_v2 — gitignored ``data/`` paths
+    a fresh eval-lane clone lacks) stage here too (review r1 C2), then get
+    validated against the ABSOLUTE plan-registered pool size so a stale mock
+    at a canonical path can never be sha256-pinned into
+    ``inputs_manifest.json`` as a "frozen input" (review r1 C1(iii)). The
+    manifest's two non-staged inputs (E0_deception_v2 + the reanchor parent
+    record) are git-tracked, so a fresh clone carries them; the coverage
+    invariant is pinned by
+    ``tests/test_issue763_cofit_phase_boundary.py::test_every_manifest_frozen_input_is_staged_or_git_tracked``.
     """
     from huggingface_hub import hf_hub_download
     from huggingface_hub.utils import EntryNotFoundError
@@ -181,9 +190,10 @@ def _stage_round_inputs(behaviors: list[str]) -> None:
         _read_rollouts_jsonl,
         _stage_from_hf,
     )
-    from issue763_fit_predictors import _stage_fit_inputs_from_hf
+    from issue763_fit_predictors import _stage_fit_inputs_from_hf, _stage_v0_shards_from_hf
 
     _stage_fit_inputs_from_hf(behaviors, stage_e0=True)
+    _stage_v0_shards_from_hf(behaviors)
     _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
     _stage_from_hf("pv_judge_v2", PV_JUDGE_V2_DIR, behaviors, suffix="json")
     for b in behaviors:
