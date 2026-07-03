@@ -593,6 +593,41 @@ def _batched_arm_dofs(
         return out
 
 
+def _floor_design_gram(
+    src: torch.Tensor,
+    rows: torch.Tensor,
+    rows_mask: torch.Tensor,
+    off: int,
+    armrep: torch.Tensor,
+    cnt: torch.Tensor,
+    idxf: torch.Tensor,
+    imskf: torch.Tensor,
+    gm2: torch.Tensor,
+    n: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """(Gd, K) for one batch of resampled floor designs.
+
+    Standardizes `rows` (the arm stacks the design + grid rows live in) by each
+    fit's count-weighted moments of `src`, takes ONE batched HIDDEN-dim Gram, then
+    gathers the design sub-Gram (Gd) and the grid (C0 rows) × design cross-terms
+    (K). `off` places the design block inside `rows` (0 = C0 block, n = C⁺ block).
+    """
+    dt = src.dtype
+    src_b = src[armrep]  # (B, n, H)
+    mu = torch.einsum("bn,bnh->bh", cnt, src_b)
+    e2 = torch.einsum("bn,bnh->bh", cnt, src_b * src_b)
+    sd = (e2 - mu * mu).clamp(min=0).sqrt() + 1e-9
+    z = (rows[armrep] - mu.unsqueeze(1)) / sd.unsqueeze(1)
+    z = z * rows_mask[armrep].to(dt).unsqueeze(-1)
+    gw = z @ z.transpose(1, 2)  # the ONE HIDDEN-dim GEMM per fit
+    didx = idxf + off
+    gd = torch.where(gm2, _gather_sub(gw, didx, didx), torch.zeros((), dtype=dt, device=src.device))
+    k_cross = torch.gather(gw[:, :n, :], 2, didx.unsqueeze(1).expand(-1, n, -1)) * imskf.to(
+        dt
+    ).unsqueeze(1)  # (B, n, mF) grid × design
+    return gd, k_cross
+
+
 def _batched_arm_dofs_inner(
     arms: list[dict],
     r_hat: np.ndarray | None,
@@ -692,48 +727,47 @@ def _batched_arm_dofs_inner(
     gy_by_t = [gram_v0, gram_vp, gram_sh]
     if r_hat is not None:
         yr_by_t = [v0r, vpr, torch.einsum("ank,ak->an", m0cp64, q_obs)]
-    src_off = [0, n, n]  # design block per floor target: fl_m0 → C0; fl_mp/fl_sh → C⁺
 
     # ── The three refit floors, batched over (arm × pair × member) ──
+    #
+    # FLOP-sharing across floor targets: fl_mp and fl_sh resample the SAME design
+    # (the C⁺ rows at the same indices — only their Y differs), so the design side
+    # (standardization + the HIDDEN-dim Gram + PRESS inputs) is computed ONCE per
+    # variant, not once per floor; and fl_m0's grid IS its design block (C0), so its
+    # weighted Gram only needs the n-row C0 block, not the 2n combined one. Together
+    # ~2.4x fewer HIDDEN-dim GEMM FLOPs than the naive one-Gram-per-floor shape.
     refit_dim = fitM.TARGET_DIM  # the serial _refit_ridge_fn reads issue722_fit_M's global
     k_ref = int(min(refit_dim, m_fit_max))
     stats = torch.zeros((n_arms, 3, n_refit_pairs), dtype=dt, device=dev)
-    for t in range(3):
-        gy = gy_by_t[t]
-        off = src_off[t]
-        src = stack_c0 if t == 0 else stack_cp
-        for p0 in range(0, n_refit_pairs, pair_chunk):
-            pc = list(range(p0, min(p0 + pair_chunk, n_refit_pairs)))
-            n_p = len(pc)
-            idx = fit_idx[:, pc]  # (A, P, 2, mF)
-            imsk = fit_msk[:, pc]
-            bsz = n_arms * n_p * 2
-            idxf = idx.reshape(bsz, m_fit_max)
-            imskf = imsk.reshape(bsz, m_fit_max)
-            m_real = imskf.sum(-1).to(dt)
-            wf = imskf.to(dt) / m_real.clamp(min=1.0).unsqueeze(-1)
-            cnt = torch.zeros((bsz, n), dtype=dt, device=dev)
-            cnt.scatter_add_(1, idxf, wf)  # per-arm-row weights (multiplicity/m)
-            armrep = torch.arange(n_arms, device=dev).repeat_interleave(n_p * 2)
-            src_b = src[armrep]  # (B, n, H)
-            mu = torch.einsum("bn,bnh->bh", cnt, src_b)
-            e2 = torch.einsum("bn,bnh->bh", cnt, src_b * src_b)
-            sd = (e2 - mu * mu).clamp(min=0).sqrt() + 1e-9
-            z = (comb[armrep] - mu.unsqueeze(1)) / sd.unsqueeze(1)
-            z = z * mask2n[armrep].to(dt).unsqueeze(-1)
-            gw = z @ z.transpose(1, 2)  # (B, 2n, 2n) — the ONE HIDDEN-dim GEMM per fit
-            didx = idxf + off
-            gm2 = imskf.unsqueeze(-1) & imskf.unsqueeze(-2)
-            gd = torch.where(
-                gm2, _gather_sub(gw, didx, didx), torch.zeros((), dtype=dt, device=dev)
-            )
-            k_cross = torch.gather(gw[:, :n, :], 2, didx.unsqueeze(1).expand(-1, n, -1)) * imskf.to(
-                dt
-            ).unsqueeze(1)  # (B, n, mF) grid × design
+    for p0 in range(0, n_refit_pairs, pair_chunk):
+        pc = list(range(p0, min(p0 + pair_chunk, n_refit_pairs)))
+        n_p = len(pc)
+        idx = fit_idx[:, pc]  # (A, P, 2, mF)
+        imsk = fit_msk[:, pc]
+        bsz = n_arms * n_p * 2
+        idxf = idx.reshape(bsz, m_fit_max)
+        imskf = imsk.reshape(bsz, m_fit_max)
+        m_real = imskf.sum(-1).to(dt)
+        wf = imskf.to(dt) / m_real.clamp(min=1.0).unsqueeze(-1)
+        cnt = torch.zeros((bsz, n), dtype=dt, device=dev)
+        cnt.scatter_add_(1, idxf, wf)  # per-arm-row weights (multiplicity/m)
+        armrep = torch.arange(n_arms, device=dev).repeat_interleave(n_p * 2)
+        gm2 = imskf.unsqueeze(-1) & imskf.unsqueeze(-2)
+        cap = torch.minimum(m_real.long(), torch.full_like(m_real.long(), refit_dim))
+
+        # variant 0: X = C0 rows; grid == design block → the n-row C0 Gram suffices.
+        # variant 1: X = C⁺ rows (fl_mp AND fl_sh — identical design, different Y);
+        #            grid = C0 rows → the combined [C0; C⁺] Gram.
+        design_by_var = (
+            _floor_design_gram(stack_c0, stack_c0, mask, 0, armrep, cnt, idxf, imskf, gm2, n),
+            _floor_design_gram(stack_cp, comb, mask2n, n, armrep, cnt, idxf, imskf, gm2, n),
+        )
+        for t in range(3):
+            gy = gy_by_t[t]
+            gd, k_cross = design_by_var[0 if t == 0 else 1]
             gs = torch.where(
                 gm2, _gather_sub(gy[armrep], idxf, idxf), torch.zeros((), dtype=dt, device=dev)
             )
-            cap = torch.minimum(m_real.long(), torch.full_like(m_real.long(), refit_dim))
             c_f = _gram_pca_coeff(gs, imskf, m_real, cap, k_ref)  # (B, k_ref, mF)
             y64f = _right_center(gs, wf, imskf) @ c_f.transpose(1, 2)  # (B, mF, k_ref)
             (pred64,) = _batched_press_ridge(gd, y64f, [k_cross], lambdas)  # (B, n, k_ref)
