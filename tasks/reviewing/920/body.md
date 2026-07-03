@@ -55,6 +55,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_920.md](https://github.com/superkaiba/explore-persona-space/blob/e192a82965d7061784274cb362ca3348eaf8d81c/docs/methodology/issue_920.md) · [gist](https://gist.github.com/superkaiba/5ae2aa61cce08383cb3cad3f34075ffc)
+
 ## Takeaways
 
 - **The linear context→answer activation map is far above chance under family-held-out evaluation: best held-out skill 0.87 against a 0.17 chance band; 17,447 of 34,652 combinations clear.**
