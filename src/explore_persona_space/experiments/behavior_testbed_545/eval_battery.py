@@ -28,6 +28,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from explore_persona_space.artifacts.context import Context
+
 from . import (
     BASE_MODEL,
     IM_END_TOKEN_ID,
@@ -125,18 +127,44 @@ def battery_probes(column: ColumnSpec, *, cap: int | None = None) -> list[dict]:
     return items
 
 
-def render_chat(tokenizer, question: str, context_id: str) -> str:
-    """Chat-template render of one probe under an eval context (system-prompt
-    persona injection only; optional frozen multi-turn prefix)."""
+def _context_for_545(context_id: str) -> Context:
+    """Convert a 545 ``columns.CONTEXTS`` entry into an ``artifacts.Context``.
+
+    Battery resolution stays HERE, at call time: ``load_battery`` carries the
+    testbed-specific smoke/v2 root-fallback logic, and ``artifacts/`` stays
+    file-free and never imports ``behavior_testbed_545`` (no import cycle).
+    NOTE: the id ``"default"`` exists in BOTH universes — the artifacts
+    ``CONTEXTS`` registry and this converter — by design; both resolve to the
+    bare default-assistant context (this shim never reads the registry).
+
+    Error surface is unchanged from the pre-#852 ``render_chat``: ``KeyError``
+    on an unknown context id, ``FileNotFoundError`` on a missing battery.
+    """
     ctx = CONTEXTS[context_id]
-    messages: list[dict] = []
-    if ctx.get("system"):
-        messages.append({"role": "system", "content": ctx["system"]})
+    prefix: tuple[dict, ...] = ()
     if ctx.get("prefix_battery"):
-        prefix = load_battery(ctx["prefix_battery"])["prefix_turns"]
-        messages.extend(prefix)
-    messages.append({"role": "user", "content": question})
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        prefix = tuple(load_battery(ctx["prefix_battery"])["prefix_turns"])
+    system = ctx.get("system")
+    kind = "prefix" if prefix else ("persona" if system else "bare")
+    return Context(
+        context_id=context_id,
+        kind=kind,
+        family="testbed_545",
+        system=system,
+        prefix_turns=prefix,
+        source="behavior_testbed_545.columns.CONTEXTS",
+    )
+
+
+def render_chat(tokenizer, question: str, context_id: str) -> str:
+    """Thin shim over ``artifacts.context.Context.render`` (Phase 0b, task #852).
+
+    Byte-identical to the pre-#852 implementation on every 545 context id
+    (system-prompt persona injection only; optional frozen multi-turn prefix)
+    — regression-pinned against a frozen verbatim copy of the old body by
+    ``tests/test_artifacts_context.py``.
+    """
+    return _context_for_545(context_id).render(tokenizer, question)
 
 
 # ---------------------------------------------------------------------------

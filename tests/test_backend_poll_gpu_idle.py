@@ -517,3 +517,147 @@ def test_backend_poll_main_non_gcp_omits_idle_fields_defaulting_false(
     out = _last_json_line(capsys)
     assert out["gcp_gpu_idle_advisory_posted"] is False
     assert out["gcp_gpu_idle_escalation_posted"] is False
+
+
+# ── #873 m-of-N GPU-width advisory on the GCP lane ────────────────────────────
+#
+# The decision core + RunPod-lane wiring (incl. the injectable-clock
+# repost-after-relaunch behavior) are exhaustively pinned in
+# tests/test_poll_gpu_width_advisory.py; here we pin the GCP-lane WIRING —
+# the imported _maybe_post_gpu_width_advisory + the _tripwire_run_scope
+# run-scope anchor driven off the seeded sibling state file (AC #6 mirror).
+
+# Partial idle on an 8-GPU pod: idle {0,1,3,7}, active {2,4,5,6}.
+_PARTIAL_IDLE_UTIL = "0,0,95,0,88,90,92,0"
+
+
+def _seed_width_state(
+    path: Path,
+    *,
+    since_epoch: int,
+    phase: str,
+    advised: str = "",
+    run_epoch: int | None = None,
+) -> None:
+    payload = {
+        "phase": phase,
+        "gpu_idle_since_epoch": "0",
+        "gpu_idle_advised_phases": "",
+        "gpu_idle_escalated_phases": "",
+        "gpu_width_since_epoch": str(since_epoch),
+        "gpu_width_idle_set": "0,1,3,7",
+        "gpu_width_advised_phases": advised,
+    }
+    if run_epoch is not None:
+        payload["tripwire_run_epoch"] = str(run_epoch)
+    bp._save_gpu_idle_state(path, payload)
+
+
+def test_gcp_width_advisory_posts_after_threshold(tmp_path: Path, monkeypatch) -> None:
+    """A STABLE strict subset of GPUs idle past GPU_WIDTH_ADVISORY_MIN in the
+    seeded sibling state -> the imported width wiring posts a
+    [gpu-width-advisory] marker (mirror of test_gcp_advisory_posts_after_threshold)."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    path = tmp_path / "issue-730-gpu-idle-state.json"
+    now = 100_000
+    _seed_width_state(path, since_epoch=now - pp.GPU_WIDTH_ADVISORY_MIN * 60, phase="workload")
+    prev = bp._load_gpu_idle_state(path)
+    _since, idle_set, advised, width_posted = pp._maybe_post_gpu_width_advisory(
+        issue=730,
+        pod="eps-issue-730",
+        status="running",
+        gpu_util=_PARTIAL_IDLE_UTIL,
+        current_phase="workload",
+        prev_state=prev,
+        now_epoch=now,
+    )
+    assert width_posted is True
+    assert idle_set == (0, 1, 3, 7)
+    assert "workload" in advised
+    assert any(p["key"] == "epm:progress" and p.get("gpu_width_advisory") for p in posted)
+    assert any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+
+
+def test_backend_poll_main_gcp_width_integration(tmp_path, monkeypatch, capsys) -> None:
+    """Driving main() on a GCP handle with a RUNNING poll + a partial-idle
+    probe + a pre-seeded width span past the threshold emits the new
+    serialized ``gcp_gpu_width_advisory_posted`` field True and records the
+    advised phase in the sibling state (mirror of
+    test_backend_poll_main_gcp_idle_integration)."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    # Deterministic run-scope anchor: no epm:run-launched signal -> no reset.
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: None)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    now = int(time.time())
+    _seed_width_state(
+        state_path,
+        since_epoch=now - (pp.GPU_WIDTH_ADVISORY_MIN + 1) * 60,
+        phase="workload",
+    )
+
+    backend = _IdlePollBackend(gpu_util=_PARTIAL_IDLE_UTIL, current_phase="workload")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["gcp_gpu_width_advisory_posted"] is True
+    # Partial idle is DISJOINT from the all-idle tiers: neither idle flag fires.
+    assert out["gcp_gpu_idle_advisory_posted"] is False
+    assert out["gcp_gpu_idle_escalation_posted"] is False
+    saved = bp._load_gpu_idle_state(state_path)
+    assert "workload" in saved["gpu_width_advised_phases"]
+    assert saved["gpu_width_idle_set"] == "0,1,3,7"
+    assert any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+
+
+def test_gcp_width_relaunch_resets_advised_phases(tmp_path, monkeypatch, capsys) -> None:
+    """AC #6 mirrored in the GCP sibling state payload: a fresh
+    epm:run-launched epoch (newer than the stored tripwire_run_epoch by
+    >60s) CLEARS the stale width keys — the advised-phase de-dup and the
+    span belong to the PREVIOUS run, so the fresh run's first tick restarts
+    the span (no post) with a re-armed advised set. The repost-after-aging
+    behavior of the SECOND run is pinned with an injectable clock in
+    tests/test_poll_gpu_width_advisory.py::test_width_relaunch_resets_advised_phases."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    # The fresh run launched 120s ago -> current run epoch >> stored anchor.
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 120.0)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    t0 = int(time.time())
+    _seed_width_state(
+        state_path,
+        since_epoch=t0 - 10 * 3600,  # a stale, way-past-threshold span
+        phase="workload",
+        advised="workload",  # the PREVIOUS run already advised this phase
+        run_epoch=1000,  # the PREVIOUS run's launch epoch
+    )
+
+    backend = _IdlePollBackend(gpu_util=_PARTIAL_IDLE_UTIL, current_phase="workload")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # The stale span/advised set was CLEARED, so this tick restarts, not posts.
+    assert out["gcp_gpu_width_advisory_posted"] is False
+    assert not any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+    saved = bp._load_gpu_idle_state(state_path)
+    assert saved["gpu_width_advised_phases"] == ""  # stale de-dup cleared (re-armed)
+    assert int(saved["gpu_width_since_epoch"]) >= t0  # span restarted this run
+    assert int(saved["tripwire_run_epoch"]) >= t0 - 121  # fresh anchor persisted

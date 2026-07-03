@@ -1,0 +1,504 @@
+{
+  "dv": "reconstruction_skill_over_mean_r2 (LOCO ridge on PCA-48 target)",
+  "predictor": "cc_last_input_token (#594)",
+  "note": "ad-hoc user-chat inline free analysis on #810: signedmax = per-dim max-|value| answer-token element, sign kept (abs-argmax gather), probe-mean per context; maxp/mean re-fit through the same code path as validation anchors",
+  "n_contexts": 50,
+  "pca_target_dim": 48,
+  "capture_layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "by_summary": {
+    "signedmax": [
+      {
+        "layer": 0,
+        "n": 50,
+        "ridge_skill": -0.6538785720426097
+      },
+      {
+        "layer": 1,
+        "n": 50,
+        "ridge_skill": -0.4256779616563433
+      },
+      {
+        "layer": 2,
+        "n": 50,
+        "ridge_skill": -0.19853579766342078
+      },
+      {
+        "layer": 3,
+        "n": 50,
+        "ridge_skill": -0.15340735312239806
+      },
+      {
+        "layer": 4,
+        "n": 50,
+        "ridge_skill": -0.05112041116072463
+      },
+      {
+        "layer": 5,
+        "n": 50,
+        "ridge_skill": -0.10070211488548786
+      },
+      {
+        "layer": 6,
+        "n": 50,
+        "ridge_skill": -0.03229382371859546
+      },
+      {
+        "layer": 7,
+        "n": 50,
+        "ridge_skill": 0.009125640541530422
+      },
+      {
+        "layer": 8,
+        "n": 50,
+        "ridge_skill": 0.049011847537876685
+      },
+      {
+        "layer": 9,
+        "n": 50,
+        "ridge_skill": 0.07084229429028188
+      },
+      {
+        "layer": 10,
+        "n": 50,
+        "ridge_skill": 0.07753700491887228
+      },
+      {
+        "layer": 11,
+        "n": 50,
+        "ridge_skill": 0.10232921288710906
+      },
+      {
+        "layer": 12,
+        "n": 50,
+        "ridge_skill": 0.1367389274709998
+      },
+      {
+        "layer": 13,
+        "n": 50,
+        "ridge_skill": 0.2021283321650803
+      },
+      {
+        "layer": 14,
+        "n": 50,
+        "ridge_skill": 0.21145241662918135
+      },
+      {
+        "layer": 15,
+        "n": 50,
+        "ridge_skill": 0.2889045528121883
+      },
+      {
+        "layer": 16,
+        "n": 50,
+        "ridge_skill": 0.2627607529434858
+      },
+      {
+        "layer": 17,
+        "n": 50,
+        "ridge_skill": 0.2402455892983527
+      },
+      {
+        "layer": 18,
+        "n": 50,
+        "ridge_skill": 0.2988049311290857
+      },
+      {
+        "layer": 19,
+        "n": 50,
+        "ridge_skill": 0.3290655437489638
+      },
+      {
+        "layer": 20,
+        "n": 50,
+        "ridge_skill": 0.2869813281545949
+      },
+      {
+        "layer": 21,
+        "n": 50,
+        "ridge_skill": 0.20474657547912356
+      },
+      {
+        "layer": 22,
+        "n": 50,
+        "ridge_skill": 0.048561976008901775
+      },
+      {
+        "layer": 23,
+        "n": 50,
+        "ridge_skill": -0.06776393531137881
+      },
+      {
+        "layer": 24,
+        "n": 50,
+        "ridge_skill": -0.1150446381771495
+      },
+      {
+        "layer": 25,
+        "n": 50,
+        "ridge_skill": -0.21361552702138775
+      },
+      {
+        "layer": 26,
+        "n": 50,
+        "ridge_skill": -0.15734836593174006
+      },
+      {
+        "layer": 27,
+        "n": 50,
+        "ridge_skill": -0.08419076295314953
+      }
+    ],
+    "maxp_revalidated": [
+      {
+        "layer": 0,
+        "n": 50,
+        "ridge_skill": 0.15644174124864407
+      },
+      {
+        "layer": 1,
+        "n": 50,
+        "ridge_skill": 0.22067685319386332
+      },
+      {
+        "layer": 2,
+        "n": 50,
+        "ridge_skill": 0.33860384187167425
+      },
+      {
+        "layer": 3,
+        "n": 50,
+        "ridge_skill": 0.3586297927094313
+      },
+      {
+        "layer": 4,
+        "n": 50,
+        "ridge_skill": 0.46689874490757843
+      },
+      {
+        "layer": 5,
+        "n": 50,
+        "ridge_skill": 0.48868190151671276
+      },
+      {
+        "layer": 6,
+        "n": 50,
+        "ridge_skill": 0.5370298290688937
+      },
+      {
+        "layer": 7,
+        "n": 50,
+        "ridge_skill": 0.5913200819057549
+      },
+      {
+        "layer": 8,
+        "n": 50,
+        "ridge_skill": 0.5827997351593026
+      },
+      {
+        "layer": 9,
+        "n": 50,
+        "ridge_skill": 0.6661469199742092
+      },
+      {
+        "layer": 10,
+        "n": 50,
+        "ridge_skill": 0.6797133550729559
+      },
+      {
+        "layer": 11,
+        "n": 50,
+        "ridge_skill": 0.72056266326738
+      },
+      {
+        "layer": 12,
+        "n": 50,
+        "ridge_skill": 0.7238553378711019
+      },
+      {
+        "layer": 13,
+        "n": 50,
+        "ridge_skill": 0.7357478432690896
+      },
+      {
+        "layer": 14,
+        "n": 50,
+        "ridge_skill": 0.7556309823994577
+      },
+      {
+        "layer": 15,
+        "n": 50,
+        "ridge_skill": 0.7585446382880913
+      },
+      {
+        "layer": 16,
+        "n": 50,
+        "ridge_skill": 0.7652808993380463
+      },
+      {
+        "layer": 17,
+        "n": 50,
+        "ridge_skill": 0.7604437354623262
+      },
+      {
+        "layer": 18,
+        "n": 50,
+        "ridge_skill": 0.7891491419870315
+      },
+      {
+        "layer": 19,
+        "n": 50,
+        "ridge_skill": 0.7908343698199812
+      },
+      {
+        "layer": 20,
+        "n": 50,
+        "ridge_skill": 0.8187853762703357
+      },
+      {
+        "layer": 21,
+        "n": 50,
+        "ridge_skill": 0.825916393306918
+      },
+      {
+        "layer": 22,
+        "n": 50,
+        "ridge_skill": 0.8088433666098076
+      },
+      {
+        "layer": 23,
+        "n": 50,
+        "ridge_skill": 0.801925083318598
+      },
+      {
+        "layer": 24,
+        "n": 50,
+        "ridge_skill": 0.795177848437545
+      },
+      {
+        "layer": 25,
+        "n": 50,
+        "ridge_skill": 0.7754298495658275
+      },
+      {
+        "layer": 26,
+        "n": 50,
+        "ridge_skill": 0.7084799709904546
+      },
+      {
+        "layer": 27,
+        "n": 50,
+        "ridge_skill": 0.6555299749102554
+      }
+    ],
+    "mean_revalidated": [
+      {
+        "layer": 0,
+        "n": 50,
+        "ridge_skill": -0.09047721056299673
+      },
+      {
+        "layer": 1,
+        "n": 50,
+        "ridge_skill": 0.17337113513016367
+      },
+      {
+        "layer": 2,
+        "n": 50,
+        "ridge_skill": 0.34789884078080524
+      },
+      {
+        "layer": 3,
+        "n": 50,
+        "ridge_skill": 0.4256971290167956
+      },
+      {
+        "layer": 4,
+        "n": 50,
+        "ridge_skill": 0.48861634805612275
+      },
+      {
+        "layer": 5,
+        "n": 50,
+        "ridge_skill": 0.47480501047785617
+      },
+      {
+        "layer": 6,
+        "n": 50,
+        "ridge_skill": 0.5894329254391446
+      },
+      {
+        "layer": 7,
+        "n": 50,
+        "ridge_skill": 0.6050007205890667
+      },
+      {
+        "layer": 8,
+        "n": 50,
+        "ridge_skill": 0.6655902802916152
+      },
+      {
+        "layer": 9,
+        "n": 50,
+        "ridge_skill": 0.6403514933389851
+      },
+      {
+        "layer": 10,
+        "n": 50,
+        "ridge_skill": 0.6598108178316537
+      },
+      {
+        "layer": 11,
+        "n": 50,
+        "ridge_skill": 0.6888475547935466
+      },
+      {
+        "layer": 12,
+        "n": 50,
+        "ridge_skill": 0.7109649849649957
+      },
+      {
+        "layer": 13,
+        "n": 50,
+        "ridge_skill": 0.7245434074107704
+      },
+      {
+        "layer": 14,
+        "n": 50,
+        "ridge_skill": 0.7471152400057104
+      },
+      {
+        "layer": 15,
+        "n": 50,
+        "ridge_skill": 0.7877708437511896
+      },
+      {
+        "layer": 16,
+        "n": 50,
+        "ridge_skill": 0.7869857239084512
+      },
+      {
+        "layer": 17,
+        "n": 50,
+        "ridge_skill": 0.7825979107068154
+      },
+      {
+        "layer": 18,
+        "n": 50,
+        "ridge_skill": 0.7997271698800967
+      },
+      {
+        "layer": 19,
+        "n": 50,
+        "ridge_skill": 0.7799565645916701
+      },
+      {
+        "layer": 20,
+        "n": 50,
+        "ridge_skill": 0.7746674287237958
+      },
+      {
+        "layer": 21,
+        "n": 50,
+        "ridge_skill": 0.7427925052512234
+      },
+      {
+        "layer": 22,
+        "n": 50,
+        "ridge_skill": 0.7000677981123722
+      },
+      {
+        "layer": 23,
+        "n": 50,
+        "ridge_skill": 0.6570108825548171
+      },
+      {
+        "layer": 24,
+        "n": 50,
+        "ridge_skill": 0.6185325454171416
+      },
+      {
+        "layer": 25,
+        "n": 50,
+        "ridge_skill": 0.5668701027648171
+      },
+      {
+        "layer": 26,
+        "n": 50,
+        "ridge_skill": 0.5444950867892873
+      },
+      {
+        "layer": 27,
+        "n": 50,
+        "ridge_skill": 0.5135481379883038
+      }
+    ]
+  },
+  "best": {
+    "signedmax": {
+      "layer": 19,
+      "ridge_skill": 0.3290655437489638
+    },
+    "maxp_revalidated": {
+      "layer": 21,
+      "ridge_skill": 0.825916393306918
+    },
+    "mean_revalidated": {
+      "layer": 18,
+      "ridge_skill": 0.7997271698800967
+    }
+  },
+  "layer_mean_skill": {
+    "signedmax": 0.02020205937040153,
+    "maxp_revalidated": 0.6456100097050451,
+    "mean_revalidated": 0.6038068349287221
+  },
+  "anchor_revalidation": {
+    "tolerance": 0.01,
+    "held": true,
+    "per_summary": {
+      "maxp": {
+        "max_abs_diff_vs_stored": 1.9238230875018303e-07,
+        "n_layers_compared": 28
+      },
+      "mean": {
+        "max_abs_diff_vs_stored": 1.2619015743453588e-07,
+        "n_layers_compared": 28
+      }
+    },
+    "stored_reference": "eval_results/issue_810/reconstruction_skill_by_summary.json"
+  },
+  "stream_stats": {
+    "total_bytes_downloaded": 142018852834,
+    "max_maxp_parity_diff": 0.0
+  },
+  "summaries_pt": "eval_results/issue_810/adhoc_signedmax_summaries.pt"
+}

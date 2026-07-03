@@ -74,9 +74,11 @@ import hashlib
 import json
 import logging
 import os
+import random
 import re
 import shutil
 import subprocess
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -227,13 +229,13 @@ def _sanitized_git_env() -> dict[str, str]:
     return env
 
 
-@functools.lru_cache(maxsize=1)
-def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
-    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
-    automatically. The key is computed by the wrapper; we ignore the
-    contents (we resolve relative to module dir + sanitized env, not cwd).
+def _resolve_primary_checkout(env: dict[str, str]) -> Path:
+    """Resolve + validate the PRIMARY checkout root (the git common dir's
+    parent). Verbatim extraction of ``_resolve_repo_root_cached`` steps
+    (a)+(b) — the rev-parse + layout validation, everything BEFORE the
+    branch guard (#844). Raises ``RuntimeError`` on any failure; never
+    falls back to a ``__file__``/cwd walk-up.
     """
-    env = _sanitized_git_env()
     # (a) Locate the common git dir.
     try:
         proc = subprocess.run(
@@ -275,6 +277,18 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"resolved repo root {parent!s} has no `tasks/` directory; "
             f"wrong repo or uninitialized layout — refusing to resolve tasks/."
         )
+    return parent
+
+
+@functools.lru_cache(maxsize=1)
+def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
+    automatically. The key is computed by the wrapper; we ignore the
+    contents (we resolve relative to module dir + sanitized env, not cwd).
+    """
+    env = _sanitized_git_env()
+    # (a)+(b) Locate the common git dir + validate its parent.
+    parent = _resolve_primary_checkout(env)
     # (c) Branch guard.
     sym = subprocess.run(
         ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
@@ -501,9 +515,31 @@ def repo_root() -> Path:
     return _resolve_repo_root_cached((os.getpid(), os.getcwd()))
 
 
+@functools.lru_cache(maxsize=1)
+def _primary_checkout_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target for :func:`primary_checkout_root`. Keyed on
+    (pid, cwd) exactly like ``_resolve_repo_root_cached`` so forks + chdirs
+    invalidate automatically.
+    """
+    return _resolve_primary_checkout(_sanitized_git_env())
+
+
+def primary_checkout_root() -> Path:
+    """Absolute path of the PRIMARY (main) checkout — the git common dir's
+    parent — with full layout validation but NO branch guard and NO off-main
+    routing to the managed ``_task-main-pin`` worktree. For consumers that
+    need the canonical checkout PATH (session-spawn cwd, #844), not a safe
+    tasks/ read-write root (those use :func:`repo_root`). Fails loud; never
+    falls back to a ``__file__``/cwd walk-up.
+    """
+    return _primary_checkout_cached((os.getpid(), os.getcwd()))
+
+
 def invalidate_cache() -> None:
-    """Drop the cached repo-root resolution. Next call re-probes git."""
+    """Drop the cached repo-root + primary-checkout resolutions. Next call
+    re-probes git."""
     _resolve_repo_root_cached.cache_clear()
+    _primary_checkout_cached.cache_clear()
 
 
 def tasks_dir() -> Path:
@@ -1345,6 +1381,479 @@ def stage_dispatch_should_skip(
     )
 
 
+# ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
+
+# Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
+# advisory content — excluded from pre-dispatch triage candidates. Anything
+# NOT listed is a candidate (over-approximation by design: a false positive
+# costs one first-line read; a false negative is the #779 failure mode).
+TRIAGE_EXEMPT_KINDS = frozenset(
+    {
+        "epm:status-changed",
+        "epm:step-completed",
+        "epm:backend-selected",
+        "epm:codex-task-spawned",
+        "epm:codex-task-completed",
+        "epm:codex-task-failed",
+        "epm:pod-provisioned",
+        "epm:pod-terminated",
+        "epm:pod-stopped",
+        "epm:run-launched",
+        "epm:run-finished",
+        "epm:upload-verification",
+        "epm:merged",
+        "epm:methodology-doc-generated",
+        "epm:workflow-fix-task-filed",
+        "epm:workflow-fix-applied",
+        "epm:workflow-fix-failed",
+        "epm:workflow-fix-candidate",
+        # Session-pipeline review/lifecycle verdict kinds — structurally posted
+        # by THIS task's own planner/review/implementation loop, never the
+        # vehicle for a cross-session advisory (fact-check on #779: including
+        # these halves the per-dispatch read load, 30 -> 20 candidates, with
+        # zero externals lost).
+        "epm:code-review",
+        "epm:code-review-codex",
+        "epm:review-reconcile",
+        "epm:experiment-implementation",
+        "epm:concern-raised",
+        "epm:concern-addressed",
+        "epm:concern-deferred",
+        "epm:interp-critique",
+        "epm:interp-critique-codex",
+        "epm:clean-result-critique",
+        "epm:clean-result-critique-codex",
+        "epm:plan",
+        "epm:plan-approved",
+        "epm:plan-verify",
+        "epm:consistency",
+        "epm:clarify",
+        "epm:clarify-answers",
+        "epm:test-verdict",
+        "epm:smoke-architecture-check",
+    }
+)
+
+# ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
+# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
+# "unknown", and on #779 both self- and PM-chat-posted markers carried
+# by="unknown" — so this set only strips known machine identities; it never
+# claims to identify externality (that is the orchestrator's judgment call,
+# SKILL.md § Pre-dispatch external-marker triage).
+TRIAGE_MACHINE_BY = frozenset(
+    {
+        "poll_pipeline",
+        "task.py",
+        "backends.router",
+        "backends.gcp",
+        "backends.slurm",
+        "backends.slurm_monitor",
+        "backends.selector",
+        "autonomous-gate",
+        "codex_task",
+        "task_state shim",
+    }
+)
+
+# Compute-launch marker kinds — ALWAYS close the triage window.
+# epm:run-launched is the RunPod/experimenter launch record;
+# epm:cluster-launched is what the default GCP/SLURM lanes post (SKILL.md
+# Step 6b marker trail; #779's own window contains one at 14:56:21Z, by
+# backends.gcp).
+TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
+
+# The auditable triage-record line. A dispatch record carrying this line is
+# DUTY-BOUND (it performed the triage) and closes the window; a note that IS
+# a triage record is also excluded from candidates.
+TRIAGE_LINE_PREFIX = "external-markers triaged:"
+
+
+def triage_candidates_since_last_dispatch(
+    events: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+    launch_kinds: frozenset[str] = TRIAGE_LAUNCH_KINDS,
+) -> list[dict]:
+    """Return pre-dispatch triage candidates since the latest DUTY-BOUND dispatch record.
+
+    THE BOUNDARY MATCHES THE TRIAGE DUTY SURFACE: the window opens AFTER the
+    most recent event that is either (i) a compute-launch marker (kind in
+    ``launch_kinds`` — ``epm:run-launched`` or ``epm:cluster-launched``), or
+    (ii) ANY event whose note contains the ``external-markers triaged:`` line
+    (a triaged compute breadcrumb, or the adjacent ``epm:progress`` triage
+    note the pod/backend-launch form posts). When no such record exists the
+    window is the whole list (task start). A NON-compute breadcrumb (review /
+    analyzer / verifier stages) never closes the window — those dispatches
+    carry no triage duty, so they cannot orphan an advisory; an UNTRIAGED
+    compute breadcrumb (pre-fix or concurrent session) also does not close it
+    (fail-toward-triage). Within the window an event is a candidate unless:
+    kind in ``exempt_kinds``, ``by`` in ``machine_by``, the note is
+    empty/absent, the note is itself breadcrumb-shaped (lstripped note begins
+    ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
+    or the note contains the triage line (it is a triage record, not an
+    advisory). Chronological order preserved. Deliberately over-approximates —
+    it ENUMERATES for LLM-side triage and never classifies externality
+    (``by`` cannot: default "unknown").
+    """
+    boundary = -1
+    for idx in range(len(events) - 1, -1, -1):
+        event = events[idx]
+        note = event.get("note", "") or ""
+        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+            boundary = idx
+            break
+    candidates: list[dict] = []
+    for event in events[boundary + 1 :]:
+        if event.get("kind", "") in exempt_kinds:
+            continue
+        if event.get("by", "") in machine_by:
+            continue
+        note = event.get("note", "") or ""
+        if not note.strip():
+            continue
+        if note.lstrip().startswith("stage-dispatch "):
+            continue
+        if TRIAGE_LINE_PREFIX in note:
+            continue
+        candidates.append(event)
+    return candidates
+
+
+# ─── Same-issue follow-up label grouping (#894) ────────────────────────────
+#
+# Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)
+# under different `followup_label`s, so the highest-version-per-kind marker
+# map is the WRONG read for dispatch: a later label's completion must never
+# strand an earlier queued label (#763: scope v1 `neutral-contrast-and-cofit`
+# stayed invisible after scope v2's round ran). These helpers are the SINGLE
+# implementation of the label-grouped predicate; `/issue` Step 0, the Step 9b
+# loop, the resume table, and `scripts/autonomous_session_watch.py` all defer
+# here.
+
+FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
+FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
+
+# An UNLABELED scope note inherits the previous entry's label ONLY when it
+# carries an explicit correction signal (the #658-v2 shape: "CORRECTION to
+# the earlier epm:followup-scope (...)"). An unlabeled note WITHOUT the
+# signal is a DISTINCT queued follow-up (#685 v2) and must NOT merge into
+# the previous label.
+CORRECTION_SIGNAL = re.compile(r"correction|supersede|re-?post", re.IGNORECASE)
+
+# The same-issue loop's stage-dispatch breadcrumb prefix (mirrors
+# `autonomous_session_watch._FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`; the
+# watcher script cannot be imported from the library, so the literal is
+# duplicated here — both sides cite each other).
+_FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
+
+# Round-completion words for the class-3 retro-close evidence read
+# (`followup_retro_close_evidence`). Case-sensitive by design — a missed
+# close is safe (the label stays queued), a wrong close is not.
+_ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+
+def parse_followup_note_field(note: str, field: str) -> str | None:
+    """Extract ``<field>``'s value from a followup-scope / run-marker note.
+
+    Matches the FIRST line whose core (after stripping any leading mix of
+    ``-``/``*`` bullets, bold markers, and whitespace) starts with
+    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
+    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
+    The value is the first whitespace token of the remainder, stripped of
+    backticks / quotes / ``*`` and a trailing comma (#664 ships a
+    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
+    COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
+    field — corpus-clean today, pinned against future drift), and
+    single-line space-separated run notes (first-token rule; labels are
+    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
+    wins: #763 v2 embeds a second bold label deep inside its
+    verbatim-proposal section, and the top-of-note canonical line is hit
+    first. Returns ``None`` when the field is absent or its value is empty.
+    """
+    for line in (note or "").splitlines():
+        # One regex pass strips any interleaved mix of whitespace, bullet
+        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
+        # chain stops at the space in "- **field:** x" and misses the bold
+        # marker behind it).
+        core = re.sub(r"^[\s\-*]+", "", line)
+        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+            rest = core[len(field) + 1 :].lstrip("*").strip()
+            tokens = rest.split()
+            value = tokens[0] if tokens else ""
+            value = value.strip("`'\"*").rstrip(",")
+            return value or None
+    return None
+
+
+def _scope_scan_key(event: dict) -> tuple[datetime, int]:
+    """Chronological scan key ``(ts, version)`` for followup-scope grouping.
+
+    CHRONOLOGICAL with version tiebreak — NOT ``(version, ts)``: per-kind
+    version monotonicity is VIOLATED in the wild (#480 carries TWO
+    ``version: 1`` scope rows with a v2 chronologically between them);
+    ``(ts, version)`` is robust there and identical to ``(version, ts)`` on
+    every conforming task (#658, #763). A malformed/missing ts sorts first.
+    """
+    ts = _stage_event_ts(event)
+    if ts is None:
+        ts = datetime.min.replace(tzinfo=UTC)
+    version = event.get("version")
+    if not isinstance(version, int):
+        version = 0
+    return (ts, version)
+
+
+def followup_label_groups(events: list[dict]) -> list[dict]:
+    """Group ``epm:followup-scope`` entries by ``followup_label``.
+
+    Scans scopes in ``(ts, version)`` order (see :func:`_scope_scan_key`).
+    Per entry the label is resolved as:
+
+    - ``parsed`` — the note carries a parseable ``followup_label``;
+    - ``inherited-from-previous`` — unlabeled BUT the note carries a
+      correction signal (:data:`CORRECTION_SIGNAL`): a correction follows
+      the scope it corrects (#658 v2), so it attributes to the previous
+      label;
+    - ``pseudo-ts`` — unlabeled with NO correction signal: a DISTINCT queued
+      follow-up under the pseudo-label ``unlabeled-<ts>`` (#685 v2). NEVER
+      silently dropped, but NON-dispatchable (``unlabeled-<ts>`` violates the
+      kebab-slug field contract and would name
+      ``eval_results/issue_<N>/<label>/`` artifact dirs with colons) — Step 0
+      surfaces these loudly as repair items instead of executing a malformed
+      round. Dispatchability is FOUNDING-based: a group FOUNDED as
+      ``pseudo-ts`` stays ``dispatchable: False`` even when a later unlabeled
+      CORRECTION inherits into it (the inherit raises the group's
+      authoritative entry but cannot repair the malformed label — only a
+      re-post with a proper kebab-slug ``followup_label`` can).
+
+    Returns one dict per label, in first-armed order, with JSON-native
+    values: ``{followup_label, source, user_initiated, armed_ts,
+    authoritative, label_parse, dispatchable, n_entries}``. Within a label
+    the AUTHORITATIVE entry is the last in scan order (corrections land
+    append-only — the #658 v3→v7 ``persona-vectors-style-rb`` chain);
+    ``armed_ts`` is the FIRST entry's ts (a later correction never re-queues
+    the label). ``source`` is the first parseable ``source`` across the
+    group's entries in scan order (a correction note that omits ``source``
+    must not demote a user-chat round), else ``"unknown"``.
+    """
+    scopes = sorted(
+        (e for e in events if e.get("kind") == FOLLOWUP_SCOPE_KIND),
+        key=_scope_scan_key,
+    )
+    prev_label: str | None = None
+    groups: dict[str, dict] = {}
+    sources: dict[str, list[str]] = {}
+    founded_pseudo: dict[str, bool] = {}
+    for ev in scopes:
+        note = ev.get("note") or ""
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            parse_mode = "parsed"
+        elif prev_label is not None and CORRECTION_SIGNAL.search(note):
+            label, parse_mode = prev_label, "inherited-from-previous"
+        else:
+            label, parse_mode = f"unlabeled-{ev.get('ts', '')}", "pseudo-ts"
+        prev_label = label
+        group = groups.get(label)
+        if group is None:
+            group = {
+                "followup_label": label,
+                "armed_ts": ev.get("ts", ""),
+                "authoritative": ev,
+                "label_parse": parse_mode,
+                "n_entries": 0,
+            }
+            groups[label] = group
+            sources[label] = []
+            founded_pseudo[label] = parse_mode == "pseudo-ts"
+        group["n_entries"] += 1
+        group["authoritative"] = ev  # last in (ts, version) order wins
+        group["label_parse"] = parse_mode
+        src = parse_followup_note_field(note, "source")
+        if src:
+            sources[label].append(src)
+    result: list[dict] = []
+    for label, group in groups.items():
+        group["source"] = sources[label][0] if sources[label] else "unknown"
+        group["user_initiated"] = group["source"] in USER_INITIATED_FOLLOWUP_SOURCES
+        # FOUNDING-based: a pseudo-founded group is a repair item forever —
+        # a later unlabeled CORRECTION inheriting into it must NOT flip it
+        # dispatchable (the label is still the malformed `unlabeled-<ts>`).
+        group["dispatchable"] = not founded_pseudo[label] and group["label_parse"] in (
+            "parsed",
+            "inherited-from-previous",
+        )
+        result.append(group)
+    return result
+
+
+def unrun_followup_labels(events: list[dict]) -> list[dict]:
+    """Label groups (per :func:`followup_label_groups`) with NO matching
+    ``epm:same-issue-followup-run`` marker — the UNRUN queue.
+
+    A LABEL is unrun iff no run marker carries the same ``followup_label``
+    (workflow.yaml § markers — the label-keyed satisfier; the label's run
+    marker closes ALL of its scope entries). Pseudo-label groups are
+    INCLUDED (they must surface as repair items) but carry
+    ``dispatchable: False`` — consumers that execute rounds filter on
+    ``dispatchable``. A run marker with an unparseable label closes NOTHING
+    (conservative in the anti-stranding direction; the counterweight is the
+    Step 0 stale-label disposition rule / :func:`followup_retro_close_evidence`).
+
+    Ordered deterministically: user-initiated labels first
+    (:data:`USER_INITIATED_FOLLOWUP_SOURCES`), then oldest ``armed_ts``,
+    then the authoritative entry's ``version``.
+    """
+    run_labels = {
+        parse_followup_note_field(e.get("note") or "", "followup_label")
+        for e in events
+        if e.get("kind") == FOLLOWUP_RUN_KIND
+    } - {None}
+    unrun = [g for g in followup_label_groups(events) if g["followup_label"] not in run_labels]
+
+    def _order(group: dict) -> tuple[bool, str, int]:
+        version = group["authoritative"].get("version")
+        return (
+            not group["user_initiated"],
+            group["armed_ts"],
+            version if isinstance(version, int) else 0,
+        )
+
+    unrun.sort(key=_order)
+    return unrun
+
+
+def executing_followup_label(events: list[dict]) -> dict | None:
+    """Resolve WHICH unrun label the current / most-recent round is executing.
+
+    Shared by the Step 9b step-3 mid-round re-read, the step-4
+    completion-marker label derivation, and the watcher's
+    ``_post_followup_run_marker`` (SKILL.md Step 9b § Same-issue follow-up
+    loop). Resolution order:
+
+    1. The newest ``epm:progress`` note beginning
+       ``stage-dispatch stage=followup-`` that is strictly newer than the
+       newest ``epm:same-issue-followup-run`` ts and carries a
+       ``label=<slug>`` token (via :func:`_breadcrumb_fields`) → that
+       label's group, if unrun. This wins over the queue head because a
+       user-chat label posted MID-ROUND would jump the head; the breadcrumb
+       pins the round actually dispatched.
+    2. Fallback: the head of the DISPATCHABLE subset of
+       :func:`unrun_followup_labels` (Step 0 only ever dispatches
+       dispatchable heads, so head == executing round whenever no labeled
+       breadcrumb exists — breadcrumbs predating the #894 ``label=``
+       contract lack the token).
+    3. ``None`` when no dispatchable unrun labels exist.
+    """
+    unrun = unrun_followup_labels(events)
+    crumb_label = _newest_followup_dispatch_crumb_label(events)
+    if crumb_label is not None:
+        for group in unrun:
+            if group["followup_label"] == crumb_label:
+                return group
+    for group in unrun:
+        if group["dispatchable"]:
+            return group
+    return None
+
+
+def _newest_followup_dispatch_crumb_label(events: list[dict]) -> str | None:
+    """``label=`` of the newest follow-up stage-dispatch breadcrumb strictly
+    newer than the newest ``epm:same-issue-followup-run`` ts, else ``None``
+    (no labeled crumb, or every labeled crumb predates the latest recorded
+    round). Helper for :func:`executing_followup_label`."""
+    newest_run_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is not None and (newest_run_ts is None or ts > newest_run_ts):
+            newest_run_ts = ts
+    crumb_label: str | None = None
+    crumb_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = (ev.get("note") or "").lstrip()
+        if not note.startswith(_FOLLOWUP_STAGE_DISPATCH_PREFIX):
+            continue
+        label = _breadcrumb_fields(note).get("label")
+        if not label:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is None:
+            continue
+        if newest_run_ts is not None and ts <= newest_run_ts:
+            continue
+        if crumb_ts is None or ts > crumb_ts:
+            crumb_ts = ts
+            crumb_label = label
+    return crumb_label
+
+
+def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
+    """MECHANICAL, exact-label evidence that ``label``'s round already ran.
+
+    The predicate behind the Step 0 stale-label disposition rule (legacy
+    tasks like #658 carry ghost labels whose rounds demonstrably ran without
+    an ``epm:same-issue-followup-run`` record). Three evidence classes, all
+    EXACT-match — prose mention / substring / prefix evidence NEVER closes:
+
+    1. an ``epm:methodology-doc-generated`` note carrying ``extends=<label>``
+       (exact token, via :func:`parse_followup_note_field` or the
+       ``key=value`` breadcrumb grammar);
+    2. an ``epm:free-analysis-followup-run`` whose ``followup_ref`` EXACTLY
+       equals ``label`` (string equality — a PREFIX match like
+       ``<label>-9a-ter-fit`` never closes);
+    3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
+       note with the exact parenthesized round token ``(<label>)`` AND a
+       round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
+       line.
+
+    Returns the one-line evidence string of the FIRST matching class (class
+    order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
+    corroboration, not ambiguity — the canonical #658 ghost label carries
+    both a 9a-quater ``extends=`` record and a status-PASS round note);
+    ``None`` when NO class matches — the caller then never closes (a
+    merely-prose / substring / prefix mention is not evidence; ambiguity
+    NEVER closes).
+    """
+    for ev in events:
+        kind = ev.get("kind")
+        note = ev.get("note") or ""
+        if kind == "epm:methodology-doc-generated":
+            extends = parse_followup_note_field(note, "extends")
+            if extends != label:
+                extends = _breadcrumb_fields(note).get("extends")
+            if extends == label:
+                return (
+                    f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
+                )
+    for ev in events:
+        if ev.get("kind") != "epm:free-analysis-followup-run":
+            continue
+        ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
+        if ref == label:
+            return (
+                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
+            )
+    token = f"({label})"
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
+            continue
+        for line in (ev.get("note") or "").splitlines():
+            if token in line and _ROUND_COMPLETION_WORD.search(line):
+                return (
+                    f"{kind} at {ev.get('ts', '?')} carries the round token "
+                    f"({label}) plus a round-completion word"
+                )
+    return None
+
+
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
     """Render the new (correcting) failure-lesson body as a durable memory entry.
 
@@ -1589,7 +2098,21 @@ def _status_from_path(path: Path) -> str:
 
 
 def find_task_path(task_id: int) -> Path:
-    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY."""
+    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY.
+
+    Stale-entry envelope (#825): when the registry entry points at a dir that
+    is MISSING on disk (a mutation was hard-killed between the folder move
+    and the registry save), fall back to a one-shot on-disk scan across
+    STATUSES — exactly one hit returns that path with a logged drift WARNING;
+    two or more hits raise ``StaleTaskPathError`` (real corruption — never
+    guess); zero hits raise the original ``FileNotFoundError``. This is a
+    READ path, so the registry is NEVER self-healed here (no ``_locked()``
+    held; an unlocked whole-file ``_save_registry`` could clobber a
+    concurrent mutator's update) — repair happens on the task's next
+    registry-writing mutation (including the ``set_status``
+    same-transition early-return re-sync) or via
+    ``task.py audit --repair --apply``.
+    """
     reg = _load_registry()
     entry = reg["tasks"].get(str(task_id))
     td = tasks_dir()
@@ -1601,12 +2124,35 @@ def find_task_path(task_id: int) -> Path:
                 return candidate
         raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
     abs_path = repo_root() / entry["path"]
-    if not abs_path.is_dir():
-        raise FileNotFoundError(
-            f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
-            f"run `task.py audit` to repair"
+    if abs_path.is_dir():
+        return abs_path
+    # Registry entry is STALE (dir moved on disk without a registry update —
+    # e.g. a mutation was hard-killed mid-flight; cf. #825). Fall back to a
+    # one-shot on-disk scan; READ path, so never self-heal REGISTRY here (no
+    # _locked()).
+    hits = [td / s / str(task_id) for s in STATUSES if (td / s / str(task_id)).is_dir()]
+    if len(hits) == 1:
+        _log.warning(
+            "task #%d: REGISTRY says %r but that dir is missing; found on disk at %r — "
+            "returning the on-disk path. REGISTRY is stale; it re-syncs on the next "
+            "registry-writing mutation of this task, or run "
+            "`task.py audit --repair --apply`.",
+            task_id,
+            entry["path"],
+            str(hits[0].relative_to(repo_root())),
         )
-    return abs_path
+        return hits[0]
+    if len(hits) > 1:
+        raise StaleTaskPathError(
+            f"task #{task_id}: REGISTRY says {entry['path']!r} (missing) and the "
+            f"task exists in MULTIPLE status folders: "
+            f"{[str(h.relative_to(repo_root())) for h in hits]}; "
+            f"run `task.py audit --repair --apply`"
+        )
+    raise FileNotFoundError(
+        f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
+        f"run `task.py audit` to repair"
+    )
 
 
 def get_task(task_id: int) -> dict[str, Any]:
@@ -1857,6 +2403,31 @@ def _rollback_move(src: Path, dst: Path) -> None:
         raise
 
 
+def _task_status_dir_pathspecs(task_id: int, repo: Path) -> list[str]:
+    """All ``tasks/<status>/<id>`` dirs for this task that git TRACKS or that
+    exist on disk — the staging pathspec set that reconciles any residue a
+    previously-crashed transition left behind (ghost old-status dirs whose
+    deletions were never staged; #825 / the #644 stale-task-folder class).
+
+    One ``git ls-files`` call over deterministic per-STATUSES pathspecs (no
+    fnmatch wildcards — exact-id matching only, so id 89 never sweeps id
+    898). ``ls-files`` silently ignores pathspecs that match nothing, so the
+    candidate list is safe to pass wholesale. The returned set is restricted
+    to tracked-or-on-disk dirs BECAUSE ``git add`` (without
+    ``--ignore-unmatch``) and ``git commit --only`` both FAIL LOUD on a
+    pathspec that matches neither the index/HEAD nor the working tree — a
+    dir that is neither tracked nor on disk has nothing to stage and must be
+    excluded, not passed along.
+    """
+    rel_tasks = tasks_dir().relative_to(repo)
+    candidates = [str(rel_tasks / status / str(task_id)) for status in STATUSES]
+    tracked = _run_git(["ls-files", "--", *candidates]).stdout.splitlines()
+    n_parts = len(rel_tasks.parts) + 2  # <tasks>/<status>/<id>
+    dirs = {"/".join(p.split("/")[:n_parts]) for p in tracked if p.strip()}
+    dirs |= {c for c in candidates if (repo / c).is_dir()}
+    return sorted(dirs)
+
+
 def set_status(
     task_id: int,
     new_status: str,
@@ -1864,8 +2435,29 @@ def set_status(
     note: str | None = None,
     force_followup_exit: bool = False,
 ) -> Path:
-    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
-    status-changed event. Returns the new absolute path.
+    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ (whole-dir move), then post
+    a status-changed event and commit. Returns the new absolute path.
+
+    Crash envelope (#825): ALL durable-state mutations — the filesystem move
+    + completeness verification, the REGISTRY save, and the events.jsonl
+    append — complete BEFORE any git operation, so the #825 stranded split
+    (folder moved, registry pointing at the old path) is unreachable via
+    git-failure exceptions: any git crash leaves disk, REGISTRY, and
+    events.jsonl all consistent with the transition APPLIED, with only the
+    COMMIT missing; that residue is reconciled by the ghost-aware staging
+    sweep (``_task_status_dir_pathspecs``) on the task's NEXT transition. A
+    HARD KILL (SIGKILL/OOM) in the residual window between ``shutil.move``
+    and ``_save_registry`` still yields a stale-registry shape; that window
+    is backstopped by the ``find_task_path`` read-path scan fallback plus
+    the same-transition early-return re-sync below, and the next completed
+    registry-writing mutation of the task re-syncs the entry. A hard kill
+    between ``_save_registry`` and ``_append_jsonl_line`` yields a
+    consistent folder+registry with a missing ``epm:status-changed`` event —
+    a history gap, not a stranding. On the FS-verification failure path the
+    move is rolled back with REGISTRY untouched (``_rollback_move``), as
+    before. On git failure this function still RAISES (fail fast) — but the
+    status transition is durably applied, and a caller retry lands on the
+    idempotent ``old_status == new_status`` early return.
 
     Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
     (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
@@ -1876,6 +2468,29 @@ def set_status(
         old = find_task_path(task_id)
         old_status = _status_from_path(old)
         if old_status == new_status:
+            # Idempotent retry of the SAME transition. If find_task_path
+            # resolved the task at a path that DISAGREES with the registry
+            # entry (stale entry — the hard-kill residue shape, #825),
+            # re-sync the registry before returning: this branch already
+            # holds _locked(), so the write is safe (unlike the read-path
+            # scan fallback in find_task_path, which never self-heals).
+            reg = _load_registry()
+            entry = reg["tasks"].get(str(task_id))
+            rel = str(old.relative_to(repo_root()))
+            if entry and entry.get("path") != rel:
+                fm, _ = _read_body(old / "body.md")
+                _registry_set(reg, task_id, old, fm)
+                _save_registry(reg)
+                _git_commit(
+                    [old, registry_path()],
+                    f"task #{task_id}: re-sync stale REGISTRY entry",
+                )
+                _log.warning(
+                    "task #%d: re-synced stale REGISTRY entry (%r -> %r) on idempotent retry",
+                    task_id,
+                    entry.get("path"),
+                    rel,
+                )
             return old
         if (
             old_status == "followups_running"
@@ -1951,11 +2566,12 @@ def set_status(
                 f"back, REGISTRY untouched. Retry after resolving the disk/"
                 f"permission issue."
             )
-        # Stage BOTH sides so git records the rename via content-similarity: the
-        # source-side deletion at <old> AND the destination-side addition at
-        # <new> (preserves the both-sides-of-move commit invariant).
-        _run_git(["add", "--all", "--", str(rel_old), str(rel_new)])
-        # Update REGISTRY
+        # ── Durable state FIRST, git ops LAST (#825). ── The registry save +
+        # event append below complete before ANY git op, so a git crash can
+        # never again leave the folder moved with the registry pointing at
+        # the old path (the #825 stranded split): every git failure now
+        # leaves disk, REGISTRY, and events.jsonl consistent with the
+        # transition applied, only the COMMIT missing.
         reg = _load_registry()
         fm, _ = _read_body(new / "body.md")
         _registry_set(reg, task_id, new, fm)
@@ -1973,13 +2589,53 @@ def set_status(
         if note:
             payload["note"] = note
         _append_jsonl_line(ev_path, payload)
-        # Pass BOTH old and new to _git_commit so the deletion side of
-        # the `git mv` is included in the commit's --only pathspec.
-        # Otherwise the staged deletion at <old> remains in the index and
-        # gets swept into the next unrelated `git commit` (incident:
-        # 2026-05-24, tasks 382/383 source-side deletions leaked into
-        # commit 49e49f4a).
-        _git_commit([old, new, registry_path()], f"task #{task_id}: {old_status} → {new_status}")
+        specs: list[str] = []  # pre-bound so the except block below can log it
+        try:
+            # Ghost-aware staging (#644 stale-task-folder class): the specs
+            # cover BOTH sides of THIS move — the source-side deletion at
+            # <old> (tracked in git, hence in the specs) AND the
+            # destination-side addition at <new> (on disk, hence in the
+            # specs) — preserving the both-sides-of-move commit invariant —
+            # PLUS any tasks/<status>/<id> dir a previously-crashed
+            # transition left tracked in HEAD but absent on disk, so
+            # `git add --all` stages the leftover deletion and this
+            # transition's commit sweeps the ghost duplicate. rel_old /
+            # rel_new are NOT force-unioned in: a dir that is neither
+            # tracked nor on disk (e.g. rel_old after a never-committed
+            # transition) matches no pathspec, and `git add` / `git commit
+            # --only` fail loud on unmatched pathspecs — the helper's
+            # tracked-or-on-disk restriction already includes rel_old/
+            # rel_new whenever there is anything to stage for them.
+            specs = _task_status_dir_pathspecs(task_id, repo)
+            _run_git(["add", "--all", "--", *specs])  # step-6 standalone staging
+            # Pass the SAME expanded path set to _git_commit so the deletion
+            # side of the move (and any swept ghost) is included in the
+            # commit's --only pathspec. Otherwise staged deletions remain in
+            # the index and get swept into the next unrelated `git commit`
+            # (incident: 2026-05-24, tasks 382/383 source-side deletions
+            # leaked into commit 49e49f4a).
+            _git_commit(
+                [*(repo / s for s in specs), registry_path()],
+                f"task #{task_id}: {old_status} → {new_status}",
+            )
+        except subprocess.CalledProcessError:
+            _log.error(
+                "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
+                "events.jsonl consistent at %s) but git failed before committing. "
+                "Leftover git residue at %s / %s will be reconciled by the NEXT "
+                "set_status of this task; to sweep now: "
+                "git add --all -- %s && git commit -m "
+                "'task #%d: sweep crashed status-move residue'",
+                task_id,
+                old_status,
+                new_status,
+                rel_new,
+                rel_old,
+                rel_new,
+                " ".join(specs) if specs else f"{rel_old} {rel_new}",
+                task_id,
+            )
+            raise
     return new
 
 
@@ -3087,25 +3743,82 @@ def list_comments(task_id: int) -> list[dict[str, Any]]:
 # ─── Git helpers ────────────────────────────────────────────────────────────
 
 
+# Git lock-contention signature. Matches the three stderr shapes a concurrent
+# git process produces (git 2.x): the index.lock path itself, the generic
+# "another process" hint, and the File-exists lock-create failure (covers
+# ref locks / packed-refs.lock with the same transient signature). A CAS
+# mismatch ("is at <sha> but expected <sha>") deliberately does NOT match.
+_GIT_LOCK_CONTENTION_RE = re.compile(
+    r"index\.lock"
+    r"|Another git process seems to be running"
+    r"|Unable to create '.*\.lock': File exists"
+)
+_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+
+
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    # Resolve cwd PER CALL (not from a cached module-level REPO). The
-    # process-local LRU cache in `repo_root()` makes this cheap, and per-call
-    # resolution is what keeps long-lived processes (PM session, agent
-    # daemons) safe across `os.chdir()` or branch state changes.
-    #
-    # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
-    # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
-    # principle redirect git add/commit. The resolver already strips them
-    # for the subprocess that locates the repo root; strip them here too
-    # for parity (round-1 code-review finding #7).
-    return subprocess.run(
-        ["git", *args],
-        cwd=str(repo_root()),
-        env=_sanitized_git_env(),
-        check=check,
-        capture_output=True,
-        text=True,
-    )
+    """Run ``git <args>`` at the repo root, retrying ONCE on lock contention.
+
+    Contention/crash envelope (#825): the command runs with ``check=False``
+    internally; if it exits non-zero AND stderr matches the git
+    lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent git
+    process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
+    jittered ``random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)`` interval and
+    rerun exactly ONCE (never more). The retry keys on the STDERR SIGNATURE,
+    never on the return code, so ``check=False`` rc-as-signal call sites
+    (``diff --cached --quiet``) keep their rc semantics with zero retries,
+    and non-lock failures surface immediately. A SUCCESSFUL call takes no
+    sleep (zero happy-path latency). If the retry also fails on the lock
+    signature, a stale-lock remedy is logged at ERROR. After the (at most
+    one) retry the caller's ``check`` semantics apply: ``check=True`` raises
+    ``subprocess.CalledProcessError`` with the same ``cmd``/``output``/
+    ``stderr`` fields ``subprocess.run(check=True)`` would produce.
+    """
+
+    def _attempt() -> subprocess.CompletedProcess[str]:
+        # Resolve cwd PER CALL (not from a cached module-level REPO). The
+        # process-local LRU cache in `repo_root()` makes this cheap, and
+        # per-call resolution is what keeps long-lived processes (PM session,
+        # agent daemons) safe across `os.chdir()` or branch state changes.
+        #
+        # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
+        # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
+        # principle redirect git add/commit. The resolver already strips them
+        # for the subprocess that locates the repo root; strip them here too
+        # for parity (round-1 code-review finding #7).
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(repo_root()),
+            env=_sanitized_git_env(),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    result = _attempt()
+    if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+        delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
+        _log.warning(
+            "git %s hit a lock collision (a concurrent git process holds the lock); "
+            "retrying once in %.1fs",
+            args[0] if args else "",
+            delay,
+        )
+        time.sleep(delay)
+        result = _attempt()  # second and FINAL attempt
+        if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+            _log.error(
+                "git %s failed twice on a lock collision. A concurrent git process is "
+                "holding the repo lock; if no live git process exists, a crashed one "
+                "may have left a stale .git/index.lock — inspect and remove it "
+                "manually.",
+                args[0] if args else "",
+            )
+    if check and result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, output=result.stdout, stderr=result.stderr
+        )
+    return result
 
 
 def _git_commit(paths: list[Path], message: str) -> None:
@@ -3590,6 +4303,8 @@ __all__ = [
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
+    "FOLLOWUP_RUN_KIND",
+    "FOLLOWUP_SCOPE_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",
@@ -3598,6 +4313,7 @@ __all__ = [
     "STATUSES",
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
+    "USER_INITIATED_FOLLOWUP_SOURCES",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -3608,7 +4324,10 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "executing_followup_label",
     "find_task_path",
+    "followup_label_groups",
+    "followup_retro_close_evidence",
     "get_goal",
     "get_relates_to",
     "get_task",
@@ -3620,7 +4339,9 @@ __all__ = [
     "list_concerns",
     "list_events",
     "new_plan_version",
+    "parse_followup_note_field",
     "post_event",
+    "primary_checkout_root",
     "promote",
     "raise_concern",
     "reconcile_registry",
@@ -3634,4 +4355,5 @@ __all__ = [
     "set_status",
     "set_title",
     "tasks_dir",
+    "unrun_followup_labels",
 ]

@@ -26,11 +26,15 @@ Check catalog (id — classification — kind scope)
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
   c11 dry-run test coverage      WARN-only, conditional    infra + batch only
+  c12 battery multiplier +       FAIL (experiment) / WARN  experiment +
+      batched commitment         (analysis), conditional   analysis
+  c13 empirical-null gate        FAIL (experiment) / WARN  experiment +
+      p-floor attainability      (analysis), conditional   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11) also SKIP when their content
-trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13) also SKIP when their
+content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -40,6 +44,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
   - ``N/A — no dry-run smoke`` (check 11)
+  - ``N/A — no draw battery`` (check 12)
+  - ``N/A — no empirical-null gate`` (check 13)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -78,9 +84,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
 
 import yaml
@@ -729,10 +737,10 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(h) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(i) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the eight letters."""
+    forcing the section to exist and naming the nine letters."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -749,22 +757,23 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     if re.search(NA_RE + r"no (?:artifact )?reuse", text):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
     fitness = re.search(r"(?i)fitness", text)
-    letters = {m.group(1) for m in re.finditer(r"\(([a-h])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-i])\)", text)}
     if fitness and len(letters) >= 4:
-        return _pass(cid, name, f"fitness check present ({len(letters)}/8 lettered items spotted)")
+        return _pass(cid, name, f"fitness check present ({len(letters)}/9 lettered items spotted)")
     if fitness:
         return _warn(
             cid,
             name,
-            f"fitness vocabulary present but only {len(letters)} of the (a)–(h) items "  # noqa: RUF001
-            "detectable — verify all eight attestations (recipe/regime/cells/single-var/"
-            "hub-resolution/content-identity/scaling/backend-fetchability) before approval",
+            f"fitness vocabulary present but only {len(letters)} of the (a)–(i) items "  # noqa: RUF001
+            "detectable — verify all nine attestations (recipe/regime/cells/single-var/"
+            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput) "
+            "before approval",
         )
     return _warn(
         cid,
         name,
         "plan reuses HF artifacts but no fitness check found — CLAUDE.md reuse rule requires "
-        "attestations (a)–(h); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
+        "attestations (a)–(i); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
     )
 
 
@@ -1023,6 +1032,463 @@ def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 12 — battery multiplier + batched commitment (conditional) ──────
+
+# Trigger: the plan names a permutation/null-draw battery — battery/null-draw
+# framing, or an explicit >=100 count attached to draw vocabulary. Deliberate
+# NON-triggers: a bare "bootstrap CI" / "bootstrapped 95% CI" (cheap post-hoc
+# stat, ubiquitous in plans). Known accepted under-trigger: "bootstrap with
+# B=2000 over all cells" carries no bootstrap alternation here — an
+# under-trigger fails SAFE (the layered prose surfaces — planner §9 block,
+# critic 10(iii)/12, implementer re-derivation — still fire); deliberate, not
+# discovered (#869 plan §4.13).
+# The count arm's lookbehind excludes range/scale-dash-preceded numbers —
+# "graded 0-100 draws" is judge-scale vocabulary, not a battery (calibration
+# false-FAIL on #779 v1); "1000 draws" after whitespace still triggers.
+_BATTERY_TRIGGER_RE = re.compile(
+    r"(?i)\b(null[- ]?(draws?|batter(y|ies))"
+    r"|permutation[- ](tests?|batter(y|ies)|nulls?|draws?)"
+    r"|n_(draws|perms)\b"
+    r"|(?<![\d\u2013\u2014-])\d{3,}\s+(null[- ])?(draws|permutations|resamples))"
+)
+
+# Evidence (i): an explicit two-factor multiplier product where at least one
+# factor is draw-bearing ("1000 draws x 24 cells" satisfies; a grid-only
+# "34 x 50 x 28" or "layers x 3584" does NOT — the #810 false-PASS class where
+# the forgotten draw multiplier is exactly what is absent).
+_DRAW_FACTOR = (
+    r"(?:\d[\d,_]*\s*(?:null[- ])?(?:draws?|perms?|permutations|resamples)"
+    r"|n_(?:draws|perms|boot)\b|draws|perms|permutations|resamples|B\s*=\s*\d{3,})"
+)
+_GRID_FACTOR = (
+    r"(?:\d[\d,_]*|cells|folds|arms|layers|traits|seeds"
+    r"|behaviors|settings|conditions|statistics)"
+)
+# The multiplication token plans actually write: the real multiplication
+# sign plus the ASCII fallbacks.
+_MULT_TOKEN = r"[×x*]"  # noqa: RUF001 — the multiplication sign is real plan text
+_MULT_ARITH_RE = re.compile(
+    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_FACTOR}"
+    rf"|{_GRID_FACTOR}\s*{_MULT_TOKEN}\s*{_DRAW_FACTOR})\b"
+)
+
+# Evidence (ii): a named batched helper or an explicit vectorization
+# statement. A token whose only in-window occurrence sits inside a citation /
+# path of the rule file does NOT count — citing the rule is not an
+# implementation commitment (the filename itself contains "vectorize", so the
+# citation tokens are stripped from the window before this search).
+_BATCHED_COMMIT_RE = re.compile(
+    r"(?i)\b(batched|vectoriz(?:e|ed|es|ation)|subset-sum|GEMM|one\s+(?:masked\s+)?matmul"
+    r"|perm_null_draws|randnorm_null_draws|vectorized_mlp_skill)\b"
+)
+_C12_RULE_CITATION_RE = re.compile(r"\S*vectorize-many-cell-fits\.md\S*")
+
+# Evidence window: ± this many RAW lines around each trigger hit (arithmetic
+# legitimately lives in tables/fences adjacent to the battery row).
+_C12_WINDOW_LINES = 15
+
+
+def _battery_trigger_windows(plan: str) -> list[str]:
+    """RAW-text windows (± ``_C12_WINDOW_LINES`` lines) around each NON-fenced
+    line matching ``_BATTERY_TRIGGER_RE``. Trigger detection is fence-masked
+    (a fence-only example is not a battery plan — the line-preserving
+    equivalent of searching ``strip_fences(plan)``); each WINDOW is raw text,
+    so evidence inside adjacent tables/fences still counts."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    windows: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _BATTERY_TRIGGER_RE.search(line):
+            continue
+        lo = max(0, i - _C12_WINDOW_LINES)
+        hi = min(len(lines), i + _C12_WINDOW_LINES + 1)
+        windows.append("\n".join(lines[lo:hi]))
+    return windows
+
+
+def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
+    """A plan naming a permutation/bootstrap/null-draw battery must carry,
+    NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
+    arithmetic with a draw-bearing factor and (ii) a batched-implementation
+    commitment. Window-scoped, never document-global — the document-global
+    draft demonstrably false-PASSed the motivating incident plan (#810 v1)
+    via an unrelated footprint product + helper boilerplate. FAIL
+    (experiment) / WARN (analysis) / SKIP otherwise; a SURFACE check per the
+    module's scope discipline — semantic adequacy of the arithmetic stays
+    with the Phase 2 critics."""
+    cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
+    windows = _battery_trigger_windows(plan)
+    if not windows:
+        return _skip(cid, name, "no permutation/null-draw battery named")
+    if re.search(NA_RE + r"no draw battery", plan):
+        return _pass(cid, name, "explicit N/A declared (no draw battery)")
+    any_arith = False
+    any_commit = False
+    for window in windows:
+        has_arith = bool(_MULT_ARITH_RE.search(window))
+        has_commit = bool(_BATCHED_COMMIT_RE.search(_C12_RULE_CITATION_RE.sub("", window)))
+        any_arith = any_arith or has_arith
+        any_commit = any_commit or has_commit
+        if has_arith and has_commit:
+            return _pass(
+                cid,
+                name,
+                "a battery window carries both the multiplier arithmetic and a "
+                "batched-implementation commitment",
+            )
+    missing: list[str] = []
+    if not any_arith:
+        missing.append(
+            "the multiplier arithmetic with a draw-bearing factor "
+            "(draws x cells x folds x per-call cost = projected wall)"
+        )
+    if not any_commit:
+        missing.append(
+            "a batched-implementation commitment (a named batched helper or an explicit "
+            "vectorization statement)"
+        )
+    if not missing:
+        missing.append(
+            "co-location: the multiplier arithmetic and the batched-implementation "
+            "commitment each appear somewhere, but never together near any battery mention"
+        )
+    detail = (
+        f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
+        " — a named battery defaults to a serial per-draw loop (#778: ~15 h realized vs 1 h"
+        " planned; #810: 308x); see .claude/rules/vectorize-many-cell-fits.md, or declare"
+        " 'N/A — no draw battery' if the mention is incidental"
+    )
+    if kind == "analysis":
+        return _warn(cid, name, detail)
+    return _fail(cid, name, detail)
+
+
+# ─── Check 13 — empirical-null gate p-floor attainability (conditional) ────
+
+# Gate alpha: a decimal alpha DIRECTLY after the comparator (comparator
+# captured — strictness matters at the floor == alpha boundary). A
+# fraction-form self-consistent floor gate ("p ≤ 1/(15+1) ≈ 0.06", #816 v5
+# Exp-4) must NOT match: "1/" blocks the decimal, and the "≈ 0.06" is not
+# comparator-adjacent.
+_C13_P_ALPHA_RE = re.compile(r"(?i)\bp(?:-?values?)?\s*(≤|<=|<)\s*\*{0,2}`?(0?\.\d+)`?")
+_C13_EMPIRICAL_RE = re.compile(r"(?i)\bempirical\b")
+# Registered-gate section: any ENCLOSING heading matching the c8 success/kill
+# families or an Evaluation heading. Lines elsewhere (Prior Work recaps,
+# TL;DR) are not registrations — under-trigger fails safe (critics review).
+_C13_GATE_SECTION_RE = re.compile(
+    r"(?i)success criteri|acceptance criteri|decision rule|decision gate"
+    r"|kill[- ]criteri|abort criteri|stop criteri|\bevaluation\b"
+)
+# On-gate-line draws-scope qualifier ("(n_draws ≥ 50: ...)" — the #816 v6 fix
+# shape): families below K are OUTSIDE the gate's own declared scope. The
+# DRAWS-EXPLICIT token is REQUIRED: a bare `n ≥ K` (e.g. "n ≥ 20 prompts per
+# probe" — a sample-size clause on the gate line) must NOT set the scope, or
+# it silently descopes every small-n_draws family and emits an affirmative
+# false-PASS on the exact #816 class this check exists to catch.
+_C13_SCOPE_RE = re.compile(r"(?i)\bn_(?:draws|perms)\w*\s*(?:≥|>=)\s*(\d+)")
+# Family vocabulary on the gate line = the tie is unambiguous (the gate
+# quantifies over null families) → FAIL-capable; absent → WARN cap.
+_C13_FAMILY_RE = re.compile(r"(?i)famil")
+# Per-declaration exclusion: a family row/line declaring itself outside the
+# test set is dropped (v5/v6 contaminated-reference row; v6 "outside the BH").
+_C13_EXCLUDE_RE = re.compile(
+    r"(?i)contaminated|reference only|descriptive|excluded"
+    r"|not (?:in|included|counted)|outside the (?:BH|test)"
+)
+# n_draws declarations, prose/kwarg forms: n_draws=K, n_draws: K,
+# n_draws_isotropic=200, n_perms=500. ("n_draws ≥ 50" and "(n_draws+1)" do
+# not match — comparator/paren, not =/:.)
+_C13_NDRAWS_KWARG_RE = re.compile(r"(?i)\b(n_(?:draws|perms)\w*)\s*[=:]\s*(\d+)")
+
+# Known accepted under-triggers (mirroring the c12 precedent): (a) a gate
+# registered outside any success/kill/decision/evaluation-titled section;
+# (b) a gate whose `p <= alpha` wraps across lines or uses `%`/LaTeX `\le`;
+# (c) "empirical" absent from the gate line; (d) draw counts declared only as
+# bare prose ("15 draws") without an `n_draws` label. (a)-(d) fail SAFE
+# (under-trigger → SKIP; the plan still reaches the fact-checker + critic
+# ensemble, whose statistics lens caught the original #816 incident). ONE
+# known fail-UNSAFE direction: (e) a hard-wrapped gate whose `(n_draws ≥ K)`
+# qualifier lands on the NEXT line is gate-detected without its qualifier →
+# false-FAIL on a legitimately scoped gate. Accepted: repo plans favor long
+# single lines (v5/v6 both do), the corpus-sweep calibration bounds it, and a
+# false-FAIL costs 1-2 mechanical planner bounces with the PASS-with-override
+# valve as the escape (adversarial-planner SKILL.md Phase 1.5.0) — §4.5 is
+# NOT all-fails-safe.
+
+
+def _n_draws_declarations(plan: str) -> list[tuple[str, int]]:
+    """Deduplicated ``(label, n_draws)`` pairs harvested from the RAW plan:
+    (1) markdown-table columns whose header cell CONTAINS ``n_draws`` /
+    ``n_perms`` after bold/backtick stripping (v5's twin ``n_draws (Exp-2)`` /
+    ``n_draws (Exp-4)`` columns both match; ALL matching columns per table are
+    collected), and (2) prose/kwarg forms (``n_draws=K``, ``n_perms: K``,
+    ``n_draws_isotropic=200``). Deliberately raw text — declarations
+    legitimately live in tables and fenced config blocks (#816 v6's kwargs are
+    fenced). A row/line matching ``_C13_EXCLUDE_RE`` (outside-the-test-set
+    vocabulary) is dropped; a non-numeric cell is skipped."""
+    lines = plan.splitlines()
+    pairs: list[tuple[str, int]] = []
+    seen: set[tuple[str, int]] = set()
+
+    def add(label: str, n: int) -> None:
+        key = (label, n)
+        if key not in seen:
+            seen.add(key)
+            pairs.append(key)
+
+    # (1) Table columns — a sibling of the c1 `_source_column_cells` walk,
+    # with a contains-predicate on the header cell + multi-column collection.
+    i = 0
+    while i < len(lines) - 1:
+        header = lines[i].strip()
+        sep = lines[i + 1].strip()
+        if not (header.startswith("|") and sep.startswith("|") and _TABLE_SEP_RE.fullmatch(sep)):
+            i += 1
+            continue
+        header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
+        cols = [j for j, c in enumerate(header_cells) if "n_draws" in c or "n_perms" in c]
+        k = i + 2
+        while k < len(lines) and lines[k].strip().startswith("|"):
+            row_text = lines[k]
+            if cols and not _C13_EXCLUDE_RE.search(row_text):
+                row = _split_table_row(row_text)
+                # replace("**", "") drops INTERIOR bold markers (e.g.
+                # `**Cross-trait** (ref)`) that a bare strip("*") keeps.
+                label = row[0].replace("**", "").strip("*").strip() if row else ""
+                for col in cols:
+                    if col >= len(row):
+                        continue
+                    m = re.search(r"\d[\d,_]*", row[col])
+                    if m:
+                        add(label, int(m.group(0).replace(",", "").replace("_", "")))
+            k += 1
+        i = k
+    # (2) Prose/kwarg declarations.
+    for line in lines:
+        if _C13_EXCLUDE_RE.search(line):
+            continue
+        for m in _C13_NDRAWS_KWARG_RE.finditer(line):
+            add(m.group(1), int(m.group(2)))
+    return pairs
+
+
+def _c13_registered_gates(plan: str) -> list[dict]:
+    """Registered empirical-p gate lines: non-fenced lines inside a
+    success/kill/evaluation-titled section carrying "empirical" + at least
+    one decimal alpha directly after ``p <=`` / ``p <``. Per gate: the
+    stripped line, the MIN alpha on the line (a gate requiring the most
+    stringent of several alphas is unattainable if the floor exceeds the
+    smallest), whether the min-alpha comparator is strict ``<``, the on-line
+    draws-scope qualifier K (or None), and whether family vocabulary is on
+    the line."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    gates: list[dict] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if not any(h.line <= i < h.end and _C13_GATE_SECTION_RE.search(h.text) for h in headings):
+            continue
+        if not _C13_EMPIRICAL_RE.search(line):
+            continue
+        matches = list(_C13_P_ALPHA_RE.finditer(line))
+        if not matches:
+            continue
+        alphas: list[tuple[Fraction, bool]] = []
+        for m in matches:
+            a = m.group(2)
+            alphas.append(
+                (Fraction("0" + a) if a.startswith(".") else Fraction(a), m.group(1) == "<")
+            )
+        min_alpha = min(a for a, _ in alphas)
+        strict = any(s for a, s in alphas if a == min_alpha)
+        scope_m = _C13_SCOPE_RE.search(line)
+        gates.append(
+            {
+                "line": line.strip(),
+                "alpha": min_alpha,
+                "strict": strict,
+                "scope": int(scope_m.group(1)) if scope_m else None,
+                "family": bool(_C13_FAMILY_RE.search(line)),
+            }
+        )
+    return gates
+
+
+def _c13_na_escape_declared(plan: str) -> bool:
+    """True when the ``N/A — no empirical-null gate`` escape appears as a
+    deliberate STANDALONE declaration line (leading list/blockquote markers
+    stripped), never doc-global: the c13 FAIL detail quotes the escape phrase
+    as a remedy option, and this project's convention pastes verifier/bounce
+    text into revised plans verbatim — a substring match would let a bounced
+    plan self-escape re-verification (the #810 spurious-satisfaction
+    structure, one polarity over). NA_RE opens with an inline (?i), so it
+    must sit at pattern position 0 — per-line re.match satisfies that; never
+    prepend a prefix to NA_RE (py3.11+ rejects mid-pattern global flags)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        if re.match(NA_RE + r"no empirical[- ]null gate", line.lstrip(" \t>*-")):
+            return True
+    return False
+
+
+def _c13_evaluate(gates: list[dict], decls: list[tuple[str, int]]) -> dict:
+    """Per-gate attainability arithmetic. Offender iff floor > alpha OR
+    (floor == alpha AND the gate comparator is strict ``<`` — then the gate
+    is unattainable, not boundary); floor == alpha under ``<=`` is boundary.
+    A nonpositive alpha (``p ≤ 0.00``) is in-domain: floor = 1/(n+1) > 0 ≥
+    alpha for EVERY draw count, so the same arithmetic classifies every
+    in-scope declaration an offender (fail_capable per the normal
+    family-vocab rule; the alpha ≤ 0 remedy lives in the detail builder).
+    A gate whose scope qualifier excludes EVERY declaration is vacuous (an
+    empty in-scope set must not yield an affirmative PASS with an undefined
+    min)."""
+    offenders: list[tuple[dict, str, int, Fraction]] = []
+    boundary: list[tuple[str, int]] = []
+    fail_capable = False
+    vacuous_scope = False
+    min_in_scope: int | None = None
+    for g in gates:
+        in_scope = [d for d in decls if g["scope"] is None or d[1] >= g["scope"]]
+        if g["scope"] is not None and not in_scope:
+            vacuous_scope = True
+            continue
+        for label, n in in_scope:
+            if min_in_scope is None or n < min_in_scope:
+                min_in_scope = n
+            floor = Fraction(1, n + 1)
+            if floor > g["alpha"] or (floor == g["alpha"] and g["strict"]):
+                offenders.append((g, label, n, floor))
+                fail_capable = fail_capable or g["family"]
+            elif floor == g["alpha"]:
+                boundary.append((label, n))
+    return {
+        "offenders": offenders,
+        "boundary": boundary,
+        "fail_capable": fail_capable,
+        "vacuous_scope": vacuous_scope,
+        "min_in_scope": min_in_scope,
+    }
+
+
+def _c13_offender_detail(offenders: list[tuple[dict, str, int, Fraction]]) -> str:
+    """Bounded FAIL/WARN detail: the first offending gate line (truncated)
+    + its alpha, at most 6 offenders, and the remedy menu (raise n_draws to
+    >= ceil(1/alpha) for a clean PASS — n = 1/alpha - 1 exactly lands on the
+    boundary WARN). A nonpositive alpha (e.g. a registered ``p ≤ 0.00`` —
+    the limiting case of the unattainable-gate class) gets a dedicated
+    remedy instead of ``ceil(1/alpha)``, which would ZeroDivisionError on
+    ``Fraction(1, 0)`` — a parseable gate must never crash the module."""
+    g0 = offenders[0][0]
+    alpha0: Fraction = g0["alpha"]
+    # Display-dedupe on (label, n): two gates sharing an offending family
+    # would otherwise list it twice and push distinct offenders past the cap.
+    uniq: list[tuple[str, int, Fraction]] = []
+    for _, label, n, floor in offenders:
+        if (label, n, floor) not in uniq:
+            uniq.append((label, n, floor))
+    shown = ", ".join(
+        f"{label} n_draws={n} → floor {floor.numerator}/{floor.denominator} ≈ {float(floor):.3g}"
+        for label, n, floor in uniq[:6]
+    )
+    if len(uniq) > 6:
+        shown += ", …"
+    if alpha0 <= 0:
+        remedy = (
+            "alpha ≤ 0 — no finite n_draws attains it (the p-floor 1/(n_draws+1) is "
+            "positive for every draw count); raise the alpha or fix the gate"
+        )
+    else:
+        remedy = (
+            f"raise n_draws to ≥ {math.ceil(1 / alpha0)} for a clean PASS "
+            "(n = 1/alpha - 1 exactly lands on the floor == alpha boundary WARN)"
+        )
+    return (
+        f'plan registers an empirical-p gate ("{g0["line"][:90]}", alpha={float(alpha0):g}) '
+        f"over families whose p-floor 1/(n_draws+1) exceeds alpha: {shown} — the gate is "
+        f"structurally unattainable (#816 v5 class); {remedy}, scope the gate "
+        "(e.g. 'n_draws ≥ 50'), mark the family outside the test set on its row, or declare "
+        "'N/A — no empirical-null gate' on its own line"
+    )
+
+
+def check_empirical_gate_attainability(plan: str, kind: str) -> CheckResult:
+    """A registered empirical-null gate (a success/kill/evaluation-section
+    line requiring p ≤ alpha against null families) must be ATTAINABLE for
+    every in-scope declared family: p_floor = 1/(n_draws+1) ≤ alpha.
+    Necessary-condition logic only — under BH the effective per-test
+    thresholds are ≤ alpha, so floor > alpha is conservative-correct; BH-m
+    arithmetic, family-set semantics, and joint satisfiability stay with the
+    Statistics critic (c8's form-only charter). FAIL (experiment) / WARN
+    (analysis) / WARN on ambiguous tie or floor == alpha under a non-strict
+    comparator / SKIP otherwise. Incident: #816 v5 (gate p ≤ 0.05 over
+    families with n_draws=2/5 → floors 1/3, 1/6; caught only by the Codex
+    statistics critic)."""
+    cid, name = "c13_empirical_gate_attainability", "empirical-null gate p-floor attainability"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: registered empirical-null gates are an experiment|analysis plan shape",
+        )
+    gates = _c13_registered_gates(plan)
+    if not gates:
+        return _skip(cid, name, "no registered empirical-p gate detected")
+    if _c13_na_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no empirical-null gate)")
+    decls = _n_draws_declarations(plan)
+    if not decls:
+        return _skip(
+            cid,
+            name,
+            "empirical-p gate present but no per-family n_draws declarations found — "
+            "attainability not computable at the plan surface",
+        )
+    ev = _c13_evaluate(gates, decls)
+    if ev["offenders"]:
+        detail = _c13_offender_detail(ev["offenders"])
+        if kind == "analysis":
+            return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+        if not ev["fail_capable"]:
+            return _warn(
+                cid,
+                name,
+                detail + " — ambiguous tie: no family vocabulary on any offending gate line; "
+                "verify the flagged draw counts are in the gate's test set",
+            )
+        return _fail(cid, name, detail)
+    if ev["boundary"]:
+        label, n = ev["boundary"][0]
+        return _warn(
+            cid,
+            name,
+            f"p-floor equals the registered alpha exactly ({label} n_draws={n} → floor "
+            f"1/{n + 1} = alpha) — attainable only when the real statistic beats every "
+            "draw; state the floor next to the verdict",
+        )
+    if ev["vacuous_scope"]:
+        return _warn(
+            cid,
+            name,
+            "the gate's scope qualifier (n_draws ≥ K) excludes every declared family — "
+            "attainability not computable for any in-scope family; verify the gate's "
+            "in-scope families are declared",
+        )
+    min_in_scope = ev["min_in_scope"]
+    return _pass(
+        cid,
+        name,
+        f"min in-scope n_draws={min_in_scope} → p-floor 1/{(min_in_scope or 0) + 1} ≤ "
+        "registered alpha (attainable in form; adequacy stays with the Statistics critic)",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1037,6 +1503,8 @@ CHECKS = [
     check_conditions_seeds,
     check_marker_recipe,
     check_dryrun_test_coverage,
+    check_battery_multiplier,
+    check_empirical_gate_attainability,
 ]
 
 

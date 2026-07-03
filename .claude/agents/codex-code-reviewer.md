@@ -10,10 +10,15 @@ description: >
   (see Step 4). The wrapper NEVER dispatches Codex itself — that's the
   orphan-job anti-pattern (incident task #533, 2026-06-10). Codex itself
   never sees `GH_TOKEN`.
-model: claude-fable-5
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - Write
 ---
 
 # Codex Code Reviewer (thin Claude wrapper)
@@ -307,6 +312,30 @@ both reviewers are graded against the same standard. Read
   `### (e) Concerns addressed`** rule (present only when prior open
   concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
   NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
+- "Step 0.55: Smoke-architecture marker presence gate" (`type:experiment`
+  only) — INCLUDING all three of its rules: (i) the check is
+  presence-ON-TASK (any version), NEVER presence-per-round — the implementer
+  posts `epm:smoke-architecture-check` ONCE at pre-flight and fix rounds do
+  NOT re-post, so a fix-round review with a round-1 marker PASSes; (ii)
+  genuine absence (no such events row, or no parseable `verdict:` line among
+  `PASS_UNIFIED` | `PASS_CANARY canary_cell=<id>` | `FAIL_NO_CANARY`) is a
+  single Critical tagged `marker-shape` whose body NAMES
+  `epm:smoke-architecture-check` — exactly ONE marker kind per blocker,
+  never a combined Step 0.5 + 0.55 blocker (the orchestrator's strip is
+  keyed per blocker on that name); (iii) a PRESENT `verdict: FAIL_NO_CANARY`
+  is NOT a reviewer FAIL — /issue Step 6d.0 (gates.inline id=10) owns that
+  adjudication; note it as a CONCERNS bullet only. The composer (Step 2-pre
+  pattern) fetches the highest-version marker via
+  `uv run python "$REPO_ROOT/scripts/task.py" latest-marker <N> --prefix
+  epm:smoke-architecture-check` and INLINES its body into the prompt inside a
+  `---BEGIN/END SMOKE-ARCHITECTURE-CHECK MARKER BODY---` envelope; when the
+  fetch returns nothing (absence is a VALID finding here, not a compose
+  failure — do NOT fail-loud like the implementation-marker fetch), inline
+  the literal line `SMOKE-ARCHITECTURE-CHECK MARKER: ABSENT in canonical
+  task state` instead so Codex raises the Step 0.55 blocker. Codex scores
+  presence on the INLINED content only, never on `tasks/...` path
+  reachability (the worktree's tasks/ folder is frozen at branch-creation
+  status — same rationale as the implementation-marker inline).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
   present-but-imperfect-digest → CONCERNS rule AND the
   **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
@@ -320,7 +349,12 @@ both reviewers are graded against the same standard. Read
   full so Codex never re-derives a narrower check (incident #606: two
   PASSed rounds never executed an upload-branch lazy import of a
   nonexistent symbol; the ImportError fired on the pod after training +
-  judging — the same omission class as the Step 0.65 copy-list miss).
+  judging — the same omission class as the Step 0.65 copy-list miss). AND
+  the many-call fit/battery production-shape unit-timing + full-scale
+  extrapolation requirement (>2× gap vs plan §9 with no
+  `epm:compute-deviation` row → substantive FAIL, not smoke-run-missing).
+  Copy it in full so Codex never re-derives a narrower check (incident
+  #823).
 - "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
   INCLUDING the full THREE-shape accepted-call enumeration (canonical
   `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
@@ -342,9 +376,31 @@ both reviewers are graded against the same standard. Read
   launcher or documented fan-out, and the `compute-shape-mismatch` blocker tag
   (SUBSTANTIVE, NOT mechanical-contract — never stripped by Step 5c-bis) plus
   the plausible-but-unconfirmed → CONCERNS routing and the descope-is-a-valid-
-  fix note. Copy the trigger + the three shapes + the tag in full so Codex
-  never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan ran on
-  a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
+  fix note — AND the work-conserving schedule sub-check IN FULL (applies at
+  diff-read whenever the diff schedules >1 independent cell on a multi-GPU
+  pod/provision, including a plain serial loop — the exposure gate's N/A does
+  NOT close it; a strict wave/stage barrier or degenerate serial schedule
+  idling workers while independent cells wait is a Major `substantive`
+  finding, NOT `compute-shape-mismatch`; barriers/reduced width acceptable
+  only for a plan-stated cross-cell dependency OR a named resource/capacity
+  constraint, named in the verdict; a width cap justifies WIDTH, not a drain
+  barrier; incident #813: two sequential waves idled GPUs 1/2/4/7 for 6.7h on
+  a billing 8×H100 pod; #778 phase-3: serial loop at 1/8 util on 8×H100).
+  Copy the trigger + the three shapes + the tag + the sub-check in full so
+  Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
+  ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
+- "Step 0.68: Named-helper adherence check" (`type:experiment` only;
+  hollow-gate sub-check: any diff type) — INCLUDING the ::fn
+  grep-for-import-and-call requirement, the slower-sibling-substitution →
+  Major substantive rule, the hollow-verification-gate sub-check (a
+  `--verify-X` / equivalence gate must assert on the function the entrypoint
+  actually dispatches; fires for any diff type even when the named-helper
+  trigger is N/A; blocker tag `hollow-verification-gate`, SUBSTANTIVE — never
+  stripped by Step 5c-bis; incident #779: a green `--verify-vectorized` gated
+  an unused helper while the live ridge hot loop ran unverified), and the N/A
+  carve-out (no ::fn-level helper named). Copy in full so Codex never
+  re-derives a narrower check (incident #823: round-1 plan-adherence blessed
+  the slow import while the body named the fast twin).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
@@ -374,8 +430,15 @@ both reviewers are graded against the same standard. Read
   failure mode: the /issue Step 5c-ter dispatch gate reads
   `concerns.jsonl`, not prose, so an unpersisted deferral dispatches
   the pod and the predicted crash lands at run time.
+- The Step 2 "Compute-throughput anti-patterns" block — copy the FULL (a)-(d)
+  enumeration, INCLUDING (d) per-row compression/serialization/upload inside
+  the inner loop when it dominates row wall-time (#813: `np.savez_compressed`
+  103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at
+  1.29× size, Xet dedup already −59% on upload), so Codex never re-derives a
+  narrower throughput check (same omission class as the #606 copy-list miss).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
-  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
+  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 3.6:
+  Long-loop restartability" + "Step 5: Security
   Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
   schema.
 - The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
@@ -395,6 +458,13 @@ both reviewers are graded against the same standard. Read
   task's `R_eval.json` covered fewer personas than the bank, and the
   launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
   this in the prompt, Codex inherits the same gap.
+- The Step 3.6 **Long-loop restartability rule** VERBATIM. This is load-bearing: copy
+  the > ~1h trigger (keyed off plan §9 sizing / the implementer's projection / a trivial
+  count × per-call estimate), the persistence + resume predicate pair, the Major
+  `substantive` routing (NOT stripped by Step 5c-bis) with its plan-stated-justification
+  carve-outs, and the #823 incident, so Codex never re-derives a narrower check (same
+  omission class as the #606 copy-list miss; #823: five rounds PASSed a ~20h in-memory
+  accumulate-and-write-at-end loop).
 - The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
   Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
   scope, the 4-target sweep order (whole file → sibling family in the file →
@@ -435,6 +505,14 @@ Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; RUNNING tests is the Claude
 reviewer's responsibility. (Step 4.5 above is a separate test-PRESENCE
 grep that Codex DOES perform — it does not require the `uv` env.)
+
+Additionally instruct Codex, verbatim: "NEVER execute the implementer's
+smoke / launch / dispatch commands (`run_<N>.py`, dispatch scripts, `uv
+run python scripts/...` workloads) — smoke evidence is reviewed from the
+inlined marker digest, never regenerated by the reviewer." A
+reviewer-launched duplicate races the implementer's own instance on the
+same output paths (incident 2026-07-02: #823's review-retry loop reached
+three concurrent smoke instances on the shared VM).
 
 The compose prompt template (substitute `{{...}}` placeholders):
 
@@ -499,7 +577,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -508,7 +586,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>

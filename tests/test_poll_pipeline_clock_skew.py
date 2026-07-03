@@ -210,7 +210,14 @@ def test_missing_pod_now_falls_back_to_vm_clock(
 def test_heredoc_emits_pod_now_epoch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """The probe heredoc (the remote command in the ssh ``subprocess.run``
     call) emits ``POD_NOW_EPOCH=$(date +%s)``. Captured via ``cmd[-1]`` on
-    the probe call (mirrors the zombie-GPU test's capture pattern)."""
+    the probe call (mirrors the zombie-GPU test's capture pattern).
+
+    The capture is scoped to ``cmd[0] == "ssh"``: ``poll_once`` also runs
+    NON-ssh subprocesses through the same mocked ``subprocess.run`` (the
+    ``_resolve_state_dir_root`` phase-cache anchor runs ``git rev-parse
+    --path-format=absolute --git-common-dir``), and an unscoped
+    capture-last-call fake records that git call's ``cmd[-1]``
+    (``--git-common-dir``) over the probe heredoc."""
     captured: dict[str, str] = {}
     vm_now = int(time.time())
 
@@ -220,7 +227,8 @@ def test_heredoc_emits_pod_now_epoch(monkeypatch: pytest.MonkeyPatch, tmp_path: 
         remote = cmd[-1]
         if "SENTINEL_START" in remote:
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
-        captured["heredoc"] = remote
+        if cmd[0] == "ssh":
+            captured["heredoc"] = remote
         stdout = _probe_stdout(
             mtime_epoch=vm_now - 30,
             pod_now_epoch=vm_now,

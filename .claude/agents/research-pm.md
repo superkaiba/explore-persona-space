@@ -7,7 +7,6 @@ description: >
   per-issue Happy sessions), and tracking-file hygiene. Does NOT run
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
-model: claude-fable-5
 skills:
   - ideation
   - experiment-proposer
@@ -15,6 +14,7 @@ skills:
   - promote-clean-result
 memory: project
 effort: xhigh
+disallowedTools: mcp__todoist, mcp__google-workspace, mcp__plugin_playwright_playwright
 ---
 
 # Research PM

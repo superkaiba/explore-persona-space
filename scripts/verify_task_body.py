@@ -1984,7 +1984,8 @@ def is_v2_nested_design(body: str) -> bool:
     Strips fenced code blocks AND `<details>...</details>` blocks
     before the substring scan, so a body that only QUOTES
     `<!-- clean-result-v2 -->` inside an illustrative code fence (e.g.
-    the analyzer.md inlined skeleton) or inside a `<details>` example
+    the clean-result body skeleton, analyzer-section-reference.md
+    § Step 4) or inside a `<details>` example
     block is NOT misdetected as v2. The sentinel must live at the
     document-level prose layer to count.
 
@@ -3666,6 +3667,73 @@ _ARTIFACT_PATH_RE = re.compile(
     r"(?:\./)?[A-Za-z0-9_./-]+\.(?:json|png|csv))`"
 )
 
+# Clause delimiters for the committed-at-sha scan (#893, incident #841):
+# semicolon / interpunct / sentence-final period, each REQUIRING trailing
+# whitespace — so file-extension dots (`foo.json`), version strings, and
+# URL punctuation (which carry no spaces) never split. The em-dash (" — ")
+# and ":" are deliberately NOT delimiters: real footers put them BETWEEN a
+# path and its own sha claim (the #549 / #601 corpus shapes), so splitting
+# there would silently drop genuine pairs.
+_CLAUSE_DELIM_RE = re.compile(r";\s|\s·\s|\.\s")
+
+# Abbreviation tokens whose trailing dot is NOT a sentence boundary
+# (#893 v2, methodology-reconciler binding concern 2): without this guard,
+# "committed, e.g. `path` at commit `sha`." splits at "e.g. " and a TRUE
+# FAIL today becomes a silent PASS (protection removal). Matched against
+# the lowercased word immediately before the candidate ". " (the token's
+# own internal dots included, e.g. "e.g"). Over-inclusion is fail-safe:
+# a suppressed split degrades toward today's whole-line behavior.
+_DOT_ABBREVIATIONS = frozenset(
+    {"e.g", "i.e", "eg", "ie", "cf", "vs", "etc", "al", "fig", "approx", "incl"}
+)
+
+
+def _split_clauses(line: str) -> list[str]:
+    """Split ``line`` into clauses on ``; `` / `` · `` / ``. `` occurring
+    OUTSIDE backtick code spans, so a ``committed ... at commit `<sha>```
+    match and its artifact-path pairing can never cross a clause boundary
+    (#893; incident #841: the lazy span crossed from a results clause's
+    "committed" to the figures clause's "at commit `<sha>`" and validated
+    eval_results paths against the figures SHA). A ``. `` whose preceding
+    word is a known abbreviation (``e.g.`` / ``cf.`` / ...) does not
+    split. An UNBALANCED backtick latches ``in_code`` for the line's
+    remainder — deliberately fail-safe: no further splits means the
+    suffix keeps today's whole-line behavior, never a new false FAIL.
+    Known residual (accepted): two claims INSIDE one clause with no
+    delimiter between them still cross-pair within that clause.
+    """
+    clauses: list[str] = []
+    buf: list[str] = []
+    in_code = False
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if ch == "`":
+            in_code = not in_code
+            buf.append(ch)
+            i += 1
+            continue
+        if not in_code:
+            m = _CLAUSE_DELIM_RE.match(line, i)
+            if m is not None:
+                # Abbreviation guard: applies only to the ". " delimiter —
+                # look at the word ending the current buffer (dot excluded).
+                if ch == ".":
+                    words = "".join(buf).split()
+                    last_word = words[-1] if words else ""
+                    if last_word.lower().strip("(,") in _DOT_ABBREVIATIONS:
+                        buf.append(ch)
+                        i += 1
+                        continue
+                clauses.append("".join(buf))
+                buf = []
+                i = m.end()
+                continue
+        buf.append(ch)
+        i += 1
+    clauses.append("".join(buf))
+    return clauses
+
 
 def _resolve_repo_root() -> Path | None:
     """Return the repo root via the existing task_workflow helper, or
@@ -4052,6 +4120,10 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
         ``at commit `<sha>` `` prose marker, and their hex paths sit
         inside `()` link targets rather than backticks.
       - Prose without a backticked sha never trips the check.
+      - Same-CLAUSE anchoring: sha claims and paths pair only within a
+        clause — `;`/`·`/sentence boundaries outside backticks split the
+        window (#893; incident #841: a "committed" token in one clause
+        was paired with a later clause's ``at commit `<sha>` ``).
 
     Mechanical scope only — the semantic call ("did the experimenter
     actually upload this elsewhere, e.g. HF data repo?") belongs to
@@ -4071,25 +4143,29 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
         )
 
     cleaned = _strip_fenced_blocks(repro)
-    # Collect (sha, paths-on-same-line) pairs. Same-line anchoring keeps
-    # the association unambiguous: if a sha and a path are on the same
-    # line they are almost certainly being asserted together. Cross-line
-    # pairings are intentionally out of scope (too noisy).
+    # Collect (sha, paths-in-same-CLAUSE) pairs. Same-clause anchoring
+    # keeps the association unambiguous: if a sha and a path share a
+    # clause they are almost certainly being asserted together; a
+    # "committed" in one clause can no longer pair with a later clause's
+    # ``at commit `<sha>` `` (#893, incident #841). Cross-line pairings
+    # are intentionally out of scope (too noisy).
     pairs: list[tuple[str, str]] = []
     for line in cleaned.splitlines():
-        sha_match = _COMMITTED_AT_SHA_RE.search(line)
-        if sha_match is None:
-            continue
-        sha = sha_match.group("sha")
-        path_matches = _ARTIFACT_PATH_RE.findall(line)
-        for raw in path_matches:
-            # ``_ARTIFACT_PATH_RE`` is a non-grouping disjunction that
-            # returns the full path capture; normalize a leading `./`.
-            p = raw[2:] if raw.startswith("./") else raw
-            # Reject absolute or remote-looking paths defensively.
-            if p.startswith("/") or p.startswith("~") or "://" in p:
-                continue
-            pairs.append((sha, p))
+        # #893: scope BOTH regexes to a single clause so a "committed"
+        # token can never pair with a later clause's "at commit `<sha>`"
+        # (incident #841), and a line carrying two genuine claims
+        # validates each against its own clause's paths (finditer).
+        for clause in _split_clauses(line):
+            for sha_match in _COMMITTED_AT_SHA_RE.finditer(clause):
+                sha = sha_match.group("sha")
+                for raw in _ARTIFACT_PATH_RE.findall(clause):
+                    # ``_ARTIFACT_PATH_RE`` is a non-grouping disjunction that
+                    # returns the full path capture; normalize a leading `./`.
+                    p = raw[2:] if raw.startswith("./") else raw
+                    # Reject absolute or remote-looking paths defensively.
+                    if p.startswith("/") or p.startswith("~") or "://" in p:
+                        continue
+                    pairs.append((sha, p))
 
     if not pairs:
         return CheckResult(

@@ -57,7 +57,7 @@ What differs from the reference experiment / baseline:
 | | Key library versions | {LIB_VERSIONS} |
 | | Script + commit | {SCRIPT_COMMIT} |
 | | Config file | {CONFIG_FILE} |
-| | Command to reproduce | `{NOHUP_COMMAND}` |
+| | Command to reproduce | `{WORKLOAD_COMMAND}` (workload/dispatcher command + env pins — no launch wrapper; the experimenter wraps it, `experimenter.md` § "During Execution") |
 
 ### Success criteria
 {SUCCESS_CRITERIA}

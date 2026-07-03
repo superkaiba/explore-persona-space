@@ -1,0 +1,300 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:44Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.9645226080996883,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.9580697377941488,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.9428865234802587,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.98654813389335,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.9194079246023596,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.9106663056281346,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8822458879664126,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9619978240553582,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.9456337405136396,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.9455124077024852,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.9324593625403652,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9741618316150454,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.9059791935610951,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.902741806135474,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8742425283743739,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9516853643547222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.9401824237955412,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.9386664209045883,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.9257785164208169,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9681292123585302,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.945816141016796,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.9511946236192174,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.946852493632138,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9737936763699121,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.5828110689489856,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.7738316850497584,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8900745751092088,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9304036451836217,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.5307025092407458,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.7276174201894978,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8458072612577445,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.8927703896122277,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.6726501994679976,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.8072170412688937,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8869441348504585,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.919635364785443,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.7013013403171358,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.8071045262944324,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.8732507466117324,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9038985699873274,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.8447406439262544,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.8924980738523445,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.9236663733145132,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9398426162819371,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Fit-set size n": 500.0,
+      "Held-out identity-relative R\u00b2": 0.832536015768951,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Fit-set size n": 1000.0,
+      "Held-out identity-relative R\u00b2": 0.8831809962198138,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Fit-set size n": 2000.0,
+      "Held-out identity-relative R\u00b2": 0.9158555268388257,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Fit-set size n": 4000.0,
+      "Held-out identity-relative R\u00b2": 0.9326769588110926,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48
+}

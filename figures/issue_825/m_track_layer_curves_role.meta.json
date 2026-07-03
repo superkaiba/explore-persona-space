@@ -1,0 +1,1580 @@
+{
+  "commit": "dfa953a482",
+  "created": "2026-07-02T23:05:51Z",
+  "figsize": [
+    9.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$": -0.97546758788152,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$": -2.073158847537186,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$": -1.7814691828493312,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$": -1.9560308047472894,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$": -1.8670719033450287,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$": -2.0012427923995912,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$": -1.82022633469016,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$": -1.801859661502946,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$": -1.5184580784194943,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$": -1.3279912524488213,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$": -1.115167688200399,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$": -1.084663473389225,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$": -0.8346549794334772,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$": -0.6105124886224043,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$": -0.4775855210484734,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$": -0.37808070357748336,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$": -0.31129955079812244,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$": -0.26361582468983635,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$": -0.12138978594928251,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$": 0.07571368282874946,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$": 0.09320531239651009,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$": 0.053402162866464487,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$": 0.03210480326909049,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$": -0.03520580999725986,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$": -0.08451892376281589,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$": -0.1408856746067162,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$": -0.206020424593095,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$": -0.17872393665060105,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$": -2.3861599518543626,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$": -1.9124916742898317,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$": -1.695561161906963,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$": -1.8785953479444344,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$": -1.9382083978530789,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$": -1.9932414474014912,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$": -2.039291164966493,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$": -2.1937621249625536,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$": -2.073000124325186,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$": -2.0339106442533645,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$": -2.113466262553175,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$": -2.099167049790717,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$": -2.1403225523400597,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$": -1.968748861914015,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$": -1.9237428878658975,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$": -1.941821688013024,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$": -1.9122140371993068,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$": -1.9653443372732777,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$": -1.7946380438151461,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$": -1.4272499394227478,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$": -1.4319890468315877,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$": -1.4220889255339983,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$": -1.430266968298088,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$": -1.3655100177843145,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$": -1.221699508045691,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$": -1.2489863845298874,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$": -1.1212441058127531,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$": -0.8066296952623677,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$": 0.2828164641930825,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$": -2.1409315194664775,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$": -1.913291052628884,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$": -2.0433845821638523,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$": -2.717093958897767,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$": -2.9095987588225083,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$": -3.127131682669101,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$": -2.931454423363505,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$": -2.4269259698972587,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$": -1.753973678045607,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$": -1.8581059463966314,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$": -1.649461287970901,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$": -1.4643884516780172,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$": -1.1428575784479036,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$": -0.9775847367296802,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$": -0.8335491206743546,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$": -0.8079000121498479,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$": -0.7788171956723484,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$": -0.6996494800826982,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$": -0.4605551809040864,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$": -0.49201973607778404,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$": -0.5224764084196845,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$": -0.5797120905685282,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$": -0.587444856568138,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$": -0.5534222320063313,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$": -0.5715581577130904,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$": -0.5690021507795027,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$": -0.2957941200524876,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$": -2.4860685120060912,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$": -1.9330436305812428,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$": -1.6734616444821597,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$": -2.235471604317771,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$": -4.276493680152718,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$": -4.044855401166247,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$": -4.631043064416713,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$": -4.339288337268233,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$": -3.123966125886443,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$": -2.51983904350429,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$": -2.6577019487501494,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$": -2.4726710807451058,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$": -2.112812239243354,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$": -1.9457190408650025,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$": -1.8901788900613843,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$": -1.8314537579676995,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$": -1.6932261467456122,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$": -1.7661457304706851,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$": -1.6738222188914968,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$": -1.4893560397043863,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$": -1.5373671505952675,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$": -1.542267715148113,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$": -1.4926720723092535,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$": -1.4616526254676998,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$": -1.3681426832627954,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$": -1.3953016678854375,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$": -1.2108970442009106,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$": -0.9472050193210624,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.28983861223063623,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.319903443599015,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "y": -1.9799934747678698,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "y": -2.0991088110275453,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "y": -2.0743136047016084,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "y": -2.160710997828823,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "y": -2.002017716305321,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "y": -2.2658129437743812,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "y": -2.0040367006156887,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "y": -1.5870303876597673,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "y": -1.4510405016007084,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "y": -1.3658778540686374,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "y": -1.1087191208336242,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.9035596673228952,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.6622451599401609,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.5613258457085035,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.5165282615004478,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.47987311540890243,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.2766452384375546,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.07842569894348572,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.03786391573096948,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.045907139476953684,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.07743805329095887,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.14197997667093154,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.1613787904807058,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.1945319792492224,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.22772439938409827,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.1373052566393722,
+      "series": "Instruct \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "y": -2.5972740672870183,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "y": -1.9193937576653983,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "y": -1.6844136678400434,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "y": -1.824119491930571,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "y": -2.0298242888970806,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "y": -2.0347527280777786,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "y": -2.0287802032810403,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "y": -2.17903225130524,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "y": -2.0208147404785604,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "y": -1.9617698414027442,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "y": -2.011765717564313,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "y": -2.0202441088418586,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "y": -2.0816854104241003,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "y": -1.9699609096571473,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "y": -2.014378004352124,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "y": -1.9623281202477423,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "y": -1.9976489657346517,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "y": -2.090634243400931,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "y": -1.8942351284136185,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "y": -1.6051478189019184,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "y": -1.6700632318951056,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "y": -1.6528103622819912,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "y": -1.6199054189550988,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "y": -1.5356419053543453,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "y": -1.3242483771851692,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "y": -1.3419304529931866,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "y": -1.075702113328283,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.7185413340284599,
+      "series": "Instruct \u00b7 user turn",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.2827519754305675,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.31403677666718044,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "y": -2.088324392377806,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "y": -2.1610698642331663,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "y": -2.037127207149738,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "y": -2.1561678249956193,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "y": -2.0380602254236218,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "y": -2.4962926376523042,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "y": -2.6006674485502557,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "y": -2.0729887067744937,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "y": -2.101856958361614,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "y": -2.0208860722645254,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "y": -1.6776852594953442,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "y": -1.220412621828387,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.9686366354532072,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.8500040891375447,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.7793965308032937,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.7156587098564338,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.5260624119561166,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.38966704296046184,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.38311203866583043,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.3374377926655956,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.35429966138194624,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.42092567897713384,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.43916318674673493,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.46291411166606555,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.4655692769221389,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.21457082788944937,
+      "series": "Pretrained \u00b7 assistant turn",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "y": -2.5889108025517107,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "y": -2.0086511331972785,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "y": -1.7573572921488116,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "y": -1.9356488013397954,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "y": -2.0213074498373045,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "y": -2.057497452895961,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "y": -2.0549952130687585,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "y": -2.255748723765482,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "y": -2.0831633071347673,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "y": -1.9621460146657834,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "y": -1.9802492424540241,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "y": -2.0392556744289565,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "y": -2.006208809755165,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "y": -1.8292475495760092,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "y": -1.8303820787782201,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "y": -1.8393695965843149,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "y": -1.9204163441290287,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "y": -2.0667023725173244,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "y": -1.8384804982201848,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "y": -1.649589414624506,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "y": -1.699333965077726,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "y": -1.6933192386349423,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "y": -1.766744375899136,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "y": -1.779131660144861,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "y": -1.6080190354798938,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "y": -1.599483388997173,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "y": -1.3162971846035858,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "y": -1.0252949403098923,
+      "series": "Pretrained \u00b7 user turn",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224
+}

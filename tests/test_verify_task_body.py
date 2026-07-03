@@ -5828,3 +5828,182 @@ def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
         _CHECK732_UNDISCLOSED_BODY, issue=608, eval_root=tmp_path
     )
     assert res.passed and not res.is_warn, res.render()
+
+
+# ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────
+#
+# `check_repro_committed_claims_exist` must never pair a "committed" token
+# with an ``at commit `<sha>` `` from a DIFFERENT clause of the same line
+# (the #841 false FAIL: the lazy span crossed from the results-JSON
+# clause's "committed" to the figures clause's sha and validated the
+# eval_results paths against the WRONG sha). Fixture: a throwaway repo
+# with two commits so a pair validated against the wrong commit fails
+# `git cat-file -e`.
+
+
+def _make_repo_two_commits(tmp_path):
+    """Throwaway repo with two commits: commit A adds
+    eval_results/issue_999/metrics.json; commit B REMOVES it and adds
+    figures/issue_999/hero.png — so a (sha, path) pair validated against
+    the WRONG commit fails `git cat-file -e`. Returns (repo, sha_a, sha_b)."""
+    repo = tmp_path / "tworepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    def head_sha():
+        return subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    metrics = repo / "eval_results" / "issue_999" / "metrics.json"
+    metrics.parent.mkdir(parents=True)
+    metrics.write_text("{}")
+    git("add", "eval_results")
+    git("commit", "-q", "-m", "commit A: add metrics.json")
+    sha_a = head_sha()
+    git("rm", "-q", "eval_results/issue_999/metrics.json")
+    fig = repo / "figures" / "issue_999" / "hero.png"
+    fig.parent.mkdir(parents=True)
+    fig.write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "commit B: remove metrics.json, add hero.png")
+    sha_b = head_sha()
+    return repo, sha_a, sha_b
+
+
+def _repro_body(line):
+    """Minimal non-v4 body routing `line` through the `## Reproducibility`
+    H2 (the `section_text` leg of `_repro_section_text`)."""
+    return "# T\n\n## Reproducibility\n\n" + line + "\n"
+
+
+def test_check15_cross_clause_sha_not_paired_841_shape(tmp_path, monkeypatch):
+    """The #841 regression: clause 1 carries "committed" + the eval path +
+    a parenthesized branch sha WITHOUT "at commit"; clause 2 carries
+    "at commit `<sha_b>`" WITHOUT "committed". The eval path must never be
+    validated against the figures sha — no pair forms, the check PASSes."""
+    repo, sha_a, sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"Result JSONs `eval_results/issue_999/metrics.json` committed on branch "
+        f"`issue-999` (`{sha_a}`). Figures pinned at commit `{sha_b}` on main."
+    )
+    # Fixture sanity: the OLD whole-line regex DOES match this shape (the
+    # lazy span crosses the `. ` boundary) — proving the test exercises the
+    # cross-clause pairing the fix removes, not a never-matching string.
+    assert verify_task_body._COMMITTED_AT_SHA_RE.search(line) is not None
+    res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no `committed" in res.detail
+
+
+def test_check15_two_claims_one_line_each_validated_against_own_clause(tmp_path, monkeypatch):
+    """A line with TWO genuine claims validates each against its own
+    clause's path (finditer fixes the only-first-claim-per-line defect;
+    the old code paired hero.png with sha_a and false-FAILed)."""
+    repo, sha_a, sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"Eval JSONs `eval_results/issue_999/metrics.json` committed at commit `{sha_a}`; "
+        f"figures `figures/issue_999/hero.png` committed at commit `{sha_b}`."
+    )
+    res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
+    assert res.passed and not res.is_warn, res.render()
+    assert "2 committed-at-sha claim pair(s) resolved cleanly" in res.detail
+
+
+def test_check15_same_clause_missing_path_still_fails(tmp_path, monkeypatch):
+    """Coverage preserved (#550 shape): a same-clause pair whose sha lacks
+    the path still FAILs — clause scoping must not defang the check."""
+    repo, _sha_a, sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"- Eval JSONs committed to git at commit `{sha_b}` (65 files): "
+        f"[`eval_results/issue_999/metrics.json`](https://github.com/x/y/blob/{sha_b}/f)."
+    )
+    res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
+    assert not res.passed, res.render()
+    assert "NOT present" in res.detail
+
+
+def test_check15_same_clause_pair_resolves(tmp_path, monkeypatch):
+    """Happy path (#601 shape): a genuine same-clause pair resolves."""
+    repo, sha_a, _sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = (
+        f"- Eval JSONs: `eval_results/issue_999/metrics.json` committed at commit `{sha_a}` "
+        f"on branch `issue-999`."
+    )
+    res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 committed-at-sha claim pair(s) resolved cleanly" in res.detail
+
+
+def test_split_clauses_backtick_protection():
+    """Pure-helper pins: backtick spans protect delimiters; extension dots
+    and an end-of-string period never split; the ` · ` (U+00B7) leg splits;
+    an unbalanced backtick fail-safes to NO further splits (status-quo
+    whole-line behavior on the suffix); an abbreviation dot (`e.g. `) does
+    not split while a genuine sentence boundary on the same line does."""
+    split = verify_task_body._split_clauses
+    # Backtick protection: the `; ` inside the code span does not split.
+    assert split("a `x; y` b; c") == ["a `x; y` b", "c"]
+    # Extension dot + end-of-string period: one clause.
+    line = "path `m.json` committed at commit `abcd1234` end."
+    assert split(line) == [line]
+    # Interpunct leg (v2 binding Must-Fix): U+00B7 with flanking whitespace.
+    assert split("a · b") == ["a", "b"]
+    # Unbalanced backtick: in_code latches for the remainder — no further
+    # splits (fail-safe direction: the suffix keeps whole-line behavior,
+    # so the fix can never introduce a NEW false FAIL there).
+    unbalanced = "a `unclosed; b. c"
+    assert split(unbalanced) == [unbalanced]
+    # Abbreviation guard: no split at "e.g. ", split at the "y. " boundary.
+    assert split("committed, e.g. x at commit y. done") == [
+        "committed, e.g. x at commit y",
+        "done",
+    ]
+
+
+def test_check15_v4_footer_route_interpunct_no_cross_field_pair(tmp_path, monkeypatch):
+    """The #841 PRODUCTION route: a v4 `**Repro:**` footer (reaches the
+    check via `_v4_footer_text`) whose committed-claim field and
+    ``at commit `<sha>` `` field are separated by ` · ` — no cross-field
+    pair may form. Also exercises the ` · ` splitter leg end-to-end."""
+    repo, sha_a, sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    footer_line = (
+        f"**Repro:** Result JSONs `eval_results/issue_999/metrics.json` committed on "
+        f"branch `issue-999` (`{sha_a}`) · figures at commit `{sha_b}`"
+    )
+    lines = _V4_GOOD_BODY.splitlines()
+    idx = next(i for i, ln in enumerate(lines) if ln.startswith("**Repro:**"))
+    lines[idx] = footer_line
+    body = "\n".join(lines) + "\n"
+    assert verify_task_body.is_v4(body)
+    # Fixture sanity: the OLD whole-line regex crosses the ` · ` field
+    # boundary on the raw footer line (would have cross-paired).
+    assert verify_task_body._COMMITTED_AT_SHA_RE.search(footer_line) is not None
+    res = verify_task_body.check_repro_committed_claims_exist(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check15_abbreviation_dot_same_clause_claim_still_fails(tmp_path, monkeypatch):
+    """Protection preservation (v2 binding concern 2): a comma-less
+    abbreviation dot between "committed" and its same-sentence path/sha
+    claim must NOT split the clause — this TRUE FAIL stays a FAIL (without
+    the guard, the split would silently flip it to PASS)."""
+    repo, _sha_a, sha_b = _make_repo_two_commits(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    line = f"- Artifacts committed, e.g. `eval_results/issue_999/metrics.json` at commit `{sha_b}`."
+    res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
+    assert not res.passed, res.render()
+    assert "NOT present" in res.detail

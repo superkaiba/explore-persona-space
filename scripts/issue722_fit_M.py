@@ -42,8 +42,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -453,6 +455,21 @@ def fit_cell(
     the ``rho_M0_mlp`` / ``rho_Mplus_mlp`` / ``rho_M0_shuffle`` / ``nonlin_gap_*``
     keys (all MLP-derived); every ridge key is byte-for-byte the same code path.
     """
+    if include_mlp:
+        if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+            raise RuntimeError(
+                "fit_cell(include_mlp=True) is the SERIAL per-(behavior,layer) MLP path "
+                "superseded by src/explore_persona_space/analysis/vectorized_mlp_skill.py; "
+                "EPM_FORBID_SERIAL_FITS=1 is set (see "
+                ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+            )
+        warnings.warn(
+            "fit_cell(include_mlp=True) runs the SERIAL per-(behavior,layer) MLP fit; new "
+            "sweeps should use src/explore_persona_space/analysis/vectorized_mlp_skill.py "
+            "(batched, 50-100x). Serial call retained for #722/#667 reproduction only.",
+            FutureWarning,
+            stacklevel=2,
+        )
     stacks = loadact.stack_for_fit(cells)
     C0, Cplus = stacks["C0"], stacks["Cplus"]
     V0, Vplus = stacks["V0"], stacks["Vplus"]
@@ -673,11 +690,8 @@ def m0_at_cplus_ridge_full(C0, V0, Cplus, pca):
 def main() -> int:
     global N_REFIT_PAIRS, TARGET_DIM
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    # Resolve the compute device the ridge + MLP fitters read off fit658.DEVICE
-    # (default "cpu", flipped to cuda only inside fit658.main() — which #722 never
-    # calls; MF#6 / Claude Major#1). "auto" → cuda when available else cpu, so the
-    # GPU lane uses cuda and the CPU smoke still falls back to cpu.
-    fit658.DEVICE = fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("[phase=fit_M] device=%s", fit658.DEVICE)
     ap = argparse.ArgumentParser(description="Issue #722 fit M0 vs M⁺ + the four reads")
     ap.add_argument("--behaviors", nargs="+", default=list(HEADLINE_BEHAVIORS))

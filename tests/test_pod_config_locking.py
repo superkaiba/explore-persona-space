@@ -180,3 +180,170 @@ def test_locked_pods_conf_releases_on_exception(tmp_path, monkeypatch) -> None:
     # Re-acquire immediately — must not block.
     with pod_config.locked_pods_conf():
         pass
+
+
+# ---------------------------------------------------------------------------
+# Task #821 v3 r2 — reentrant ``locked_pods_conf`` (nested-flock deadlock).
+#
+# Round-1 codex-reviewer critical blocker: ``_resolve_live_pods_conf``
+# acquires ``locked_pods_conf`` for the seed→live migration; every
+# production writer (``pod_lifecycle._upsert_pods_conf``,
+# ``_remove_from_pods_conf``, ``cmd_update``, ``cmd_refresh_from_api``)
+# ALREADY holds the lock when it calls ``parse_pods_conf`` /
+# ``write_pods_conf``, which lazily resolve. ``fcntl.flock`` is
+# per-open-file-description, so a second ``LOCK_EX`` on a fresh fd
+# BLOCKS forever on the fd the outer frame is holding. Fix: reentrant
+# via a ``threading.local()`` depth counter (see ``pod_config.py``).
+#
+# The two tests below use ``multiprocessing.Process`` with a hard timeout
+# so a regression NEVER hangs the test suite — the join times out and
+# the assertion fires on ``exitcode``.
+# ---------------------------------------------------------------------------
+
+
+def _worker_nested_acquire(pods_conf_path_str: str, lock_path_str: str) -> None:
+    """Subprocess body: two ``with locked_pods_conf()`` frames stacked
+    directly. Pre-fix (non-reentrant flock) this hangs on the inner
+    acquire because ``fcntl.flock`` blocks on a second fd against the
+    same lockfile even inside the same process.
+    """
+    import pod_config
+
+    pod_config.PODS_CONF = Path(pods_conf_path_str)
+    pod_config.PODS_CONF_LOCK = Path(lock_path_str)
+
+    with pod_config.locked_pods_conf():
+        with pod_config.locked_pods_conf():
+            # Sanity: the nested body actually ran (not just skipped).
+            assert getattr(pod_config._LOCK_STATE, "depth", 0) == 2
+        assert getattr(pod_config._LOCK_STATE, "depth", 0) == 1
+    assert getattr(pod_config._LOCK_STATE, "depth", 0) == 0
+
+
+def test_locked_pods_conf_is_reentrant_direct_nesting(tmp_path: Path) -> None:
+    """A direct ``with locked_pods_conf(): with locked_pods_conf(): ...``
+    stack MUST return without deadlock. Pre-fix the inner frame's
+    ``flock(fd2, LOCK_EX)`` blocked on the outer frame's fd1.
+
+    Ran in a subprocess with a 15 s hard timeout so a regression fails the
+    assertion instead of hanging the pytest run.
+    """
+    pods_conf = tmp_path / "pods.conf"
+    pods_conf.write_text("# fixture\n")
+    lock_path = tmp_path / ".pods.conf.lock"
+
+    ctx = mp.get_context("spawn")
+    proc = ctx.Process(target=_worker_nested_acquire, args=(str(pods_conf), str(lock_path)))
+    proc.start()
+    proc.join(timeout=15)
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=5)
+    assert not proc.is_alive(), (
+        "locked_pods_conf deadlocked on nested acquire — the reentrant "
+        "depth-counter fix has regressed."
+    )
+    assert proc.exitcode == 0, f"nested-acquire worker exited {proc.exitcode}; expected 0"
+
+
+def _worker_first_use_migration_under_lock(
+    seed_path_str: str,
+    live_dir_str: str,
+    lock_path_str: str,
+) -> None:
+    """Subprocess body: reproduces the exact orchestrator repro from the
+    round-1 codex FAIL — acquire ``locked_pods_conf`` at the top of the
+    caller's read-modify-write, then call ``parse_pods_conf`` on a fresh
+    checkout where only the SEED exists. ``parse_pods_conf`` calls
+    ``_resolve_live_pods_conf`` (no live file yet → migrates seed → live),
+    which itself acquires ``locked_pods_conf`` inside the same process.
+
+    Pre-fix: the inner acquire's ``flock(fd2, LOCK_EX)`` blocks on the
+    outer fd1 → hang → the ``multiprocessing.Process.join(timeout=…)``
+    fires and the exitcode assertion FAILs.
+
+    Post-fix: the reentrant depth counter skips the inner ``flock``, the
+    migration copies seed → live, ``parse_pods_conf`` reads the seed's
+    rows, the worker exits 0 with the seed row present.
+    """
+    import pod_config
+
+    seed_path = Path(seed_path_str)
+    live_dir = Path(live_dir_str)
+    live_path = live_dir / "pods.conf"
+
+    # Point PODS_CONF at the seed so the monkeypatch-passthrough branch
+    # in ``_resolve_live_pods_conf`` does NOT fire (it fires only when
+    # PODS_CONF != PODS_CONF_SEED). We want the real migration path.
+    pod_config.PODS_CONF = pod_config.PODS_CONF_SEED
+    pod_config.PODS_CONF_SEED = seed_path
+    pod_config.PODS_CONF = seed_path  # keep both aligned
+    pod_config.PODS_CONF_LOCK = Path(lock_path_str)
+
+    # Redirect ``_git_common_dir`` to a temp dir so the migration's live
+    # dir lands inside our fixture, not the real repo's ``.git/eps/``.
+    def _fake_common_dir() -> Path:
+        return live_dir.parent
+
+    pod_config._git_common_dir = _fake_common_dir  # type: ignore[assignment]
+    # ``_LIVE_PODS_CONF_DIRNAME`` = "eps" — the migration writes to
+    # ``<common>/eps/pods.conf``. Point ``live_dir.parent / "eps"`` at
+    # ``live_dir`` by matching the name.
+    assert live_dir.name == pod_config._LIVE_PODS_CONF_DIRNAME, live_dir.name
+
+    with pod_config.locked_pods_conf():
+        rows = pod_config.parse_pods_conf()
+
+    # Live file must exist post-migration.
+    assert live_path.exists(), f"migration did not create {live_path}"
+    # The seed row must be present in the parsed output.
+    assert any(p.name == "pod-42" for p in rows), (
+        f"expected pod-42 in parsed rows, got {[p.name for p in rows]}"
+    )
+
+
+def test_locked_pods_conf_first_use_migration_under_caller_lock(tmp_path: Path) -> None:
+    """The orchestrator's exact reproduction: caller holds the lock, then
+    ``parse_pods_conf`` lazily resolves and migrates seed → live inside
+    ``_resolve_live_pods_conf`` — which itself acquires the lock. Pre-fix
+    this is the round-1 nested-flock deadlock.
+
+    Fixture layout:
+        tmp_path/scripts/pods.conf        <- SEED (only file that exists pre-run)
+        tmp_path/eps/                     <- LIVE dir (created by migration)
+        tmp_path/.pods.conf.lock          <- lockfile
+
+    Ran in a subprocess with a 15 s hard timeout so a regression FAILs
+    the assertion instead of hanging.
+    """
+    seed_dir = tmp_path / "scripts"
+    seed_dir.mkdir()
+    seed = seed_dir / "pods.conf"
+    seed.write_text(
+        "# fixture seed\n"
+        "# name  host  port  gpus  gpu_type  label\n"
+        "pod-42  10.0.0.42  22042  1  H100  thomas-pod-42\n"
+    )
+
+    live_dir = tmp_path / "eps"  # matches _LIVE_PODS_CONF_DIRNAME
+    lock_path = tmp_path / ".pods.conf.lock"
+
+    ctx = mp.get_context("spawn")
+    proc = ctx.Process(
+        target=_worker_first_use_migration_under_lock,
+        args=(str(seed), str(live_dir), str(lock_path)),
+    )
+    proc.start()
+    proc.join(timeout=15)
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=5)
+    assert not proc.is_alive(), (
+        "First-use migration deadlocked under caller-held lock — the "
+        "nested-flock bug (round-1 codex-reviewer critical blocker) has "
+        "regressed. Non-reentrant flock: outer acquire owns fd1, "
+        "_resolve_live_pods_conf opens fd2 and blocks forever on LOCK_EX."
+    )
+    assert proc.exitcode == 0, f"migration-under-lock worker exited {proc.exitcode}; expected 0"

@@ -37,7 +37,21 @@ from explore_persona_space.orchestrate.env import load_dotenv
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-CONF_PATH = SCRIPT_DIR / "pods.conf"
+
+# Task #821: resolve pods.conf via pod_config's lazy resolver so this
+# READ-only consumer picks up the LIVE pods.conf at
+# ``<git-common-dir>/eps/pods.conf`` instead of the tracked seed at
+# ``scripts/pods.conf``. Prior code ``CONF_PATH = SCRIPT_DIR / "pods.conf"``
+# silently read the SEED after the v3 relocation — every reap on the seed
+# would have missed rows the live registry knows about. Resolved lazily
+# at call time so a test that monkeypatches ``pod_config.PODS_CONF`` is
+# honored, matching the pattern every other reader now uses.
+sys.path.insert(0, str(SCRIPT_DIR))
+
+# Import the LIVE-pods.conf resolver from pod_config so this READ-only
+# consumer resolves to the LIVE file (post-#821 relocation) instead of the
+# tracked seed. See the block above.
+from pod_config import _resolve_live_pods_conf  # noqa: E402
 
 # ── Env setup ────────────────────────────────────────────────────────────────
 
@@ -98,11 +112,12 @@ class CleanupReport:
 
 
 def parse_pods() -> list[Pod]:
-    """Read pods.conf."""
+    """Read pods.conf (LIVE — resolved via ``pod_config._resolve_live_pods_conf``)."""
+    conf_path = _resolve_live_pods_conf()
     pods = []
-    if not CONF_PATH.exists():
+    if not conf_path.exists():
         return pods
-    for line in CONF_PATH.read_text().splitlines():
+    for line in conf_path.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue

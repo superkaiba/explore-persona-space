@@ -1,0 +1,228 @@
+{
+  "commit": "2922b0a3e1",
+  "created": "2026-07-02T18:41:11Z",
+  "figsize": [
+    10.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.12797530397663376,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": -0.02898237064884968,
+      "y": -0.16,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.20492351281265223,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.11345016301029681,
+      "y": 0.84,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": -0.1116995610272735,
+      "y": 2.66,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": -0.12954159407921056,
+      "y": 2.34,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": -0.05171729687447668,
+      "y": 3.66,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.01591046554158322,
+      "y": 3.34,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": -0.03366870853608696,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": -0.0659864090200581,
+      "y": 4.84,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": -0.11535043227680124,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.04187685342620253,
+      "y": 5.84,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.075738673662733,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.12420020257371915,
+      "y": -0.16,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.0968374173905007,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.18076481779000433,
+      "y": 0.84,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.09973084053950597,
+      "y": 2.66,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.13309379455003703,
+      "y": 2.34,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.09625066921358055,
+      "y": 3.66,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.03900843798594366,
+      "y": 3.34,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.14676923679997908,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.0708283627419014,
+      "y": 4.84,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.14495182450067787,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Spearman \u03c1(prediction along behavior direction, measured leakage)": -0.027921783635915007,
+      "y": 5.84,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "x": -0.20550917818358483,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 0.10670048919493859,
+      "y": -0.16,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": -0.15834457127444634,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": -0.10990122976652585,
+      "y": 0.84,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": -0.20035984024973902,
+      "y": 2.66,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.5120034441078058,
+      "y": 2.34,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": -0.1530408722359096,
+      "y": 3.66,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 0.22387689378562922,
+      "y": 3.34,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": -0.16241540176582486,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": 0.5029618802717022,
+      "y": 4.84,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": -0.04932424271130877,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": -0.05926374371283244,
+      "y": 5.84,
+      "_kind": "errorbar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 36
+}

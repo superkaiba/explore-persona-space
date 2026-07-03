@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
+import sys
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -3937,28 +3939,48 @@ def test_render_startup_script_persists_diagnostics_before_teardown() -> None:
 
 def test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts() -> None:
     """The crash-diagnostics upload covers BOTH the workload log (the
-    traceback / stderr) AND the partial eval_results the workload wrote
-    before crashing — the two things #658 lost on every retry."""
+    traceback / stderr) AND the partial artifacts the workload wrote
+    before crashing — the two things #658 lost on every retry. #854
+    broadens the partial sweep to the data/issue_<N> + data/issue<N>
+    working-dir conventions (caches excluded), adds a per-crash
+    timestamped log copy + a transcript audit, and prints every skip."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
     # Log + crash report upload.
     assert "workload.log" in script
     assert "crash_report.json" in script
-    # Partial artifacts: the workload's eval_results/issue_<N>/ dir.
+    # Partial artifacts: the workload's eval_results/issue_<N>/ dir AND both
+    # data/ conventions (#854 — the #825 partials lived in data/issue_825/).
     assert 'eval_results" / f"issue_{issue}"' in script
+    assert 'data" / f"issue_{issue}"' in script
+    assert 'data" / f"issue{issue}"' in script
     assert "upload_folder" in script
+    # Re-downloadable caches are excluded — top-level AND nested forms (the
+    # '**/'-prefixed fnmatch forms do NOT match top-level; both are needed).
+    assert "ignore_patterns" in script
+    assert '"hf_dl/**"' in script
+    assert '"**/hf_dl/**"' in script
+    # Every skip is loud, the timestamped log copy + transcript audit exist.
+    assert "[crash-persist] SKIP" in script
+    assert "workload_{stamp}.log" in script
+    assert "crash_persist_transcript.log" in script
     # Destination prefix isolates partial output per attempt.
     assert "issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}" in script
 
 
 def test_render_startup_script_diagnostics_is_guarded_and_bounded() -> None:
     """The crash-upload must NEVER delay the poweroff that bounds billing:
-    it early-returns without a repo/token, time-bounds the upload, and the
-    trap call is on the non-aborting (``set +e``) crash path."""
+    it early-returns without a repo/token (LOUDLY, #854), time-bounds the
+    upload, and the trap call is on the non-aborting (``set +e``) crash
+    path."""
     script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
-    # Early-return when the repo target / token is absent (early-boot crash).
-    assert (
-        'if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi' in script
-    )
+    # Early-return when the repo target / token is absent (early-boot crash)
+    # — now with a loud serial-console skip line instead of a silent return.
+    assert 'if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then' in script
+    assert "[crash-persist] SKIP-ALL" in script
+    guard_idx = script.index('if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then')
+    skip_idx = script.index("[crash-persist] SKIP-ALL")
+    ret_idx = script.index("return 0;", skip_idx)
+    assert guard_idx < skip_idx < ret_idx
     # Hard time bound on the upload so a hung HF call can't strand the VM.
     assert "timeout 300 uv run python" in script
     # The trap body runs under set +e (non-aborting), so a failing upload
@@ -3998,6 +4020,394 @@ def test_render_startup_script_is_valid_bash() -> None:
             path = fh.name
         proc = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
         assert proc.returncode == 0, f"bash -n failed:\n{proc.stderr}"
+
+
+# ---------------------------------------------------------------------------
+# #854 — crash-persist hardening (coverage + diagnosability; incident #825)
+# ---------------------------------------------------------------------------
+
+
+def _extract_persist_heredoc(script: str) -> str:
+    """Return the EPS_PERSIST_PY heredoc body (the real embedded python).
+
+    Asserts exactly one heredoc occurrence so the extraction is
+    unambiguous; returns the lines between the ``<<'EPS_PERSIST_PY'``
+    opener and the ``EPS_PERSIST_PY`` terminator."""
+    lines = script.splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.endswith("<<'EPS_PERSIST_PY'")]
+    ends = [i for i, ln in enumerate(lines) if ln == "EPS_PERSIST_PY"]
+    assert len(starts) == 1 and len(ends) == 1, (starts, ends)
+    assert starts[0] < ends[0]
+    return "\n".join(lines[starts[0] + 1 : ends[0]]) + "\n"
+
+
+def test_render_startup_script_trap_reaps_watchdog_before_persist() -> None:
+    """#854: the EXIT trap kills the reachability watchdog — the only other
+    in-guest poweroff actor — at trap ENTRY, BEFORE the crash persist, so
+    nothing can power the VM off mid-upload. The clean-exit reap must also
+    survive (both-path coverage)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    kill_idx = trap_line.index('kill "${EPS_WATCHDOG_PID')
+    persist_idx = trap_line.index('_eps_persist_diagnostics "$rc"')
+    shutdown_idx = trap_line.index("shutdown -h now")
+    assert kill_idx < persist_idx < shutdown_idx
+    # The clean-exit reap (before the success sentinel) still exists as its
+    # own standalone line.
+    assert '{ kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true' in script.splitlines()
+
+
+def test_render_startup_script_persist_streams_eagerly() -> None:
+    """#854: the persist output reaches fd 3 (serial console) EAGERLY, line
+    by line — the old ``| cut | tail`` pipe buffered everything until EOF,
+    so a killed/skipped persist left zero evidence. The reader keeps
+    READING to EOF (only printing stops at the cap): an early pipe close
+    would SIGPIPE-kill the uploader mid-upload — that property is pinned
+    HERE by string assert (the behavioral heredoc test runs the python
+    without the bash streamer). Standing dep A: every heredoc ``print(``
+    carries ``flush=True`` (buffered prints would defeat the eager
+    stream)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "| cut -c1-2000 | tail -n 20 >&3" not in script
+    # Read-to-EOF reader with trailing-unterminated-line hardening.
+    assert 'while IFS= read -r _l || [ -n "$_l" ]' in script
+    # Progress bars would spam the now-eager stream.
+    assert "HF_HUB_DISABLE_PROGRESS_BARS=1" in script
+    # Standing dep A: structural flush=True pin over the extracted heredoc.
+    heredoc = _extract_persist_heredoc(script)
+    print_lines = [ln for ln in heredoc.splitlines() if "print(" in ln]
+    assert print_lines, "heredoc must print (the eager stream reads its stdout)"
+    for ln in print_lines:
+        assert "flush=True" in ln, f"unflushed print in persist heredoc: {ln!r}"
+
+
+def test_persist_heredoc_ignore_patterns_cover_top_level_and_nested() -> None:
+    """Standing dep B: the rendered IGNORE list excludes caches at BOTH the
+    top level and nested depths under the REAL huggingface_hub fnmatch
+    filter — the ``**/``-prefixed forms do NOT match top-level paths on
+    hub 0.36.2, so both forms must be present and each is load-bearing."""
+    import ast
+
+    from huggingface_hub.utils import filter_repo_objects
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+    ignore = None
+    for node in ast.walk(ast.parse(heredoc)):
+        if isinstance(node, ast.Assign) and any(
+            getattr(t, "id", None) == "IGNORE" for t in node.targets
+        ):
+            ignore = ast.literal_eval(node.value)
+    assert isinstance(ignore, list) and ignore, ignore
+    items = [
+        "hf_dl/a.bin",
+        "sub/hf_dl/b.bin",
+        "g2_dl/c.bin",
+        "sub/g2_dl/d.bin",
+        "store/e.pt",
+        "sub/store/f.pt",
+        ".cache/g",
+        "sub/.cache/h",
+        "__pycache__/i.pyc",
+        "sub/__pycache__/j.pyc",
+        "track_s.jsonl",
+        "sub/data.json",
+    ]
+    kept = list(filter_repo_objects(items, ignore_patterns=ignore))
+    assert kept == ["track_s.jsonl", "sub/data.json"], kept
+    # Each form is load-bearing: top-level-only misses nested, nested-only
+    # misses top-level.
+    top_only = [p for p in ignore if not p.startswith("**/")]
+    nested_only = [p for p in ignore if p.startswith("**/")]
+    assert "sub/hf_dl/b.bin" in list(filter_repo_objects(items, ignore_patterns=top_only))
+    assert "hf_dl/a.bin" in list(filter_repo_objects(items, ignore_patterns=nested_only))
+
+
+def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_dirs=True):
+    """Execute the REAL extracted EPS_PERSIST_PY heredoc against a fake
+    ``huggingface_hub`` (records upload calls to a JSONL), mirroring
+    production's ``python - <dest> <crash>`` stdin invocation.
+
+    ``make_dirs``: True = the full fixture tree; ``"cache_only"`` = a data
+    dir holding ONLY pruned caches (the empty-after-excludes SKIP case);
+    False = no dirs at all. Returns ``(proc, calls, paths)`` where
+    ``calls`` is the ordered list of recorded upload calls and ``paths``
+    maps the fixture paths."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_persist_heredoc(script)
+
+    shim = tmp_path / "shim" / "huggingface_hub"
+    (shim / "utils").mkdir(parents=True, exist_ok=True)
+    calls_path = tmp_path / "calls.jsonl"
+    (shim / "__init__.py").write_text(
+        "import json, os\n"
+        "class HfApi:\n"
+        "    def _rec(self, kind, **kw):\n"
+        "        with open(os.environ['FAKE_HUB_CALLS'], 'a') as fh:\n"
+        "            fh.write(json.dumps({'kind': kind, **kw}) + '\\n')\n"
+        "    def upload_file(self, *, path_or_fileobj, path_in_repo, repo_id, repo_type):\n"
+        "        self._rec('file', path_in_repo=path_in_repo, repo_id=repo_id,\n"
+        "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
+        "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
+        "                      ignore_patterns=None):\n"
+        "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
+        "        # relpath, with raw content for small files (else the size) so the\n"
+        "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
+        "        # actually uploaded.\n"
+        "        staged = {}\n"
+        "        for dp, _dns, fns in os.walk(folder_path):\n"
+        "            for fn in fns:\n"
+        "                p = os.path.join(dp, fn)\n"
+        "                rel = os.path.relpath(p, folder_path).replace(os.sep, '/')\n"
+        "                size = os.path.getsize(p)\n"
+        "                if size <= 4096:\n"
+        "                    with open(p, 'rb') as fh:\n"
+        "                        staged[rel] = fh.read().decode('utf-8', 'replace')\n"
+        "                else:\n"
+        "                    staged[rel] = size\n"
+        "        self._rec('folder', folder_path=folder_path, path_in_repo=path_in_repo,\n"
+        "                  repo_id=repo_id, repo_type=repo_type,\n"
+        "                  ignore_patterns=ignore_patterns, staged=staged)\n"
+    )
+    (shim / "utils" / "__init__.py").write_text("")
+
+    root = tmp_path / "workload"
+    crash = tmp_path / "eps-crash-report.json"
+    log = tmp_path / "workload.log"
+    transcript = tmp_path / "transcript.log"
+    if make_crash:
+        crash.write_text('{"issue":137,"exit_code":1}\n')
+        log.write_text("Traceback (most recent call last): boom\n")
+    if make_dirs == "cache_only":
+        (root / "data" / "issue_137" / "hf_dl").mkdir(parents=True)
+        (root / "data" / "issue_137" / "hf_dl" / "cache.bin").write_text("x" * 64)
+        (root / "data" / "issue_137" / "sub" / "hf_dl").mkdir(parents=True)
+        (root / "data" / "issue_137" / "sub" / "hf_dl" / "x.bin").write_text("y" * 64)
+    elif make_dirs:
+        (root / "eval_results" / "issue_137").mkdir(parents=True)
+        (root / "eval_results" / "issue_137" / "a.json").write_text("{}")
+        (root / "data" / "issue_137").mkdir(parents=True)
+        (root / "data" / "issue_137" / "track.jsonl").write_text('{"row":1}\n')
+        (root / "data" / "issue_137" / "hf_dl").mkdir()
+        (root / "data" / "issue_137" / "hf_dl" / "cache.bin").write_text("x" * 64)
+        (root / "data" / "issue_137" / "sub" / "hf_dl").mkdir(parents=True)
+        (root / "data" / "issue_137" / "sub" / "hf_dl" / "x.bin").write_text("y" * 64)
+        (root / "data" / "issue137").mkdir(parents=True)
+        (root / "data" / "issue137" / "battery.json").write_text("{}")
+        # #885: a per-worker fan-out log under $WORKLOAD_ROOT/logs/ (the
+        # worker-logs sweep target; small -> plain-copied, not tailed).
+        (root / "logs" / "issue_137").mkdir(parents=True)
+        (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
+    else:
+        # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
+        # before invoking the harness with make_dirs=False.
+        root.mkdir(parents=True, exist_ok=True)
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "PYTHONPATH": str(tmp_path / "shim"),
+            "FAKE_HUB_CALLS": str(calls_path),
+            "EPS_HF_DATA_REPO": "org/repo",
+            "EPS_ISSUE": "137",
+            "EPS_LOG_PATH": str(log) if make_crash else "",
+            "WORKLOAD_ROOT": str(root),
+            "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # #885: isolate the worker-logs staged tree per test — the
+            # production default is the shared literal /tmp/eps-worker-logs,
+            # which concurrent pytest sessions on this shared VM would race.
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
+        }
+    )
+    env.update(env_overrides or {})
+    proc = subprocess.run(
+        [sys.executable, "-", "issue137_partial/att-x", str(crash)],
+        input=heredoc,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
+    )
+    calls = []
+    if calls_path.is_file():
+        calls = [json.loads(ln) for ln in calls_path.read_text().splitlines()]
+    return proc, calls, {"root": root, "crash": crash, "log": log, "transcript": transcript}
+
+
+def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
+    """#854 behavioral (execution, not string-presence): the REAL heredoc,
+    run exactly as production runs it, uploads crash_report → workload.log
+    → worker_logs (one staged-tree commit, #885) → eval_results dir →
+    data dirs → timestamped log copy → transcript, passes the cache
+    excludes to upload_folder, prunes nested caches from the dir stats,
+    and exits 0."""
+    proc, calls, paths = _run_persist_heredoc(tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    seq = [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert seq[0] == ("file", "issue137_partial/att-x/crash_report.json")
+    assert seq[1] == ("file", "issue137_partial/att-x/workload.log")
+    assert seq[2] == ("folder", "issue137_partial/att-x/worker_logs")
+    assert seq[3] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
+    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue_137")
+    assert seq[5] == ("folder", "issue137_partial/att-x/data_issue137")
+    assert (
+        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[6][1])
+        and seq[6][0] == "file"
+    )
+    assert seq[7] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
+    assert len(seq) == 8, seq
+    # The worker-logs commit staged the fixture worker log verbatim (#885).
+    assert calls[2]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
+    # The data-dir upload carries the cache excludes (top-level AND nested).
+    data_call = calls[4]
+    assert "hf_dl/**" in data_call["ignore_patterns"]
+    assert "**/hf_dl/**" in data_call["ignore_patterns"]
+    assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
+    # _dir_stats pruned BOTH the top-level and the nested hf_dl caches: only
+    # track.jsonl is counted for data_issue_137.
+    assert "[crash-persist] uploading dir data_issue_137 (1 files" in proc.stdout
+    # Eagerly-streamed audit lines, start to DONE.
+    assert "[crash-persist] BEGIN repo=org/repo dest=issue137_partial/att-x" in proc.stdout
+    assert "[crash-persist] DONE" in proc.stdout
+    # The transcript tee carries the same audit (uploaded as the final step).
+    transcript_text = paths["transcript"].read_text()
+    assert "[crash-persist] BEGIN" in transcript_text
+    assert "[crash-persist] DONE" in transcript_text
+
+
+def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
+    """#854 behavioral SKIP coverage: a missing crash report / unset log
+    path / absent dirs each print a loud SKIP (never a silent pass), an
+    empty-after-excludes dir SKIPs, and the per-dir byte cap is
+    env-overridable (EPS_PERSIST_DIR_CAP_BYTES) so the oversized branch is
+    exercised with a tiny cap."""
+    # Variant A: nothing exists — every artifact SKIPs loudly, rc stays 0,
+    # and the ONLY upload is the transcript audit itself.
+    proc, calls, _ = _run_persist_heredoc(tmp_path / "a", make_crash=False, make_dirs=False)
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP crash_report.json: no such file" in proc.stdout
+    assert "[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing" in proc.stdout
+    assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
+    assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
+    assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
+    assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
+    assert "[crash-persist] DONE" in proc.stdout
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
+        ("file", "issue137_partial/att-x/crash_persist_transcript.log")
+    ]
+    # Variant B: a 5-byte cap SKIPs the 10-byte data dir as oversized (the
+    # critic-requested env override making the branch testable; the cap
+    # comparison is strict `size > CAP`), while the nested-cache-only dir
+    # SKIPs as empty after excludes.
+    b_dir = tmp_path / "b"
+    proc, calls, _ = _run_persist_heredoc(b_dir, env_overrides={"EPS_PERSIST_DIR_CAP_BYTES": "5"})
+    assert proc.returncode == 0, proc.stderr
+    assert "bytes > cap 5 (oversized; regenerate or reduce EPS_PERSIST_DIR_CAP_BYTES)" in (
+        proc.stdout
+    )
+    uploaded_folders = {c["path_in_repo"] for c in calls if c["kind"] == "folder"}
+    assert "issue137_partial/att-x/data_issue_137" not in uploaded_folders
+    # A dir whose only content is pruned caches (top-level + nested) reads
+    # as empty and SKIPs — never a cache-only upload.
+    proc2, calls2, _ = _run_persist_heredoc(tmp_path / "c", make_dirs="cache_only")
+    assert proc2.returncode == 0, proc2.stderr
+    assert "[crash-persist] SKIP data_issue_137: empty after cache excludes" in proc2.stdout
+    assert not any(c["kind"] == "folder" for c in calls2)
+
+
+# ---------------------------------------------------------------------------
+# #885 — crash-persist worker-logs sweep ($WORKLOAD_ROOT/logs/**)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
+    """#885: the crash persist ALSO sweeps $WORKLOAD_ROOT/logs/** — the
+    per-worker fan-out logs carrying the real traceback (the canonical
+    workload.log ends at the fan-out line; two #779 crashes each needed a
+    manual boot-disk detach). Newest-first, per-file tail cap + file-count
+    bound at STAGE time, staged into /tmp/eps-worker-logs, uploaded as ONE
+    upload_folder commit (never a per-file upload_file loop — the #664
+    gotcha), ordered AFTER the canonical workload.log and BEFORE the
+    partial dirs."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "EPS_PERSIST_LOG_FILE_CAP_BYTES" in script
+    assert "EPS_PERSIST_LOG_MAX_FILES" in script
+    assert "/tmp/eps-worker-logs" in script
+    assert 'logs_root = root / "logs"' in script
+    # The worker-logs upload surface is exactly ONE upload_folder commit of
+    # the staged tree (acceptance criterion 6).
+    assert 'path_in_repo=f"{dest}/worker_logs"' in script
+    # The CALL, not just the def (a defined-but-never-called sweep is dead).
+    assert "\n_up_logs()" in script
+    # Ordering: canonical workload.log upload -> _up_logs() -> partial dirs.
+    assert (
+        script.index('_up_file(log_path, f"{dest}/workload.log")')
+        < script.index("\n_up_logs()")
+        < script.index("for local, name in (")
+    )
+
+
+def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) -> None:
+    """#885 behavioral (executed heredoc): with a 16-byte tail cap and a
+    1-file bound over two worker logs where the OLDER file is the LARGER
+    one, the sweep stages exactly the NEWER file (newest-by-mtime — a
+    size-sort mutant would stage the older one) and its staged bytes equal
+    the exact 16-byte tail sentinel (a dropped-seek head-read mutant would
+    stage head filler); the TAILED + dropped-count SKIP lines print AND
+    tee into the transcript."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    older = logs / "older_but_bigger.log"
+    newer = logs / "newer_crashing_worker.log"
+    older.write_bytes(b"H" * 200)  # LARGER but older; no sentinel
+    newer.write_bytes(b"h" * 64 + b"TAIL-SENTINEL-OK")  # 80 bytes; distinct 16-byte tail
+    base = os.stat(newer).st_mtime
+    os.utime(older, (base - 3600, base - 3600))
+    os.utime(newer, (base, base))
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={
+            "EPS_PERSIST_LOG_FILE_CAP_BYTES": "16",
+            "EPS_PERSIST_LOG_MAX_FILES": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    # Exactly ONE staged file == the NEWER one (kills a size-sort mutant);
+    # its content == the exact tail sentinel bytes (kills a dropped-seek
+    # head-read mutant).
+    assert folder_calls[0]["staged"] == {"issue_137/newer_crashing_worker.log": "TAIL-SENTINEL-OK"}
+    assert (
+        "[crash-persist] TAILED worker_logs/issue_137/newer_crashing_worker.log:"
+        " kept last 16 of 80 bytes"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] SKIP 1 older worker log(s) beyond EPS_PERSIST_LOG_MAX_FILES=1"
+    ) in proc.stdout
+    assert proc.returncode == 0
+    transcript_text = paths["transcript"].read_text()
+    assert "TAILED worker_logs/issue_137/newer_crashing_worker.log" in transcript_text
+    assert "SKIP 1 older worker log(s)" in transcript_text
+
+
+def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> None:
+    """#885: EPS_PERSIST_LOG_MAX_FILES < 1 is the documented disable — a
+    loud SKIP, never a silent empty sweep and never an upload."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    (logs / "w.log").write_text("worker traceback\n")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP worker_logs: EPS_PERSIST_LOG_MAX_FILES=0 < 1" in proc.stdout
+    assert not any(c["kind"] == "folder" for c in calls)
 
 
 # ---------------------------------------------------------------------------
@@ -4536,10 +4946,11 @@ def test_render_startup_script_oom_guard_diffs_after_workload_before_done() -> N
     assert script.index("exit 137") < script.index("_eps_phase done")
     assert script.index("exit 137") < script.index('{"phase":"done"')
     # The guard precedes the clean-exit watchdog reaper (so an OOM'd run lets
-    # the EXIT-trap shutdown own teardown, not the clean reaper).
-    assert script.index('EPS_OOM_FINAL="$(_eps_oom_count)"') < script.index(
-        'kill "${EPS_WATCHDOG_PID:-}"'
-    )
+    # the EXIT trap own teardown, not the clean reaper). #854 added a SECOND
+    # kill earlier in the script (at EXIT-trap entry), so anchor on the
+    # STANDALONE clean-exit reap line, not the first `kill` substring.
+    clean_reap = '\n{ kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true\n'
+    assert script.index('EPS_OOM_FINAL="$(_eps_oom_count)"') < script.index(clean_reap)
 
 
 def test_render_startup_script_oom_guard_on_both_workload_shapes() -> None:

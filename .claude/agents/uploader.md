@@ -6,7 +6,6 @@ description: >
   figures to git. Resumes stopped pods, runs uploads, restores prior pod state.
   Companion to the read-only `upload-verifier`: verifier reports gaps,
   uploader closes them.
-model: claude-fable-5
 effort: xhigh
 tools:
   - Bash

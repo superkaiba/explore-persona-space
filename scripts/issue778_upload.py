@@ -25,18 +25,21 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import issue778_lib as lib
-from huggingface_hub import HfApi
-
 from explore_persona_space.orchestrate.env import load_dotenv
-from explore_persona_space.orchestrate.hub import (
+
+# huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at import time, so
+# the env must be loaded BEFORE the hub import (#745 import-order lint).
+load_dotenv()
+
+import issue778_lib as lib  # noqa: E402
+from huggingface_hub import HfApi  # noqa: E402
+
+from explore_persona_space.orchestrate.hub import (  # noqa: E402
     DEFAULT_DATASET_REPO,
     DEFAULT_MODEL_REPO,
     list_repo_files_complete,
     upload_model,
 )
-
-load_dotenv()
 
 
 def _verify_prefix(repo_id: str, repo_type: str, prefix: str, min_files: int = 1) -> int:

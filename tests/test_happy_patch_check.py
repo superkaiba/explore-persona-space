@@ -186,6 +186,9 @@ def reverted_daemon(tmp_path, monkeypatch):
 def test_cmd_spawn_issue_auto_dies_before_post(reverted_daemon, monkeypatch, tmp_path):
     # No worktree at the synthetic path -> cwd falls back to repo root (fine).
     monkeypatch.setattr(spawn_session, "WORKTREE_DIR", tmp_path / "no-worktrees")
+    # #843: the --auto path now acquires a dispatch lease BEFORE the patch
+    # verify; isolate the registry so the test never writes ~/.eps-autonomous.
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path / "registry")
     ns = argparse.Namespace(
         issue=999,
         auto=True,

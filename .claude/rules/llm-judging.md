@@ -5,8 +5,8 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 20-guideline
-recipe those bullets point at (the 18 judge-scoring guidelines plus the
+`claude-sonnet-4-5-20250929`" bullet; this file is the full 22-guideline
+recipe those bullets point at (the 20 judge-scoring guidelines plus the
 two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
@@ -182,12 +182,73 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     compression a binary rate hides — a rate pinned at 1.0 across conditions
     can still show graded spread, which is the saturation signature to watch.
 
+21. **Design-aligned split-half on crossed designs.** When a reliability
+    ceiling (split-half + Spearman–Brown; the √(r_yy) of rules 15/18) is
+    computed over a CROSSED design — the same item/probe set scored under
+    every condition — the half-split MUST be item-ALIGNED across conditions:
+    ONE half-partition of the items, applied identically to every condition
+    (prefer averaging over many aligned partitions, or a deterministic
+    odd–even-by-item-id split, to a single random draw). Splitting each
+    condition's items INDEPENDENTLY violates the parallel-halves assumption
+    Spearman–Brown requires: within a condition the two halves partition the
+    same items, so the item-composition offset enters the two half-scores
+    with OPPOSITE signs; independent splits make that anti-correlated offset
+    vary across conditions, and when its half-mean variance (item main-effect
+    variance scaled by half size, ≈ σ²_item/(n_items−1)) exceeds the
+    condition signal it dominates, driving split-half r systematically
+    NEGATIVE — which the non-negativity floor reports as a 0.00 ceiling,
+    censoring real signal. (An aligned split turns the offset into a shared
+    constant that cancels in the cross-condition correlation.) Incident #763
+    (`reliability_split_half_over_probes`, crossed context × probe; probe sd
+    ≈27/100 vs context signal ≈3/100 — half-mean offset sd 27/√59 ≈ 3.5 vs
+    signal ≈ 3): independent splits gave r = −0.41 (v1) / −0.23 (v2),
+    ~100%/99% of 200 random splits negative, clipping a real v2 ceiling
+    ≈0.59 to 0.00; the probe-ALIGNED split recovered it. Report the
+    splitting scheme AND the aggregation convention alongside the ceiling
+    (rule 18) — e.g. mean r across aligned partitions BEFORE Spearman–Brown,
+    and where any non-negativity floor is applied. The aligned ceiling is
+    conditional on the fixed item panel (item main effects deliberately
+    excluded) — do not read it as item-sampling generalization.
+
 ## G. Reproducibility / reporting
 
 18. **Pin & report, per DV:** scoring mode, scale, N samples + temperature,
     judge model + date, prompt hash, per-behavior reliability (test-retest +
     judge–human agreement), and the reliability ceiling √(r_yy). A judged DV
     is a measurement instrument; report it like one.
+
+22. **Judge-result caches key on (rubric/behavior id, question, completion) —
+    NEVER on completion content alone.** Any cache in front of a judge call
+    (file-based, in-memory, or resume-time) MUST carry the rubric / behavior
+    identity in its key — in practice the full judge prompt (or a stable hash
+    of it), plus the judge model id when it can vary — alongside the
+    question + completion. A content-only key silently returns ANOTHER
+    behavior's judgment for the same completion whenever completions are
+    reused across rubrics (a multi-behavior eval scoring one generation pool
+    under several rubrics against a shared cache dir). Incident #810:
+    `JudgeCache._hash_key` (`src/explore_persona_space/eval/batch_judge.py`)
+    keyed on (question, completion) only, so refusal-rubric judgments leaked
+    into harmful_compliance E0 scores via the shared content-keyed cache
+    dir — 64% of high harmful_compliance scores were refusal-rubric
+    judgments, and 99.1% of flagged rows shared their exact
+    (reasoning, score) pair with the refusal file (vs 18.7% baseline) — an
+    exact-pair fingerprint implicating cache reuse rather than a prompt bug
+    (independent temperature>0 judge draws would not be byte-identical).
+    The SAFE in-repo patterns: a
+    full-payload cache key (`llm/api_dispatch.py::_cache_key_parts` keys on
+    (item_id, full-payload JSON) — safe ONLY when the caller's payload
+    embeds the rubric-bearing user message; the rubric's system-prompt half
+    is typically NOT in the payload, so payload-key safety is
+    caller-dependent, not structural), and a DISJOINT per-rubric
+    `cache_dir` partition (`datagen.py`'s `judge_cache/pos` vs
+    `judge_cache/neg`).
+    Until the `batch_judge.py` key fix lands (a separate follow-up), the
+    per-rubric `cache_dir` is the accepted key surrogate. Plan-side: any
+    plan whose eval judges >1 rubric/behavior over a shared completion
+    pool — or resumes judging against a previously-populated shared cache
+    dir — NAMES its judge-cache key fields (or the per-rubric cache
+    partition); critics REVISE a shared multi-rubric judge cache without a
+    rubric-bearing key.
 
 ## Do NOT over-rely on (adversarially refuted)
 
@@ -212,6 +273,9 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   one-Sonnet-judge pin gate (rule 12).
 - CLAUDE.md § Measurement validity — the always-on dual-DV clause + the
   graded-primary-for-ranking-targets extension this rule details.
+- Rule 22 (judge-cache keying) rides the same lens load: the Statistics &
+  Measurement critic REVISEs a shared multi-rubric judge cache without a
+  rubric-bearing key; the plan names the cache key fields per rule 22.
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -221,7 +285,9 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
 ## Files of record
 
 Task body #765 (the guideline derivation + the two adversarial deep-research
-dives); `.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
+dives); task body #763 (the design-aligned split-half incident behind rule 21);
+task body #810 (the shared judge-cache rubric-leak incident behind rule 22);
+`.claude/rules/persona-vectors-recipe.md` (the graded-judge precedent +
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,
 `analyzer.md`, `interpretation-critic.md`, `clean-result-critic.md`).
