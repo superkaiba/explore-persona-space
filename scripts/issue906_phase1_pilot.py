@@ -158,6 +158,11 @@ class PilotSeams:
     # Marker programmatic-carve-out seams.
     marker_datagen_fn: Any = None  # None -> inline marker mix builder
     marker_verify_fn: Any = None  # None -> inline three-space forward pass
+    # marker_gen_fn: generates on-policy base-model responses for the marker training
+    # mix positives/negatives.  Signature: (questions: list[str], system_prompt: str | None)
+    # -> list[str].  None -> inline HF generate in _build_marker_class.
+    # Smoke stub returns distinct per-question fakes: f"resp::{hash(q) & 0xFFFF:04x}".
+    marker_gen_fn: Any = None
 
 
 # ── Small provenance / IO helpers ────────────────────────────────────────────
@@ -576,19 +581,65 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
 
         pos_path = mix_dir / "pos.jsonl"
         cn_path = mix_dir / "cn.jsonl"
-        # BLOCKER 1 fix: positive completions must include MARKER_TEXT so that
-        # MarkerOnlyDataCollator (which detects row positivity by finding token id 83399
-        # in input_ids) treats them as positives.  A bare "placeholder" never encodes to
-        # id 83399 and makes every row a negative, inverting the training signal.
+        # Generate on-policy base-model responses for every question under each
+        # system prompt (plan §4: positives = base response + MARKER_TEXT, negatives
+        # = base response alone, both on-policy from the base model).
+        # seams.marker_gen_fn provides an injectable seam so tests avoid GPU/HF loads.
+        if seams.marker_gen_fn is not None:
+            gen_fn = seams.marker_gen_fn
+        else:
+            # Inline HF generate: load the base model once, run greedy decoding.
+            import torch
+            from transformers import AutoModelForCausalLM
+
+            _tok = AutoTokenizer.from_pretrained(cfg.base_model, trust_remote_code=True)
+            _dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+            _device = torch.device(f"cuda:{cfg.gpu_id}" if torch.cuda.is_available() else "cpu")
+            _gen_model = AutoModelForCausalLM.from_pretrained(
+                cfg.base_model, torch_dtype=_dtype, trust_remote_code=True
+            ).to(_device)
+            _gen_model.eval()
+
+            def gen_fn(questions_: list[str], system_prompt: str | None) -> list[str]:
+                """Greedy base-model responses for the given questions + system prompt."""
+                responses_ = []
+                for q_ in questions_:
+                    msgs_ = []
+                    if system_prompt is not None:
+                        msgs_.append({"role": "system", "content": system_prompt})
+                    msgs_.append({"role": "user", "content": q_})
+                    input_ids_ = _tok.apply_chat_template(
+                        msgs_, add_generation_prompt=True, return_tensors="pt"
+                    ).to(_device)
+                    with torch.no_grad():
+                        out_ = _gen_model.generate(
+                            input_ids_,
+                            max_new_tokens=512,
+                            do_sample=False,
+                            pad_token_id=_tok.eos_token_id,
+                        )
+                    new_tokens_ = out_[0, input_ids_.shape[-1] :]
+                    responses_.append(_tok.decode(new_tokens_, skip_special_tokens=True))
+                return responses_
+
+        # Positive rows: on-policy response under source_sp + MARKER_TEXT (marker token).
+        pos_responses = gen_fn(questions, source_sp)
         with open(pos_path, "w", encoding="utf-8") as fp:
-            for q in questions:
-                fp.write(json.dumps(_row(source_sp, q, "placeholder" + MARKER_TEXT)) + "\n")
-        # Contrastive negatives: round-robin over the negative panel per question.
-        # Negatives intentionally omit MARKER_TEXT (train the turn-end tail only).
+            for q, resp in zip(questions, pos_responses, strict=True):
+                fp.write(json.dumps(_row(source_sp, q, resp + MARKER_TEXT)) + "\n")
+        # Contrastive negatives: on-policy response under each negative persona; omit
+        # MARKER_TEXT so the negative trains the turn-end tail only (no marker token).
         with open(cn_path, "w", encoding="utf-8") as fn:
             for qi, q in enumerate(questions):
                 neg_sp = neg_sps[qi % len(neg_sps)]
-                fn.write(json.dumps(_row(neg_sp, q, "placeholder")) + "\n")
+                neg_resp = gen_fn([q], neg_sp)[0]
+                fn.write(json.dumps(_row(neg_sp, q, neg_resp)) + "\n")
+
+        # Clean up the inline model to free GPU memory before training.
+        if seams.marker_gen_fn is None:
+            del _gen_model
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     # Training mix path (pos + cn interleaved).  train_lora with marker_only_loss=True
     # wires MarkerOnlyDataCollator automatically.
@@ -639,11 +690,14 @@ def _verify_marker_class(
         validate_marker_slot_record,
     )
 
+    # Use the full eval bank (50 questions) in full mode; cfg.eval_question_limit
+    # is an explicit cap for smoke/debug — None means "use all".
+    _eval_bank = list(behavior.eval_question_bank)
     n_questions = min(
-        cfg.eval_question_limit or 5,
-        len(list(behavior.eval_question_bank)),
+        cfg.eval_question_limit if cfg.eval_question_limit is not None else len(_eval_bank),
+        len(_eval_bank),
     )
-    questions = list(behavior.eval_question_bank)[:n_questions]
+    questions = _eval_bank[:n_questions]
     source_ctx = CONTEXTS[cfg.source_context]
     panel = NEGATIVE_PANELS["default_v1"]
 
@@ -685,7 +739,15 @@ def _verify_marker_class(
         device = torch.device(f"cuda:{cfg.gpu_id}" if torch.cuda.is_available() else "cpu")
 
         def _read_slots(model, contexts_list: list[tuple[str, str | None]]) -> list[dict]:
-            """Compute (logp, z_marker, z_eos, logZ) at the post-response slot for each context."""
+            """Compute (logp, z_marker, z_eos, logZ) at the post-response slot.
+
+            Per marker-leakage-measurement.md: the DV is log P(marker) at the slot
+            AFTER the model's OWN greedy response — not before any response (which
+            measures unconditional marker preference, a different and wrong quantity).
+            Recipe: (1) generate R = model.generate(prompt) greedy; (2) build
+            input_ids = prompt + R; (3) one forward pass; (4) read logits at the
+            last position of R (the slot where the model decides what comes AFTER R).
+            """
             records: list[dict] = []
             for ctx_id, sp in contexts_list:
                 ctx_logp_sum = 0.0
@@ -698,18 +760,30 @@ def _verify_marker_class(
                     if sp is not None:
                         msgs.append({"role": "system", "content": sp})
                     msgs.append({"role": "user", "content": q})
-                    # Tokenize: prompt + marker token (teacher-forced).
+                    # Step 1: tokenize the prompt (chat template adds generation prefix).
                     input_ids_prompt = tokenizer.apply_chat_template(
                         msgs, add_generation_prompt=True, return_tensors="pt"
                     ).to(device)
-                    marker_ids = torch.tensor([[MARKER_TOKEN_ID]], device=device)
-                    input_ids = torch.cat([input_ids_prompt, marker_ids], dim=-1)
-                    # Single forward pass; no gradient needed.
+                    # Step 2: generate the model's OWN greedy response R.
                     with torch.no_grad():
-                        logits = model(input_ids).logits  # (1, T, V)
+                        generated = model.generate(
+                            input_ids_prompt,
+                            max_new_tokens=512,
+                            do_sample=False,
+                            pad_token_id=tokenizer.eos_token_id,
+                        )
+                    # generated shape: (1, prompt_len + response_len).
+                    # Step 3: build input = prompt + R for a single forward pass.
+                    # Use the full generated sequence (prompt already included by generate).
+                    input_ids_full = generated  # (1, T_full)
+                    with torch.no_grad():
+                        logits = model(input_ids_full).logits  # (1, T_full, V)
                     assert logits.shape[0] == 1, logits.shape
-                    # The slot to read is position T-2 (predicts token at T-1 = marker).
-                    slot_logits = logits[0, -2, :]  # (V,)
+                    # Step 4: read the slot at the LAST position of the response —
+                    # this is the position that predicts the token AFTER R (where the
+                    # marker would appear).  logits[:, -1, :] is that slot because
+                    # the model was asked to predict one step beyond the last input token.
+                    slot_logits = logits[0, -1, :]  # (V,) — post-response slot
                     z_marker = slot_logits[MARKER_TOKEN_ID].item()
                     z_eos = slot_logits[QWEN_IM_END_ID].item()
                     log_Z = torch.logsumexp(slot_logits, dim=-1).item()
@@ -800,9 +874,23 @@ def _verify_marker_class(
     }
 
 
-def _extract_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path):
-    """Generate on-policy contrastive rollouts -> score -> extract r_B -> persist."""
+def _extract_class(
+    behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path, datagen_dir: str
+):
+    """Load Phase-0 datagen completions -> score -> extract r_B -> persist.
+
+    Per plan §4 Phase 3: the completions teacher-forced through Qwen to produce r_B
+    are the Claude-generated datagen completions (provenance="claude_generated",
+    regime="steering").  generate_contrastive_completions MUST NOT be called on this
+    production path — fresh rollouts would change the provenance and break the plan's
+    contrastive-negative geometry.
+
+    The sycophancy control arm (fresh on-policy rollouts, provenance="on_policy") uses
+    a different extract_fn injected via seams.extract_fn; the DEFAULT production extract_fn
+    (_make_default_extract_fn) always sets provenance="claude_generated".
+    """
     from explore_persona_space.artifacts.directions import (
+        load_completions_jsonl,
         save_completions_jsonl,
         save_direction,
         score_completions,
@@ -811,29 +899,12 @@ def _extract_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Pat
     extract_dir = class_dir / "extract"
     extract_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Contrastive rollouts (vLLM base model; torn down before the HF extract).
-    if seams.extract_generate_fn is not None:
-        gen_fn = seams.extract_generate_fn
-        owns_gen = False
-    else:
-        from explore_persona_space.artifacts.organisms import _default_vllm_generate_fn
-
-        gen_fn = _default_vllm_generate_fn(cfg.base_model)
-        owns_gen = True
-    try:
-        completions = generate_contrastive_completions(
-            behavior,
-            gen_fn,
-            n_rollouts=cfg.n_extraction_rollouts,
-            temperature=cfg.eval_temperature,
-            question_limit=cfg.extraction_question_limit,
-        )
-    finally:
-        close = getattr(gen_fn, "close", None)
-        if owns_gen and callable(close):
-            close()
-    # Persist rollout TEXT the moment it exists (upload-policy: text-persist is
-    # the load-bearing minimum; a discarded activation regenerates from it).
+    # 1. Load Phase-0 datagen completions from disk (plan §4: reuse the Claude-generated
+    # datagen completions produced by build_organism; do NOT generate fresh rollouts here).
+    datagen_completions_path = Path(datagen_dir) / "contrastive_completions.jsonl"
+    completions = load_completions_jsonl(datagen_completions_path)
+    # Re-persist into the extract directory for the upload path (upload-policy: text-persist
+    # is the load-bearing minimum; a discarded activation regenerates from it).
     save_completions_jsonl(completions, extract_dir / "contrastive_completions.jsonl")
 
     # 2. Judge-score (drop-never-coerce inside score_completions/extract_direction).
@@ -1044,9 +1115,13 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
             verify_counts = _verify_judge_counts(report_dict)
 
             # 3. Extract r_B (always non-programmatic in this branch).
+            # Pass datagen_dir so _extract_class can load Phase-0 completions from disk
+            # instead of generating fresh rollouts (BLOCKER B fix).
             extract_judge_counts = {}
             with _timed(timings, "extract"):
-                direction, judge_result, rb_path = _extract_class(behavior, cfg, seams, class_dir)
+                direction, judge_result, rb_path = _extract_class(
+                    behavior, cfg, seams, class_dir, datagen_dir
+                )
             extract_judge_counts = {
                 "judge_draws_total": judge_result.n_total_draws,
                 "judge_draws_dropped": judge_result.n_dropped_draws,
@@ -1243,10 +1318,10 @@ def _smoke_train_row(q: str, a: str) -> dict:
 
 
 def _make_marker_smoke_stubs(n_pos: int, n_cn: int) -> tuple:
-    """Return ``(marker_datagen_fn, marker_verify_fn)`` smoke stubs for the marker carve-out.
+    """Return ``(marker_datagen_fn, marker_verify_fn, marker_gen_fn)`` smoke stubs.
 
     Extracted from ``make_smoke_seams`` to keep that function under the C901 complexity cap.
-    Both stubs satisfy the seam contracts without GPU or network access.
+    All three stubs satisfy the seam contracts without GPU or network access.
     """
 
     def marker_datagen_fn(source_sp, neg_sps, mix_dir, *, seed):
@@ -1303,7 +1378,17 @@ def _make_marker_smoke_stubs(n_pos: int, n_cn: int) -> tuple:
             )
         return records
 
-    return marker_datagen_fn, marker_verify_fn
+    def marker_gen_fn(questions: list, system_prompt) -> list:
+        """Smoke stub: return distinct per-question fakes; no GPU or network needed.
+
+        Returns strings of the form ``resp::<hex4>`` so each question gets a
+        deterministically distinct response — the production ``_build_marker_class``
+        can then verify that training mix rows carry question-specific on-policy text
+        rather than a constant placeholder string.
+        """
+        return [f"resp::{hash(q) & 0xFFFF:04x}" for q in questions]
+
+    return marker_datagen_fn, marker_verify_fn, marker_gen_fn
 
 
 def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> PilotSeams:
@@ -1359,6 +1444,37 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
                 }
             )
         )
+        # Write contrastive_completions.jsonl so _extract_class's load_completions_jsonl
+        # call (BLOCKER B fix: production path loads Phase-0 datagen completions from disk)
+        # finds the file during smoke tests instead of raising FileNotFoundError.
+        from explore_persona_space.artifacts.directions import (
+            ContrastiveCompletion,
+            save_completions_jsonl,
+        )
+
+        fake_completions = []
+        for i in range(n_pos):
+            fake_completions.append(
+                ContrastiveCompletion(
+                    arm="exhibit",
+                    pair_index=i,
+                    system_prompt="",
+                    question=f"q{i}",
+                    response=f"pos resp {i}",
+                    judge_score=80.0,
+                )
+            )
+            fake_completions.append(
+                ContrastiveCompletion(
+                    arm="not_exhibit",
+                    pair_index=i,
+                    system_prompt="",
+                    question=f"q{i}",
+                    response=f"neg resp {i}",
+                    judge_score=10.0,
+                )
+            )
+        save_completions_jsonl(fake_completions, out_dir / "contrastive_completions.jsonl")
         return pos, cn, out_dir / "pool_meta.json"
 
     def train_stub(base_model, data_path, output_dir, *, cfg=None, callbacks=None, **overrides):
@@ -1418,7 +1534,7 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
     def uploader_stub(behavior_name, build_result, cfg):
         return {"status": "skipped", "reason": "smoke — no upload"}
 
-    marker_datagen_fn, marker_verify_fn = _make_marker_smoke_stubs(n_pos, n_cn)
+    marker_datagen_fn, marker_verify_fn, marker_gen_fn = _make_marker_smoke_stubs(n_pos, n_cn)
 
     return PilotSeams(
         datagen_fn=datagen_stub,
@@ -1434,6 +1550,7 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
         uploader=uploader_stub,
         marker_datagen_fn=marker_datagen_fn,
         marker_verify_fn=marker_verify_fn,
+        marker_gen_fn=marker_gen_fn,
     )
 
 

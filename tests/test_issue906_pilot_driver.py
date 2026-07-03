@@ -379,7 +379,7 @@ def test_marker_smoke_stubs_positives_contain_marker_text(tmp_path):
     """
     import json
 
-    marker_datagen_fn, _ = pilot._make_marker_smoke_stubs(n_pos=4, n_cn=4)
+    marker_datagen_fn, _, _marker_gen_fn = pilot._make_marker_smoke_stubs(n_pos=4, n_cn=4)
     mix_dir = tmp_path / "mix"
     pos_path, cn_path = marker_datagen_fn("source_sp", ["neg_sp"], mix_dir, seed=0)
 
@@ -404,33 +404,202 @@ def test_marker_smoke_stubs_positives_contain_marker_text(tmp_path):
         )
 
 
-# ── BLOCKER 2 regression: extract_stub uses steering + claude_generated ───────
+# ── BLOCKER A live test: _build_marker_class uses marker_gen_fn for on-policy R ─
 
 
-def test_extract_stub_uses_steering_provenance(tmp_path):
-    """BLOCKER 2: the smoke extract_stub must use regime='steering', provenance='claude_generated'.
+def test_build_marker_class_uses_marker_gen_fn_for_on_policy_responses(tmp_path):
+    """BLOCKER A (live function): _build_marker_class must use seams.marker_gen_fn to
+    produce per-question-distinct on-policy responses for training mix positives.
 
-    Plan §4 Phase 3 requires that production direction extraction uses
-    regime='steering' with Claude-generated datagen completions.  The sycophancy
-    control arm (fresh on-policy rollouts) uses regime='read_out'; it must NOT be
-    the default for the production path.
+    MarkerOnlyDataCollator trains gradient only on the MARKER token + turn-end tail.
+    The response R before the marker must be the base model's OWN on-policy greedy
+    output (not a constant 'placeholder').  The smoke marker_gen_fn returns
+    f"resp::{hash(q) & 0xFFFF:04x}" — deterministically distinct per question —
+    so this test can verify that each training-mix positive carries its question's
+    unique response text, proving the live _build_marker_class code path used the
+    injected seam rather than a constant fallback.
+
+    The inline mix builder path (marker_datagen_fn=None) is exercised.  It calls
+    AutoTokenizer.from_pretrained to assert the marker token-id; we patch that to
+    avoid a network download while still traversing the real code path.
     """
-    from unittest.mock import MagicMock
+    import json
+    from unittest.mock import MagicMock, patch
 
-    ref_root = tmp_path / "refs"
-    seams = pilot.make_smoke_seams(ref_root)
+    from explore_persona_space.artifacts.recipe import MARKER_TEXT, MARKER_TOKEN_ID
 
-    # The extract_fn seam is what _extract_class calls in production.
-    fake_behavior = MagicMock()
-    fake_behavior.name = "sycophancy"
-    result = seams.extract_fn(fake_behavior, [])  # scored can be empty for stub
+    behavior = MagicMock()
+    behavior.source_context = "persona_software_engineer"
+    behavior.negative_panel = ["persona_doctor", "default"]
+    # Small question bank — enough to get at least 2 distinct questions.
+    questions = [f"question_{i}" for i in range(3)]
+    behavior.train_question_bank = questions
+    behavior.eval_question_bank = questions[:2]
 
-    assert result.regime == "steering", (
-        f"extract_fn must use regime='steering', got {result.regime!r}"
+    cfg = _smoke_config(tmp_path, datagen_target_n=None, mode="full")
+
+    # Build a marker_gen_fn seam that records calls and returns per-question fakes.
+    calls: list[tuple] = []
+
+    def recording_marker_gen_fn(qs: list, system_prompt) -> list:
+        calls.append((tuple(qs), system_prompt))
+        return [f"resp::{hash(q) & 0xFFFF:04x}" for q in qs]
+
+    def no_train_fn(base_model, data_path, output_dir, *, cfg=None, callbacks=None, **kw):
+        # Write a stub adapter directory so downstream can find it.
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "checkpoint-50").mkdir(parents=True, exist_ok=True)
+        return str(out), 0.5
+
+    seams = pilot.PilotSeams(
+        marker_gen_fn=recording_marker_gen_fn,
+        # marker_datagen_fn must be None so the inline builder (which uses
+        # marker_gen_fn) is exercised, not the pre-built stub.
+        marker_datagen_fn=None,
+        train_fn=no_train_fn,
     )
+
+    build_dir = tmp_path / "build_marker"
+    build_dir.mkdir(parents=True)
+
+    # Patch AutoTokenizer.from_pretrained to avoid a HF network call.
+    # The inline builder uses it ONLY to assert the marker token-id; return a mock
+    # tokenizer whose encode() returns [MARKER_TOKEN_ID] for the marker text.
+    mock_tokenizer = MagicMock()
+    mock_tokenizer.encode.return_value = [MARKER_TOKEN_ID]
+    with patch("transformers.AutoTokenizer.from_pretrained", return_value=mock_tokenizer):
+        pilot._build_marker_class(behavior, cfg, seams, build_dir)
+
+    # 1. marker_gen_fn must have been called.
+    assert calls, "_build_marker_class never called seams.marker_gen_fn"
+
+    # 2. Positive rows must each carry their question's unique response text.
+    # _build_marker_class creates class_dir/"build"/"mix" internally.
+    mix_dir = build_dir / "build" / "mix"
+    pos_path = mix_dir / "pos.jsonl"
+    assert pos_path.exists(), f"pos.jsonl not written to {pos_path}"
+
+    with open(pos_path) as f:
+        pos_rows = [json.loads(line) for line in f]
+
+    for row in pos_rows:
+        q_text = row["prompt"][-1]["content"]  # last prompt turn = user question
+        expected_resp_prefix = f"resp::{hash(q_text) & 0xFFFF:04x}"
+        completion_text = row["completion"][-1]["content"]
+        assert completion_text.startswith(expected_resp_prefix), (
+            f"positive for question {q_text!r} expected response starting with "
+            f"{expected_resp_prefix!r}, got {completion_text!r} — "
+            "suggests _build_marker_class used a constant placeholder rather than "
+            "the on-policy marker_gen_fn output"
+        )
+        assert MARKER_TEXT in completion_text, (
+            f"positive completion missing MARKER_TEXT: {completion_text!r}"
+        )
+
+
+# ── BLOCKER 2 regression: _extract_class loads from disk, never generates ─────
+
+
+def test_extract_class_loads_from_disk_not_generate(tmp_path):
+    """BLOCKER 2 (live function): _extract_class must load Phase-0 datagen completions
+    from disk and MUST NOT call generate_contrastive_completions.
+
+    This exercises the PRODUCTION _extract_class function (not the smoke stub) with
+    injected score_fn and extract_fn seams, so the test verifies real code paths —
+    not mock seam literals.
+    """
+    from unittest.mock import MagicMock, patch
+
+    import torch
+
+    from explore_persona_space.artifacts.directions import (
+        ContrastiveCompletion,
+        DirectionResult,
+        save_completions_jsonl,
+    )
+
+    # Write fake completions.jsonl to disk (the production load path).
+    datagen_dir = tmp_path / "datagen"
+    datagen_dir.mkdir(parents=True)
+    fake_completions = [
+        ContrastiveCompletion(
+            arm="exhibit",
+            pair_index=0,
+            system_prompt="sp",
+            question="q0",
+            response="pos resp 0",
+            judge_score=80.0,
+        ),
+        ContrastiveCompletion(
+            arm="not_exhibit",
+            pair_index=0,
+            system_prompt="sp",
+            question="q0",
+            response="neg resp 0",
+            judge_score=10.0,
+        ),
+    ]
+    save_completions_jsonl(fake_completions, datagen_dir / "contrastive_completions.jsonl")
+
+    # Build a minimal fake behavior object.
+    behavior = MagicMock()
+    behavior.name = "sycophancy"
+
+    # Use seams with score_fn and extract_fn injected so no model is needed.
+    n_layers = 4
+    fake_rb = torch.zeros(n_layers, 32)
+
+    from explore_persona_space.artifacts.directions import JudgeResult
+
+    def fake_score_fn(beh, completions, *, n_draws, cache_dir, save_raw, dry_run=False):
+        import dataclasses
+
+        scored = [dataclasses.replace(c, judge_score=75.0) for c in completions]
+        jr = JudgeResult(
+            scores={f"i{i}": 75.0 for i in range(len(scored))},
+            n_total_draws=len(scored) * n_draws,
+            n_dropped_draws=0,
+        )
+        return scored, jr
+
+    def fake_extract_fn(beh, scored):
+        return DirectionResult(
+            behavior_name=beh.name,
+            regime="steering",
+            layers=tuple(range(n_layers)),
+            r_b=fake_rb.clone(),
+            counts={"smoke": True},
+            provenance="claude_generated",
+        )
+
+    cfg = _smoke_config(tmp_path)
+    class_dir = tmp_path / "class_sycophancy"
+    class_dir.mkdir(parents=True)
+
+    seams = pilot.PilotSeams(
+        score_fn=fake_score_fn,
+        extract_fn=fake_extract_fn,
+    )
+
+    # Patch generate_contrastive_completions to detect if it's ever called.
+    with patch(
+        "issue906_phase1_pilot.generate_contrastive_completions",
+        side_effect=AssertionError(
+            "_extract_class must NOT call generate_contrastive_completions on the production path"
+        ),
+    ):
+        result, _jr, rb_path = pilot._extract_class(
+            behavior, cfg, seams, class_dir, str(datagen_dir)
+        )
+
+    # generate_contrastive_completions was NOT called (no AssertionError raised).
+    # Verify the result came from our injected extract_fn.
+    assert result.regime == "steering", f"expected 'steering', got {result.regime!r}"
     assert result.provenance == "claude_generated", (
-        f"extract_fn must use provenance='claude_generated', got {result.provenance!r}"
+        f"expected 'claude_generated', got {result.provenance!r}"
     )
+    assert rb_path.exists(), "r_b tensor must be persisted to disk"
 
 
 # ── BLOCKER 3 regression: --full without --generic-data-path must exit ────────
@@ -480,7 +649,12 @@ def test_build_marker_class_uses_train_question_bank(tmp_path, monkeypatch):
         """Stop as soon as the mix files are written — we only need the JSONL content."""
         raise RuntimeError("stop_after_mix")
 
-    seams = pilot.PilotSeams(train_fn=stub_train_fn)
+    seams = pilot.PilotSeams(
+        train_fn=stub_train_fn,
+        # Inject marker_gen_fn so _build_marker_class stays in the seam path and
+        # never tries to load the base model (which would require a real GPU).
+        marker_gen_fn=lambda qs, sp: [f"stub_resp_{i}" for i, _ in enumerate(qs)],
+    )
 
     with (
         patch("transformers.AutoTokenizer.from_pretrained", return_value=fake_tokenizer),
