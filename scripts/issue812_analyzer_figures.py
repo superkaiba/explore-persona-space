@@ -12,6 +12,14 @@ regenerates the reader-facing figures:
 4. ``rho_per_layer_grid`` -- 2x4 small multiples of the per-layer rho curves
    (all 8 behaviors, fixed operator->color map; fixes the duplicated-color
    defect in the run-generated single-behavior figures).
+5. ``reconstruction_r2`` -- per-layer held-out reconstruction R^2 of each
+   operator summary from the context mean vector (regenerated with
+   reader-facing labels; supersedes the run-generated figure whose legend
+   used config slugs).
+6. ``rho_per_layer_<behavior>`` x8 -- single-behavior per-layer rho curves
+   (regenerated: reader-facing labels, the fixed operator->color map, and a
+   reliability-excluded marker on the deception panel; supersede the
+   run-generated singles).
 
 Usage: ``uv run python scripts/issue812_analyzer_figures.py``
 """
@@ -220,7 +228,75 @@ def main() -> None:
     savefig_paper(fig, "issue_812/rho_per_layer_grid", dir=FIGDIR)
     plt.close(fig)
 
-    print("wrote 4 figures to figures/issue_812/")
+    _fig_reconstruction()
+    _fig_per_behavior_singles(results, all_beh)
+
+    print("wrote 13 figures to figures/issue_812/")
+
+
+def _fig_reconstruction() -> None:
+    """Per-layer held-out reconstruction R^2 per operator, reader-facing labels."""
+    rec = json.loads((EV / "reconstruction_r2.json").read_text())["reconstruction"]
+    rec_labels = {
+        "mean": "mean pool",
+        "max": "max pool",
+        "attn_fixed": "random attention pool",
+        "unpooled": "unpooled (34 positions)",
+    }
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    for op in ("mean", "max", "attn_fixed", "unpooled"):
+        r2 = rec["per_layer_r2"][op]
+        layers = sorted(int(k) for k in r2)
+        ax.plot(
+            layers,
+            [r2[str(li)] for li in layers],
+            color=OP_COLORS[op],
+            lw=1.3,
+            marker="o",
+            ms=2.5,
+            label=rec_labels[op],
+        )
+    ax.axhline(0.80, color="#444444", ls="--", lw=0.9)
+    ax.axhline(0.0, color="#bbbbbb", lw=0.6, ls=":")
+    ax.set_xlabel("layer")
+    ax.set_ylabel("held-out reconstruction R² (skill over mean)")
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, ncol=4, fontsize=8.5, loc="outside lower center", frameon=False)
+    set_title_subtitle(
+        ax,
+        "Reconstructing each summary from the context mean vector",
+        "ridge map, LOCO, PCA target rank 48, n = 50 contexts; dashed: parent-line anchor ≈ 0.80",
+    )
+    savefig_paper(fig, "issue_812/reconstruction_r2", dir=FIGDIR)
+    plt.close(fig)
+
+
+def _fig_per_behavior_singles(results: dict, all_beh: list[str]) -> None:
+    """Single-behavior per-layer rho curves: reader-facing labels, fixed colors."""
+    for beh in all_beh:
+        v = results[beh]
+        layers = [int(x) for x in v["layers"]]
+        fig, ax = plt.subplots(figsize=(6.5, 4.2))
+        for op in OP_ORDER:
+            rhos = [v["per_layer_rho"][op][str(li)] for li in layers]
+            ax.plot(layers, rhos, color=OP_COLORS[op], lw=1.2, label=OP_LABELS[op])
+        ryy = v["sqrt_r_yy"]
+        if ryy is not None:
+            ax.axhline(ryy, color="#444444", ls="--", lw=0.9, label="reliability ceiling")
+        ax.axhline(0.0, color="#bbbbbb", lw=0.6, ls=":")
+        ax.set_xlabel("layer")
+        ax.set_ylabel("held-out Spearman rho")
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles, labels, ncol=4, fontsize=8, loc="outside lower center", frameon=False)
+        suffix = " (target reliability-excluded)" if v["reliability_excluded"] else ""
+        set_title_subtitle(
+            ax,
+            f"Per-layer predictivity: {BEH_LABELS[beh]}{suffix}",
+            "LOCO ridge to graded expression, n = 50 contexts"
+            + ("; no ceiling: target failed reliability" if ryy is None else ""),
+        )
+        savefig_paper(fig, f"issue_812/rho_per_layer_{beh}", dir=FIGDIR)
+        plt.close(fig)
 
 
 if __name__ == "__main__":
