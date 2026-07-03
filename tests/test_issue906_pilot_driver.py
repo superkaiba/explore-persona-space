@@ -1371,9 +1371,16 @@ def test_run_class_calls_production_on_policy_control_when_no_seam(tmp_path, mon
 
     def fake_run_on_policy_control(behavior, cfg_, class_dir, seams_):
         production_calls.append({"behavior": getattr(behavior, "name", str(behavior))})
+        # Persist a REAL artifact at the returned path: run_class's d1-gap branch
+        # (r7) loads both saved directions, so a dangling path would fail loud.
+        import torch
+
+        rb_path = Path(class_dir) / "on_policy_control" / "r_b.pt"
+        rb_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"r_b": torch.ones(4, 8)}, rb_path)
         return {
             "status": "ok",
-            "r_b_path": str(class_dir / "on_policy_control" / "r_b.pt"),
+            "r_b_path": str(rb_path),
             "provenance": "on_policy",
             "n_kept": 20,
         }

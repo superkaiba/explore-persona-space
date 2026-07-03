@@ -326,3 +326,191 @@ def test_on_policy_control_score_completions_contract(onpolicy_run):
     assert direction.regime == "steering" == result["regime"]
     assert tuple(direction.r_b.shape) == (2, 16)  # tiny model: 2 layers x hidden 16
     assert torch.isfinite(direction.r_b).all()
+
+
+# ── r7 concerns (round-6 ledger): upload coverage / judge-draw roll-up / d1-gap ──
+
+
+def _smoke_cfg_for_run_class(tmp_path: Path, **overrides) -> pilot.PilotConfig:
+    """A run_class-capable smoke config (mirrors the driver test harness)."""
+    generic = pilot.write_smoke_generic_corpus(tmp_path / "generic.jsonl")
+    return _cfg(
+        tmp_path,
+        mode="smoke",
+        generic_data_path=str(generic),
+        datagen_target_n=8,
+        **overrides,
+    )
+
+
+def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_path, monkeypatch):
+    """r7 CONCERN pilot-artifact-upload-coverage: the REAL _upload_class must
+    upload the on_policy_control/ and baseline/ dirs AND the r_b_*.pt direction
+    tensors (plan hard-req 13 + §10), one bulk upload_folder commit per dir,
+    judge_cache/ excluded.  Only the remote Hub boundary is substituted, with
+    inspect.signature(real_fn).bind(...)-conformant fakes; _upload_class and
+    _upload_pilot_dir bodies (incl. the expected-set enumeration) run REAL.
+    """
+    from types import SimpleNamespace
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    cfg = _cfg(tmp_path, upload=True)
+    class_dir = cfg.out_root / "sycophancy"
+
+    # Real on-disk artifact tree, as the production phases lay it out.
+    datagen_dir = tmp_path / "datagen"
+    datagen_dir.mkdir(parents=True)
+    (datagen_dir / "raw_pos.jsonl").write_text("{}\n")
+    extract = class_dir / "extract"
+    extract.mkdir(parents=True)
+    (extract / "contrastive_completions.jsonl").write_text("{}\n")
+    (extract / "scored_completions.jsonl").write_text("{}\n")
+    (extract / "judge_raw.json").write_text("{}")
+    torch.save({"r_b": torch.ones(2, 4)}, extract / "r_b_sycophancy.pt")
+    (extract / "judge_cache").mkdir()
+    (extract / "judge_cache" / "item.json").write_text("{}")
+    baseline = class_dir / "baseline"
+    baseline.mkdir(parents=True)
+    (baseline / "baseline.json").write_text("{}")
+    (baseline / "judge_raw.json").write_text("{}")
+    (baseline / "judge_cache").mkdir()
+    (baseline / "judge_cache" / "item.json").write_text("{}")
+    onpolicy = class_dir / "on_policy_control"
+    onpolicy.mkdir(parents=True)
+    (onpolicy / "completions.jsonl").write_text("{}\n")
+    (onpolicy / "judge_raw.json").write_text("{}")
+    torch.save({"r_b": torch.ones(2, 4)}, onpolicy / "r_b_on_policy.pt")
+
+    model_sig = inspect.signature(hub.upload_model)
+    folder_sig = inspect.signature(hub._upload_folder_filtered)
+    dataset_dir_sig = inspect.signature(hub.upload_dataset_directory)
+    folder_calls: list[inspect.BoundArguments] = []
+
+    def fake_upload_model(*args, **kwargs):
+        bound = model_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return f"repo/{bound.arguments['path_in_repo']}"
+
+    def fake_upload_dataset_directory(*args, **kwargs):
+        bound = dataset_dir_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return [f"repo/{bound.arguments['bucket']}/raw_pos.jsonl"]
+
+    def fake_upload_folder_filtered(*args, **kwargs):
+        bound = folder_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        folder_calls.append(bound)
+        return f"repo/{bound.arguments['path_in_repo']}"
+
+    monkeypatch.setattr(hub, "upload_model", fake_upload_model)
+    monkeypatch.setattr(hub, "upload_dataset_directory", fake_upload_dataset_directory)
+    monkeypatch.setattr(hub, "_upload_folder_filtered", fake_upload_folder_filtered)
+
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        data_paths={"datagen_dir": str(datagen_dir)},
+    )
+    out = pilot._upload_class("sycophancy", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "ok", out
+    # One bulk commit per artifact dir: extract + baseline + on_policy_control.
+    by_bucket = {b.arguments["path_in_repo"]: b for b in folder_calls}
+    assert set(by_bucket) == {
+        "issue906_pilot/sycophancy/extraction_rollouts",
+        "issue906_pilot/sycophancy/baseline",
+        "issue906_pilot/sycophancy/on_policy_control",
+    }
+    all_expected = sorted(p for b in folder_calls for p in b.arguments["expected_repo_paths"])
+    for required in (
+        "issue906_pilot/sycophancy/extraction_rollouts/r_b_sycophancy.pt",
+        "issue906_pilot/sycophancy/extraction_rollouts/judge_raw.json",
+        "issue906_pilot/sycophancy/extraction_rollouts/contrastive_completions.jsonl",
+        "issue906_pilot/sycophancy/extraction_rollouts/scored_completions.jsonl",
+        "issue906_pilot/sycophancy/baseline/baseline.json",
+        "issue906_pilot/sycophancy/baseline/judge_raw.json",
+        "issue906_pilot/sycophancy/on_policy_control/completions.jsonl",
+        "issue906_pilot/sycophancy/on_policy_control/judge_raw.json",
+        "issue906_pilot/sycophancy/on_policy_control/r_b_on_policy.pt",
+    ):
+        assert required in all_expected, f"missing from upload expected-set: {required}"
+    # judge_cache trees are excluded from BOTH the expected set and the commit.
+    assert not [p for p in all_expected if "judge_cache" in p]
+    for b in folder_calls:
+        assert "*judge_cache/*" in b.arguments["ignore_patterns"]
+    # The recorded outcome carries each verified URL.
+    assert out["extract"].endswith("/extraction_rollouts")
+    assert out["baseline"].endswith("/baseline")
+    assert out["on_policy_control"].endswith("/on_policy_control")
+
+
+def test_api_calls_total_includes_onpolicy_and_baseline_judge_draws(tmp_path):
+    """r7 CONCERN onpolicy-judge-draws-excluded-from-api-calls: fake an on-policy
+    control return with NONZERO judge draws and assert api_calls.total_judge_draws
+    includes them — itemized under on_policy_control_judge (and the baseline pass,
+    the same roll-up class, under baseline_judge).  run_class runs REAL."""
+    import dataclasses
+
+    cfg = _smoke_cfg_for_run_class(tmp_path)
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+
+    def onpolicy_fake(behavior, cfg_, class_dir):
+        return {
+            "status": "ok",
+            "r_b_path": None,  # roll-up under test; the d1-gap branch is covered below
+            "judge_draws_total": 37,
+            "judge_draws_dropped": 3,
+        }
+
+    def baseline_fake(behavior, cfg_, class_dir):
+        return {
+            "status": "ok",
+            "rate": 0.1,
+            "n_questions": 2,
+            "judge_draws_total": 11,
+            "judge_draws_dropped": 1,
+        }
+
+    seams = dataclasses.replace(
+        seams, on_policy_control_fn=onpolicy_fake, baseline_fn=baseline_fake
+    )
+    entry = pilot.run_class("sycophancy", cfg, seams)
+    assert entry["status"] == "success", entry.get("error")
+    api = entry["api_calls"]
+    assert api["on_policy_control_judge"] == {"judge_draws_total": 37, "judge_draws_dropped": 3}
+    assert api["baseline_judge"] == {"judge_draws_total": 11, "judge_draws_dropped": 1}
+    itemized = (
+        (api["datagen"].get("judge_draws_total") or 0)
+        + api["verify_judge"]["judge_draws_total"]
+        + api["extract_judge"]["judge_draws_total"]
+        + 11
+        + 37
+    )
+    assert api["total_judge_draws"] == itemized
+    # Strictly larger than the pre-fix sum (the two new passes are non-zero).
+    assert api["total_judge_draws"] >= 48
+
+
+def test_run_class_computes_d1_gap_from_persisted_direction_artifacts(tmp_path):
+    """r7 CONCERN d1-gap-cosine-not-computed-in-driver: run_class persists the
+    plan §4 Phase-3 D1-gap under entry['direction']['d1_gap'], computed from the
+    two SAVED direction artifacts (claude_generated + on_policy) — the field
+    matches a direct _per_layer_cosine recomputation loaded back from disk."""
+    cfg = _smoke_cfg_for_run_class(tmp_path)
+    # The smoke on-policy stub persists a real (perturbed) direction artifact.
+    seams = pilot.make_smoke_seams(cfg.reference_root)
+    entry = pilot.run_class("sycophancy", cfg, seams)
+    assert entry["status"] == "success", entry.get("error")
+    d1 = entry["direction"]["d1_gap"]
+    assert d1["status"] == "computed", d1
+    assert d1["claude_generated_path"] == entry["direction"]["r_b_path"]
+    assert Path(d1["on_policy_path"]).name == "r_b_on_policy.pt"
+    assert d1["claude_generated_path"] != d1["on_policy_path"]
+    # Recompute from the persisted artifacts: the driver's number must match.
+    claude_rb, _ = pilot._load_reference_rb(Path(d1["claude_generated_path"]))
+    onpolicy_rb, _ = pilot._load_reference_rb(Path(d1["on_policy_path"]))
+    expected = pilot._per_layer_cosine(claude_rb, onpolicy_rb)
+    assert d1["cosine_mean"] == pytest.approx(expected["cosine_mean"], abs=1e-6)
+    assert d1["cosine_per_layer"] == expected["cosine_per_layer"]
+    # Perturbed stub direction: cosine is high but strictly below 1.
+    assert 0.5 < d1["cosine_mean"] < 1.0

@@ -285,6 +285,37 @@ def reproduction_check(behavior_name: str, new_rb, reference_root: Path) -> dict
     return {"status": "reference_not_found", "searched": [str(p) for p in candidates]}
 
 
+def _compute_d1_gap(claude_rb_path: Path, on_policy_rb_path: Path) -> dict:
+    """Plan §4 Phase-3 D1-gap: per-layer cosine(claude_generated r_B, on_policy r_B).
+
+    Loads BOTH sycophancy directions from their PERSISTED artifacts (the extract
+    phase's ``r_b_sycophancy.pt`` and the on-policy control's
+    ``r_b_on_policy.pt``) — never from in-memory objects — so the reported gap
+    is computed from exactly what the upload / reuse paths will see.  Returns
+    the ``_per_layer_cosine`` stats plus provenance paths, or a machine-readable
+    shape-mismatch record.  A missing artifact raises (fail loud): on the
+    production path both files were just written by ``save_direction``.
+    """
+    claude_rb, claude_key = _load_reference_rb(Path(claude_rb_path))
+    on_policy_rb, on_policy_key = _load_reference_rb(Path(on_policy_rb_path))
+    if tuple(claude_rb.shape) != tuple(on_policy_rb.shape):
+        return {
+            "status": "shape_mismatch",
+            "claude_generated_path": str(claude_rb_path),
+            "on_policy_path": str(on_policy_rb_path),
+            "claude_generated_shape": list(claude_rb.shape),
+            "on_policy_shape": list(on_policy_rb.shape),
+        }
+    return {
+        "status": "computed",
+        "claude_generated_path": str(claude_rb_path),
+        "claude_generated_key": claude_key,
+        "on_policy_path": str(on_policy_rb_path),
+        "on_policy_key": on_policy_key,
+        **_per_layer_cosine(claude_rb, on_policy_rb),
+    }
+
+
 # ── API-count aggregation (from the library's sidecars) ───────────────────────
 
 
@@ -336,6 +367,23 @@ def _verify_judge_counts(report_dict: dict) -> dict:
     total = sum((c.get("n_total_draws", 0) or 0) for c in tele.values())
     dropped = sum((c.get("n_dropped_draws", 0) or 0) for c in tele.values())
     return {"judge_draws_total": total, "judge_draws_dropped": dropped, "n_cells": len(tele)}
+
+
+def _judge_draw_subcounts(payload: dict | None) -> dict:
+    """Judge-draw totals from a phase payload dict (baseline / on-policy control).
+
+    ``_run_baseline_pass`` and ``_run_on_policy_control`` both persist
+    ``judge_draws_total`` / ``judge_draws_dropped`` in their return dicts (which
+    ``run_class`` stores in the report entry); those are real Anthropic judge
+    API calls and belong in the per-class ``api_calls`` roll-up (r6 concern
+    ``onpolicy-judge-draws-excluded-from-api-calls``).  Tolerates ``None`` /
+    seam-stub payloads that omit the keys (counts read 0).
+    """
+    payload = payload or {}
+    return {
+        "judge_draws_total": int(payload.get("judge_draws_total", 0) or 0),
+        "judge_draws_dropped": int(payload.get("judge_draws_dropped", 0) or 0),
+    }
 
 
 # ── Contrastive-rollout generation for r_B extraction ─────────────────────────
@@ -768,13 +816,16 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
     n_kept = {arm: filter_counts[arm]["kept"] for arm in ("exhibit", "not_exhibit")}
     if n_kept["exhibit"] == 0 or n_kept["not_exhibit"] == 0:
         # Reported yield failure — never a fabricated direction (extract_direction
-        # raises on a zero-captured arm).
+        # raises on a zero-captured arm).  Judge draws were already spent on the
+        # score pass above, so they still count toward the api_calls roll-up.
         return {
             "status": "yield_failure",
             "completions_path": str(completions_path),
             "n_kept": n_kept,
             "filter_counts": filter_counts,
             "r_b_path": None,
+            "judge_draws_total": judge_result.n_total_draws,
+            "judge_draws_dropped": judge_result.n_dropped_draws,
         }
 
     # extract_direction from the on-policy completions (HF model loads only
@@ -1346,8 +1397,63 @@ def _extract_class(
     return result, judge_result, rb_path
 
 
+def _upload_pilot_dir(local_dir: Path, bucket: str) -> str | None:
+    """Bulk-upload one pilot artifact dir (text/JSON + r_B tensors) in ONE commit.
+
+    Coverage set per plan §10 (``discarded_artifacts: None``): every ``*.jsonl``
+    / ``*.json`` text artifact plus the ``r_b_*.pt`` direction tensors
+    (28x3584 fp32 ≈ 0.4 MB each — cheap to upload).  ``judge_cache/`` trees are
+    re-derivable caches and are excluded.  Routes through
+    ``hub._upload_folder_filtered`` — ONE ``upload_folder`` commit + an
+    EXACT-set Hub verify (the upload-policy bulk-over-per-file rule; #664/#727)
+    — and raises ``RuntimeError`` on any failure/incomplete commit (fail-loud,
+    the same contract as ``upload_dataset_directory``).  Returns ``None`` when
+    the dir is absent or holds no matching files (machine-readable skip for
+    classes without the phase, e.g. the marker carve-out).
+    """
+    from explore_persona_space.orchestrate.hub import (
+        DEFAULT_DATASET_REPO,
+        _upload_folder_filtered,
+    )
+
+    local_dir = Path(local_dir)
+    if not local_dir.is_dir():
+        return None
+    bucket = bucket.rstrip("/")
+    expected = sorted(
+        f"{bucket}/{p.relative_to(local_dir).as_posix()}"
+        for p in local_dir.rglob("*")
+        if p.is_file()
+        and p.suffix in {".jsonl", ".json", ".pt"}
+        and "judge_cache" not in p.relative_to(local_dir).parts
+    )
+    if not expected:
+        return None
+    url = _upload_folder_filtered(
+        local_dir,
+        DEFAULT_DATASET_REPO,
+        "dataset",
+        bucket,
+        allow_patterns=["*.jsonl", "*.json", "*.pt"],
+        expected_repo_paths=expected,
+        ignore_patterns=["*judge_cache/*"],
+    )
+    if not url:
+        raise RuntimeError(
+            f"bulk upload of {local_dir} -> {bucket} failed or was incomplete "
+            "(empty URL from _upload_folder_filtered; see the error log above)"
+        )
+    return url
+
+
 def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: PilotSeams) -> dict:
-    """Per-cell upload of the adapter + generations (Upload Policy). Records outcome.
+    """Per-cell upload of the adapter + generations + directions (Upload Policy).
+
+    r6 CONCERN ``pilot-artifact-upload-coverage``: coverage now includes the
+    ``baseline/`` and ``on_policy_control/`` dirs and the ``r_b_*.pt`` direction
+    tensors (plan hard-req 13 + §10 require text AND tensor upload before pod
+    teardown) — each dir lands as ONE bulk ``upload_folder`` commit via
+    ``_upload_pilot_dir``.
 
     Returns a status dict; never raises out of here so one failed upload does not
     forfeit the class's calibration numbers. The driver surfaces any failure loud
@@ -1359,7 +1465,14 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         return {"status": "skipped", "reason": "upload disabled"}
     from explore_persona_space.orchestrate.hub import upload_dataset_directory, upload_model
 
-    out: dict[str, Any] = {"status": "ok", "adapter": None, "generations": None, "extract": None}
+    out: dict[str, Any] = {
+        "status": "ok",
+        "adapter": None,
+        "generations": None,
+        "extract": None,
+        "baseline": None,
+        "on_policy_control": None,
+    }
     try:
         adapter_url = upload_model(
             build_result.adapter_path,
@@ -1377,14 +1490,25 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
             datagen_dir,
             bucket=f"issue906_pilot/{behavior_name}/raw_completions",
         )
-        # Extraction contrastive-rollout TEXT (the load-bearing r_B text-persist,
-        # upload-policy.md) — present only for the non-programmatic classes.
-        extract_dir = cfg.out_root / behavior_name / "extract"
-        if extract_dir.is_dir():
-            out["extract"] = upload_dataset_directory(
-                extract_dir,
-                bucket=f"issue906_pilot/{behavior_name}/extraction_rollouts",
-            )
+        # Extraction contrastive-rollout TEXT + the r_b_<behavior>.pt direction
+        # tensor + judge_raw.json, in ONE commit (previously only extract/*.jsonl
+        # uploaded — the r6 upload-coverage concern).  Present only for the
+        # non-programmatic classes; _upload_pilot_dir returns None otherwise.
+        class_dir = cfg.out_root / behavior_name
+        out["extract"] = _upload_pilot_dir(
+            class_dir / "extract",
+            f"issue906_pilot/{behavior_name}/extraction_rollouts",
+        )
+        # Pre-intervention baseline judged-rate artifacts (plan §4 Phase 0).
+        out["baseline"] = _upload_pilot_dir(
+            class_dir / "baseline",
+            f"issue906_pilot/{behavior_name}/baseline",
+        )
+        # Sycophancy on-policy control arm: rollout text + r_b_on_policy.pt.
+        out["on_policy_control"] = _upload_pilot_dir(
+            class_dir / "on_policy_control",
+            f"issue906_pilot/{behavior_name}/on_policy_control",
+        )
         if not adapter_url:
             out["status"] = "failed"
             out["error"] = "upload_model returned empty path"
@@ -1594,23 +1718,56 @@ def run_class(behavior_name: str, cfg: PilotConfig, seams: PilotSeams) -> dict:
                             behavior, cfg, class_dir, seams
                         )
 
-            # 4. API-call telemetry.
+                # r6 CONCERN d1-gap-cosine-not-computed-in-driver: plan §4 Phase-3
+                # D1-gap read — cosine(claude_generated r_B, on_policy r_B) from the
+                # two PERSISTED direction artifacts, computed here in the driver so
+                # the calibration report ships the number (no aggregation deferral).
+                opc = entry["direction"].get("on_policy_control") or {}
+                op_rb_path = opc.get("r_b_path")
+                if op_rb_path:
+                    entry["direction"]["d1_gap"] = _compute_d1_gap(rb_path, Path(op_rb_path))
+                else:
+                    # Machine-readable non-compute (yield_failure / stub without an
+                    # artifact) — recorded, never silently absent.
+                    entry["direction"]["d1_gap"] = {
+                        "status": "not_computed",
+                        "reason": (
+                            f"on_policy_control returned no r_b_path (status={opc.get('status')!r})"
+                        ),
+                    }
+
+            # 4. API-call telemetry.  r6 CONCERN
+            # onpolicy-judge-draws-excluded-from-api-calls: the baseline and
+            # sycophancy on-policy-control judge passes are real Anthropic API
+            # calls too — itemize them and fold them into total_judge_draws so
+            # the cost-calibration roll-up counts every judge pass.
             gen_pos = (datagen_counts.get("claude_generation_requested") or {}).get("positive") or 0
             gen_neg = (datagen_counts.get("claude_generation_requested") or {}).get("negative") or 0
+            baseline_judge_counts = _judge_draw_subcounts(entry.get("baseline"))
+            on_policy_judge_counts = _judge_draw_subcounts(
+                (entry.get("direction") or {}).get("on_policy_control")
+            )
             entry["api_calls"] = {
                 "datagen": datagen_counts,
                 "verify_judge": verify_counts,
                 "extract_judge": extract_judge_counts,
+                "baseline_judge": baseline_judge_counts,
+                "on_policy_control_judge": on_policy_judge_counts,
                 "claude_generation_calls": gen_pos + gen_neg,
                 "total_judge_draws": (
                     (datagen_counts.get("judge_draws_total", 0) or 0)
                     + (verify_counts.get("judge_draws_total", 0) or 0)
                     + (extract_judge_counts.get("judge_draws_total", 0) or 0)
+                    + baseline_judge_counts["judge_draws_total"]
+                    + on_policy_judge_counts["judge_draws_total"]
                 ),
                 "note": (
-                    "Generation on the verify + dose-ladder + extract phases is local vLLM "
-                    "(not an API call); only datagen generation is Claude API. Dose-ladder "
-                    "judge draws are folded into the build wall-time, not itemized here."
+                    "Generation on the baseline + verify + dose-ladder + extract + "
+                    "on-policy-control phases is local vLLM (not an API call); only "
+                    "datagen generation is Claude API. Baseline and on-policy-control "
+                    "judge draws are itemized above and included in total_judge_draws; "
+                    "dose-ladder judge draws remain folded into the build wall-time, "
+                    "not itemized here."
                 ),
             }
 
@@ -1862,7 +2019,7 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
     """
     import torch
 
-    from explore_persona_space.artifacts.directions import DirectionResult
+    from explore_persona_space.artifacts.directions import DirectionResult, save_direction
     from explore_persona_space.eval.graded_judge import JudgeResult
 
     # A tiny (L, H) direction; the fake sycophancy reference matches it exactly.
@@ -2004,8 +2161,36 @@ def make_smoke_seams(reference_root: Path, *, n_pos: int = 6, n_cn: int = 6) -> 
         return {"status": "smoke", "rate": 0.0, "n_questions": 0, "out_dir": str(class_dir)}
 
     def on_policy_control_stub(behavior, cfg_, class_dir, seams_=None):
-        """Smoke stub for the on-policy control arm — skips tier-2 elicitation."""
-        return {"status": "smoke", "r_b_path": None, "provenance": "smoke", "n_kept": 0}
+        """Smoke stub for the on-policy control arm — skips tier-2 elicitation.
+
+        Persists a real (perturbed) direction artifact via save_direction so the
+        production d1-gap branch in run_class computes a REAL cosine from two
+        saved tensors in smoke mode, and returns judge-draw counts so the
+        api_calls roll-up includes the control arm (both r6 concerns exercised
+        end-to-end by --smoke).
+        """
+        on_policy_dir = Path(class_dir) / "on_policy_control"
+        rb_path = on_policy_dir / "r_b_on_policy.pt"
+        save_direction(
+            DirectionResult(
+                behavior_name=behavior.name,
+                regime="steering",
+                layers=tuple(range(n_layers)),
+                r_b=fake_rb.clone() + 0.5,  # near-but-not-exactly the claude_generated r_B
+                counts={"smoke": True},
+                provenance="on_policy",
+            ),
+            rb_path,
+        )
+        return {
+            "status": "smoke",
+            "r_b_path": str(rb_path),
+            "regime": "steering",
+            "provenance": "on_policy",
+            "n_kept": {"exhibit": 3, "not_exhibit": 3},
+            "judge_draws_total": 12,
+            "judge_draws_dropped": 0,
+        }
 
     return PilotSeams(
         datagen_fn=datagen_stub,
