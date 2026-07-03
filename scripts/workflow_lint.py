@@ -3873,8 +3873,15 @@ _GIT_FLAGS_GRP = r"(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*"
 _WT_REVERT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     # Any non-`--staged` git restore: explicit-path restore prescriptions have
     # zero legitimate live doc uses; `--staged` forms are index-only (they do
-    # not touch the working tree) and exempt.
-    ("git restore", re.compile(rf"git\s+{_GIT_FLAGS_GRP}restore\b(?![^`]*--staged)")),
+    # not touch the working tree) and exempt. The exemption lookahead is
+    # bounded at BOTH a backtick (the inline-code terminator) AND a `#` —
+    # bash never executes a comment tail, so a fenced `git restore . #
+    # --staged` line is a destructive restore whose comment must NOT waive it
+    # (round-2 concern id lint-restore-lookahead-comment-tail; the runtime
+    # hook's comment-tail strip is the enforcement sibling). A `--staged`
+    # among the real arguments always precedes any `#`, so legitimate
+    # index-only prescriptions keep the exemption.
+    ("git restore", re.compile(rf"git\s+{_GIT_FLAGS_GRP}restore\b(?![^`#]*--staged)")),
     # Bare-dot wholesale checkout ONLY — explicit `checkout <ref> -- <path>`
     # doc mentions are NOT flagged (legitimate prescriptive uses exist: the
     # /issue Step 5a spec-freshness sync, the Step 10d surgical additive
@@ -5044,7 +5051,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         action="store_true",
         help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
         "prescribes an unqualified working-tree revert on the shared repo "
-        "root: a non---staged `git restore`, a bare-dot `git checkout .`, or "
+        "root: a `git restore` without `--staged`, a bare-dot `git checkout .`, or "
         'a force-flagged `git clean`. Only per-worktree `git -C "$WT" ...` '
         "forms (the `-C` qualifier before the match on the same line) or "
         "lines carrying the `workflow-lint: allow-repo-root-wt-revert: "

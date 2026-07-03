@@ -40,7 +40,10 @@ T8  the no-flags bundling pin — ``main([])`` on a doctored tree FAILs with
     the explicit ``--check-no-repo-root-worktree-revert`` path FAILs/PASSes;
 T9  the live-tree migration pin — the SKILL.md Step 10d additive-checkout
     fence and the code-reviewer.md smoke-restore prescription carry
-    ``git -C`` (content-anchored, never line numbers).
+    ``git -C`` (content-anchored, never line numbers);
+T10 (round 2) a comment-tail ``--staged`` does NOT waive the restore pattern
+    (the exemption lookahead is bounded at an unquoted ``#`` — concern id
+    lint-restore-lookahead-comment-tail).
 
 Plus the live-tree anti-regression lock (the analyzer.md ban-context
 sentinels keep the real tree clean).
@@ -255,6 +258,34 @@ def test_matches_in_fenced_block_and_prose(tmp_path: Path) -> None:
     assert len(errors) == 2, errors
     assert any("fenced.md:2:" in e for e in errors), errors
     assert any("prose.md:1:" in e for e in errors), errors
+
+
+# --------------------------------------------------------------------------
+# T10 (round 2) — a comment-tail `--staged` cannot waive the restore pattern
+# (concern id lint-restore-lookahead-comment-tail). Bash never executes an
+# unquoted comment tail, so a fenced `git restore . # --staged` line is a
+# destructive working-tree restore; the exemption lookahead is bounded at
+# `#` (and backtick) so only a `--staged` among the REAL arguments exempts.
+# --------------------------------------------------------------------------
+
+
+def test_comment_tail_staged_does_not_waive_restore(tmp_path: Path) -> None:
+    _write_agent(
+        tmp_path,
+        "spoof.md",
+        "```bash\ngit restore . # --staged\n```\n",
+    )
+    errors = check_no_repo_root_worktree_revert(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "spoof.md:2:" in errors[0], errors
+    # symmetry: a REAL `--staged` argument (before any `#`) keeps the
+    # exemption even with a trailing comment on the same line
+    _write_agent(
+        tmp_path,
+        "spoof.md",
+        "```bash\ngit restore --staged foo.py # unstage only\n```\n",
+    )
+    assert check_no_repo_root_worktree_revert(repo_root=tmp_path) == []
 
 
 # --------------------------------------------------------------------------
