@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 921,
+  "highest_id": 922,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6065,6 +6065,14 @@
       "path": "tasks/proposed/921",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
+    },
+    "922": {
+      "goal": "On Qwen-2.5-7B-Instruct, characterize the per-layer predictability of residual-stream token-position dynamics on real chat contexts \u2014 fit one map per layer g_l: h_{l,t} -> h_{l,t+1} (identity/copy-previous null, affine ridge, small MLP, optional sequence model as exploratory) and report held-out variance explained of the update Delta_t = h_{l,t+1} - h_{l,t} per layer relative to the identity and affine baselines.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/922",
+      "status": "proposed",
+      "title": "Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP) on real chat contexts"
     },
     "94": {
       "has_clean_result": false,
