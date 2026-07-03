@@ -389,12 +389,18 @@ both reviewers are graded against the same standard. Read
   Copy the trigger + the three shapes + the tag + the sub-check in full so
   Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
   ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
-- "Step 0.68: Named-helper adherence check" (`type:experiment` only) —
-  INCLUDING the ::fn grep-for-import-and-call requirement, the
-  slower-sibling-substitution → Major substantive rule, and the N/A carve-out
-  (no ::fn-level helper named). Copy in full so Codex never re-derives a
-  narrower check (incident #823: round-1 plan-adherence blessed the slow
-  import while the body named the fast twin).
+- "Step 0.68: Named-helper adherence check" (`type:experiment` only;
+  hollow-gate sub-check: any diff type) — INCLUDING the ::fn
+  grep-for-import-and-call requirement, the slower-sibling-substitution →
+  Major substantive rule, the hollow-verification-gate sub-check (a
+  `--verify-X` / equivalence gate must assert on the function the entrypoint
+  actually dispatches; fires for any diff type even when the named-helper
+  trigger is N/A; blocker tag `hollow-verification-gate`, SUBSTANTIVE — never
+  stripped by Step 5c-bis; incident #779: a green `--verify-vectorized` gated
+  an unused helper while the live ridge hot loop ran unverified), and the N/A
+  carve-out (no ::fn-level helper named). Copy in full so Codex never
+  re-derives a narrower check (incident #823: round-1 plan-adherence blessed
+  the slow import while the body named the fast twin).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
@@ -580,7 +586,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>
