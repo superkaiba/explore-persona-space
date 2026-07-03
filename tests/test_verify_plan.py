@@ -1302,6 +1302,57 @@ def test_c13_strict_lt_at_floor_equal_alpha_is_offender():
     assert _status(_c13_plan(C13_TABLE_19, gate), "c13_empirical_gate_attainability") == "FAIL"
 
 
+def test_c13_alpha_zero_gate_fails_without_crash():
+    # Round-2 BLOCKER `alpha-zero-c13-crash`: a registered `p <= 0.00` gate
+    # parses to alpha == Fraction(0) — the limiting case of the unattainable
+    # class. Every declaration's floor 1/(n+1) > 0 == alpha, so c13 must FAIL
+    # (family vocab present), NOT ZeroDivisionError on ceil(1/alpha) in the
+    # offender-detail builder (pre-fix: Fraction(1, 0) at the remedy bound).
+    gate = (
+        "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+        "one-sided empirical p ≤ 0.00 surviving Benjamini-Hochberg across the 3 traits."
+    )
+    plan = _c13_plan(C13_TABLE_19, gate)
+    # Direct check-function call — the CLI text and --json modes route through
+    # verify_plan_text with no exception guard, so no-raise here pins both.
+    r = verify_plan.check_empirical_gate_attainability(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "alpha ≤ 0" in r.detail
+    assert "no finite n_draws" in r.detail
+    # Full-driver path (what the CLI executes) must not raise either, and the
+    # kind=analysis degrade branch builds the SAME detail before degrading —
+    # it must WARN, not crash.
+    ok, by_id = _run(plan)
+    assert by_id["c13_empirical_gate_attainability"].status == "FAIL"
+    assert ok is False
+    assert _status(plan, "c13_empirical_gate_attainability", kind="analysis") == "WARN"
+
+
+def test_c13_vacuous_scope_excluding_every_declaration_warns():
+    # Round-2 concern `c13-binding-tests-missing` (a): a draws-scope qualifier
+    # above every declared count (n_draws >= 500 over a 200/2/5 table) leaves
+    # an EMPTY in-scope set — the vacuous-scope WARN, never an affirmative
+    # PASS with an undefined min.
+    gate = (
+        "- SUCCESS: for every STOCHASTIC family (n_draws ≥ 500) one-sided "
+        "empirical p ≤ 0.05 surviving Benjamini-Hochberg."
+    )
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, gate))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "excludes every declared family" in r.detail
+
+
+def test_c13_fail_detail_names_clean_pass_remedy_bound():
+    # Round-2 concern `c13-binding-tests-missing` (b): the alpha=0.05 offender
+    # detail carries the ceil(1/alpha) = 20 clean-PASS remedy bound.
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "≥ 20" in r.detail
+    assert "clean PASS" in r.detail
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
