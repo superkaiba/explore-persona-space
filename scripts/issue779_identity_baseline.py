@@ -64,6 +64,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+# Shared-VM thread caps (#847): apply env caps BEFORE torch/numpy freeze their pools.
+load_dotenv()
+
 import issue779_common as C  # noqa: E402
 import issue779_percontext_recon as PR  # noqa: E402
 import issue779_stage1 as S1  # noqa: E402

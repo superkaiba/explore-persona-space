@@ -70,19 +70,19 @@ ONLY:
 - **Fallback path (``blocks is None``):** returns ``hs[-1]`` == POST-norm.
   The helper's two paths therefore DISAGREE for the last layer; a caller
   requesting ``L_max`` must know which path its model takes.
-- **Wrapped models take the fallback SILENTLY:** a PEFT-wrapped model
-  (``peft.PeftModel``) FAILS the ``model.model.layers`` detection — its
-  ``.model`` resolves (via LoRA attribute forwarding) to the inner
-  ``*ForCausalLM``, which has no ``.layers`` — so it takes the fallback
-  (POST-norm last layer AND all ``L+1`` hidden states materialized, the
-  memory cost this helper exists to avoid) while a bare model takes the
-  hook path. Unwrap first (e.g. pass ``peft_model.get_base_model()``,
-  LoRA layers stay active, or a merged model) to get the hook path.
+- **Wrapped (PEFT-style) models take the HOOK path:** block resolution walks
+  the ``.model`` chain (depth <= 3), so a ``peft.PeftModel`` resolves its
+  LoRA-active decoder blocks at ``model.model.model.layers`` and takes the
+  hook path — pre-final-norm last layer, no all-layers materialization,
+  consistent with bare models. A one-time ``UserWarning`` marks the wrapped
+  resolution (earlier helper versions silently took the post-norm full-tuple
+  fallback here).
 - All NON-last layers and ``EMBED_LAYER``: the two paths agree exactly.
 """
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable
 
 import torch
@@ -98,6 +98,31 @@ def _unwrap(output):
     ``analysis/representation_shift.py``'s unwrap and the reference impl.
     """
     return output[0] if isinstance(output, tuple) else output
+
+
+def _resolve_decoder_blocks(model):
+    """Walk the ``.model`` wrapper chain (depth 1..3) to find decoder blocks.
+
+    Returns ``(blocks, embed_tokens, depth)`` from the FIRST chain level
+    exposing ``.layers``; ``(None, None, 0)`` when none does (non-standard
+    models + CPU test stubs -> the full-tuple fallback). Depth 1 is the bare
+    HF layout (``model.model.layers``). Depth 2 is the PEFT layout:
+    ``PeftModel.model`` forwards (``PeftModel.__getattr__`` ->
+    ``LoraModel.model``, peft 0.18.1) to the injected ``*ForCausalLM`` whose
+    own ``.model.layers`` ARE the LoRA-active decoder blocks (same object
+    ``get_base_model()`` returns). Depth 3 is headroom for one extra wrapper.
+    Purely structural — no peft import; depth-1-first preserves bare-model
+    behavior exactly.
+    """
+    inner = model
+    for depth in range(1, 4):
+        inner = getattr(inner, "model", None)
+        if inner is None:
+            return None, None, 0
+        blocks = getattr(inner, "layers", None)
+        if blocks is not None:
+            return blocks, getattr(inner, "embed_tokens", None), depth
+    return None, None, 0
 
 
 @torch.no_grad()
@@ -127,14 +152,16 @@ def extract_layer_activations(
     ----------
     model
         Causal-LM, already on its device and in eval mode (this helper does
-        not move or set the mode). A standard Llama-style decoder
-        (``model.model.layers`` + ``model.model.embed_tokens``) takes the
-        primary hook path; anything else falls back to the full-tuple read
-        (covers non-standard models AND the CPU test stub).
-        WARNING: a PEFT-wrapped model (``peft.PeftModel``) fails the hook-path
-        detection and silently takes the fallback (post-norm last layer +
-        all-layers materialization) — unwrap first (``get_base_model()`` /
-        a merged model); see the module docstring's last-layer caveat.
+        not move or set the mode). Decoder blocks are resolved by walking the
+        ``.model`` wrapper chain (depth 1..3, first match wins — see
+        ``_resolve_decoder_blocks``): a standard Llama-style decoder
+        (``model.model.layers`` + ``model.model.embed_tokens``, depth 1) AND a
+        wrapped (PEFT-style) model whose LoRA-active blocks sit one level
+        deeper (``peft.PeftModel`` at ``model.model.model.layers``, depth 2 —
+        takes the hook path with adapters active, one-time ``UserWarning``;
+        see the module docstring's wrapped-models note) take the primary hook
+        path; anything else falls back to the full-tuple read (covers
+        non-standard models AND the CPU test stub).
     input_ids
         ``(1, T)`` or ``(B, T)`` on the model's device.
     layers
@@ -167,16 +194,27 @@ def extract_layer_activations(
     tuple[dict[int, torch.Tensor], torch.Tensor]
         ``(captured, logits)`` when ``return_logits`` is ``True``.
     """
-    blocks = getattr(getattr(model, "model", None), "layers", None)
-    embed = getattr(getattr(model, "model", None), "embed_tokens", None)
+    blocks, embed, wrap_depth = _resolve_decoder_blocks(model)
+    if wrap_depth >= 2:
+        warnings.warn(
+            "extract_layer_activations: wrapped (PEFT-style) model — decoder "
+            f"blocks resolved {wrap_depth} levels deep; taking the HOOK path "
+            "with adapters active. NOTE: the last-layer capture is "
+            "PRE-final-norm (earlier versions silently took the post-norm "
+            "full-tuple fallback for wrapped models).",
+            UserWarning,
+            stacklevel=2,
+        )
     layers = list(layers)
 
     def _reduce(hs: torch.Tensor) -> torch.Tensor:
         return hs.detach().float().cpu() if detach_to_cpu else hs.detach()
 
     # ---- Fallback for non-standard models / CPU stubs (the labeled =True) ----
-    # (Fires for non-standard models, CPU stubs, AND wrapped models e.g. peft.PeftModel;
-    # last-layer return here is POST-final-norm — unlike the hook path; see module docstring.)
+    # (Fires for non-standard models and CPU stubs with no resolvable `.model` chain;
+    # last-layer return here is POST-final-norm — unlike the hook path; see module
+    # docstring. Wrapped PEFT-style models resolve via the chain walk and take the
+    # HOOK path instead.)
     if blocks is None:
         out = model(
             input_ids=input_ids,
