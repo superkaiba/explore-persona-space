@@ -6200,8 +6200,8 @@
     "939": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/939",
-      "status": "reviewing",
+      "path": "tasks/completed/939",
+      "status": "completed",
       "title": "workflow-fix: scoped listing in verify_uploads.py (1M-file repo hang)"
     },
     "94": {
