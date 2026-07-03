@@ -28,6 +28,8 @@ goal: On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, 
   CoT, answer), in both the averaged-over-query regime (averaging over the query vector
   or over the CoT vector) and the individual context+query regime, scored by held-out
   R² per layer on the parent line's folds.
+relates_to:
+- spec-context-as-vector
 ---
 ## Goal
 
