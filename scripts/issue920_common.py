@@ -24,7 +24,12 @@ import logging
 import time
 from pathlib import Path
 
-import torch
+# Shared-VM thread caps (#847) must bind BEFORE torch freezes its pool at import.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv(str(Path(__file__).resolve().parent.parent / ".env"))
+
+import torch  # noqa: E402
 
 logger = logging.getLogger("issue920_common")
 

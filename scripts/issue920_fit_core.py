@@ -30,12 +30,16 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-import torch
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Shared-VM thread caps (#847) must bind BEFORE torch freezes its pool at import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 from issue658_fit_predictors import (  # noqa: E402
     RIDGE_LAMBDAS,
     _press_loo_mse_per_lambda,
@@ -397,10 +401,13 @@ def serial_reference_map_fit(
         if len(tr) < 3 or len(te) == 0:
             continue
         dev = torch.device(device)
-        Ytr = torch.from_numpy(Yp[tr]).double().unsqueeze(0).to(dev)
-        # PCA reuses batched_pca_project — itself asserted against the #810
-        # _gram_top_k_pca primitive in the G2 gate, so the twin stays a RIDGE oracle.
-        mu_p, comps = batched_pca_project(Ytr, k)
+        # PCA basis is DRAW-INVARIANT (plan §3.5-S5: built on the UNPERMUTED train
+        # rows; the permutation applies to the TARGET rows only — the parent's
+        # sanctioned exchangeability variant). Basis reuses batched_pca_project —
+        # itself asserted against the #810 _gram_top_k_pca primitive in the G2
+        # gate, so the twin stays a RIDGE oracle.
+        Ytr_basis = torch.from_numpy(Yv[tr]).double().unsqueeze(0).to(dev)
+        mu_p, comps = batched_pca_project(Ytr_basis, k)
 
         def proj(R, _dev=dev, _mu=mu_p, _comps=comps):
             return (torch.from_numpy(R).double().unsqueeze(0).to(_dev) - _mu) @ _comps.transpose(

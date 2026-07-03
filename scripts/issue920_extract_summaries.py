@@ -51,6 +51,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Shared-VM thread caps (#847): dotenv before torch's import-time pool freeze.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
+
 import torch  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402
 from issue920_common import (  # noqa: E402
@@ -81,10 +87,6 @@ from issue920_common import (  # noqa: E402
     store_dtype,
     write_sentinel,
 )
-
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 logger = logging.getLogger("issue920_extract")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -445,6 +447,17 @@ def g1_gate(blobs: dict[str, dict], assert_pass: bool) -> dict:
             ours, n_ours = _in_range_probe_mean(blob, fam)
             theirs = store["pos_vectors"][pos_names.index(sname)].to(torch.float32)
             n_theirs = int(store["coverage"].get(sname, 0))
+            if ours.shape != theirs.shape:
+                if assert_pass:
+                    raise RuntimeError(
+                        f"[g1-equiv-assert] {ctx_id}/{sname}: shape {tuple(ours.shape)} vs "
+                        f"store {tuple(theirs.shape)} — wrong model/layer config"
+                    )
+                rows[sname] = {
+                    "shape_mismatch": [list(ours.shape), list(theirs.shape)],
+                    "note": "expected on the tiny-model dry smoke",
+                }
+                continue
             cos, rel = _vec_close(ours, theirs)
             rows[sname] = {
                 "cos": round(cos, 6),
