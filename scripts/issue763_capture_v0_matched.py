@@ -219,6 +219,105 @@ def check_batched_serial_equivalence(
     return min_cos
 
 
+# ── `neutral-contrast-and-cofit` round: prompt-side c(C,B) capture (plan §4.1.4) ──
+
+
+def _batched_prompt_mean(
+    model, tokenizer, capture, prompt_texts: list[str], *, batch_size: int
+) -> tuple[torch.Tensor, int]:
+    """Probe-mean of the PROMPT-token mean per layer -> (n_layers, H), n_used.
+
+    Prompt-ONLY forwards (no answer): each row's span is its full non-pad
+    region (the chat-templated system prompt + probe + generation header), so
+    ``c(C,B)[l]`` mirrors ``v0``'s probe-averaged construction on the prompt
+    side. Left-padded batches through the same ``BatchedAnswerSpanCapture``.
+    """
+    pad_id = tokenizer.pad_token_id
+    device = model.device
+    n_layers = capture.n_layers
+    accum = torch.zeros(n_layers, model.config.hidden_size, dtype=torch.float32)
+    n_used = 0
+    encoded = [
+        tokenizer(t, return_tensors="pt", padding=False)["input_ids"][0] for t in prompt_texts
+    ]
+    for start in range(0, len(encoded), batch_size):
+        batch = encoded[start : start + batch_size]
+        max_len = max(s.shape[0] for s in batch)
+        b = len(batch)
+        input_ids = torch.full((b, max_len), pad_id, dtype=torch.long)
+        attn = torch.zeros((b, max_len), dtype=torch.long)
+        spans: list[tuple[int, int]] = []
+        for r, seq in enumerate(batch):
+            pad_left = max_len - seq.shape[0]
+            input_ids[r, pad_left:] = seq
+            attn[r, pad_left:] = 1
+            spans.append((pad_left, max_len))
+        with torch.no_grad():
+            model(input_ids=input_ids.to(device), attention_mask=attn.to(device))
+        for vec in capture.mean_answer_spans(spans):
+            accum += vec
+            n_used += 1
+    if n_used == 0:
+        raise RuntimeError("prompt-span capture: no prompts produced tokens")
+    return (accum / n_used), n_used
+
+
+def _run_prompt_span(args, model, tokenizer, capture, n_layers: int, hidden: int) -> int:
+    """--span prompt: c(C,B) prompt-side context capture -> c0 shards (plan §4.1.4).
+
+    ``c(C,B)[l]`` = mean residual over the PROMPT tokens (chat-templated system
+    prompt + probe), averaged over the behavior's frozen-pool probes — probe-
+    averaged (NOT system-prompt-only) so the construction mirrors ``v0``'s
+    probe-averaged answer-side mean. 50 x (60+60+60+20+20) = 11,000 prompt-only
+    forwards, batched. Writes ``<COFIT_DIR>/c0_shards/c0_<b>.pt`` [n_ctx, L, H].
+    """
+    from issue594_common import load_battery
+    from issue763_common import COFIT_DIR, load_frozen_pool_staged
+
+    _, instances = load_battery()
+    if args.smoke:
+        instances = instances[:3]
+    shard_dir = COFIT_DIR / "c0_shards"
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    c0_meta: dict[str, dict] = {}
+    for behavior in args.behaviors:
+        probes = load_frozen_pool_staged(behavior)["probes"]
+        if args.smoke:
+            probes = probes[:5]
+        rows, ctx_ids = [], []
+        for inst in instances:
+            prompt_texts = [
+                tokenizer.apply_chat_template(
+                    messages_for_instance(inst, probe), tokenize=False, add_generation_prompt=True
+                )
+                for probe in probes
+            ]
+            c0, n_used = _batched_prompt_mean(
+                model, tokenizer, capture, prompt_texts, batch_size=args.batch_size
+            )
+            assert c0.shape == (n_layers, hidden), c0.shape
+            rows.append(c0)
+            ctx_ids.append(inst["id"])
+            c0_meta.setdefault(behavior, {})[inst["id"]] = {"n_probes": n_used}
+        tensor = torch.stack(rows)  # (n_ctx, n_layers, H)
+        torch.save(
+            {"tensor": tensor, "context_ids": ctx_ids, "behavior": behavior, "span": "prompt"},
+            shard_dir / f"c0_{behavior}.pt",
+        )
+        logger.info("[capture:prompt] %s -> c0 shard %s", behavior, tuple(tensor.shape))
+    out = {
+        "n_layers": n_layers,
+        "hidden": hidden,
+        "span": "prompt",
+        "by_behavior": c0_meta,
+        "metadata": reproducibility_metadata({"phase": "capture_context_side"}),
+    }
+    dump_json(out, COFIT_DIR / "c0_matched_by_behavior.json")
+    capture.remove()
+    print(f"[issue763.capture] wrote c0 for {len(c0_meta)} behaviors ({len(instances)} contexts)")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763: matched-probe v0 capture.")
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
@@ -228,6 +327,13 @@ def main() -> int:
     ap.add_argument("--max-answer-tokens", type=int, default=1024)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--check-equivalence", action="store_true")
+    ap.add_argument(
+        "--span",
+        choices=["answer", "prompt"],
+        default="answer",
+        help="answer = the v0 answer-span capture (default); prompt = the round's "
+        "prompt-side c(C,B) capture (plan §4.1.4)",
+    )
     args = ap.parse_args()
 
     device = args.device
@@ -243,6 +349,9 @@ def main() -> int:
         assert hidden == EXPECTED_HIDDEN, f"expected hidden {EXPECTED_HIDDEN}, got {hidden}"
 
     capture = BatchedAnswerSpanCapture(model, n_layers)
+
+    if args.span == "prompt":
+        return _run_prompt_span(args, model, tokenizer, capture, n_layers, hidden)
 
     shard_dir = EVAL_RESULTS_DIR / "v0_shards"
     shard_dir.mkdir(parents=True, exist_ok=True)

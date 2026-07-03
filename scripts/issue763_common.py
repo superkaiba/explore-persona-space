@@ -106,6 +106,29 @@ HF_RAW_COMPLETIONS_PREFIX = f"{HF_PREFIX}/raw_completions"
 HF_ANALYSIS_TENSORS_PREFIX = f"{HF_PREFIX}/analysis_tensors"
 EXPERIMENT_NAME = "issue763_matched_v0"  # for upload_raw_completions_to_data_repo
 
+# ── `neutral-contrast-and-cofit` follow-up round (plans/v7.md) ────────────────
+# Artifacts land under eval_results/issue_763/neutral-contrast-and-cofit/ (git)
+# and issue763_matched_v0/analysis_tensors/{neutral_rollouts, neutral_judge,
+# neutral_rollout_means, c0_shards, pv_directions_v2, cofit_null_matrices}/ +
+# raw_completions/neutral_arm/ (HF) — plan §4.1 / §10.
+COFIT_ROUND = "neutral-contrast-and-cofit"
+COFIT_DIR = EVAL_RESULTS_DIR / COFIT_ROUND
+NEUTRAL_ROLLOUT_DIR = DATA_DIR / "neutral_rollouts"
+NEUTRAL_JUDGE_DIR = DATA_DIR / "neutral_judge"
+NEUTRAL_ROLLOUT_MEANS_DIR = COFIT_DIR / "neutral_rollout_means"
+PV_DIRECTIONS_V2_DIR = COFIT_DIR / "pv_directions_v2"
+C0_SHARD_DIR = COFIT_DIR / "c0_shards"
+COFIT_NULL_MATRIX_DIR = COFIT_DIR / "cofit_null_matrices"
+# Neutral-arm generation budget (plan §11: 20 q × 50 rollouts = 1000/behavior,
+# matching the Phase-1 per-pole budget; temp 1.0 / max_new 256 inherited).
+N_NEUTRAL_ROLLOUTS_PER_QUESTION = 50
+# Neutral keep-floor (plan §4.1.2, pre-registered): expressed as FRACTIONS of the
+# realized rollout pool so the registered absolute values (250 / 25 at the
+# production n=1000) scale onto smoke slices. ≥ NORMAL ⇒ proceed;
+# [HARD, NORMAL) ⇒ proceed flagged pv_thin_sample; < HARD ⇒ r_neutral UNBUILDABLE.
+NEUTRAL_KEEP_FLOOR_NORMAL_FRAC = 0.25  # 250 / 1000
+NEUTRAL_KEEP_FLOOR_HARD_FRAC = 0.025  # 25 / 1000
+
 SENTINEL_SCHEMA_VERSION = 1
 SEED = 763
 
