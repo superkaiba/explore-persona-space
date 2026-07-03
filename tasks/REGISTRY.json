@@ -5773,8 +5773,8 @@
     "885": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/885",
-      "status": "planning",
+      "path": "tasks/approved/885",
+      "status": "approved",
       "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
     },
     "886": {
