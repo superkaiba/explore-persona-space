@@ -132,6 +132,14 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    analysis lane has no cheap RunPod equivalent) — it does NOT fall over
    to RunPod. RunPod CPU pods are on-demand only; a CPU no-capacity miss
    surfaces :class:`RunPodNoCapacityError` → terminal.
+8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
+   (terminal rung + explicit override) translate a GCP-only GPU intent to
+   its nearest same-or-narrower RunPod intent via
+   :data:`RUNPOD_INTENT_FOR_GCP_INTENT` (``capture-7b`` → ``eval``,
+   ``lora`` / ``lora-7b-h100`` → ``lora-7b``); an unmapped GCP GPU intent
+   (``eval-h100``, in :data:`RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS`)
+   fails loud PRE-launch naming the missing map row, and a real translation
+   rides the marker ``extra`` as ``runpod_intent_translation``.
 9. **Markers** — extends the existing ``epm:backend-selected v1`` body
    (per-lane est-starts raw+clamped, chosen lane, fallback chain,
    canonical reason codes, ids). The orchestrator's marker poster is
@@ -176,6 +184,7 @@ from explore_persona_space.backends.base import (
     validate_lane_suffix,
 )
 from explore_persona_space.backends.gcp import (
+    INTENT_TO_MACHINE,
     GcpProvisioningError,
     GcpWorkloadError,
     MachineSpec,
@@ -288,6 +297,80 @@ RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
 }
+
+#: GCP GPU intent -> the RunPod intent the terminal rung provisions (#940).
+#: TOTAL over the gpu_count>0 keys of gcp.INTENT_TO_MACHINE (identity rows
+#: included) so the completeness test
+#: (tests/test_router.py::test_translation_map_total_over_gcp_gpu_intents)
+#: catches a future intent added without deciding its RunPod fate — the exact
+#: #841 failure mode (a `capture-7b` RunPod terminal-rung launch died in
+#: gpu_heuristics.resolve_intent's KeyError, voiding the sanctioned last rung
+#: despite live RunPod capacity). Values MUST be same-or-narrower GPU width
+#: and >= HBM (never widen; pinned by
+#: test_translation_never_widens_gpu_count_and_targets_provisionable).
+#: CPU intents are DELIBERATELY absent — RUNPOD_CPU_INSTANCE_FOR_INTENT
+#: above owns them (#677/#747), byte-identical semantics.
+RUNPOD_INTENT_FOR_GCP_INTENT: dict[str, str] = {
+    # identity rows — intents in BOTH vocabularies (no-op, no marker record)
+    "eval": "eval",  # GCP 1x L4      -> RunPod 1x H100
+    "debug": "debug",  # GCP 1x L4      -> RunPod 1x H100
+    "lora-7b": "lora-7b",  # GCP 1x A100-80 -> RunPod 1x H100
+    "ft-7b": "ft-7b",  # GCP 4x A100-80 -> RunPod 4x H100
+    "sweep-8g-a100": "sweep-8g-a100",  # 8x A100-80 -> 8x A100 (same width)
+    "sweep-8g-h100": "sweep-8g-h100",  # 8x H100    -> 8x H100
+    # GCP-only intents — nearest same-or-narrower RunPod intent
+    "lora": "lora-7b",  # GCP alias of lora-7b (1x A100-80 -> 1x H100-80)
+    "capture-7b": "eval",  # #752 activation-capture EVAL path: 1x A100-80
+    # forward-pass -> 1x H100-80 (same width, HBM 80 >= 80)
+    "lora-7b-h100": "lora-7b",  # 1x H100-80 -> 1x H100-80 (identical hardware)
+}
+
+#: GCP GPU intents DELIBERATELY not RunPod-servable via intent translation
+#: (#940). eval-h100 (2x H100, TP=2): no same-width RunPod intent exists, and
+#: narrowing 2->1 would silently break a 2-GPU-sharded --workload-cmd
+#: mid-run on a paid pod — worse than failing loud at dispatch with a
+#: message naming this row. Widening (e.g. to an 8x sweep intent) is
+#: banned outright.
+RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS: frozenset[str] = frozenset({"eval-h100"})
+
+
+def _translated_runpod_intent(spec: RunSpec) -> tuple[str, dict[str, str] | None]:
+    """Resolve spec.intent to a RunPod-provisionable intent (#940).
+
+    Returns ``(runpod_intent, translation_record)`` where
+    ``translation_record`` is ``{"from": ..., "to": ...}`` for a REAL
+    translation, ``None`` for identity rows and pass-through intents.
+    Raises :class:`ValueError` — naming the missing
+    :data:`RUNPOD_INTENT_FOR_GCP_INTENT` row — for a GCP-mapped GPU intent
+    with no row (the ``eval-h100`` / future-intent case). CPU intents
+    (``gpu_count == 0`` in ``gcp.INTENT_TO_MACHINE``) and non-GCP intents
+    (``ft-70b``, ``inf-70b``, custom) pass through verbatim: the #677/#747
+    CPU semantics and the RunPod-native vocabulary are untouched.
+
+    Uses a direct ``INTENT_TO_MACHINE.get(...)`` — NOT
+    :func:`gcp.machine_for_intent` — so the helper (a) never raises gcp.py's
+    unmapped-intent ``ValueError`` for RunPod-only intents like ``ft-70b``
+    under explicit override, and (b) is immune to
+    ``spec.extra["machine_spec_override"]`` rung threading.
+    """
+    intent = spec.intent
+    target = RUNPOD_INTENT_FOR_GCP_INTENT.get(intent)
+    if target is not None:
+        if target == intent:
+            return intent, None  # identity: byte-identical behavior
+        return target, {"from": intent, "to": target}
+    gcp_machine = INTENT_TO_MACHINE.get(intent)
+    if gcp_machine is not None and gcp_machine.gpu_count > 0:
+        raise ValueError(
+            f"intent {intent!r} is GCP-mapped but has no RunPod translation: "
+            f"add a same-or-narrower row to backends/router.py "
+            f"RUNPOD_INTENT_FOR_GCP_INTENT (or list it in "
+            f"RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS and keep it off RunPod). "
+            f"Deliberate gaps: {sorted(RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)}."
+        )
+    return intent, None  # CPU / RunPod-native / custom: verbatim
+
+
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
 #: (a :class:`gcp.GcpWorkloadError`, not a capacity/headroom miss) — the
 #: deliberate reversal of the historical "GCP workload failure surfaces
@@ -1780,6 +1863,27 @@ def _override_runpod(
     cross-issue) so contention is bounded to the racing invocations we
     are deliberately serializing.
     """
+    # #940: translate a GCP-only GPU intent to its RunPod-provisionable
+    # equivalent BEFORE the launch (and BEFORE the per-issue flock, so a
+    # translation ValueError never holds it). The helper's ValueError
+    # propagates raw: an explicit `backend: runpod` pin of an unmapped
+    # GCP-only intent (eval-h100) is a CONFIG error — fail loud pre-launch
+    # with the map-row-naming message (same class as gcp.machine_for_intent's
+    # ValueError on a gcp override). RunPod-native / RunPod-only intents
+    # (lora-7b, ft-70b, custom) hit the verbatim branch — byte-identical.
+    runpod_intent, intent_translation = _translated_runpod_intent(spec)
+    if intent_translation is not None:
+        logger.warning(
+            "route: explicit runpod override translating GCP-only intent %r -> %r (issue %d).",
+            spec.intent,
+            runpod_intent,
+            spec.issue,
+        )
+        spec = replace(
+            spec,
+            intent=runpod_intent,
+            extra={**(spec.extra or {}), "runpod_intent_translation": intent_translation},
+        )
     # Hold the per-issue flock across launch + persist so two concurrent
     # route() calls cannot both decide "no live job, submit fresh" and
     # provision twice.
@@ -1827,6 +1931,9 @@ def _override_runpod(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
+        # #940: the GCP-only -> RunPod intent translation record, when one
+        # applied, so the override marker records the intent swap too.
+        extra=({"runpod_intent_translation": intent_translation} if intent_translation else {}),
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -2286,6 +2393,10 @@ def _runpod_terminal_rung(
     re-raise as :class:`NoComputeAvailableError` with the full attempt
     trail — the terminal "truly no compute anywhere" outcome, preserving a
     typed terminal for the orchestrator's failure classifier.
+
+    #940: a GCP-only GPU intent is translated to its RunPod-provisionable
+    equivalent (:func:`_translated_runpod_intent`) before the launch, so the
+    rung actually fires instead of dying in ``gpu_heuristics.resolve_intent``.
     """
     # CPU-intent guard (#677, RELAXED for mapped intents #747). RunPod's GPU
     # mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 adds a RunPod
@@ -2320,6 +2431,49 @@ def _runpod_terminal_rung(
             f"has no CPU fallback lane for this intent. residual_gap: {residual_gap}",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
+    # #940: translate a GCP-only GPU intent (capture-7b / lora / lora-7b-h100)
+    # to its RunPod-provisionable equivalent BEFORE building runpod_spec —
+    # pod_lifecycle's gpu_heuristics.resolve_intent KeyErrors on a GCP-only
+    # intent (provision exit 1 -> NoComputeAvailableError), which is what
+    # voided the sanctioned last rung on #841 despite live RunPod capacity.
+    # An unmapped GCP GPU intent (eval-h100) fails loud HERE, pre-launch and
+    # BEFORE the per-issue flock, naming the missing map row; the failure
+    # reuses the existing runpod_fallback_failed terminal shape (same
+    # classifier contract as a failed RunPod launch).
+    try:
+        runpod_intent, intent_translation = _translated_runpod_intent(spec)
+    except ValueError as exc:
+        attempts.append(
+            RouteAttempt(
+                kind="runpod",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="runpod_fallback_failed",
+                detail=f"runpod terminal fallback UNSERVABLE ({exc})",
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="runpod",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            "every GCP rung + free lane failed AND the RunPod terminal "
+            f"fallback cannot serve this intent ({exc})",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        ) from exc
+    if intent_translation is not None:
+        logger.warning(
+            "route: translating GCP-only intent %r -> RunPod intent %r for the "
+            "terminal rung (issue %d).",
+            spec.intent,
+            runpod_intent,
+            spec.issue,
+        )
     if reason in (
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
         ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
@@ -2348,7 +2502,15 @@ def _runpod_terminal_rung(
     runpod_spec = replace(
         spec,
         backend="runpod",
-        extra={**(spec.extra or {}), "runpod_fallback_residual_gap": residual_gap},
+        # #940: the translated intent (identity for RunPod-native intents) so
+        # everything downstream — launch argv, handle, lease, wedge
+        # re-provision — is self-consistently RunPod-provisionable.
+        intent=runpod_intent,
+        extra={
+            **(spec.extra or {}),
+            "runpod_fallback_residual_gap": residual_gap,
+            **({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+        },
     )
     with store.transaction(spec.issue) as (lease, write):
         # M3b (#669): in-flock re-check of the GCP->RunPod failover idempotency
@@ -2456,6 +2618,10 @@ def _runpod_terminal_rung(
         elapsed_seconds=now_fn() - started_at,
         extra={
             "runpod_fallback_residual_gap": residual_gap,
+            # #940: the GCP-only -> RunPod intent translation record, when one
+            # applied, so the marker trail shows the intent swap (additive
+            # extra key per the runpod_fallback_residual_gap precedent).
+            **({"runpod_intent_translation": intent_translation} if intent_translation else {}),
             # The GcpWorkloadError evidence (task #658) so the failover
             # marker carries the original crash signal for diagnosis.
             **({"gcp_workload_evidence": failover_evidence} if failover_evidence else {}),
@@ -4763,6 +4929,8 @@ __all__ = [
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
     "RUNPOD_CPU_INSTANCE_FOR_INTENT",
+    "RUNPOD_INTENT_FOR_GCP_INTENT",
+    "RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS",
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
     "GcpAttemptCapExceededError",

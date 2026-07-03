@@ -600,7 +600,13 @@ def _fallback_to_runpod(
     elapsed_seconds: float,
     extra: dict[str, Any],
 ) -> BackendDecision:
-    """Launch RunPod after a SLURM fall-back; record the reason + extras."""
+    """Launch RunPod after a SLURM fall-back; record the reason + extras.
+
+    NOTE (#940, legacy/test-only path): this launches ``spec.intent``
+    VERBATIM — a revival of ``select_backend`` for GCP-only intents must
+    route through ``router._translated_runpod_intent`` first, or the #841
+    ``gpu_heuristics.resolve_intent`` KeyError hole re-opens here.
+    """
     if not _autonomous_session():
         logger.warning(
             "Falling back to RunPod for requested backend=%s cluster=%s (%s).",
