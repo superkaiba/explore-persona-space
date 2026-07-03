@@ -334,6 +334,12 @@ New v3-only checks (PASS vacuously on v2/legacy):
   per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
+  (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
+  Results, `## Methodology` excluded; its round count reads
+  `epm:same-issue-followup-run` markers and/or the footer round clauses,
+  max-reconciled — the Rounds-table read binds v3 only. It needs the
+  `issue` number for the events leg, so it is dispatched separately in
+  `verify_text`, outside CHECKS; #921.)
 - **check 21** (`check_body_params_subset_of_doc`): the body's
   load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
   methodology doc §2 complete table. Binds when the doc path is supplied
@@ -6186,6 +6192,109 @@ def _count_extra_followup_rounds(body: str) -> int:
     return max(0, data_rows - 1)
 
 
+# One clause per FOLDED same-issue follow-up round in the v4 footer
+# (SPEC.md § `**Context:**` row: rounds name each round's `followup_label`;
+# corpus forms: "same-issue follow-up round `<label>`" (#763/#811/#667) and
+# the sentence-initial numbered variant "Same-issue follow-up round 2
+# (label: `<label>`, ...)" (#685 footer) — hence IGNORECASE + the optional
+# `<n> (label: ` infix. The `(?!s)` lookahead keeps generic plural prose
+# ("follow-up rounds also name...") out of the count; an unlabeled singular
+# clause still counts 1.
+_V4_FOOTER_ROUND_CLAUSE_RE = re.compile(
+    r"same-issue follow-up round(?!s)"
+    r"(?:\s+(?:\d+\s*\(label:\s*)?`(?P<label>[^`\s]+)`)?",
+    re.IGNORECASE,
+)
+
+
+def _followup_run_marker_rounds(issue: int) -> int:
+    """Count REAL folded same-issue follow-up rounds off the task's
+    events.jsonl `epm:same-issue-followup-run` markers: distinct
+    `followup_label`s (one run marker closes a label's round) plus one per
+    unlabeled run marker, EXCLUDING markers whose `outcome` begins
+    `retroactive-close` — bookkeeping closes of ghost labels that folded
+    no new prose (they are likewise excluded from the /issue round caps,
+    SKILL.md). Returns 0 when the task id does not resolve (a plain
+    FileNotFoundError — e.g. a fixture body under a numeric tmp dir); a
+    `StaleTaskPathError` (registry corruption, a FileNotFoundError
+    SUBCLASS) still propagates — that is real corruption the gate should
+    surface, unlike an unknown id."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        FOLLOWUP_RUN_KIND,
+        StaleTaskPathError,
+        list_events,
+        parse_followup_note_field,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels: set[str] = set()
+    unlabeled = 0
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        note = ev.get("note") or ""
+        # `parse_followup_note_field` matches only LINE-LEADING fields, but
+        # the corpus run-marker notes are SINGLE-LINE (all fields space-
+        # separated; #763's `outcome:` is mid-line and parses to None).
+        # Mid-line regex fallback so a single-line retro-close marker
+        # cannot evade the exclusion.
+        outcome = parse_followup_note_field(note, "outcome") or ""
+        if not outcome:
+            m = re.search(r"(?:^|\s)outcome:\s*(\S+)", note)
+            outcome = m.group(1) if m else ""
+        if outcome.startswith("retroactive-close"):
+            continue
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            labels.add(label)
+        else:
+            unlabeled += 1
+    return len(labels) + unlabeled
+
+
+def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
+    """v4 twin of `_count_extra_followup_rounds` (whose `## What I ran`
+    Rounds-table read only binds v3 — v4 bodies always scored rounds=0,
+    incident #763/#921). Two signals, max-reconciled — the budget is
+    WARN-only and monotone-up, and each signal under-counts in a known
+    case (footer: a body omitting the SPEC round clause, e.g. #685;
+    events: a legacy pre-marker round whose prose IS folded, e.g. #811):
+
+    - footer: `same-issue follow-up round [`label`]` clauses inside the
+      `**Repro:**`/`**Context:**` footer (distinct backticked labels +
+      one per unlabeled singular clause);
+    - events (when `issue` is known): non-retroactive-close
+      `epm:same-issue-followup-run` markers via
+      `_followup_run_marker_rounds`.
+
+    Returns `(count, source)`; `source` is one of `none` / `footer` /
+    `events` / `footer+events` and names the winning signal for the WARN
+    message. Bare-file residual: in `--body-stdin` / bare `--file` mode
+    (no issue id) the events leg is unavailable, so a footer-less
+    multi-round body scores 0 and keeps the base budget."""
+    footer = _v4_footer_text(body) or ""
+    labels: set[str] = set()
+    unlabeled = 0
+    for m in _V4_FOOTER_ROUND_CLAUSE_RE.finditer(footer):
+        if m.group("label"):
+            labels.add(m.group("label"))
+        else:
+            unlabeled += 1
+    footer_n = len(labels) + unlabeled
+    events_n = _followup_run_marker_rounds(issue) if issue is not None else 0
+    count = max(footer_n, events_n)
+    if count == 0:
+        return 0, "none"
+    if footer_n == events_n:
+        return count, "footer+events"
+    return count, "footer" if footer_n > events_n else "events"
+
+
 def _count_overlong_takeaways_bullets(takeaways: str) -> int:
     """Count top-level Takeaways bullets over the per-bullet word cap
     (fence-aware). Helper for check 20."""
@@ -6413,7 +6522,7 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
     )
 
 
-def check_v4_word_caps(body: str) -> CheckResult:
+def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
 
     - Per-Takeaways-bullet ≤30 words (WARN).
@@ -6424,9 +6533,12 @@ def check_v4_word_caps(body: str) -> CheckResult:
       EXCLUDED — it carries the absorbed methodology-doc content) ≤800 +
       250 per live follow-up round beyond the first (WARN-only).
 
-    The Takeaways 3-6 bullet COUNT is owned by `check_v4_structure`. A FAIL
-    here fires ONLY on the per-result ≥180-word hard cap. PASSes vacuously
-    on v3 / v2 / legacy bodies.
+    The per-extra-round scaling counts folded rounds from the task's
+    non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
+    when known) and/or the footer's round clauses (max), NOT the v3
+    Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
+    `check_v4_structure`. A FAIL here fires ONLY on the per-result
+    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -6462,7 +6574,7 @@ def check_v4_word_caps(body: str) -> CheckResult:
     # Total content prose (WARN-only): Takeaways + Goal + Results. The
     # `## Methodology` section is EXCLUDED — it absorbed the entire former
     # standalone methodology doc and is reference, not skim prose.
-    extra_rounds = _count_extra_followup_rounds(body)
+    extra_rounds, rounds_src = _count_extra_followup_rounds_v4(body, issue)
     total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
     total_prose = (
         _prose_words(takeaways)
@@ -6473,8 +6585,8 @@ def check_v4_word_caps(body: str) -> CheckResult:
         warns.append(
             f"total content prose is {total_prose} words (budget {total_budget}: "
             f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
-            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round; "
-            "Methodology excluded)"
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round "
+            f"[{rounds_src}]; Methodology excluded)"
         )
 
     if fails:
@@ -7069,9 +7181,11 @@ CHECKS = [
     check_data_subset_disclosure,  # check 19 (v3)
     check_data_unwrapped_example_table,  # check 19b (v3, WARN)
     check_v3_word_caps,  # check 20 (v3)
-    # v4-gated checks (PASS vacuously on non-v4 bodies):
+    # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
+    # `check_v4_word_caps` is NOT here — it needs the issue number for the
+    # events-based folded-round budget scaling, so it is dispatched
+    # separately in `verify_text` (#921):
     check_v4_methodology_shape,  # check 18 (v4)
-    check_v4_word_caps,  # check 20 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
     check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs in standalone sections
     # generation-agnostic checks (v2 AND v3 AND v4):
@@ -7229,6 +7343,12 @@ def verify_text(
     # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
     # whenever no doc is supplied (gate-timing — see the check docstring).
     results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
+    # Check 20 (v4) word caps needs the issue number for the events-based
+    # folded-round budget scaling (#921; the v3 twin stays body-only inside
+    # CHECKS), so it is dispatched separately like the other
+    # context-needing checks. PASS-skip on non-v4 bodies, and the events
+    # leg degrades to the footer-only read when `issue` is None/unknown.
+    results.append(check_v4_word_caps(body, issue=issue))
     # Check (#732, judge-API-error denominator) needs the issue number AND
     # the eval-root / body-source-path resolution legs (the body-only CHECKS
     # list carries none of these), so it also lives outside CHECKS. Graceful
