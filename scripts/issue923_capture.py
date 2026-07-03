@@ -889,7 +889,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
                 assert cmin > 0.99, f"F_ctx identity check failed for {inst['id']}: {cmin}"
                 if cmin <= 0.999:
                     logger.warning(
-                        "[fctx-identity] %s min_cos=%.6f in (0.99, 0.999] — bf16 batching numerics, recorded",
+                        "[fctx-identity] %s min_cos=%.6f in (0.99, 0.999] — bf16 numerics, recorded",
                         inst["id"], cmin,
                     )
             run_meta["fctx_identity_check"] = id_cos
