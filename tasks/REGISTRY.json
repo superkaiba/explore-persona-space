@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 913,
+  "highest_id": 914,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6000,6 +6000,14 @@
       "path": "tasks/proposed/913",
       "status": "proposed",
       "title": "Fix run_823.py phase-5 length-R2 diagnostic: valid_idx slice + un-swallow bare except"
+    },
+    "914": {
+      "goal": "Determine whether the finetuned per-context map M+ should be measured on the finetuned model's own generations by regenerating answers from the finetuned checkpoints on the same held-out LMSYS contexts, refitting M+ on those answer profiles, and testing whether its fit and read-out geometry differ from the current pre-finetuned-response measurement.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/on_hold/914",
+      "status": "on_hold",
+      "title": "Measure the finetuned map M+ on the finetuned model's own generations (parked: duplicates #833)"
     },
     "92": {
       "has_clean_result": false,
