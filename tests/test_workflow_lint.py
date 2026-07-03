@@ -49,6 +49,7 @@ from workflow_lint import (  # noqa: E402
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_registry,
+    check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_script_references,
@@ -2641,6 +2642,81 @@ def test_workflow_lint_check_no_workflow_improver_spawn_cli_exits_zero():
     result = _run("--check-no-workflow-improver-spawn")
     assert result.returncode == 0, (
         f"workflow_lint --check-no-workflow-improver-spawn failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─── --check-no-literal-round-marker-versions (#917) ────────────────────────
+
+
+def test_no_literal_round_marker_versions_live_tree():
+    """No checked-in workflow prose instructs a literal v1 for a
+    round-versioned marker kind (#917 — the #825/#389 collision class).
+    The E1-E7 sweep of #917 established zero hits at introduction."""
+    errors = check_no_literal_round_marker_versions()
+    assert errors == [], (
+        "literal round-marker version instruction found in the workflow "
+        "surface (rephrase to `v<n>` / max+1, #917):\n" + "\n".join(errors)
+    )
+
+
+def test_check_no_literal_round_marker_versions_flags_literal_v1(tmp_path):
+    """A literal `epm:results v1` posting instruction in an in-scope file
+    (here a rule .md) IS flagged — the guard actually trips."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text("On completion, post `epm:results v1` on the task.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "max+1" in errors[0]
+    assert "stray.md:1" in errors[0]
+
+
+def test_check_no_literal_round_marker_versions_wrapped_pair_trips(tmp_path):
+    """A line-wrapped kind/version pair still trips — the scan is whole-file,
+    so the `\\s+` between kind and `v1` may span a newline."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "a.md").write_text("then post `epm:proposed-tests\n  v1` and EXIT.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_no_literal_round_marker_versions_no_false_positives(tmp_path):
+    """`v<n>`, `v12`, and a genuinely-once kind (`epm:failure v1`) never
+    match — the pattern is restricted to the 3 round-versioned kinds and
+    `v1` is word-bounded."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "ok.md").write_text(
+        "post `epm:results v<n>` (max+1 per the rule); the legitimate\n"
+        "`epm:experiment-implementation v12` round-12 example; and\n"
+        "`epm:failure v1` is a genuinely-once marker, out of scope.\n"
+    )
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_no_literal_round_marker_versions_excluded_paths_pass(tmp_path):
+    """A hit under an EXCLUDED path (.claude/plans/, .claude/agent-memory/)
+    passes — pins the exclusion set (archives may legitimately quote the
+    incident text; a mis-enumerated exclusion would false-FAIL the default
+    lint bundle on archive text)."""
+    plans = tmp_path / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "issue-825.md").write_text("the brief said: post `epm:results v1` (historical)\n")
+    mem = tmp_path / ".claude" / "agent-memory" / "implementer"
+    mem.mkdir(parents=True)
+    (mem / "note.md").write_text("brief instructed `epm:experiment-implementation v1`\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_workflow_lint_check_no_literal_round_marker_versions_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-no-literal-round-marker-versions")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-no-literal-round-marker-versions failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 

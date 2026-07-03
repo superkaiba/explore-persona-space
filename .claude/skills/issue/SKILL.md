@@ -502,7 +502,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     the open concern_id); do NOT state the Decision and then end the turn.
   <!-- gate: gates.tdd_gate -->
   - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
-    the implementer posts `epm:proposed-tests v1` and exits; the resume
+    the implementer posts `epm:proposed-tests v<n>` and exits; the resume
     signal is `epm:approve-tests` posted via `task.py post-marker`). In
     autonomous mode, auto-post `epm:approve-tests` IF the proposed-tests
     body lists ≥1 test per acceptance criterion from the original task
@@ -1903,6 +1903,18 @@ Brief passed to the implementer:
   `experiment-implementer.md` § "Deferred production-path TODOs are
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
+- **Marker-version discipline — a brief NEVER instructs a literal marker
+  version.** Any brief line about posting `epm:experiment-implementation` /
+  `epm:results` / `epm:proposed-tests` says: "post at the next version —
+  read `events.jsonl` for the highest existing version of the kind and use
+  max+1, or omit `--version` (the CLI derives max+1)". Never "post as `v1`"
+  or any literal `v<k>`: on a fresh task max+1 IS 1, but on a follow-up
+  round / TDD resume / crash-recovery re-post prior rows exist, and an
+  explicit `--version` beats the CLI's safe default (incident #825: a
+  follow-up-round brief instructed a literal `v1` for the implementation
+  marker on a task already at v6 — the #389 collision class). See
+  `experiment-implementer.md` / `implementer.md` § Posting review-round
+  markers.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
@@ -1916,7 +1928,7 @@ Brief passed to the implementer:
   (a) the approved plan body contains a literal `### TDD: yes` line, OR
   (b) the task body / latest user comment in `comments.jsonl` contains
   `request-tdd`. When `tdd_mode=true`, the implementer writes tests
-  first, posts them as `epm:proposed-tests v1`, and EXITs without writing
+  first, posts them as `epm:proposed-tests v<n>` (max+1), and EXITs without writing
   implementation. This skill then parks at `running` (implementing
   sub-phase) and waits — see Resume semantics below: an `approve-tests`
   marker posted via `task.py post-marker <N> epm:approve-tests` **after**
@@ -3325,7 +3337,7 @@ session may have finished the run while this session was mid-review):
    dispatch; re-derive scope from the markers (the run may already be
    done) or re-provision via Step 6b.
 2. **Run still pending.** `uv run python scripts/task.py latest-marker
-   <N>` + the recent `events.jsonl` tail: if `epm:results v1` +
+   <N>` + the recent `events.jsonl` tail: if `epm:results v<n>` +
    `epm:upload-verification PASS` (or `epm:pod-terminated v1`) postdate
    the failure being recovered, the (re)launch is STALE — the work
    already completed. Do not dispatch; reduce the brief to the genuinely
@@ -4151,9 +4163,9 @@ sources contribute to `running`-phase progress:
 - **Entry script on the pod**: writes `[phase=done]` to its log on
   graceful completion AND writes a JSON sentinel file at
   `/workspace/logs/issue-<N>-results.json` containing the
-  `epm:results v1` payload. The orchestrator's polling-loop terminal
+  `epm:results` payload. The orchestrator's polling-loop terminal
   tick (Step 6d.2) reads the sentinel on its next poll and posts
-  `epm:results v1` from the local VM via `task.py post-marker`. The
+  the `epm:results` marker from the local VM via `task.py post-marker`. The
   pod NEVER calls `task.py` directly — enforced by
   `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
   "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
@@ -4193,7 +4205,7 @@ sources contribute to `running`-phase progress:
 
   **Orchestrator-composed fallback.** When the driver emits only
   granular per-cell / per-shard sentinels (no single results sentinel)
-  and the orchestrator composes the `epm:results v1` payload itself
+  and the orchestrator composes the `epm:results` payload itself
   from the drained pieces, the composed payload obeys the SAME contract
   above — in particular the `reproducibility_card` structured-field
   requirement. Composing the card's adapter / WandB info as prose is
@@ -6761,7 +6773,12 @@ orchestrators driving one round is the #778 root cause.
      `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and park at `plan_pending` over
      the cap; interactive sessions ask.
    - `experiment-implementer` + `code-reviewer` if the diff needs code
-     changes (same ensemble shape as Step 5).
+     changes (same ensemble shape as Step 5). The round's implementer brief
+     follows the Step 4b brief contract INCLUDING its marker-version-
+     discipline bullet — on a follow-up round prior
+     `epm:experiment-implementation` rows ALWAYS exist, so a brief
+     instructing a literal `v1` reproduces the #825 collision; the brief
+     defers to max+1 (or tells the implementer to omit `--version`).
    - Fresh compute dispatch on the SAME issue, through the slice-6
      router exactly like the parent run: read the task's `backend:`
      frontmatter and run `dispatch_issue.py launch --issue <N>
@@ -8118,7 +8135,7 @@ dedicated "working" statuses):
 | `plan_pending` | `epm:plan` exists | awaiting user approval | show plan path, EXIT |
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
-| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
+| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation` at the next version (max+1 per § Posting review-round markers; omit `--version` and the CLI derives it) as normal |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |

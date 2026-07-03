@@ -69,7 +69,7 @@ Multi-step workflows (`/issue`, `/adversarial-planner`) MUST auto-continue excep
 6. `awaiting_promotion` — clean-result promotion. User runs `task.py promote <N> useful|not-useful`. **User-only:** no automation may flip `runs.classification`. (The worktree auto-merges to `main` the instant the task reaches this state — Step 9b — independent of promotion.)
 
 *Conditional gates:*
-7. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`.
+7. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v<n>`, EXITs awaiting `epm:approve-tests v1`.
 8. Goal-refinement (Step 1 clarifier OR Phase 1 planner) — surface the sharper Goal via `AskUserQuestion`; on agreement run `task.py set-goal <N> "..." --by clarifier|planner` + post `epm:goal-updated v1`. No other agent may propose Goal changes.
 
 Outside these gates, NEVER ask "should I continue". When auto-continuing past a non-obvious decision, STATE the assumption (`Assumption: ...`). Reviewers reject PRs that introduce additional pauses.

@@ -665,8 +665,8 @@ issue branch are free (the branch merges via Step 10d's guarded procedure).
 If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
 
 1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
-2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v1 -->` on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
-3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation v1` and proceed to code-review.
+2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v<n> -->` (max+1 per § Posting review-round markers) on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
+3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation` marker at the next version (max+1 per § Posting review-round markers; v1 only when the task has no prior implementation rows) and proceed to code-review.
 
 If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
 
@@ -864,7 +864,21 @@ and `.claude/skills/issue/SKILL.md` Step 7.
 
 ## Posting review-round markers
 
-Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implementation`, `epm:proposed-tests`), FIRST read `events.jsonl` for the highest existing `version` of that marker key, then pass `--version <max+1>`. `task.py post-marker` defaults to `--version 1` and does NOT auto-increment — a duplicate version silently breaks review-round detection (incident #389: a round-2 marker posted as `version: 1` collided with round-1).
+Before posting ANY marker of a kind that may already have rows on this task
+(`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests` — a
+follow-up round, a TDD resume, a crash-recovery re-post, and a revision round
+ALL count, not just round 2/3 of your own review loop), FIRST read
+`events.jsonl` for the highest existing `version` of that kind and post at
+max+1: omit `--version` (the CLI derives `max(existing)+1` per kind — the
+post-#480 default) or pass `--version <max+1>` explicitly (required for
+multi-part posts: compute max+1 ONCE before part 1; every part carries that
+SAME version — never a fresh max per part). An EXPLICIT `--version` beats
+the safe default — NEVER take a literal version from a brief or template;
+this rule overrides any brief that says "post as v1" (incident #389: a
+round-2 marker posted as `version: 1` collided with round-1; incident #825: a
+follow-up-round brief said v1 on a task at v6 and the explicit `--version 1`
+collided). A duplicate version silently breaks review-round detection
+(highest-version-wins resume).
 
 ---
 
@@ -888,7 +902,7 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   round posts `epm:experiment-implementation v<n>` and EXITs; an
   unrecoverable round posts `epm:failure v1` with `failure_class:
   code|infra` and EXITs; the TDD proposed-tests step posts
-  `epm:proposed-tests v1` and EXITs (the orchestrator handles the
+  `epm:proposed-tests v<n>` and EXITs (the orchestrator handles the
   resume signal). The `/issue` SKILL.md orchestrator owns ALL routing
   for both Interactive mode and `EPM_AUTONOMOUS_SESSION=1` — including
   TDD approval (gate id 8), compute-deviation resolution (id 12),
