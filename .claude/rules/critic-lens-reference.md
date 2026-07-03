@@ -638,6 +638,33 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     here); it lives in this lens because power raises originate here. Not a REVISE-generator by
     itself — it is an obligation ON your own recommendations.
 
+13. **OOD generalization folds (group-structured held-out predictive DVs).** If any DV the plan
+    reports is a held-out predictive statistic (reconstruction R² / skill, read-out ρ, predictor
+    accuracy — any "held-out" / "cross-validated" number) over a sample with known GROUP structure
+    (context/prompt families, genres, persona panels, behavior classes, seeds sharing a template),
+    verify §6 names the grouping axes AND registers at least one GROUP-level held-out fold
+    (leave-one-family-out / leave-one-genre-out / leave-one-persona-out, or a corpus/genre
+    transfer arm — fit on corpus A, evaluate on corpus B), with every headline labeled by its
+    fold, per planner.md §6 "OOD generalization folds" and
+    `.claude/rules/ood-generalization-folds.md`. REVISE when the concrete pattern holds: the DV is
+    held-out-predictive, the sample has a nameable group axis, and the plan registers ONLY
+    pointwise LOO/LOCO with no explicit iid argument. Conclusion-changing because pointwise LOO
+    trains on same-family siblings of every test point — it measures within-family interpolation,
+    not generalization, and can REORDER the headline: #810's LOCO sweep said max-pool was the best
+    answer-side summary (0.826 vs mean 0.800) and the trained-ridge read-out reached ρ ≈ 0.909;
+    the 7-fold leave-one-FAMILY-out re-read reordered the ranking (mean 0.804 ≥ turn_nl 0.791 >
+    max-pool 0.760 at LOCO-best layers) and collapsed the read-out to ρ ≈ 0.285 — both headline
+    claims were within-family fold-artifacts. Interactions: any max/argmax over a free axis INSIDE
+    a group-fold headline inherits item 11's selection-symmetric null with the null computed under
+    the SAME fold structure (`.claude/rules/ood-generalization-folds.md` point 4); and group-level
+    n is the real n for item 4's uninterpretable-N read (G quasi-independent test units — 7 in
+    #810 — not n points). Not a REVISE when: no DV is a held-out predictive statistic (the plan's
+    §6 "N/A — no held-out predictive DV" satisfies this item); the plan argues genuine iid
+    sampling — no nameable group axis — as an explicit positive claim; or a group-level fold /
+    transfer arm is already registered with fold-labeled headlines. Pointwise LOO retained
+    ALONGSIDE the group fold is fine (it upper-bounds within-distribution skill); pointwise-ONLY
+    is the defect.
+
 ### Alternative Explanations lens
 
 1. For each predicted positive result, name the simplest alternative explanation that doesn't
