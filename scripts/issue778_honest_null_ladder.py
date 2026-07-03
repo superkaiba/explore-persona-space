@@ -1911,8 +1911,12 @@ def _w2_check(
         return {"status": "skipped", "reason": f"committed file missing: {committed_path.name}"}
     with open(committed_path) as f:
         committed = json.load(f)
-    key = "finetune" if setting == "finetune" else f"monitoring_{regime}"
-    nulls = committed.get(key, {}).get("nulls", {})
+    # Committed layout: the finetune file is FLAT (SettingResult.to_json at top
+    # level); the monitoring files nest under monitoring_{overall,within}.
+    if setting == "finetune":
+        nulls = committed.get("nulls", {})
+    else:
+        nulls = committed.get(f"monitoring_{regime}", {}).get("nulls", {})
     kind = {"orig_randnorm": "randnorm", "orig_perm": "perm"}[fam]
     node = nulls.get(kind)
     if node is None:
