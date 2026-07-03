@@ -46,19 +46,20 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
-# DOTENV_LINT_EXEMPT: analysis-phase script; shell exports cover pod/GCE/SLURM.
-from dotenv import load_dotenv
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+# Project wrapper (NOT bare dotenv): robust .env load + HF-upload accelerators +
+# the shared-VM thread caps (#847) — called BEFORE numpy/torch freeze their pools.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
 load_dotenv(str(PROJECT_ROOT / ".env"))
 
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     MLPGroup,

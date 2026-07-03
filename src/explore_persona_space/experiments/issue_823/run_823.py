@@ -35,12 +35,12 @@ import sys
 import time
 from typing import Any
 
-import numpy as np
-import torch
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

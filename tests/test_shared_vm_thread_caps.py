@@ -237,9 +237,6 @@ GRANDFATHERED_895: dict[str, str] = {
     "scripts/issue779_arm_headline_summaries.py": "no-dotenv",
     "scripts/issue779_capture_answer_summaries.py": "import-order",
     "scripts/issue779_edges.py": "no-dotenv",
-    "scripts/issue779_heldout_recon_scatter.py": "import-order",
-    "scripts/issue779_identity_baseline.py": "no-dotenv",
-    "scripts/issue779_layer_sweep.py": "no-dotenv",
     # END GENERATED
 }
 

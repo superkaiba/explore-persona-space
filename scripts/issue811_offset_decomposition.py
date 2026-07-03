@@ -60,8 +60,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -76,6 +74,7 @@ load_dotenv()
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
+import numpy as np  # noqa: E402
 from issue722_bootstrap import clustered_bootstrap_scalar  # noqa: E402
 from issue811_fit import HEADLINE_BEHAVIORS, STORE_PREFIX, SUMMARIES, SWEEP_LAYERS  # noqa: E402
 
