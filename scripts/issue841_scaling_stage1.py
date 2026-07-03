@@ -30,6 +30,7 @@ FULL win-count/paired-delta/BH/npz path end-to-end on CPU.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -74,37 +75,48 @@ def _resolve_device(requested: str) -> str:
 # ── paired bootstrap vs the anchor (p-value-augmented mirror of #779's) ──────────
 
 
-def paired_delta_vs_anchor(cx_n, cx_4k, cy, *, n_boot, seed) -> dict:
-    """Within-condition r delta (transported@n − transported@4k) + CI + one-sided p.
+# ── vectorized bootstrap (EXACT equivalent of #779's per-draw loop) ───────────────
+# The condition-resampling bootstrap re-runs within_condition_pearson per draw, at
+# ~9.6s/call on the shared VM (a Python loop over conditions × n_boot); the
+# class×n multiplication of the scaling curve makes that battery a ~15h CPU job.
+# But within_condition_pearson's r on a condition-resample is EXACTLY the mean of
+# the per-condition r over the resampled conditions (each condition's r is fixed;
+# resampling is at the condition level) — so precompute per-condition r ONCE and
+# reduce each draw as an array mean. Same rng.choice sequence (same seed ⇒ same
+# resamples) ⇒ bit-identical to the #779 helpers; ~1000× faster. Verified against
+# the #779 references by _assert_fast_matches_reference() at main() entry.
 
-    Structurally IDENTICAL to #779's ``bootstrap_delta_ci`` (condition-resample
-    ONCE per replicate, paired r_n − r_4k on the shared resample) — it additionally
-    returns ``p_one_sided`` (fraction of replicates with delta ≤ 0, the H2 "does
-    more data help" test) for the Benjamini-Hochberg refinement. cx_n / cx_4k are
-    per-condition x-arrays for the SAME conditions in order; cy the matched y.
-    """
+
+def _per_cond_r(cond_x, cond_y):
+    """Per-condition within-condition r (NaN for a condition #779's wcp excludes)."""
+    return np.array(
+        [within_condition_pearson([cond_x[i]], [cond_y[i]])["r"] for i in range(len(cond_y))],
+        dtype=float,
+    )
+
+
+def _resample_idx(seed, n_cond, n_boot):
+    """The EXACT #779 rng.choice(arange(n_cond), size=n_cond) draw sequence."""
     rng = np.random.default_rng(seed)
-    r_n = within_condition_pearson(cx_n, cy)["r"]
-    r_4k = within_condition_pearson(cx_4k, cy)["r"]
-    point = (r_n - r_4k) if (np.isfinite(r_n) and np.isfinite(r_4k)) else float("nan")
-    n_cond = len(cy)
-    idx = np.arange(n_cond)
+    idx_all = np.arange(n_cond)
+    return [rng.choice(idx_all, size=n_cond, replace=True) for _ in range(n_boot)]
+
+
+def _mean_or_nan(a):
+    f = a[np.isfinite(a)]
+    return float(f.mean()) if f.size else float("nan")
+
+
+def _delta_fast(pc_a, pc_b, samps) -> dict:
+    """Vectorized bootstrap_delta_ci: within-condition r_a − r_b + 95% CI."""
+    point = _mean_or_nan(pc_a) - _mean_or_nan(pc_b)
     deltas = []
-    for _ in range(n_boot):
-        samp = rng.choice(idx, size=n_cond, replace=True)
-        ra = within_condition_pearson([cx_n[i] for i in samp], [cy[i] for i in samp])["r"]
-        rb = within_condition_pearson([cx_4k[i] for i in samp], [cy[i] for i in samp])["r"]
+    for s in samps:
+        ra, rb = _mean_or_nan(pc_a[s]), _mean_or_nan(pc_b[s])
         if np.isfinite(ra) and np.isfinite(rb):
             deltas.append(ra - rb)
     if not deltas:
-        return {
-            "delta": point,
-            "lo": float("nan"),
-            "hi": float("nan"),
-            "excludes_zero": False,
-            "p_one_sided": float("nan"),
-            "n_boot_valid": 0,
-        }
+        return {"delta": point, "lo": float("nan"), "hi": float("nan"), "excludes_zero": False}
     arr = np.asarray(deltas)
     lo, hi = float(np.quantile(arr, 0.025)), float(np.quantile(arr, 0.975))
     return {
@@ -112,9 +124,70 @@ def paired_delta_vs_anchor(cx_n, cx_4k, cy, *, n_boot, seed) -> dict:
         "lo": lo,
         "hi": hi,
         "excludes_zero": bool(lo > 0 or hi < 0),
-        "p_one_sided": float(np.mean(arr <= 0.0)),  # H2: delta > 0 (more data helps)
-        "n_boot_valid": len(arr),
+        "_arr": arr,
     }
+
+
+def _paired_fast(pc_n, pc_anchor, samps) -> dict:
+    """Vectorized paired_delta_vs_anchor: r_n − r_anchor + CI + one-sided p."""
+    d = _delta_fast(pc_n, pc_anchor, samps)
+    arr = d.pop("_arr", None)
+    d["p_one_sided"] = float(np.mean(arr <= 0.0)) if arr is not None else float("nan")
+    d["n_boot_valid"] = int(arr.size) if arr is not None else 0
+    return d
+
+
+def _retention_fast(pc_row, pc_ceil, samps) -> dict:
+    """Vectorized bootstrap_retention_ci: JOINT ratio r_row / r_ceil (unclipped)."""
+    r_row, r_ceil = _mean_or_nan(pc_row), _mean_or_nan(pc_ceil)
+    point = (
+        r_row / r_ceil
+        if (np.isfinite(r_row) and np.isfinite(r_ceil) and r_ceil != 0.0)
+        else float("nan")
+    )
+    ratios = []
+    for s in samps:
+        rr, rc = _mean_or_nan(pc_row[s]), _mean_or_nan(pc_ceil[s])
+        if np.isfinite(rr) and np.isfinite(rc) and rc != 0.0:
+            ratios.append(rr / rc)
+    if not ratios:
+        return {
+            "point": point,
+            "lo": float("nan"),
+            "hi": float("nan"),
+            "r_row": r_row,
+            "r_ceiling": r_ceil,
+            "n_boot_valid": 0,
+        }
+    a = np.asarray(ratios)
+    return {
+        "point": point,
+        "lo": float(np.quantile(a, 0.025)),
+        "hi": float(np.quantile(a, 0.975)),
+        "r_row": r_row,
+        "r_ceiling": r_ceil,
+        "n_boot_valid": len(a),
+    }
+
+
+def _assert_fast_matches_reference() -> None:
+    """Gate: the vectorized helpers reproduce the #779 references bit-for-bit."""
+    rng = np.random.default_rng(7)
+    cy = [rng.standard_normal(8) * 10 + 50 for _ in range(11)]
+    cx_a = [rng.standard_normal(8) for _ in range(11)]
+    cx_b = [rng.standard_normal(8) for _ in range(11)]
+    cx_c = [rng.standard_normal(8) for _ in range(11)]
+    samps = _resample_idx(0, len(cy), 200)
+    ref_d = bootstrap_delta_ci(cx_a, cx_b, cy, n_boot=200, seed=0)
+    fast_d = _delta_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_b, cy), samps)
+    for k in ("delta", "lo", "hi"):
+        assert abs((ref_d[k] or 0.0) - (fast_d[k] or 0.0)) < 1e-9, (k, ref_d[k], fast_d[k])
+    assert ref_d["excludes_zero"] == fast_d["excludes_zero"]
+    ref_r = B1.bootstrap_retention_ci(cx_a, cx_c, cy, n_boot=200, seed=0)
+    fast_r = _retention_fast(_per_cond_r(cx_a, cy), _per_cond_r(cx_c, cy), samps)
+    for k in ("point", "lo", "hi"):
+        assert abs((ref_r[k] or 0.0) - (fast_r[k] or 0.0)) < 1e-9, (k, ref_r[k], fast_r[k])
+    logger.info("[gate] vectorized bootstrap == #779 references (delta + retention)")
 
 
 def benjamini_hochberg(pvals: list[float], q: float = 0.05) -> list[bool]:
@@ -150,21 +223,76 @@ def _grouped(x, mat, mode):
     return gx, gy
 
 
-def process_trait(
-    trait, mat, r_b, maps_by_n, schemes, ns_all, anchor_n, *, n_boot, seed, device, smoke
+TRANSPORT_CLASSES = ("ridge", "mlp", "direct_hop")
+
+
+def _transported_by_class(
+    traj_dev,
+    fit_pool,
+    src,
+    tgt,
+    r_b_tgt,
+    ridge_maps_by_n,
+    mlp_maps_by_n,
+    ns_all,
+    *,
+    device,
+    dual_max,
 ):
-    """Per-(scheme, source, mode) win + paired-delta records across all n; + fidelity + proj."""
+    """Per-class {n: (proj, h_hat)} for one (src → tgt) cell.
+
+    ridge/mlp compose the persisted one-step maps (plan row 1, matched-information);
+    direct_hop refits ℓ→ℓ* on the SAME nested fit pool per n (plan row 4; primal
+    path at n>dual_max via fit_direct_hop_ridge's solver dispatch).
+    """
+    out: dict[str, dict[int, tuple]] = {c: {} for c in TRANSPORT_CLASSES}
+    for n in ns_all:
+        out["ridge"][n] = B1._transport_proj(ridge_maps_by_n[n], traj_dev, src, tgt, r_b_tgt)
+        if n in mlp_maps_by_n:
+            out["mlp"][n] = B1._transport_proj(mlp_maps_by_n[n], traj_dev, src, tgt, r_b_tgt)
+        fit = fit_pool[:n]
+        dmap = MP.fit_direct_hop_ridge(
+            fit[:, src, :], fit[:, tgt, :], fit[:1, src, :], device=device, n=n, dual_max=dual_max
+        )
+        h_hat_d = traj_dev[:, src, :] + dmap.apply(traj_dev[:, src, :])
+        out["direct_hop"][n] = (B1._proj(h_hat_d, r_b_tgt), h_hat_d)
+    return out
+
+
+def process_trait(
+    trait,
+    mat,
+    r_b,
+    ridge_maps_by_n,
+    mlp_maps_by_n,
+    fit_pool,
+    schemes,
+    ns_all,
+    anchor_n,
+    *,
+    n_boot,
+    seed,
+    device,
+    dual_max,
+    smoke,
+):
+    """Per-(class, scheme, source, mode) win + paired-delta + retention across n; + fidelity/proj.
+
+    Returns ``cells_by_class`` (class → list of cell records), each cell's ``per_n``
+    keyed by that class's available n-points (ridge/direct_hop: all n; mlp: the
+    n-points with a persisted map). aggregate_curve is called per class downstream.
+    """
     traj_dev = torch.from_numpy(np.ascontiguousarray(mat["traj"])).to(
         device=device, dtype=torch.float32
     )
     rb_dev = torch.from_numpy(np.ascontiguousarray(r_b)).to(device=device, dtype=torch.float32)
 
-    cells: list[dict] = []
+    cells_by_class: dict[str, list[dict]] = {c: [] for c in TRANSPORT_CLASSES}
     fidelity: dict = {}
     proj_store: dict = {}
     for scheme, tgt in schemes.items():
         r_b_tgt = rb_dev[tgt]
-        fidelity[scheme] = {}
+        fidelity[scheme] = {c: {} for c in TRANSPORT_CLASSES}
         ceiling = B1._proj(traj_dev[:, tgt, :], r_b_tgt)  # row 3 raw-target (map-independent)
         proj_store[f"{scheme}__ceiling"] = ceiling
         for src in B1.source_grid(tgt, smoke):
@@ -172,64 +300,91 @@ def process_trait(
             row1b = B1._proj(traj_dev[:, src, :], r_b_tgt)  # id_transport (map-independent)
             proj_store[f"{scheme}__{src}__raw_source"] = row2
             proj_store[f"{scheme}__{src}__id_transport"] = row1b
-            transported: dict[int, np.ndarray] = {}
-            fidelity[scheme][str(src)] = {}
-            for n in ns_all:
-                x_t, h_hat = B1._transport_proj(maps_by_n[n], traj_dev, src, tgt, r_b_tgt)
-                transported[n] = x_t
-                proj_store[f"{scheme}__{src}__ridge_n{n}"] = x_t
-                fidelity[scheme][str(src)][str(n)] = B1.transport_fidelity(
-                    h_hat, traj_dev, src, tgt
-                )
+            tb = _transported_by_class(
+                traj_dev,
+                fit_pool,
+                src,
+                tgt,
+                r_b_tgt,
+                ridge_maps_by_n,
+                mlp_maps_by_n,
+                ns_all,
+                device=device,
+                dual_max=dual_max,
+            )
+            for cls in TRANSPORT_CLASSES:
+                fidelity[scheme][cls][str(src)] = {}
+                for n, (x_t, h_hat) in tb[cls].items():
+                    proj_store[f"{scheme}__{src}__{cls}_n{n}"] = x_t
+                    fidelity[scheme][cls][str(src)][str(n)] = B1.transport_fidelity(
+                        h_hat, traj_dev, src, tgt
+                    )
             for mode in MODES:
                 gx2, gy = _grouped(row2, mat, mode)
                 gx1b, _ = _grouped(row1b, mat, mode)
                 g_ceil, _ = _grouped(ceiling, mat, mode)
                 if len(gy) < 2:
                     continue  # too few conditions in this mode for a within-condition read
-                gt = {n: _grouped(transported[n], mat, mode)[0] for n in ns_all}
-                per_n = {}
-                for n in ns_all:
-                    d_raw = bootstrap_delta_ci(gt[n], gx2, gy, n_boot=n_boot, seed=seed)
-                    d_id = bootstrap_delta_ci(gt[n], gx1b, gy, n_boot=n_boot, seed=seed)
-                    win = bool(
-                        d_raw["excludes_zero"]
-                        and d_raw["delta"] > 0
-                        and d_id["excludes_zero"]
-                        and d_id["delta"] > 0
-                    )
-                    # DV3 retention(n): row-r ÷ ceiling-r, JOINT condition-resample
-                    # bootstrap (#779/#841 bootstrap_retention_ci, unclipped).
-                    ret = (
-                        B1.bootstrap_retention_ci(gt[n], g_ceil, gy, n_boot=n_boot, seed=seed)
-                        if len(g_ceil) == len(gy)
-                        else {"point": float("nan")}
-                    )
-                    entry = {
-                        "win": win,
-                        "vs_raw_source": d_raw,
-                        "vs_id_transport": d_id,
-                        "retention": ret,
+                # Precompute per-condition r ONCE + one shared resample sequence (seed);
+                # every delta/paired/retention below is then an array-mean reduction
+                # (vectorized bootstrap — bit-identical to the #779 per-draw loop).
+                n_cond = len(gy)
+                samps = _resample_idx(seed, n_cond, n_boot)
+                pc_raw = _per_cond_r(gx2, gy)
+                pc_id = _per_cond_r(gx1b, gy)
+                pc_ceil = _per_cond_r(g_ceil, gy) if len(g_ceil) == n_cond else None
+                for cls in TRANSPORT_CLASSES:
+                    cls_ns = sorted(tb[cls].keys())
+                    if anchor_n not in cls_ns:
+                        continue  # no anchor for this class ⇒ cannot pair; skip (e.g. mlp)
+                    pc_t = {
+                        n: _per_cond_r(_grouped(tb[cls][n][0], mat, mode)[0], gy) for n in cls_ns
                     }
-                    if n != anchor_n:
-                        entry["paired_vs_anchor"] = paired_delta_vs_anchor(
-                            gt[n], gt[anchor_n], gy, n_boot=n_boot, seed=seed
+                    per_n = {}
+                    for n in cls_ns:
+                        d_raw = _delta_fast(pc_t[n], pc_raw, samps)
+                        d_id = _delta_fast(pc_t[n], pc_id, samps)
+                        win = bool(
+                            d_raw["excludes_zero"]
+                            and d_raw["delta"] > 0
+                            and d_id["excludes_zero"]
+                            and d_id["delta"] > 0
                         )
-                    per_n[n] = entry
-                cells.append(
-                    {
-                        "scheme": scheme,
-                        "target_layer": tgt,
-                        "source": src,
-                        "mode": mode,
-                        "per_n": per_n,
-                    }
-                )
-            logger.info("[%s/%s] source=%d done (%d n-points)", trait, scheme, src, len(ns_all))
+                        ret = (
+                            _retention_fast(pc_t[n], pc_ceil, samps)
+                            if pc_ceil is not None
+                            else {"point": float("nan")}
+                        )
+                        entry = {
+                            "win": win,
+                            "vs_raw_source": d_raw,
+                            "vs_id_transport": d_id,
+                            "retention": ret,
+                        }
+                        if n != anchor_n:
+                            entry["paired_vs_anchor"] = _paired_fast(pc_t[n], pc_t[anchor_n], samps)
+                        per_n[n] = entry
+                    cells_by_class[cls].append(
+                        {
+                            "class": cls,
+                            "scheme": scheme,
+                            "target_layer": tgt,
+                            "source": src,
+                            "mode": mode,
+                            "per_n": per_n,
+                        }
+                    )
+            logger.info(
+                "[%s/%s] source=%d done (classes=%s)",
+                trait,
+                scheme,
+                src,
+                ",".join(TRANSPORT_CLASSES),
+            )
     proj_store["y"] = mat["y"]
     proj_store["cond"] = mat["cond"]
     proj_store["mode_is_manyshot"] = (mat["mode"] == "many_shot").astype(np.int64)
-    return {"cells": cells, "fidelity": fidelity, "proj": proj_store}
+    return {"cells_by_class": cells_by_class, "fidelity": fidelity, "proj": proj_store}
 
 
 # ── curve aggregation across cells ────────────────────────────────────────────────
@@ -315,7 +470,7 @@ def aggregate_curve(all_cells, ns_scaling, anchor_n, *, bh_q, seed) -> dict:
 
 
 def _synthetic_inputs(hidden, ns_all, anchor_n):
-    """Fabricate a tiny 1-trait eval matrix + r_B + per-n maps (CPU, no HF)."""
+    """Fabricate a tiny 1-trait eval matrix + r_B + per-n ridge/MLP maps + fit_pool (CPU, no HF)."""
     rng = np.random.default_rng(0)
     n_q, n_layers = 60, C.EXPECTED_LAYERS
     traj = rng.standard_normal((n_q, n_layers, hidden)).astype(np.float32)
@@ -331,11 +486,11 @@ def _synthetic_inputs(hidden, ns_all, anchor_n):
         "layers": list(range(n_layers)),
     }
     r_b = rng.standard_normal((n_layers, hidden)).astype(np.float32)
-    maps_by_n = {}
+    ridge_maps_by_n, mlp_maps_by_n = {}, {}
+    hid_mlp = 8
     for n in ns_all:
-        maps = {}
-        for t in range(n_layers - 1):
-            maps[t] = MP.RidgeMap(
+        ridge_maps_by_n[n] = {
+            t: MP.RidgeMap(
                 mu=torch.zeros(hidden),
                 sd=torch.ones(hidden),
                 w=torch.from_numpy(
@@ -345,32 +500,85 @@ def _synthetic_inputs(hidden, ns_all, anchor_n):
                 best_lam=1.0,
                 sigma=1.0,
             )
-        maps_by_n[n] = maps
+            for t in range(n_layers - 1)
+        }
+        mlp_maps_by_n[n] = {
+            t: MP.MLPMap(
+                W1=torch.from_numpy(
+                    (rng.standard_normal((hid_mlp, hidden)) * 0.01).astype(np.float32)
+                ),
+                b1=torch.zeros(hid_mlp),
+                W2=torch.from_numpy(
+                    (rng.standard_normal((hidden, hid_mlp)) * 0.01).astype(np.float32)
+                ),
+                b2=torch.zeros(hidden),
+                mu=torch.zeros(hidden),
+                sd=torch.ones(hidden),
+                sigma=1.0,
+            )
+            for t in range(n_layers - 1)
+        }
+    fit_pool = rng.standard_normal((max(ns_all), n_layers, hidden)).astype(np.float32)
     schemes = {"primary": 20}  # a single target with a real source grid
-    return {"evil": (mat, r_b)}, maps_by_n, schemes
+    return {"evil": (mat, r_b)}, ridge_maps_by_n, mlp_maps_by_n, fit_pool, schemes
 
 
-def _real_inputs(traits, maps_dir, ns_all, device, smoke):
-    """Load per-n ridge maps (local-or-HF) + each trait's eval matrix + r_B."""
-    maps_by_n = {}
-    for n in ns_all:
-        path = maps_dir / f"ridge_maps_n{n}.pt"
+def _fetch_map(maps_dir, fname, hf_bucket, device, loader):
+    """Local-first → HF-fetch a per-n map file; return the loaded maps dict."""
+    path = maps_dir / fname
+    if not path.exists():
+        from huggingface_hub import hf_hub_download
+
+        rel = f"{hf_bucket}/{fname}"
+        logger.info("[maps] local %s absent; fetching %s", path, rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        local = hf_hub_download(C.HF_DATA_REPO, filename=rel, repo_type="dataset")
         if not path.exists():
-            from huggingface_hub import hf_hub_download
+            path.symlink_to(Path(local).resolve())
+    return loader(path, device)
 
-            rel = f"{S.hf_ridge_maps_bucket(n)}/ridge_maps_n{n}.pt"
-            logger.info("[maps] local %s absent; fetching %s", path, rel)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            local = hf_hub_download(C.HF_DATA_REPO, filename=rel, repo_type="dataset")
-            if not path.exists():
-                path.symlink_to(Path(local).resolve())
-        maps_by_n[n] = S.load_ridge_maps(path, device)
+
+def _stage0_mlp_ns(out_dir, ns_all, anchor_n):
+    """Which n-points have persisted MLP maps (from stage0_scaling.json, else the default)."""
+    p = out_dir / "stage0_scaling.json"
+    if p.exists():
+        with open(p) as f:
+            mns = json.load(f).get("mlp_ns")
+        if mns:
+            return [n for n in mns if n in ns_all]
+    return sorted({anchor_n, ns_all[-1]})  # stage0's default mlp_ns
+
+
+def _real_inputs(traits, maps_dir, out_dir, capture_dir, ns_all, anchor_n, device, smoke):
+    """Load per-n ridge + MLP maps (local-or-HF), the fit_pool, and each trait's mat + r_B."""
+    ridge_maps_by_n = {
+        n: _fetch_map(
+            maps_dir, f"ridge_maps_n{n}.pt", S.hf_ridge_maps_bucket(n), device, S.load_ridge_maps
+        )
+        for n in ns_all
+    }
+    mlp_ns = _stage0_mlp_ns(out_dir, ns_all, anchor_n)
+    mlp_maps_by_n = {
+        n: _fetch_map(
+            maps_dir, f"mlp_maps_n{n}.pt", S.hf_mlp_maps_bucket(n), device, S.load_mlp_maps
+        )
+        for n in mlp_ns
+    }
+    # fit_pool for the direct-hop refit (parent bundle + new capture, nested by row).
+    cap = S.load_capture_local_or_hf(capture_dir)
+    fit_pool = S.build_scaling_bundle(C.load_pass_b(), cap)["fit_pool"]
     trait_inputs = {}
     for trait in traits:
-        cells = C.load_eval_cells(trait)
-        mat = C.build_eval_traj_matrix(cells)
+        mat = C.build_eval_traj_matrix(C.load_eval_cells(trait))
         trait_inputs[trait] = (mat, C.load_rb(trait))
-    return trait_inputs, maps_by_n
+    logger.info(
+        "[inputs] ridge n=%s mlp n=%s fit_pool=%d capture_dtype=%s",
+        ns_all,
+        mlp_ns,
+        fit_pool.shape[0],
+        cap.get("capture_dtype"),
+    )
+    return trait_inputs, ridge_maps_by_n, mlp_maps_by_n, fit_pool, cap.get("capture_dtype")
 
 
 def main() -> int:
@@ -383,6 +591,13 @@ def main() -> int:
     ap.add_argument("--anchor-n", type=int, default=S.N_ANCHOR_FIT)
     ap.add_argument("--maps-dir", type=Path, default=S.RIDGE_MAPS_DIR)
     ap.add_argument("--out-dir", type=Path, default=S.EVAL_SCALING_DIR)
+    ap.add_argument("--capture-dir", type=Path, default=S.CAPTURE_DIR)
+    ap.add_argument(
+        "--dual-max",
+        type=int,
+        default=10000,
+        help="direct-hop refit uses the dual solver at n≤this, primal above",
+    )
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--bh-q", type=float, default=0.05)
     ap.add_argument("--synthetic", action="store_true", help="smoke: fabricate tiny inputs (no HF)")
@@ -392,11 +607,11 @@ def main() -> int:
     )
     args = ap.parse_args()
 
+    _assert_fast_matches_reference()  # gate the vectorized bootstrap == #779 before any work
     device = _resolve_device(args.device)
     ns_all = [int(x) for x in args.ns.split(",") if x] or list(S.SCALING_NS)
     anchor_n = args.anchor_n
     assert anchor_n in ns_all, f"anchor_n={anchor_n} must be in ns={ns_all}"
-    ns_scaling = [n for n in ns_all if n != anchor_n]
     traits = ["evil"] if (args.smoke or args.synthetic) else args.traits
     logger.info(
         "device=%s ns=%s anchor=%d traits=%s n_boot=%d",
@@ -407,65 +622,93 @@ def main() -> int:
         args.n_boot,
     )
 
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     if args.synthetic:
-        trait_inputs, maps_by_n, fixed_schemes = _synthetic_inputs(
+        trait_inputs, ridge_maps_by_n, mlp_maps_by_n, fit_pool, fixed_schemes = _synthetic_inputs(
             args.synthetic_hidden, ns_all, anchor_n
         )
+        capture_dtype = "synthetic"
     else:
-        trait_inputs, maps_by_n = _real_inputs(traits, args.maps_dir, ns_all, device, args.smoke)
+        trait_inputs, ridge_maps_by_n, mlp_maps_by_n, fit_pool, capture_dtype = _real_inputs(
+            traits,
+            args.maps_dir,
+            args.out_dir,
+            args.capture_dir,
+            ns_all,
+            anchor_n,
+            device,
+            args.smoke,
+        )
         fixed_schemes = None
 
-    all_cells: list[dict] = []
+    def _curve(cells):
+        """aggregate_curve over one class's cells, deriving that class's scaling n's."""
+        cls_ns = sorted({n for c in cells for n in c["per_n"]} - {anchor_n})
+        return {
+            "n_cells": len(cells),
+            "curve": aggregate_curve(
+                cells, cls_ns, anchor_n, bh_q=args.bh_q, seed=C.BOOTSTRAP_SEED
+            ),
+        }
+
+    cells_by_class_all: dict[str, list[dict]] = {c: [] for c in TRANSPORT_CLASSES}
     fidelity_all: dict = {"traits": {}}
     proj_all: dict = {}
     result: dict = {
         "ns": ns_all,
         "anchor_n": anchor_n,
         "n_boot": args.n_boot,
+        "classes": list(TRANSPORT_CLASSES),
+        "capture_dtype": capture_dtype,  # realized capture precision (Fold 1)
         "target_layers": {"primary": C.PRIMARY_TARGET_LAYER, "companion": C.COMPANION_TARGET_LAYER},
         "traits": {},
-        "metadata": C.reproducibility_metadata({"phase": "stage1_scaling", "smoke": args.smoke}),
+        "metadata": C.reproducibility_metadata(
+            {"phase": "stage1_scaling", "smoke": args.smoke, "capture_dtype": capture_dtype}
+        ),
     }
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
     for trait, (mat, r_b) in trait_inputs.items():
         schemes = fixed_schemes if fixed_schemes is not None else B1.schemes_for(trait, args.smoke)
         out = process_trait(
             trait,
             mat,
             r_b,
-            maps_by_n,
+            ridge_maps_by_n,
+            mlp_maps_by_n,
+            fit_pool,
             schemes,
             ns_all,
             anchor_n,
             n_boot=args.n_boot,
             seed=C.BOOTSTRAP_SEED,
             device=device,
+            dual_max=args.dual_max,
             smoke=args.smoke,
         )
-        result["traits"][trait] = {
-            "n_cells": len(out["cells"]),
-            "curve": aggregate_curve(
-                out["cells"], ns_scaling, anchor_n, bh_q=args.bh_q, seed=C.BOOTSTRAP_SEED
-            ),
-        }
-        all_cells.extend(out["cells"])
+        curve_by_class = {}
+        for cls, cells in out["cells_by_class"].items():
+            if not cells:
+                continue
+            curve_by_class[cls] = _curve(cells)
+            cells_by_class_all[cls].extend(cells)
+        result["traits"][trait] = {"curve_by_class": curve_by_class}
         fidelity_all["traits"][trait] = out["fidelity"]
         for k, v in out["proj"].items():
             proj_all[f"{trait}__{k}"] = v
         C.write_json_atomic(args.out_dir / "stage1_scaling.json", result)  # checkpoint per trait
 
-    # Pooled curve across ALL traits' cells (the ~136-cell headline).
-    result["pooled_curve"] = aggregate_curve(
-        all_cells, ns_scaling, anchor_n, bh_q=args.bh_q, seed=C.BOOTSTRAP_SEED
-    )
+    # Pooled curve across ALL traits' cells, PER CLASS (the ~136-cell headline per class).
+    result["pooled_curve_by_class"] = {
+        cls: _curve(cells) for cls, cells in cells_by_class_all.items() if cells
+    }
     C.write_json_atomic(args.out_dir / "stage1_scaling.json", result)
     C.write_json_atomic(args.out_dir / "transport_fidelity_scaling.json", fidelity_all)
     np.savez(args.out_dir / "scaling_projections.npz", **proj_all)
+    ridge_pooled = result["pooled_curve_by_class"].get("ridge", {}).get("curve", {})
     logger.info(
-        "[done] pooled win_count(anchor)=%d over %d cells → %s",
-        result["pooled_curve"]["win_count_anchor"],
-        result["pooled_curve"]["total_cells"],
+        "[done] ridge pooled win_count(anchor)=%s over %s cells → %s",
+        ridge_pooled.get("win_count_anchor"),
+        ridge_pooled.get("total_cells"),
         args.out_dir / "stage1_scaling.json",
     )
     return 0

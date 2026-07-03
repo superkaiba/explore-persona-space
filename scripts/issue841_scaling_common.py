@@ -31,7 +31,7 @@ import issue841_common as C  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
-from explore_persona_space.experiments.issue_841.maps import RidgeMap  # noqa: E402
+from explore_persona_space.experiments.issue_841.maps import MLPMap, RidgeMap  # noqa: E402
 
 logger = logging.getLogger("issue841_scaling")
 
@@ -56,6 +56,11 @@ def hf_ridge_maps_bucket(n: int) -> str:
     return f"{HF_SCALING_PREFIX}/ridge_maps_n{n}"
 
 
+def hf_mlp_maps_bucket(n: int) -> str:
+    """HF path-in-repo prefix for the per-n fitted MLP maps (Stage-1 row-1 mlp class)."""
+    return f"{HF_SCALING_PREFIX}/mlp_maps_n{n}"
+
+
 # Local scratch/output paths (worktree). The capture tensor + per-n maps are
 # re-downloadable caches under data/; the JSON + npz are durable under eval_results/.
 CAPTURE_DIR = PROJECT_ROOT / "data" / "issue_841" / "scaling" / "cx_last_shards"
@@ -77,6 +82,119 @@ def shard_paths(capture_dir: Path) -> list[Path]:
     return sorted(capture_dir.glob("cx_last_shard*.pt"))
 
 
+def shard_boundaries(n_total: int, shard_rows: int = SHARD_ROWS) -> list[tuple[int, int, int]]:
+    """``(shard_index, row_lo, row_hi)`` spans covering ``n_total`` rows."""
+    starts = list(range(0, n_total, shard_rows))
+    return [(i, lo, min(lo + shard_rows, n_total)) for i, lo in enumerate(starts)]
+
+
+def _done_marker(capture_dir: Path, idx: int) -> Path:
+    return capture_dir / f"cx_last_shard{idx:03d}.done.json"
+
+
+def shard_is_done(capture_dir: Path, idx: int, lo: int, hi: int, capture_dtype: str) -> bool:
+    """A shard is resumable-complete iff its ``.done.json`` matches span + dtype.
+
+    Keying on ``capture_dtype`` means a bf16 rerun never reuses fp32 shards (and
+    vice versa) — a dtype change invalidates every prior shard for this dir.
+    """
+    marker = _done_marker(capture_dir, idx)
+    if not (marker.exists() and (capture_dir / f"cx_last_shard{idx:03d}.pt").exists()):
+        return False
+    with open(marker) as f:
+        m = json.load(f)
+    return (
+        m.get("row_lo") == lo and m.get("row_hi") == hi and m.get("capture_dtype") == capture_dtype
+    )
+
+
+def write_one_shard(
+    capture_dir: Path,
+    idx: int,
+    cx_chunk: np.ndarray,
+    prompts_chunk: list[str],
+    *,
+    lo: int,
+    hi: int,
+    n_total: int,
+    n_shards: int,
+    source: str,
+    capture_dtype: str,
+) -> Path:
+    """Write ONE cx_last shard + its ``.done.json`` resume marker (shard-as-you-go).
+
+    Peak RAM stays ~one shard: the driver captures a shard's rows, calls this, and
+    frees the chunk before the next shard. The marker (written LAST, after the .pt)
+    is the resume signal — a crash mid-``torch.save`` leaves no marker, so the
+    shard re-captures on resume.
+    """
+    assert cx_chunk.shape[1:] == (C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN), cx_chunk.shape
+    assert cx_chunk.shape[0] == len(prompts_chunk) == (hi - lo), (
+        cx_chunk.shape[0],
+        len(prompts_chunk),
+        hi - lo,
+    )
+    capture_dir.mkdir(parents=True, exist_ok=True)
+    path = capture_dir / f"cx_last_shard{idx:03d}.pt"
+    torch.save(
+        {
+            "cx_last": torch.from_numpy(np.ascontiguousarray(cx_chunk)),
+            "prompts": prompts_chunk,
+            "shard_index": idx,
+            "n_shards": n_shards,
+            "row_lo": lo,
+            "row_hi": hi,
+            "total_rows": n_total,
+            "layers": list(range(C.EXPECTED_LAYERS)),
+            "source": source,
+            "capture_dtype": capture_dtype,
+        },
+        path,
+    )
+    with open(_done_marker(capture_dir, idx), "w") as f:
+        json.dump({"row_lo": lo, "row_hi": hi, "capture_dtype": capture_dtype}, f)
+    return path
+
+
+def write_capture_manifest(
+    capture_dir: Path,
+    n_total: int,
+    source: str,
+    capture_dtype: str,
+    metadata: dict,
+    *,
+    shard_rows: int = SHARD_ROWS,
+) -> Path:
+    """Write the capture ``manifest.json`` after all shards are present (verifies spans)."""
+    spans = []
+    for idx, lo, hi in shard_boundaries(n_total, shard_rows):
+        name = f"cx_last_shard{idx:03d}.pt"
+        assert (capture_dir / name).exists(), f"manifest: shard {name} missing"
+        spans.append({"shard": name, "row_lo": lo, "row_hi": hi})
+    path = capture_dir / "manifest.json"
+    with open(path, "w") as f:
+        json.dump(
+            {
+                "total_rows": n_total,
+                "n_shards": len(spans),
+                "source": source,
+                "capture_dtype": capture_dtype,
+                "spans": spans,
+                "metadata": metadata,
+            },
+            f,
+            indent=2,
+        )
+    logger.info(
+        "[capture] wrote manifest (%d shards, %d rows, dtype=%s) → %s",
+        len(spans),
+        n_total,
+        capture_dtype,
+        capture_dir,
+    )
+    return path
+
+
 def write_capture_shards(
     cx_last: np.ndarray,
     prompts: list[str],
@@ -85,61 +203,42 @@ def write_capture_shards(
     capture_dir: Path,
     *,
     shard_rows: int = SHARD_ROWS,
+    capture_dtype: str = "synthetic",
 ) -> list[Path]:
-    """Shard ``cx_last`` (N,28,3584) + aligned prompts into ≤8 GB ``.pt`` pieces.
+    """Convenience: write ALL shards from an in-memory array + the manifest (test/dry-run).
 
-    Each shard is a self-describing dict; a sibling ``manifest.json`` records the
-    global row count + ordered shard list + per-shard row spans so ``load_capture``
-    can verify completeness. Returns the written shard paths.
+    Production capture uses the shard-as-you-go path (``write_one_shard`` +
+    ``write_capture_manifest``) to bound RAM; this all-at-once form is for the
+    ``--dry-run-io`` wiring test where the array is already tiny.
     """
     n = cx_last.shape[0]
-    assert cx_last.shape[1:] == (C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN), cx_last.shape
     assert len(prompts) == n, (len(prompts), n)
-    capture_dir.mkdir(parents=True, exist_ok=True)
-    written: list[Path] = []
-    spans: list[dict] = []
-    shard_starts = list(range(0, n, shard_rows))
-    n_shards = len(shard_starts)
-    for si, lo in enumerate(shard_starts):
-        hi = min(lo + shard_rows, n)
-        path = capture_dir / f"cx_last_shard{si:03d}.pt"
-        torch.save(
-            {
-                "cx_last": torch.from_numpy(np.ascontiguousarray(cx_last[lo:hi])),
-                "prompts": prompts[lo:hi],
-                "shard_index": si,
-                "n_shards": n_shards,
-                "row_lo": lo,
-                "row_hi": hi,
-                "total_rows": n,
-                "layers": list(range(C.EXPECTED_LAYERS)),
-                "source": source,
-            },
-            path,
+    bounds = shard_boundaries(n, shard_rows)
+    written = []
+    for idx, lo, hi in bounds:
+        written.append(
+            write_one_shard(
+                capture_dir,
+                idx,
+                cx_last[lo:hi],
+                prompts[lo:hi],
+                lo=lo,
+                hi=hi,
+                n_total=n,
+                n_shards=len(bounds),
+                source=source,
+                capture_dtype=capture_dtype,
+            )
         )
-        spans.append({"shard": path.name, "row_lo": lo, "row_hi": hi})
-        written.append(path)
-    with open(capture_dir / "manifest.json", "w") as f:
-        json.dump(
-            {
-                "total_rows": n,
-                "n_shards": n_shards,
-                "source": source,
-                "spans": spans,
-                "metadata": metadata,
-            },
-            f,
-            indent=2,
-        )
-    logger.info("[capture] wrote %d shards (%d rows) → %s", n_shards, n, capture_dir)
+    write_capture_manifest(capture_dir, n, source, capture_dtype, metadata, shard_rows=shard_rows)
     return written
 
 
 def load_capture(capture_dir: Path) -> dict:
     """Load + concatenate the sharded new-context capture (local-first).
 
-    Returns ``{"cx_last": (N,28,3584) fp32, "prompts": [str], "source": str}``.
-    Fail-loud on a missing manifest / row-count mismatch / shape drift.
+    Returns ``{"cx_last": (N,28,3584) fp32, "prompts": [str], "source": str,
+    "capture_dtype": str}``. Fail-loud on a missing manifest / row-count mismatch.
     """
     manifest_path = capture_dir / "manifest.json"
     if not manifest_path.exists():
@@ -155,7 +254,12 @@ def load_capture(capture_dir: Path) -> dict:
     assert cx_last.shape[0] == manifest["total_rows"], (cx_last.shape, manifest["total_rows"])
     assert cx_last.shape[1:] == (C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN), cx_last.shape
     assert len(prompts) == cx_last.shape[0], (len(prompts), cx_last.shape[0])
-    return {"cx_last": cx_last, "prompts": prompts, "source": manifest.get("source")}
+    return {
+        "cx_last": cx_last,
+        "prompts": prompts,
+        "source": manifest.get("source"),
+        "capture_dtype": manifest.get("capture_dtype"),
+    }
 
 
 def fetch_capture_from_hf(capture_dir: Path) -> Path:
@@ -273,3 +377,27 @@ def load_ridge_maps(path: Path, device: str) -> dict[int, RidgeMap]:
             sigma=float(d["sigma"]),
         )
     return out
+
+
+# ── per-n MLP-map (de)serialize (Stage-1 row-1 mlp transported class) ─────────────
+
+
+def save_mlp_maps(params_by_transition: dict[int, dict], path: Path) -> Path:
+    """Persist the per-transition RAW-target MLP params (from ``fit_split_mlps``).
+
+    ``params_by_transition[t]`` is the numpy-array param dict (W1/b1/W2/b2/mu/sd)
+    ``fit_split_mlps`` returns; Stage-1 rebuilds each into an ``MLPMap`` (sigma=1.0,
+    raw target) for the row-1 mlp transported class. Stored keyed by str(transition).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {str(t): p for t, p in params_by_transition.items()}
+    torch.save(payload, path)
+    return path
+
+
+def load_mlp_maps(path: Path, device: str) -> dict[int, MLPMap]:
+    """Reload the per-n MLP maps saved by ``save_mlp_maps`` onto ``device`` (sigma=1.0 raw)."""
+    blob = torch.load(path, weights_only=False)
+    return {
+        int(t_str): MLPMap.from_params(p, sigma=1.0, device=device) for t_str, p in blob.items()
+    }

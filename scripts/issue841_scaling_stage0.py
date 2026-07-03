@@ -140,8 +140,13 @@ def ridge_scaling(fit_pool, test, transitions, ns, *, device, dual_max):
 def mlp_scaling(
     fit_pool, val, test, transitions, ns, *, device, chunk_size, num_threads, max_epochs
 ):
-    """MLP r2_id(n) + r2_meancentered(n) per (transition, n), RAW space, batched."""
+    """MLP r2_id(n) + r2_meancentered(n) per (transition, n), RAW space, batched.
+
+    Returns ``(curve, params_by_n)`` — ``params_by_n[n][t]`` is the numpy param
+    dict Stage-1 rebuilds into the row-1 mlp transported class (RAW space).
+    """
     curve: dict = {f"transition_{t}": {} for t in transitions}
+    params_by_n: dict[int, dict] = {}
     for n in ns:
         fit = fit_pool[:n]
         groups = []
@@ -158,7 +163,7 @@ def mlp_scaling(
                     Y_val=d_val.astype(np.float32),
                 )
             )
-        preds, _params = MP.fit_split_mlps(
+        preds, params = MP.fit_split_mlps(
             groups,
             device=device,
             chunk_size=chunk_size,
@@ -172,9 +177,10 @@ def mlp_scaling(
                 "r2_id": MP.identity_relative_r2(pred, d_test),
                 "r2_meancentered": MP.mean_centered_r2(pred, d_test, d_fit.mean(0)),
             }
+        params_by_n[n] = {t: params[("mlp", t)] for t in transitions}
         logger.info("[mlp] n=%d done (%d transitions batched)", n, len(transitions))
     curve["ns"] = list(ns)
-    return curve
+    return curve, params_by_n
 
 
 # ── KILL-B parity gates ──────────────────────────────────────────────────────────
@@ -336,16 +342,25 @@ def _load_bundle(args):
             val.shape[0],
             test.shape[0],
         )
-        return fit_pool, val, test, drift, anchor_n, Path("/nonexistent-parent-atlas.json")
+        return (
+            fit_pool,
+            val,
+            test,
+            drift,
+            anchor_n,
+            Path("/nonexistent-parent-atlas.json"),
+            "synthetic",
+        )
     pass_b = C.load_pass_b()
     capture = S.load_capture_local_or_hf(args.capture_dir)
     bundle = S.build_scaling_bundle(pass_b, capture)
     logger.info(
-        "[bundle] REAL fit_pool=%d val=%d test=%d drift_window=%d",
+        "[bundle] REAL fit_pool=%d val=%d test=%d drift_window=%d capture_dtype=%s",
         bundle["fit_pool"].shape[0],
         bundle["val"].shape[0],
         bundle["test"].shape[0],
         bundle["drift_window"].shape[0],
+        capture.get("capture_dtype"),
     )
     return (
         bundle["fit_pool"],
@@ -354,6 +369,7 @@ def _load_bundle(args):
         bundle["drift_window"],
         S.N_ANCHOR_FIT,
         PROJECT_ROOT / "eval_results" / "issue_841" / "stage0_atlas.json",
+        capture.get("capture_dtype"),
     )
 
 
@@ -414,7 +430,9 @@ def main() -> int:
     )
 
     out_dir, maps_dir = args.out_dir, args.maps_dir
-    fit_pool, val, test, drift_window, anchor_n, parent_atlas_path = _load_bundle(args)
+    fit_pool, val, test, drift_window, anchor_n, parent_atlas_path, capture_dtype = _load_bundle(
+        args
+    )
 
     result: dict = {
         "ns": ns,
@@ -422,7 +440,10 @@ def main() -> int:
         "transitions": transitions,
         "target_spaces": list(SPACES),
         "dual_max": args.dual_max,
-        "metadata": C.reproducibility_metadata({"phase": "stage0_scaling", "smoke": args.smoke}),
+        "capture_dtype": capture_dtype,  # realized capture precision (Fold 1)
+        "metadata": C.reproducibility_metadata(
+            {"phase": "stage0_scaling", "smoke": args.smoke, "capture_dtype": capture_dtype}
+        ),
     }
 
     # KILL-B FIRST (fail before the full curve if the primal is unanchored).
@@ -444,7 +465,7 @@ def main() -> int:
     )
     C.write_json_atomic(out_dir / "stage0_scaling.json", result)
 
-    result["scaling_curve"]["mlp"] = mlp_scaling(
+    mlp_curve, mlp_params_by_n = mlp_scaling(
         fit_pool,
         val,
         test,
@@ -455,18 +476,28 @@ def main() -> int:
         num_threads=args.num_threads,
         max_epochs=mlp_epochs,
     )
+    result["scaling_curve"]["mlp"] = mlp_curve
     result["atlas_largest_n"] = ns[-1]
+    result["mlp_ns"] = mlp_ns  # which n-points have persisted MLP maps for Stage-1
     C.write_json_atomic(out_dir / "stage0_scaling.json", result)
 
-    # Persist every fitted RAW ridge map (Stage-1 reloads them) + upload per n.
+    # Persist every fitted RAW map (Stage-1 reloads them for the class dimension) + upload.
+    def _upload_maps(path, bucket):
+        if not args.no_upload:
+            from explore_persona_space.orchestrate.hub import upload_dataset_directory
+
+            upload_dataset_directory(path.parent, bucket, pattern=path.name)
+
     for n, maps in ridge_maps_by_n.items():
         path = maps_dir / f"ridge_maps_n{n}.pt"
         S.save_ridge_maps(maps, path)
         logger.info("[maps] saved %d ridge maps for n=%d → %s", len(maps), n, path)
-        if not args.no_upload:
-            from explore_persona_space.orchestrate.hub import upload_dataset_directory
-
-            upload_dataset_directory(path.parent, S.hf_ridge_maps_bucket(n), pattern=path.name)
+        _upload_maps(path, S.hf_ridge_maps_bucket(n))
+    for n, params in mlp_params_by_n.items():
+        path = maps_dir / f"mlp_maps_n{n}.pt"
+        S.save_mlp_maps(params, path)
+        logger.info("[maps] saved %d MLP maps for n=%d → %s", len(params), n, path)
+        _upload_maps(path, S.hf_mlp_maps_bucket(n))
 
     logger.info("[done] wrote %s", out_dir / "stage0_scaling.json")
     return 0

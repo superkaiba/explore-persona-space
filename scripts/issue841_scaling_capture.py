@@ -10,19 +10,15 @@ maps at fit-set sizes n ∈ {4k,10k,25k,50k,100k}. Single manipulated variable =
 the fit-corpus size (plan v9 §3); everything else matches the parent's pass_b.
 
 Forward: batched (left-pad + explicit position_ids), all 28 layers, last real
-token per sequence, cast fp32. ``--capture-dtype`` selects the forward dtype
-(default fp32 with TF32 OFF, per plan §4.1).
-
-    ⚠ PARENT-PRECISION NOTE (surfaced to the orchestrator as a concern): the
-    plan cites ``issue779_collect.py:808`` (``torch_dtype=torch.float32``) as
-    the parent's forward precision, but that is the CPU-fallback branch; the
-    production 5000-context pass_b ran on GPU via lines 804-806 with
-    ``torch_dtype=torch.bfloat16``. So the KILL-A rel-1e-3 spot-gate against the
-    stored (bf16-precision) ``cx_last`` will likely FAIL under an fp32 recapture.
-    The fix is ``--capture-dtype bf16`` (which ALSO removes the fit-pool
-    precision confound — bf16 is the parent's actual value, so it is the
-    single-variable-correct choice). ``--anchor-rel-tol`` loosens the gate for
-    the bf16 batched-vs-per-sequence numerics if needed.
+token per sequence, cast fp32 for storage. ``--capture-dtype`` selects the
+forward dtype — **default bf16, TF32 OFF** (code-review round 1 fold 1): the
+parent's production 5000-context pass_b ran on GPU with
+``torch_dtype=torch.bfloat16`` (``issue779_collect.py:804-806``; line 808's
+``float32`` is the CPU-fallback branch that never ran the 5000-ctx capture), so
+bf16 both passes the KILL-A rel-1e-3 spot-gate against the stored bf16-precision
+``cx_last`` AND keeps the fit-pool precision the single held variable. Override
+with ``--capture-dtype fp32`` (a deliberate precision change) or loosen
+``--anchor-rel-tol`` for batched-vs-per-sequence numerics.
 
 KILL-A (spot-gate, before the full 96k capture): re-capture 8-16 REGENERATED
 parent contexts MIXED into a realistic batch and assert they match the stored
@@ -320,19 +316,26 @@ def equivalence_test() -> int:
 
 
 def dry_run_io(n: int, capture_dir: Path) -> int:
-    """Synthetic (n,28,3584) → shard/manifest write + load round-trip (no GPU/upload)."""
+    """Synthetic (n,28,3584) → shard/manifest write + load round-trip + resume predicate (no GPU)."""
     rng = np.random.default_rng(0)
     cx = rng.standard_normal((n, C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN)).astype(np.float32)
     prompts = [f"synthetic prompt {i}" for i in range(n)]
     meta = C.reproducibility_metadata({"phase": "scaling_capture_dry_run_io", "n": n})
-    # tiny shard size so multiple shards exercise the multi-shard path
-    S.write_capture_shards(cx, prompts, "synthetic", meta, capture_dir, shard_rows=max(1, n // 3))
+    shard_rows = max(1, n // 3)  # multiple shards exercise the multi-shard + resume path
+    S.write_capture_shards(
+        cx, prompts, "synthetic", meta, capture_dir, shard_rows=shard_rows, capture_dtype="bf16"
+    )
     loaded = S.load_capture(capture_dir)
     assert loaded["cx_last"].shape == cx.shape, (loaded["cx_last"].shape, cx.shape)
     assert np.allclose(loaded["cx_last"], cx), "round-trip cx_last mismatch"
     assert loaded["prompts"] == prompts, "round-trip prompts mismatch"
+    assert loaded["capture_dtype"] == "bf16", loaded["capture_dtype"]
+    # resume predicate: every written shard reads done for the SAME dtype, NOT for another.
+    for idx, lo, hi in S.shard_boundaries(n, shard_rows):
+        assert S.shard_is_done(capture_dir, idx, lo, hi, "bf16"), (idx, "should be done")
+        assert not S.shard_is_done(capture_dir, idx, lo, hi, "fp32"), (idx, "dtype must invalidate")
     logger.info(
-        "[dry-run-io] PASS: %d rows round-tripped through %d shards",
+        "[dry-run-io] PASS: %d rows round-tripped through %d shards; resume predicate holds",
         n,
         len(S.shard_paths(capture_dir)),
     )
@@ -362,7 +365,7 @@ def _verify_imports() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #841 scaling-capture (GPU capture phase).")
     ap.add_argument("--model", default=C779.DEFAULT_MODEL)
-    ap.add_argument("--capture-dtype", choices=list(DTYPES), default="fp32")
+    ap.add_argument("--capture-dtype", choices=list(DTYPES), default="bf16")
     ap.add_argument("--tf32", action="store_true", help="enable TF32 (default OFF per plan)")
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument(
@@ -441,12 +444,41 @@ def main() -> int:
         rel_tol=args.anchor_rel_tol,
     )
 
-    # Full capture of the new contexts.
+    # Full capture of the new contexts — SHARD-AS-YOU-GO (bounds peak RAM to one
+    # shard; resumable after a crash, keyed on capture_dtype so a dtype change
+    # never reuses stale shards). Each shard's rows are captured, written, freed.
     target_new = new_prompts[:n_new]
-    cx_last_new = capture_prompts(
-        model, tokenizer, target_new, layers, batch_size=args.batch_size
-    )  # (n_new, 28, 3584) fp32
-    assert cx_last_new.shape == (len(target_new), n_layers, C.EXPECTED_HIDDEN), cx_last_new.shape
+    n_total = len(target_new)
+    bounds = S.shard_boundaries(n_total)
+    for idx, lo, hi in bounds:
+        if S.shard_is_done(args.capture_dir, idx, lo, hi, args.capture_dtype):
+            logger.info(
+                "[capture] shard %d/%d rows[%d:%d] already done — resume skip",
+                idx + 1,
+                len(bounds),
+                lo,
+                hi,
+            )
+            continue
+        chunk_prompts = target_new[lo:hi]
+        cx_chunk = capture_prompts(
+            model, tokenizer, chunk_prompts, layers, batch_size=args.batch_size
+        )  # (hi-lo, 28, 3584) fp32
+        assert cx_chunk.shape == (hi - lo, n_layers, C.EXPECTED_HIDDEN), cx_chunk.shape
+        S.write_one_shard(
+            args.capture_dir,
+            idx,
+            cx_chunk,
+            chunk_prompts,
+            lo=lo,
+            hi=hi,
+            n_total=n_total,
+            n_shards=len(bounds),
+            source=source,
+            capture_dtype=args.capture_dtype,
+        )
+        logger.info("[capture] wrote shard %d/%d rows[%d:%d]", idx + 1, len(bounds), lo, hi)
+        del cx_chunk
 
     meta = C.reproducibility_metadata(
         {
@@ -454,12 +486,12 @@ def main() -> int:
             "capture_dtype": args.capture_dtype,
             "tf32": args.tf32,
             "source": source,
-            "n_new": len(target_new),
+            "n_new": n_total,
             "kill_a": spot,
             "smoke": args.smoke,
         }
     )
-    S.write_capture_shards(cx_last_new, target_new, source, meta, args.capture_dir)
+    S.write_capture_manifest(args.capture_dir, n_total, source, args.capture_dtype, meta)
 
     # Durable capture summary (git, issue branch) — spot-gate + disjointness record.
     C.write_json_atomic(

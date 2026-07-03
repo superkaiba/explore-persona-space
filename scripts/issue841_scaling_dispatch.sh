@@ -55,10 +55,10 @@ fi
 log_phase() { printf '[phase=%s] %s\n' "$1" "${2:-}"; }
 
 # ── capture (GPU) ───────────────────────────────────────────────────────────────
-log_phase capture "start (dtype=${EPM_I841S_CAPTURE_DTYPE:-fp32})"
+log_phase capture "start (dtype=${EPM_I841S_CAPTURE_DTYPE:-bf16})"
 # shellcheck disable=SC2086
 uv run python scripts/issue841_scaling_capture.py \
-  --capture-dtype "${EPM_I841S_CAPTURE_DTYPE:-fp32}" \
+  --capture-dtype "${EPM_I841S_CAPTURE_DTYPE:-bf16}" \
   ${EPM_I841S_CAPTURE_EXTRA:-} \
   $SMOKE_CAP
 

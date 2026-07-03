@@ -127,42 +127,60 @@ def plot_r2_scaling(stage0: dict) -> None:
 # ── Hero 2: DV2 transport-scaling curve ───────────────────────────────────────
 
 
-def plot_transport_scaling(stage1: dict) -> None:
-    pooled = stage1.get("pooled_curve")
-    if not pooled:
-        logger.warning("[plots] no pooled_curve; skip transport-scaling")
-        return
-    by_n = pooled["by_n"]
-    anchor = pooled["anchor_n"]
-    ns_scaling = sorted(int(n) for n in by_n)
-    xs = [anchor, *ns_scaling]
-    win = [pooled["win_count_anchor"]] + [by_n[str(n)]["win_count"] for n in ns_scaling]
-    mpd = [0.0] + [by_n[str(n)]["mean_paired_delta"] for n in ns_scaling]
-    mpd_lo = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][0] for n in ns_scaling]
-    mpd_hi = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][1] for n in ns_scaling]
+def _pooled_by_class(stage1: dict) -> dict:
+    """pooled_curve_by_class (v5) with a legacy single-curve fallback wrapped as ridge."""
+    if stage1.get("pooled_curve_by_class"):
+        return {cls: d["curve"] for cls, d in stage1["pooled_curve_by_class"].items()}
+    if stage1.get("pooled_curve"):
+        return {"ridge": stage1["pooled_curve"]}
+    return {}
 
+
+def plot_transport_scaling(stage1: dict) -> None:
+    pbc = _pooled_by_class(stage1)
+    if not pbc:
+        logger.warning("[plots] no pooled_curve_by_class; skip transport-scaling")
+        return
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.2))
-    ax1.plot(xs, win, marker="o")
-    ax1.axhline(pooled["win_count_anchor"], color="grey", linestyle=":", linewidth=1)
-    chance = by_n[str(ns_scaling[0])]["chance_expectation"] if ns_scaling else 0
-    ax1.axhline(chance, color="red", linestyle="--", linewidth=1)
+    for cls, pooled in pbc.items():
+        by_n = pooled["by_n"]
+        anchor = pooled["anchor_n"]
+        ns_scaling = sorted(int(n) for n in by_n)
+        if not ns_scaling:
+            continue
+        xs = [anchor, *ns_scaling]
+        win = [pooled["win_count_anchor"]] + [by_n[str(n)]["win_count"] for n in ns_scaling]
+        mpd = [0.0] + [by_n[str(n)]["mean_paired_delta"] for n in ns_scaling]
+        mpd_lo = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][0] for n in ns_scaling]
+        mpd_hi = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][1] for n in ns_scaling]
+        ax1.plot(xs, win, marker="o", label=cls)
+        ax2.errorbar(
+            xs,
+            mpd,
+            yerr=[np.array(mpd) - np.array(mpd_lo), np.array(mpd_hi) - np.array(mpd)],
+            marker="o",
+            capsize=3,
+            label=cls,
+        )
+    # 20/136 baseline + chance line from the ridge (headline) class.
+    ridge = pbc.get("ridge")
+    if ridge and ridge["by_n"]:
+        ax1.axhline(ridge["win_count_anchor"], color="grey", linestyle=":", linewidth=1)
+        n0 = sorted(int(n) for n in ridge["by_n"])[0]
+        ax1.axhline(
+            ridge["by_n"][str(n0)]["chance_expectation"], color="red", linestyle="--", linewidth=1
+        )
+        ax1.set_ylabel(f"win_count (of {ridge['total_cells']} cells)")
     ax1.set_xscale("log")
     ax1.set_xlabel("fit-set size n")
-    ax1.set_ylabel(f"win_count (of {pooled['total_cells']} cells)")
-    ax1.set_title("DV2 transport wins vs n")
-
-    ax2.errorbar(
-        xs,
-        mpd,
-        yerr=[np.array(mpd) - np.array(mpd_lo), np.array(mpd_hi) - np.array(mpd)],
-        marker="o",
-        capsize=3,
-    )
+    ax1.set_title("DV2 transport wins vs n (per class)")
+    ax1.legend(fontsize=7)
     ax2.axhline(0.0, color="grey", linestyle=":", linewidth=1)
     ax2.set_xscale("log")
     ax2.set_xlabel("fit-set size n")
     ax2.set_ylabel("mean paired Δr vs 4k anchor")
-    ax2.set_title("DV2 mean paired-delta vs n")
+    ax2.set_title("DV2 mean paired-delta vs n (per class)")
+    ax2.legend(fontsize=7)
     _save(fig, "hero_transport_scaling")
     logger.info("[plots] wrote hero_transport_scaling")
 
@@ -171,23 +189,26 @@ def plot_transport_scaling(stage1: dict) -> None:
 
 
 def plot_retention_scaling(stage1: dict) -> None:
-    pooled = stage1.get("pooled_curve")
-    if not pooled:
+    pbc = _pooled_by_class(stage1)
+    if not pbc:
         return
-    by_n = pooled["by_n"]
-    anchor = pooled["anchor_n"]
-    ns_scaling = sorted(int(n) for n in by_n)
-    xs = [anchor, *ns_scaling]
-    ys = [pooled.get("mean_retention_anchor", np.nan)] + [
-        by_n[str(n)]["mean_retention"] for n in ns_scaling
-    ]
     fig, ax = plt.subplots(figsize=(6.0, 4.0))
-    ax.plot(xs, ys, marker="o")
+    for cls, pooled in pbc.items():
+        by_n = pooled["by_n"]
+        ns_scaling = sorted(int(n) for n in by_n)
+        if not ns_scaling:
+            continue
+        xs = [pooled["anchor_n"], *ns_scaling]
+        ys = [pooled.get("mean_retention_anchor", np.nan)] + [
+            by_n[str(n)]["mean_retention"] for n in ns_scaling
+        ]
+        ax.plot(xs, ys, marker="o", label=cls)
     ax.axhline(1.0, color="grey", linestyle=":", linewidth=1)
     ax.set_xscale("log")
     ax.set_xlabel("fit-set size n")
     ax.set_ylabel("mean retention (row r ÷ ceiling r)")
-    ax.set_title("DV3 retention vs fit-set size")
+    ax.set_title("DV3 retention vs fit-set size (per class)")
+    ax.legend(fontsize=7)
     _save(fig, "exploratory_retention_scaling")
     logger.info("[plots] wrote exploratory_retention_scaling")
 

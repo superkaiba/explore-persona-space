@@ -426,17 +426,29 @@ def fit_direct_hop_ridge(
     *,
     device: str,
     lambdas: list[float] = RIDGE_LAMBDAS,
+    n: int | None = None,
+    dual_max: int = 10000,
 ) -> RidgeMap:
     """Direct-hop ridge ℓ→ℓ* (JTC-style): predict the total displacement.
 
     Fits ``h_ℓ → (h_{ℓ*} − h_ℓ)`` on train, so ``apply`` gives the raw total
     displacement and ``ĥ_{ℓ*} = h_ℓ + apply(h_ℓ)``. Returns the RidgeMap (sigma=1,
     raw target). Answers "is composing one-step maps worse than one long hop?".
+
+    Solver dispatch (additive; default preserves the parent's dual behavior): when
+    ``n`` is given and ``n > dual_max`` the fit uses the primal path
+    (``fit_ridge_primal``) — the dual m×m Gram is n×n fp64 (~80 GB at n=100k),
+    infeasible for the scaling curve. ``n=None`` (parent callers) keeps the dual.
     """
     delta_direct = h_target_train - h_source_train
-    _, rmap = fit_ridge_split(
-        h_source_train, delta_direct, h_source_eval, sigma=1.0, device=device, lambdas=lambdas
-    )
+    if n is not None and n > dual_max:
+        _, rmap = fit_ridge_primal(
+            h_source_train, delta_direct, h_source_eval, sigma=1.0, device=device, lambdas=lambdas
+        )
+    else:
+        _, rmap = fit_ridge_split(
+            h_source_train, delta_direct, h_source_eval, sigma=1.0, device=device, lambdas=lambdas
+        )
     return rmap
 
 
