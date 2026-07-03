@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 915,
+  "highest_id": 916,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6015,6 +6015,13 @@
       "path": "tasks/running/915",
       "status": "running",
       "title": "workflow-fix: janitors fail rmtree on symlinked per-issue cache dirs"
+    },
+    "916": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/916",
+      "status": "proposed",
+      "title": "workflow-fix: null-band-vs-DV-ceiling informativeness check in selection-symmetric-nulls"
     },
     "92": {
       "has_clean_result": false,
