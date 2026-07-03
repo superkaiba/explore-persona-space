@@ -215,6 +215,48 @@ def _make_figure(results: dict[str, dict], fig_dir: Path) -> None:
     plt.close(fig)
 
 
+# Reader-facing labels for the #594-battery context ids rendered as scatter point
+# labels (paper-plots §3.5: no raw codes on the figure; the raw ids stay in the
+# eval_results JSON `ctx_ids`). Derived from the battery naming scheme
+# ``f<family>_<kind>_<detail>`` — families per issue594_fig_hero_embeddings_clean.py:
+# f1 personas (house + PersonaHub), f2 WildChat chat prefixes, f3 few-shot (ICL)
+# worked examples, f4 instruction rephrasings, f5 format wraps, f6 defaults,
+# f8 behavior-instruction probes.
+_CTX_LABEL_FIXED = {
+    "f6_default_template": "bare default",
+    "f6_helpful_asst": "helpful assistant",
+}
+_ICL_KIND_LABELS = {"french": "French", "json": "JSON"}
+_BEHAV_KIND_LABELS = {"sycophant": "sycophancy"}
+
+
+def _ctx_label(cid: str) -> str:
+    """Plain-English point label for a battery context id (e.g. ``f1_phub_03`` ->
+    ``PersonaHub 03``); fail-loud on an unrecognized family so a new battery id
+    never silently ships as a raw code."""
+    if cid in _CTX_LABEL_FIXED:
+        return _CTX_LABEL_FIXED[cid]
+    if cid.startswith("f1_house_"):
+        return cid.removeprefix("f1_house_").replace("_", " ") + " persona"
+    if cid.startswith("f1_phub_"):
+        return "PersonaHub " + cid.removeprefix("f1_phub_")
+    if cid.startswith("f2_wc_"):
+        kind, num = cid.removeprefix("f2_wc_").rsplit("_", 1)
+        return f"WildChat {kind} {num}"
+    if cid.startswith("f3_icl_"):
+        kind, k = cid.removeprefix("f3_icl_").rsplit("_k", 1)
+        kind = _ICL_KIND_LABELS.get(kind, kind.replace("_", " "))
+        return f"few-shot {kind} (k={k})"
+    if cid.startswith("f4_reph_"):
+        return cid.removeprefix("f4_reph_").replace("_", " ") + " rephrase"
+    if cid.startswith("f5_fmt_"):
+        return cid.removeprefix("f5_fmt_").replace("_", " ") + " format"
+    if cid.startswith("f8_behav_"):
+        kind = cid.removeprefix("f8_behav_")
+        return _BEHAV_KIND_LABELS.get(kind, kind) + "-behavior probe"
+    raise RuntimeError(f"unrecognized context-id family for point label: {cid!r}")
+
+
 def _make_perctx_scatter(results: dict[str, dict], beh: str, fig_dir: Path) -> None:
     """Per-unit data view at one headline cell: both arms' 50 labeled held-out points.
 
@@ -249,7 +291,7 @@ def _make_perctx_scatter(results: dict[str, dict], beh: str, fig_dir: Path) -> N
     for ax, (name, preds, rho) in zip(axes, panels, strict=True):
         ax.scatter(preds, y, s=18, color=paper_palette_role("primary"), alpha=0.85, zorder=3)
         for xi, yi, cid in zip(preds, y, pc["ctx_ids"], strict=True):
-            ax.text(xi, yi, f" {cid}", fontsize=4.2, va="center", ha="left", alpha=0.8)
+            ax.text(xi, yi, f" {_ctx_label(cid)}", fontsize=4.2, va="center", ha="left", alpha=0.8)
         ax.set_xlabel("held-out predicted expression score")
         ax.set_title(f"{name} (layer {r['fixed_layer']})", fontsize=10)
         ax.text(
@@ -277,8 +319,20 @@ def main() -> int:
     ap.add_argument("--n-draws", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=658)
     ap.add_argument("--num-threads", type=int, default=8)
+    ap.add_argument(
+        "--scatter-only",
+        action="store_true",
+        help="regenerate the per-context scatter from the existing --out JSON "
+        "(no refit, no HF download) — e.g. after a point-label change",
+    )
     args = ap.parse_args()
     torch.set_num_threads(args.num_threads)
+
+    if args.scatter_only:
+        blob = json.loads(Path(args.out).read_text())
+        _make_perctx_scatter(blob["results"], SCATTER_BEHAVIOR, Path(args.fig_dir))
+        logger.info("wrote %s/fixed_layer_perctx_scatter_%s.png", args.fig_dir, SCATTER_BEHAVIOR)
+        return 0
 
     inputs_path = Path(args.inputs) if args.inputs else None
     if inputs_path is None or not inputs_path.exists():
