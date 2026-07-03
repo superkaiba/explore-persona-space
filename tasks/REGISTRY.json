@@ -6171,8 +6171,8 @@
     "936": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/936",
-      "status": "running",
+      "path": "tasks/reviewing/936",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md \u2014 bf16 single-position equivalence-gate calibration"
     },
     "937": {
