@@ -443,7 +443,8 @@ data, checkpoints, eval JSONs, raw completions, figure source — pinned>
 
 **Context:** <verbatim originating prompt(s), blockquoted> · <lineage:
 `[#K](...) — <one line>` or `fresh direction (no parent)`; same-issue
-follow-up rounds also name each round's followup_label> · <created/run
+follow-up rounds also name each round's followup_label, each as a
+'same-issue follow-up round `<label>`' clause> · <created/run
 dates>
 ```
 
@@ -636,7 +637,10 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   original body's `## Provenance` / `epm:followup-scope v1` markers, NEVER
   paraphrased; when none recorded, `origin prompt not recorded`) · lineage
   (`[#K](...) — <one line>` or `fresh direction (no parent)`; same-issue
-  follow-up rounds name each round's `followup_label`) · created/run dates.
+  follow-up rounds name each round's `followup_label` — written as a
+  ``same-issue follow-up round `<followup_label>` `` clause, the
+  machine-countable form check 20's round-scaled prose budget reads;
+  #921) · created/run dates.
   This footer is the ONLY place run-context provenance lives in the body
   (the "state facts, not sources" rule still bans weaving prompt/person
   attributions into Takeaways / Results prose).
@@ -709,7 +713,7 @@ sections:
 | Per-Takeaways-bullet length | ≤30 words | WARN |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
 | Figure caption | ≤60 words | WARN |
-| Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first | WARN-only |
+| Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
@@ -904,6 +908,18 @@ Forward-only: each check branches on the sentinel. The v4 checks
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
     legitimately figure-less qualitative result is not blocked; the
     clean-result-critic owns the substantive beat read.
+27. **No bare issue refs in standalone sections**
+    (`check_v4_no_bare_issue_refs`, v4 only): a bare `#<digits>` token in
+    the `## Takeaways` / `## Methodology` / `## Results` section spans is
+    a hard FAIL — prior-issue references live ONLY in the `## Goal`
+    context slot (`[#K](...)` links) and the `**Repro:**`/`**Context:**`
+    footer. Sanctioned forms that do not trip: markdown links (label +
+    target), GFM table rows (the Training-table Source column), fenced +
+    inline code, `<details>` blocks, HTML comments, the footer,
+    frontmatter. The inline-code escape hatch is for non-issue `#N`
+    strings (colors, ordinals) only — never for a genuine issue
+    reference. (Origin: the #841 round-2 two-round Lens-2 miss; numbered
+    27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23). The Goal-of-experiment frontmatter

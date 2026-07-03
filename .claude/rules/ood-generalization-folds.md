@@ -60,9 +60,12 @@ interpolation. (`eval_results/issue_810/adhoc_lofo_heatmap_grids.json`,
 
 ## Enforcement
 
-- `planner.md` §6 (measurement validity) — the plan names the grouping axes
-  and the group-level fold per held-out DV.
-- `critic.md` Statistics & Measurement lens — REVISEs a
+- `planner.md` §6 "OOD generalization folds" Required block (full template:
+  `.claude/rules/planner-section-reference.md` § 6. Evaluation) — the plan
+  names the grouping axes and the group-level fold per held-out DV, or the
+  named "N/A — no held-out predictive DV" / explicit-iid escape.
+- `critic.md` Statistics & Measurement lens item 13 (full rubric:
+  `.claude/rules/critic-lens-reference.md`) — REVISEs a
   held-out-predictive-DV plan with pointwise-only folds and no iid argument.
 
 ## Files of record
