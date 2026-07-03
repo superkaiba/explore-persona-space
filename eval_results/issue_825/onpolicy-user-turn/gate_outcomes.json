@@ -1,0 +1,44 @@
+{
+  "smoke": false,
+  "gates": {
+    "deferred_fit_failures": "PASS",
+    "anchor_rowset_parity": "PASS",
+    "anchor_ridge_tolerance": {
+      "result": "PASS",
+      "deltas": {
+        "M_instruct_assistant_chat": {
+          "fresh": 0.0783192013836691,
+          "parent": 0.07571368282874946,
+          "delta": 0.002605518554919639
+        },
+        "M_instruct_assistant_naturalistic": {
+          "fresh": -0.08028519039911886,
+          "parent": -0.07842569894348572,
+          "delta": -0.0018594914556331332
+        },
+        "M_pretrained_assistant_chat": {
+          "fresh": -0.45970439687534315,
+          "parent": -0.4605551809040864,
+          "delta": 0.0008507840287432789
+        },
+        "M_pretrained_assistant_naturalistic": {
+          "fresh": -0.3930784738526705,
+          "parent": -0.38966704296046184,
+          "delta": -0.0034114308922086334
+        }
+      }
+    },
+    "g3_sanity": {
+      "result": "PASS",
+      "obs_layer_max_r2": 0.0957129393791396
+    },
+    "wiring_check": "PASS",
+    "coverage": "PASS",
+    "degeneracy_audit": {
+      "M_instruct_user_chat": true,
+      "M_instruct_user_naturalistic": true,
+      "M_pretrained_user_chat": true,
+      "M_pretrained_user_naturalistic": true
+    }
+  }
+}
