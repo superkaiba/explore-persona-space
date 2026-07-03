@@ -99,3 +99,31 @@ def plain_cell(cell: str) -> str:
 def plain_behavior(slug: str) -> str:
     """Plain-English label for a behavior slug."""
     return _BEH.get(slug, slug.replace("_", " "))
+
+
+_CTX_GROUP_DISPLAY = {
+    "house": "house",
+    "phub": "persona-hub",
+    "wc": "wildchat",
+    "icl": "icl",
+    "reph": "rephrase",
+    "fmt": "fmt",
+    "behav": "behav",
+    "default": "default",
+}
+
+
+def plain_context_id(cid: str) -> str:
+    """Readable point label for a battery context id.
+
+    Strips the ``fN_`` family prefix and de-slugs, e.g.
+    ``f5_fmt_markdown_table`` -> ``fmt: markdown table``,
+    ``f8_behav_harmful`` -> ``behav: harmful``,
+    ``f3_icl_marker_k4`` -> ``icl: marker k4``.
+    """
+    parts = cid.split("_")
+    if parts and parts[0].startswith("f") and parts[0][1:].isdigit():
+        parts = parts[1:]
+    if len(parts) >= 2 and parts[0] in _CTX_GROUP_DISPLAY:
+        return f"{_CTX_GROUP_DISPLAY[parts[0]]}: {' '.join(parts[1:])}"
+    return " ".join(parts)
