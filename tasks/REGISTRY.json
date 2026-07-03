@@ -6040,8 +6040,8 @@
     "919": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/919",
-      "status": "reviewing",
+      "path": "tasks/completed/919",
+      "status": "completed",
       "title": "workflow-fix: route user 'pause <N>' to on_hold (durable, watcher-safe park)"
     },
     "92": {
