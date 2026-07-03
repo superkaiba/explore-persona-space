@@ -470,6 +470,42 @@ session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unr
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
+**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).** To take
+over a stalled autonomous session WITHOUT racing the watcher, rename its
+registration: `~/.eps-autonomous/issue-<N>.json` →
+`issue-<N>.json.paused-takeover-<YYYYMMDD>` (any suffix after the literal
+`.paused-takeover-`; `manual-issue-` same shape). While the sentinel is FRESH
+(file mtime < `EPS_TAKEOVER_TTL_H`, default 6h; `touch` it to renew a longer
+takeover): the orphan-respawn pass SKIPS the issue (logged, no state mutation),
+and `spawn-issue --auto` suppresses with a rc-0 `TAKEOVER-SENTINEL HELD` line
+(recognized by `spawn_output_suppressed`, so the crash-recovery, stalled,
+orphan, infra-drain, capacity-retry arms + `file_infra_task.py` all book
+nothing). Manual spawns warn-and-proceed (the #843 lease posture). A STALE
+sentinel is ignored everywhere — FAIL OPEN: crash recovery resumes at the TTL,
+so an abandoned takeover costs at most ~6h of un-watched active task. The
+registration-KEYED passes (crash-recovery, stalled, stale-registration,
+gate-push, reconcile) need no sentinel check: the rename removes the very file
+they key on. Ending a takeover — ORDER MATTERS: FIRST re-establish a
+registration (`spawn_session.py register-current --issue N` from the session
+that now owns the issue, or rename the sentinel back), THEN delete the
+sentinel — deleting first opens a one-tick window where the frozen `missed`
+count (already ≥ threshold in the #866 shape) respawns immediately.
+Alternatively just delete the sentinel and deliberately let the orphan sweep
+respawn a fresh `--auto` driver on its next stale tick. Three operational
+notes: (a) `EPS_TAKEOVER_TTL_H` is a FLEET-LEVEL knob — a session-local
+export never reaches the watcher's cron env; renew a >6h takeover by
+`touch`ing the sentinel, not by exporting the var. (b) Before renaming,
+check for a fresh `issue-<N>.json` / dispatch lease — a respawn may have
+JUST fired (the rename cannot recall an in-flight spawn; bounded to one
+tick). (c) During a takeover the `/issue` Step 0 single-orchestrator guard
+is registration-keyed and therefore BLIND — a human hand-driving the issue
+should check for the sentinel first. Stopping the superseded session:
+`spawn_session.py stop --session-id <sid>` — on a daemon-untracked sid it now
+resolves the wrapper pid via the `~/.happy/logs` reverse map and reports a
+verified kill-by-pid recipe (or SIGTERMs it under `--kill`; comm re-verified,
+never auto-SIGKILL). Stale sentinels are GC'd after `max(7 days, the
+configured TTL)`.
+
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON
 (`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy

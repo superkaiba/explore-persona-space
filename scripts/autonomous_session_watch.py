@@ -441,9 +441,11 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
     spawn_output_suppressed,
+    takeover_sentinel_fresh,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
@@ -9173,6 +9175,21 @@ def _dispatch_orphan_exemption_action(
         )
 
 
+def _parse_orphan_state_counters(state: dict, day_key: str) -> tuple[int, int]:
+    """Type-guarded ``(missed, respawns_today)`` from a loaded orphan-state
+    dict; ``respawns_today`` resets to 0 when the recorded ``respawn_day`` is
+    not today's ``day_key``. Factored out of :func:`_process_orphan_task` to
+    keep it under the C901 cap after the #903 takeover-sentinel skip landed
+    there (behavior-preserving extraction)."""
+    missed = state.get("missed", 0)
+    if not isinstance(missed, int):
+        missed = 0
+    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
+    if not isinstance(respawns_today, int):
+        respawns_today = 0
+    return missed, respawns_today
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -9190,17 +9207,27 @@ def _process_orphan_task(
     """Apply one active-status task's orphan decision (gather signals ->
     :func:`decide_orphan` -> act). ``rec`` is the task's registration record
     from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
-    #472 class). Honours dry_run (logs but never mutates / spawns)."""
+    #472 class). Honours dry_run (logs but never mutates / spawns).
+
+    #866/#903: a FRESH ``paused-takeover`` sentinel (a deliberate session
+    takeover renamed the registration away) skips the issue ENTIRELY before
+    any state read/write — the frozen ``missed`` count resumes exactly where
+    it left off when the sentinel goes stale (FAIL OPEN). No marker is posted
+    (a per-tick marker would spam events.jsonl; this stdout log is the
+    record)."""
+    sentinel = takeover_sentinel_fresh(issue, now=now, registry_dir=AUTONOMOUS_REGISTRY_DIR)
+    if sentinel is not None:
+        print(
+            f"  issue #{issue}: status={status} SKIP — deliberate takeover sentinel "
+            f"{sentinel.name} is FRESH (< EPS_TAKEOVER_TTL_H); orphan sweep deferred "
+            f"(stale sentinel resumes normal respawn — fail open)"
+        )
+        return
     mapped_alive = bool(rec and rec["sids"] & live_ids)
     manual_only = bool(rec and rec["has_manual"] and not rec["has_auto"])
     entry_age_s = (now - rec["newest_write"]) if rec and rec["newest_write"] > 0 else None
     state = _load_orphan_state(issue)
-    missed = state.get("missed", 0)
-    if not isinstance(missed, int):
-        missed = 0
-    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
-    if not isinstance(respawns_today, int):
-        respawns_today = 0
+    missed, respawns_today = _parse_orphan_state_counters(state, day_key)
     alerted = bool(state.get("alerted"))
     followups_child_alerted = bool(state.get("followups_child_alerted"))
 
@@ -11693,12 +11720,48 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
     return counts
 
 
+# Floor age before a `paused-takeover` sentinel is GC'd. A stale sentinel is
+# INERT after the (default 6h) TTL — this reap is clutter-control only, and
+# 7 days deliberately preserves the human-readable takeover record for
+# post-hoc forensics well past the takeover itself (#903).
+TAKEOVER_SENTINEL_GC_AGE_S = 7 * 24 * 3600
+
+
+def _gc_stale_takeover_sentinels(now: float, dry_run: bool) -> int:
+    """Unlink ``*.json.paused-takeover-*`` sentinels older than
+    ``max(7 days, the configured takeover TTL)`` — the ``*.json`` GC globs
+    can never match them, so without this they would linger forever (#903).
+
+    The ``max()`` is load-bearing (#903 round-1 critique Must-Fix): with
+    ``EPS_TAKEOVER_TTL_H`` set above 168h a fixed 7-day reap would delete a
+    sentinel that is STILL protecting a live takeover. Returns the reap
+    count for the :func:`gc_pass` summary line."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return 0
+    gc_age = max(TAKEOVER_SENTINEL_GC_AGE_S, _takeover_ttl_s())
+    reaped = 0
+    for p in sorted(AUTONOMOUS_REGISTRY_DIR.glob("*.json.paused-takeover-*")):
+        try:
+            if now - p.stat().st_mtime < gc_age:
+                continue
+        except OSError:
+            continue
+        print(f"gc: {'would reap' if dry_run else 'reaping'} stale takeover sentinel {p.name}")
+        if not dry_run:
+            p.unlink(missing_ok=True)
+        reaped += 1
+    return reaped
+
+
 def gc_pass(dry_run: bool, now: float | None = None) -> None:
-    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` for
-    consistency with the other ``*_pass`` entry points + the ``--gc-only``
-    debug flag."""
+    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` (+
+    the #903 stale-takeover-sentinel reap) for consistency with the other
+    ``*_pass`` entry points + the ``--gc-only`` debug flag."""
     now = now if now is not None else time.time()
     counts = _gc_orphaned_eps_autonomous_files(now, dry_run)
+    reaped_sentinels = _gc_stale_takeover_sentinels(now, dry_run)
+    if reaped_sentinels:
+        counts["paused-takeover"] = counts.get("paused-takeover", 0) + reaped_sentinels
     if not counts:
         print("gc: no stale per-issue state files to reap")
         return

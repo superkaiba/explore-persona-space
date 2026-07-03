@@ -3881,6 +3881,128 @@ def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch)
     assert respawns == [663]
 
 
+# ─── #866/#903: deliberate-takeover sentinel skips the orphan sweep ──────────
+#
+# A deliberate session takeover renames `issue-<N>.json` ->
+# `issue-<N>.json.paused-takeover-<suffix>`, making the registration invisible
+# to the registry-keyed passes — which turned the handoff into a guaranteed
+# orphan-respawn (#866: a duplicate `/issue 866 --auto` orchestrator 21 min
+# into the takeover). The orphan sweep must SKIP the issue while the sentinel
+# is FRESH (mtime < EPS_TAKEOVER_TTL_H, default 6h) and behave EXACTLY as
+# today when it is stale/missing (FAIL OPEN — the existing orphan suite above
+# is the no-sentinel control).
+
+
+def test_takeover_sentinel_fresh_skips_orphan_respawn(isolated_registry, monkeypatch):
+    import time
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-866.json.paused-takeover-20260702").write_text("{}")
+    now = time.time()
+    # Marker is comfortably stale — without the sentinel this respawns (the
+    # control is test_takeover_sentinel_stale_respawns below).
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=866, events=events, now=now)
+    assert respawns == []
+    # Frozen episode: the skip returns BEFORE any state read/write, so the
+    # pre-seeded missed count is untouched and expiry resumes where it left off.
+    assert asw._load_orphan_state(866).get("missed") == 1
+
+
+def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch):
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    sentinel = isolated_registry / "issue-867.json.paused-takeover-20260702"
+    sentinel.write_text("{}")
+    now = time.time()
+    stale = now - 7 * 3600  # past the 6h default TTL
+    os.utime(sentinel, (stale, stale))
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=867, events=events, now=now)
+    assert respawns == [867]  # FAIL OPEN: today's behavior once the sentinel ages out
+
+
+def test_takeover_sentinel_manual_prefix_also_honored(isolated_registry, monkeypatch):
+    import time
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "manual-issue-868.json.paused-takeover-x").write_text("{}")
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=868, events=events, now=time.time())
+    assert respawns == []
+
+
+def test_takeover_ttl_env_malformed_falls_back(monkeypatch):
+    # A typo'd env var must not disable crash recovery (mirror of the
+    # _orphan_staleness_s malformed-env fallback pattern).
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "banana")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(6.0 * 3600.0)
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "2")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(2.0 * 3600.0)
+    monkeypatch.delenv("EPS_TAKEOVER_TTL_H")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(6.0 * 3600.0)
+
+
+def test_takeover_sentinel_future_mtime_not_fresh(isolated_registry):
+    # A future-dated mtime (clock skew / `touch -d` typo) would be PERMANENTLY
+    # fresh — an indefinite crash-recovery suppression inverting the fail-open
+    # guarantee. Beyond the clock-jitter slack it is treated as NOT fresh.
+    import os
+    import time
+
+    sentinel = isolated_registry / "issue-869.json.paused-takeover-x"
+    sentinel.write_text("{}")
+    now = time.time()
+    future = now + 3600.0  # well beyond FUTURE_MTIME_SLACK_S (300s)
+    os.utime(sentinel, (future, future))
+    assert (
+        spawn_session.takeover_sentinel_fresh(869, now=now, registry_dir=isolated_registry) is None
+    )
+
+
+def test_gc_reaps_stale_takeover_sentinels(isolated_registry):
+    # Sentinels never match the `*.json` GC globs, so without the dedicated
+    # reap they linger forever; the 7-day floor keeps the forensics record
+    # well past the (inert-after-6h) TTL.
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    now = time.time()
+    old = isolated_registry / "issue-901.json.paused-takeover-old"
+    old.write_text("{}")
+    os.utime(old, (now - 8 * 86400, now - 8 * 86400))  # past the 7d floor
+    fresh = isolated_registry / "issue-902.json.paused-takeover-new"
+    fresh.write_text("{}")
+    os.utime(fresh, (now - 3600, now - 3600))
+    asw.gc_pass(dry_run=False, now=now)
+    assert not old.exists()
+    assert fresh.exists()
+
+
+def test_gc_keeps_sentinel_under_extended_ttl(isolated_registry, monkeypatch):
+    # The max(7d, TTL) contract: with EPS_TAKEOVER_TTL_H above 168h a fixed
+    # 7-day reap would delete a sentinel STILL protecting a live takeover.
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "240")  # 10 days > the 7d GC floor
+    now = time.time()
+    sentinel = isolated_registry / "issue-904.json.paused-takeover-live"
+    sentinel.write_text("{}")
+    os.utime(sentinel, (now - 8 * 86400, now - 8 * 86400))  # 8d old: past 7d, inside 240h
+    assert asw._gc_stale_takeover_sentinels(now, dry_run=False) == 0
+    assert sentinel.exists()
+
+
 def test_campaign_child_pre_run_lifecycle_marker_reads_fresh(monkeypatch):
     # Campaign watchdog parity (#661/#658 sibling): a child in a long pre-pod
     # planning/implementation phase posts only excluded lifecycle markers; the
