@@ -6250,8 +6250,8 @@
     "945": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/945",
-      "status": "proposed",
+      "path": "tasks/planning/945",
+      "status": "planning",
       "title": "workflow-fix: figure-sidecar opaque-code lint for clean-results"
     },
     "946": {
