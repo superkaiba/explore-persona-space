@@ -146,7 +146,8 @@ for cid, ref in ANCHORS.items():
         if smoke:
             continue
         fail("coverage_miss", f"anchor cell {cid} absent from ridge results")
-    entry = _l19(payload.get("frozen_layer_table") or {})
+    # Fix (run-3 crash): frozen_layer_table nests under selection_symmetric.
+    entry = _l19((payload.get("selection_symmetric") or {}).get("frozen_layer_table") or {})
     if entry is None:
         if smoke:
             continue
