@@ -5759,8 +5759,8 @@
     "883": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/883",
-      "status": "approved",
+      "path": "tasks/running/883",
+      "status": "running",
       "title": "workflow-fix: canonicalize setsid launcher-script SSH-MCP pod launch shape"
     },
     "884": {
