@@ -5920,8 +5920,8 @@
     "903": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/903",
-      "status": "planning",
+      "path": "tasks/approved/903",
+      "status": "approved",
       "title": "workflow-fix: watcher honors paused-takeover sentinel; stop resolves unregistered sessions"
     },
     "904": {
