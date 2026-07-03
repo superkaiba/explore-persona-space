@@ -1,6 +1,6 @@
 {
-  "commit": "c4dcf8c907",
-  "created": "2026-07-03T06:05:08Z",
+  "commit": "c5236717d5",
+  "created": "2026-07-03T06:26:54Z",
   "figsize": [
     9.5,
     4.4
@@ -129,14 +129,14 @@
     {
       "x": 0.0,
       "Held-out $R^2$": 0.2,
-      "series": "Pre-registered recoverability line (0.2)",
+      "series": "Recoverability line from the follow-up plan (0.2)",
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
       "Held-out $R^2$": 0.2,
-      "series": "Pre-registered recoverability line (0.2)",
+      "series": "Recoverability line from the follow-up plan (0.2)",
       "_kind": "line",
       "_group": 2
     }
