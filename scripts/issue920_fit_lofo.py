@@ -78,10 +78,12 @@ from issue920_fit_core import (  # noqa: E402
     batched_press_predict,
     batched_press_predict_per_column,
     enumerate_map_cells,
+    excluded_mask,
     fit_device,
     load_reduced_matrices,
     pca_apply,
     serial_reference_map_fit,
+    union_excluded,
 )
 
 logger = logging.getLogger("issue920_fit")
@@ -288,19 +290,10 @@ def main() -> int:
     n = len(ctx_ids)
 
     # excluded-cell masks (zero-valid-probe families, plan §3.3). UNION of BOTH
-    # stores' exclusion lists: `load_reduced_matrices` zero-fills a zero-coverage
-    # (family, context) cell, so a set-B-only gap would otherwise silently
+    # stores' exclusion lists — a set-B-only gap would otherwise silently
     # zero-fill into R2/R3/R4, the B-side read-outs, the identity ceiling, and
     # every null band (round-1 blocker `set-b-zero-coverage-not-masked`).
-    def _excluded_mask(names: list[str], fams: list[str]) -> np.ndarray:
-        ex = {f.split("@")[0] for f in fams}
-        return np.array([nm.split("@")[0] in ex for nm in names], dtype=bool)
-
-    excluded_by_source = {
-        "set_A": sorted(red_A["excluded_families"]),
-        "set_B": sorted(red_B["excluded_families"]),
-    }
-    excluded_union = sorted(set(red_A["excluded_families"]) | set(red_B["excluded_families"]))
+    excluded_union, excluded_by_source = union_excluded(red_A, red_B)
     if excluded_union:
         logger.warning(
             "excluded families (union A|B): %s (A=%s, B=%s)",
@@ -308,8 +301,8 @@ def main() -> int:
             excluded_by_source["set_A"],
             excluded_by_source["set_B"],
         )
-    ex_ctx = _excluded_mask(red_A["ctx_cell_names"], excluded_union)
-    ex_ans = _excluded_mask(red_A["ans_cell_names"], excluded_union)
+    ex_ctx = excluded_mask(red_A["ctx_cell_names"], excluded_union)
+    ex_ans = excluded_mask(red_A["ans_cell_names"], excluded_union)
     ex_map = ex_ctx[c_map] | ex_ans[a_map]
 
     # accumulators
