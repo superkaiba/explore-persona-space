@@ -180,6 +180,17 @@ def test_launch_skips_execution_without_opt_in(monkeypatch, caplog):
     assert warning.index("THIS pod") < warning.index("--execute-workload")
 
 
+def test_launch_mints_own_rp_attempt_id_ignoring_spec_threaded_id(monkeypatch):
+    """#927: RunPod is per-launch by construction — ``launch`` mints its own
+    ``rp-…`` attempt id unconditionally, so a router-threaded (or stale)
+    ``spec.extra["attempt_id"]`` is inert on this lane."""
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec(extra={"attempt_id": "att-threaded-by-router"}))
+    minted = handle.extra["runpod_attempt_id"]
+    assert minted != "att-threaded-by-router"
+    assert re.fullmatch(r"rp-\d{8}T\d{6}Z-[0-9a-f]{4}", minted), minted
+
+
 def test_launch_hydra_run_without_flag_untouched(monkeypatch, caplog):
     """AC8: a hydra-args RunPod launch WITHOUT the flag no-ops the leg exactly
     as today — no SSH calls, no WARNING, workload_executed False."""

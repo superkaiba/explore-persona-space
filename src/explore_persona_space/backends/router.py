@@ -777,10 +777,13 @@ class Lease:
       stale (the orchestrator's ``set-status approved`` flow should have
       cleared the old lease, but a fresh attempt for a different
       hyperparameter set is also OK — we replace the lease).
-    * ``attempt_id`` — stable per-attempt id used as the GCP artifact
-      namespace AND as the reconnect key. The GCP backend reads this
-      from ``spec.extra["attempt_id"]``; the router sets it here so
-      every submit/provision uses the SAME id across the lease lifetime.
+    * ``attempt_id`` — the attempt id of the LAST fresh submit (the GCP
+      artifact namespace for that launch). Minted FRESH per launch by
+      ``_thread_attempt_id_into`` and overwritten here at each fresh
+      submit ("lease follows the launch", #927) — NOT stable across the
+      lease lifetime. Reconnect id-stability comes from the router-level
+      reconnect early-return + the GCP ``eps-attempt`` instance label
+      recovery, never from this field.
     * ``backend`` — which backend was used last (``None`` if no submit
       has happened yet but the lease was opened to claim the attempt id).
     * ``cluster`` — cluster name for SLURM backends (``None`` for GCP).
@@ -3940,6 +3943,9 @@ def _attempt_one_gcp_rung(
             lease = Lease(
                 issue=int(spec.issue),
                 spec_hash=spec_hash(spec),
+                # Placeholder only — superseded by the fresh per-launch mint in
+                # _thread_attempt_id_into just before _prepare_and_launch below
+                # (#927); this lease exists here so the cap counter has a home.
                 attempt_id=_make_attempt_id(),
             )
         today = _today_utc_iso()
@@ -4365,9 +4371,11 @@ def _lease_after_submit(
     lease-write all hold the same flock (the read happened when the
     caller opened the transaction; this returns the new value the caller
     will hand to ``write_fn``). Pre-existing GCP attempt counter +
-    spec_hash + attempt_id fields are preserved on ``lease``; absent
-    lease → fresh one with the spec's attempt_id (or a freshly minted
-    one if none).
+    spec_hash + attempt_id fields are preserved on ``lease`` — the
+    threading step (:func:`_thread_attempt_id_into`) already set
+    ``attempt_id`` to THIS launch's id, so preserving it here records the
+    id the launch actually used. Absent lease → fresh one with the
+    spec's attempt_id (or a freshly minted one if none).
     """
     if lease is None:
         lease = Lease(
@@ -4406,58 +4414,58 @@ def _persist_lease_after_submit(
         write(_lease_after_submit(lease, spec, backend_kind, cluster, handle))
 
 
-def _thread_attempt_id(spec: RunSpec, store: LeaseStore) -> RunSpec:
-    """Ensure ``spec.extra["attempt_id"]`` is set + matches the lease.
-
-    Convenience wrapper that opens its own transaction; used ONLY when
-    the caller is NOT already inside a transaction (the override+auto
-    paths now hold one flock across reconnect-check → launch → lease-write
-    and use :func:`_thread_attempt_id_into` instead to avoid the re-entry
-    deadlock — :py:func:`fcntl.flock` from a fresh open-file-description
-    in the same process blocks against any held lock).
-    """
-    current_id = (spec.extra or {}).get("attempt_id")
-    with store.transaction(spec.issue) as (lease, write):
-        if lease is None:
-            attempt_id = str(current_id or _make_attempt_id())
-            lease = Lease(
-                issue=int(spec.issue),
-                spec_hash=spec_hash(spec),
-                attempt_id=attempt_id,
-            )
-            write(lease)
-        else:
-            attempt_id = lease.attempt_id
-
-    # RunSpec is frozen; replace ``extra`` with a new dict carrying the id.
-    new_extra = dict(spec.extra or {})
-    new_extra["attempt_id"] = attempt_id
-    return replace(spec, extra=new_extra)
-
-
 def _thread_attempt_id_into(
     spec: RunSpec,
     lease: Lease | None,
     write_fn: Callable[[Lease], None],
 ) -> tuple[RunSpec, Lease]:
-    """Same contract as :func:`_thread_attempt_id` but reuses an OPEN transaction.
+    """Mint a FRESH attempt id for this launch + thread it into the spec (#927).
 
     Returns ``(new_spec, lease)`` where ``new_spec`` carries the threaded
     ``attempt_id`` in ``extra``, and ``lease`` is the (possibly freshly
-    created) lease record. If lease was None, a fresh one is written via
-    ``write_fn`` — the caller's transaction owns the flock.
+    created) lease record — updated to the id the launch actually uses
+    and written via ``write_fn`` on BOTH branches ("lease follows the
+    launch", never vice versa). Every call site is a fresh-submit path
+    (the reconnect probes early-return above it), so "called ⇒ mint
+    fresh" is the invariant: reusing ``lease.attempt_id`` made a NEW
+    launch inherit a dead prior attempt's crash-persist / sentinel /
+    ``expected_artifacts`` namespace (#825: three relaunches all wrote
+    under ``att-20260702-061417``).
+
+    Reconnect id-stability does NOT live here: the router-level reconnect
+    early-returns before this function runs, and GCP recovers the
+    original id from the instance's ``eps-attempt`` label
+    (``gcp.reconnect_or_none``). One caveat on that label path: on the
+    ``GcpBackend.launch``-INTERNAL reconnect race (the instance came
+    alive between the router probe and ``launch()``), the instance's
+    ``eps-attempt`` LABEL id wins while the lease records the unused
+    fresh mint — so "lease follows the launch" is NOT guaranteed on that
+    race path; a future lease-id consumer must not design against it
+    (the handle sidecar, not the lease, names the live attempt).
+
+    A caller-pinned ``spec.extra["attempt_id"]`` takes precedence over
+    the fresh mint — even when a lease exists. Pinning is for explicit
+    re-attach tooling ONLY: a pinned spec re-routed across relaunches
+    reproduces the #825 namespace-collision class by construction.
+
+    MUST be called inside the caller's OPEN ``store.transaction`` — the
+    caller's transaction owns the flock (a nested ``store.transaction``
+    would deadlock: :py:func:`fcntl.flock` from a fresh
+    open-file-description in the same process blocks against any held
+    lock), and the in-transaction ``write_fn`` keeps the
+    reconnect-check → launch → lease-write sequence atomic.
     """
     current_id = (spec.extra or {}).get("attempt_id")
+    attempt_id = str(current_id or _make_attempt_id())
     if lease is None:
-        attempt_id = str(current_id or _make_attempt_id())
         lease = Lease(
             issue=int(spec.issue),
             spec_hash=spec_hash(spec),
             attempt_id=attempt_id,
         )
-        write_fn(lease)
     else:
-        attempt_id = lease.attempt_id
+        lease.attempt_id = attempt_id  # lease follows the launch, never vice versa
+    write_fn(lease)
     new_extra = dict(spec.extra or {})
     new_extra["attempt_id"] = attempt_id
     return replace(spec, extra=new_extra), lease
