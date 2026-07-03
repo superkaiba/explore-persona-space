@@ -318,8 +318,10 @@ the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
 LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
 the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
 `POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
-whereas a crash BEFORE the park leaves the task at its ACTIVE status, where
-the pod-active-stale alert + orphan-respawn remain loud backstops:
+whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
+(`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
+alert fires too:
 
 1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
    backstop cron must not outlive the pause), then Step 8-bis: stop any
