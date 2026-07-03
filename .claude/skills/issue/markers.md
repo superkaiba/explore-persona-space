@@ -22,6 +22,13 @@ post-marker` writes one row per call. The schema:
   distinct queued follow-ups share the kind under different
   `followup_label`s; group by label per
   `task_workflow.unrun_followup_labels`, #894).
+  `task.py post-marker` derives `max(existing)+1` per kind when `--version`
+  is omitted (an explicit `--version` always wins — required for multi-part
+  posts, where every part carries the same version). Briefs and skill/agent
+  prose never instruct a literal version for the round-versioned kinds
+  (`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests`) —
+  see the implementer agents' § Posting review-round markers (incidents
+  #389, #480, #825).
 - `note` = human-readable body (capped at 50,000 chars by `task.py`).
 - `metadata` = compact JSON sidecar (e.g., reviewer-loop fields below).
 

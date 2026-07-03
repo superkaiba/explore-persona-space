@@ -230,6 +230,21 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
+  default run): FAIL on a literal ``v1`` posting instruction for a
+  round-versioned marker kind (``epm:experiment-implementation`` /
+  ``epm:results`` / ``epm:proposed-tests``) in checked-in workflow prose
+  (CLAUDE.md, workflow.yaml, agents/rules ``.md``, every ``SKILL.md``, the
+  /issue ``markers.md`` + ``templates/``). Those kinds accrue rows across
+  follow-up rounds / TDD resumes / crash-recovery re-posts, and an explicit
+  ``--version`` beats the CLI's omitted-version max+1 default, so checked-in
+  "post at v1" prose seeds briefs that collide with existing rows (incident
+  #825: a follow-up-round brief instructed a literal v1 on a task already at
+  v6 — the #389 class). Whole-file scan (a line-wrapped kind/version pair
+  still trips); ``v1`` is word-bounded (``v12`` never matches); prose
+  evasions like "pass ``--version 1``" are a DELIBERATE boundary covered by
+  the brief-contract prose layers, not this lint. Historical archives
+  (``.claude/plans/``, ``.claude/agent-memory/``) are out of scan scope (#917).
 * ``--check-agent-tools`` (also bundled into the no-flags default run):
   every ``.claude/agents/*.md`` must declare an explicit tool surface — a
   ``tools:`` allowlist or a ``disallowedTools:`` denylist — in its YAML
@@ -3840,6 +3855,93 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# `--check-no-literal-round-marker-versions` (#917): the round-versioned marker
+# kinds must never be instructed at a literal ` v1` in checked-in workflow
+# prose. `\s+` (not a single space) so a line-wrapped kind/version pair still
+# trips under the whole-file scan; `v1\b` does NOT match `v12` (the legitimate
+# round-12 example in the /issue SKILL.md).
+_LITERAL_ROUND_MARKER_V1_RE = re.compile(
+    r"epm:(?:experiment-implementation|results|proposed-tests)\s+v1\b"
+)
+
+
+def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a literal ``v1`` posting instruction for a round-versioned marker kind.
+
+    The round-versioned kinds — ``epm:experiment-implementation``,
+    ``epm:results``, ``epm:proposed-tests`` — accrue rows across follow-up
+    rounds / TDD resumes / crash-recovery re-posts, and ``task.py post-marker``
+    derives ``max(existing)+1`` only when ``--version`` is OMITTED (an explicit
+    ``--version`` always wins, #480). Checked-in prose instructing "post
+    ``epm:<kind>`` at ``v1``" teaches orchestrators to compose briefs that pin
+    an explicit version 1, which collides with existing rows and silently
+    breaks highest-version-wins review-round detection (incident #825: a
+    follow-up-round brief instructed a literal v1 on a task already at v6 —
+    the #389 collision class). Prose defers to ``v<n>`` / max+1 instead.
+
+    Scan mode: whole-file ``re.finditer`` per file (NOT line-based), so a
+    line-wrapped kind/version pair (the kind at end-of-line, ``v1`` on the
+    next) still trips via ``\\s+``; ``v1\\b`` does not match ``v12``.
+
+    DELIBERATE boundary: prose evasions like "pass ``--version 1``" are OUT of
+    the pattern by design — that layer is covered by the brief-contract prose
+    (the /issue SKILL.md Step 4b marker-version-discipline bullet, the Step 9b
+    step-3 bullet, and the implementer agents' § Posting review-round markers
+    rule), and linting every ``--version 1`` mention would false-positive on
+    legitimate incident documentation. A future tightener should know this
+    boundary was chosen, not missed.
+
+    Scanned (positive enumeration): ``CLAUDE.md``, ``.claude/workflow.yaml``,
+    ``.claude/agents/*.md``, ``.claude/rules/*.md``,
+    ``.claude/skills/**/SKILL.md``, ``.claude/skills/issue/markers.md``, and
+    ``.claude/skills/issue/templates/*.md``. Everything else — notably
+    ``.claude/plans/`` and ``.claude/agent-memory/`` (historical quotes may
+    legitimately contain the incident text), skill support/iteration logs,
+    and ``scripts/`` / ``src/`` code paths (a separate follow-up covers the
+    poller's synthesized-envelope pin) — is excluded by NOT being enumerated.
+    ``repo_root`` is a unit-test override hook; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    targets: list[Path] = []
+    claude_md = root / "CLAUDE.md"
+    if claude_md.is_file():
+        targets.append(claude_md)
+    wf_yaml = root / ".claude" / "workflow.yaml"
+    if wf_yaml.is_file():
+        targets.append(wf_yaml)
+    for md_dir in (root / ".claude" / "agents", root / ".claude" / "rules"):
+        if md_dir.is_dir():
+            targets.extend(p for p in sorted(md_dir.glob("*.md")) if p.is_file())
+    skills_dir = root / ".claude" / "skills"
+    if skills_dir.is_dir():
+        targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+    markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
+    if markers_md.is_file():
+        targets.append(markers_md)
+    templates_dir = root / ".claude" / "skills" / "issue" / "templates"
+    if templates_dir.is_dir():
+        targets.extend(p for p in sorted(templates_dir.glob("*.md")) if p.is_file())
+
+    errors: list[str] = []
+    for p in targets:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for m in _LITERAL_ROUND_MARKER_V1_RE.finditer(text):
+            lineno = text.count("\n", 0, m.start()) + 1
+            matched = " ".join(m.group(0).split())
+            errors.append(
+                f"{p}:{lineno}: literal round-marker version instruction `{matched}` — "
+                f"this kind accrues rows across rounds and an explicit --version beats "
+                f"the CLI's max+1 default (incident #825; the #389 collision class). "
+                f"Rephrase to `v<n>` / max+1 (omit --version and the CLI derives it); "
+                f"see the implementer agents' § Posting review-round markers."
+            )
+    return errors
+
+
 # A destructive `git reset --hard` invocation. Whitespace-tolerant, broadened
 # (FI1) to catch flag-ordering variants:
 #   - `git reset --hard`, `git reset -q --hard`      (flags before --hard)
@@ -5158,6 +5260,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run (#765).",
     )
     parser.add_argument(
+        "--check-no-literal-round-marker-versions",
+        action="store_true",
+        help="FAIL on a literal 'v1' posting instruction for a round-versioned "
+        "marker kind (epm:experiment-implementation / epm:results / "
+        "epm:proposed-tests) in checked-in workflow prose (CLAUDE.md, "
+        "workflow.yaml, agents/rules .md, every SKILL.md, the /issue "
+        "markers.md + templates/). Those kinds accrue rows across follow-up "
+        "rounds, and an explicit --version beats the CLI's max+1 default, so "
+        "'post at v1' prose seeds briefs that collide with existing rows "
+        "(incident #825; the #389 class). Rephrase to v<n> / max+1. Bundled "
+        "into the no-flags default run (#917).",
+    )
+    parser.add_argument(
         "--check-agent-spec-size",
         action="store_true",
         help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
@@ -5207,6 +5322,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
+        or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
     )
 
@@ -5290,6 +5406,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_vm_thread_cap_guidance())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
+    if args.check_no_literal_round_marker_versions or no_flags:
+        errors.extend(check_no_literal_round_marker_versions())
 
     if errors:
         for err in errors:

@@ -489,7 +489,7 @@ gates:
       step: "4b"
       condition: "plan body contains '### TDD: yes' OR user explicitly requested TDD"
       reason: |
-        Implementer posts `epm:proposed-tests v1`, EXITs awaiting an
+        Implementer posts `epm:proposed-tests v<n>` (max+1), EXITs awaiting an
         `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
         after approval resumes Step 4b normally. (See `markers.md` and the
         implementer agent specs.)
