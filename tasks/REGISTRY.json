@@ -5836,8 +5836,8 @@
     "893": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/893",
-      "status": "planning",
+      "path": "tasks/approved/893",
+      "status": "approved",
       "title": "workflow-fix: bound verify_task_body committed-at-sha regex to a single clause"
     },
     "894": {
