@@ -3,11 +3,14 @@
 # Intentional Unicode (Δ, ℓ, →, ×) in scientific docstrings/log messages.
 """Issue #841 scaling-capture — the ONE GPU phase of the scaling-capture round.
 
-Captures last-prompt-token residual states (all 28 block outputs) for ~96,000
-NEW LMSYS prompts (stream positions 5001..101000, disjoint-by-construction from
-the parent's 1..5000), so Stage-0/Stage-1 can re-fit the parent's next-activation
-maps at fit-set sizes n ∈ {4k,10k,25k,50k,100k}. Single manipulated variable =
-the fit-corpus size (plan v9 §3); everything else matches the parent's pass_b.
+Captures last-prompt-token residual states (all 28 block outputs) for 96,000
+NEW LMSYS prompts drawn from stream positions 5001+ and STRING-FILTERED disjoint
+from the parent's 1..5000 (lmsys repeats prompt texts, so ~0.8% of raw new
+positions collide with a parent string and are dropped; the pool backfills from
+later stream positions to exactly 96,000 clean — see ``split_stream``), so
+Stage-0/Stage-1 can re-fit the parent's next-activation maps at fit-set sizes
+n ∈ {4k,10k,25k,50k,100k}. Single manipulated variable = the fit-corpus size
+(plan v9 §3); everything else matches the parent's pass_b.
 
 Forward: batched (left-pad + explicit position_ids), all 28 layers, last real
 token per sequence, cast fp32 for storage. ``--capture-dtype`` selects the
@@ -235,20 +238,63 @@ def kill_a_spot_gate(
 # ── disjointness ────────────────────────────────────────────────────────────────
 
 
-def split_stream(all_prompts: list[str]) -> tuple[list[str], list[str]]:
-    """Parent (first 5000) vs new (positions 5001..101000) — structural disjointness."""
-    assert len(all_prompts) == S.N_STREAM_TOTAL, (
-        f"loader returned {len(all_prompts)} prompts, expected {S.N_STREAM_TOTAL} "
-        "(corpus ran short — fall back to the WildChat caveat, §4.1)"
+def split_stream(all_prompts: list[str], n_new: int) -> tuple[list[str], list[str], int, int]:
+    """Parent (first N_PARENT) vs a CLEAN new pool of exactly ``n_new`` prompts.
+
+    The guarantee the plan's §4.1 disjointness protects is test-set contamination
+    protection: NO new fit-row string equals ANY parent-5000 string. lmsys-chat-1m
+    repeats prompt TEXTS across rows, so the stream positions 5001+ contain
+    parent-colliding strings by construction (~0.8% measured) — the old empty-overlap
+    assert was therefore unsatisfiable. FILTER instead: drop new prompts that collide
+    with the parent-5000 string set (cross-dedup ONLY — new-internal duplicates are
+    KEPT, exactly as the parent kept its own internal dupes, so no second variable is
+    introduced), and backfill from later stream positions until the clean pool holds
+    exactly ``n_new``. Hard-fail (never silently under-fill) if the over-streamed
+    buffer runs out of clean prompts first.
+
+    Returns ``(parent_prompts, new_clean, dropped_count, stream_extent)`` where
+    ``stream_extent`` is the 1-based stream position of the last consumed prompt
+    (provenance: how far into the stream the clean pool reached).
+    """
+    assert len(all_prompts) >= S.N_PARENT + n_new, (
+        f"loader returned {len(all_prompts)} prompts, need ≥ {S.N_PARENT + n_new} "
+        f"(parent {S.N_PARENT} + new {n_new}); corpus ran short (§4.1 WildChat fallback)"
     )
     parent_prompts = all_prompts[: S.N_PARENT]
-    new_prompts = all_prompts[S.N_PARENT :]
-    assert len(new_prompts) == S.N_NEW_CONTEXTS, (len(new_prompts), S.N_NEW_CONTEXTS)
-    # Belt-and-suspenders string-disjointness (the stream-position slice is the
-    # structural guarantee; this catches an accidental duplicate in the corpus).
-    overlap = set(new_prompts) & set(parent_prompts)
-    assert not overlap, f"{len(overlap)} new prompts collide with parent prompts (§4.1 step 3)"
-    return parent_prompts, new_prompts
+    parent_set = set(parent_prompts)
+    new_clean: list[str] = []
+    dropped = 0
+    stream_extent = S.N_PARENT
+    for offset, p in enumerate(all_prompts[S.N_PARENT :]):
+        if p in parent_set:
+            dropped += 1
+            continue
+        new_clean.append(p)
+        if len(new_clean) == n_new:
+            stream_extent = S.N_PARENT + offset + 1  # 1-based position of last consumed
+            break
+    if len(new_clean) < n_new:
+        n_raw_new = len(all_prompts) - S.N_PARENT
+        raise RuntimeError(
+            f"split_stream could not fill {n_new} clean new prompts: got {len(new_clean)} "
+            f"after dropping {dropped} parent-colliding prompts from {n_raw_new} raw new "
+            f"positions. Raise EPM_I841S_BACKFILL_MARGIN (currently "
+            f"{S.N_STREAM_BACKFILL_MARGIN}) or fall back to WildChat (§4.1)."
+        )
+    # POST-FILTER invariant (now trivially true — guards a regression): no clean new
+    # prompt string equals any parent string. This IS the §4.1 test-set-contamination
+    # guarantee, enforced by construction rather than asserted against raw stream order.
+    assert set(new_clean).isdisjoint(parent_set), (
+        "split_stream post-filter invariant violated: a new prompt still collides with parent"
+    )
+    logger.info(
+        "[split_stream] dropped %d parent-colliding prompts; new pool backfilled to %d clean "
+        "(stream extended to %d)",
+        dropped,
+        len(new_clean),
+        stream_extent,
+    )
+    return parent_prompts, new_clean, dropped, stream_extent
 
 
 # ── local no-GPU smoke substitutes ───────────────────────────────────────────────
@@ -456,13 +502,24 @@ def main() -> int:
     assert model.config.hidden_size == C.EXPECTED_HIDDEN, model.config.hidden_size
     layers = list(range(n_layers))
 
-    # Regenerate the deterministic stream + structural disjointness (§4.1).
+    # Regenerate the deterministic stream, then FILTER parent-colliding new prompts
+    # and backfill to exactly n_new clean (§4.1 test-set contamination protection).
+    # Over-stream by N_STREAM_BACKFILL_MARGIN so the drop-and-backfill still fills the
+    # clean pool; lmsys repeats prompt strings so an empty-overlap assert is impossible.
     from issue779_collect import load_train_contexts
 
-    all_prompts, source = load_train_contexts(S.N_STREAM_TOTAL, smoke=False)
-    parent_prompts, new_prompts = split_stream(all_prompts)
+    buffer_target = S.N_PARENT + n_new + S.N_STREAM_BACKFILL_MARGIN
+    all_prompts, source = load_train_contexts(buffer_target, smoke=False)
+    parent_prompts, new_prompts, dropped_collisions, stream_extent = split_stream(
+        all_prompts, n_new
+    )
     logger.info(
-        "[stream] source=%s parent=%d new=%d", source, len(parent_prompts), len(new_prompts)
+        "[stream] source=%s parent=%d new=%d dropped=%d stream_extent=%d",
+        source,
+        len(parent_prompts),
+        len(new_prompts),
+        dropped_collisions,
+        stream_extent,
     )
 
     # KILL-A spot-gate against the stored parent cx_last (before the full capture).
@@ -525,6 +582,8 @@ def main() -> int:
             "tf32": args.tf32,
             "source": source,
             "n_new": n_total,
+            "dropped_parent_collisions": dropped_collisions,
+            "stream_extent": stream_extent,
             "kill_a": spot,
             "smoke": args.smoke,
         }
@@ -549,7 +608,12 @@ def main() -> int:
             "tf32": args.tf32,
             "source": source,
             "kill_a": spot,
-            "disjointness": {"n_parent": len(parent_prompts), "n_new": len(new_prompts)},
+            "disjointness": {
+                "n_parent": len(parent_prompts),
+                "n_new": len(new_prompts),
+                "dropped_parent_collisions": dropped_collisions,
+                "stream_extent": stream_extent,
+            },
             "metadata": meta,
         },
     )

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -45,6 +46,13 @@ N_PARENT = 5000
 N_ANCHOR_FIT = C.N_FIT  # 4000
 N_NEW_CONTEXTS = 96000  # positions 5001..101000 of the deterministic LMSYS stream
 N_STREAM_TOTAL = N_PARENT + N_NEW_CONTEXTS  # 101000
+# lmsys-chat-1m repeats prompt STRINGS across rows, so ~0.8% of the raw new-pool
+# stream positions collide with a parent-5000 string (763/96000 measured, crash-fix
+# round). We over-stream by this margin and drop parent-colliding new prompts so the
+# clean new pool still fills exactly N_NEW_CONTEXTS. 8000 ≈ 10× the observed collision
+# rate; a shortfall past it hard-fails (never silently under-fills). Override for a
+# denser-collision corpus via EPM_I841S_BACKFILL_MARGIN.
+N_STREAM_BACKFILL_MARGIN = int(os.environ.get("EPM_I841S_BACKFILL_MARGIN", "8000"))
 
 # HF layout for this round's artifacts (data repo superkaiba1/explore-persona-space-data).
 HF_SCALING_PREFIX = "issue841_scaling"
