@@ -31,7 +31,7 @@ relates_to:
 - Two-turn chat assistant targets turn strongly nonlinear: an MLP (multilayer perceptron) probe recovers R² 0.557 (instruct) / 0.487 (pretrained) where ridge reads +0.076 / −0.461.
 - User-turn maps have no practical predictive power — R² −1.08 to −1.32 at layer 26 — yet sit above shuffle nulls; scoped to LLM-written second user turns.
 - Pretrained assistant→user transfer sign-flips with depth (ΔR² −0.62 at layer 14 → +0.23 at layer 26); provisional — single seed, n = 2000.
-- The replication gate vs the parent rig PASSed (layer-profile rank correlation 0.963, ΔR² 0.004 at layer 19); render-integrity evidence was lost at pod teardown (regenerable).
+- The replication gate vs the parent rig PASSed (layer-profile rank correlation 0.963, ΔR² 0.004 at layer 19); the render-integrity gate PASSed on regenerated evidence (cross-format span mismatch 3.0%, gate ≤ 10%).
 
 ## Goal
 
@@ -132,15 +132,15 @@ What is plotted: paired ΔR² (assistant-fit map applied to user targets, minus 
 
 In the pretrained model the assistant→user delta flips sign with depth: −0.623 [−0.809, −0.448] at layer 14, −0.171 [−0.315, −0.024] at 18, +0.124 [+0.013, +0.242] at 19, +0.229 [+0.166, +0.293] at 26. The instruct model is negative at all four layers (−0.709 / −0.634 / −0.311 / −0.214), so the positive transfer is a pretrained-only observation — no mechanism claim. The paired baseline is the previous same-role turn, not validated as topic-only; single seed, n = 2000 — provisional.
 
-### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render-integrity evidence lost
+### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render integrity PASS on regenerated evidence
 
 No figure; the gate outcomes are stated inline.
 
 - Replication gate (G1): the single-turn instruct map reproduces the parent run — layer-profile rank correlation 0.963; absolute R² difference at layer 19 of 0.004, within the 0.05 gate — PASS.
 - Two-turn signal gate (G3): selection read 0.093 vs shuffle null ≈ −0.036 at n = 2000 — PASS.
-- Render/BPE-integrity gate (G2): the evidence file was lost at pod teardown before upload; regenerable from the persisted turnstore. Reported as evidence-lost — not PASS.
+- Render/BPE-integrity gate (G2): the original evidence file was lost at pod teardown; regenerated deterministically from the persisted conversations (free-analysis follow-up, committed as `eval_results/issue_825/render_asserts.json`). Cross-format rest-of-span BPE mismatch 3.0% (241/8000; gate ≤ 10%), tokenizer-identity and span-integrity asserts PASS — PASS.
 
-All 10 planned within-cell maps and all 4 cross-role cells are present and analyzed; no silent drops. Binding constraints — single seed, LLM-synthetic second user turns, no MLP probe for naturalistic/user cells, G2 evidence lost — hold the headline at MODERATE, the cross-role sign-flip at LOW (provisional), and the user-turn null at LOW-to-MODERATE, scoped to LLM-written user turns.
+All 10 planned within-cell maps and all 4 cross-role cells are present and analyzed; no silent drops. Binding constraints — single seed, LLM-synthetic second user turns, no MLP probe for naturalistic/user cells — hold the headline at MODERATE, the cross-role sign-flip at LOW (provisional), and the user-turn null at LOW-to-MODERATE, scoped to LLM-written user turns.
 
 ---
 
