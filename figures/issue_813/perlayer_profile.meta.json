@@ -1,0 +1,2336 @@
+{
+  "commit": "71fb3e6c30",
+  "created": "2026-07-03T22:17:26Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.41433559243744966,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.5435118667431458,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 1.5270833432811333,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 1.3840116321994438,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 2.8729636186959193,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 1.7169981504497016,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 2.491525121706753,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 1.9392440436091747,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 1.8828816487271847,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 3.3224967917740242,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 4.966351721508663,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 5.29969246375903,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 5.08181944966461,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 5.118818139670021,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 4.1787043102773245,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 2.8164911531417,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 2.460325752511326,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 3.0026748971284807,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.6498987049788514,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.1425730934803724,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.5667468852429173,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.8029912621944775,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.7259601467977965,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.014698437930583,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 1.1189656521469848,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.3430039166871344,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 1.2381241532805334,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.3448730507858395,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.5295319775155276,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.8276427948868963,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 4.492981049673138,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 3.6707709972029594,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 2.135340258745925,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 1.8803410177834696,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.9042523218698847,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.6538675469865404,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 2.149253506898775,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 2.6388468351444945,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 3.5384855016093066,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.88408050495919,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.7275420449073966,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.5445258921144006,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.9920333244050176,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.9828889202218467,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 1.0409562587256351,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.2894325291720223,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.9308450560655339,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.921849416963999,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 1.0523598041773015,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.9593524373684724,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.0600133680800472,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.8971071977436467,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.1749413155162256,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.9511912892462381,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.7839929685166942,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.47271637614484674,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 1.702632322675991,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 4.688965625509258,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 3.968409912766098,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 2.4385429739507245,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 1.9850993944942614,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 1.0154165792710772,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.6585045210229467,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 2.132861621861103,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 2.8203716541999717,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 3.117195093695979,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 1.5393236375040467,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.40577420521354474,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.29596464907336256,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.3384178956835122,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.4871079959544673,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 0.8896220891099815,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.3731626634447234,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.0818274592659243,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 1.536654573790412,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 1.1834671282793117,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 1.1726409119004346,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.5583217941673875,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 1.3818279392349646,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.595611758149913,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 1.742636627934388,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.5608703144108264,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 1.0447585465595608,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.9976496481071913,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.41494302035798164,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.39622456088263364,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 2.6532313825512044,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 2.806807672313204,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.40288173840614455,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 1.470632987605218,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.21469781694203374,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.2937562491291427,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.8474719253095239,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.3608195979755912,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.3480849751004862,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.5526128515416459,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.3802897089843979,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.9726385009415406,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 0.8899918310642205,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 0.8252895358849871,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.39700388169712036,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 1.174088833823923,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 1.7289992646177423,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 2.4349791097479843,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.2519303325838176,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 1.694187247043578,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.7597679672019095,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 1.0497374269707647,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.5015960537700224,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 1.2358209272981526,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 2.051770467004558,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 2.2690761688370618,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 1.4003765724358914,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 0.6276444828710597,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.6656330577122039,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.8232472361333547,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.518258940502019,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 1.125828645799061,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 1.5453422226933289,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 1.2224649709003759,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.6941410082226732,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.28719002759489387,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.33864597093858567,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.4953559784980586,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.9698602235935044,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 1.295056389795395,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.2086792265174056,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.162316001425395,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 1.1762561287021294,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.3618384534149693,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.3539456165396832,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 0.346686728726134,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.48634782684884387,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 0.6977563767752808,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.83688194905418,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.7801475083847021,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 1.2281417615667047,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 2.0529162734988624,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 1.721824078709346,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 1.1552268050390646,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 1.131054947640749,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.7222241662299781,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 1.02077835984059,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.2799934777016907,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.9771401572752796,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 1.3964070368651265,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.9006630624126021,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.8347894185763194,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.3748800805711574,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.34553624341287514,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.6651445657087959,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 1.1033123680411747,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 1.623861920321414,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.3258916208904874,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.5711483210520825,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 1.716133929473695,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 1.5328335469294454,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 1.4259876504719033,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.1441612610643639,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.9133381294091748,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.165599799339554,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.5851310340396823,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.16205684211588967,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.4182639653295734,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.17304484600854195,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 1.0989789577151248,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.700291145498432,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 0.5300969362369079,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 1.8942476898902385,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 2.6014717817368123,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 2.1677415510691684,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 3.3737834033241807,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 2.610146981724046,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 3.32888572109456,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 5.753492642514034,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 3.7433642993667804,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 3.609838968740745,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 2.5905852151257034,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 2.170197085026761,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 2.243822750271392,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.4310305256773863,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.0367256703174084,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.836127403726728,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.4416594286955643,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.37179314903651917,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 0.3530300787573756,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.47931920260153477,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.003317465378085,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.7599710107689693,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.11574836870897898,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.4962082738396199,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 1.45752826051854,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.33580711364439214,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.8213599493065598,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 1.7170198653118078,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.4657775793172201,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.2928156036811287,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.6140228431366633,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.4961812430410557,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.4782649195896838,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.5305964332629931,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.6555049862921304,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.1986209857601033,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.9217143994396227,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 1.5269052967693069,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 1.0376742981310496,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 1.3314099405949502,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 0.9820339882751016,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.929574970179856,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.8967352394171196,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 1.572487946984529,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 1.7361106384072378,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.962044332353821,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 1.6049513078371473,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 2.043369257555772,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 1.3743991445143269,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.18122507652081196,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.464525281545534,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 1.4441228098289935,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.9147124628945585,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.40885223543697297,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 1.0723089968764972,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.6370952344264089,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.45518980993124014,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.6417297132540791,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 1.3260846580352013,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.5372314495025066,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.317711320862338,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 1.5206691904279113,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.6351114713820527,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 1.0776068175328728,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 1.6801513803873878,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 1.1586940893130486,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 1.5359992283029342,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 1.3113679680746855,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 1.0350814552000662,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.8092667430768006,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.9419278723642932,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 1.0003460067352776,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 1.0906094486409545,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 1.1614070345767338,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 1.4159926216227907,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.5995693421867666,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.013300209272780689,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.024845479786094766,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.025801671459464316,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.03989769775545613,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.07193006367274861,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 0.06904756230374383,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.050338303382143984,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.04275025695439535,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.03505073359512125,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.036669369416316384,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.03766737245093004,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.03785068884854577,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.04775822900610908,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.04063348833904728,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.05780627005980308,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.05791494165049108,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.060482499163012224,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 0.06405813085412908,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 0.08476522545000939,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.08192642050581152,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.08392999671808357,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.08708272815023976,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.09116090527968063,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 0.09025378448656256,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.10112155080318272,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 0.11654832227459612,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.42871037247537214,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.012383023117986613,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.018498114051883296,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.0226624616324776,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.04401382516787501,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.07719771879987326,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 0.07377013722674473,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.06026870183673079,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.051634924929140597,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.04988889054837127,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.045011087746764045,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.04489445790949457,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.040991227583194664,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.045452531670676484,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.04117464765095615,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.05284674480676927,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.04937141551972463,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.05333257068057528,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 0.05926332869972369,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 0.09076482657198524,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.08683657318469992,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.08740325383855808,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.08156219326765807,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.08328731997264155,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 0.08648019589614392,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.10098552000019415,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 0.11738736797818886,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.47647008453227624,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "\u0394/floor (floor-normalized map change)": 0.012675960783112155,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 2.0,
+      "\u0394/floor (floor-normalized map change)": 0.021252056170826133,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 3.0,
+      "\u0394/floor (floor-normalized map change)": 0.023721485971464982,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 4.0,
+      "\u0394/floor (floor-normalized map change)": 0.04285268600511995,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 5.0,
+      "\u0394/floor (floor-normalized map change)": 0.07320729489803915,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 6.0,
+      "\u0394/floor (floor-normalized map change)": 0.0708526359131656,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 7.0,
+      "\u0394/floor (floor-normalized map change)": 0.054484624574547155,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 8.0,
+      "\u0394/floor (floor-normalized map change)": 0.046249790141606614,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 9.0,
+      "\u0394/floor (floor-normalized map change)": 0.03995942623510952,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 10.0,
+      "\u0394/floor (floor-normalized map change)": 0.0390833745968527,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 11.0,
+      "\u0394/floor (floor-normalized map change)": 0.038566223004125336,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 12.0,
+      "\u0394/floor (floor-normalized map change)": 0.03668875006197253,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 13.0,
+      "\u0394/floor (floor-normalized map change)": 0.04553493566524132,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.040477716893615526,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 15.0,
+      "\u0394/floor (floor-normalized map change)": 0.05361021190417379,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 16.0,
+      "\u0394/floor (floor-normalized map change)": 0.054049228261988776,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 17.0,
+      "\u0394/floor (floor-normalized map change)": 0.056508149572105607,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 18.0,
+      "\u0394/floor (floor-normalized map change)": 0.06182996620184194,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 19.0,
+      "\u0394/floor (floor-normalized map change)": 0.08964100211965494,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 20.0,
+      "\u0394/floor (floor-normalized map change)": 0.08549256655925826,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 21.0,
+      "\u0394/floor (floor-normalized map change)": 0.0903688948833685,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 22.0,
+      "\u0394/floor (floor-normalized map change)": 0.08812675088127311,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 23.0,
+      "\u0394/floor (floor-normalized map change)": 0.09102592989178848,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 24.0,
+      "\u0394/floor (floor-normalized map change)": 0.09390658514390623,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 25.0,
+      "\u0394/floor (floor-normalized map change)": 0.10652003972306426,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 26.0,
+      "\u0394/floor (floor-normalized map change)": 0.12052153464422871,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 27.0,
+      "\u0394/floor (floor-normalized map change)": 0.40551545396399086,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 14.0,
+      "\u0394/floor (floor-normalized map change)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 332
+}
