@@ -170,19 +170,126 @@ def fig3(data: dict, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig4(identity: dict, out_dir: Path) -> None:
+    """Identity baseline (follow-up round): ridge v_A'(x) -> v_target(x) vs the context refit.
+
+    Left: grouped bars at each trait's read-out layer — context->plain refit (reference)
+    vs own-answer-profile ridge to plain / distinct-style / mismatched targets.
+    Right: per-layer own-profile->plain curve vs the context->plain refit and the
+    own-profile->mismatched floor (11-layer grid). Error bars = fold SD.
+    """
+    ib = identity["identity_baseline_r2"]
+    ref = identity["reference_refit"]
+    series_color = {
+        "ctx_b2": "#555555",  # context -> plain refit (reference)
+        "id_b2": "#159f7f",  # own profile -> plain
+        "id_b1": "#e8a33d",  # own profile -> distinct style
+        "id_c": "#d1500f",  # own profile -> mismatched
+    }
+    series_label = {
+        "ctx_b2": "context → plain external (refit)",
+        "id_b2": "own-answer profile → plain external",
+        "id_b1": "own-answer profile → distinct-style external",
+        "id_c": "own-answer profile → mismatched (shuffled)",
+    }
+
+    fig, (axl, axr) = plt.subplots(1, 2, figsize=(10.6, 4.4), width_ratios=[1.0, 1.15])
+
+    # Left: grouped bars at read-out layers.
+    xs = np.arange(len(TRAITS))
+    order = ["ctx_b2", "id_b2", "id_b1", "id_c"]
+    width = 0.19
+    for j, key in enumerate(order):
+        means, sds = [], []
+        for t in TRAITS:
+            layer = str(READOUT[t])
+            if key == "ctx_b2":
+                means.append(ref["B2"][layer]["refit_r2_mean"])
+                sds.append(ref["B2"][layer]["refit_r2_sd"])
+            else:
+                arm = {"id_b2": "b2", "id_b1": "b1", "id_c": "c"}[key]
+                means.append(ib[arm][layer]["r2_mean"])
+                sds.append(ib[arm][layer]["r2_sd"])
+        pos = xs + (j - (len(order) - 1) / 2) * width
+        axl.bar(
+            pos,
+            means,
+            width=width * 0.95,
+            yerr=sds,
+            capsize=2.5,
+            color=series_color[key],
+            label=series_label[key],
+            error_kw={"lw": 1.0, "ecolor": "#333333"},
+        )
+    axl.set_xticks(xs)
+    axl.set_xticklabels([f"{t}\n(read-out L{READOUT[t]})" for t in TRAITS])
+    axl.set_ylabel("Pooled 5-fold out-of-fold $R^2$")
+    axl.set_ylim(-0.06, 0.95)
+    axl.axhline(0.0, color="#888888", lw=0.8)
+    axl.legend(loc="upper left", fontsize=7.6, framealpha=0.9)
+
+    # Right: per-layer curves on the 11-layer grid.
+    grid = sorted(int(k) for k in ib["b2"].keys())
+    gl = [str(k) for k in grid]
+    curves = {
+        "id_b2": ([ib["b2"][k]["r2_mean"] for k in gl], [ib["b2"][k]["r2_sd"] for k in gl]),
+        "ctx_b2": (
+            [ref["B2"][k]["refit_r2_mean"] for k in gl],
+            [ref["B2"][k]["refit_r2_sd"] for k in gl],
+        ),
+        "id_c": ([ib["c"][k]["r2_mean"] for k in gl], [ib["c"][k]["r2_sd"] for k in gl]),
+    }
+    for key, ls in [("id_b2", "-"), ("ctx_b2", "--"), ("id_c", "-")]:
+        m, s = curves[key]
+        axr.errorbar(
+            grid,
+            m,
+            yerr=s,
+            fmt=ls,
+            marker="o",
+            ms=3.5,
+            lw=1.7,
+            capsize=2.0,
+            color=series_color[key],
+            label=series_label[key],
+        )
+    axr.set_xlabel("Layer")
+    axr.set_ylabel("Pooled 5-fold out-of-fold $R^2$")
+    axr.set_ylim(-0.06, 0.80)
+    axr.axhline(0.0, color="#888888", lw=0.8)
+    axr.legend(loc="center right", fontsize=7.6, framealpha=0.9)
+
+    fig.suptitle(
+        "Identity baseline: the own-answer profile predicts the plain external answer\n"
+        "profile better than the context does; mismatched targets stay at zero",
+        y=1.10,
+    )
+    savefig_paper(fig, "fig4_identity_baseline", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="eval_results/issue_823/ridge_r2_by_arm.json")
+    ap.add_argument("--identity-results", default="eval_results/issue_823/identity_baseline.json")
     ap.add_argument("--out", default="figures/issue_823")
+    ap.add_argument("--figs", default="1,2,3,4", help="comma-separated subset of figures to build")
     args = ap.parse_args()
     set_paper_style()
-    data = load(Path(args.results))
+    which = {f.strip() for f in args.figs.split(",") if f.strip()}
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig1(data, out_dir)
-    fig2(data, out_dir)
-    fig3(data, out_dir)
-    print(f"wrote 3 figures to {out_dir}")
+    if which & {"1", "2", "3"}:
+        data = load(Path(args.results))
+        if "1" in which:
+            fig1(data, out_dir)
+        if "2" in which:
+            fig2(data, out_dir)
+        if "3" in which:
+            fig3(data, out_dir)
+    if "4" in which:
+        fig4(load(Path(args.identity_results)), out_dir)
+    print(f"wrote figures {sorted(which)} to {out_dir}")
 
 
 if __name__ == "__main__":
