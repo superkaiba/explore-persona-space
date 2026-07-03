@@ -104,6 +104,12 @@ json.dump({
       'capture_hf': 'issue841_scaling/cx_last_shards/',
       'ridge_maps_hf': 'issue841_scaling/ridge_maps_n*/',
     },
+    'overflow_routing': {
+      'overflow_repo': 'superkaiba1/explore-persona-space-overflow',
+      'reason': 'public LFS quota 403 (#541/#552 LFS wall)',
+      'lfs_prefixes': ['issue841_scaling/cx_last_shards/', 'issue841_scaling/ridge_maps_n*/', 'issue841_scaling/mlp_maps_n*/'],
+      'note': 'LFS .pt shards + maps routed to the PRIVATE overflow repo; non-LFS (manifests, .done.json) + OVERFLOW_POINTER.json on the canonical public data repo',
+    },
     'reproducibility_card': 'N/A — forward-pass capture + closed-form/MLP fits; no adapters, no WandB',
   }),
 }, open(sys.argv[1], 'w'), indent=2)

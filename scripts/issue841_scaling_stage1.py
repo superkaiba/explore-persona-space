@@ -536,15 +536,17 @@ def _synthetic_inputs(hidden, ns_all, anchor_n):
 
 
 def _fetch_map(maps_dir, fname, hf_bucket, device, loader):
-    """Local-first → HF-fetch a per-n map file; return the loaded maps dict."""
+    """Local-first → HF-fetch a per-n map file; return the loaded maps dict.
+
+    The HF-fetch leg is overflow-aware (map .pt files are rerouted to the private
+    overflow repo when the public LFS quota is full, #541); same-instance reads hit
+    the local file and never touch HF.
+    """
     path = maps_dir / fname
     if not path.exists():
-        from huggingface_hub import hf_hub_download
-
-        rel = f"{hf_bucket}/{fname}"
-        logger.info("[maps] local %s absent; fetching %s", path, rel)
+        logger.info("[maps] local %s absent; fetching %s/%s", path, hf_bucket, fname)
         path.parent.mkdir(parents=True, exist_ok=True)
-        local = hf_hub_download(C.HF_DATA_REPO, filename=rel, repo_type="dataset")
+        local = S.hf_download_pt_maybe_overflow(C.HF_DATA_REPO, hf_bucket, fname)
         if not path.exists():
             path.symlink_to(Path(local).resolve())
     return loader(path, device)

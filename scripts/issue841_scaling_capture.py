@@ -764,8 +764,6 @@ def main() -> int:
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.orchestrate.hub import upload_dataset_directory
-
     n_new = 64 if args.smoke else args.n_contexts
     _set_tf32(args.tf32)
     logger.info(
@@ -892,9 +890,24 @@ def main() -> int:
         logger.info("[capture] wrote shard %d/%d rows[%d:%d]", idx + 1, len(bounds), lo, hi)
         del cx_chunk
 
+    # This round routes LFS shards to the PRIVATE overflow repo (public LFS quota 403,
+    # #541/#552); non-LFS + an OVERFLOW_POINTER.json stay on the canonical public repo.
+    # Record the deviation in the manifest metadata + durable capture_summary so the
+    # upload-verifier and analyzer see WHERE the LFS landed and WHY.
+    overflow_routing = {
+        "overflow_repo": S.OVERFLOW_REPO,
+        "canonical_repo": C.HF_DATA_REPO,
+        "path_in_repo": S.HF_CAPTURE_BUCKET,
+        "lfs_glob": "*.pt",
+        "reason": (
+            S.OVERFLOW_REASON + " — LFS .pt shards → private overflow repo; non-LFS "
+            "(manifest, .done.json) + OVERFLOW_POINTER.json → canonical public repo"
+        ),
+    }
     meta = C.reproducibility_metadata(
         {
             "phase": "scaling_capture",
+            "overflow_routing": overflow_routing,
             "capture_dtype": realized_capture_dtype,
             "requested_capture_dtype": args.capture_dtype,
             "realized_capture_dtype": realized_capture_dtype,
@@ -933,13 +946,23 @@ def main() -> int:
                 "dropped_parent_collisions": dropped_collisions,
                 "stream_extent": stream_extent,
             },
+            "overflow_routing": overflow_routing,
             "metadata": meta,
         },
     )
 
     if not args.no_upload:
-        logger.info("[upload] cx_last shards → %s:%s", C.HF_DATA_REPO, S.HF_CAPTURE_BUCKET)
-        upload_dataset_directory(args.capture_dir, S.HF_CAPTURE_BUCKET, pattern="*")
+        dev = S.upload_split_lfs_to_overflow(
+            args.capture_dir, S.HF_CAPTURE_BUCKET, reason=overflow_routing["reason"]
+        )
+        logger.info(
+            "[upload] cx_last shards split: %d LFS → %s, %d non-LFS → %s:%s (pointer written)",
+            dev["n_lfs"],
+            dev["overflow_repo"],
+            dev["n_nonlfs"],
+            C.HF_DATA_REPO,
+            S.HF_CAPTURE_BUCKET,
+        )
 
     logger.info(
         "[done] captured %d new contexts (requested=%s realized=%s)",

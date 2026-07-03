@@ -485,11 +485,11 @@ def main() -> int:
     C.write_json_atomic(out_dir / "stage0_scaling.json", result)
 
     # Persist every fitted RAW map (Stage-1 reloads them for the class dimension) + upload.
+    # LFS maps (.pt) route to the PRIVATE overflow repo (public LFS quota 403, #541/#552);
+    # each bucket gets its OVERFLOW_POINTER.json breadcrumb on the canonical public repo.
     def _upload_maps(path, bucket):
         if not args.no_upload:
-            from explore_persona_space.orchestrate.hub import upload_dataset_directory
-
-            upload_dataset_directory(path.parent, bucket, pattern=path.name)
+            S.upload_split_lfs_to_overflow(path, bucket, reason=S.OVERFLOW_REASON)
 
     for n, maps in ridge_maps_by_n.items():
         path = maps_dir / f"ridge_maps_n{n}.pt"

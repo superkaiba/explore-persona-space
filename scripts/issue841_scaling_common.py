@@ -20,6 +20,8 @@ import json
 import logging
 import os
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -333,29 +335,207 @@ def load_capture(capture_dir: Path) -> dict:
     }
 
 
-def fetch_capture_from_hf(capture_dir: Path) -> Path:
-    """Download the cx_last shards + manifest from the HF data repo (fallback path).
+# ── HF public-storage LFS-quota (#541/#552) overflow routing ──────────────────────
+# The account-wide PUBLIC-storage quota gates ONLY the LFS endpoint; PRIVATE-repo LFS
+# is a separate quota with headroom. When the public quota is full, this round routes
+# the LFS artifacts (cx_last .pt shards, ridge/mlp map .pt) to the PRIVATE overflow
+# repo, keeps the non-LFS files (manifests, .done.json) + an OVERFLOW_POINTER.json
+# breadcrumb on the canonical PUBLIC data repo, and threads a deviation record into the
+# capture metadata/summary/sentinel. Mirrors hub.DEFAULT_OVERFLOW_REPO (asserted below).
+OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"
+OVERFLOW_REASON = "public LFS quota 403 (#541/#552 LFS wall)"
 
-    Local-first is the caller's job (``load_capture``); this is the HF-fetch leg
-    for a fresh instance whose local scratch is empty. Fail-loud on any miss.
+
+def _overflow_repo_for_bucket(
+    canonical_repo: str, bucket: str, repo_type: str = "dataset"
+) -> str | None:
+    """Return the overflow repo id iff ``<bucket>/OVERFLOW_POINTER.json`` exists on the
+    canonical repo (i.e. this bucket's LFS was rerouted), else None. Fail-soft on any
+    listing/parse error → None (falls back to the canonical repo, backward-compatible)."""
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    pointer_rel = f"{bucket.rstrip('/')}/OVERFLOW_POINTER.json"
+    try:
+        if pointer_rel not in list_repo_files(canonical_repo, repo_type=repo_type):
+            return None
+        local = hf_hub_download(canonical_repo, filename=pointer_rel, repo_type=repo_type)
+        return json.loads(Path(local).read_text()).get("overflow_repo")
+    except Exception as e:
+        logger.warning("[overflow] pointer probe for %s:%s failed (%s)", canonical_repo, bucket, e)
+        return None
+
+
+def hf_download_pt_maybe_overflow(
+    canonical_repo: str, bucket: str, fname: str, repo_type: str = "dataset"
+) -> str:
+    """Download ``<bucket>/<fname>`` to the local HF cache, preferring the PRIVATE
+    overflow repo for a rerouted ``.pt`` (when ``<bucket>/OVERFLOW_POINTER.json`` is
+    present on ``canonical_repo``). Non-``.pt`` files always come from the canonical
+    repo. Fail-loud: raises if a pointer says overflow but the shard is not there."""
+    from huggingface_hub import hf_hub_download
+
+    rel = f"{bucket.rstrip('/')}/{fname}"
+    if fname.endswith(".pt"):
+        overflow = _overflow_repo_for_bucket(canonical_repo, bucket, repo_type)
+        if overflow:
+            return hf_hub_download(overflow, filename=rel, repo_type=repo_type)
+    return hf_hub_download(canonical_repo, filename=rel, repo_type=repo_type)
+
+
+def _write_overflow_pointer_dataset(
+    canonical_repo: str, path_in_repo: str, overflow_repo: str, reason: str
+) -> None:
+    """Upload an ``OVERFLOW_POINTER.json`` breadcrumb to the canonical DATASET repo at
+    ``<path_in_repo>/`` (non-LFS — succeeds over the public LFS quota). Fail-soft: a
+    pointer-write failure logs loudly but never fails the already-verified LFS upload.
+    (hub._write_overflow_pointer targets repo_type='model'; this is the dataset twin
+    with the team-lead's {overflow_repo, path_in_repo, ts, reason} schema.)"""
+    from explore_persona_space.orchestrate import hub
+
+    payload = {
+        "overflow_repo": overflow_repo,
+        "path_in_repo": path_in_repo.rstrip("/"),
+        "ts": time.time(),
+        "reason": reason,
+    }
+    tmp = Path(tempfile.gettempdir()) / f"OVERFLOW_POINTER_{os.getpid()}.json"
+    try:
+        tmp.write_text(json.dumps(payload, indent=2))
+        dest = (
+            f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
+            if path_in_repo
+            else "OVERFLOW_POINTER.json"
+        )
+        url = hub._upload(tmp, canonical_repo, "dataset", dest, upload_as_file=True)
+        if url:
+            logger.info(
+                "[upload] overflow pointer → %s/%s → %s", canonical_repo, dest, overflow_repo
+            )
+        else:
+            logger.warning(
+                "[upload] overflow pointer write returned empty (%s/%s)", canonical_repo, dest
+            )
+    except Exception as e:
+        logger.warning(
+            "[upload] overflow pointer write failed (%s); LFS remains at %s", e, overflow_repo
+        )
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def upload_split_lfs_to_overflow(
+    local_path: Path,
+    path_in_repo: str,
+    *,
+    lfs_glob: str = "*.pt",
+    canonical_repo: str | None = None,
+    reason: str = OVERFLOW_REASON,
+) -> dict:
+    """Split an artifact dir/file across repos to route around the public LFS quota 403.
+
+    LFS files (``lfs_glob``, default ``*.pt``) → the PRIVATE overflow repo (created
+    private if missing); non-LFS files (manifests, ``.done.json``) → the canonical
+    PUBLIC dataset repo unchanged; an ``OVERFLOW_POINTER.json`` breadcrumb → the
+    canonical repo at ``path_in_repo``. Every LFS + non-LFS upload is FAIL-LOUD
+    (raises on any verification miss); the pointer is fail-soft. Logs the fix-engaged
+    signal at the FIRST rerouted upload. Returns a deviation dict for the caller to
+    record in metadata/summary/sentinel. ``local_path`` may be a directory (globbed
+    non-recursively) or a single file.
+    """
+    from fnmatch import fnmatch
+
+    from explore_persona_space.orchestrate import hub
+
+    assert OVERFLOW_REPO == hub.DEFAULT_OVERFLOW_REPO, (OVERFLOW_REPO, hub.DEFAULT_OVERFLOW_REPO)
+    canonical = canonical_repo or C.HF_DATA_REPO
+    local_path = Path(local_path)
+    files = (
+        sorted(p for p in local_path.iterdir() if p.is_file())
+        if local_path.is_dir()
+        else [local_path]
+    )
+    lfs = [p for p in files if fnmatch(p.name, lfs_glob)]
+    nonlfs = [p for p in files if not fnmatch(p.name, lfs_glob)]
+    prefix = path_in_repo.rstrip("/")
+
+    for f in nonlfs:  # non-LFS → canonical public repo (unchanged path), fail-loud
+        dest = f"{prefix}/{f.name}"
+        if not hub._upload(f, canonical, "dataset", dest, upload_as_file=True):
+            raise RuntimeError(f"non-LFS upload failed: {f} → {canonical}:{dest}")
+
+    for i, f in enumerate(lfs):  # LFS → PRIVATE overflow repo, fail-loud
+        if i == 0:
+            logger.info(
+                "[upload] LFS artifacts → overflow repo %s (public quota 403 recovery); "
+                "pointer written",
+                OVERFLOW_REPO,
+            )
+        dest = f"{prefix}/{f.name}"
+        if not hub._upload(f, OVERFLOW_REPO, "dataset", dest, upload_as_file=True, private=True):
+            raise RuntimeError(f"LFS overflow upload failed: {f} → {OVERFLOW_REPO}:{dest}")
+
+    if lfs:
+        _write_overflow_pointer_dataset(canonical, prefix, OVERFLOW_REPO, reason)
+    return {
+        "overflow_repo": OVERFLOW_REPO,
+        "canonical_repo": canonical,
+        "path_in_repo": prefix,
+        "lfs_glob": lfs_glob,
+        "reason": reason,
+        "n_lfs": len(lfs),
+        "n_nonlfs": len(nonlfs),
+        "ts": time.time(),
+    }
+
+
+def fetch_capture_from_hf(capture_dir: Path) -> Path:
+    """Download the cx_last shards + manifest from HF (fallback path, overflow-aware).
+
+    Local-first is the caller's job (``load_capture``); this is the HF-fetch leg for a
+    fresh instance whose local scratch is empty. When the LFS shards were rerouted to
+    the private overflow repo (``OVERFLOW_POINTER.json`` present on the public bucket,
+    #541 quota recovery), the ``.pt`` shards are fetched from OVERFLOW and the non-LFS
+    files from the public repo — so a durability read never returns a partial public
+    shard set. Fail-loud on any miss.
     """
     from huggingface_hub import hf_hub_download, list_repo_files
 
-    files = [
+    public_files = [
         f
         for f in list_repo_files(C.HF_DATA_REPO, repo_type="dataset")
         if f.startswith(f"{HF_CAPTURE_BUCKET}/")
     ]
-    if not files:
+    if not public_files:
         raise FileNotFoundError(
-            f"no capture shards at {C.HF_DATA_REPO}:{HF_CAPTURE_BUCKET}/ — run capture first"
+            f"no capture artifacts at {C.HF_DATA_REPO}:{HF_CAPTURE_BUCKET}/ — run capture first"
         )
+    overflow = _overflow_repo_for_bucket(C.HF_DATA_REPO, HF_CAPTURE_BUCKET)
     capture_dir.mkdir(parents=True, exist_ok=True)
-    for rel in files:
-        local = hf_hub_download(C.HF_DATA_REPO, filename=rel, repo_type="dataset")
+
+    def _link(repo: str, rel: str) -> None:
+        local = hf_hub_download(repo, filename=rel, repo_type="dataset")
         dst = capture_dir / Path(rel).name
         if not dst.exists():
             dst.symlink_to(Path(local).resolve())
+
+    for rel in public_files:  # non-.pt (+ .pt when NOT rerouted) from the public repo
+        if rel.endswith(".pt") and overflow:
+            continue  # shard lives on overflow; fetched below
+        if rel.endswith("OVERFLOW_POINTER.json"):
+            continue  # breadcrumb, not a capture artifact
+        _link(C.HF_DATA_REPO, rel)
+    if overflow:
+        shard_files = [
+            f
+            for f in list_repo_files(overflow, repo_type="dataset")
+            if f.startswith(f"{HF_CAPTURE_BUCKET}/") and f.endswith(".pt")
+        ]
+        if not shard_files:
+            raise FileNotFoundError(
+                f"OVERFLOW_POINTER present but no .pt shards at {overflow}:{HF_CAPTURE_BUCKET}/"
+            )
+        for rel in shard_files:
+            _link(overflow, rel)
     return capture_dir
 
 
