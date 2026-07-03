@@ -24,6 +24,7 @@ brief:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -51,6 +52,7 @@ from explore_persona_space.backends import (
 )
 from explore_persona_space.backends.gcp import (
     _JANITOR_FENCE_GRACE_SECONDS,
+    _ZOMBIE_GUEST_PHASES,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -1358,6 +1360,76 @@ def test_gcp_probe_error_is_backend_probe_error() -> None:
     assert issubclass(GcpProbeError, BackendProbeError)
 
 
+# ---------------------------------------------------------------------------
+# Reconnect refusal of RUNNING + terminal-phase zombies (#908/#763)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+def test_reconnect_refuses_running_instance_with_terminal_guest_phase(phase: str) -> None:
+    """A RUNNING instance whose workload already published a terminal/wedged
+    eps/phase is a gate-park/finished zombie, NOT a live run to rejoin —
+    reconnecting to it silently no-ops the new dispatch (#763 leg 2: the
+    phase-C launch "reconnected" to the gate-parked done VM and never ran)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+
+
+def test_reconnect_returns_handle_when_running_with_nonterminal_phase() -> None:
+    """A live mid-run instance (phase=workload) keeps the idempotent
+    reconnect path byte-for-byte (#908 must not break healthy re-entry)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_returns_handle_when_phase_unwritten() -> None:
+    """gcloud 404/not-found = attribute not written yet (early boot) —
+    reconnect normally (`_read_guest_phase` returns "")."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "guest attribute eps/phase not found")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_phase_probe_failure_raises_probe_error() -> None:
+    """A guest-attribute probe FAILURE (non-404 rc != 0) is UNKNOWN state:
+    it must read as NEITHER "live, reconnect" (resurrects the #763 silent
+    no-op) NOR "zombie, delete" (could reclaim a healthy VM) — the #535
+    "couldn't ask" discipline; the launch fails typed + retriable."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+@pytest.mark.parametrize("status", ["PROVISIONING", "STOPPING"])
+def test_reconnect_probes_phase_only_for_running_status(status: str) -> None:
+    """The phase gate is RUNNING-only (mirrors the janitor's
+    should_probe_phase scoping): PROVISIONING/STAGING have no phase yet and
+    STOPPING is the seconds-long teardown transition — both reconnect as
+    today with NO guest-attribute probe issued. Mis-scoping would silently
+    widen the R5 dead-end via the fake's 404 default."""
+    runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload(status), "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert not [a for a in runner.calls if "get-guest-attributes" in a], runner.calls
+
+
 def test_launch_skips_create_when_reconnect_finds_live_instance(no_marker_posts) -> None:
     """Regression guard for the idempotency contract: a re-launch on
     a still-live instance must NOT double-provision."""
@@ -1539,12 +1611,140 @@ def test_stale_named_instance_bad_json_raises_probe_error() -> None:
 def test_stale_named_instance_refuses_to_delete_live_status() -> None:
     """A non-deletable status (only reachable as a TOCTOU race vs the
     reconnect probe) must FAIL loudly — never auto-delete a possibly-live
-    VM (data loss). The success criterion's data-loss guard."""
+    VM (data loss). The success criterion's data-loss guard. (Post-#908
+    the RUNNING path first re-probes the phase; the fake's guest-attr 404
+    default reads "" = non-terminal, so the raise is preserved.)"""
     from explore_persona_space.backends.gcp import GcpBackendError
 
     runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")])
     with pytest.raises(GcpBackendError, match="non-deletable status"):
         _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+# ---------------------------------------------------------------------------
+# Pre-launch reclaim of RUNNING + terminal-phase zombies (#908/#763)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+def test_stale_named_instance_returns_record_for_running_terminal_phase(phase: str) -> None:
+    """The #908 matched delete: the SAME RUNNING+terminal-phase record that
+    reconnect refuses must be deletable here, or the refusal dead-ends in
+    the #632 "already exists" create collision."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+    )
+    stale = _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.name == "eps-issue-137"
+    assert stale.status == "RUNNING"
+    assert stale.guest_phase == phase
+    assert stale.zone == "us-central1-b"
+
+
+def test_stale_named_instance_still_refuses_running_nonterminal_phase() -> None:
+    """A RUNNING record whose re-probed phase is NON-terminal keeps the loud
+    TOCTOU raise — never auto-delete a possibly-live instance (#908
+    preserves the existing semantics for every non-zombie RUNNING record)."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    with pytest.raises(GcpBackendError, match="non-deletable status"):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_stale_named_instance_phase_probe_failure_raises_probe_error() -> None:
+    """A phase-probe failure on a RUNNING record is UNKNOWN state: no
+    StaleNamedInstance (no delete on unknown state), no GcpBackendError —
+    a typed, retriable GcpProbeError (#535 discipline)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    with pytest.raises(GcpProbeError):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+@pytest.mark.parametrize("phase", sorted(_ZOMBIE_GUEST_PHASES))
+def test_reconnect_skip_set_matches_prelaunch_delete_set_for_phase_zombie(phase: str) -> None:
+    """THE consistency pin, as a BEHAVIORAL SWEEP over the shared constant:
+    for EVERY member of _ZOMBIE_GUEST_PHASES, identical mocked project
+    state (one RUNNING record + that phase) must make reconnect SKIP
+    (None) AND the stale probe return a DELETABLE record. A one-sided
+    membership edit diverges loudly, and a future membership change
+    auto-extends coverage (the #632 skip/delete identical-sets invariant)."""
+
+    def _fresh_runner() -> _Runner:
+        return _Runner(
+            list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+            guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+        )
+
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=_fresh_runner()) is None
+    stale = _stale_named_instance_or_none(
+        spec=_spec(), config=_test_config(), runner=_fresh_runner()
+    )
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.guest_phase == phase
+
+
+def test_launch_deletes_terminal_phase_zombie_then_creates_fresh(no_marker_posts) -> None:
+    """End-to-end #908/#763 leg 2: a launch against a RUNNING+done zombie
+    deletes it then creates fresh — never a silent no-op reconnect
+    (pre-#908, this exact state returned reason=reconnect and the new
+    workload never ran)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "445566"}])
+    runner = _Runner(
+        # 1st list = reconnect probe; 2nd list = stale-name probe.
+        list_results=[
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),
+        ],
+        # 1st guest-attr = reconnect's phase gate; 2nd = the stale probe's
+        # local RE-probe (the phase is never carried over between them).
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec())
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "445566"
+
+    # Delete fired, in the zombie record's zone, BEFORE the create.
+    delete_calls = [c for c in runner.calls if "delete" in c and "instances" in c]
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(delete_calls) == 1, runner.calls
+    assert "eps-issue-137" in delete_calls[0]
+    assert "--zone=us-central1-b" in delete_calls[0]
+    assert len(create_calls) == 1, runner.calls
+    assert runner.calls.index(delete_calls[0]) < runner.calls.index(create_calls[0])
+
+    # The flow exercised the LIVE render_guest_attributes_argv path, not a
+    # stub: recorded probe calls carry the real argv shape.
+    ga_calls = [
+        c for c in runner.calls if "get-guest-attributes" in c and "--query-path=eps/phase" in c
+    ]
+    assert len(ga_calls) == 2, runner.calls
+
+    # Marker flags the reclaim (same field as the #632 status-stale path).
+    assert len(posted) == 1
+    body = json.loads(posted[0]["note"])
+    assert body["pre_launch_deleted_stale_instance"] is True
 
 
 def test_launch_deletes_stale_terminated_instance_then_creates(no_marker_posts) -> None:
@@ -1853,6 +2053,34 @@ def test_preflight_quota_headroom_fails_open_on_reconnect_probe_error() -> None:
         preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
         is None
     )
+
+
+def test_quota_preflight_skips_when_running_zombie_occupies_name(caplog) -> None:
+    """#908 §4.1(e): reconnect now refuses a RUNNING+terminal-phase zombie,
+    but the zombie's allocated GPUs still COUNT in the regions-describe
+    usage read — in a tight-quota regime the headroom verdict would block
+    the GCP lane BEFORE launch's stale reclaim can delete the zombie and
+    free the quota. The preflight must SKIP (no opinion; no regions
+    describe issued), the same disposition as the reconnect-handle path,
+    and log the zombie-reclaim disposition."""
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),  # reconnect probe
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),  # stale-name probe
+        ],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+        ],
+    )
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.gcp"):
+        headroom = preflight_quota_headroom(
+            spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner
+        )
+    assert headroom is None
+    # No regions-describe headroom decision can block the lane.
+    assert not [a for a in runner.calls if "regions" in a]
+    assert "skipping the headroom check" in caplog.text
 
 
 def test_preflight_quota_headroom_no_opinion_on_unmapped_intent() -> None:

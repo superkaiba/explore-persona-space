@@ -21,7 +21,14 @@ a healthy "workload" phase forever while no process is alive.
 "token too long" /var/log/syslog`. State on disk survives (the kill is the
 parent shell, not a wipe).
 
-**How to recover:** relaunch the REMAINING phases on the same VM via SSH under
+**How to recover:** FIRST (REQUIRED, #908) re-publish `eps/phase=workload`
+via the guest-attribute curl (`curl -fsS -X PUT -H "Metadata-Flavor: Google" --data "workload" "http://metadata.google.internal/computeMetadata/v1/instance/guest-attributes/eps/phase"`)
+BEFORE resuming any work on the VM — the #908
+zombie predicates (`reconnect_or_none` + the pre-launch stale reclaim in
+`backends/gcp.py`) classify a RUNNING VM whose phase reads terminal/wedged
+(`done`/`failed`/`wedged`) as a finished zombie and DELETE it on the next
+dispatch, so an active relaunch must never be left reading terminal. Then
+relaunch the REMAINING phases on the same VM via SSH under
 `nohup` with stdout/stderr redirected to a FILE (bypasses the metadata-runner
 pipe entirely); on success replicate the startup script's success tail —
 write the completion sentinel at the handle's `sentinel_path`, then publish

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 920,
+  "highest_id": 924,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5941,8 +5941,8 @@
     "906": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/planning/906",
-      "status": "planning",
+      "path": "tasks/running/906",
+      "status": "running",
       "title": "artifacts factory Phase 1: validate unified pipeline + calibrate cost on 4 pilot classes"
     },
     "907": {
@@ -5955,8 +5955,8 @@
     "908": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/908",
-      "status": "running",
+      "path": "tasks/completed/908",
+      "status": "completed",
       "title": "workflow-fix: GCP gate-park teardown leg + terminal-phase reconnect refusal"
     },
     "909": {
@@ -5976,22 +5976,22 @@
     "910": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/910",
-      "status": "planning",
+      "path": "tasks/completed/910",
+      "status": "completed",
       "title": "workflow-fix: plan-time gates measure per-item serialization/IO wall-time; broaden 'left serial' beyond fits"
     },
     "911": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/911",
-      "status": "proposed",
+      "path": "tasks/planning/911",
+      "status": "planning",
       "title": "workflow-fix: janitors miss issue-keyed caches outside canonical globs"
     },
     "912": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/912",
-      "status": "proposed",
+      "path": "tasks/running/912",
+      "status": "running",
       "title": "workflow-fix: worktree sweep should reap idle worktrees' regenerable .venv"
     },
     "913": {
@@ -6026,8 +6026,8 @@
     "917": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/917",
-      "status": "running",
+      "path": "tasks/completed/917",
+      "status": "completed",
       "title": "workflow-fix: follow-up brief marker versions defer to max+1 rule"
     },
     "918": {
@@ -6055,9 +6055,39 @@
       "goal": "On base Qwen2.5-7B-Instruct over the 50-context battery, determine which (context-vector recipe \u00d7 answer-vector recipe) combination best supports (a) the linear context\u2192answer map, (b) direct behavior read-out, and (c) map-mediated (chain) read-out, under leave-one-family-out (LOFO) evaluation with generic UltraChat probes for activation collection and a disjoint OOD UltraChat probe pool testing probe-set generalization on both the input and target sides \u2014 naming the best combination against selection-symmetric nulls.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/920",
-      "status": "planning",
+      "path": "tasks/running/920",
+      "status": "running",
       "title": "Context\u00d7answer summary-recipe sweep under LOFO on UltraChat probes with OOD-probe generalization"
+    },
+    "921": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/921",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body total-prose budget ignores folded follow-up rounds"
+    },
+    "922": {
+      "goal": "On Qwen-2.5-7B-Instruct, test whether future (answer-time) token activations can be predicted WITHOUT generating: fit one map per layer g_l: h_{l,t} -> h_{l,t+1} taking ONLY the previous position's activation (no token identity), evaluate single-step held-out Delta R^2 per layer and multi-step autoregressive rollout from the last prompt token against true on-policy answer activations, and benchmark behavior read-out off rolled-forward states against #779's direct context->trait predictor and context->answer-profile map.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/922",
+      "status": "planning",
+      "title": "Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP) on real chat contexts"
+    },
+    "923": {
+      "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/923",
+      "status": "proposed",
+      "title": "Context/query decomposition of the mean answer activation: ridge read-outs from disjoint last-context / last-query vectors vs the full-prompt vector (no training)"
+    },
+    "924": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/924",
+      "status": "proposed",
+      "title": "workflow-fix: clean_experiment_downloads degrades gracefully off-main"
     },
     "94": {
       "has_clean_result": false,

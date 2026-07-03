@@ -16294,6 +16294,43 @@ def program_orchestrator_pass(
         print(f"program-orchestrator: relaunch errored: {e}")
 
 
+def _vm_ledger_reap_disabled(env: dict | None = None) -> bool:
+    """Kill switch: True when ``EPM_DISABLE_VM_LEDGER_REAP`` is set truthy."""
+    env = os.environ if env is None else env
+    return env.get("EPM_DISABLE_VM_LEDGER_REAP", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def vm_ledger_reap_pass(dry_run: bool) -> None:
+    """Reap expired-TTL / dead-PID rows from the advisory VM resource ledger (plan §5).
+
+    The ledger (``scripts/resource_ledger.py``, ``~/.task-workflow/vm-ledger.json``)
+    routes CPU/RAM-heavy phases off the shared VM; a crashed session's claim is
+    TTL- + PID-reaped here so a dead claim can never wedge routing. Piggybacks
+    the 10-min tick. Daemon-INDEPENDENT (a local file only), so it runs on a
+    daemon outage too. Fail-soft: any error (incl. a psutil-less-host import
+    failure) is logged and swallowed — a ledger hiccup never crashes the
+    watcher. ``--dry-run`` reports without mutating. Kill switch:
+    ``EPM_DISABLE_VM_LEDGER_REAP=1``.
+    """
+    if _vm_ledger_reap_disabled():
+        print("  vm-ledger-reap: disabled via EPM_DISABLE_VM_LEDGER_REAP; skipping")
+        return
+    try:
+        import resource_ledger  # lazy: a psutil-less host must not crash the watcher
+
+        reaped = resource_ledger.reap_ledger_file(apply=not dry_run)
+        if reaped:
+            phases = ", ".join(
+                f"#{r.get('issue')}:{r.get('phase')} (claim {r.get('claim_id')})" for r in reaped
+            )
+            verb = "WOULD reap" if dry_run else "reaped"
+            print(f"  vm-ledger-reap: {verb} {len(reaped)} stale claim(s): {phases}")
+        else:
+            print("  vm-ledger-reap: no stale claims")
+    except Exception as exc:
+        print(f"  vm-ledger-reap: error (skipping): {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -16438,6 +16475,13 @@ def main(argv: list[str] | None = None) -> int:
     # daemon-independent (reads /proc + the earlyoom journal only), so it
     # runs on a daemon outage too.
     cpu_guard_pass(args.dry_run)
+
+    # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
+    # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
+    # can never wedge the CPU/RAM off-VM routing decision. Daemon-INDEPENDENT (a
+    # local file only) + fail-soft, so it sits in this block next to the other
+    # daemon-independent escalate/reap passes and runs on a daemon outage too.
+    vm_ledger_reap_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy

@@ -145,6 +145,47 @@ KINDS = (
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
 
+# Workflow-pipeline versions a task can be pinned to (EPS workflow-v2 plan,
+# Assumption 2). "v1" is the current pipeline; "v2" is the report-only
+# pipeline the `/issue` dispatcher branches to when a task's frontmatter
+# carries `workflow: v2`. The default for a NEW task resolves as
+# explicit-arg > env EPM_DEFAULT_WORKFLOW > DEFAULT_WORKFLOW_VERSION; the
+# flip of the default to "v2" is a later one-line env/config change after the
+# dogfood, NOT wired here. `workflow_version()` fail-opens to v1 so legacy
+# tasks (no `workflow:` key) resolve to the current pipeline everywhere.
+WORKFLOW_VERSIONS = ("v1", "v2")
+DEFAULT_WORKFLOW_VERSION = "v1"
+
+
+def workflow_version(frontmatter: dict[str, Any]) -> str:
+    """Return the workflow-pipeline version a task is pinned to.
+
+    Reads the ``workflow`` frontmatter key and fail-OPENS to
+    :data:`DEFAULT_WORKFLOW_VERSION` ("v1") for an absent, empty, or unknown
+    value — so legacy tasks (which have no ``workflow:`` key) resolve to the
+    current v1 pipeline everywhere and a garbage value never crashes a caller.
+    """
+    value = frontmatter.get("workflow")
+    if isinstance(value, str) and value.strip() in WORKFLOW_VERSIONS:
+        return value.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
+def _resolve_workflow_version(explicit: str | None) -> str:
+    """Resolve a NEW task's workflow version at creation time.
+
+    Precedence: explicit arg > env ``EPM_DEFAULT_WORKFLOW`` >
+    :data:`DEFAULT_WORKFLOW_VERSION`. An unknown value at any layer falls
+    through to the next (fail-open to v1). The CLI validates the explicit arg
+    with ``argparse`` choices, so an unknown value here can only reach us from
+    a programmatic caller — treat it as unset rather than crash.
+    """
+    for candidate in (explicit, os.environ.get("EPM_DEFAULT_WORKFLOW")):
+        if isinstance(candidate, str) and candidate.strip() in WORKFLOW_VERSIONS:
+            return candidate.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
 # Intermediate pipeline statuses a `followups_running` task may NOT re-enter
 # mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
 # § Same-issue follow-up loop, step 3): the round HOLDS `followups_running`
@@ -2681,6 +2722,12 @@ class NewTaskRequest:
     # The clean-result `## Reproducibility` `**Context:**` row carries it
     # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
     origin_prompt: str | None = None
+    # Workflow-pipeline version this task runs under: "v1" (current default)
+    # or "v2" (report-only pipeline). None -> resolved at creation via
+    # _resolve_workflow_version(): explicit > env EPM_DEFAULT_WORKFLOW >
+    # DEFAULT_WORKFLOW_VERSION. Always written to frontmatter `workflow:` so
+    # the `/issue` dispatcher can branch (EPS workflow-v2 plan, Assumption 2).
+    workflow: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -2709,6 +2756,11 @@ def create_task(req: NewTaskRequest) -> int:
             fm["parent_id"] = req.parent_id
         if req.origin_prompt and req.origin_prompt.strip():
             fm["origin_prompt"] = req.origin_prompt.strip()
+        # Pin the workflow-pipeline version (explicit > EPM_DEFAULT_WORKFLOW >
+        # v1). Always written so the /issue dispatcher can branch; purely
+        # additive — legacy tasks with no `workflow:` key fail-open to v1 via
+        # workflow_version() (EPS workflow-v2 plan, Assumption 2).
+        fm["workflow"] = _resolve_workflow_version(req.workflow)
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.
