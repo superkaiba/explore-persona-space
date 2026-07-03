@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 943,
+  "highest_id": 944,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6231,6 +6231,13 @@
       "path": "tasks/on_hold/943",
       "status": "on_hold",
       "title": "LOFO-banded re-read of the #810 fold-flip: family-fold selection-symmetric nulls for the 46-summary axis"
+    },
+    "944": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/944",
+      "status": "proposed",
+      "title": "workflow-fix: gotcha \u2014 GCE workloads have no ./.env; conditional sourcing"
     },
     "96": {
       "has_clean_result": true,
