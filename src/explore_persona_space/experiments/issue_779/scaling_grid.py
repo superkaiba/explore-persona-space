@@ -351,11 +351,28 @@ def verify_live_ridge(*, seed: int = 0, tol: float = 1e-7) -> dict:
     AssertionError on any mismatch; returns the measured deltas. Called by the
     grid CLI under ``--verify-vectorized`` (this gates the LIVE ridge path; the
     old check gated only the unused MLP helper).
+
+    Fixtures cover well-conditioned designs AND near-low-rank ones (r10, the
+    r9-review MINOR): ``*_lowrank`` fixtures build ``X = Z @ B + 0.01·noise``
+    at rank ~6, the ill-conditioned regime production activations live in
+    (near-degenerate Gram/covariance spectra), where the eigh-vs-SVD agreement
+    is least trivial.
     """
     rng = np.random.default_rng(seed)
     out = {}
-    for name, (n, h) in {"dual": (24, 40), "primal": (80, 24)}.items():
-        X = rng.standard_normal((n, h))
+    fixtures = {
+        "dual": (24, 40, None),
+        "primal": (80, 24, None),
+        "dual_lowrank": (40, 64, 6),
+        "primal_lowrank": (120, 36, 6),
+    }
+    for name, (n, h, rank) in fixtures.items():
+        if rank is None:
+            X = rng.standard_normal((n, h))
+        else:
+            # near-low-rank design: rank-`rank` signal + small isotropic noise.
+            X = rng.standard_normal((n, rank)) @ rng.standard_normal((rank, h))
+            X = X + 0.01 * rng.standard_normal((n, h))
         W_true = rng.standard_normal((h, h))
         Y = X @ W_true + 0.1 * rng.standard_normal((n, h))
         Xev = rng.standard_normal((13, h))
@@ -364,7 +381,7 @@ def verify_live_ridge(*, seed: int = 0, tol: float = 1e-7) -> dict:
         pred_ref = ((Xev - xmu) / xsd) @ W_ref + ymu
         d_pred = float(np.max(np.abs(core.predict(Xev) - pred_ref)))
         d_w = float(np.max(np.abs(core.W() - W_ref)))
-        assert core.form == name, (core.form, name)
+        assert core.form == name.split("_")[0], (core.form, name)
         assert core.lam == lam_ref, f"{name}: lambda diverged ({core.lam} vs {lam_ref})"
         assert d_pred < tol and d_w < tol, f"{name}: d_pred={d_pred} d_w={d_w} (tol {tol})"
         y = X @ rng.standard_normal(h) + 0.1 * rng.standard_normal(n)
@@ -565,10 +582,19 @@ def _heldout_recon(fit, src: TrainSource, ct: dict) -> dict:
                 "r2": float("nan"),
                 "mean_cosine": float("nan"),
                 "n_heldout": int(held.size),
+                "selection": "prefix",
             }
             continue
         m = F.reconstruction_metrics(fit.predict(X_all[held]), Y_all[held])
-        out[tag] = {"r2": m["r2"], "mean_cosine": m["mean_cosine"], "n_heldout": int(held.size)}
+        out[tag] = {
+            "r2": m["r2"],
+            "mean_cosine": m["mean_cosine"],
+            "n_heldout": int(held.size),
+            # r9-review MINOR: the held-out subset is the SORTED PREFIX of the
+            # complement (deterministic, no extra RNG draws) — recorded so the
+            # analyzer knows the selection rule when corpus order is non-random.
+            "selection": "prefix",
+        }
     return out
 
 
@@ -725,3 +751,392 @@ def run_g_holdout_question(
             "per_fold": per_mode[m],
         }
     return {"k_folds": len(folds), "modes": out, "labels_dropped_nan": total_dropped}
+
+
+# ── canonical-artifact merge + completeness + edges composition (r10) ─────────
+#
+# The r6-review BLOCKER (`partial-scaling-grid-overwrite`): a --skip-edges /
+# --grid-variants-subset relaunch used to write its PARTIAL `scaling` dict to
+# the canonical scaling_grid.json path unconditionally, silently replacing the
+# plan-required full 7x7xK grid. The guard below makes every canonical write
+# (a) MERGE-safe — an existing artifact's traits/modes/variants/cells are
+# preserved, new cells win on key collision, axis/frozen-layer mismatches fail
+# loud — and (b) SELF-DESCRIBING — a top-level `complete` bool + a
+# machine-readable `completeness` record of omitted variants/coordinates and
+# realized-vs-planned cell counts. `compose_edges_into_scaling` is the operative
+# v81 composition step: interior cells (VM-side) + pod-computed edge cells
+# (eval_results/issue_779/batch2_edges.json, `issue779_edges` format).
+
+GRID_VARIANT_SLOTS = ("natural", "upsample_1to1", "secondary_10rollout")
+_ENTRY_SCALAR_KEYS = ("frozen_layer", "behavior_agg")
+
+
+def _cell_key(cell: dict) -> tuple[int, int, int]:
+    """The identity of a grid cell within one variant block."""
+    return (int(cell["n_lmsys"]), int(cell["n_behavior"]), int(cell["subsample"]))
+
+
+def expected_coords(n_lmsys_grid, n_behavior_grid, *, skip_edges: bool = False) -> set:
+    """The planned (n_lmsys, n_behavior) coordinates of a grid block.
+
+    Mirrors run_scaling_grid's enumeration: the (0,0) cell is always undefined;
+    ``skip_edges`` additionally drops the nL==0 / nB==0 edge cells."""
+    coords = set()
+    for nL in n_lmsys_grid:
+        for nB in n_behavior_grid:
+            if int(nL) == 0 and int(nB) == 0:
+                continue
+            if skip_edges and (int(nL) == 0 or int(nB) == 0):
+                continue
+            coords.add((int(nL), int(nB)))
+    return coords
+
+
+def _cells_equal(a, b) -> bool:
+    """Deep equality that treats NaN == NaN (cells legitimately carry NaN reads
+    — lo/hi on composed edge cells, g on label-less cells — and a bare ``!=``
+    would flag an IDENTICAL recompose as a conflict)."""
+    if isinstance(a, float) and isinstance(b, float):
+        return (a == b) or (np.isnan(a) and np.isnan(b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_cells_equal(a[k], b[k]) for k in a)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_cells_equal(x, y) for x, y in zip(a, b, strict=True))
+    return a == b
+
+
+def merge_grid_block(prev: dict | None, new: dict | None, *, on_collision: str = "new_wins"):
+    """Merge two ``run_scaling_grid`` outputs for the SAME variant slot.
+
+    Cells are keyed by (n_lmsys, n_behavior, subsample). ``on_collision``:
+    ``"new_wins"`` (checkpoint re-writes / re-runs) or ``"refuse"`` (edges
+    composition — raise ValueError on a key collision with CONFLICTING values;
+    an identical cell is idempotent and allowed either way). Fails loud on any
+    axis or k_subsamples mismatch — merging cells fit on different grids or
+    subsample plans would silently mix incomparable draws. The merged block's
+    ``skip_edges`` flag is the AND of the two inputs (it records whether edge
+    cells were ever computed into this block)."""
+    if prev is None:
+        return new
+    if new is None:
+        return prev
+    for k in ("n_lmsys_grid", "n_behavior_grid"):
+        if list(prev[k]) != list(new[k]):
+            raise ValueError(f"grid axis mismatch on merge ({k}): {prev[k]} vs {new[k]}")
+    kp, kn = int(prev["grid_shape"][2]), int(new["grid_shape"][2])
+    if kp != kn:
+        raise ValueError(f"k_subsamples mismatch on merge: {kp} vs {kn}")
+    cells = {_cell_key(c): c for c in prev["cells"]}
+    n_collide = 0
+    for c in new["cells"]:
+        key = _cell_key(c)
+        if key in cells and not _cells_equal(cells[key], c):
+            n_collide += 1
+            if on_collision == "refuse":
+                raise ValueError(
+                    f"conflicting cell values at (n_lmsys={key[0]}, n_behavior={key[1]}, "
+                    f"subsample={key[2]}) — refusing to overwrite (on_collision='refuse')"
+                )
+        cells[key] = c
+    merged = dict(new)
+    merged["cells"] = [cells[k] for k in sorted(cells)]
+    merged["skip_edges"] = bool(prev.get("skip_edges", False)) and bool(
+        new.get("skip_edges", False)
+    )
+    if n_collide:
+        logger.info("[grid-merge] %d colliding cells overwritten (new wins)", n_collide)
+    return merged
+
+
+def merge_scaling_traits(prev: dict, new: dict, *, on_collision: str = "new_wins") -> dict:
+    """Merge two scaling_grid.json ``traits`` trees (trait -> mode -> entry).
+
+    Preserves prior traits/modes/variant blocks absent from the new tree; merges
+    shared variant blocks via ``merge_grid_block``; fails loud when a shared
+    (trait, mode) entry disagrees on frozen_layer / behavior_agg (cells read at
+    different layers are not mergeable)."""
+    out: dict = {}
+    for trait in sorted(set(prev) | set(new)):
+        pt, nt = prev.get(trait, {}), new.get(trait, {})
+        out[trait] = {}
+        for mode in sorted(set(pt) | set(nt)):
+            pe, ne = pt.get(mode), nt.get(mode)
+            if pe is None or ne is None:
+                out[trait][mode] = ne if pe is None else pe
+                continue
+            for k in _ENTRY_SCALAR_KEYS:
+                if k in pe and k in ne and pe[k] != ne[k]:
+                    raise ValueError(
+                        f"{trait}/{mode}: {k} mismatch on merge ({pe[k]!r} vs {ne[k]!r})"
+                    )
+            entry: dict = {}
+            for k in sorted(set(pe) | set(ne)):
+                if k in ("natural", "upsample_1to1"):
+                    entry[k] = merge_grid_block(pe.get(k), ne.get(k), on_collision=on_collision)
+                elif k == "secondary_10rollout":
+                    ps, ns = pe.get(k), ne.get(k)
+                    if ps is None or ns is None:
+                        entry[k] = ns if ps is None else ps
+                    else:
+                        if ps.get("behavior_agg") != ns.get("behavior_agg"):
+                            raise ValueError(
+                                f"{trait}/{mode}/secondary_10rollout: behavior_agg mismatch "
+                                f"({ps.get('behavior_agg')!r} vs {ns.get('behavior_agg')!r})"
+                            )
+                        entry[k] = {
+                            **ns,
+                            "natural": merge_grid_block(
+                                ps.get("natural"), ns.get("natural"), on_collision=on_collision
+                            ),
+                        }
+                else:
+                    entry[k] = ne.get(k, pe.get(k))
+            out[trait][mode] = entry
+    return out
+
+
+def _variant_block(entry: dict, variant: str) -> dict | None:
+    """The run_scaling_grid block for one variant slot of a (trait, mode) entry."""
+    if variant == "secondary_10rollout":
+        return (entry.get(variant) or {}).get("natural")
+    return entry.get(variant)
+
+
+def grid_completeness(
+    traits_tree: dict,
+    *,
+    expected_traits,
+    expected_modes=MODES,
+    expected_variants=GRID_VARIANT_SLOTS,
+    coord_cap: int = 20,
+) -> dict:
+    """Machine-readable completeness record for a scaling_grid ``traits`` tree.
+
+    ``complete`` iff EVERY (trait, mode, variant) block exists AND covers every
+    planned (nL, nB) coordinate of its own declared axes with >=1 subsample.
+    Coordinate coverage — not full-k coverage — is the completeness criterion:
+    the operative v81 design computes edges pod-side at k_draws=5 vs the
+    interior k=10, so coordinates below the planned k are RECORDED
+    (``coords_below_planned_k``) but do not flip ``complete``. Realized
+    coordinates outside the declared axes (e.g. the pod edges' behavior-axis
+    N=2400 vs the planned 2000) are recorded as ``extra_coords``."""
+    blocks: dict = {}
+    complete = True
+    variants_complete = dict.fromkeys(expected_variants, True)
+    for trait in expected_traits:
+        for mode in expected_modes:
+            entry = traits_tree.get(trait, {}).get(mode)
+            for variant in expected_variants:
+                key = f"{trait}/{mode}/{variant}"
+                block = _variant_block(entry, variant) if entry is not None else None
+                if block is None:
+                    blocks[key] = {"present": False}
+                    complete = False
+                    variants_complete[variant] = False
+                    continue
+                planned = expected_coords(block["n_lmsys_grid"], block["n_behavior_grid"])
+                k_planned = int(block["grid_shape"][2])
+                counts: dict[tuple[int, int], int] = {}
+                for c in block["cells"]:
+                    co = (int(c["n_lmsys"]), int(c["n_behavior"]))
+                    counts[co] = counts.get(co, 0) + 1
+                realized = set(counts)
+                missing = sorted(planned - realized)
+                extra = sorted(realized - planned)
+                below_k = sorted(co for co in realized & planned if counts[co] < k_planned)
+                blocks[key] = {
+                    "present": True,
+                    "k_planned": k_planned,
+                    "n_coords_planned": len(planned),
+                    "n_coords_realized": len(realized & planned),
+                    "n_cells_planned": len(planned) * k_planned,
+                    "n_cells_realized": int(sum(counts.values())),
+                    "n_missing_coords": len(missing),
+                    "missing_coords": [list(co) for co in missing[:coord_cap]],
+                    "extra_coords": [list(co) for co in extra[:coord_cap]],
+                    "coords_below_planned_k": [list(co) for co in below_k[:coord_cap]],
+                }
+                if missing:
+                    complete = False
+                    variants_complete[variant] = False
+    return {
+        "complete": complete,
+        "variants_complete": variants_complete,
+        "criterion": (
+            "coordinate coverage: every (trait, mode, variant) block present AND every "
+            "planned (n_lmsys, n_behavior) coordinate realized with >=1 subsample; "
+            "k-shortfalls recorded in coords_below_planned_k, never flip complete"
+        ),
+        "blocks": blocks,
+    }
+
+
+def stamp_completeness(scaling: dict, *, expected_traits, run_flags: dict | None = None) -> dict:
+    """Stamp top-level ``complete`` + ``completeness`` onto a scaling artifact.
+
+    The record is derived from the ARTIFACT (post-merge), not the run flags —
+    so a --skip-edges run merged over a prior full grid can legitimately read
+    ``complete: true``, and the final canonical artifact flips to true exactly
+    when all planned cells are present (the v81 composition contract).
+    ``run_flags`` (skip_edges / grid_variants / traits / smoke) are recorded
+    for provenance. Mutates ``scaling`` in place; returns the record."""
+    rec = grid_completeness(scaling.get("traits", {}), expected_traits=expected_traits)
+    if run_flags is not None:
+        rec["last_write_run_flags"] = run_flags
+    scaling["complete"] = rec["complete"]
+    scaling["completeness"] = rec
+    return rec
+
+
+def _edge_draw_to_cell(draw: dict, *, n_lmsys: int, n_behavior: int, upsample_1to1: bool) -> dict:
+    """Adapt one issue779_edges draw into the run_scaling_grid cell schema.
+
+    The pod edges carry per-mode point reads (no bootstrap CI — lo/hi are NaN
+    with n_boot_valid=0) and a different recon protocol (kept under
+    ``edges_extra``, never faked into ``recon_heldout``); composed cells are
+    stamped ``source: "pod_edges"`` so the analyzer can tell them from
+    VM-interior cells (which carry no ``source`` key)."""
+    assert (n_lmsys == 0) != (n_behavior == 0), (n_lmsys, n_behavior)
+
+    def _read(field: str) -> dict:
+        out = {}
+        for m in MODES:
+            d = (draw.get(field) or {}).get(m)
+            if d is None:
+                out[m] = {
+                    "point": float("nan"),
+                    "lo": float("nan"),
+                    "hi": float("nan"),
+                    "n_conditions": 0,
+                    "n_boot_valid": 0,
+                }
+            else:
+                out[m] = {
+                    "point": float(d["point"]),
+                    "lo": float("nan"),
+                    "hi": float("nan"),
+                    "n_conditions": int(d.get("n_conditions", 0)),
+                    "n_boot_valid": 0,
+                }
+        return out
+
+    n = int(draw["n"])
+    return {
+        "arm": "arm_a_lmsys" if n_behavior == 0 else "arm_b_behavior",
+        "n_lmsys": int(n_lmsys),
+        "n_behavior": int(n_behavior),
+        "n_lmsys_used": n if n_behavior == 0 else 0,
+        "n_behavior_used": n if n_lmsys == 0 else 0,
+        "subsample": int(draw["draw"]),
+        "upsample_1to1": bool(upsample_1to1),
+        "h_ridge_dot_r": _read("h_dot"),
+        "g_ridge_r": _read("g"),
+        "g_labels_dropped_nan": int(draw.get("g_n_dropped", 0)),
+        "has_labels": bool(draw.get("g_n_valid", 0)),
+        "source": "pod_edges",
+        "edges_extra": {
+            k: draw.get(k)
+            for k in ("h_cos", "h_gcv_lambda", "g_gcv_lambda", "h_recon_r2", "g_recon_r2")
+        },
+    }
+
+
+def compose_edges_into_scaling(scaling: dict, edges_doc: dict, *, edges_path=None) -> dict:
+    """Merge pod-computed edge cells into a scaling_grid artifact IN PLACE (v81).
+
+    ``edges_doc`` is the ``issue779_edges`` format
+    (eval_results/issue_779/batch2_edges.json):
+    ``edges[trait]["L<layer>"] = {modes, lmsys_axis{N: {draws}}, behavior_axis{...}}``.
+
+    Mapping per (trait, mode) entry at frozen layer L:
+      - ``lmsys_axis[N]`` draws -> (N, 0) Arm-A edge cells in ALL THREE variant
+        slots (an nB==0 cell contains no behavior rows, so it is
+        aggregation-invariant AND 1to1-upsampling-invariant).
+      - ``behavior_axis[N]`` draws -> (0, N) Arm-B edge cells in the
+        headline-agg slots only (natural + upsample_1to1); the
+        secondary_10rollout variant aggregates the behavior side differently,
+        so its behavior edges CANNOT be honestly filled from headline-agg pod
+        edges and stay missing (recorded by the completeness stamp).
+
+    Fail-loud validation: missing ``edges[trait]["L<frozen_layer>"]`` leaf, or
+    ``mode`` not read at that layer -> ValueError. An edge coordinate outside
+    the block's declared axis (the pod's behavior-axis 2400 vs the planned
+    2000) is composed as an EXTRA coordinate with a WARNING (recorded in the
+    completeness record), never silently remapped. A composed cell colliding
+    with an EXISTING cell refuses loud on conflicting values (idempotent
+    recompose of identical cells is allowed). Returns a summary dict; caller
+    stamps completeness + writes."""
+    edges = edges_doc.get("edges")
+    if not isinstance(edges, dict):
+        raise ValueError("edges doc has no 'edges' tree (expected issue779_edges format)")
+    meta = edges_doc.get("metadata", {})
+    n_added, n_extra, per_block = 0, 0, {}
+    for trait, modes_tree in scaling.get("traits", {}).items():
+        for mode, entry in modes_tree.items():
+            layer = int(entry["frozen_layer"])
+            leaf = (edges.get(trait) or {}).get(f"L{layer}")
+            if leaf is None:
+                raise ValueError(
+                    f"edges doc has no leaf for {trait}/L{layer} "
+                    f"(available: {sorted((edges.get(trait) or {}).keys())})"
+                )
+            if mode not in leaf.get("modes", []):
+                raise ValueError(
+                    f"edges leaf {trait}/L{layer} was not read in mode {mode!r} "
+                    f"(modes: {leaf.get('modes')})"
+                )
+            for axis_name, coord_of in (
+                ("lmsys_axis", lambda n: (n, 0)),
+                ("behavior_axis", lambda n: (0, n)),
+            ):
+                for n_str, node in (leaf.get(axis_name) or {}).items():
+                    nL, nB = coord_of(int(n_str))
+                    for variant in GRID_VARIANT_SLOTS:
+                        if variant == "secondary_10rollout" and axis_name == "behavior_axis":
+                            continue  # headline-agg edges cannot fill the secondary agg
+                        block = _variant_block(entry, variant)
+                        if block is None:
+                            continue  # variant never computed; completeness records it
+                        axis_vals = [int(v) for v in block["n_lmsys_grid"]] + [
+                            int(v) for v in block["n_behavior_grid"]
+                        ]
+                        declared = (nL in axis_vals) if nB == 0 else (nB in axis_vals)
+                        if not declared:
+                            n_extra += 1
+                            logger.warning(
+                                "[compose-edges] %s/%s/%s: edge coord (%d,%d) outside the "
+                                "declared axes — composed as EXTRA",
+                                trait,
+                                mode,
+                                variant,
+                                nL,
+                                nB,
+                            )
+                        new_cells = [
+                            _edge_draw_to_cell(
+                                d,
+                                n_lmsys=nL,
+                                n_behavior=nB,
+                                upsample_1to1=(variant == "upsample_1to1"),
+                            )
+                            for d in node.get("draws", [])
+                        ]
+                        stub = dict(block)
+                        stub["cells"] = new_cells
+                        merged = merge_grid_block(block, stub, on_collision="refuse")
+                        block.clear()
+                        block.update(merged)
+                        n_added += len(new_cells)
+                        bk = f"{trait}/{mode}/{variant}"
+                        per_block[bk] = per_block.get(bk, 0) + len(new_cells)
+    provenance = {
+        "path": str(edges_path) if edges_path is not None else None,
+        "git_commit": meta.get("git_commit"),
+        "timestamp_utc": meta.get("timestamp_utc"),
+        "k_draws": meta.get("k_draws"),
+        "n_cells_added": n_added,
+        "n_extra_coord_composes": n_extra,
+    }
+    scaling.setdefault("edges_composed", []).append(provenance)
+    logger.info("[compose-edges] %s", provenance)
+    return {"n_cells_added": n_added, "n_extra_coord_composes": n_extra, "per_block": per_block}

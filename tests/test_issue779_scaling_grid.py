@@ -889,3 +889,257 @@ def test_r4_rb_loader_fails_loud_when_hf_fetch_also_fails(monkeypatch, tmp_path)
     monkeypatch.setattr(huggingface_hub, "hf_hub_download", boom)
     with pytest.raises(FileNotFoundError, match=r"HF fetch .*r_b/evil\.pt.* failed"):
         G._resolve_rb_path("evil", tmp_path / "r_b", tmp_path)
+
+
+# ── r10: partial-write guard + edges composition (r6 BLOCKER
+#    `partial-scaling-grid-overwrite`) ─────────────────────────────────────────
+
+
+def _tiny_grid_entry(rb_seed=4, *, skip_edges=True, k=2):
+    """A (trait, mode) scaling entry with all three variant slots on tiny axes."""
+    src = _tiny_source()
+    em = _tiny_eval_mat()
+    rb = np.random.default_rng(rb_seed).standard_normal(5)
+
+    def g(**kw):
+        return SG.run_scaling_grid(
+            src,
+            em,
+            rb,
+            n_lmsys_grid=(0, 8),
+            n_behavior_grid=(0, 4),
+            k_subsamples=k,
+            n_boot=5,
+            skip_edges=skip_edges,
+            **kw,
+        )
+
+    return {
+        "frozen_layer": 3,
+        "behavior_agg": "headline_1rollout",
+        "natural": g(),
+        "upsample_1to1": g(upsample_1to1=True),
+        "secondary_10rollout": {"behavior_agg": "mean_10rollout", "natural": g()},
+    }
+
+
+def _edge_draw(n, draw_idx, *, modes=("system", "many_shot"), point=0.5):
+    """One issue779_edges-format draw (the batch2_edges.json leaf schema)."""
+    return {
+        "n": n,
+        "draw": draw_idx,
+        "h_dot": {m: {"point": point, "n_conditions": 2} for m in modes},
+        "h_cos": {m: {"point": point, "n_conditions": 2} for m in modes},
+        "g": {m: {"point": point / 2, "n_conditions": 2} for m in modes},
+        "g_n_valid": n,
+        "g_n_dropped": 0,
+        "h_gcv_lambda": 0.01,
+        "g_gcv_lambda": 0.01,
+        "h_recon_r2": 0.3,
+        "g_recon_r2": 0.1,
+    }
+
+
+def _tiny_edges_doc(*, point=0.5):
+    """An issue779_edges doc covering the _tiny_grid_entry axes ((0,8) x (0,4))."""
+    return {
+        "metadata": {"git_commit": "deadbeef", "timestamp_utc": "t", "k_draws": 1},
+        "edges": {
+            "evil": {
+                "L3": {
+                    "modes": ["system", "many_shot"],
+                    "lmsys_axis": {"8": {"n_draws": 1, "draws": [_edge_draw(8, 0, point=point)]}},
+                    "behavior_axis": {
+                        "4": {"n_draws": 1, "draws": [_edge_draw(4, 0, point=point)]}
+                    },
+                }
+            }
+        },
+    }
+
+
+def test_r10_merge_grid_block_axis_or_k_mismatch_fails_loud():
+    """r6 BLOCKER pin: merging grid blocks fit on DIFFERENT axes or subsample
+    plans must raise, never silently mix incomparable cells (pre-fix the
+    canonical write clobbered unconditionally — no merge, no guard)."""
+    a = _tiny_grid_entry()["natural"]
+    b = dict(a)
+    b["n_lmsys_grid"] = [0, 999]
+    with pytest.raises(ValueError, match="axis mismatch"):
+        SG.merge_grid_block(a, b)
+    c = dict(a)
+    c["grid_shape"] = [a["grid_shape"][0], a["grid_shape"][1], 7]
+    with pytest.raises(ValueError, match="k_subsamples mismatch"):
+        SG.merge_grid_block(a, c)
+
+
+def test_r10_partial_write_guard_stamps_incomplete_and_merges(tmp_path):
+    """r6 BLOCKER (`partial-scaling-grid-overwrite`): a --skip-edges /
+    variant-subset canonical write must (a) stamp complete:false + a
+    machine-readable omitted-axes/variants record, and (b) MERGE with an
+    existing artifact (prior cells preserved) instead of clobbering it."""
+    import issue779_scaling_grid as GRID
+
+    entry = _tiny_grid_entry()
+    path = tmp_path / "scaling_grid.json"
+    run_flags = {"skip_edges": True, "grid_variants": ["natural"]}
+
+    # write 1: natural-only, interior-only
+    scaling1 = {
+        "traits": {
+            "evil": {"system": {k: entry[k] for k in ("frozen_layer", "behavior_agg", "natural")}}
+        },
+        "meta": {"m": 1},
+    }
+    GRID._write_grid_checkpoint(path, scaling1, run_flags=run_flags)
+    import json
+
+    doc = json.loads(path.read_text())
+    assert doc["complete"] is False
+    rec = doc["completeness"]
+    assert rec["last_write_run_flags"] == run_flags
+    nat = rec["blocks"]["evil/system/natural"]
+    # interior-only: the (8,0) + (0,4) edge coords are recorded missing
+    assert nat["present"] and nat["n_missing_coords"] == 2
+    assert sorted(map(tuple, nat["missing_coords"])) == [(0, 4), (8, 0)]
+    assert nat["n_cells_planned"] == 3 * 2 and nat["n_cells_realized"] == 2
+    assert rec["blocks"]["evil/system/upsample_1to1"] == {"present": False}
+    assert rec["variants_complete"]["natural"] is False
+
+    # write 2 (a later variant-subset run): 1to1-only — natural cells preserved
+    scaling2 = {
+        "traits": {
+            "evil": {
+                "system": {k: entry[k] for k in ("frozen_layer", "behavior_agg", "upsample_1to1")}
+            }
+        },
+        "meta": {"m": 2},
+    }
+    GRID._write_grid_checkpoint(path, scaling2, run_flags=run_flags)
+    doc2 = json.loads(path.read_text())
+    got_nat = doc2["traits"]["evil"]["system"]["natural"]
+    assert got_nat["cells"] == json.loads(json.dumps(entry["natural"]["cells"])), (
+        "prior natural cells must survive a later variant-subset write"
+    )
+    assert doc2["traits"]["evil"]["system"]["upsample_1to1"]["cells"]
+    assert doc2["completeness"]["blocks"]["evil/system/upsample_1to1"]["present"] is True
+
+    # write 3: AXIS-mismatched grid at the same canonical path -> fail loud
+    bad = _tiny_grid_entry()
+    bad["natural"]["n_lmsys_grid"] = [0, 999]
+    bad["natural"]["cells"] = [{**c, "n_lmsys": 999} for c in bad["natural"]["cells"]]
+    scaling3 = {
+        "traits": {
+            "evil": {
+                "system": {
+                    "frozen_layer": 3,
+                    "behavior_agg": "headline_1rollout",
+                    "natural": bad["natural"],
+                }
+            }
+        }
+    }
+    with pytest.raises(ValueError, match="axis mismatch"):
+        GRID._write_grid_checkpoint(path, scaling3, run_flags=run_flags)
+
+
+def test_r10_completeness_flips_true_when_all_planned_cells_present():
+    """The default full path (all variants, all planned coords) stamps
+    complete: true; coordinate coverage — not full-k — is the criterion."""
+    entry_full = _tiny_grid_entry(skip_edges=False)
+    scaling = {"traits": {"evil": {"system": entry_full, "many_shot": entry_full}}}
+    rec = SG.stamp_completeness(scaling, expected_traits=["evil"])
+    assert scaling["complete"] is True and rec["complete"] is True
+    assert all(rec["variants_complete"].values())
+
+
+def test_r10_compose_edges_fills_edges_refuses_conflicts(tmp_path):
+    """v81 composition: pod edge cells fill the interior artifact's edge
+    coordinates (lmsys edges -> all 3 variant slots; behavior edges -> the
+    headline-agg slots only), idempotent on recompose, refuse-loud on a
+    conflicting overlap / missing leaf / wrong mode."""
+    entry = _tiny_grid_entry()
+    scaling = {"traits": {"evil": {"system": entry}}}
+    edges = _tiny_edges_doc()
+    summary = SG.compose_edges_into_scaling(scaling, edges, edges_path="e.json")
+    # natural + 1to1 gain both edge coords; secondary gains ONLY the lmsys edge
+    assert summary["per_block"]["evil/system/natural"] == 2
+    assert summary["per_block"]["evil/system/upsample_1to1"] == 2
+    assert summary["per_block"]["evil/system/secondary_10rollout"] == 1
+    nat_cells = {
+        (c["n_lmsys"], c["n_behavior"], c["subsample"]): c for c in entry["natural"]["cells"]
+    }
+    edge_cell = nat_cells[(8, 0, 0)]
+    assert edge_cell["source"] == "pod_edges" and edge_cell["arm"] == "arm_a_lmsys"
+    assert edge_cell["h_ridge_dot_r"]["system"]["point"] == 0.5
+    assert np.isnan(edge_cell["h_ridge_dot_r"]["system"]["lo"])
+    assert edge_cell["h_ridge_dot_r"]["system"]["n_boot_valid"] == 0
+    up_cell = {
+        (c["n_lmsys"], c["n_behavior"], c["subsample"]): c for c in entry["upsample_1to1"]["cells"]
+    }[(0, 4, 0)]
+    assert up_cell["upsample_1to1"] is True and up_cell["arm"] == "arm_b_behavior"
+    sec_keys = {
+        (c["n_lmsys"], c["n_behavior"]) for c in entry["secondary_10rollout"]["natural"]["cells"]
+    }
+    assert (0, 4) not in sec_keys, "behavior-side edges must NOT fill the secondary agg"
+
+    # completeness: natural/1to1 fully covered (k-shortfall recorded, not fatal);
+    # secondary still missing its behavior edge -> overall complete stays False
+    rec = SG.stamp_completeness(
+        scaling,
+        expected_traits=["evil"],
+    )
+    nat_sys = rec["blocks"]["evil/system/natural"]
+    assert nat_sys["n_missing_coords"] == 0
+    assert sorted(map(tuple, nat_sys["coords_below_planned_k"])) == [(0, 4), (8, 0)]
+    assert rec["blocks"]["evil/system/secondary_10rollout"]["missing_coords"] == [[0, 4]]
+    assert rec["variants_complete"]["secondary_10rollout"] is False
+
+    # idempotent recompose: identical cells, no raise, no duplicates
+    n_before = len(entry["natural"]["cells"])
+    SG.compose_edges_into_scaling(scaling, _tiny_edges_doc(), edges_path="e.json")
+    assert len(entry["natural"]["cells"]) == n_before
+
+    # conflicting overlap -> refuse loud
+    with pytest.raises(ValueError, match="conflicting cell values"):
+        SG.compose_edges_into_scaling(scaling, _tiny_edges_doc(point=0.9), edges_path="e")
+
+    # missing frozen-layer leaf / mode not read at the layer -> fail loud
+    bad = _tiny_edges_doc()
+    bad["edges"]["evil"] = {"L9": bad["edges"]["evil"]["L3"]}
+    with pytest.raises(ValueError, match="no leaf"):
+        SG.compose_edges_into_scaling({"traits": {"evil": {"system": _tiny_grid_entry()}}}, bad)
+    bad2 = _tiny_edges_doc()
+    bad2["edges"]["evil"]["L3"]["modes"] = ["many_shot"]
+    with pytest.raises(ValueError, match="not read in mode"):
+        SG.compose_edges_into_scaling({"traits": {"evil": {"system": _tiny_grid_entry()}}}, bad2)
+
+
+def test_r10_compose_edges_cli_roundtrip(tmp_path):
+    """The --compose-edges CLI branch: reads <out-dir>/scaling_grid.json,
+    composes, stamps completeness + provenance, rewrites atomically."""
+    import json
+    from types import SimpleNamespace
+
+    import issue779_scaling_grid as GRID
+
+    entry = _tiny_grid_entry()
+    scaling = {"traits": {"evil": {"system": entry}}, "meta": {}}
+    grid_path = tmp_path / "scaling_grid.json"
+    grid_path.write_text(json.dumps(scaling))
+    edges_path = tmp_path / "edges.json"
+    edges_path.write_text(json.dumps(_tiny_edges_doc()))
+    ns = SimpleNamespace(out_dir=tmp_path, compose_edges=edges_path)
+    assert GRID._compose_edges_cli(ns) == 0
+    doc = json.loads(grid_path.read_text())
+    assert doc["edges_composed"][0]["git_commit"] == "deadbeef"
+    assert "complete" in doc and "completeness" in doc
+    coords = {
+        (c["n_lmsys"], c["n_behavior"]) for c in doc["traits"]["evil"]["system"]["natural"]["cells"]
+    }
+    assert {(8, 0), (0, 4), (8, 4)} <= coords
+    # missing artifact -> fail loud
+    with pytest.raises(FileNotFoundError):
+        GRID._compose_edges_cli(
+            SimpleNamespace(out_dir=tmp_path / "nope", compose_edges=edges_path)
+        )

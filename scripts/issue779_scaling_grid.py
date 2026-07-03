@@ -273,6 +273,13 @@ def load_corpus_source(
     bundle_path = corpus_dir / f"{trait}_corpus.pt"
     scores_path = corpus_dir / f"{trait}_judge_scores.json"
     if cb is None:
+        # r9-review MINOR: loud breadcrumb so a future caller that forgets to
+        # thread ``cb`` is visible in the log (11.6 GB disk re-load per call).
+        logger.info(
+            "[%s] corpus bundle loaded from disk (no cb threaded — back-compat path): %s",
+            trait,
+            bundle_path,
+        )
         cb = torch.load(bundle_path, weights_only=False)
     clayers = list(cb["layers"])
     cli = clayers.index(layer_idx)
@@ -533,6 +540,69 @@ def _shuffle_within_condition(
     return out
 
 
+# ── canonical-write guard + edges composition (r10; r6 BLOCKER fix) ──────────
+
+
+def _write_grid_checkpoint(out_path: Path, scaling: dict, *, run_flags: dict) -> None:
+    """Merge-safe canonical ``scaling_grid.json`` checkpoint write.
+
+    r6-review BLOCKER (`partial-scaling-grid-overwrite`) fix: a --skip-edges /
+    --grid-variants-subset run must never clobber prior traits/modes/variants/
+    cells at the canonical path — an existing artifact is LOADED and MERGED
+    (new cells win on key collision; axis / frozen-layer mismatches fail loud
+    via ``SG.merge_scaling_traits``), and every write stamps a top-level
+    ``complete`` bool + machine-readable ``completeness`` record (omitted
+    variants/coordinates, realized-vs-planned cell counts) derived from the
+    MERGED artifact. The default full path (no skip, all variants, all traits)
+    therefore flips ``complete: true`` exactly when all planned cells land."""
+    merged = dict(scaling)
+    if out_path.exists():
+        with open(out_path) as f:
+            prev = json.load(f)
+        merged["traits"] = SG.merge_scaling_traits(
+            prev.get("traits", {}), scaling.get("traits", {})
+        )
+        if "edges_composed" in prev:
+            merged["edges_composed"] = prev["edges_composed"]
+    SG.stamp_completeness(merged, expected_traits=list(C.TRAITS), run_flags=run_flags)
+    C.write_json_atomic(out_path, merged)
+
+
+def _compose_edges_cli(args) -> int:
+    """``--compose-edges``: merge pod edge cells into the interior grid + exit.
+
+    The operative v81 composition (interior VM-side + edges pod-side): loads
+    the existing ``<out-dir>/scaling_grid.json``, adapts + merges the
+    ``issue779_edges``-format edge cells (refuse-loud on frozen-layer/mode
+    mismatch or conflicting cell overlap; extra coordinates recorded), stamps
+    completeness, and atomically rewrites the canonical artifact. Pure JSON —
+    no tensors loaded."""
+    grid_path = args.out_dir / "scaling_grid.json"
+    if not grid_path.exists():
+        raise FileNotFoundError(
+            f"--compose-edges requires an existing interior artifact at {grid_path}"
+        )
+    with open(grid_path) as f:
+        scaling = json.load(f)
+    with open(args.compose_edges) as f:
+        edges_doc = json.load(f)
+    summary = SG.compose_edges_into_scaling(scaling, edges_doc, edges_path=args.compose_edges)
+    rec = SG.stamp_completeness(
+        scaling,
+        expected_traits=list(C.TRAITS),
+        run_flags={"mode": "compose_edges", "edges_path": str(args.compose_edges)},
+    )
+    C.write_json_atomic(grid_path, scaling)
+    logger.info(
+        "compose-edges: added %d cells (%d extra-coord); complete=%s; variants_complete=%s",
+        summary["n_cells_added"],
+        summary["n_extra_coord_composes"],
+        rec["complete"],
+        rec["variants_complete"],
+    )
+    return 0
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
@@ -643,8 +713,31 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
             "(headline natural / 1:1-upsample / secondary 10-rollout)"
         ),
     )
+    ap.add_argument(
+        "--compose-edges",
+        type=Path,
+        default=None,
+        help=(
+            "merge pod-computed edge cells (issue779_edges format, e.g. "
+            "eval_results/issue_779/batch2_edges.json) into the existing "
+            "<out-dir>/scaling_grid.json and exit (the v81 interior+edges "
+            "composition; pure JSON, no tensors loaded)"
+        ),
+    )
+    ap.add_argument(
+        "--mmap-corpus",
+        action="store_true",
+        help=(
+            "torch.load the multi-GB LMSYS + corpus bundles with mmap=True "
+            "(file-backed pages, ~zero anonymous RSS) — for smokes on a "
+            "RAM-contended VM; default off (values byte-identical either way)"
+        ),
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny grid + reduced boot (wiring smoke)")
     args = ap.parse_args()
+
+    if args.compose_edges is not None:
+        return _compose_edges_cli(args)
 
     if args.verify_vectorized:
         from explore_persona_space.analysis.vectorized_mlp_skill import assert_matches_reference
@@ -665,7 +758,7 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
 
     frozen = frozen_readout_layers(step0_path)
     logger.info("Frozen read-out layers (step0 best_by_mode): %s", frozen)
-    lmsys_bundle = torch.load(pass_b_path, weights_only=False)
+    lmsys_bundle = torch.load(pass_b_path, weights_only=False, mmap=args.mmap_corpus)
 
     # Arm A g labels (optional; the label-floor diagnostic). Absent -> Arm A g NaN.
     lmsys_g_labels = None
@@ -717,6 +810,16 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
 
     components = set(args.components)
     grid_variants = set(args.grid_variants)
+    # provenance for the completeness stamp on every canonical grid write
+    grid_run_flags = {
+        "skip_edges": bool(args.skip_edges),
+        "components": sorted(components),
+        "grid_variants": sorted(grid_variants),
+        "traits": list(args.traits),
+        "smoke": bool(args.smoke),
+        "max_lmsys": max_lmsys,
+        "max_behavior": max_behavior,
+    }
 
     def _grid(src_v, eval_mat, rb_l, **kw):
         return SG.run_scaling_grid(
@@ -746,7 +849,9 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
         need_bundle = need_src or ("layer_matrix" in components)
         corpus_bundle = None
         if need_bundle:
-            corpus_bundle = torch.load(args.corpus_dir / f"{trait}_corpus.pt", weights_only=False)
+            corpus_bundle = torch.load(
+                args.corpus_dir / f"{trait}_corpus.pt", weights_only=False, mmap=args.mmap_corpus
+            )
             logger.info("[%s] corpus bundle loaded once (RSS %.1f GB)", trait, _rss_gb())
         if "arm_comparison" in components:
             arm_comparison["traits"][trait] = {}
@@ -860,7 +965,10 @@ def main() -> int:  # noqa: C901 -- linear per-(trait,mode) driver; component ga
             if "arm_comparison" in components:
                 C.write_json_atomic(args.out_dir / "arm_comparison.json", arm_comparison)
             if "grid" in components:
-                C.write_json_atomic(args.out_dir / "scaling_grid.json", scaling)
+                # r6 BLOCKER fix: merge-safe, completeness-stamped canonical write
+                _write_grid_checkpoint(
+                    args.out_dir / "scaling_grid.json", scaling, run_flags=grid_run_flags
+                )
             if "g_holdout" in components:
                 C.write_json_atomic(args.out_dir / "g_holdout_question.json", g_holdout)
             logger.info(
