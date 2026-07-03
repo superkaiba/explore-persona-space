@@ -158,6 +158,11 @@ would land back in the same PARK without solving the in-skill stall) —
 the in-process re-drive here is the only recovery for that class, which
 is why this tick survives the redesign at all.
 
+A re-driven session performing any compute dispatch is bound by the
+`/issue` skill's § Pre-dispatch external-marker triage; a successor
+session that cannot attribute window markers to itself treats them as
+external (fail-toward-triage).
+
 `tick_triage.py` never returns `STALE-REDRIVE` for gate-park states
 (over-cap `plan_pending`, `awaiting_promotion`, `blocked`) — those are
 user gates by design; staleness there is correct and the user is the

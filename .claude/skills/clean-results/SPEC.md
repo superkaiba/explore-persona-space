@@ -824,8 +824,10 @@ verbose.
 Otherwise identical to v3:
 
 - **Bullets are the default for `## Takeaways`; prose only where a causal
-  chain needs ≤2 sentences** (in `## Methodology` / `## Results`, prose IS
-  the default per Rule B — keep it ≤2-sentence units).
+  chain needs 1–3 sentences** (in `## Methodology` / `## Results`, prose IS
+  the default per Rule B — keep it to 1–3-sentence units, matching the v4
+  three-beat register rule at § Voice (v4) Rule B and the canonical
+  three-beat definition above).
 - `I`, not `we`.
 - Direct declarative ("The observed correlation was X").
 - Plain academic register in `## Takeaways`.

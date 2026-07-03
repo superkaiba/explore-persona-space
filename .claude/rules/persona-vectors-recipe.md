@@ -128,6 +128,19 @@ cannot repeat that divergence.
    model's own generated response, so the activations that carry it are the
    response-token activations, mean-pooled over the response. The activation is
    collected for each KEPT rollout, at every layer.
+   **Persist the extraction rollout TEXT always** (the kept `{persona, question,
+   response}` rows) under `raw_completions/extraction/`, and the per-context
+   `v(x)` under `analysis_tensors/` **when downstream reuse is foreseeable** —
+   the stream-reduce into a running mean stays the memory-safe capture path
+   (#666/#772; never materialize the whole activation grid), but it persists
+   the text it reduced so a sibling arm can regenerate `v(x)` / `c_last` from
+   one teacher-forced forward pass instead of re-sampling. #779's extraction
+   driver reduced to `r_B` and dropped the rollout text (wrote it only as judge
+   input, not to `raw_completions/`), so arms B/C had to regenerate —
+   persist-by-default (CLAUDE.md § Upload Policy) makes the rollout text the
+   load-bearing minimum here. A deliberate `v(x)`-drop is declared in the plan
+   §10 `discarded_artifacts:` slot with its regen recipe, never silent (rollout
+   TEXT is never a valid discard entry).
 
 6. **Direction.** `r_B` (the persona vector) = mean(activations | KEPT
    trait-exhibiting rollouts) − mean(activations | KEPT non-exhibiting

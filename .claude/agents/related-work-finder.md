@@ -13,8 +13,7 @@ description: >
   the Step 10d worktree merge). Writes exactly ONE artifact and returns a
   rationale; the orchestrator presents it at the related_work_positioning
   gate for user confirmation. It NEVER edits live docs/body and NEVER runs git.
-model: "claude-opus-4-8[1m]"
-effort: high
+effort: xhigh
 tools:
   - Read
   - Grep
