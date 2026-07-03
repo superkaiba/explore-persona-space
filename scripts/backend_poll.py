@@ -1285,9 +1285,11 @@ def _runspec_from_runpod_handle(handle, issue):
     Mirrors :func:`_runspec_from_gcp_handle`. A router-launched RunPod handle's
     ``extra`` carries ``intent`` plus (for runs dispatched through the unified
     router's canonical handle) ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
-    ``time_budget_hours``. FAILS LOUD (raises ``ValueError``) on a handle that
-    carries NEITHER a workload command NOR hydra args — it NEVER silently
-    re-provisions a blank pod.
+    ``time_budget_hours`` (+ ``repo_branch`` post-#909, threaded through so the
+    failover re-execution syncs the ISSUE branch, not ``main``; a legacy handle
+    without the key still reconstructs). FAILS LOUD (raises ``ValueError``) on
+    a handle that carries NEITHER a workload command NOR hydra args — it NEVER
+    silently re-provisions a blank pod.
     """
     from explore_persona_space.backends.base import RunSpec
 
@@ -1308,6 +1310,7 @@ def _runspec_from_runpod_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
+        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
     )
 
 
@@ -2210,6 +2213,9 @@ def _runspec_from_gcp_handle(handle, issue):
         )
     workload_cmd = extra["workload_cmd"]  # str, verbatim (MF1)
     hydra_args = tuple(extra["hydra_args"])  # list/tuple -> tuple, verbatim
+    # #909: thread repo_branch through so the RunPod re-execution syncs the
+    # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
+    # branches). A legacy handle without the key still reconstructs.
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -2218,6 +2224,7 @@ def _runspec_from_gcp_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
+        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
     )
 
 

@@ -52,12 +52,14 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -175,6 +177,352 @@ def runpod_sentinel_path(issue: int, attempt_id: str) -> str:
     return f"/workspace/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
 
 
+# ---------------------------------------------------------------------------
+# Workload execution leg (#909)
+# ---------------------------------------------------------------------------
+
+#: Seconds between the detach call and the liveness-verification SSH call.
+#: A same-invocation probe cannot catch SIGHUP-on-disconnect death, so the
+#: verify runs from a SEPARATE SSH invocation a few seconds later (the
+#: ``.claude/agents/experimenter.md`` § "During Execution" convention).
+WORKLOAD_VERIFY_DELAY_SECONDS = 3.0
+
+#: Branch names interpolated into the remote sync script must be plain git
+#: ref characters — the branch comes from ``spec.extra["repo_branch"]``
+#: (orchestrator-controlled), but a quoting slip would only surface pod-side,
+#: so fail LOUD here instead.
+_BRANCH_RE = re.compile(r"[A-Za-z0-9._/-]+")
+
+#: Verify-script success line: ``LAUNCH-OK pid=<int>`` (optionally
+#: ``via=<fresh pidfile>`` for the GCP-parity self-daemonizing acceptance).
+_LAUNCH_OK_RE = re.compile(r"LAUNCH-OK pid=(\d+)")
+
+#: Double-fire guard line from the launch script (exit 5): the live PID.
+_ALREADY_RUNNING_PID_RE = re.compile(r"ALREADY-RUNNING pid=(\d+)")
+
+
+class RunPodWorkloadStartError(RuntimeError):
+    """A requested ``--workload-cmd`` execution did not start on the pod (#909).
+
+    Raised by the RunPod execution leg on ANY start failure — missing
+    pods.conf row, branch-sync mismatch, double-fire guard, dead PID with
+    no fresh pidfile, missing log. ``scripts/dispatch_issue.py launch``
+    surfaces it as a ``reason: runpod_workload_start_failed`` failure JSON
+    + exit 2 — a requested execution that did not start NEVER returns ok.
+    The pod is left RUNNING for SSH diagnosis (the RunPod-as-diagnosis-lane
+    doctrine, ``.claude/rules/compute-backend-failover.md``).
+    """
+
+
+def _resolve_pod_endpoint(pod_name: str) -> tuple[str, int]:
+    """Resolve ``(host, port)`` for ``pod_name`` from the live pods.conf.
+
+    pods.conf is the SSH config source (refreshed from the live RunPod API
+    by provision — ``pod_lifecycle._upsert_pods_conf``), so a freshly
+    provisioned pod always has a row. Raises
+    :class:`RunPodWorkloadStartError` on a missing/invalid row — the
+    execution leg cannot SSH without it.
+    """
+    # Lazy import — same style as ``poll``'s ``from scripts.poll_pipeline
+    # import ...``; keeps this module importable without scripts/ on
+    # sys.path for launch/teardown-only callers.
+    from scripts.pod_config import parse_pods_conf
+
+    try:
+        pods = parse_pods_conf()
+    except Exception as exc:
+        raise RunPodWorkloadStartError(
+            f"cannot read pods.conf to resolve {pod_name!r} for workload execution "
+            f"({type(exc).__name__}: {exc})"
+        ) from exc
+    for pod in pods:
+        if pod.name == pod_name:
+            if not pod.host or not pod.port:
+                raise RunPodWorkloadStartError(
+                    f"pods.conf row for {pod_name!r} has no usable host/port "
+                    f"(host={pod.host!r}, port={pod.port!r}); cannot SSH to execute "
+                    "the workload — run `pod.py config --refresh-from-api` and retry"
+                )
+            return pod.host, int(pod.port)
+    raise RunPodWorkloadStartError(
+        f"pod {pod_name!r} has no pods.conf row — cannot SSH to execute the workload "
+        "(provision normally upserts the row; run `pod.py config --refresh-from-api`)"
+    )
+
+
+def _ssh_pod_run(host: str, port: int, command: str, *, timeout: int, context: str) -> str:
+    """Run ``command`` on the pod over SSH; return stdout, raise typed error on failure.
+
+    Mirrors the battle-tested explicit transport of
+    ``scripts/pod_lifecycle._restore_uv_on_pod`` / ``bootstrap_pod.sh``
+    (host/port from pods.conf; NOT the ``~/.ssh/config``-by-name form —
+    pods.conf is the config SOURCE here). Any non-zero exit / timeout /
+    transport error raises :class:`RunPodWorkloadStartError` carrying the
+    stdout + stderr tails, prefixed with ``context`` so the caller's error
+    names the failing step.
+    """
+    argv = [
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=15",
+        "-o",
+        "BatchMode=yes",
+        "-i",
+        str(Path.home() / ".ssh" / "id_ed25519"),
+        "-p",
+        str(port),
+        f"root@{host}",
+        command,
+    ]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise RunPodWorkloadStartError(
+            f"{context}: ssh to {host}:{port} failed ({type(exc).__name__}: {exc})"
+        ) from exc
+    if proc.returncode != 0:
+        raise RunPodWorkloadStartError(
+            f"{context}: remote command exited rc={proc.returncode} on {host}:{port}; "
+            f"stdout tail: {(proc.stdout or '')[-1500:]!r}; "
+            f"stderr tail: {(proc.stderr or '')[-800:]!r}"
+        )
+    return proc.stdout or ""
+
+
+def _render_branch_sync_script(branch: str) -> str:
+    """Remote script (a): sync the pod clone to ``branch`` (fetch + reset, never pull).
+
+    ``git pull`` is banned here — it exits 0 on a stale ``.git/index.lock``
+    without moving HEAD, and divergent ``.claude/**`` spec files block the
+    ff-only form (both in ``.claude/rules/gotchas.md``). The fetch +
+    ``checkout -f -B`` + ``reset --hard`` sequence defeats both, and the
+    pod-side ``HEAD == FETCH_HEAD`` verification never trusts pull stdout.
+    (Pod-side ``reset --hard`` is sanctioned — the VM-tree ban does not
+    apply to the disposable pod clone.)
+    """
+    if not _BRANCH_RE.fullmatch(branch):
+        raise RunPodWorkloadStartError(
+            f"refusing to sync suspicious branch name {branch!r} "
+            "(expected plain git ref characters [A-Za-z0-9._/-])"
+        )
+    return "\n".join(
+        [
+            "set -eu",
+            'export PATH="/root/.local/bin:$PATH"',
+            "cd /workspace/explore-persona-space",
+            "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock",
+            f'git fetch origin "refs/heads/{branch}"',
+            f'git checkout -q -f -B "{branch}" FETCH_HEAD',
+            "git reset --hard -q FETCH_HEAD",
+            "HEAD_SHA=$(git rev-parse HEAD); FETCH_SHA=$(git rev-parse FETCH_HEAD)",
+            '[ "$HEAD_SHA" = "$FETCH_SHA" ] || '
+            '{ echo "SYNC-MISMATCH head=$HEAD_SHA fetch=$FETCH_SHA" >&2; exit 3; }',
+            'echo "SYNC-OK $HEAD_SHA"',
+        ]
+    )
+
+
+def _launch_epoch_path(issue: int) -> str:
+    """Pod-side launch-epoch stamp anchoring the verify script's fresh-pidfile check."""
+    return f"/workspace/logs/issue-{issue}.launch_epoch"
+
+
+def _launcher_path(issue: int) -> str:
+    """Canonical pod-side launcher-script path (the experimenter.md convention)."""
+    return f"/workspace/launch_issue_{issue}.sh"
+
+
+def _render_launch_script(*, issue: int, workload_cmd: str, log_path: str, pid_file: str) -> str:
+    """Remote script (b): write the launcher + detach it (setsid + nohup + pidfile).
+
+    Reuses the canonical experimenter launcher pattern
+    (``.claude/agents/experimenter.md`` § "During Execution") verbatim,
+    with one deliberate delta: no ``exec`` before the workload line —
+    ``workload_cmd`` is an arbitrary shell line (possibly env-var
+    prefixed / compound), which ``exec`` cannot take; the pidfile then
+    holds the launcher bash PID, whose liveness tracks the workload
+    (``poll_once`` probes liveness, not process identity). The
+    ``ALREADY-RUNNING`` live-PID guard converts a flag+experimenter
+    double-launch into a loud no-op (exit 5). ``workload_cmd`` is embedded
+    VERBATIM inside the quoted heredoc (the GCP trusted-single-line
+    doctrine; ``RunSpec.__post_init__`` guarantees single-line).
+    """
+    launcher = _launcher_path(issue)
+    epoch_file = _launch_epoch_path(issue)
+    return "\n".join(
+        [
+            "set -eu",
+            "mkdir -p /workspace/logs",
+            f"OLD_PID=$(cat {pid_file} 2>/dev/null || true)",
+            'if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then',
+            '  echo "ALREADY-RUNNING pid=$OLD_PID" >&2',
+            "  exit 5",
+            "fi",
+            f"rm -f {pid_file}",
+            f"date +%s > {epoch_file}",
+            f"cat > {launcher} << 'EPSEOF'",
+            "#!/bin/bash",
+            "set -uo pipefail",
+            'export PATH="/root/.local/bin:$PATH"',
+            "cd /workspace/explore-persona-space",
+            "set -a; [ -f .env ] && source .env; set +a",
+            'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
+            f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
+            f"echo $$ > {pid_file}",
+            workload_cmd,
+            "EPSEOF",
+            f"chmod +x {launcher}",
+            f"setsid nohup bash {launcher} > {log_path} 2>&1 < /dev/null &",
+            'echo "WRAPPER-STARTED $!"',
+        ]
+    )
+
+
+def _render_verify_script(*, issue: int, log_path: str, pid_file: str) -> str:
+    """Remote script (c): liveness verification, run from a SEPARATE SSH invocation.
+
+    ``LAUNCH-OK`` iff the canonical pidfile PID is alive, OR a FRESH
+    pod-side ``/workspace/logs/*.pid`` written at/after the launch epoch
+    carries a live PID (the GCP self-daemonizing-driver parity — a driver
+    that setsid-forks the real work and exits would otherwise read a false
+    ``LAUNCH-DEAD``; see ``backends/gcp.py``'s fresh-``*.pid`` wait), AND
+    the log exists. Anything else prints ``LAUNCH-DEAD`` + a log tail and
+    exits 4.
+    """
+    epoch_file = _launch_epoch_path(issue)
+    return "\n".join(
+        [
+            f"LAUNCH_EPOCH=$(cat {epoch_file} 2>/dev/null || echo 0)",
+            f"PID=$(cat {pid_file} 2>/dev/null || true)",
+            f'if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null && [ -f "{log_path}" ]; then',
+            '  echo "LAUNCH-OK pid=$PID"',
+            "  exit 0",
+            "fi",
+            "# Launcher PID gone: accept any FRESH pod-side pidfile (mtime >=",
+            "# launch epoch) whose PID is alive — the GCP self-daemonizing-driver",
+            "# convention.",
+            "for f in /workspace/logs/*.pid; do",
+            '  [ -f "$f" ] || continue',
+            '  [ "$(stat -c %Y "$f" 2>/dev/null || echo 0)" -ge "$LAUNCH_EPOCH" ] || continue',
+            '  FPID=$(cat "$f" 2>/dev/null || true)',
+            f'  if [ -n "$FPID" ] && kill -0 "$FPID" 2>/dev/null && [ -f "{log_path}" ]; then',
+            '    echo "LAUNCH-OK pid=$FPID via=$f"',
+            "    exit 0",
+            "  fi",
+            "done",
+            'echo "LAUNCH-DEAD pid=${PID:-none}"',
+            f'tail -20 "{log_path}" 2>/dev/null || true',
+            "exit 4",
+        ]
+    )
+
+
+def _execute_workload_on_pod(
+    spec: RunSpec, *, pod_name: str, log_path: str, pid_file: str
+) -> dict[str, Any]:
+    """Sync the pod clone, start ``spec.workload_cmd`` detached, verify liveness (#909).
+
+    Sequences remote scripts (a) branch sync → (b) write launcher + detach
+    → sleep → (c) verify (a SEPARATE SSH invocation, catching
+    SIGHUP-on-disconnect death). Returns ``{"workload_pid": int,
+    "launcher_path": str, "synced_sha": str}`` on success; raises
+    :class:`RunPodWorkloadStartError` on ANY start failure (the pod stays
+    RUNNING for diagnosis).
+    """
+    host, port = _resolve_pod_endpoint(pod_name)
+    branch = str((spec.extra or {}).get("repo_branch") or "") or "main"
+    issue = int(spec.issue)
+
+    # (a) Branch sync — fetch + checkout -f -B + reset --hard; pod-side
+    # HEAD == FETCH_HEAD verification (never trusting pull stdout).
+    sync_out = _ssh_pod_run(
+        host,
+        port,
+        _render_branch_sync_script(branch),
+        timeout=180,
+        context=f"branch sync of {pod_name} to {branch!r}",
+    )
+    sync_match = re.search(r"SYNC-OK ([0-9a-f]+)", sync_out)
+    if not sync_match:
+        raise RunPodWorkloadStartError(
+            f"branch sync of {pod_name} to {branch!r} did not confirm SYNC-OK; "
+            f"output tail: {sync_out[-1500:]!r}"
+        )
+    synced_sha = sync_match.group(1)
+
+    # (b) Write the launcher + detach it.
+    try:
+        launch_out = _ssh_pod_run(
+            host,
+            port,
+            _render_launch_script(
+                issue=issue,
+                workload_cmd=spec.workload_cmd,
+                log_path=log_path,
+                pid_file=pid_file,
+            ),
+            timeout=120,
+            context=f"workload detach on {pod_name}",
+        )
+    except RunPodWorkloadStartError as exc:
+        if "ALREADY-RUNNING" in str(exc):
+            pid_match = _ALREADY_RUNNING_PID_RE.search(str(exc))
+            live_pid = pid_match.group(1) if pid_match else "unknown"
+            raise RunPodWorkloadStartError(
+                f"double-fire guard: a live workload (pid={live_pid}) already holds "
+                f"{pid_file} on {pod_name} — the experimenter (SKILL.md Step 6d.1) or a "
+                "prior --execute-workload launch already started it; refusing to "
+                f"double-launch. Original: {exc}"
+            ) from exc
+        raise
+    if "WRAPPER-STARTED" not in launch_out:
+        raise RunPodWorkloadStartError(
+            f"workload detach on {pod_name} did not confirm WRAPPER-STARTED "
+            f"(log {log_path}); output tail: {launch_out[-1500:]!r}"
+        )
+
+    # (c) Verify from a SEPARATE SSH invocation — a same-session probe
+    # cannot catch SIGHUP-on-disconnect death.
+    time.sleep(WORKLOAD_VERIFY_DELAY_SECONDS)
+    try:
+        verify_out = _ssh_pod_run(
+            host,
+            port,
+            _render_verify_script(issue=issue, log_path=log_path, pid_file=pid_file),
+            timeout=120,
+            context=f"workload liveness verify on {pod_name}",
+        )
+    except RunPodWorkloadStartError as exc:
+        raise RunPodWorkloadStartError(
+            f"workload did NOT verify alive on {pod_name} (log {log_path}): {exc} — "
+            "if the workload self-daemonizes without writing a pod-side pidfile, check "
+            "the pod before treating this as dead; the pod is left RUNNING for diagnosis"
+        ) from exc
+    ok = _LAUNCH_OK_RE.search(verify_out)
+    if not ok:
+        raise RunPodWorkloadStartError(
+            f"workload did NOT verify alive on {pod_name} (log {log_path}); "
+            f"verify output tail: {verify_out[-1500:]!r} — if the workload "
+            "self-daemonizes without writing a pod-side pidfile, check the pod before "
+            "treating this as dead; the pod is left RUNNING for diagnosis"
+        )
+    return {
+        "workload_pid": int(ok.group(1)),
+        "launcher_path": _launcher_path(issue),
+        "synced_sha": synced_sha,
+    }
+
+
 class RunPodBackend(ComputeBackend):
     """Backend adapter over the existing RunPod tooling.
 
@@ -219,6 +567,18 @@ class RunPodBackend(ComputeBackend):
         (``deployCpuPod``); ``cpu-bigmem`` never reaches here (it keeps the #677
         typed terminal — it is absent from the RunPod-CPU map).
         """
+        execute_workload = bool((spec.extra or {}).get("execute_workload"))
+        if execute_workload and not spec.workload_cmd:
+            # Defensive in-backend guard behind the dispatch CLI's parse-time
+            # rejection (#909 AC3a): a PROGRAMMATIC caller must not silently
+            # recreate the flag+hydra false-green cell (the execution leg
+            # cannot execute a hydra-args run). Raised BEFORE the provision
+            # subprocess so no pod is paid for.
+            raise RunPodWorkloadStartError(
+                "execute_workload requested with empty workload_cmd — the RunPod "
+                "execution leg cannot execute a hydra-args run (#909); refusing "
+                "before provisioning"
+            )
         cmd = [
             sys.executable,
             str(_scripts_dir() / "pod_lifecycle.py"),
@@ -237,6 +597,29 @@ class RunPodBackend(ComputeBackend):
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT).
         subprocess.run(cmd, check=True)
         pod_name = _runpod_pod_name(spec.issue)
+        # Execution leg (#909): execute iff workload_cmd is non-empty AND the
+        # caller opted in via spec.extra["execute_workload"] (set automatically
+        # by router.failover_to_runpod_after_async_workload_crash — the
+        # no-experimenter automated failover paths — or explicitly via
+        # `dispatch_issue.py launch --execute-workload`). The interactive
+        # /issue Step 6b/6d.1 flow passes no flag: the experimenter stays the
+        # sole executor there, so this branch is behavior-unchanged for it.
+        exec_requested = execute_workload and bool(spec.workload_cmd)
+        workload_info: dict[str, Any] = {}
+        if exec_requested:
+            workload_info = _execute_workload_on_pod(
+                spec,
+                pod_name=pod_name,
+                log_path=_runpod_log_path(spec.issue),
+                pid_file=_runpod_pid_file_path(spec.issue),
+            )
+        elif spec.workload_cmd:
+            logger.warning(
+                "workload_cmd persisted but NOT executed — EXPECTED when the "
+                "experimenter (SKILL.md Step 6d.1) launches it on this pod; otherwise "
+                "dispatch the experimenter on THIS pod (preferred — a re-launch "
+                "provisions a SECOND pod), or re-launch with --execute-workload (#909)"
+            )
         # Expected-artifacts declaration (#598): attempt id minted at
         # launch (GCP-style) and embedded in the pod-side sentinel path
         # so a prior attempt's sentinel on the persistent /workspace
@@ -304,6 +687,15 @@ class RunPodBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #909: the branch the run's code lives on (round-trips through
+                # the sidecar + backend_poll reconstructors so a failover
+                # re-execution syncs the ISSUE branch, not `main`) + the
+                # execution-leg outcome (workload_executed / workload_pid /
+                # launcher_path / synced_sha via **workload_info). Additive
+                # keys — every existing reader uses .get(...).
+                "repo_branch": str((spec.extra or {}).get("repo_branch") or ""),
+                "workload_executed": exec_requested,
+                **workload_info,
                 EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
                     issue=spec.issue,
                     sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),

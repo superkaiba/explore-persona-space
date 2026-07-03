@@ -5364,3 +5364,77 @@ def test_route_attempt_dict_omits_evidence_when_empty():
         "detail",
         "elapsed_seconds",
     }
+
+
+# ---------------------------------------------------------------------------
+# #909 — the async failover seam opts custom-workload specs into the RunPod
+# execution leg (spec.extra["execute_workload"] = True); hydra-args specs
+# arrive WITHOUT it (+ a loud named-residual log line). These pin AC4.
+# ---------------------------------------------------------------------------
+
+
+def test_async_failover_sets_execute_workload_on_custom_workload_spec(lease_store, marker_poster):
+    """#909 AC4: a custom-workload spec dispatched through
+    ``failover_to_runpod_after_async_workload_crash`` arrives at
+    ``backend.launch`` with ``extra["execute_workload"] is True`` — the
+    automated no-experimenter failover paths are the execution leg's
+    primary consumer."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=RunSpec(
+            issue=909,
+            intent="lora-7b",
+            backend="gcp",
+            workload_cmd="bash scripts/issue909_dispatch.sh",
+            extra={"repo_branch": "issue-909"},
+        ),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    launched = rp.launches[0]
+    assert launched.extra.get("execute_workload") is True
+    assert launched.workload_cmd == "bash scripts/issue909_dispatch.sh"
+    # Pre-existing extra keys survive the opt-in replace.
+    assert launched.extra.get("repo_branch") == "issue-909"
+
+
+def test_async_failover_hydra_spec_arrives_without_execute_workload(
+    lease_store, marker_poster, caplog
+):
+    """#909 AC4 (negative): a hydra-args spec is NOT opted in (the RunPod
+    execution leg cannot execute a hydra run) and the seam logs the named
+    residual LOUD."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    with caplog.at_level("WARNING", logger="explore_persona_space.backends.router"):
+        failover_to_runpod_after_async_workload_crash(
+            spec=RunSpec(
+                issue=909,
+                intent="lora-7b",
+                backend="gcp",
+                hydra_args=("condition=c1", "seed=42"),
+            ),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert len(rp.launches) == 1
+    assert "execute_workload" not in (rp.launches[0].extra or {})
+    warning = "\n".join(r.getMessage() for r in caplog.records)
+    assert "hydra" in warning and "no backend-side executor" in warning

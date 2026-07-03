@@ -807,14 +807,26 @@ def _issue_worktree_git_root(issue: int) -> str | None:
 
 
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    """Build ``spec.extra`` from the launch CLI's GCP-only knobs.
+    """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
     Returns the dict :func:`backends.issue_dispatch.build_run_spec`
-    threads through to the lane renderers; every key here is inert on
-    SLURM / RunPod lanes. Extracted from :func:`_cmd_launch` so each
-    new knob doesn't push the dispatcher over the complexity cap.
+    threads through to the lane renderers. Most keys are GCP-only and
+    inert on SLURM / RunPod lanes, but NOT all: ``execute_workload``
+    (#909) is RunPod-honored (the RunPod execution leg), and
+    ``repo_branch`` is honored by GCP (GCE clone) AND RunPod (the #909
+    execution leg's branch sync). Extracted from :func:`_cmd_launch` so
+    each new knob doesn't push the dispatcher over the complexity cap.
     """
     extra: dict[str, Any] = {}
+    if getattr(args, "execute_workload", False):
+        # RunPod-honored knob (#909): opts the launch into the RunPod
+        # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
+        # the clone to repo_branch, and starts workload_cmd detached).
+        # Without it an explicit-runpod --workload-cmd launch is
+        # provision-only (the experimenter is the executor there).
+        # main()'s parse-time guard rejects the flag without a non-empty
+        # --workload-cmd, so this key never rides a hydra launch.
+        extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
         # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
         # inert on SLURM / RunPod lanes.
@@ -851,10 +863,19 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # no-op back-compat shim. Inert on SLURM / RunPod lanes.
         extra["spot_tolerant"] = True
     if getattr(args, "repo_branch", None):
-        # GCP-only knob: the GCE startup script clones from origin, so a
-        # feature-branch workload must name its branch (issue 535 r6).
+        # The GCE startup script clones from origin, so a feature-branch
+        # workload must name its branch (issue 535 r6); the RunPod #909
+        # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"}:
+    elif (args.backend or "auto") in {"auto", "gcp"} or (
+        # #909 (AC6): the auto-default ALSO fires for an explicit
+        # `--backend runpod --execute-workload` launch — the execution
+        # leg's branch sync would otherwise target `main`, where per-issue
+        # dispatch scripts do not exist (the #763-shaped manual command).
+        # Explicit --repo-branch (above) always wins.
+        (args.backend or "").strip().lower() == "runpod"
+        and getattr(args, "execute_workload", False)
+    ):
         # fix19's production mirror (round-2 Claude Major, task #535):
         # without this, the GCE clone defaults to "main" even when the
         # invoking checkout — the /issue worktree on an issue-<N> branch
@@ -877,7 +898,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto lane — "
+                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -893,7 +914,8 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto lane — invoking checkout "
+                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
                     worktree_root,
@@ -939,6 +961,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         dispatch_for_issue,
     )
     from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     extra = _launch_extra_from_args(args)
     spec = build_run_spec(
@@ -1074,6 +1097,24 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
             started_evidence_probe=deps.get("started_evidence_probe"),
             reconnect_fn=deps["reconnect_fn"],
         )
+    except RunPodWorkloadStartError as exc:
+        # #909 AC3: a requested --execute-workload execution that did not
+        # start NEVER returns ok. RunPodBackend.launch raises the typed
+        # error UNWRAPPED through route()'s explicit-runpod override
+        # (_prepare_and_launch only wraps prepare() failures, and
+        # dispatch_for_issue does not wrap route()), so this arm catches it
+        # directly; were a future router change to wrap it in a RouteError,
+        # the arm below already yields the same exit 2 + failure JSON.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "exception": type(exc).__name__,
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": str(exc),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     except RouteError as exc:
         translation = classify_terminal_exception(exc)
         body = {
@@ -1151,6 +1192,24 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         return EXIT_STILL_WAITING
 
     result = outcome.result
+    handle_extra = result.handle.extra or {}
+    # #909 belt-and-suspenders fail-fast: a handle that CLAIMS the workload
+    # executed but carries no workload_pid is a backend regression returning
+    # ok on a provision-only result — never print ok:true on it.
+    if handle_extra.get("workload_executed") and not handle_extra.get("workload_pid"):
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": (
+                "handle claims workload_executed=true but carries no workload_pid — "
+                "backend regression; treating the requested execution as NOT started "
+                f"(#909). pod_name={result.handle.pod_name} log_path={result.handle.log_path}"
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     body = {
         "ok": True,
         "issue": int(args.issue),
@@ -1163,6 +1222,13 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         ),
         "pod_name": result.handle.pod_name,
         "job_id": result.handle.job_id,
+        # #909: the execution-leg outcome (RunPod lane; None / absent-key
+        # semantics on lanes that never set them) + the log path the caller
+        # tails. workload_executed False on a provision-only RunPod launch
+        # is the loud "the experimenter must launch this" signal.
+        "workload_executed": handle_extra.get("workload_executed"),
+        "workload_pid": handle_extra.get("workload_pid"),
+        "log_path": result.handle.log_path,
     }
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
@@ -1647,6 +1713,23 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--execute-workload",
+        action="store_true",
+        help=(
+            "RunPod lane only (#909): after provisioning, SSH the fresh pod, sync "
+            "its clone to --repo-branch (auto-defaulted for this shape), and start "
+            "--workload-cmd detached (setsid launcher + pidfile + log), verifying "
+            "liveness before returning — a requested execution that did not start "
+            "exits 2 with reason=runpod_workload_start_failed, never ok:true. "
+            "REQUIRES a non-empty --workload-cmd (rejected at parse time with "
+            "--hydra: the execution leg cannot execute a hydra run). Without this "
+            "flag an explicit-runpod --workload-cmd launch is provision-only — "
+            "EXPECTED when the experimenter (SKILL.md Step 6d.1) launches it on "
+            "the pod. The automated GCP→RunPod failover paths opt in "
+            "automatically (they have no experimenter). Inert on non-RunPod lanes."
+        ),
+    )
+    launch.add_argument(
         "--skip-default-git-paths",
         action="store_true",
         help=(
@@ -1732,6 +1815,18 @@ def main(
                 "launch requires exactly one of --workload-cmd / --hydra "
                 f"(got {'both' if has_hydra else 'neither'}; an empty --workload-cmd '' "
                 "counts as not provided)"
+            )
+        # #909 AC3a (upheld Must-Fix): --execute-workload with nothing to
+        # execute (a --hydra run, or an empty/absent --workload-cmd) would
+        # recreate the #763 silent false-green through the fix's own flag
+        # surface — the execution leg would no-op, no WARNING would fire,
+        # and ok:true would print on a paid provision-only pod. Reject at
+        # parse time, BEFORE backends_factory is built or any provision
+        # attempted (mirrors the exactly-one-of guard above).
+        if getattr(args, "execute_workload", False) and not has_workload_cmd:
+            parser.error(
+                "--execute-workload requires a non-empty --workload-cmd "
+                "(it cannot execute a --hydra run)"
             )
     logging.basicConfig(
         stream=sys.stderr,

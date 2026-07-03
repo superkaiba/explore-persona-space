@@ -410,6 +410,12 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+**Manual-pivot runbook line (#909):** a manual RunPod pivot that carries
+`--workload-cmd` must ALSO pass `--execute-workload` — without it the launch
+is provision-only (the pod boots, nothing runs) and the JSON carries
+`workload_executed: false`; the alternative executor is dispatching the
+experimenter on the provisioned pod (#909).
+
 ### CPU intents: cheap CPU lanes + the scoped #677 terminal (#747)
 
 The GCP→RunPod failover above (capacity AND workload-crash, sync AND async)

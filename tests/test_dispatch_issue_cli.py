@@ -3073,3 +3073,256 @@ def test_finalize_fetch_results_crash_still_reaches_confirm_gate(monkeypatch, tm
     assert body["reason"] == "confirm_artifacts_failed"
     assert len(nibi.confirms) == 1
     assert len(nibi.teardowns) == 0
+
+
+# ---------------------------------------------------------------------------
+# issue #909 — --execute-workload flag surface + CLI failure/success contracts
+# ---------------------------------------------------------------------------
+
+
+def _rp_shaped_handle(spec: RunSpec, extra_overrides: dict) -> RunHandle:
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name=f"pod-{spec.issue}",
+        scratch_dir="/workspace",
+        log_path=f"/workspace/logs/issue-{spec.issue}.log",
+        extra={"issue": spec.issue, "intent": spec.intent, **extra_overrides},
+    )
+
+
+class _RunpodExecBackend(_MockBackend):
+    """RunPod mock whose launch returns a #909-shaped handle extra."""
+
+    def __init__(self, extra_overrides: dict) -> None:
+        super().__init__(kind="runpod")
+        self._extra_overrides = extra_overrides
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        self.launches.append(spec)
+        return _rp_shaped_handle(spec, self._extra_overrides)
+
+
+def _runpod_launch_args(*extra_args: str) -> list[str]:
+    return [
+        "launch",
+        "--issue",
+        "909",
+        "--intent",
+        "lora-7b",
+        "--backend",
+        "runpod",
+        "--workload-cmd",
+        "bash scripts/issue909_dispatch.sh",
+        *extra_args,
+    ]
+
+
+def _pin_runpod_frontmatter(monkeypatch) -> None:
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+
+
+def test_launch_execute_workload_threads_to_spec_extra(monkeypatch, tmp_path) -> None:
+    """#909: ``--execute-workload`` lands on ``spec.extra`` (the RunPod
+    execution leg's opt-in)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 0
+    assert runpod.launches[0].extra.get("execute_workload") is True
+
+
+def test_execute_workload_requires_workload_cmd(monkeypatch, tmp_path) -> None:
+    """#909 AC3a (upheld Must-Fix): ``--execute-workload`` with ``--hydra``
+    (no workload command) is REJECTED at parse time — exit 2, NO provision
+    attempted (the fake factory is never called)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def exploding_factory():
+        raise AssertionError("backends must not be built on a parser error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "launch",
+                "--issue",
+                "909",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--execute-workload",
+                "--hydra",
+                "foo=bar",
+            ],
+            backends_factory=exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_execute_workload_with_empty_workload_cmd_is_parser_error(monkeypatch, tmp_path) -> None:
+    """#909 AC3a sibling: ``--execute-workload --workload-cmd ''`` is the
+    same parse-time rejection (an empty command can never be a workload)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def exploding_factory():
+        raise AssertionError("backends must not be built on a parser error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            # Base args minus the workload-cmd VALUE, then an EMPTY value:
+            # [..., "--workload-cmd", "", "--execute-workload"].
+            [*_runpod_launch_args()[:-1], "", "--execute-workload"],
+            backends_factory=exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_launch_runpod_workload_start_error_exits_2_with_reason(monkeypatch, tmp_path) -> None:
+    """#909 AC3: a launch whose execution leg raises
+    ``RunPodWorkloadStartError`` prints the failure JSON
+    (``reason: runpod_workload_start_failed``) + exits 2 — never ok:true on
+    a provision-only result when execution was requested."""
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=RunPodWorkloadStartError(
+            "workload did NOT verify alive on pod-909 (log /workspace/logs/issue-909.log)"
+        ),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "runpod_workload_start_failed"
+    assert "pod-909" in body["note"]
+
+
+def test_launch_success_body_carries_workload_execution_keys(monkeypatch, tmp_path) -> None:
+    """#909 AC6: the launch success JSON gains ``workload_executed`` /
+    ``workload_pid`` / ``log_path``."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _RunpodExecBackend({"workload_executed": True, "workload_pid": 777})
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is True
+    assert body["workload_executed"] is True
+    assert body["workload_pid"] == 777
+    assert body["log_path"] == "/workspace/logs/issue-909.log"
+
+
+def test_launch_belt_and_suspenders_executed_without_pid_exits_2(monkeypatch, tmp_path) -> None:
+    """#909 belt-and-suspenders: a handle claiming ``workload_executed: true``
+    with NO ``workload_pid`` (a future backend regression returning ok on a
+    provision-only result) prints the failure JSON + exits 2."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _RunpodExecBackend({"workload_executed": True})  # no workload_pid
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["reason"] == "runpod_workload_start_failed"
+    assert "workload_pid" in body["note"]
+
+
+def test_repo_branch_auto_default_fires_for_explicit_runpod_with_execute_workload(
+    monkeypatch, tmp_path
+) -> None:
+    """#909 AC6: the ``repo_branch`` auto-default (previously gated to the
+    gcp/auto lanes) ALSO fires for explicit ``--backend runpod`` +
+    ``--execute-workload`` — the execution leg's branch sync must target
+    the issue branch, not `main` (the #763-shaped manual command)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    from scripts import dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-909-x")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 0
+    assert runpod.launches[0].extra.get("repo_branch") == "issue-909-x"
+
+
+def test_repo_branch_explicit_flag_wins_over_auto_default(monkeypatch, tmp_path) -> None:
+    """#909 AC6: an explicit ``--repo-branch`` always wins over the
+    auto-default."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    from scripts import dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-909-x")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            _runpod_launch_args("--execute-workload", "--repo-branch", "issue-909-other"),
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert runpod.launches[0].extra.get("repo_branch") == "issue-909-other"
+
+
+def test_repo_branch_auto_default_does_not_fire_for_explicit_runpod_without_flag(
+    monkeypatch, tmp_path
+) -> None:
+    """#909 AC6 (negative control): explicit ``--backend runpod`` WITHOUT
+    ``--execute-workload`` keeps today's behavior — no repo_branch
+    auto-default (the experimenter owns the branch there)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    from scripts import dispatch_issue as di
+
+    monkeypatch.setattr(di, "_current_git_branch", lambda: "issue-909-x")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(_runpod_launch_args(), backends_factory=factory)
+    assert rc == 0
+    assert "repo_branch" not in (runpod.launches[0].extra or {})

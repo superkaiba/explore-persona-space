@@ -2526,6 +2526,21 @@ def failover_to_runpod_after_async_workload_crash(
     # RouterConfig, so it is not threaded further. Touch it so a future reader
     # sees the deliberate non-use, not a forgotten wiring.
     _ = config
+    # #909: no experimenter exists on the async failover paths — the RunPod
+    # backend is the executor. Opt a custom-workload spec into the execution
+    # leg (RunPodBackend.launch executes iff workload_cmd is set AND
+    # extra["execute_workload"] is truthy); a hydra-args spec has no
+    # backend-side executor on this lane (named residual) — log LOUD so the
+    # gap is visible on the marker trail instead of a silent provision-only
+    # relaunch (the #763 failure shape).
+    if spec.workload_cmd and not (spec.extra or {}).get("execute_workload"):
+        spec = replace(spec, extra={**dict(spec.extra or {}), "execute_workload": True})
+    elif not spec.workload_cmd:
+        logger.warning(
+            "async RunPod failover of a hydra-args run for issue %s: the RunPod "
+            "lane has no backend-side executor for hydra runs (named residual, #909)",
+            spec.issue,
+        )
     return _runpod_terminal_rung(
         spec=replace(spec, backend="runpod"),
         runpod_backend=runpod_backend,
