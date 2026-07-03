@@ -47,6 +47,7 @@ those for the ridge arm and only batches the gradient-descent MLP arm.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 import os
@@ -829,3 +830,410 @@ def zscore_columns(Xc: np.ndarray) -> np.ndarray:
     mu = Xc.mean(axis=0)
     sd = Xc.std(axis=0) + 1e-8
     return (Xc - mu) / sd
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Batched fixed-split multi-output MLP (issue #841 lineage). Ported to main from
+# origin/issue-841 @ a9c2e59849 (content snapshot @ e2a7398541; introduced at
+# 404046fefe) by
+# issue #926, WITH the #926 partition-invariant per-group seeding fix (per-group
+# init keyed to (seed, group.key), NOT batch position — supersedes the branch
+# copies' batch-order seeding). At the eventual issue-841 / issue-922 merges,
+# resolve conflicts in this region to MAIN's version.
+# ═══════════════════════════════════════════════════════════════════════════════
+# The LOCO helpers above return held-out predictions only. The Δ-predictability
+# atlas (#841) needs (a) a SINGLE fixed train/eval split per fit-problem instead
+# of LOCO folds, (b) SmoothL1 (not MSE), (c) inner-validation early-stopping, and
+# (d) the TRAINED PARAMS returned so the fitted map can be applied to NEW inputs
+# (the eval-context trajectories Stage 1 transports). This is the "extend on a
+# branch if needed" path the vectorize-many-cell-fits rule allows — it reuses the
+# SAME (d_in→hidden→p) multi-output architecture, per-group train-only ddof=1
+# standardization, and bmm forward as fit_batched_loco_mlp_multihead, differing
+# only in the split shape + loss + the returned params.
+
+
+def split_group_init_seed(seed: int, key: tuple) -> int:
+    """Stable per-group init seed for ``fit_batched_split_mlp``: unsalted blake2b
+    of ``f"{seed}|{key!r}"`` reduced to [0, 2**63). Depends ONLY on (seed, key) —
+    never on batch position, chunking, ordering, process, or platform — so any
+    partition of a group list reproduces each group's init bit-exactly (#926).
+    Key elements must be Python primitives (str/int/float/bool/None, or tuples
+    thereof): ``repr(key)`` is the identity. Python's builtin ``hash()`` is
+    salted per process (PYTHONHASHSEED) and MUST NOT replace this.
+    """
+    payload = f"{int(seed)}|{key!r}".encode()
+    return int.from_bytes(hashlib.blake2b(payload, digest_size=8).digest(), "big") % (2**63)
+
+
+@dataclass
+class SplitMLPGroup:
+    """One fixed-split multi-output MLP fit problem in the batched ensemble.
+
+    All groups in a batch MUST share n_train, n_eval, d_in, p, and (if any group
+    supplies validation) n_val — that shared shape is what lets them ride one
+    batched pass. Groups differ only in their X/Y values. ``X_val``/``Y_val`` are
+    optional; when present the returned map is the per-member BEST-validation-loss
+    snapshot (batched early stopping); when absent the final-epoch params are used.
+    """
+
+    key: tuple
+    X_train: np.ndarray  # (n_train, d_in) fp32
+    Y_train: np.ndarray  # (n_train, p) fp32 multi-output target
+    X_eval: np.ndarray  # (n_eval, d_in) fp32 (the atlas test slice)
+    X_val: np.ndarray | None = None  # (n_val, d_in) fp32
+    Y_val: np.ndarray | None = None  # (n_val, p) fp32
+
+
+@dataclass
+class SplitMLPResult:
+    """Eval-slice predictions + trained params for every group.
+
+    ``preds_by_key``: key -> (n_eval, p) predictions on ``X_eval`` (the atlas R²
+    read). ``params_by_key``: key -> {"W1","b1","W2","b2","mu","sd"} numpy arrays
+    (the trained map + its train-input standardization) so a caller can apply the
+    map to arbitrary inputs (Stage-1 transport composition).
+    ``best_val_epoch_by_key``: key -> int best-val epoch (-1 when no validation).
+    """
+
+    preds_by_key: dict
+    params_by_key: dict
+    best_val_epoch_by_key: dict
+    n_groups: int
+    chunk_size: int
+
+
+def _split_mlp_eval(Xg, W1, b1, W2, b2, mu, sd):
+    """bmm forward of the batched multi-output MLP on standardized inputs.
+
+    Xg (c, n, d_in) raw inputs; mu/sd (c, d_in); W1 (c, hid, d_in), b1 (c, hid),
+    W2 (c, p, hid), b2 (c, p). Returns (c, n, p) predictions. Standardizes with
+    the per-member train mu/sd (same as the LOCO helpers' bmm forward).
+    """
+    Xn = (Xg - mu.unsqueeze(1)) / sd.unsqueeze(1)  # (c, n, d_in)
+    h = torch.nn.functional.gelu(torch.bmm(Xn, W1.transpose(1, 2)) + b1.unsqueeze(1))  # (c, n, hid)
+    return torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
+
+
+def fit_batched_split_mlp(
+    groups: list[SplitMLPGroup],
+    *,
+    seed: int = DEFAULT_MLP_SEED,
+    hidden: int = MLP_HIDDEN,
+    lr: float = MLP_LR,
+    wd: float = MLP_WD,
+    max_epochs: int = MLP_MAX_EPOCHS,
+    device: str = "cpu",
+    chunk_size: int = 8,
+    num_threads: int | None = None,
+    smooth_l1_beta: float = 1.0,
+) -> SplitMLPResult:
+    """Fit ALL groups' fixed-split multi-output MLPs as one batched ensemble.
+
+    Member ``g`` is a ``Linear(d_in, hidden) → GELU → Linear(hidden, p)`` net
+    trained on group ``g``'s ``X_train → Y_train`` with AdamW(lr, wd) + SmoothL1
+    (``smooth_l1_beta``), standardized on the group's own train rows. When
+    validation is supplied, the per-member BEST-validation-loss params are kept
+    (batched early stopping — equivalent to patience≥remaining-epochs); else the
+    final-epoch params. Chunked over groups so peak memory scales with
+    ``chunk_size × n × d`` (the #841 tensors are large-d, unlike #722's tiny-d
+    LOCO folds — chunk small).
+
+    SEEDING: each group's init is drawn under
+    ``torch.manual_seed(split_group_init_seed(seed, group.key))`` — a stable
+    unsalted hash of ``(seed, repr(key))`` — NOT from the group's batch
+    position. Any partition or reordering of the same group list across calls
+    yields bit-identical per-group inits, and (on CPU, pinned by
+    ``assert_split_mlp_partition_invariant`` + tests) bit-identical trained
+    results at matched settings. Keys must be unique per call (asserted) and
+    built from Python primitives (repr is the identity). Supersedes the
+    pre-#926 batch-order seeding (member g got draw g), under which chunking a
+    group list changed every member's init (#841 fu-r1 v15: pred maxdiff 0.82
+    between a 5-group call and 2+3-group calls). Deterministic + reproducible
+    across runs and processes; sets the global torch CPU RNG as a side effect.
+    Returns a ``SplitMLPResult`` (eval preds + trained params + best-val epoch).
+    """
+    from torch.func import stack_module_state
+
+    if not groups:
+        return SplitMLPResult({}, {}, {}, 0, chunk_size)
+    if num_threads is not None and device == "cpu":
+        torch.set_num_threads(int(num_threads))
+
+    n_train, d_in = groups[0].X_train.shape
+    p = groups[0].Y_train.shape[1]
+    n_eval = groups[0].X_eval.shape[0]
+    has_val = groups[0].X_val is not None
+    n_val = groups[0].X_val.shape[0] if has_val else 0
+    for g in groups:
+        assert g.X_train.shape == (n_train, d_in), (g.key, g.X_train.shape)
+        assert g.Y_train.shape == (n_train, p), (g.key, g.Y_train.shape)
+        assert g.X_eval.shape == (n_eval, d_in), (g.key, g.X_eval.shape)
+        assert (g.X_val is not None) == has_val, (g.key, "val presence must match across groups")
+        if has_val:
+            assert g.X_val.shape == (n_val, d_in) and g.Y_val.shape == (n_val, p), g.key
+    dev = torch.device(device)
+    n_groups = len(groups)
+
+    # Stacked group tensors stay on CPU; only the per-chunk slice is moved to the
+    # device (below). Moving the whole (n_groups, n, d) ensemble to the device up
+    # front peaks at the full stacked footprint PLUS the per-chunk working set —
+    # which OOMs a smaller GPU at large (n, d) (the #811 measured-peak trap). CPU
+    # residency keeps device peak ~per-chunk.
+    def _stack(attr):
+        return torch.from_numpy(
+            np.ascontiguousarray(np.stack([getattr(g, attr) for g in groups]).astype(np.float32))
+        )
+
+    Xtr_g, Ytr_g, Xev_g = _stack("X_train"), _stack("Y_train"), _stack("X_eval")
+    Xval_g = _stack("X_val") if has_val else None
+    Yval_g = _stack("Y_val") if has_val else None
+
+    class _MLPMulti(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.net = torch.nn.Sequential(
+                torch.nn.Linear(d_in, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, p)
+            )
+
+    # Per-group init keyed to (seed, group.key) — partition/reorder-invariant (#926).
+    # Inits are drawn on the CPU RNG (modules constructed on CPU, then .to(dev)),
+    # so init bytes are device-independent; each group's stream is fully consumed
+    # before the next group's manual_seed, so neighbors cannot perturb it.
+    assert len({repr(g.key) for g in groups}) == n_groups, (
+        "duplicate (or repr-colliding) SplitMLPGroup.key in one call — keys must be "
+        "unique; results are keyed by them and inits are seeded from them"
+    )
+    block_members = []
+    for g in groups:
+        torch.manual_seed(split_group_init_seed(seed, g.key))
+        block_members.append(_MLPMulti().to(dev))
+    bp, _bb = stack_module_state(block_members)
+    bW1, bb1 = bp["net.0.weight"].detach(), bp["net.0.bias"].detach()
+    bW2, bb2 = bp["net.2.weight"].detach(), bp["net.2.bias"].detach()
+
+    preds_by_key: dict = {}
+    params_by_key: dict = {}
+    best_epoch_by_key: dict = {}
+    chunk = chunk_size if (chunk_size and chunk_size > 0) else n_groups
+    for lo in range(0, n_groups, chunk):
+        hi = min(lo + chunk, n_groups)
+        c = hi - lo
+        sl = slice(lo, hi)
+        W1 = bW1[sl].clone()  # (c, hid, d_in)
+        b1 = bb1[sl].clone()  # (c, hid)
+        W2 = bW2[sl].clone()  # (c, p, hid)
+        b2 = bb2[sl].clone()  # (c, p)
+        # Move only this chunk's slices to the device (CPU-resident otherwise).
+        Xtr, Ytr, Xev = Xtr_g[sl].to(dev), Ytr_g[sl].to(dev), Xev_g[sl].to(dev)
+        Xval = Xval_g[sl].to(dev) if has_val else None
+        Yval = Yval_g[sl].to(dev) if has_val else None
+
+        # Per-group train-only standardization (ddof=1 via the SS form).
+        mu = Xtr.mean(1)  # (c, d_in)
+        var = Xtr.var(1, correction=1)  # (c, d_in)
+        sd = var.clamp(min=0.0).sqrt() + 1e-6
+
+        for w in (W1, b1, W2, b2):
+            w.requires_grad_(True)
+        opt = torch.optim.AdamW([W1, b1, W2, b2], lr=lr, weight_decay=wd)
+
+        best_val = torch.full((c,), float("inf"), device=dev)
+        best_epoch = torch.full((c,), -1, dtype=torch.long, device=dev)
+        best = {k: v.detach().clone() for k, v in (("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2))}
+        pred = per_member = None  # keep bound for the del below at max_epochs=0 (#926)
+        for epoch in range(max_epochs):
+            opt.zero_grad(set_to_none=True)
+            pred = _split_mlp_eval(Xtr, W1, b1, W2, b2, mu, sd)  # (c, n_train, p)
+            per_member = torch.nn.functional.smooth_l1_loss(
+                pred, Ytr, reduction="none", beta=smooth_l1_beta
+            ).mean(dim=(1, 2))  # (c,)
+            per_member.sum().backward()
+            opt.step()
+            if has_val:
+                with torch.no_grad():
+                    vpred = _split_mlp_eval(Xval, W1, b1, W2, b2, mu, sd)
+                    vloss = torch.nn.functional.smooth_l1_loss(
+                        vpred, Yval, reduction="none", beta=smooth_l1_beta
+                    ).mean(dim=(1, 2))  # (c,)
+                improved = vloss < best_val
+                if improved.any():
+                    best_val = torch.where(improved, vloss, best_val)
+                    best_epoch = torch.where(
+                        improved, torch.full_like(best_epoch, epoch), best_epoch
+                    )
+                    im = improved.view(c, *([1] * (W1.dim() - 1)))
+                    best["W1"] = torch.where(im, W1.detach(), best["W1"])
+                    best["W2"] = torch.where(im, W2.detach(), best["W2"])
+                    imb = improved.view(c, 1)
+                    best["b1"] = torch.where(imb, b1.detach(), best["b1"])
+                    best["b2"] = torch.where(imb, b2.detach(), best["b2"])
+        if not has_val:
+            best = {"W1": W1.detach(), "b1": b1.detach(), "W2": W2.detach(), "b2": b2.detach()}
+
+        with torch.no_grad():
+            ev = _split_mlp_eval(Xev, best["W1"], best["b1"], best["W2"], best["b2"], mu, sd)
+        ev_np = ev.detach().cpu().numpy().astype(np.float64)
+        for j in range(c):
+            key = groups[lo + j].key
+            preds_by_key[key] = ev_np[j]
+            params_by_key[key] = {
+                "W1": best["W1"][j].detach().cpu().numpy().astype(np.float32),
+                "b1": best["b1"][j].detach().cpu().numpy().astype(np.float32),
+                "W2": best["W2"][j].detach().cpu().numpy().astype(np.float32),
+                "b2": best["b2"][j].detach().cpu().numpy().astype(np.float32),
+                "mu": mu[j].detach().cpu().numpy().astype(np.float32),
+                "sd": sd[j].detach().cpu().numpy().astype(np.float32),
+            }
+            best_epoch_by_key[key] = int(best_epoch[j].item()) if has_val else -1
+        del W1, b1, W2, b2, Xtr, Ytr, Xev, Xval, Yval, opt, pred, per_member, best
+    return SplitMLPResult(preds_by_key, params_by_key, best_epoch_by_key, n_groups, chunk)
+
+
+def assert_split_mlp_matches_serial(
+    seed: int = 0, n_train: int = 120, n_eval: int = 40, d: int = 32, p: int = 6
+) -> dict:
+    """Assert the batched split MLP reproduces a serial ``_MLP`` reference (no val).
+
+    Fits one group both via ``fit_batched_split_mlp`` (chunk that exercises the
+    loop) and a serial per-member ``_MLPMulti``-equivalent AdamW+SmoothL1 loop on
+    the SAME (X_train→Y_train), same seed/standardization, then compares the
+    eval-slice predictions. The residual is batched-bmm vs nn.Linear reduction
+    order (the same class the #658/#722 gates bound); ``tol=5e-5`` at this
+    well-conditioned N. Validates the unit-equivalence the plan §12 assumption 8
+    requires before the atlas trusts the batched fit.
+    """
+    rng = np.random.default_rng(seed)
+    z = rng.standard_normal((n_train + n_eval, 4))
+    W = rng.standard_normal((4, d))
+    X = (z @ W + 0.1 * rng.standard_normal((n_train + n_eval, d))).astype(np.float32)
+    B = rng.standard_normal((d, p))
+    Y = (X @ B * 0.05 + 0.1 * rng.standard_normal((n_train + n_eval, p))).astype(np.float32)
+    Xtr, Ytr, Xev = X[:n_train], Y[:n_train], X[n_train:]
+
+    grp = SplitMLPGroup(("g",), Xtr, Ytr, Xev)
+    res = fit_batched_split_mlp([grp], seed=658, max_epochs=40, device="cpu", chunk_size=1)
+    batched_pred = res.preds_by_key[("g",)]
+
+    # Serial reference: one _MLPMulti drawing the SAME init as the batched fit's
+    # per-group seed for key ("g",) (#926 seeding contract) + AdamW + SmoothL1.
+    torch.manual_seed(split_group_init_seed(658, ("g",)))
+
+    class _Ref(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.net = torch.nn.Sequential(
+                torch.nn.Linear(d, MLP_HIDDEN), torch.nn.GELU(), torch.nn.Linear(MLP_HIDDEN, p)
+            )
+
+        def forward(self, x):
+            return self.net(x)
+
+    net = _Ref()
+    Xt = torch.from_numpy(Xtr)
+    mu = Xt.mean(0)
+    sd = Xt.var(0, correction=1).clamp(min=0.0).sqrt() + 1e-6
+    Xn = (Xt - mu) / sd
+    Yt = torch.from_numpy(Ytr)
+    opt = torch.optim.AdamW(net.parameters(), lr=MLP_LR, weight_decay=MLP_WD)
+    for _ in range(40):
+        opt.zero_grad(set_to_none=True)
+        loss = torch.nn.functional.smooth_l1_loss(net(Xn), Yt, beta=1.0)
+        loss.backward()
+        opt.step()
+    with torch.no_grad():
+        Xev_n = (torch.from_numpy(Xev) - mu) / sd
+        ref_pred = net(Xev_n).numpy().astype(np.float64)
+
+    max_abs = float(np.max(np.abs(batched_pred - ref_pred)))
+    tol = 5e-5
+    assert max_abs <= tol, (
+        f"split MLP exactness FAILED: max|Δpred|={max_abs:.3e} > {tol} vs the serial "
+        "_MLP reference (batched bmm vs nn.Linear reduction order drifted)"
+    )
+    return {"max_abs_delta": max_abs, "tol": tol}
+
+
+def assert_split_mlp_partition_invariant(
+    seed: int = 0,
+    n_train: int = 48,
+    n_eval: int = 16,
+    d: int = 12,
+    p: int = 3,
+    n_groups: int = 5,
+    hidden: int = 32,
+    max_epochs: int = 15,
+) -> dict:
+    """Assert fit_batched_split_mlp is PARTITION- and REORDER-invariant (#926).
+
+    Builds ``n_groups`` synthetic groups with distinct keys/targets, then fits
+    (A) all in ONE call at chunk_size=2, (B) a 2+3 partition (chunk-membership-
+    ALIGNED with A: pure seeding-fix leg), (B') a 3+2 partition (boundary-
+    MISALIGNED: chunk memberships differ from A), (C) all in REVERSED order,
+    and (D) one full call at chunk_size=0 (no chunking — the cross-CHUNK-SIZE
+    leg mirroring ``assert_matches_reference`` check (b)). Also asserts
+    distinct keys derive distinct init seeds (anti-degeneracy). Asserts per-key
+    ``preds_by_key`` and every ``params_by_key`` array (W1,b1,W2,b2,mu,sd)
+    BIT-identical (``np.array_equal``) across all arms, each assert naming its
+    arm so a failure report says WHICH arm broke (an aligned-partition failure
+    = seeding bug; a reversed/nochunk-only failure = the anticipated kernel-
+    stability class, §6 fallback territory). CPU-only, num_threads pinned.
+    Returns the summary dict for the caller's log.
+    """
+    rng = np.random.default_rng(seed)
+    groups = []
+    for i in range(n_groups):
+        X = rng.standard_normal((n_train + n_eval, d)).astype(np.float32)
+        Y = (
+            X @ rng.standard_normal((d, p)) * 0.05
+            + 0.1 * rng.standard_normal((n_train + n_eval, p))
+        ).astype(np.float32)
+        groups.append(SplitMLPGroup((f"g{i}",), X[:n_train], Y[:n_train], X[n_train:]))
+    # Cross-key distinctness (reconciler mandatory-absorb, #926 critique r1): a
+    # key-ignoring helper would make every invariance assert below vacuously true.
+    seeds = {g.key: split_group_init_seed(658, g.key) for g in groups}
+    assert len(set(seeds.values())) == len(groups), (
+        "split_group_init_seed collapsed distinct keys to a shared seed"
+    )
+    kw = dict(
+        seed=658,
+        hidden=hidden,
+        max_epochs=max_epochs,
+        device="cpu",
+        chunk_size=2,
+        num_threads=8,  # thread count pinned: the asserted bit-identity contract
+        # is environment-pinned, not ambient (stats-critic rec)
+    )
+    full = fit_batched_split_mlp(groups, **kw)
+    part_a = fit_batched_split_mlp(groups[:2], **kw)  # 2+3: seeding-fix leg
+    part_b = fit_batched_split_mlp(groups[2:], **kw)
+    mis_a = fit_batched_split_mlp(groups[:3], **kw)  # 3+2: boundary-MISALIGNED
+    mis_b = fit_batched_split_mlp(groups[3:], **kw)  # chunk memberships differ
+    rev = fit_batched_split_mlp(list(reversed(groups)), **kw)
+    nochunk = fit_batched_split_mlp(groups, **{**kw, "chunk_size": 0})
+    # ^ cross-CHUNK-SIZE leg (width 5 vs 2) — the split-variant sibling of the
+    # LOCO gate's check (b) chunked-vs-nochunk comparison; certifies the
+    # "group_chunk is a memory knob" contract (stats-critic Must-Fix, #926 r1).
+    for g in groups:
+        k = g.key
+        split_res = part_a if k in part_a.preds_by_key else part_b
+        mis_res = mis_a if k in mis_a.preds_by_key else mis_b
+        for arm_name, arm in (
+            ("partition-2+3", split_res),
+            ("partition-3+2", mis_res),
+            ("reversed", rev),
+            ("nochunk", nochunk),
+        ):
+            assert np.array_equal(full.preds_by_key[k], arm.preds_by_key[k]), (arm_name, k)
+            for name in ("W1", "b1", "W2", "b2", "mu", "sd"):
+                assert np.array_equal(full.params_by_key[k][name], arm.params_by_key[k][name]), (
+                    arm_name,
+                    k,
+                    name,
+                )
+    return {
+        "n_groups": n_groups,
+        "partition_bit_identical": True,
+        "reorder_bit_identical": True,
+        "cross_chunk_bit_identical": True,
+        "distinct_key_seeds": True,
+    }
