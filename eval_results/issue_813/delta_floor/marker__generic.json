@@ -1,0 +1,19 @@
+{
+  "behavior": "marker",
+  "substrate": "generic",
+  "layer": 14,
+  "n_cells": 50,
+  "delta_over_floor": 0.04063347665517868,
+  "delta_over_floor_sd": 0.15991136483388843,
+  "delta_med": 0.14800879973234074,
+  "floor_combined": 3.6425334949397503,
+  "wu_delta_over_floor": 0.015691825183426475,
+  "wu_frac_in_subspace": 0.1546267572190112,
+  "wu_read2_informative": true,
+  "support_distance": {
+    "mean": 2.837709798560352,
+    "p90": 5.614437696979515
+  },
+  "chain_rho": null,
+  "marker_two_read": true
+}
