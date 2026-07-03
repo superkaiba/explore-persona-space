@@ -640,8 +640,12 @@ def _judge_one_behavior(behavior: str, *, mock: bool) -> dict:
         for r in rows
     ]
     if mock:
-        # mock: positive iff the response contains the trait token (offline).
-        raw_scores = [80 if "EXHIBIT" in r["response"].upper() else 20 for r in rows]
+        # mock: deterministic CONTENT-INDEPENDENT scores (offline). Even rollout
+        # ids score 80, odd score 20 — so BOTH arms keep ~half and reject ~half
+        # regardless of what the tiny smoke model babbles (the previous
+        # response-contains-"EXHIBIT" rule silently kept 0 pos rollouts under a
+        # tiny-random smoke model, crashing the capture on "an arm kept 0").
+        raw_scores = [80 if r["rollout_id"] % 2 == 0 else 20 for r in rows]
     else:
         raw_scores = _judge_rollouts_via_batch_api(filled)
     kept_flags: list[bool] = []
@@ -1185,11 +1189,10 @@ def _phase_neutral_judge(behaviors: list[str], *, mock: bool) -> None:
             for r in rows
         ]
         if mock:
-            # offline smoke: the bare-context rollouts express no mock trait
-            # token, so every row scores 20 (< 50 -> kept) deterministically.
-            raw_scores: list[int | None] = [
-                80 if "EXHIBIT" in r["response"].upper() else 20 for r in rows
-            ]
+            # offline smoke: deterministic CONTENT-INDEPENDENT scores (same rule
+            # as the Phase-1 mock judge) — odd ids score 20 (< 50 -> kept), even
+            # score 80 (rejected), exercising keep + reject + the floor branches.
+            raw_scores: list[int | None] = [80 if r["rollout_id"] % 2 == 0 else 20 for r in rows]
         else:
             raw_scores = _judge_rollouts_via_batch_api(filled)
         keep_flags: list[bool] = []

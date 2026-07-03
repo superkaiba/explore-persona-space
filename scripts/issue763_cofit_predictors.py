@@ -403,7 +403,16 @@ def fit_behavior_cofit(behavior: str, args, fam_by_ctx: dict[str, str]) -> dict:
     c0k = c0[[c0_index[c] for c in kept]]
 
     dir_blob = load_directions_v2(behavior, Path(args.dirs_dir))
-    rb = torch.load(PV_SHARD_DIR / f"rb_{behavior}.pt", weights_only=False)["r_b"].float().numpy()
+    if args.smoke and "r_A_surrogate" in dir_blob:
+        # smoke: the unified dispatcher's prereq overwrites the local rb shard
+        # with tiny-model dims; the v0-dim-consistent surrogate carries r_A.
+        rb = dir_blob["r_A_surrogate"].float().numpy()
+    else:
+        rb = (
+            torch.load(PV_SHARD_DIR / f"rb_{behavior}.pt", weights_only=False)["r_b"]
+            .float()
+            .numpy()
+        )
     directions = {
         "r_A": rb.astype(np.float64),
         "r_C": dir_blob["r_C"].float().numpy().astype(np.float64),
@@ -663,6 +672,11 @@ def run_nonlinear_block(behaviors: list[str], records: dict[str, dict], args) ->
 
         ridge = rec["methods"]["cofit_ridge"]
         krr = rec["methods"]["cofit_krr"]
+        if ridge.get("chosen_layer") is None or not ridge.get("preds_chosen_layer"):
+            # degenerate slice (all-NaN ridge read) — record and move on, never crash
+            cells[behavior] = {"skipped": "ridge produced no valid layer read"}
+            logger.warning("[nonlinear] %s: skipped (no valid ridge layer)", behavior)
+            continue
         # (1) kernel-vs-linear paired sign-flip on the RANK scale, both methods at
         # their OWN chosen layers; per-context error vs the full-sample rank01(y).
         y_rank = rank01(y)
@@ -740,33 +754,48 @@ def run_nonlinear_block(behaviors: list[str], records: dict[str, dict], args) ->
 def _write_smoke_surrogates(behaviors: list[str], dirs_dir: Path, c0_dir: Path) -> None:
     """Write SURROGATE pv_directions_v2 + c0 shards for the --smoke slice.
 
-    Derived from the REAL rb shards + v0 shards (production dims, production
-    key schema) so the co-fit exercises the exact consumption path; the real
-    Phase-A/B artifacts replace them in the production run. Never written
+    Derived from the REAL v0 shards (production key schema, v0-consistent
+    (L, H) dims) so the co-fit exercises the exact consumption path; the real
+    Phase-A/B artifacts replace them in the production run. The direction base
+    is the REAL rb shard when its dims match v0 (a pristine worktree), else a
+    seeded random (L, H) direction — the unified dispatcher smoke's Phase-1
+    prereq OVERWRITES the local rb shard with a tiny-smoke-model one (L=2, H=8)
+    while the v0 shards stay real, so rb dims cannot be assumed. The surrogate
+    blob also carries ``r_A_surrogate`` so the smoke's pv_rA read is
+    dim-consistent (production reads the real rb shard directly). Never written
     outside --smoke.
     """
     rng = np.random.default_rng(SEED)
     dirs_dir.mkdir(parents=True, exist_ok=True)
     c0_dir.mkdir(parents=True, exist_ok=True)
     for b in behaviors:
-        rb = torch.load(PV_SHARD_DIR / f"rb_{b}.pt", weights_only=False)["r_b"].float()
-        noise = torch.from_numpy(rng.standard_normal(rb.shape)).to(torch.float32)
-        scale = rb.norm(dim=-1, keepdim=True) / max(float(noise.norm()), 1e-9)
+        v0, ctx_ids = _load_v0(b)
+        n_layers, hidden = v0.shape[1], v0.shape[2]
+        rb_path = PV_SHARD_DIR / f"rb_{b}.pt"
+        base = None
+        if rb_path.exists():
+            rb = torch.load(rb_path, weights_only=False)["r_b"].float()
+            if tuple(rb.shape) == (n_layers, hidden):
+                base = rb
+        if base is None:
+            base = torch.from_numpy(rng.standard_normal((n_layers, hidden))).to(torch.float32)
+        noise = torch.from_numpy(rng.standard_normal(base.shape)).to(torch.float32)
+        scale = base.norm(dim=-1, keepdim=True) / max(float(noise.norm()), 1e-9)
         torch.save(
             {
                 "behavior": b,
-                "r_C": rb + 0.05 * noise * scale,
-                "r_neutral": rb + 0.10 * noise * scale,
-                "pos_C_mean": rb,
-                "neg_C_mean": torch.zeros_like(rb),
-                "neutral_mean": torch.zeros_like(rb),
+                "r_A_surrogate": base,
+                "r_C": base + 0.05 * noise * scale,
+                "r_neutral": base + 0.10 * noise * scale,
+                "pos_C_mean": base,
+                "neg_C_mean": torch.zeros_like(base),
+                "neutral_mean": torch.zeros_like(base),
                 "neutral_kept_n": 999,
                 "keep_floor_branch": "normal",
-                "read_context": "SMOKE_SURROGATE (rb-derived)",
+                "read_context": "SMOKE_SURROGATE (v0-dim-consistent)",
             },
             dirs_dir / f"{b}.pt",
         )
-        v0, ctx_ids = _load_v0(b)
         c0 = torch.from_numpy(v0 + 0.1 * rng.standard_normal(v0.shape)).to(torch.float32)
         torch.save(
             {"tensor": c0, "context_ids": ctx_ids, "behavior": b, "span": "prompt"},
