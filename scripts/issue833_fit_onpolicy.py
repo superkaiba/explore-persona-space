@@ -2091,6 +2091,16 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
         "keyed on EVERY join regime key + the data repo main sha; a relaunch with an "
         "unchanged regime skips the ~53-min HF store join",
     )
+    ap.add_argument(
+        "--local-store",
+        action="store_true",
+        help="read the NEW/RBASE store namespaces from the LOCAL mirrors under "
+        "<out-dir>/analysis_tensors{,_rbase} (the same validated loaders --floors-selftest "
+        "uses) instead of per-file HF Hub streaming — avoids the Hub API rate limit "
+        "(2500 req/5 min) that a parallel per-cell fan-out trips; requires "
+        "--context-source reextracted (the old #667 store has no local mirror). The join's "
+        "100%%-coverage + rbase-hash asserts guard mirror completeness",
+    )
     ap.add_argument("--skip-mlp", action="store_true", help="skip the MLP validity gate")
     ap.add_argument(
         "--mlp-layers",
@@ -2212,15 +2222,38 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
                 r_hat_by[(beh, li)] = fitM._r_hat_for(beh, li, rb_main, rb_fact)
                 E_by[(beh, li)] = fitM._load_E(beh, cached_joined[(beh, li)]["cell_keys"])
         else:
-            new_streamer = _PinnedStreamer(prefix=args.store_prefix, revision=None)
-            new_layout = _list_layout(args.store_prefix, behaviors, None)
+            if args.local_store:
+                # Local-mirror load path — the SAME streamer/layout constructions the
+                # --floors-selftest gate uses (run_floors_selftest above); estimator-
+                # neutral (the leg loaders accept either streamer by design). Guards:
+                # loud FileNotFoundError on a missing mirror; the join's 100%-coverage
+                # + duplicate-cell + rbase-hash asserts catch incomplete mirrors.
+                if args.context_source != "reextracted":
+                    raise ValueError(
+                        "--local-store requires the reextracted context contingency "
+                        "(the old #667 store has no local mirror)"
+                    )
+                _new_root = args.out_dir / "analysis_tensors"
+                _rbase_root = args.out_dir / "analysis_tensors_rbase"
+                for _p in (_new_root, _rbase_root):
+                    if not _p.is_dir():
+                        raise FileNotFoundError(f"--local-store needs the mirror at {_p}")
+                new_streamer = loadact._Streamer(local_root=_new_root)
+                new_layout = loadact.list_store_layout_local(_new_root, behaviors)
+            else:
+                new_streamer = _PinnedStreamer(prefix=args.store_prefix, revision=None)
+                new_layout = _list_layout(args.store_prefix, behaviors, None)
             legs = load_onpolicy_legs(behaviors, layers, new_streamer, new_layout)
 
             rlegs: dict = {}
             rbase_layout: dict = {}
             if args.legs_mode == "reextracted" or args.context_source == "reextracted":
-                rbase_streamer = _PinnedStreamer(prefix=args.rbase_store_prefix, revision=None)
-                rbase_layout = _list_layout(args.rbase_store_prefix, behaviors, None)
+                if args.local_store:
+                    rbase_streamer = loadact._Streamer(local_root=_rbase_root)
+                    rbase_layout = loadact.list_store_layout_local(_rbase_root, behaviors)
+                else:
+                    rbase_streamer = _PinnedStreamer(prefix=args.rbase_store_prefix, revision=None)
+                    rbase_layout = _list_layout(args.rbase_store_prefix, behaviors, None)
                 rlegs = load_rbase_legs(behaviors, layers, rbase_streamer, rbase_layout)
 
             if args.context_source == "reextracted":
