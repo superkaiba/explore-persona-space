@@ -3957,22 +3957,57 @@ def _py_phase_done_emission_lines(target: Path) -> list[int]:
     return sorted(sites)
 
 
+# A `#` begins a shell comment only at the START of a word — i.e. at string
+# start or after whitespace / an operator character (the POSIX tokenizer
+# rule). Used by _strip_sh_trailing_comment's word-boundary test.
+_SH_COMMENT_BOUNDARY_CHARS = frozenset(" \t;&|(<>")
+
+
 def _strip_sh_trailing_comment(line: str) -> str:
     """Cut an unquoted trailing ``#`` comment from a shell line via a small
-    quote-state char scanner (tracks single/double-quote state; a ``#``
-    inside either quote kind is kept). Errs toward cutting early on exotic
-    unquoted ``#`` forms (``${#arr[@]}``) — fail-toward-false-negative, the
-    correct direction for a pre-commit-gating lint."""
+    quote- and backslash-escape-aware char scanner. Word-boundary-aware
+    (the round-3 ``phase-done-comment-strip-midword-fn`` fix): a ``#``
+    starts a comment ONLY when it BEGINS a shell word — at string start or
+    preceded by unescaped whitespace / an operator character
+    (:data:`_SH_COMMENT_BOUNDARY_CHARS`) — matching the shell tokenizer, so
+    a mid-word ``#`` (``tag=run#1``, ``$#``, ``${x#pat}``, ``${#ARR[@]}``,
+    ``2#101``) and a backslash-escaped ``\\#`` never cut. (Pre-fix the
+    unconditional cut truncated the scanned line at ANY unquoted ``#``,
+    hiding every invocation/emission after it — a silent false negative
+    once the strip became load-bearing for invocation scanning in round 2.)
+    A ``#`` inside single or double quotes is kept; outside single quotes a
+    backslash escapes the next char (an escaped operator like ``\\;`` is
+    NOT a word boundary; ``\\"`` does not close a double quote). Residual
+    over-cut (fail-toward-false-negative — the safe direction for a
+    pre-commit-gating lint): a word-initial ``#`` inside an unquoted
+    ``$(...)`` command substitution still cuts there (the scanner is not
+    ``$()``-aware)."""
     out: list[str] = []
     in_single = in_double = False
-    for ch in line:
-        if ch == "#" and not in_single and not in_double:
+    prev_escaped = False
+    i, n = 0, len(line)
+    while i < n:
+        ch = line[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            out.append(ch)
+            out.append(line[i + 1])
+            prev_escaped = True
+            i += 2
+            continue
+        if (
+            ch == "#"
+            and not in_single
+            and not in_double
+            and (not out or (not prev_escaped and out[-1] in _SH_COMMENT_BOUNDARY_CHARS))
+        ):
             break
         if ch == "'" and not in_double:
             in_single = not in_single
         elif ch == '"' and not in_single:
             in_double = not in_double
         out.append(ch)
+        prev_escaped = False
+        i += 1
     return "".join(out)
 
 
@@ -4144,8 +4179,17 @@ def check_phase_done_reserved(
     carries no stdout redirect) — the round-2 fix for the
     ``phase-done-shell-edge-scoping`` concern (pre-fix, ``a.py && bad.py``
     only inspected ``a.py``, and ``bad.py; echo ok > marker`` was wrongly
-    suppressed by the line-global redirect search). Comment lines and
-    ``echo``-preview lines/segments are skipped; ``.py`` emission detection
+    suppressed by the line-global redirect search). The trailing-comment
+    strip is word-boundary- and escape-aware (round 3,
+    ``phase-done-comment-strip-midword-fn``): a ``#`` cuts only where it
+    BEGINS a shell word, so an executable mid-word ``#`` (``tag=run#1; uv
+    run python scripts/x.py``) or an escaped ``\\#`` no longer truncates
+    the scanned line ahead of a real invocation
+    (:func:`_strip_sh_trailing_comment`). Comment lines and
+    ``echo``-preview SEGMENTS are skipped — the echo skip is segment grain
+    (round 3): an ``echo`` segment ahead of a real invocation on the same
+    logical line (``echo \\#; uv run python scripts/x.py``) no longer
+    hides it. ``.py`` emission detection
     is AST-based (comments / docstrings / ``re.compile``-``re.search`` match
     sites / membership tests never flag); ``.sh`` emission detection is
     quote-aware comment-stripped ``echo|printf|print(``. A
@@ -4168,17 +4212,24 @@ def check_phase_done_reserved(
     tell a per-worker log from the dispatcher's own main log; no live
     instance — historical shapes use ``tee`` and ARE caught); (vi) a
     dispatcher's OWN mid-pipeline emissions in a loop (own-file sites are
-    unrestricted by construction); (vii) an unquoted ``#`` in a parameter
-    expansion (``${#ARR[@]}``) truncates the scanned line at the
-    comment-strip, hiding any invocation after it (the
-    :func:`_strip_sh_trailing_comment` errs-toward-cutting-early
-    limitation). ONE deliberate fail-toward-FLAGGING exception (a false
-    positive, not a false negative): a stdout redirect applied to a whole
+    unrestricted by construction); (vii) a word-initial unquoted ``#``
+    inside a ``$(...)`` command substitution truncates the scanned line at
+    the comment-strip (the scanner is not ``$()``-aware), hiding any
+    invocation after it — a MID-WORD ``#`` (``${#ARR[@]}``, ``tag=run#1``,
+    ``$#``) and an escaped ``\\#`` no longer truncate as of the round-3
+    word-boundary fix (:func:`_strip_sh_trailing_comment`). TWO deliberate
+    fail-toward-FLAGGING exceptions (false positives, not false
+    negatives): (a) a stdout redirect applied to a whole
     subshell/group (``( a.py; b.py ) > log`` / ``{ ...; } > log``) is not
     attributed to the segments INSIDE the group, so an emitting invocation
     there flags even though the group's stdout is isolated — no live
-    instance; waivable via ``# noqa: phase-done-reserved`` or the per-worker
-    pattern.
+    instance; (b) a pipe-DOWNSTREAM stdout redirect (``a.py 2>&1 | tee f
+    > /dev/null``) is attributed to the downstream segment only — the pipe
+    is a segment boundary and deliberately NON-isolating (the plan §4.3
+    tee-still-checked semantics), so an emitting invocation upstream of
+    the pipe still flags even when the pipeline's terminal stdout is
+    discarded. Both are waivable via ``# noqa: phase-done-reserved`` or
+    the per-worker pattern.
 
     ``scripts_dir`` is an override hook for unit tests (production callers
     pass None → the canonical ``<repo_root>/scripts`` tree); ``allowlist``
@@ -4199,8 +4250,11 @@ def check_phase_done_reserved(
         lines = sh.read_text(encoding="utf-8").splitlines()
         for first, _last, logical in _iter_logical_shell_lines(lines):
             stripped = logical.strip()
-            # Comments and dry-run echo previews are not launches.
-            if stripped.startswith("#") or stripped.startswith("echo "):
+            # Comment lines are not launches. echo-preview skipping is
+            # SEGMENT grain inside _phase_done_line_edges (round 3): a
+            # line-level `echo `-prefix skip hid a real invocation in a
+            # later segment (`echo \#; uv run python scripts/x.py`).
+            if stripped.startswith("#"):
                 continue
             # Round-2 (`phase-done-shell-edge-scoping`): EVERY non-redirected
             # invocation on the line is an edge — comment-stripped,
