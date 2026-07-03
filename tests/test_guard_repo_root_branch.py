@@ -4,7 +4,11 @@ The guard blocks any git command that would move the SHARED repo-root working
 tree off ``main`` OR detach its HEAD, because the repo root is the canonical
 commit target for ``scripts/task.py`` and every concurrent VM Claude session
 (all assume ``HEAD==main``). A detached repo-root HEAD additionally crashes
-``task_workflow``'s main-worktree resolver.
+``task_workflow``'s main-worktree resolver. As of #897 it ALSO blocks
+working-tree REVERTS on the shared root (``git restore``, pathspec /
+bare-path / force ``git checkout``, ``git clean -f``, ``git reset --hard``) —
+the #841 incident class where a concurrent destructive op silently reverted
+another session's uncommitted edits.
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -157,18 +161,21 @@ def test_existing_local_branch_checkout_still_blocks(throwaway_branch):
 
 
 # ---------------------------------------------------------------------------
-# MUST ALLOW — file-restore, return-to-main, scoped, and non-git shapes.
-# These must never be trapped regardless of the repo-root HEAD state, so they
-# are NOT guarded by @on_main.
+# MUST ALLOW — return-to-main, scoped, and non-git shapes. These must never be
+# trapped regardless of the repo-root HEAD state, so they are NOT guarded by
+# @on_main.
+#
+# FLIPPED to MUST-BLOCK by #897 (following the #804 `;`-latch flip precedent):
+# the four file-restore rows that used to sit here — `git checkout .`,
+# `git checkout -- scripts/eval.py`, `git checkout HEAD -- foo.py`,
+# `git checkout -f -- scripts/eval.py` — are working-tree reverts that
+# silently discard CONCURRENT sessions' uncommitted edits on the shared root
+# (incident #841). They now live in test_worktree_revert_shapes_block below.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
     [
         "git checkout main",  # return to main
-        "git checkout -- scripts/eval.py",  # file restore (explicit --)
-        "git checkout HEAD -- foo.py",  # file restore from a ref
-        "git checkout .",  # restore-all
-        "git checkout -f -- scripts/eval.py",  # flag + file restore
         "git -C .claude/worktrees/issue-123 checkout abc1234",  # scoped to a worktree
         "cd /tmp/foo && git checkout abc1234",  # scoped by cd /tmp
         "cd .claude/worktrees/x && git checkout abc1234",  # scoped by cd worktree
@@ -562,3 +569,205 @@ def test_backslash_newline_continuation_legitimate_allows(cmd):
 )
 def test_fail_soft_exit0(payload):
     assert _run_raw(payload) == 0
+
+
+# ===========================================================================
+# #897 — working-tree reverts on the shared repo root
+# ===========================================================================
+# Incident #841 (2026-07-02): a concurrent session's destructive working-tree
+# git op on the shared root reverted the #841 analyzer's uncommitted body.md
+# mid-task and deleted untracked pre-registration + figure files. The five
+# #897 detectors (restore / checkout-pathspec incl. --pathspec-from-file /
+# checkout-force / clean-force / reset-hard) close this class; they use a
+# TIGHT `git <verb>` bigram anchor so plain-English "restore"/"clean"/"reset"
+# in `-m` messages do NOT trip. The four rows FLIPPED from
+# test_allowed_shapes_exit0 appear here (the #804 `;`-latch flip precedent).
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # -- restore detector -------------------------------------------------
+        "git restore .",
+        "git restore tasks/running/841/body.md",  # the exact #841 shape
+        "git restore --worktree .",
+        "git restore --staged --worktree foo.py",  # worktree present -> fail-closed
+        "git restore -W foo.py",  # short worktree form fails closed
+        "git restore -S foo.py",  # short staged form fails closed
+        "git restore --source=main .",
+        # -- checkout pathspec detector (incl. the 4 FLIPPED rows) ------------
+        "git checkout .",  # FLIPPED from allow (#897)
+        "git checkout -- scripts/eval.py",  # FLIPPED from allow (#897)
+        "git checkout HEAD -- foo.py",  # FLIPPED from allow (#897)
+        "git checkout -f -- scripts/eval.py",  # FLIPPED from allow (#897)
+        "git checkout main -- CLAUDE.md",  # explicit ref incl. main
+        "git checkout ./src",  # dot-slash positional
+        "xargs -a files.txt git checkout issue-42 --",  # pins the SKILL.md -C migration
+        # -- checkout --pathspec-from-file (attached + separate-value forms) --
+        "git checkout HEAD --pathspec-from-file=/tmp/files",
+        "git checkout HEAD --pathspec-from-file /tmp/files",
+        # -- checkout force detector (discards dirty edits even AT main) ------
+        "git checkout -f main",
+        "git checkout --force main",
+        # -- bare-pathspec existence probe (the exact #841 op) ----------------
+        "git checkout CLAUDE.md",
+        "git checkout scripts/eval.py CLAUDE.md",  # first positional is a real path
+        # -- clean force detector ---------------------------------------------
+        "git clean -f",
+        "git clean -fd",
+        "git clean -fdx",
+        "git clean -ffdx",
+        "git clean -xdf",  # f not first in the cluster
+        "git clean --force",
+        "git clean -e keep.me -fd",  # force flag after a valued flag
+        # -- runtime reset --hard detector (#778/#815 class) -------------------
+        "git reset --hard",
+        "git reset --hard origin/main",
+        "git reset -q --hard",
+        "git reset origin/main --hard",  # ref BEFORE the flag
+        "git reset --hard HEAD~1",
+        "git --no-pager reset --hard",  # git-level flag before subcommand
+        # -- compound / latch parity with the #804 machinery -------------------
+        "git status && git clean -fd",  # AND does not mask a later dangerous clause
+        "cd .claude/worktrees/x ; git restore .",  # SEQ resets the latch
+        "cd .claude/worktrees/x\ngit clean -fd",  # NL resets the latch
+        "git clean -fd & git switch main",  # BG does not mask
+        "echo hi; git checkout .",  # later-clause classification
+        "git \\\nrestore .",  # backslash-continuation normalization parity
+    ],
+)
+def test_worktree_revert_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@on_main
+def test_note_text_restore_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (documented in the script header, mirror of
+    # test_note_text_git_verb_literal_trips_guard_known_limitation): a quoted
+    # FULL `git restore .`-class command literal inside another command's
+    # argument trips the raw scan. Workaround: `--file <path.md>` for notes,
+    # `git commit -F <file>` for commit messages. Exit 2 pins the deliberate
+    # trade-off so a future quote-strip re-attempt trips this test.
+    assert (
+        _run(
+            "uv run python scripts/task.py post-marker 897 epm:x "
+            '--note "run git restore . to revert"'
+        )
+        == 2
+    )
+
+
+@on_main
+def test_mangled_comment_separator_split_fails_closed():
+    # A comment CONTAINING a separator is mis-split by the clause splitter:
+    # the tail clause (`git clean -fd`) classifies on its own and BLOCKS even
+    # though bash would treat the whole line as a comment. Fail-closed is the
+    # documented safe direction for the #897 comment-clause skip (§3a(iii)).
+    assert _run("# note; git clean -fd") == 2
+
+
+# ---------------------------------------------------------------------------
+# #897 round 2 — comment-tail waiver spoof (concern id
+# comment-tail-waiver-spoof, the round-1 BLOCKER). Bash never executes an
+# unquoted `#` comment tail, but the raw scan previously READ it — so a
+# trailing comment carrying a waiver token (`git -C ...`, `--staged`) or a
+# latch shape (`cd .claude/worktrees/...`) made the hook exit 0 while bash
+# executed the destructive head. The driver loop now strips the
+# whitespace-anchored ` #` tail of each clause before any latch / waiver /
+# gate / classification read; these rows pin the spoof shapes CLOSED.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git restore . # git -C /tmp status",  # comment `-C` cannot waive
+        "git restore . # --staged",  # comment `--staged` cannot flip the allow-arm
+        "git checkout . # git -C /tmp status",
+        "git clean -fd # git -C /tmp status",
+        "git reset --hard # git -C /tmp status",
+        # control: a plain comment tail (no waiver token) also blocks — the
+        # spoof required a waiver token in the tail, the strip removes both
+        "git restore . # plain comment no waiver tokens",
+        # comment-tail LATCH spoof: the `cd .claude/worktrees/x` lives in the
+        # comment tail of clause 1, so it must NOT latch scope across the &&
+        "echo hi # cd .claude/worktrees/x && git restore .",
+    ],
+)
+def test_comment_tail_cannot_spoof_waiver_or_allow_arm(cmd):
+    assert _run(cmd) == 2
+
+
+@on_main
+def test_commit_message_checkout_realpath_prose_blocks_known_limitation():
+    # KNOWN LIMITATION (documented in the script header, round-2 concern id
+    # header-tight-anchor-claim-overbroad): the bare-pathspec existence probe
+    # rides the LEGACY loose `\bgit\b[^;&|]*\bcheckout\b` anchor, so prose
+    # containing `checkout <path>` where `<path>` names a REAL repo file trips
+    # WITHOUT a `git checkout` bigram — this `-m` message blocks (fails
+    # CLOSED). Remediation: `git commit -F <file>` / `--file <path.md>`.
+    assert _run('git commit -m "fix checkout CLAUDE.md handling"') == 2
+
+
+def test_abs_path_bare_pathspec_residual_gap_allows():
+    # RESIDUAL GAP (vii), documented in the script header (round-2 concern id
+    # abs-path-bare-pathspec-residual-unnamed): an ABSOLUTE-path bare pathspec
+    # inside the repo evades the existence probe (`cat-file -e "HEAD:/abs"`
+    # fails; `[ -e "$REPO/$arg" ]` concatenates the repo prefix onto the
+    # already-absolute path) so the revert is ALLOWED (fail-open) while git
+    # would revert the file. Pinned as CURRENT behavior, deliberately NOT
+    # closed this round; closable post-v1 by stripping a `$REPO/` prefix from
+    # the arg before probing. NOT @on_main: the allow must hold in either
+    # repo-root HEAD state.
+    assert _run("git checkout /home/thomasjiralerspong/explore-persona-space/CLAUDE.md") == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — #897 allow-side: index-only restore, dry-run clean, the safe
+# stash alternative, per-clause `-C` waivers, cd-latches, tight-anchor
+# non-matches, comment clauses, and unresolvable bare args. NOT guarded by
+# @on_main (must never trap in either repo-root HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git restore --staged foo.py",  # index-only
+        "git restore --staged .",  # index-only, dot pathspec
+        "git stash",  # the blessed safe alternative
+        "git stash pop",
+        "git clean -n",  # dry-run, no force
+        "git clean -nd",
+        "git -C .claude/worktrees/issue-1 clean -fdx",  # per-clause -C waiver
+        # deliberate -C override (even pointing at the repo root — the
+        # designed, auditable escape; the block message steers away from it)
+        "git -C /home/thomasjiralerspong/explore-persona-space checkout -- tasks/x",
+        'git -C "$WT" reset --hard origin/main',  # the documented recovery path
+        'git -C "$WT" restore .',  # -C waiver symmetry for the restore detector
+        "cd .claude/worktrees/x && git restore .",  # && latch
+        "cd /tmp/scratch && git clean -fd",  # /tmp latch
+        'git commit -m "restore the defaults"',  # tight anchor: no `git restore` bigram
+        'git commit -m "clean up the sweep"',  # tight anchor
+        'git commit -m "reset --hard the docs"',  # tight-anchor reset symmetry
+        "git add docs/notes-clean.md",  # `clean` inside a filename, no force flag
+        "uv run python scripts/clean_experiment_downloads.py 897 --apply",  # no `git` word
+        "git switch main",  # unchanged allow-arm
+        # -- #897 round 2: comment-tail strip allow-side parity ---------------
+        "git clean -n # -f",  # comment `-f` cannot force-block a dry run
+        "git -C .claude/worktrees/issue-1 clean -fdx # cleanup pass",  # waiver + comment
+        "git switch main # back to main",  # comment tail no longer breaks the allow-arm
+        "# git checkout .",  # comment-clause skip
+        # the SKILL.md Step 10d fence shape: cd + a comment SPELLING a gated
+        # form + a benign git command — the comment clause is skipped
+        'cd "$REPO_ROOT"\n# `git checkout issue-9 -- <path>` below\ngit status',
+    ],
+)
+def test_worktree_revert_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
+    # The #897 bare-pathspec existence probe fires ONLY when the positional
+    # names a real branch / commit-ish / tracked-or-existing path. An arg that
+    # resolves to NOTHING keeps the status-quo allow (git itself errors on the
+    # real call), pinning the probe's no-new-false-positive claim.
+    assert _run("git checkout nonexistent-name-xyz-897") == 0

@@ -166,6 +166,14 @@ def extract_transcript_from_happy_log(log_text: str) -> str | None:
 # ── /proc helpers ──────────────────────────────────────────────────────────
 
 
+def _pid_alive(pid: int) -> bool:
+    """True iff ``/proc/<pid>`` exists — the ONE module-level liveness seam
+    the #903 stop-fallback death-wait loop (``spawn_session._stop_fallback``)
+    and :func:`find_node_pid_for_session` probe through, so tests monkeypatch
+    exactly one name."""
+    return Path(f"/proc/{pid}").is_dir()
+
+
 def _read_proc_comm(pid: int) -> str | None:
     """Read ``/proc/<pid>/comm`` (the basename of the executable). Returns
     None if the process is gone or the file is unreadable — these are
@@ -174,6 +182,32 @@ def _read_proc_comm(pid: int) -> str | None:
         return Path(f"/proc/{pid}/comm").read_text().strip()
     except (FileNotFoundError, PermissionError, OSError):
         return None
+
+
+def _read_proc_cmdline(pid: int) -> str | None:
+    """Read ``/proc/<pid>/cmdline`` with NUL separators mapped to spaces.
+    Returns None if the process is gone or unreadable (expected races) —
+    the #903 ``--kill`` identity binding treats that as a refusal."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except (FileNotFoundError, PermissionError, OSError):
+        return None
+    return raw.replace(b"\x00", b" ").decode(errors="replace").strip()
+
+
+def _happy_daemon_pid() -> int | None:
+    """Pid of the local Happy daemon per ``~/.happy/daemon.state.json``.
+    Returns None on ANY read/parse failure — the #903 ``--kill`` path then
+    simply skips the daemon-pid refusal check (the comm + cmdline checks
+    still bind)."""
+    try:
+        state = json.loads(spawn_session.DAEMON_STATE.read_text())
+    except (OSError, ValueError):
+        return None
+    pid = state.get("pid") if isinstance(state, dict) else None
+    if isinstance(pid, int) and not isinstance(pid, bool):
+        return pid
+    return None
 
 
 def _read_proc_cwd(pid: int) -> str | None:
@@ -273,6 +307,76 @@ def _find_happy_log_for_node(node_pid: int, now: float | None = None) -> Path | 
         return None
     candidates.sort(reverse=True)
     return candidates[0][1]
+
+
+# Bytes of a happy log head to scan for a session id. The sid appears at
+# session creation, near the head (live probe 2026-07-02: first occurrence at
+# byte ~50,588 of the newest log) — 4 MB is a comfortable bound that still
+# avoids reading a multi-hundred-MB log wholesale. Allowed-deviation tunable.
+_LOG_SID_SCAN_BYTES = 4_000_000
+
+# Degenerate-sid floor. Real Happy session ids are ~25-char cuids; an EMPTY
+# sid (an unset "$SID" in a caller script) or a short fragment would
+# substring-match essentially every log head and resolve to an arbitrary live
+# wrapper — the wrong-kill vector under `stop --kill`. 8 is a generous floor:
+# well below real sid length, well above accidental fragments.
+_MIN_SID_LEN = 8
+
+
+def find_node_pid_for_session(sid: str, now: float | None = None) -> int | None:
+    """Reverse-map a Happy session id -> LIVE node wrapper pid, daemon-free.
+
+    ``~/.happy/logs/<date>-pid-<node_pid>.log`` embeds the pid in the filename
+    and the session id in the content (``"sessionId": "<sid>"``; verified live
+    2026-07-02: 304 occurrences in the newest log). For daemon-UNTRACKED
+    sessions (#903): scan logs newest-first within ``_HAPPY_LOG_MAX_AGE_S``,
+    match the QUOTED form ``"<sid>"`` in the first ``_LOG_SID_SCAN_BYTES``
+    (the quotes bind the full id — a sid that is a PREFIX of another id must
+    not vouch), parse the pid from the filename, return the first pid that is
+    alive. A degenerate sid (empty, or shorter than ``_MIN_SID_LEN``) never
+    resolves — a bare-substring match on it would bind every log head and
+    SIGTERM an arbitrary live wrapper. ``None`` on any miss (the caller
+    degrades to a structured recipe). The ``-pid-(\\d+)\\.log$`` regex
+    structurally excludes the daemon's ``...-pid-<pid>-daemon.log``."""
+    if len(sid) < _MIN_SID_LEN:
+        return None
+    if not HAPPY_LOGS_DIR.is_dir():
+        return None
+    cutoff = (now if now is not None else time.time()) - _HAPPY_LOG_MAX_AGE_S
+    candidates: list[tuple[float, int, Path]] = []
+    for path in HAPPY_LOGS_DIR.iterdir():
+        m = re.search(r"-pid-(\d+)\.log$", path.name)
+        if not m:
+            continue
+        try:
+            mt = path.stat().st_mtime
+        except OSError:
+            continue
+        if mt < cutoff:
+            continue
+        candidates.append((mt, int(m.group(1)), path))
+    candidates.sort(reverse=True)
+    # Group by pid: only the NEWEST log per pid may vouch for that pid (#903
+    # round-1 critique Must-Fix): an OLDER log containing the sid whose pid
+    # was since RECYCLED to a different live wrapper (which writes the NEWER
+    # log for the same pid, sans sid) must NOT resolve — accepting it is the
+    # wrong-kill vector.
+    newest_for_pid: dict[int, Path] = {}
+    for _mt, pid, path in candidates:  # already newest-first
+        newest_for_pid.setdefault(pid, path)
+    for _mt, pid, path in candidates:
+        if newest_for_pid[pid] != path:
+            continue  # an older log for a since-reused pid cannot vouch for it
+        try:
+            with path.open(errors="replace") as fh:
+                head = fh.read(_LOG_SID_SCAN_BYTES)
+        except OSError:
+            continue
+        if f'"{sid}"' not in head:
+            continue
+        if _pid_alive(pid):
+            return pid
+    return None
 
 
 def _resolve_transcript_via_happy_log(node_pid: int) -> tuple[str | None, str | None]:

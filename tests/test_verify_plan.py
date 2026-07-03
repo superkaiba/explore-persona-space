@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10) ────
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-14) ─
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -149,10 +149,13 @@ def test_good_plan_passes_all():
         "c10_marker_recipe": "SKIP",
         "c11_dryrun_test_coverage": "SKIP",
         "c12_battery_multiplier": "SKIP",
+        "c13_empirical_gate_attainability": "SKIP",
+        "c14_hypothesis_branch_coherence": "SKIP",
+        "c15_failloud_test_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 13
+    assert len(results) == 16
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -1099,6 +1102,566 @@ def test_c12_fenced_battery_does_not_trigger():
     assert _status(plan, "c12_battery_multiplier") == "SKIP"
 
 
+# ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
+
+# Near-verbatim #816 shapes: the synthetic fixtures ARE the incident text
+# (v5-shape = must-FAIL, v6-shape = must-PASS; the REAL v5/v6 files are
+# exercised by the §6.2 pre-commit calibration, not by this suite). NOTE:
+# the n_draws fixtures also trigger c12 (its `n_(draws|perms)\b` trigger) —
+# tests below assert the c13 status only, except where noted.
+C13_HEADING = "## 12. Success criteria (empirical-null gates)"
+C13_TABLE_SMALL = (
+    "| Family | Construction | n_draws | Source |\n"
+    "|---|---|---|---|\n"
+    "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+    "| Cross-trait | the other 2 traits' r_B | 2 | #778 v2 |\n"
+    "| PCA top-5 | top-5 PCs of diffs | 5 | #778 v1 |\n"
+)
+C13_TABLE_BIG = (
+    "| Family | Construction | n_draws | Source |\n"
+    "|---|---|---|---|\n"
+    "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+    "| Cross-trait | rotation draws | 200 | #778 v2 |\n"
+    "| PCA top-5 | top-5 PCs of diffs | 200 | #778 v1 |\n"
+)
+C13_TABLE_19 = "| Family | Construction | n_draws | Source |\n|---|---|---|---|\n| Isotropic | v ~ N(0, I) | 19 | norm-matching |\n"
+C13_GATE = (
+    "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+    "one-sided empirical p ≤ 0.05 surviving Benjamini-Hochberg across the 3 traits."
+)
+C13_GATE_SCOPED = (
+    "- SUCCESS: for every STOCHASTIC family (n_draws ≥ 50) one-sided empirical "
+    "p ≤ 0.05 surviving Benjamini-Hochberg; cross-trait (n=2) and PCA (n=5) are "
+    "descriptive max-comparators outside the BH set, p-floors 1/3 and 1/6 stated inline."
+)
+C13_GATE_FLOOR_FORM = (
+    "- SUCCESS: exceeds EVERY random draw's reduction. One-sided empirical "
+    "p ≤ 1/(15+1) ≈ 0.06 (the p-floor at 15 draws)."
+)
+
+
+def _c13_plan(*parts: str) -> str:
+    """GOOD_PLAN + a success-criteria section carrying ``parts`` in order."""
+    return GOOD_PLAN + "\n" + C13_HEADING + "\n\n" + "\n\n".join(parts) + "\n"
+
+
+def test_c13_unattainable_gate_816_v5_shape_fails():
+    ok, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "n_draws=2" in r.detail
+    assert "1/3" in r.detail
+    assert "p-floor" in r.detail
+    assert ok is False
+
+
+def test_c13_attainable_gate_passes():
+    assert _status(_c13_plan(C13_TABLE_BIG, C13_GATE), "c13_empirical_gate_attainability") == "PASS"
+
+
+def test_c13_self_consistent_floor_gate_skips():
+    # The verbatim #816 v5 Exp-4 floor-form sentence ("p ≤ 1/(15+1) ≈ 0.06")
+    # must NOT be read as a decimal-alpha gate — no gate hit, so c13 SKIPs.
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE_FLOOR_FORM))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no registered empirical-p gate" in r.detail
+
+
+def test_c13_scoped_gate_816_v6_shape_passes():
+    # The #816 v6 fix shape: same small-n table rows, but the gate line
+    # carries the draws-explicit scope qualifier `n_draws ≥ 50` — the n=2/5
+    # comparators are outside the gate's own declared scope.
+    assert (
+        _status(_c13_plan(C13_TABLE_SMALL, C13_GATE_SCOPED), "c13_empirical_gate_attainability")
+        == "PASS"
+    )
+
+
+def test_c13_not_triggered_skips():
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no registered empirical-p gate" in r.detail
+
+
+def test_c13_gate_without_ndraws_skips():
+    _, by_id = _run(_c13_plan(C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "SKIP"
+    assert "no per-family n_draws declarations" in r.detail
+
+
+def test_c13_na_escape_passes():
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE) + (
+        "\nN/A — no empirical-null gate (the p ≤ 0.05 mention quotes the sibling's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c13_kind_infra_skips():
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE)
+    assert _status(plan, "c13_empirical_gate_attainability", kind="infra") == "SKIP"
+
+
+def test_c13_kind_analysis_warns_not_fails():
+    # Same offenders as the FAIL case, but kind=analysis degrades to WARN and
+    # the overall verdict stays ok (c12 also degrades to WARN under analysis).
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE)
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id["c13_empirical_gate_attainability"].status == "WARN"
+    assert ok is True
+
+
+def test_c13_boundary_floor_equals_alpha_warns():
+    # Fraction(1, 20) == Fraction("0.05") exactly: floor == alpha under a
+    # non-strict `≤` comparator is the boundary WARN, not an offender.
+    _, by_id = _run(_c13_plan(C13_TABLE_19, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "exactly" in r.detail
+
+
+def test_c13_ambiguous_gate_without_family_vocab_warns():
+    gate = "- SUCCESS: the permutation read must reach one-sided empirical p ≤ 0.05."
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, gate))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "ambiguous tie" in r.detail
+
+
+def test_c13_prior_work_recap_not_a_gate():
+    # The same gate sentence under a Prior Work heading is a recap, not a
+    # registration — section scoping keeps it out (under-trigger fails safe).
+    plan = GOOD_PLAN + "\n## 2. Prior Work\n\n" + C13_TABLE_SMALL + "\n" + C13_GATE + "\n"
+    assert _status(plan, "c13_empirical_gate_attainability") == "SKIP"
+
+
+def test_c13_fenced_gate_does_not_trigger():
+    plan = (
+        GOOD_PLAN + "\n" + C13_HEADING + "\n\n" + C13_TABLE_SMALL + "\n```\n" + C13_GATE + "\n```\n"
+    )
+    assert _status(plan, "c13_empirical_gate_attainability") == "SKIP"
+
+
+def test_c13_kwarg_ndraws_form_harvested():
+    # No table: a FENCED kwarg declaration (`n_draws_isotropic=2`, the #816 v6
+    # config-block shape) still harvests — declarations are read from the RAW
+    # plan — and floors 1/3 > 0.05 under the unscoped family gate.
+    plan = (
+        GOOD_PLAN + "\n" + C13_HEADING + "\n\n```\nn_draws_isotropic=2\n```\n\n" + C13_GATE + "\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "n_draws_isotropic n_draws=2" in r.detail
+
+
+def test_c13_excluded_family_row_not_counted():
+    table = (
+        "| Family | Construction | n_draws | Source |\n"
+        "|---|---|---|---|\n"
+        "| Isotropic | v ~ N(0, I) | 200 | norm-matching |\n"
+        "| Cross-trait | outside the BH test set — descriptive reference only | 2 | #778 |\n"
+        "| PCA top-5 | outside the BH test set — descriptive reference only | 5 | #778 |\n"
+    )
+    assert _status(_c13_plan(table, C13_GATE), "c13_empirical_gate_attainability") == "PASS"
+
+
+def test_c13_bare_n_qualifier_does_not_descope():
+    # A bare `n ≥ 20` sample-size clause on the gate line must NOT set the
+    # draws scope (the pre-fix scope regex silently false-PASSed this — the
+    # round-1 statistics-reconcile Must-Fix): the n=2/5 families stay in
+    # scope and the gate FAILs.
+    gate = (
+        "- SUCCESS: across all null families (n ≥ 20 prompts per probe) the read reaches "
+        "one-sided empirical p ≤ 0.05 surviving BH."
+    )
+    assert _status(_c13_plan(C13_TABLE_SMALL, gate), "c13_empirical_gate_attainability") == "FAIL"
+
+
+def test_c13_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief self-escape
+    # channel — the round-1 methodology-reconcile Must-Fix) is NOT a
+    # standalone declaration line and must not escape.
+    plan = _c13_plan(C13_TABLE_SMALL, C13_GATE) + (
+        "\nThe verifier's remediation menu says to declare 'N/A — no empirical-null gate' "
+        "when the mention is incidental.\n"
+    )
+    assert _status(plan, "c13_empirical_gate_attainability") == "FAIL"
+
+
+def test_c13_strict_lt_at_floor_equal_alpha_is_offender():
+    # Under strict `<`, floor == alpha is unattainable (an offender), not the
+    # boundary WARN.
+    gate = (
+        "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+        "one-sided empirical p < 0.05 surviving Benjamini-Hochberg across the 3 traits."
+    )
+    assert _status(_c13_plan(C13_TABLE_19, gate), "c13_empirical_gate_attainability") == "FAIL"
+
+
+def test_c13_alpha_zero_gate_fails_without_crash():
+    # Round-2 BLOCKER `alpha-zero-c13-crash`: a registered `p <= 0.00` gate
+    # parses to alpha == Fraction(0) — the limiting case of the unattainable
+    # class. Every declaration's floor 1/(n+1) > 0 == alpha, so c13 must FAIL
+    # (family vocab present), NOT ZeroDivisionError on ceil(1/alpha) in the
+    # offender-detail builder (pre-fix: Fraction(1, 0) at the remedy bound).
+    gate = (
+        "- SUCCESS: real |r| > every honest null family's 97.5th-pct |r| at "
+        "one-sided empirical p ≤ 0.00 surviving Benjamini-Hochberg across the 3 traits."
+    )
+    plan = _c13_plan(C13_TABLE_19, gate)
+    # Direct check-function call — the CLI text and --json modes route through
+    # verify_plan_text with no exception guard, so no-raise here pins both.
+    r = verify_plan.check_empirical_gate_attainability(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "alpha ≤ 0" in r.detail
+    assert "no finite n_draws" in r.detail
+    # Full-driver path (what the CLI executes) must not raise either, and the
+    # kind=analysis degrade branch builds the SAME detail before degrading —
+    # it must WARN, not crash.
+    ok, by_id = _run(plan)
+    assert by_id["c13_empirical_gate_attainability"].status == "FAIL"
+    assert ok is False
+    assert _status(plan, "c13_empirical_gate_attainability", kind="analysis") == "WARN"
+
+
+def test_c13_vacuous_scope_excluding_every_declaration_warns():
+    # Round-2 concern `c13-binding-tests-missing` (a): a draws-scope qualifier
+    # above every declared count (n_draws >= 500 over a 200/2/5 table) leaves
+    # an EMPTY in-scope set — the vacuous-scope WARN, never an affirmative
+    # PASS with an undefined min.
+    gate = (
+        "- SUCCESS: for every STOCHASTIC family (n_draws ≥ 500) one-sided "
+        "empirical p ≤ 0.05 surviving Benjamini-Hochberg."
+    )
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, gate))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "WARN"
+    assert "excludes every declared family" in r.detail
+
+
+def test_c13_fail_detail_names_clean_pass_remedy_bound():
+    # Round-2 concern `c13-binding-tests-missing` (b): the alpha=0.05 offender
+    # detail carries the ceil(1/alpha) = 20 clean-PASS remedy bound.
+    _, by_id = _run(_c13_plan(C13_TABLE_SMALL, C13_GATE))
+    r = by_id["c13_empirical_gate_attainability"]
+    assert r.status == "FAIL"
+    assert "≥ 20" in r.detail
+    assert "clean PASS" in r.detail
+
+
+# ─── Check 14 — hypothesis confirm/falsify branch coherence ────────────────
+
+# Verbatim bullets from the real corpus (embedded as literals — NEVER read
+# from tasks/ at test runtime; tasks move between status folders). The REAL
+# plan files are exercised by the §4 pre-commit calibration, not this suite.
+C14_HEADING = "## 3. Hypothesis"
+# #922 v2 line 47 — the incident offender: implicit confirm (no **Confirm:**
+# label), tendency "toward" vs state "stays above" on shared `k = 32`, plus
+# the unpinned "mid/late layers" scope.
+H922_H4 = "- **H4 (rollout).** The context-only autoregressive roll beats the frozen-state null (ĥ_{T+k} = h_T) for small horizons (k ≤ 4) at mid/late layers, and decays toward/below it by k = 32 (feature drift, 2506.03566). **Falsify (positive surprise):** rollout skill stays above the frozen null through k = 32."
+# #922 v2 line 45 — vague-shaped "early to late layers" ESCAPED by the pinned
+# "layers 1-28" (en dash in the verbatim string) / "layer 0" in the same block.
+H922_H2 = "- **H2 (depth profile).** The carried-context share rises with depth: the ratio r2_id(context-only)/r2_id(token-informed) increases from early to late layers (Spearman ρ(layer, ratio) > 0 over layers 1–28, both spaces). At layer 0 (embedding stream) the context-only map fails by construction (h_{0,t+1} is exactly the injected token embedding) — a built-in sanity anchor. **Falsify:** flat or decreasing profile."
+# #841 v12 line 29 — crisp `≤` vs `>` count comparators, no tendency token.
+H841_H1 = "- **H1 (Stage-0 fit, matched information).** The source-only GRU's held-out r2_id on Δ_ℓ does NOT beat the affine ridge on the data-limited late-layer band (transitions 17–25) or on a majority of the 27 transitions. **Confirm (ridge stands):** source-only GRU r2_id ≤ ridge r2_id on ≥ 14/27 transitions (raw space), consistent with the prefix-GRU's 27/27 loss. **Falsify (GRU wins):** source-only GRU r2_id > ridge r2_id on a majority of transitions, especially the late-layer band. Directional prior: LOSS or TIE (removing prefix information from an already-losing GRU should not lift it above ridge)."
+# #810 v6 line 35 — band/threshold wording (Confirm-the-null vs clears-the-
+# band), no tendency token.
+H810_H2G = "- **H2-g (read-out).** No summary rescues behavior read-out on generic-genre activations either. **Confirm-the-null:** the two-method conjunction statistic sits inside its max-selected band for each new combo. **Falsify:** a summary clears the band on g1 → the Betley corpus was suppressing read-out (rewrites the parent's read-out takeaway)."
+
+
+def _hyp_plan(*bullets: str) -> str:
+    """GOOD_PLAN + a Hypothesis section carrying ``bullets`` in order."""
+    return GOOD_PLAN + "\n" + C14_HEADING + "\n\n" + "\n".join(bullets) + "\n"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c14_kind_infra_skips(kind):
+    assert _status(_hyp_plan(H922_H4), "c14_hypothesis_branch_coherence", kind=kind) == "SKIP"
+
+
+def test_c14_no_hypothesis_section_skips():
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no hypothesis section" in r.detail
+
+
+def test_c14_hypothesis_without_branch_anchors_skips():
+    plan = _hyp_plan("- **H1.** The read-out improves with depth (prose only, no branch labels).")
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no **Confirm/**Falsify branch anchors" in r.detail
+
+
+def test_c14_922_h4_toward_vs_stays_above_warns():
+    # H4 carries NO explicit **Confirm:** label — the implicit-confirm rule
+    # (block text before the falsify anchor is the confirm branch) is
+    # REQUIRED for this to fire (plan §4 test 14, folded in here).
+    ok, by_id = _run(_hyp_plan(H922_H4))
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "k = 32" in r.detail
+    assert "toward" in r.detail
+    assert "stays above" in r.detail
+    assert ok is True  # WARN never flips exit 0 (success criterion 6)
+
+
+def test_c14_922_h4_vague_scope_in_detail():
+    r = _run(_hyp_plan(H922_H4))[1]["c14_hypothesis_branch_coherence"]
+    assert "mid/late layers" in r.detail
+    assert "(b) vague-scope" in r.detail
+
+
+def test_c14_vague_scope_alone_warns():
+    # Predicate (b) fires without (a): no shared bounded token anywhere.
+    plan = _hyp_plan(
+        "- **H1.** Read-out improves at mid/late layers. **Falsify:** no improvement at any layer."
+    )
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "(b) vague-scope" in r.detail
+    assert "mid/late layers" in r.detail
+    assert "(a) comparator-pair" not in r.detail
+
+
+def test_c14_841_v12_crisp_comparators_pass():
+    assert _status(_hyp_plan(H841_H1), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_810_v6_band_wording_passes():
+    assert _status(_hyp_plan(H810_H2G), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_vague_scope_with_pinned_layer_range_passes():
+    assert _status(_hyp_plan(H922_H2), "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_toward_without_shared_token_passes():
+    # Deliberate shared-token conservatism (accepted false negative): the
+    # falsify names `k = 32` but the confirm does not, so no comparator pair
+    # is evaluated even though tendency + state tokens are both present.
+    plan = _hyp_plan(
+        "- **H1.** Rollout skill decays toward the null at long horizons at layer 20. "
+        "**Falsify:** rollout skill stays above the frozen null through k = 32."
+    )
+    assert _status(plan, "c14_hypothesis_branch_coherence") == "PASS"
+
+
+def test_c14_fenced_hypothesis_does_not_trigger():
+    plan = GOOD_PLAN + "\n" + C14_HEADING + "\n\n```\n" + H922_H4 + "\n```\n"
+    r = _run(plan)[1]["c14_hypothesis_branch_coherence"]
+    assert r.status == "SKIP"
+    assert "no **Confirm/**Falsify branch anchors" in r.detail
+
+
+def test_c14_kind_analysis_warns_not_skips():
+    ok, by_id = _run(_hyp_plan(H922_H4), kind="analysis")
+    assert by_id["c14_hypothesis_branch_coherence"].status == "WARN"
+    assert ok is True  # WARN-only under BOTH in-scope kinds (criterion 6)
+
+
+def test_c14_comparator_pair_alone_warns():
+    # (a)-ALONE positive (round-1 critic Must-Fix, alternatives lens): shared
+    # token + tendency-vs-state comparators, NO vague-scope token. A coupled
+    # implementation where comparator detection only evaluates when
+    # vague-scope also fires would pass the H4 tests (H4 fires both) and the
+    # shared-token-conservatism test (nothing evaluates) — this fixture is
+    # the only one that fails such a mutant.
+    plan = _hyp_plan(
+        "- **H1.** Skill decays toward the null by k = 32 at layer 20. "
+        "**Falsify:** skill stays above the null through k = 32."
+    )
+    ok, by_id = _run(plan)
+    r = by_id["c14_hypothesis_branch_coherence"]
+    assert r.status == "WARN"
+    assert "(a) comparator-pair" in r.detail
+    assert "k = 32" in r.detail
+    assert "toward" in r.detail
+    assert "stays above" in r.detail
+    assert "(b) vague-scope" not in r.detail
+    assert ok is True
+
+
+# ─── Check 15 — fail-loud acceptance claim backed by a test ────────────────
+
+FAILLOUD_ACCEPT = (
+    "\n## 5. Acceptance criteria\n\n"
+    "1. The poller re-raises on a malformed sentinel — the crash is not swallowed; "
+    "no `except Exception` fallback remains in the drain pass.\n"
+)
+
+
+def test_c15_kind_experiment_skips():
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT
+    assert _status(plan, "c15_failloud_test_coverage", kind="experiment") == "SKIP"
+
+
+def test_c15_no_failloud_vocab_skips():
+    # GOOD_PLAN's criteria section carries no claim vocabulary (verified
+    # against the fixture strings at test-write time) → baseline SKIP.
+    assert _status(GOOD_PLAN, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_failloud_claim_without_test_warns():
+    # The zero-fail-loud-test shape: a fail-loud acceptance claim + a
+    # success-path-only test list.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "WARN"
+    assert "#913" in r.detail
+    assert "grep" in r.detail
+
+
+def test_c15_kind_batch_triggers():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="batch") == "WARN"
+
+
+def test_c15_grep_gate_does_not_self_certify():
+    # The #913-v1 caller-swallow shape: a run-book grep gate over a tests/
+    # path carries a test_ identifier + except-vocabulary on one line, but a
+    # grep gate verifies the invariant once at review time — it must not
+    # count as committed-test evidence.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n- Grep gate: `grep -n 'except Exception' scripts/poll_pipeline.py "
+        "tests/test_poll_pipeline.py` returns nothing.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "WARN"
+
+
+def test_c15_named_raise_test_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nTests: `test_drain_malformed_sentinel_raises` — malformed sentinel → "
+        "`pytest.raises(ValueError)`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "test named" in r.detail
+
+
+def test_c15_identifier_internal_vocab_passes():
+    # Vocabulary inside the identifier — pins the letter-lookaround design
+    # (a \b boundary would fail on the underscore-joined token).
+    plan = GOOD_PLAN + FAILLOUD_ACCEPT + "\nTests: `test_no_silent_swallow_in_drain`.\n"
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_na_escape_incidental_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nThe 'silently' sentence above narrates the pre-fix defect. "
+        "N/A — no fail-loud acceptance claim.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c15_na_escape_doc_target_passes():
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\nN/A — fail-loud claim not test-backable (the target is a .md instruction; "
+        "no code path a pytest can exercise).\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c15_failloud_test_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c15_fenced_claim_vocab_does_not_trigger():
+    # A fenced block in an acceptance section is quoted implementation (a
+    # diff hunk containing `raise ValueError` is not a claim) — the trigger
+    # scan is fence-stripped.
+    plan = (
+        GOOD_PLAN + "\n## 5. Acceptance criteria\n\nThe diff is verified by the commands below.\n\n"
+        "```python\nraise ValueError('the crash is not swallowed')\n```\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_plan_summary_mention_does_not_trigger():
+    # §0 Plan Summary restates criteria as summary prose — a measured
+    # corpus-probe noise class; the anchor carrier is excluded.
+    plan = (
+        GOOD_PLAN + "\n## 0. Plan Summary\n\n**Evaluation:** acceptance criteria — the guard "
+        "fails loud on a wedged pod.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_design_narration_does_not_trigger():
+    # Bug narration in a Design section carries claim vocabulary but no
+    # acceptance/success anchor → no trigger.
+    plan = (
+        GOOD_PLAN + "\n## 4. Design\n\nThe old path silently swallowed the crash; "
+        "we delete the bare except.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_grep_gate_plus_named_test_passes():
+    # The #913-v2 fixed shape (§3 Q3 registered invariant): a grep-gate line
+    # must NOT invalidate independent non-grep test evidence. A
+    # grep-invalidates-all-evidence mutation would flip this test while
+    # leaving the grep-self-certify and named-raise tests green.
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n- Grep gate: `grep -n 'except Exception' scripts/poll_pipeline.py` "
+        "returns nothing.\n"
+        "Tests: `test_drain_malformed_sentinel_raises` — malformed sentinel → "
+        "`pytest.raises(ValueError)`.\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
+def test_c15_h1_preamble_anchor_does_not_trigger():
+    # Anchor + claim vocabulary in an H1-only preamble (before any ## heading)
+    # → the carrier is the H1 (level < 2), a measured probe noise class.
+    plan = GOOD_PLAN.replace(
+        "## 0.0 TL;DR (plain English)",
+        "Acceptance criteria: the poller fails loud — the crash is not swallowed.\n\n"
+        "## 0.0 TL;DR (plain English)",
+        1,
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c15_fenced_evidence_line_passes():
+    # Test lists legitimately live in fences/tables — the evidence scan is
+    # RAW (pins the design against a future fence-stripping refactor).
+    plan = (
+        GOOD_PLAN
+        + FAILLOUD_ACCEPT
+        + "\n```\ntests/test_poll_pipeline.py::test_drain_malformed_sentinel_raises PASSED\n```\n"
+    )
+    assert _status(plan, "c15_failloud_test_coverage", kind="infra") == "PASS"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1148,12 +1711,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 6
+    assert payload["n_skip"] == 9
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 13
-    assert len({c["id"] for c in payload["checks"]}) == 13
+    assert len(payload["checks"]) == 16
+    assert len({c["id"] for c in payload["checks"]}) == 16
 
 
 def test_cli_exit_one_on_fail(tmp_path):

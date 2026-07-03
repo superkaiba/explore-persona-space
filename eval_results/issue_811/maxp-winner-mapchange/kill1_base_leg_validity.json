@@ -1,0 +1,35 @@
+{
+  "fired": false,
+  "test_summary": "maxp",
+  "n_collapse": 0,
+  "n_comparable": 3,
+  "n_missing_gate": 0,
+  "n_mean_no_gate": 0,
+  "state": "decided",
+  "collapse_frac_threshold": 0.5,
+  "per_behavior": {
+    "em": {
+      "mean_margin": 0.21771688323408903,
+      "maxp_margin": 0.1847957237382039,
+      "collapse_threshold": 0.10885844161704451,
+      "collapsed": false,
+      "status": "held"
+    },
+    "sycophancy": {
+      "mean_margin": 0.042994666406928624,
+      "maxp_margin": 0.1353662689602033,
+      "collapse_threshold": 0.021497333203464312,
+      "collapsed": false,
+      "status": "held"
+    },
+    "fact": {
+      "mean_margin": 0.11895873751581304,
+      "maxp_margin": 0.06010937173842433,
+      "collapse_threshold": 0.05947936875790652,
+      "collapsed": false,
+      "status": "held"
+    }
+  },
+  "phase": "phase0_base_leg",
+  "primary_layer": 14
+}

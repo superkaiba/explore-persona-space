@@ -49,6 +49,7 @@ from workflow_lint import (  # noqa: E402
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_registry,
+    check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_script_references,
@@ -56,6 +57,7 @@ from workflow_lint import (  # noqa: E402
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
     check_upload_as_file,
+    check_vm_thread_cap_guidance,
     check_wandb_required,
 )
 
@@ -2644,6 +2646,81 @@ def test_workflow_lint_check_no_workflow_improver_spawn_cli_exits_zero():
     )
 
 
+# ─── --check-no-literal-round-marker-versions (#917) ────────────────────────
+
+
+def test_no_literal_round_marker_versions_live_tree():
+    """No checked-in workflow prose instructs a literal v1 for a
+    round-versioned marker kind (#917 — the #825/#389 collision class).
+    The E1-E7 sweep of #917 established zero hits at introduction."""
+    errors = check_no_literal_round_marker_versions()
+    assert errors == [], (
+        "literal round-marker version instruction found in the workflow "
+        "surface (rephrase to `v<n>` / max+1, #917):\n" + "\n".join(errors)
+    )
+
+
+def test_check_no_literal_round_marker_versions_flags_literal_v1(tmp_path):
+    """A literal `epm:results v1` posting instruction in an in-scope file
+    (here a rule .md) IS flagged — the guard actually trips."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text("On completion, post `epm:results v1` on the task.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "max+1" in errors[0]
+    assert "stray.md:1" in errors[0]
+
+
+def test_check_no_literal_round_marker_versions_wrapped_pair_trips(tmp_path):
+    """A line-wrapped kind/version pair still trips — the scan is whole-file,
+    so the `\\s+` between kind and `v1` may span a newline."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "a.md").write_text("then post `epm:proposed-tests\n  v1` and EXIT.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_no_literal_round_marker_versions_no_false_positives(tmp_path):
+    """`v<n>`, `v12`, and a genuinely-once kind (`epm:failure v1`) never
+    match — the pattern is restricted to the 3 round-versioned kinds and
+    `v1` is word-bounded."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "ok.md").write_text(
+        "post `epm:results v<n>` (max+1 per the rule); the legitimate\n"
+        "`epm:experiment-implementation v12` round-12 example; and\n"
+        "`epm:failure v1` is a genuinely-once marker, out of scope.\n"
+    )
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_no_literal_round_marker_versions_excluded_paths_pass(tmp_path):
+    """A hit under an EXCLUDED path (.claude/plans/, .claude/agent-memory/)
+    passes — pins the exclusion set (archives may legitimately quote the
+    incident text; a mis-enumerated exclusion would false-FAIL the default
+    lint bundle on archive text)."""
+    plans = tmp_path / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "issue-825.md").write_text("the brief said: post `epm:results v1` (historical)\n")
+    mem = tmp_path / ".claude" / "agent-memory" / "implementer"
+    mem.mkdir(parents=True)
+    (mem / "note.md").write_text("brief instructed `epm:experiment-implementation v1`\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_workflow_lint_check_no_literal_round_marker_versions_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-no-literal-round-marker-versions")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-no-literal-round-marker-versions failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 def test_workflow_lint_check_gate_ids_unique_cli_exits_zero():
     """The dedicated flag must exist and pass on the committed tree
     (all current gate ids are unique)."""
@@ -3301,4 +3378,101 @@ def test_smoke_output_hygiene_wired_into_default_run(tmp_path, capsys, monkeypat
         f"the #842 smoke-output-hygiene diagnostic is missing from the "
         f"no-flags default run's stderr — the check is not bundled into "
         f"no_flags:\n{err}"
+    )
+
+
+# --- #891 shared-VM thread-cap guidance-pin tests ---------------------------
+
+_VM_CAP_PREFIX = "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+
+_VM_CAP_FLOORS = {
+    ".claude/skills/issue/SKILL.md": 1,
+    ".claude/agents/experiment-implementer.md": 2,
+    ".claude/rules/code-style.md": 3,
+    ".claude/rules/analyzer-section-reference.md": 1,
+}
+
+
+def _write_vm_cap_fixture(root: Path, counts: dict[str, int]) -> None:
+    """Write the four #891 pinned guidance files, each carrying ``counts[rel]``
+    template-instance stand-ins of the thread-cap prefix. A rel with count 0
+    is written WITHOUT the prefix; a rel absent from ``counts`` is not written
+    at all (the missing-file case)."""
+    for rel, n in counts.items():
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        lines = [f"# {rel}", "rationale prose uses the shorthand OMP/MKL/OPENBLAS/NUMEXPR=8 only."]
+        lines += [
+            f"template {i}: `setsid nohup env {_VM_CAP_PREFIX} <cmd> < /dev/null >> <log> 2>&1`"
+            for i in range(n)
+        ]
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def test_vm_thread_cap_guidance_live_tree_passes() -> None:
+    """The real tree carries the #891 prefix at (or above) every count floor."""
+    assert check_vm_thread_cap_guidance() == []
+
+
+def test_vm_thread_cap_guidance_flags_missing_prefix(tmp_path) -> None:
+    """All four files present; one lacks the prefix entirely -> exactly one
+    error naming it (the other three satisfy their count floors)."""
+    counts = dict(_VM_CAP_FLOORS)
+    counts[".claude/rules/analyzer-section-reference.md"] = 0
+    _write_vm_cap_fixture(tmp_path, counts)
+    errors = check_vm_thread_cap_guidance(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    subject = errors[0].split(": ", 1)[0]
+    assert subject.endswith("analyzer-section-reference.md"), errors
+    assert "0 occurrence(s)" in errors[0], errors
+
+
+def test_vm_thread_cap_guidance_flags_below_count_floor(tmp_path) -> None:
+    """A file with SOME occurrences but fewer than its floor (1 of the
+    required 3 in code-style.md) FAILs — the template-strip case a bare
+    presence check would miss."""
+    counts = dict(_VM_CAP_FLOORS)
+    counts[".claude/rules/code-style.md"] = 1
+    _write_vm_cap_fixture(tmp_path, counts)
+    errors = check_vm_thread_cap_guidance(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    subject = errors[0].split(": ", 1)[0]
+    assert subject.endswith("code-style.md"), errors
+    assert "expected >= 3" in errors[0], errors
+
+
+def test_vm_thread_cap_guidance_flags_missing_file(tmp_path) -> None:
+    """A missing guidance file is itself an error (#891)."""
+    counts = dict(_VM_CAP_FLOORS)
+    counts.pop(".claude/agents/experiment-implementer.md")
+    _write_vm_cap_fixture(tmp_path, counts)
+    errors = check_vm_thread_cap_guidance(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("experiment-implementer.md"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the #891 check — deleting
+    its ``or no_flags`` branch must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the CLI
+    never runs the check. Follows the
+    ``test_smoke_output_hygiene_wired_into_default_run`` pattern: one pinned
+    file below its floor, ``_REPO_ROOT`` monkeypatched to the fixture,
+    ``main([])`` in-process. Other bundled checks contribute unrelated errors
+    on the minimal tree, so the assertion keys on the #891 diagnostic + the
+    offending file path."""
+    import workflow_lint as wl
+
+    counts = dict(_VM_CAP_FLOORS)
+    counts[".claude/rules/code-style.md"] = 1
+    _write_vm_cap_fixture(tmp_path, counts)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a below-floor tree:\n{err}"
+    assert "#891" in err and "code-style.md" in err, (
+        f"the #891 vm-thread-cap diagnostic (naming code-style.md) is missing "
+        f"from the no-flags default run's stderr — the check is not bundled "
+        f"into no_flags:\n{err}"
     )

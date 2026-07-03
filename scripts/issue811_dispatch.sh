@@ -48,10 +48,15 @@
 # /workspace/logs/issue-811-<kind_slug>-<epoch>.json with _SENTINEL_REQUIRED_KEYS.
 #
 # Usage:
-#   bash scripts/issue811_dispatch.sh                 # full production sweep
+#   bash scripts/issue811_dispatch.sh                 # full production sweep (v1 turn_nl round)
 #   bash scripts/issue811_dispatch.sh --smoke         # tiny end-to-end smoke
 #   bash scripts/issue811_dispatch.sh --skip-extract  # store already on disk/HF
 #   EPM_SKIP_UPLOAD=1 bash scripts/issue811_dispatch.sh --smoke   # local CPU smoke
+#   # maxp-winner-mapchange round (plan §10 dispatch card; adds --maxp extraction,
+#   # --test-summary maxp KILL-1, 3-summary fits, committed-mean parity + F1
+#   # offset decomposition, round-owned dirs + HF prefix + artifact revision pins):
+#   SUMMARY_VARIANT=maxp BEHAVIORS=em,fact,sycophancy LAYERS="7 14 21" \
+#     PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh
 set -euo pipefail
 
 REPO_ROOT="${WORKLOAD_ROOT:-/workspace/explore-persona-space}"
@@ -65,13 +70,14 @@ set -a
 [ -f .env ] && source .env
 set +a
 
-# ---- flags (order-independent) ----
+# ---- flags (order-independent; BEHAVIORS/LAYERS/PRIMARY_LAYER/SOURCES also
+# accept env-var defaults — the plan §10 dispatch line passes them as env) ----
 SMOKE=""
 SKIP_EXTRACT=""
-BEHAVIORS="em,sycophancy,fact"
-LAYERS="7 14 21"
-PRIMARY_LAYER="14"
-SOURCES=""          # empty = the 16 #537 train cids per behavior
+BEHAVIORS="${BEHAVIORS:-em,sycophancy,fact}"
+LAYERS="${LAYERS:-7 14 21}"
+PRIMARY_LAYER="${PRIMARY_LAYER:-14}"
+SOURCES="${SOURCES:-}"          # empty = the 16 #537 train cids per behavior
 GPU_ID="${EPM_GPU_ID:-0}"
 LOCAL_ROOT=""       # fit reads the store from a LOCAL mirror (dispatcher smoke)
 while [ $# -gt 0 ]; do
@@ -88,9 +94,53 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-STORE_DIR="eval_results/issue_811/analysis_tensors"
-PHASE0_DIR="eval_results/issue_811/phase0_base_leg"
-KILL1_JSON="eval_results/issue_811/kill1_base_leg_validity.json"
+# ---- SUMMARY_VARIANT arm (constants only — the phase code paths are IDENTICAL) ----
+# Default (turn_nl) preserves the completed v1 round VERBATIM. SUMMARY_VARIANT=maxp
+# is the #811 maxp-winner-mapchange round (plan §4 item 5): the round's OWN dirs +
+# HF prefix, --maxp added to the extract flags, the KILL-1 gate re-pointed at
+# --test-summary maxp, three-summary fits, and the critic-advisory artifact
+# revision pins. Everything else (phase order, filters, smoke scaling) is shared.
+SUMMARY_VARIANT="${SUMMARY_VARIANT:-turn_nl}"
+case "$SUMMARY_VARIANT" in
+  turn_nl)
+    ROUND_DIR="eval_results/issue_811"
+    HF_ROUND_PREFIX="issue811_turn_nl_mapchange"
+    CELLS_DIR="eval_results/issue_811/cells"
+    FIG_DIR="figures/issue_811"
+    EXTRACT_SUMMARY_FLAGS="--turn-nl"
+    FIT_SUMMARIES="mean turn_nl"
+    TEST_SUMMARY="turn_nl"
+    SUMMARY_DOC="mean_vs_turn_nl_summary.json"
+    ;;
+  maxp)
+    ROUND_DIR="eval_results/issue_811/maxp-winner-mapchange"
+    HF_ROUND_PREFIX="issue811_maxp_mapchange"
+    CELLS_DIR="$ROUND_DIR/cells"
+    FIG_DIR="figures/issue_811/maxp-winner-mapchange"
+    EXTRACT_SUMMARY_FLAGS="--turn-nl --maxp"
+    FIT_SUMMARIES="mean turn_nl maxp"
+    TEST_SUMMARY="maxp"
+    SUMMARY_DOC="summary_three_summaries.json"
+    # Critic advisory: PIN the reused-artifact revisions (full shas resolved live
+    # from the short pins e663b7cc / f6b7b0d0 via HfApi.repo_info on 2026-07-02).
+    export EPM_I537_ADAPTER_REVISION="e663b7cc6f9bb133b4df6d8508afa8c091b388dc"
+    export EPM_RB_REVISION="f6b7b0d0a94bf896e5816af2fe6421a900d0ae6e"
+    # Phase-0 staging is INVALID for this round: no prior store carries v0_maxp
+    # (plan §4 item 5 — the r7 stage-completeness verifier would refuse anyway,
+    # but fail fast + loud here).
+    if [ -n "${EPM_PHASE0_STAGE_PREFIX:-}" ]; then
+      echo "ERROR: EPM_PHASE0_STAGE_PREFIX must be UNSET for SUMMARY_VARIANT=maxp — no prior phase-0 store carries v0_maxp (plan §4 item 5); this round extracts phase 0 fresh." >&2
+      exit 2
+    fi
+    ;;
+  *) echo "unknown SUMMARY_VARIANT: $SUMMARY_VARIANT (turn_nl|maxp)" >&2; exit 2 ;;
+esac
+
+STORE_DIR="$ROUND_DIR/analysis_tensors"
+PHASE0_DIR="$ROUND_DIR/phase0_base_leg"
+KILL1_JSON="$ROUND_DIR/kill1_base_leg_validity.json"
+# Round args shared by BOTH issue811_fit invocations (phase0 gate + Phase-3 fits).
+FIT_ROUND_ARGS="--test-summary $TEST_SUMMARY --out-dir $CELLS_DIR --store-prefix $HF_ROUND_PREFIX/analysis_tensors --phase0-prefix $HF_ROUND_PREFIX/phase0_base_leg"
 
 # The smoke scales the SAME phases down: 1 behavior, layer 14 only, >=2 sources,
 # a handful of targets + probes. Every phase reads these same filters.
@@ -103,6 +153,9 @@ if [ -n "$SMOKE" ]; then
   PHASE0_SMOKE_ARGS="--max-probes 2 --targets default,sp_swe,sp_doctor"
   FIT_SMOKE_ARGS="--smoke"
   PARITY_CELLS="2"
+  # Plan §13 smoke check 1: print the mean/maxp span bounds + last-3 token ids
+  # per teacher-forced read (the extractor's [maxp-span] debug line).
+  export EPM_I811_SPAN_DEBUG=1
 else
   EXTRACT_SMOKE_ARGS=""
   PHASE0_SMOKE_ARGS=""
@@ -241,17 +294,17 @@ set +e
 # shellcheck disable=SC2086
 uv run python scripts/issue811_fit.py --phase0-gate \
   --behaviors ${BEHAVIORS//,/ } --primary-layer "$PRIMARY_LAYER" \
-  $FIT_SMOKE_ARGS $PHASE0_LOCAL_ARGS
+  $FIT_ROUND_ARGS $FIT_SMOKE_ARGS $PHASE0_LOCAL_ARGS
 PHASE0_RC=$?
 set -e
 if [ "$PHASE0_RC" -eq 3 ]; then
-  echo "[phase=phase0_gate] KILL1_TRIGGERED: turn_nl base-leg validity gate collapsed vs mean at L$PRIMARY_LAYER (>=2/3 behaviors). See $KILL1_JSON. HALT BEFORE the ~7 GPU-h Phase-1 paired re-extraction (plan §7, failure_class: data)." >&2
+  echo "[phase=phase0_gate] KILL1_TRIGGERED: $TEST_SUMMARY base-leg validity gate collapsed vs mean at L$PRIMARY_LAYER (>=2/3 behaviors). See $KILL1_JSON. HALT BEFORE the ~7 GPU-h Phase-1 paired re-extraction (plan §7, failure_class: data)." >&2
   exit 3
 elif [ "$PHASE0_RC" -ne 0 ]; then
   echo "[phase=phase0_gate] phase0 gate failed with rc=$PHASE0_RC (not a KILL-1 collapse) — HALT." >&2
   exit "$PHASE0_RC"
 fi
-echo "[phase=phase0_gate] KILL-1 PASS (turn_nl base-leg validity gate holds) — proceed to Phase 1"
+echo "[phase=phase0_gate] KILL-1 PASS ($TEST_SUMMARY base-leg validity gate holds) — proceed to Phase 1"
 
 # ---- Phase 1: PAIRED re-extraction (GPU) — only reached after KILL-1 PASS ----
 if [ -n "$SKIP_EXTRACT" ]; then
@@ -270,7 +323,7 @@ else
         uv run python scripts/issue667_extract.py \
           --behavior "$beh" --source-cid "$src" \
           --layers $LAYERS --primary-layer "$PRIMARY_LAYER" \
-          --turn-nl --out "$STORE_DIR" --gpu-id "$GPU_ID" $EXTRACT_SMOKE_ARGS
+          $EXTRACT_SUMMARY_FLAGS --out "$STORE_DIR" --gpu-id "$GPU_ID" $EXTRACT_SMOKE_ARGS
     done
   done
   echo "[phase=extract] all cells extracted -> $STORE_DIR"
@@ -278,31 +331,85 @@ fi
 
 # ---- Phase 2: upload the store to HF, then RELEASE the GPU pod (Upload Policy) ----
 echo "[phase=upload] starting"
-uv run python scripts/issue811_upload_store.py
+if [ "$SUMMARY_VARIANT" = "maxp" ]; then
+  EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" EPM_I811_REQUIRE_RAW=1 \
+    uv run python scripts/issue811_upload_store.py
+else
+  uv run python scripts/issue811_upload_store.py
+fi
 echo "[phase=upload] store uploaded + verified (GPU pod may be released here on the GCP lane)"
 
 # ---- Phase 3: vectorized fits (CPU) ----
 echo "[phase=fit] starting"
+# maxp arm: when no explicit --local-root was given and the just-extracted store
+# is on disk, read it locally (skips the HF tree walk, which 504s on this repo;
+# an explicit --local-root always wins; a --skip-extract resume with no local
+# store falls back to the round's HF prefix via $FIT_ROUND_ARGS --store-prefix).
+# The default turn_nl arm keeps the v1 behavior verbatim (HF read unless
+# --local-root is passed).
+FIT_STORE_LOCAL_ARGS="$FIT_LOCAL_ARGS"
+if [ "$SUMMARY_VARIANT" = "maxp" ] && [ -z "$FIT_STORE_LOCAL_ARGS" ] && [ -d "$STORE_DIR" ]; then
+  FIT_STORE_LOCAL_ARGS="--local-root $STORE_DIR"
+fi
 # shellcheck disable=SC2086
 uv run python scripts/issue811_fit.py --behaviors ${BEHAVIORS//,/ } --layers $LAYERS \
-  --primary-layer "$PRIMARY_LAYER" $FIT_SMOKE_ARGS $FIT_LOCAL_ARGS
+  --primary-layer "$PRIMARY_LAYER" --summaries $FIT_SUMMARIES \
+  $FIT_ROUND_ARGS $FIT_SMOKE_ARGS $FIT_STORE_LOCAL_ARGS
+
+# ---- Phase 3b (maxp round only): committed-mean replication read (plan §6b) ----
+# Report-only: compares THIS round's re-extracted mean cells vs the completed v1
+# run's committed cells; a flipped Δ/floor CALL is a replication-stability
+# finding, never fatal. Same phase in smoke + production (report scale differs).
+if [ "$SUMMARY_VARIANT" = "maxp" ]; then
+  echo "[phase=parity_committed] starting committed-mean replication read"
+  uv run python scripts/issue811_mean_parity_check.py --compare-committed \
+    --run-cells-dir "$CELLS_DIR" \
+    --committed-cells-dir eval_results/issue_811/cells \
+    --committed-out "$ROUND_DIR/mean_call_replication_vs_v1.json"
+  echo "[phase=parity_committed] report written -> $ROUND_DIR/mean_call_replication_vs_v1.json"
+fi
 
 # ---- Phase 4: assemble side-by-side deliverables (CPU) ----
 echo "[phase=analyze] starting"
-uv run python scripts/issue811_analyze.py
+uv run python scripts/issue811_analyze.py --cells-dir "$CELLS_DIR" --out-dir "$ROUND_DIR" \
+  --summary-filename "$SUMMARY_DOC"
+
+# ---- Phase 4b (maxp round only): F1 offset decomposition (CPU, plan §5/§9) ----
+# Standard read of this line; runs against the round's OWN local store + cells
+# (no HF re-download). Smoke passes the same caps the smoke store was built with.
+if [ "$SUMMARY_VARIANT" = "maxp" ]; then
+  echo "[phase=offset_decomposition] starting F1 offset decomposition"
+  OD_SMOKE_ARGS=""
+  if [ -n "$SMOKE" ]; then
+    OD_SMOKE_ARGS="--max-sources 2 --max-targets-per-source 3 --target-dim 4"
+  fi
+  # shellcheck disable=SC2086
+  uv run python scripts/issue811_offset_decomposition.py \
+    --behaviors ${BEHAVIORS//,/ } --layers $LAYERS --summaries $FIT_SUMMARIES \
+    --local-store-root "$STORE_DIR" --cells-dir "$CELLS_DIR" \
+    --store-prefix "$HF_ROUND_PREFIX/analysis_tensors" \
+    --out "$ROUND_DIR/offset_decomposition.json" $OD_SMOKE_ARGS
+  echo "[phase=offset_decomposition] wrote $ROUND_DIR/offset_decomposition.json"
+fi
 
 # ---- Phase 5: figures (CPU) ----
 echo "[phase=figures] starting"
-uv run python scripts/issue811_figures.py
+# shellcheck disable=SC2086
+uv run python scripts/issue811_figures.py --summary-json "$ROUND_DIR/$SUMMARY_DOC" \
+  --out-dir "$FIG_DIR" --summaries $FIT_SUMMARIES
 
 # ---- End-of-run sentinel + terminal phase line (poll_pipeline contract) ----
-uv run python - <<'PY'
+EPM_I811_VARIANT="$SUMMARY_VARIANT" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" \
+  EPM_I811_ROUND_DIR="$ROUND_DIR" uv run python - <<'PY'
 import datetime, json, os, time
 from pathlib import Path
 log_dir = Path(os.environ.get("EPM_LOG_DIR", "/workspace/logs"))
 if not log_dir.exists():
     log_dir = Path("logs")
 log_dir.mkdir(parents=True, exist_ok=True)
+variant = os.environ.get("EPM_I811_VARIANT", "turn_nl")
+hf_prefix = os.environ.get("EPM_I811_HF_PREFIX", "issue811_turn_nl_mapchange")
+round_dir = os.environ.get("EPM_I811_ROUND_DIR", "eval_results/issue_811")
 payload = {
     "sentinel_schema_version": 1,
     "kind": "epm:results",
@@ -310,10 +417,10 @@ payload = {
     "task_id": 811,
     "by": "issue811_dispatch",
     "ts": datetime.datetime.now(datetime.UTC).isoformat(),
-    "note": "issue811 turn_nl-vs-mean map-change: phase0 base-leg + KILL-1 pre-spend gate + "
-            "paired extract + upload + fit + analyze + figures complete. Store: "
-            "issue811_turn_nl_mapchange/analysis_tensors/ (+ phase0_base_leg/). "
-            "Deliverables under eval_results/issue_811/.",
+    "note": f"issue811 {variant}-vs-mean map-change: phase0 base-leg + KILL-1 pre-spend gate + "
+            f"paired extract + upload + fit + analyze + figures complete. Store: "
+            f"{hf_prefix}/analysis_tensors/ (+ phase0_base_leg/ + raw_completions/). "
+            f"Deliverables under {round_dir}/.",
 }
 out = log_dir / f"issue-811-epm_results-{time.time_ns()}.json"
 out.write_text(json.dumps(payload, indent=2))

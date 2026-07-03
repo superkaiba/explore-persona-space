@@ -1,0 +1,1202 @@
+{
+  "commit": "6d0bc450bf",
+  "created": "2026-07-03T04:17:37Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.2548379351740696,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.38737094837935176,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.4592076830732293,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.5146218487394958,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.5172148859543817,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.5703241296518607,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.5955822328931571,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.5825210084033614,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.6083553421368547,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.4567106842737095,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.42079231692677066,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.5051140456182474,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.6024969987995198,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.49887154861944777,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.6123889555822329,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.5864585834333733,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.5893397358943577,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.5886674669867946,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.5694597839135654,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.510876350540216,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.5525570228091237,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.5850180072028811,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.5223049219687875,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.45939975990396154,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.4753421368547419,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.4276110444177671,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.36672268907563016,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.33243697478991596,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.44105642256902755,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.26088835534213684,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.42511404561824734,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.39937575030011996,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.19827130852340935,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.48312124849939975,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.5124129651860744,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.6561824729891956,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.5697478991596638,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.48379351740696275,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.33310924369747896,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.42415366146458583,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.4582472989195678,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.395438175270108,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.5182713085234093,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.5179831932773109,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.26549819927971186,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.5054021608643458,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.34271308523409366,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.45968787515005993,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.6114285714285714,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.5658103241296518,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.4371188475390156,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.3914045618247299,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.4294357743097239,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.4886914765906362,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.37901560624249697,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.5040576230492196,
+      "series": "mean pool + PCA-10",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.6581032412965185,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.6242016806722689,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.5563025210084034,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.6055702280912364,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.6052821128451381,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.5207683073229291,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.5481392557022808,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.5834813925570228,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.5758943577430972,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.5782953181272509,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.6115246098439375,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.6259303721488595,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.5925090036014405,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.6733733493397358,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.6716446578631452,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.6469627851140455,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.5958703481392557,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.6602160864345737,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.6631932773109244,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.7286914765906362,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.6752941176470588,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.5633133253301321,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.5630252100840337,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.6239135654261704,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.5812725090036014,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.5284513805522209,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.6511884753901561,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.3576950780312125,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.5155822328931572,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.46583433373349337,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.555342136854742,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.5616806722689076,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.6534933973589436,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.6877791116446579,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.7029531812725089,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.6734693877551019,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.7342617046818728,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.6919087635054021,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.5970228091236494,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.6679951980792316,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.753469387755102,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.7056422569027611,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.7870828331332532,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.7353181272509004,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.7215846338535413,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.7426170468187274,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.7019927971188475,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.7340696278511404,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.762689075630252,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.7146698679471789,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.7081392557022809,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.7111164465786314,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.5411284513805522,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.5581272509003601,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.5977911164465786,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.4828331332533013,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.32725090036014404,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.3508763505402161,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.5882833133253301,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.3995678271308523,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.28950780312124846,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.5049219687875149,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.5623529411764706,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.6697238895558223,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.654453781512605,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.547563025210084,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.4422088835534213,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.5095318127250901,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.4659303721488595,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.5696518607442976,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.4970468187274909,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.6751980792316926,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.5491956782713086,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.6717406962785114,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.4979111644657863,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.7040096038415365,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.6899879951980793,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.7473229291716686,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.4279951980792317,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.48773109243697477,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.2976710684273709,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.38160864345738293,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.6044177671068427,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.5340216086434574,
+      "series": "learned attention pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.4206002400960384,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.4849459783913565,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": 0.5028091236494597,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": 0.712172869147659,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": 0.5168307322929172,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": 0.5033853541416566,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": 0.38765906362545016,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": 0.39015606242497,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": 0.5714765906362544,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": 0.6024969987995198,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": 0.1985594237695078,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": 0.3937094837935174,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": 0.47025210084033614,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": 0.36998799519807923,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": 0.3513565426170468,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": 0.5042496998799519,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": 0.4234813925570228,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": 0.3395438175270108,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": 0.6412004801920769,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": 0.3759423769507803,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": 0.3439615846338535,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": 0.4051380552220888,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": 0.5216326530612244,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": 0.2800960384153661,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": 0.41032412965186077,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": 0.7164945978391357,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": 0.5589915966386554,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.4152220888355342,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.8032084574555208,
+      "series": "reliability ceiling",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": 0.8032084574555208,
+      "series": "reliability ceiling",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 170
+}

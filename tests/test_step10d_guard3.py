@@ -81,6 +81,14 @@ def test_gitattributes_union_merge_for_events_and_comments():
     assert "tasks/**/comments.jsonl merge=union" in text, "comments.jsonl must use union merge"
 
 
+def test_gitattributes_union_merge_for_agent_memory():
+    """#896: agent-memory markdown must union-merge (2026-07-02 root pull-rebase incident)."""
+    text = _GITATTRIBUTES.read_text(encoding="utf-8")
+    assert ".claude/agent-memory/**/*.md merge=union" in text, (
+        "agent-memory .md files must use union merge (#896)"
+    )
+
+
 def test_gitattributes_registry_not_unioned():
     """REGISTRY.json is last-writer-wins; a union merge would break its JSON."""
     text = _GITATTRIBUTES.read_text(encoding="utf-8")

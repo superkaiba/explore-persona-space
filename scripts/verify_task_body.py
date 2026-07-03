@@ -334,6 +334,12 @@ New v3-only checks (PASS vacuously on v2/legacy):
   per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
+  (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
+  Results, `## Methodology` excluded; its round count reads
+  `epm:same-issue-followup-run` markers and/or the footer round clauses,
+  max-reconciled — the Rounds-table read binds v3 only. It needs the
+  `issue` number for the events leg, so it is dispatched separately in
+  `verify_text`, outside CHECKS; #921.)
 - **check 21** (`check_body_params_subset_of_doc`): the body's
   load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
   methodology doc §2 complete table. Binds when the doc path is supplied
@@ -3667,6 +3673,73 @@ _ARTIFACT_PATH_RE = re.compile(
     r"(?:\./)?[A-Za-z0-9_./-]+\.(?:json|png|csv))`"
 )
 
+# Clause delimiters for the committed-at-sha scan (#893, incident #841):
+# semicolon / interpunct / sentence-final period, each REQUIRING trailing
+# whitespace — so file-extension dots (`foo.json`), version strings, and
+# URL punctuation (which carry no spaces) never split. The em-dash (" — ")
+# and ":" are deliberately NOT delimiters: real footers put them BETWEEN a
+# path and its own sha claim (the #549 / #601 corpus shapes), so splitting
+# there would silently drop genuine pairs.
+_CLAUSE_DELIM_RE = re.compile(r";\s|\s·\s|\.\s")
+
+# Abbreviation tokens whose trailing dot is NOT a sentence boundary
+# (#893 v2, methodology-reconciler binding concern 2): without this guard,
+# "committed, e.g. `path` at commit `sha`." splits at "e.g. " and a TRUE
+# FAIL today becomes a silent PASS (protection removal). Matched against
+# the lowercased word immediately before the candidate ". " (the token's
+# own internal dots included, e.g. "e.g"). Over-inclusion is fail-safe:
+# a suppressed split degrades toward today's whole-line behavior.
+_DOT_ABBREVIATIONS = frozenset(
+    {"e.g", "i.e", "eg", "ie", "cf", "vs", "etc", "al", "fig", "approx", "incl"}
+)
+
+
+def _split_clauses(line: str) -> list[str]:
+    """Split ``line`` into clauses on ``; `` / `` · `` / ``. `` occurring
+    OUTSIDE backtick code spans, so a ``committed ... at commit `<sha>```
+    match and its artifact-path pairing can never cross a clause boundary
+    (#893; incident #841: the lazy span crossed from a results clause's
+    "committed" to the figures clause's "at commit `<sha>`" and validated
+    eval_results paths against the figures SHA). A ``. `` whose preceding
+    word is a known abbreviation (``e.g.`` / ``cf.`` / ...) does not
+    split. An UNBALANCED backtick latches ``in_code`` for the line's
+    remainder — deliberately fail-safe: no further splits means the
+    suffix keeps today's whole-line behavior, never a new false FAIL.
+    Known residual (accepted): two claims INSIDE one clause with no
+    delimiter between them still cross-pair within that clause.
+    """
+    clauses: list[str] = []
+    buf: list[str] = []
+    in_code = False
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if ch == "`":
+            in_code = not in_code
+            buf.append(ch)
+            i += 1
+            continue
+        if not in_code:
+            m = _CLAUSE_DELIM_RE.match(line, i)
+            if m is not None:
+                # Abbreviation guard: applies only to the ". " delimiter —
+                # look at the word ending the current buffer (dot excluded).
+                if ch == ".":
+                    words = "".join(buf).split()
+                    last_word = words[-1] if words else ""
+                    if last_word.lower().strip("(,") in _DOT_ABBREVIATIONS:
+                        buf.append(ch)
+                        i += 1
+                        continue
+                clauses.append("".join(buf))
+                buf = []
+                i = m.end()
+                continue
+        buf.append(ch)
+        i += 1
+    clauses.append("".join(buf))
+    return clauses
+
 
 def _resolve_repo_root() -> Path | None:
     """Return the repo root via the existing task_workflow helper, or
@@ -4053,6 +4126,10 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
         ``at commit `<sha>` `` prose marker, and their hex paths sit
         inside `()` link targets rather than backticks.
       - Prose without a backticked sha never trips the check.
+      - Same-CLAUSE anchoring: sha claims and paths pair only within a
+        clause — `;`/`·`/sentence boundaries outside backticks split the
+        window (#893; incident #841: a "committed" token in one clause
+        was paired with a later clause's ``at commit `<sha>` ``).
 
     Mechanical scope only — the semantic call ("did the experimenter
     actually upload this elsewhere, e.g. HF data repo?") belongs to
@@ -4072,25 +4149,29 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
         )
 
     cleaned = _strip_fenced_blocks(repro)
-    # Collect (sha, paths-on-same-line) pairs. Same-line anchoring keeps
-    # the association unambiguous: if a sha and a path are on the same
-    # line they are almost certainly being asserted together. Cross-line
-    # pairings are intentionally out of scope (too noisy).
+    # Collect (sha, paths-in-same-CLAUSE) pairs. Same-clause anchoring
+    # keeps the association unambiguous: if a sha and a path share a
+    # clause they are almost certainly being asserted together; a
+    # "committed" in one clause can no longer pair with a later clause's
+    # ``at commit `<sha>` `` (#893, incident #841). Cross-line pairings
+    # are intentionally out of scope (too noisy).
     pairs: list[tuple[str, str]] = []
     for line in cleaned.splitlines():
-        sha_match = _COMMITTED_AT_SHA_RE.search(line)
-        if sha_match is None:
-            continue
-        sha = sha_match.group("sha")
-        path_matches = _ARTIFACT_PATH_RE.findall(line)
-        for raw in path_matches:
-            # ``_ARTIFACT_PATH_RE`` is a non-grouping disjunction that
-            # returns the full path capture; normalize a leading `./`.
-            p = raw[2:] if raw.startswith("./") else raw
-            # Reject absolute or remote-looking paths defensively.
-            if p.startswith("/") or p.startswith("~") or "://" in p:
-                continue
-            pairs.append((sha, p))
+        # #893: scope BOTH regexes to a single clause so a "committed"
+        # token can never pair with a later clause's "at commit `<sha>`"
+        # (incident #841), and a line carrying two genuine claims
+        # validates each against its own clause's paths (finditer).
+        for clause in _split_clauses(line):
+            for sha_match in _COMMITTED_AT_SHA_RE.finditer(clause):
+                sha = sha_match.group("sha")
+                for raw in _ARTIFACT_PATH_RE.findall(clause):
+                    # ``_ARTIFACT_PATH_RE`` is a non-grouping disjunction that
+                    # returns the full path capture; normalize a leading `./`.
+                    p = raw[2:] if raw.startswith("./") else raw
+                    # Reject absolute or remote-looking paths defensively.
+                    if p.startswith("/") or p.startswith("~") or "://" in p:
+                        continue
+                    pairs.append((sha, p))
 
     if not pairs:
         return CheckResult(
@@ -6111,6 +6192,109 @@ def _count_extra_followup_rounds(body: str) -> int:
     return max(0, data_rows - 1)
 
 
+# One clause per FOLDED same-issue follow-up round in the v4 footer
+# (SPEC.md § `**Context:**` row: rounds name each round's `followup_label`;
+# corpus forms: "same-issue follow-up round `<label>`" (#763/#811/#667) and
+# the sentence-initial numbered variant "Same-issue follow-up round 2
+# (label: `<label>`, ...)" (#685 footer) — hence IGNORECASE + the optional
+# `<n> (label: ` infix. The `(?!s)` lookahead keeps generic plural prose
+# ("follow-up rounds also name...") out of the count; an unlabeled singular
+# clause still counts 1.
+_V4_FOOTER_ROUND_CLAUSE_RE = re.compile(
+    r"same-issue follow-up round(?!s)"
+    r"(?:\s+(?:\d+\s*\(label:\s*)?`(?P<label>[^`\s]+)`)?",
+    re.IGNORECASE,
+)
+
+
+def _followup_run_marker_rounds(issue: int) -> int:
+    """Count REAL folded same-issue follow-up rounds off the task's
+    events.jsonl `epm:same-issue-followup-run` markers: distinct
+    `followup_label`s (one run marker closes a label's round) plus one per
+    unlabeled run marker, EXCLUDING markers whose `outcome` begins
+    `retroactive-close` — bookkeeping closes of ghost labels that folded
+    no new prose (they are likewise excluded from the /issue round caps,
+    SKILL.md). Returns 0 when the task id does not resolve (a plain
+    FileNotFoundError — e.g. a fixture body under a numeric tmp dir); a
+    `StaleTaskPathError` (registry corruption, a FileNotFoundError
+    SUBCLASS) still propagates — that is real corruption the gate should
+    surface, unlike an unknown id."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        FOLLOWUP_RUN_KIND,
+        StaleTaskPathError,
+        list_events,
+        parse_followup_note_field,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels: set[str] = set()
+    unlabeled = 0
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        note = ev.get("note") or ""
+        # `parse_followup_note_field` matches only LINE-LEADING fields, but
+        # the corpus run-marker notes are SINGLE-LINE (all fields space-
+        # separated; #763's `outcome:` is mid-line and parses to None).
+        # Mid-line regex fallback so a single-line retro-close marker
+        # cannot evade the exclusion.
+        outcome = parse_followup_note_field(note, "outcome") or ""
+        if not outcome:
+            m = re.search(r"(?:^|\s)outcome:\s*(\S+)", note)
+            outcome = m.group(1) if m else ""
+        if outcome.startswith("retroactive-close"):
+            continue
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            labels.add(label)
+        else:
+            unlabeled += 1
+    return len(labels) + unlabeled
+
+
+def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
+    """v4 twin of `_count_extra_followup_rounds` (whose `## What I ran`
+    Rounds-table read only binds v3 — v4 bodies always scored rounds=0,
+    incident #763/#921). Two signals, max-reconciled — the budget is
+    WARN-only and monotone-up, and each signal under-counts in a known
+    case (footer: a body omitting the SPEC round clause, e.g. #685;
+    events: a legacy pre-marker round whose prose IS folded, e.g. #811):
+
+    - footer: `same-issue follow-up round [`label`]` clauses inside the
+      `**Repro:**`/`**Context:**` footer (distinct backticked labels +
+      one per unlabeled singular clause);
+    - events (when `issue` is known): non-retroactive-close
+      `epm:same-issue-followup-run` markers via
+      `_followup_run_marker_rounds`.
+
+    Returns `(count, source)`; `source` is one of `none` / `footer` /
+    `events` / `footer+events` and names the winning signal for the WARN
+    message. Bare-file residual: in `--body-stdin` / bare `--file` mode
+    (no issue id) the events leg is unavailable, so a footer-less
+    multi-round body scores 0 and keeps the base budget."""
+    footer = _v4_footer_text(body) or ""
+    labels: set[str] = set()
+    unlabeled = 0
+    for m in _V4_FOOTER_ROUND_CLAUSE_RE.finditer(footer):
+        if m.group("label"):
+            labels.add(m.group("label"))
+        else:
+            unlabeled += 1
+    footer_n = len(labels) + unlabeled
+    events_n = _followup_run_marker_rounds(issue) if issue is not None else 0
+    count = max(footer_n, events_n)
+    if count == 0:
+        return 0, "none"
+    if footer_n == events_n:
+        return count, "footer+events"
+    return count, "footer" if footer_n > events_n else "events"
+
+
 def _count_overlong_takeaways_bullets(takeaways: str) -> int:
     """Count top-level Takeaways bullets over the per-bullet word cap
     (fence-aware). Helper for check 20."""
@@ -6338,7 +6522,7 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
     )
 
 
-def check_v4_word_caps(body: str) -> CheckResult:
+def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
 
     - Per-Takeaways-bullet ≤30 words (WARN).
@@ -6349,9 +6533,12 @@ def check_v4_word_caps(body: str) -> CheckResult:
       EXCLUDED — it carries the absorbed methodology-doc content) ≤800 +
       250 per live follow-up round beyond the first (WARN-only).
 
-    The Takeaways 3-6 bullet COUNT is owned by `check_v4_structure`. A FAIL
-    here fires ONLY on the per-result ≥180-word hard cap. PASSes vacuously
-    on v3 / v2 / legacy bodies.
+    The per-extra-round scaling counts folded rounds from the task's
+    non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
+    when known) and/or the footer's round clauses (max), NOT the v3
+    Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
+    `check_v4_structure`. A FAIL here fires ONLY on the per-result
+    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -6387,7 +6574,7 @@ def check_v4_word_caps(body: str) -> CheckResult:
     # Total content prose (WARN-only): Takeaways + Goal + Results. The
     # `## Methodology` section is EXCLUDED — it absorbed the entire former
     # standalone methodology doc and is reference, not skim prose.
-    extra_rounds = _count_extra_followup_rounds(body)
+    extra_rounds, rounds_src = _count_extra_followup_rounds_v4(body, issue)
     total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
     total_prose = (
         _prose_words(takeaways)
@@ -6398,8 +6585,8 @@ def check_v4_word_caps(body: str) -> CheckResult:
         warns.append(
             f"total content prose is {total_prose} words (budget {total_budget}: "
             f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
-            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round; "
-            "Methodology excluded)"
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round "
+            f"[{rounds_src}]; Methodology excluded)"
         )
 
     if fails:
@@ -6513,6 +6700,198 @@ def check_v4_results_beat(body: str) -> CheckResult:
         )
     return CheckResult(
         label, True, f"all {len(result_h3s)} `### <result>`(s) framed (figure-bearing ones)"
+    )
+
+
+# ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
+
+# Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
+# all-digit 6-hex color (`#000000`) cannot match (fail-open on hypothetical
+# 5-digit issue ids beats fail-closed on hex colors — the LM lens is the
+# backstop). Lookbehind: not preceded by a word char (`file#123`), `&` (HTML
+# entities `&#8212;`), `/` (URL fragments `path/#123`), or `#`. Right guard
+# `(?!\w)`: the digit run must not abut a word char, so `#123abc` and the
+# digit prefix of a mixed hex color (`#4b5563` → `#4`) never match; a
+# possessive `#658's` still does (an apostrophe is not a word char).
+_BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\w)")
+_V4_STANDALONE_SECTIONS = ("takeaways", "methodology", "results")
+
+
+def _mask_html_comment_spans(line: str, in_comment: bool) -> tuple[str, bool]:
+    """Replace every HTML-comment span in `line` with spaces, threading the
+    multiline open/closed state across calls (one call per line, in order).
+
+    Character-grain, not line-grain: a line that OPENS a comment keeps its
+    prefix prose scannable (only `<!--`..end-of-line is masked); a line
+    that CLOSES one keeps its suffix scannable (only up to and including
+    `-->` is masked); any number of `<!-- ... -->` segments per line are
+    each masked with the prose between them kept, and a close-then-reopen
+    line (`<!-- a --> mid <!-- b`) returns the state OPEN so following
+    interior lines stay masked. Spans are substituted with same-length
+    runs of spaces — never deleted — so no token join can fabricate a
+    `#N` the raw line never carried.
+
+    Returns (masked_line, out_state); len(masked_line) == len(line).
+    """
+    out: list[str] = []
+    pos = 0
+    n = len(line)
+    while pos < n:
+        if in_comment:
+            close = line.find("-->", pos)
+            if close == -1:
+                out.append(" " * (n - pos))
+                pos = n
+            else:
+                end = close + 3
+                out.append(" " * (end - pos))
+                pos = end
+                in_comment = False
+        else:
+            opener = line.find("<!--", pos)
+            if opener == -1:
+                out.append(line[pos:])
+                pos = n
+            else:
+                out.append(line[pos:opener])
+                pos = opener
+                in_comment = True
+    masked = "".join(out)
+    assert len(masked) == len(line), (len(masked), len(line))
+    return masked, in_comment
+
+
+def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
+    """Return (section_name, matched_token, line_text) for every bare
+    `#<digits>` issue reference in the v4 standalone sections
+    (## Takeaways / ## Methodology / ## Results), excluding every
+    sanctioned form. `body` is the post-frontmatter text (as handed to
+    CHECKS entries by verify_text), so frontmatter bare refs never reach
+    the scan.
+
+    Sanctioned forms excluded: fenced code blocks, `<details>` blocks,
+    HTML comments (char-span mask with cross-line open/closed state —
+    `_mask_html_comment_spans`); GFM table rows; the
+    `**Repro:**`/`**Context:**` footer (line-index cut); markdown links
+    (label + target) and inline code spans (in-line neutralization,
+    substituting a single SPACE — never the empty string, which could
+    JOIN adjacent characters into a fabricated `#N` token, e.g.
+    ``#`x`123`` → `#123`).
+
+    HTML-comment handling is character-grain, not line-grain: on a line
+    that OPENS a multiline comment only the `<!--`..end-of-line span is
+    masked (prefix prose IS scanned — `Uses #779 corpus <!-- note`
+    hits); on a line that CLOSES one only the span up to and including
+    `-->` is masked (suffix prose IS scanned — `--> still follows #781`
+    hits); multiple `<!-- ... -->` segments per line are each masked
+    with the prose between them scanned, and a close-then-reopen line
+    (`<!-- a --> mid <!-- b`) leaves the state OPEN so following
+    interior lines stay masked (no false hit on a `#K` inside the still
+    open comment). The `<details>` counter reads the comment-MASKED
+    text, so a commented-out `<details>` tag cannot open the details
+    mask.
+
+    Documented residual edges (the clean-result-critic Lens 2 LM read is
+    the backstop; direction noted per item):
+
+    - The `<details>` open/close counter runs PRE-neutralization (before
+      link/inline-code masking), so a backticked ``<details>`` prose
+      mention opens the mask and excludes the remainder of the body
+      (fail-open — missed refs, never false FAILs).
+    - An unclosed `<details>` likewise excludes everything after it;
+      nesting is handled by the depth counter (fail-open).
+    - The comment char-span pass also runs PRE-neutralization, so a
+      backticked ``<!--`` prose mention opens the comment mask
+      (fail-open, same family as the backticked ``<details>``).
+    - 4-space indented code blocks and multi-line `[#K](\\nurl)` links
+      are NOT excluded (both survey-clean across all on-disk v4 bodies
+      as of 2026-07-03) — a `#K` inside either would false-FAIL; the
+      inline-code escape hatch covers the code-block case.
+    - In a slash-run `#658/#742` only the first token matches (the `/`
+      lookbehind protects URL fragments) — the line still FAILs, which
+      is sufficient.
+    """
+    lines = body.splitlines()
+    footer = _v4_footer_start_line(body)  # None -> no footer cut
+    table_idx = _table_row_line_indices(lines)
+    # Structural exclusion mask: line-grain for fenced code + <details>
+    # blocks, char-grain for HTML comments (comment_masked[i] = line i
+    # with every comment span space-substituted; mixed prose on comment
+    # opening/closing lines stays scannable). Single pass, whole-body
+    # (fences/details/comments may open in one section and close in
+    # another).
+    excluded: set[int] = set()
+    comment_masked: dict[int, str] = {}
+    in_fence = False
+    details_depth = 0
+    in_comment = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            excluded.add(i)
+            continue
+        if in_fence:
+            excluded.add(i)
+            continue
+        masked, in_comment = _mask_html_comment_spans(line, in_comment)
+        comment_masked[i] = masked
+        opens = len(re.findall(r"<details\b", masked, re.IGNORECASE))
+        closes = len(re.findall(r"</details>", masked, re.IGNORECASE))
+        if details_depth > 0 or opens:
+            excluded.add(i)
+        details_depth = max(0, details_depth + opens - closes)
+    hits: list[tuple[str, str, str]] = []
+    for name, start, end in find_h2_sections(body):
+        if name.casefold() not in _V4_STANDALONE_SECTIONS:
+            continue
+        for i in range(start, end):
+            if footer is not None and i >= footer:
+                continue  # footer + everything after
+            if i in excluded or i in table_idx:
+                continue
+            # Substitute a single space (never ""): an empty-string sub
+            # can JOIN the char before and after the removed span into a
+            # new `#N` token that the raw line never carried. Comment
+            # spans were already space-masked in comment_masked (every
+            # non-fence line has an entry; fence lines are excluded).
+            residue = _LINK_RE.sub(" ", comment_masked[i])  # [label](target) gone
+            residue = _INLINE_CODE_RE.sub(" ", residue)  # `code` escape hatch
+            for m in _BARE_ISSUE_REF_RE.finditer(residue):
+                hits.append((name, m.group(0), lines[i].strip()[:90]))
+    return hits
+
+
+def check_v4_no_bare_issue_refs(body: str) -> CheckResult:
+    """Check 27 (v4 only): no bare `#<digits>` issue refs in the standalone
+    sections. SPEC.md § `## Goal` (v4): the Goal context slot is the ONLY
+    place in the body that may cite prior tasks; `## Takeaways` /
+    `## Methodology` / `## Results` are standalone, and lineage/provenance
+    live in the `**Repro:**`/`**Context:**` footer. Sanctioned forms that
+    do not trip: markdown links (label + target), GFM table rows (the
+    Training-table Source column), fenced/inline code, `<details>` blocks,
+    HTML comments, the footer, YAML frontmatter. Exclusion edge behavior
+    (residuals + directions) is documented on `_bare_issue_ref_hits`. Origin: #841
+    round-2 (bare `#779` x~8 in Methodology survived two ensemble review
+    rounds). PASSes vacuously on v3 / v2 / legacy bodies (forward-only)."""
+    label = "no bare issue refs in standalone sections (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    hits = _bare_issue_ref_hits(body)
+    if not hits:
+        return CheckResult(label, True, "Takeaways/Methodology/Results carry no bare `#K` refs")
+    shown = "; ".join(f'## {sec}: `{tok}` in "{txt}"' for sec, tok, txt in hits[:5])
+    more = f" (+{len(hits) - 5} more)" if len(hits) > 5 else ""
+    return CheckResult(
+        label,
+        False,
+        f"bare issue reference(s) in standalone section(s) — {shown}{more}. "
+        "Prior-issue references live ONLY in the `## Goal` context slot as "
+        "`[#K](https://eps.superkaiba.com/tasks/K)` links and in the `**Repro:**`/"
+        "`**Context:**` footer (SPEC.md § `## Goal` (v4) + Rule A). Rewrite the prose to "
+        "describe the method standalone and move lineage to the footer. The inline-code "
+        "escape hatch is for NON-issue `#N` strings only (a hex color, an ordinal like "
+        "`GPU #2`) — do NOT backtick a genuine issue reference to silence this check.",
     )
 
 
@@ -6802,10 +7181,13 @@ CHECKS = [
     check_data_subset_disclosure,  # check 19 (v3)
     check_data_unwrapped_example_table,  # check 19b (v3, WARN)
     check_v3_word_caps,  # check 20 (v3)
-    # v4-gated checks (PASS vacuously on non-v4 bodies):
+    # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
+    # `check_v4_word_caps` is NOT here — it needs the issue number for the
+    # events-based folded-round budget scaling, so it is dispatched
+    # separately in `verify_text` (#921):
     check_v4_methodology_shape,  # check 18 (v4)
-    check_v4_word_caps,  # check 20 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
+    check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs in standalone sections
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
@@ -6961,6 +7343,12 @@ def verify_text(
     # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
     # whenever no doc is supplied (gate-timing — see the check docstring).
     results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
+    # Check 20 (v4) word caps needs the issue number for the events-based
+    # folded-round budget scaling (#921; the v3 twin stays body-only inside
+    # CHECKS), so it is dispatched separately like the other
+    # context-needing checks. PASS-skip on non-v4 bodies, and the events
+    # leg degrades to the footer-only read when `issue` is None/unknown.
+    results.append(check_v4_word_caps(body, issue=issue))
     # Check (#732, judge-API-error denominator) needs the issue number AND
     # the eval-root / body-source-path resolution legs (the body-only CHECKS
     # list carries none of these), so it also lives outside CHECKS. Graceful

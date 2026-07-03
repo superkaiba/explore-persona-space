@@ -658,6 +658,48 @@ def test_upload_store_raises_when_analysis_store_empty(monkeypatch, tmp_path):
         up.upload_store()
 
 
+def test_shard_oversize_jsonl_raises_on_single_oversize_line(monkeypatch, tmp_path):
+    """A single JSONL row bigger than the shard target cannot be line-split — it
+    RAISES with the row's identity (r10 Minor: shipping it as one oversize shard
+    would force-route >10 MB to LFS). Constants monkeypatched small for speed."""
+    import json as _json
+
+    import issue811_upload_store as up
+    import pytest
+
+    monkeypatch.setattr(up, "TEXT_SHARD_BYTES", 100)
+    monkeypatch.setattr(up, "TEXT_SHARD_TARGET", 80)
+    path = tmp_path / "responses_em_src_a_tgt1.jsonl"
+    giant = _json.dumps(
+        {
+            "behavior": "em",
+            "source_cid": "src_a",
+            "target_cid": "tgt1",
+            "probe_idx": 0,
+            "text": "x" * 200,
+        }
+    )
+    path.write_text(giant + "\n")
+    with pytest.raises(ValueError, match=r"single JSONL row .* cannot"):
+        up._shard_oversize_jsonl(path)
+
+
+def test_shard_oversize_jsonl_splits_normal_lines(monkeypatch, tmp_path):
+    """Happy path unchanged: many small lines split into <target shards."""
+    import issue811_upload_store as up
+
+    monkeypatch.setattr(up, "TEXT_SHARD_BYTES", 100)
+    monkeypatch.setattr(up, "TEXT_SHARD_TARGET", 80)
+    path = tmp_path / "responses_em_src_a_tgt1.jsonl"
+    path.write_text("".join(f'{{"probe_idx": {i}, "text": "abcdefgh"}}\n' for i in range(10)))
+    shards = up._shard_oversize_jsonl(path)
+    assert len(shards) > 1
+    assert all(s.stat().st_size <= 80 for s in shards)
+    # Every input line survives, in order, across the shards.
+    joined = "".join(s.read_text() for s in shards)
+    assert joined == path.read_text()
+
+
 # ── 8. Phase-0 staging: completeness verify (round-6 crash-fix) ─────────────────
 
 

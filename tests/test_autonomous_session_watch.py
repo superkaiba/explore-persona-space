@@ -25,6 +25,13 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+# src/ holds explore_persona_space.task_workflow (the watcher's follow-up
+# label helpers lazy-import it; the tests import it directly too). Inserted
+# ahead of any installed copy so THIS checkout's helpers win (#894).
+SRC = Path(__file__).resolve().parent.parent / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
 import spawn_session  # noqa: E402
 from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
@@ -3874,6 +3881,140 @@ def test_orphan_old_lifecycle_marker_still_stale(isolated_registry, monkeypatch)
     assert respawns == [663]
 
 
+# ─── #866/#903: deliberate-takeover sentinel skips the orphan sweep ──────────
+#
+# A deliberate session takeover renames `issue-<N>.json` ->
+# `issue-<N>.json.paused-takeover-<suffix>`, making the registration invisible
+# to the registry-keyed passes — which turned the handoff into a guaranteed
+# orphan-respawn (#866: a duplicate `/issue 866 --auto` orchestrator 21 min
+# into the takeover). The orphan sweep must SKIP the issue while the sentinel
+# is FRESH (mtime < EPS_TAKEOVER_TTL_H, default 6h) and behave EXACTLY as
+# today when it is stale/missing (FAIL OPEN — the existing orphan suite above
+# is the no-sentinel control).
+
+
+@pytest.fixture
+def clear_takeover_ttl_env(monkeypatch):
+    """The sentinel tests below pin the DEFAULT 6h TTL (and the 7d GC floor's
+    max(7d, TTL) contract); an operator shell exporting the fleet knob
+    ``EPS_TAKEOVER_TTL_H`` must not flip them."""
+    monkeypatch.delenv("EPS_TAKEOVER_TTL_H", raising=False)
+
+
+def test_takeover_sentinel_fresh_skips_orphan_respawn(
+    isolated_registry, monkeypatch, clear_takeover_ttl_env
+):
+    import time
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-866.json.paused-takeover-20260702").write_text("{}")
+    now = time.time()
+    # Marker is comfortably stale — without the sentinel this respawns (the
+    # control is test_takeover_sentinel_stale_respawns below).
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=866, events=events, now=now)
+    assert respawns == []
+    # Frozen episode: the skip returns BEFORE any state read/write, so the
+    # pre-seeded missed count is untouched and expiry resumes where it left off.
+    assert asw._load_orphan_state(866).get("missed") == 1
+
+
+def test_takeover_sentinel_stale_respawns(isolated_registry, monkeypatch, clear_takeover_ttl_env):
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    sentinel = isolated_registry / "issue-867.json.paused-takeover-20260702"
+    sentinel.write_text("{}")
+    now = time.time()
+    stale = now - 7 * 3600  # past the 6h default TTL
+    os.utime(sentinel, (stale, stale))
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=867, events=events, now=now)
+    assert respawns == [867]  # FAIL OPEN: today's behavior once the sentinel ages out
+
+
+def test_takeover_sentinel_manual_prefix_also_honored(
+    isolated_registry, monkeypatch, clear_takeover_ttl_env
+):
+    import time
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "manual-issue-868.json.paused-takeover-x").write_text("{}")
+    events = [{"kind": "epm:plan", "ts": "2026-06-25T02:00:00Z", "note": "stale marker"}]
+    respawns = _run_orphan_task(asw, monkeypatch, issue=868, events=events, now=time.time())
+    assert respawns == []
+
+
+def test_takeover_ttl_env_malformed_falls_back(monkeypatch):
+    # A typo'd env var must not disable crash recovery (mirror of the
+    # _orphan_staleness_s malformed-env fallback pattern).
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "banana")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(6.0 * 3600.0)
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "2")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(2.0 * 3600.0)
+    monkeypatch.delenv("EPS_TAKEOVER_TTL_H")
+    assert spawn_session._takeover_ttl_s() == pytest.approx(6.0 * 3600.0)
+
+
+def test_takeover_sentinel_future_mtime_not_fresh(isolated_registry, clear_takeover_ttl_env):
+    # A future-dated mtime (clock skew / `touch -d` typo) would be PERMANENTLY
+    # fresh — an indefinite crash-recovery suppression inverting the fail-open
+    # guarantee. Beyond the clock-jitter slack it is treated as NOT fresh.
+    import os
+    import time
+
+    sentinel = isolated_registry / "issue-869.json.paused-takeover-x"
+    sentinel.write_text("{}")
+    now = time.time()
+    future = now + 3600.0  # well beyond FUTURE_MTIME_SLACK_S (300s)
+    os.utime(sentinel, (future, future))
+    assert (
+        spawn_session.takeover_sentinel_fresh(869, now=now, registry_dir=isolated_registry) is None
+    )
+
+
+def test_gc_reaps_stale_takeover_sentinels(isolated_registry, clear_takeover_ttl_env):
+    # Sentinels never match the `*.json` GC globs, so without the dedicated
+    # reap they linger forever; the 7-day floor keeps the forensics record
+    # well past the (inert-after-6h) TTL.
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    now = time.time()
+    old = isolated_registry / "issue-901.json.paused-takeover-old"
+    old.write_text("{}")
+    os.utime(old, (now - 8 * 86400, now - 8 * 86400))  # past the 7d floor
+    fresh = isolated_registry / "issue-902.json.paused-takeover-new"
+    fresh.write_text("{}")
+    os.utime(fresh, (now - 3600, now - 3600))
+    asw.gc_pass(dry_run=False, now=now)
+    assert not old.exists()
+    assert fresh.exists()
+
+
+def test_gc_keeps_sentinel_under_extended_ttl(isolated_registry, monkeypatch):
+    # The max(7d, TTL) contract: with EPS_TAKEOVER_TTL_H above 168h a fixed
+    # 7-day reap would delete a sentinel STILL protecting a live takeover.
+    import os
+    import time
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPS_TAKEOVER_TTL_H", "240")  # 10 days > the 7d GC floor
+    now = time.time()
+    sentinel = isolated_registry / "issue-904.json.paused-takeover-live"
+    sentinel.write_text("{}")
+    os.utime(sentinel, (now - 8 * 86400, now - 8 * 86400))  # 8d old: past 7d, inside 240h
+    assert asw._gc_stale_takeover_sentinels(now, dry_run=False) == 0
+    assert sentinel.exists()
+
+
 def test_campaign_child_pre_run_lifecycle_marker_reads_fresh(monkeypatch):
     # Campaign watchdog parity (#661/#658 sibling): a child in a long pre-pod
     # planning/implementation phase posts only excluded lifecycle markers; the
@@ -4646,30 +4787,133 @@ def test_followups_awaiting_child_reason_fires_on_recorded_scope(monkeypatch):
     assert "#546" in reason
 
 
-def test_scope_note_field_parses_bold_markdown_fields():
-    # #837 acceptance 5 (§4c): the modern scope note writes bold-markdown
-    # fields (`**followup_label:** …`) — the verified cause of #778's second
-    # premature firing (the 04:43 disarm run marker never posted: "no
-    # followup_label parseable"). Fixture = the VERBATIM #778 scope-v2 note
-    # (2026-07-01T21:35:20Z), extracted from the incident record.
+# ─── #894: label-grouped unrun predicate in the watcher passes ───────────────
+
+
+def _make_labeled_scope_event(label: str, source: str, ts: str, version: int = 1) -> dict:
+    """epm:followup-scope row with an explicit label (multi-label fixtures)."""
+    return {
+        "ts": ts,
+        "kind": "epm:followup-scope",
+        "version": version,
+        "note": f"followup_label: {label}\nsource: {source}",
+    }
+
+
+def _make_labeled_run_event(label: str, source: str, ts: str, version: int = 1) -> dict:
+    """epm:same-issue-followup-run row with an explicit label."""
+    return {
+        "ts": ts,
+        "kind": "epm:same-issue-followup-run",
+        "version": version,
+        "note": f"followup_label: {label}\nsource: {source}\nround: 1",
+    }
+
+
+def test_followup_round_complete_reason_fires_for_older_label_round():
+    # #894 test 9: an OLDER queued label's round executes AFTER a newer
+    # label's run marker — scope A (t1), scope B (t2), run B (t3),
+    # round-start witness (t4), 9a-bis park (t5, newest). Label A is unrun,
+    # its round demonstrably started and parked → the repark MUST fire.
+    # Pre-fix the `run_ts > scope_ts` early exit returned None (blind to A).
     import autonomous_session_watch as asw
+
+    events = [
+        _make_labeled_scope_event("label-a", "user-chat", "2026-07-01T09:00:00Z", version=1),
+        _make_labeled_scope_event(
+            "label-b", "proposer-9b-cheap", "2026-07-01T10:00:00Z", version=2
+        ),
+        _make_labeled_run_event("label-b", "proposer-9b-cheap", "2026-07-01T12:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt label=label-a",
+            "2026-07-01T13:00:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-07-01T15:00:00Z"),
+    ]
+    reason = asw._followup_round_complete_reason(events, issue=763)
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
+def test_followup_round_complete_reason_anchor_rejects_stale_witness():
+    # #894 test 9b (Stat-Codex MF1 — the max-anchor MUTANT pin): scope A
+    # (t1), scope B (t2), B's round-start witness (t2.5), run B (t3),
+    # round-end park (t4 > t3). Label A is unrun but has NO witness of its
+    # own newer than max(scope_ts, run_ts) = t3 → the predicate MUST stay
+    # inert. A scope_ts-only-anchor mutant counts B's stale t2.5 witness for
+    # A and false-fires (reparking + wrong-closing the head-of-queue label).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_labeled_scope_event("label-a", "user-chat", "2026-07-01T09:00:00Z", version=1),
+        _make_labeled_scope_event(
+            "label-b", "proposer-9b-cheap", "2026-07-01T10:00:00Z", version=2
+        ),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt label=label-b",
+            "2026-07-01T10:30:00Z",
+        ),
+        _make_labeled_run_event("label-b", "proposer-9b-cheap", "2026-07-01T12:00:00Z"),
+        _make_step_completed_event(step="9a-bis", ts="2026-07-01T15:00:00Z"),
+    ]
+    assert asw._followup_round_complete_reason(events, issue=763) is None
+
+
+def test_followups_awaiting_child_reason_stands_down_on_763_multilabel_shape(monkeypatch):
+    # #894 test 10: the #763 shape — an UNRUN older label behind a NEWER
+    # label's run marker, plus a step-10 park and open children. The
+    # label-keyed stand-down MUST return None (respawn reaches the queued
+    # label); the pre-fix ts-keyed read saw run_ts > scope_ts → no
+    # stand-down → the awaiting-child latch suppressed the recovery.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_children", lambda issue: [{"id": 816, "status": "running"}])
+    events = [
+        _make_labeled_scope_event(
+            "neutral-contrast-and-cofit", "user-chat", "2026-06-30T22:10:33Z", version=1
+        ),
+        _make_labeled_scope_event(
+            "deception-rubric-reanchor", "proposer-9b-cheap", "2026-07-02T10:46:52Z", version=2
+        ),
+        _make_labeled_run_event(
+            "deception-rubric-reanchor", "proposer-9b-cheap", "2026-07-02T21:45:13Z"
+        ),
+        _make_step_completed_event(step="10", ts="2026-07-02T22:00:00Z"),
+    ]
+    reason = asw._followups_awaiting_child_reason(
+        763, status="followups_running", has_pod=False, events=events
+    )
+    assert reason is None
+
+
+def test_parse_followup_note_field_parses_bold_markdown_fields():
+    # #837 acceptance 5 (§4c), migrated to the shared parser (#894 — the
+    # watcher's `_scope_note_field` is superseded by
+    # `task_workflow.parse_followup_note_field`): the modern scope note
+    # writes bold-markdown fields (`**followup_label:** …`) — the verified
+    # cause of #778's second premature firing (the 04:43 disarm run marker
+    # never posted: "no followup_label parseable"). Fixture = the VERBATIM
+    # #778 scope-v2 note (2026-07-01T21:35:20Z) from the incident record.
+    from explore_persona_space.task_workflow import parse_followup_note_field
 
     note = (Path(__file__).resolve().parent / "fixtures" / "issue778_scope_v2_note.md").read_text()
     # fixture-integrity guards: the verbatim note really carries the bold form
     assert "**followup_label:** corrected-monitoring-8prompt-ladder" in note
     assert "**source:** user-chat" in note
-    events = [
-        {"ts": "2026-07-01T21:35:20Z", "kind": "epm:followup-scope", "version": 2, "note": note}
-    ]
-    assert asw._scope_note_field(events, "followup_label") == "corrected-monitoring-8prompt-ladder"
-    assert asw._scope_note_field(events, "source") == "user-chat"
+    assert parse_followup_note_field(note, "followup_label") == (
+        "corrected-monitoring-8prompt-ladder"
+    )
+    assert parse_followup_note_field(note, "source") == "user-chat"
 
 
 def test_post_followup_run_marker_parses_bold_scope(monkeypatch):
-    # #837 §4c end-to-end: the disarm run marker posts with the label AND the
-    # real source parsed from a bold-markdown scope note (source no longer
-    # degrades to "unknown", so a proposer-9b-cheap round counts toward the
-    # 2-round cheap cap).
+    # #837 §4c end-to-end (now via task_workflow.executing_followup_label,
+    # #894): the disarm run marker posts with the label AND the real source
+    # parsed from a bold-markdown scope note (source no longer degrades to
+    # "unknown", so a proposer-9b-cheap round counts toward the 2-round
+    # cheap cap).
     import subprocess as _subprocess
 
     import autonomous_session_watch as asw
@@ -4697,33 +4941,40 @@ def test_post_followup_run_marker_parses_bold_scope(monkeypatch):
     assert "source: proposer-9b-cheap" in note
 
 
-def test_scope_note_field_plain_format_still_parses():
-    # #837 §4c regression companion: the plain `<field>: <value>` form the
-    # legacy fixtures use must keep parsing bit-identically.
-    import autonomous_session_watch as asw
+def test_parse_followup_note_field_plain_format_still_parses():
+    # #837 §4c regression companion (migrated to the shared parser, #894):
+    # the plain `<field>: <value>` form the legacy fixtures use must keep
+    # parsing bit-identically.
+    from explore_persona_space.task_workflow import parse_followup_note_field
 
-    events = [_make_followup_scope_event("2026-06-11T09:00:00Z")]
-    assert asw._scope_note_field(events, "followup_label") == "bare-word-install-step-grid"
-    assert asw._scope_note_field(events, "source") == "user-chat"
+    note = _make_followup_scope_event("2026-06-11T09:00:00Z")["note"]
+    assert parse_followup_note_field(note, "followup_label") == "bare-word-install-step-grid"
+    assert parse_followup_note_field(note, "source") == "user-chat"
+    assert parse_followup_note_field(note, "gpu_hours_estimate") is None
+    assert parse_followup_note_field("", "followup_label") is None
 
 
-def test_scope_note_field_parses_latest_scope():
-    # _scope_note_field reads `<field>: <value>` lines off the LATEST
-    # scope marker's note; missing field / no scope -> None.
-    import autonomous_session_watch as asw
+def test_executing_followup_label_resolves_queue_head():
+    # Migration of the old "reads the LATEST scope" test (#894): with two
+    # unrun labels the resolver returns the QUEUE HEAD (user-initiated
+    # first, then oldest armed ts) rather than the bare latest scope; no
+    # scopes -> None.
+    from explore_persona_space.task_workflow import executing_followup_label
 
     events = [
         {
             "ts": "2026-06-10T09:00:00Z",
             "kind": "epm:followup-scope",
+            "version": 1,
             "note": "followup_label: old-round\nsource: proposer-9b",
         },
-        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),  # user-chat
     ]
-    assert asw._scope_note_field(events, "followup_label") == "bare-word-install-step-grid"
-    assert asw._scope_note_field(events, "source") == "user-chat"
-    assert asw._scope_note_field(events, "gpu_hours_estimate") is None
-    assert asw._scope_note_field([], "followup_label") is None
+    group = executing_followup_label(events)
+    assert group is not None
+    assert group["followup_label"] == "bare-word-install-step-grid"  # user-initiated wins
+    assert group["source"] == "user-chat"
+    assert executing_followup_label([]) is None
 
 
 def test_post_followup_run_marker_posts_matching_label(monkeypatch):
@@ -4754,9 +5005,12 @@ def test_post_followup_run_marker_posts_matching_label(monkeypatch):
     assert "round: 1" in note
 
 
-def test_post_followup_run_marker_fails_soft_without_label(monkeypatch):
-    # No parseable followup_label -> no marker posted, returns False
-    # (fail-soft: the re-park already happened; the failure is logged).
+def test_post_followup_run_marker_fails_soft_without_label(monkeypatch, capsys):
+    # No parseable followup_label -> the scope becomes a NON-dispatchable
+    # pseudo-label group (#894), so the resolver returns nothing to close:
+    # no marker posted, returns False (fail-soft: the re-park already
+    # happened), and the stderr log LOUDLY names the repair (re-post with a
+    # proper label / retro-close).
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(
@@ -4770,6 +5024,79 @@ def test_post_followup_run_marker_fails_soft_without_label(monkeypatch):
         "note": "malformed scope note",
     }
     assert asw._post_followup_run_marker(533, [scope_no_label], dry_run=False) is False
+    err = capsys.readouterr().err
+    assert "REPAIR" in err
+    assert "followup_label" in err
+
+
+def test_post_followup_run_marker_closes_executing_label_not_latest_scope(monkeypatch):
+    # #894 test 11: the #763 shape mid-round on the OLDER queued label — the
+    # LATEST scope is a different (already-run) label, so parsing the latest
+    # scope would close the WRONG label (stranding the executed round unrun
+    # and closing a never-run one). The resolver must post label A.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    events = [
+        _make_labeled_scope_event(
+            "neutral-contrast-and-cofit", "user-chat", "2026-06-30T22:10:33Z", version=1
+        ),
+        _make_labeled_scope_event(
+            "deception-rubric-reanchor", "proposer-9b-cheap", "2026-07-02T10:46:52Z", version=2
+        ),
+        _make_labeled_run_event(
+            "deception-rubric-reanchor", "proposer-9b-cheap", "2026-07-02T21:45:13Z"
+        ),
+    ]
+    assert asw._post_followup_run_marker(763, events, dry_run=False) is True
+    assert len(calls) == 1
+    note = calls[0][-1]
+    assert "followup_label: neutral-contrast-and-cofit" in note
+    assert "source: user-chat" in note
+    assert "round: 2" in note  # 1 + the existing run marker
+
+
+def test_post_followup_run_marker_breadcrumb_beats_queue_head(monkeypatch):
+    # #894 test 11b (Stat-Codex MF2 — watcher-level breadcrumb-first pin):
+    # label B is executing via a `stage-dispatch … label=B` breadcrumb NEWER
+    # than the latest run marker, and a LATER user-chat label A now heads
+    # the queue → the posted note must carry label B (a head-of-queue-only
+    # mutant posts A and fails).
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    events = [
+        _make_labeled_scope_event("label-b", "proposer-9b-cheap", "2026-07-01T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt label=label-b",
+            "2026-07-01T10:00:00Z",
+        ),
+        # A user-chat label posted MID-ROUND — heads the queue but is NOT
+        # the executing round.
+        _make_labeled_scope_event("label-a", "user-chat", "2026-07-01T11:00:00Z", version=2),
+    ]
+    assert asw._post_followup_run_marker(763, events, dry_run=False) is True
+    assert len(calls) == 1
+    note = calls[0][-1]
+    assert "followup_label: label-b" in note
+    assert "source: proposer-9b-cheap" in note
 
 
 def test_repark_completed_followup_round_dry_run_never_mutates(monkeypatch):

@@ -441,9 +441,11 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
     spawn_output_suppressed,
+    takeover_sentinel_fresh,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
@@ -6397,11 +6399,12 @@ def _latest_step_completed(events: list[dict]) -> dict | None:
 def _latest_scope_and_run_ts(events: list[dict]) -> tuple[float | None, float | None]:
     """Newest epoch ts of an ``epm:followup-scope`` and of an
     ``epm:same-issue-followup-run`` in ``events`` (either slot ``None`` when
-    absent / unparseable). A scope with no STRICTLY newer run marker is an
-    UNRUN scope — a same-issue follow-up round is pending or executing.
-    Shared by :func:`_followup_round_complete_reason` (the repark predicate)
-    and :func:`_followups_awaiting_child_reason` (the #837 stand-down) so
-    the two scans cannot drift."""
+    absent / unparseable). A pure "newest signal" primitive — the UNRUN
+    predicate itself is LABEL-keyed as of #894
+    (``task_workflow.unrun_followup_labels``; a ts-only unrun read is blind
+    to an older queued label behind a newer label's run marker, the #763
+    shape). Used by :func:`_followup_round_complete_reason` for the
+    ``max(scope_ts, run_ts)`` gate anchor."""
     scope_ts: float | None = None
     run_ts: float | None = None
     for ev in events:
@@ -6419,16 +6422,18 @@ def _latest_scope_and_run_ts(events: list[dict]) -> tuple[float | None, float | 
     return scope_ts, run_ts
 
 
-def _has_round_start_witness(events: list[dict], scope_ts: float) -> bool:
+def _has_round_start_witness(events: list[dict], anchor_ts: float) -> bool:
     """True iff ``events`` carry a ROUND-START WITNESS strictly newer than
-    ``scope_ts``: a round-only kind (:data:`_FOLLOWUP_ROUND_WITNESS_KINDS`)
+    ``anchor_ts``: a round-only kind (:data:`_FOLLOWUP_ROUND_WITNESS_KINDS`)
     or a same-issue-loop stage-dispatch breadcrumb (an ``epm:progress`` note
-    beginning :data:`_FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`). Strict ``>``
-    (#837 §12.2): a witness sharing the scope's second fails toward blocking
+    beginning :data:`_FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`). The anchor is
+    ``max(scope_ts, run_ts)`` (#894) — so a PRIOR recorded round's witness
+    can never vouch for a later queued label's round. Strict ``>``
+    (#837 §12.2): a witness sharing the anchor's second fails toward blocking
     → respawn, the safe direction."""
     for ev in events:
         ev_ts = _parse_event_ts(ev.get("ts"))
-        if ev_ts is None or ev_ts <= scope_ts:
+        if ev_ts is None or ev_ts <= anchor_ts:
             continue
         kind = ev.get("kind")
         if kind in _FOLLOWUP_ROUND_WITNESS_KINDS:
@@ -6491,15 +6496,21 @@ def _followups_awaiting_child_reason(
     four-condition predicate). Returns ``None`` when the exemption does not
     apply.
 
-    STANDS DOWN (returns ``None``) whenever an UNRUN ``epm:followup-scope``
-    exists — a scope with no strictly newer ``epm:same-issue-followup-run``
-    (#837): an unrun scope means a same-issue follow-up round is pending or
-    executing, and respawn is ALWAYS the correct recovery there (a respawned
+    STANDS DOWN (returns ``None``) whenever an UNRUN ``followup_label``
+    exists — a label group with no matching ``epm:same-issue-followup-run``
+    (``task_workflow.unrun_followup_labels``; #837, label-keyed as of #894):
+    an unrun label means a same-issue follow-up round is pending, executing,
+    or QUEUED, and respawn is ALWAYS the correct recovery there (a respawned
     session's Step 0 routes into the follow-up loop — demonstrated live by
     #778's 05:01Z replacement session), so the children-wait suppression must
     not latch alert-only on a mis-attributed parent-tail step-10 park. The
-    legacy children-in-flight shape has NO scope (or a RECORDED one), so its
-    suppression semantics are untouched.
+    old newest-ts read reproduced the #763 blindness: an earlier queued
+    label's scope stayed invisible behind a later label's run marker
+    (``run_ts > scope_ts``), so the stand-down never fired and the
+    awaiting-child latch suppressed the respawn that would correctly
+    dispatch the queued label. The legacy children-in-flight shape has NO
+    scope (or every label RECORDED), so its suppression semantics are
+    untouched.
 
     Probed LAZILY by the callers (the helper is only invoked when the stalled
     / orphan pass already wants to respawn) so a healthy session never pays
@@ -6509,15 +6520,16 @@ def _followups_awaiting_child_reason(
         return None
     if has_pod:
         return None
-    scope_ts, run_ts = _latest_scope_and_run_ts(events)
-    if scope_ts is not None and (run_ts is None or run_ts <= scope_ts):
-        # #837 stand-down: an UNRUN scope → the fall-through must reach
-        # RESPAWN, never the awaiting-child latch (the reconciler-verified
-        # freeze shape: the SAME mis-attributed step-10 park the repark
-        # predicate's witness gate vetoes would otherwise satisfy this
-        # suppression forever on a task with open children — #778 has #816).
-        # Checked BEFORE the children lookup so the stand-down stays pure
-        # (no subprocess).
+    from explore_persona_space.task_workflow import unrun_followup_labels
+
+    if unrun_followup_labels(events):
+        # #837 stand-down (label-keyed, #894): ANY unrun label → the
+        # fall-through must reach RESPAWN, never the awaiting-child latch
+        # (the reconciler-verified freeze shape: the SAME mis-attributed
+        # step-10 park the repark predicate's witness gate vetoes would
+        # otherwise satisfy this suppression forever on a task with open
+        # children — #778 has #816). Checked BEFORE the children lookup so
+        # the stand-down stays pure (no subprocess).
         return None
     sc = _latest_step_completed(events)
     if sc is None:
@@ -6567,25 +6579,34 @@ def _followup_round_complete_reason(events: list[dict], *, issue: int | None = N
     - no ``epm:followup-scope`` is on record (the legacy children-in-flight
       shape has no scope marker — never re-park it);
     - the round is still in flight (scope newer than any round-end signal);
-    - the round is RECORDED — an ``epm:same-issue-followup-run`` newer than
-      the scope. The designed ordering posts that marker only AFTER the
-      re-park (loop step 3 → step 4), so a ``followups_running`` status
-      alongside a recorded round is a LATER legitimate transition (the
-      legacy children-in-flight shape via Step 10 step 5), NOT this round
-      stranded — defer to the awaiting-child suppression. This also
-      self-disarms the predicate after the watcher's own re-park, which
-      posts the completion marker itself
+    - EVERY label is RECORDED — ``task_workflow.unrun_followup_labels`` is
+      empty (label-keyed as of #894; the old ``run_ts > scope_ts`` exit was
+      blind to an OLDER queued label's round executing AFTER a newer label's
+      run marker — the #763 shape). The designed ordering posts the run
+      marker only AFTER the re-park (loop step 3 → step 4), so a
+      ``followups_running`` status alongside an all-recorded history is a
+      LATER legitimate transition (the legacy children-in-flight shape via
+      Step 10 step 5), NOT a round stranded — defer to the awaiting-child
+      suppression. This also self-disarms the predicate after the watcher's
+      own re-park, which posts the completion marker itself
       (:func:`_repark_completed_followup_round`);
     - (#837 gate 1 — round-start witness) no round-only event newer than
-      the scope proves the round STARTED: the matched park is the parent
-      pass's own tail (#778: the 9a-bis park 14 min after the 9b scope) or
-      the round never started — either way the repark would falsely close
-      the scope; defer to crash-recovery / stalled handling;
+      ``anchor_ts = max(scope_ts, run_ts)`` proves the round STARTED: the
+      matched park is the parent pass's own tail (#778: the 9a-bis park 14
+      min after the 9b scope), a PRIOR recorded round's witness (#894: an
+      older queued label must not borrow a newer completed round's
+      witness), or the round never started — either way the repark would
+      falsely close the round; defer to crash-recovery / stalled handling;
     - (#837 gate 2 — freshness) ANY non-watcher event is strictly newer
       than the keyed round-end park: the park is stale / mis-attributed —
       the round is still executing past it (#778: round activity HOURS
       newer at both firings), or died mid-flight (crash-recovery's job,
       never the repark's).
+
+    The gates anchor on ``max(scope_ts, run_ts)`` — identical to the old
+    ``scope_ts`` anchor whenever a round is unrun in the single-label world
+    (``run_ts <= scope_ts`` or absent), so every existing #837/#533/#778
+    fixture verdict is preserved.
 
     ``issue`` is used only for the log-and-skip diagnostics; ``None`` keeps
     every existing caller/test signature working.
@@ -6595,8 +6616,11 @@ def _followup_round_complete_reason(events: list[dict], *, issue: int | None = N
     scope_ts, run_marker_ts = _latest_scope_and_run_ts(events)
     if scope_ts is None:
         return None
-    if run_marker_ts is not None and run_marker_ts > scope_ts:
+    from explore_persona_space.task_workflow import unrun_followup_labels
+
+    if not unrun_followup_labels(events):
         return None
+    anchor_ts = scope_ts if run_marker_ts is None else max(scope_ts, run_marker_ts)
     sc = _latest_step_completed(events)
     if sc is None:
         return None
@@ -6606,15 +6630,17 @@ def _followup_round_complete_reason(events: list[dict], *, issue: int | None = N
         step in _FOLLOWUP_ROUND_END_STEPS
         and sc.get("exit_kind") == _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND
         and sc_ts is not None
-        and sc_ts > scope_ts
+        and sc_ts > anchor_ts
     ):
         who = f"issue #{issue}" if issue is not None else "followup-round-repark probe"
         # Gate 1 — round-start witness (#837): the round must have
         # DEMONSTRABLY started (a round-only kind or a followup stage-
-        # dispatch breadcrumb newer than the scope). Closes the #778
-        # pre-activity race (scope → mis-attributed parent-tail park →
-        # nothing yet) deterministically, with no wall clock.
-        if not _has_round_start_witness(events, scope_ts):
+        # dispatch breadcrumb newer than the anchor — max(scope, run), so a
+        # prior recorded round's witness can never vouch for a later queued
+        # label's round, #894). Closes the #778 pre-activity race (scope →
+        # mis-attributed parent-tail park → nothing yet) deterministically,
+        # with no wall clock.
+        if not _has_round_start_witness(events, anchor_ts):
             print(
                 f"  {who}: round-end park matched but no round-start witness "
                 f"after the scope — the park is the parent pass's tail or the "
@@ -6731,60 +6757,40 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
-def _scope_note_field(events: list[dict], field: str) -> str | None:
-    """Value of ``<field>: <value>`` from the latest ``epm:followup-scope``
-    event's note (line-prefix match, first hit wins), or ``None``. Tolerates
-    the modern bold-markdown field format ``**<field>:** <value>`` alongside
-    the plain ``<field>: <value>`` form (#837 §4c — the verified cause of
-    #778's second premature repark: the 04:43 disarm run marker never posted
-    because the bold-format ``**followup_label:**`` line was unparseable).
-    Side effect: a bulleted ``* <field>: <value>`` line also parses now
-    (harmless); the legacy ``- <field>:`` dash-bullet form still misses
-    (pre-existing, fail-soft)."""
-    latest: dict | None = None
-    latest_ts: float | None = None
-    for ev in events:
-        if ev.get("kind") != "epm:followup-scope":
-            continue
-        ts = _parse_event_ts(ev.get("ts"))
-        if ts is None:
-            continue
-        if latest_ts is None or ts > latest_ts:
-            latest_ts = ts
-            latest = ev
-    if latest is None:
-        return None
-    for line in (latest.get("note") or "").splitlines():
-        stripped = line.strip()
-        core = stripped.lstrip("*").lstrip()  # tolerate "**field:** value" (#837 §4c)
-        if core.startswith(f"{field}:"):
-            value = core[len(field) + 1 :].lstrip("*").strip().rstrip(",")
-            return value or None
-    return None
-
-
 def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> bool:
     """Post the ``epm:same-issue-followup-run v1`` completion marker for the
     round the watcher just re-parked, closing the round's
     ``epm:followup-scope`` for `/issue` Step 0 routing — WITHOUT it the
-    scope stays UNRUN and a re-invoked session would re-dispatch the
+    label stays UNRUN and a re-invoked session would re-dispatch the
     already-completed round (the Step 0 dispatch table routes a post-result
-    status + unrun scope back into the follow-up loop). ``followup_label``
-    + ``source`` are parsed from the latest scope marker's note so the
-    idempotency match and the autonomous round-cap counting stay correct;
-    ``round`` is 1 + the count of existing run markers. Fail-soft: a
-    missing label or a failed post logs to stderr and returns False — the
-    re-park itself (the substance) already happened."""
-    label = _scope_note_field(events, "followup_label")
-    if label is None:
+    status + unrun label back into the follow-up loop). ``followup_label``
+    + ``source`` come from ``task_workflow.executing_followup_label``
+    (breadcrumb-first, dispatchable-queue-head fallback — #894: parsing the
+    LATEST scope closes the WRONG label when the executing round is an
+    older queued label, stranding the executed label unrun and closing a
+    never-run one) so the idempotency match and the autonomous round-cap
+    counting stay correct; ``round`` is 1 + the count of existing run
+    markers. Fail-soft: an unresolvable round (no dispatchable unrun label
+    — e.g. every scope is an unlabeled pseudo-label repair item) or a
+    failed post logs LOUDLY to stderr naming the repair and returns False —
+    the re-park itself (the substance) already happened."""
+    from explore_persona_space.task_workflow import executing_followup_label
+
+    group = executing_followup_label(events)
+    if group is None or not group.get("dispatchable"):
         print(
-            f"  issue #{issue}: cannot post epm:same-issue-followup-run — no "
-            f"followup_label parseable from the latest epm:followup-scope note; "
-            f"the scope stays unrun (Step 0 may re-route into the loop)",
+            f"  issue #{issue}: cannot post epm:same-issue-followup-run — "
+            f"task_workflow.executing_followup_label resolved no dispatchable "
+            f"unrun label (unlabeled/pseudo-label scopes are repair items, never "
+            f"rounds); the label stays unrun (Step 0 may re-route into the loop). "
+            f"REPAIR: re-post the epm:followup-scope with a proper kebab-slug "
+            f"`followup_label:` line, or retro-close it per the Step 0 "
+            f"stale-label disposition rule",
             file=sys.stderr,
         )
         return False
-    source = _scope_note_field(events, "source") or "unknown"
+    label = group["followup_label"]
+    source = group.get("source") or "unknown"
     round_idx = 1 + sum(1 for ev in events if ev.get("kind") == "epm:same-issue-followup-run")
     note = (
         f"followup_label: {label}\n"
@@ -6992,6 +6998,12 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "stop",
         "--session-id", session_id,
+        # #902: thread `--stop-source watcher` — watcher-sourced stops post
+        # NO deliberate-stop breadcrumb (the watcher keeps its own
+        # registry/sidecar evidence trail; an operator-attributed auto-post
+        # here would manufacture false attributions + unsentineled notes
+        # that reset staleness clocks).
+        "--stop-source", "watcher",
     ]  # fmt: skip
     if dry_run:
         print(f"  [dry-run] would stop session: {' '.join(cmd)}")
@@ -9163,6 +9175,21 @@ def _dispatch_orphan_exemption_action(
         )
 
 
+def _parse_orphan_state_counters(state: dict, day_key: str) -> tuple[int, int]:
+    """Type-guarded ``(missed, respawns_today)`` from a loaded orphan-state
+    dict; ``respawns_today`` resets to 0 when the recorded ``respawn_day`` is
+    not today's ``day_key``. Factored out of :func:`_process_orphan_task` to
+    keep it under the C901 cap after the #903 takeover-sentinel skip landed
+    there (behavior-preserving extraction)."""
+    missed = state.get("missed", 0)
+    if not isinstance(missed, int):
+        missed = 0
+    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
+    if not isinstance(respawns_today, int):
+        respawns_today = 0
+    return missed, respawns_today
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -9180,17 +9207,27 @@ def _process_orphan_task(
     """Apply one active-status task's orphan decision (gather signals ->
     :func:`decide_orphan` -> act). ``rec`` is the task's registration record
     from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
-    #472 class). Honours dry_run (logs but never mutates / spawns)."""
+    #472 class). Honours dry_run (logs but never mutates / spawns).
+
+    #866/#903: a FRESH ``paused-takeover`` sentinel (a deliberate session
+    takeover renamed the registration away) skips the issue ENTIRELY before
+    any state read/write — the frozen ``missed`` count resumes exactly where
+    it left off when the sentinel goes stale (FAIL OPEN). No marker is posted
+    (a per-tick marker would spam events.jsonl; this stdout log is the
+    record)."""
+    sentinel = takeover_sentinel_fresh(issue, now=now, registry_dir=AUTONOMOUS_REGISTRY_DIR)
+    if sentinel is not None:
+        print(
+            f"  issue #{issue}: status={status} SKIP — deliberate takeover sentinel "
+            f"{sentinel.name} is FRESH (< EPS_TAKEOVER_TTL_H); orphan sweep deferred "
+            f"(stale sentinel resumes normal respawn — fail open)"
+        )
+        return
     mapped_alive = bool(rec and rec["sids"] & live_ids)
     manual_only = bool(rec and rec["has_manual"] and not rec["has_auto"])
     entry_age_s = (now - rec["newest_write"]) if rec and rec["newest_write"] > 0 else None
     state = _load_orphan_state(issue)
-    missed = state.get("missed", 0)
-    if not isinstance(missed, int):
-        missed = 0
-    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
-    if not isinstance(respawns_today, int):
-        respawns_today = 0
+    missed, respawns_today = _parse_orphan_state_counters(state, day_key)
     alerted = bool(state.get("alerted"))
     followups_child_alerted = bool(state.get("followups_child_alerted"))
 
@@ -11683,12 +11720,48 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
     return counts
 
 
+# Floor age before a `paused-takeover` sentinel is GC'd. A stale sentinel is
+# INERT after the (default 6h) TTL — this reap is clutter-control only, and
+# 7 days deliberately preserves the human-readable takeover record for
+# post-hoc forensics well past the takeover itself (#903).
+TAKEOVER_SENTINEL_GC_AGE_S = 7 * 24 * 3600
+
+
+def _gc_stale_takeover_sentinels(now: float, dry_run: bool) -> int:
+    """Unlink ``*.json.paused-takeover-*`` sentinels older than
+    ``max(7 days, the configured takeover TTL)`` — the ``*.json`` GC globs
+    can never match them, so without this they would linger forever (#903).
+
+    The ``max()`` is load-bearing (#903 round-1 critique Must-Fix): with
+    ``EPS_TAKEOVER_TTL_H`` set above 168h a fixed 7-day reap would delete a
+    sentinel that is STILL protecting a live takeover. Returns the reap
+    count for the :func:`gc_pass` summary line."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return 0
+    gc_age = max(TAKEOVER_SENTINEL_GC_AGE_S, _takeover_ttl_s())
+    reaped = 0
+    for p in sorted(AUTONOMOUS_REGISTRY_DIR.glob("*.json.paused-takeover-*")):
+        try:
+            if now - p.stat().st_mtime < gc_age:
+                continue
+        except OSError:
+            continue
+        print(f"gc: {'would reap' if dry_run else 'reaping'} stale takeover sentinel {p.name}")
+        if not dry_run:
+            p.unlink(missing_ok=True)
+        reaped += 1
+    return reaped
+
+
 def gc_pass(dry_run: bool, now: float | None = None) -> None:
-    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` for
-    consistency with the other ``*_pass`` entry points + the ``--gc-only``
-    debug flag."""
+    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` (+
+    the #903 stale-takeover-sentinel reap) for consistency with the other
+    ``*_pass`` entry points + the ``--gc-only`` debug flag."""
     now = now if now is not None else time.time()
     counts = _gc_orphaned_eps_autonomous_files(now, dry_run)
+    reaped_sentinels = _gc_stale_takeover_sentinels(now, dry_run)
+    if reaped_sentinels:
+        counts["paused-takeover"] = counts.get("paused-takeover", 0) + reaped_sentinels
     if not counts:
         print("gc: no stale per-issue state files to reap")
         return
@@ -16221,6 +16294,43 @@ def program_orchestrator_pass(
         print(f"program-orchestrator: relaunch errored: {e}")
 
 
+def _vm_ledger_reap_disabled(env: dict | None = None) -> bool:
+    """Kill switch: True when ``EPM_DISABLE_VM_LEDGER_REAP`` is set truthy."""
+    env = os.environ if env is None else env
+    return env.get("EPM_DISABLE_VM_LEDGER_REAP", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def vm_ledger_reap_pass(dry_run: bool) -> None:
+    """Reap expired-TTL / dead-PID rows from the advisory VM resource ledger (plan §5).
+
+    The ledger (``scripts/resource_ledger.py``, ``~/.task-workflow/vm-ledger.json``)
+    routes CPU/RAM-heavy phases off the shared VM; a crashed session's claim is
+    TTL- + PID-reaped here so a dead claim can never wedge routing. Piggybacks
+    the 10-min tick. Daemon-INDEPENDENT (a local file only), so it runs on a
+    daemon outage too. Fail-soft: any error (incl. a psutil-less-host import
+    failure) is logged and swallowed — a ledger hiccup never crashes the
+    watcher. ``--dry-run`` reports without mutating. Kill switch:
+    ``EPM_DISABLE_VM_LEDGER_REAP=1``.
+    """
+    if _vm_ledger_reap_disabled():
+        print("  vm-ledger-reap: disabled via EPM_DISABLE_VM_LEDGER_REAP; skipping")
+        return
+    try:
+        import resource_ledger  # lazy: a psutil-less host must not crash the watcher
+
+        reaped = resource_ledger.reap_ledger_file(apply=not dry_run)
+        if reaped:
+            phases = ", ".join(
+                f"#{r.get('issue')}:{r.get('phase')} (claim {r.get('claim_id')})" for r in reaped
+            )
+            verb = "WOULD reap" if dry_run else "reaped"
+            print(f"  vm-ledger-reap: {verb} {len(reaped)} stale claim(s): {phases}")
+        else:
+            print("  vm-ledger-reap: no stale claims")
+    except Exception as exc:
+        print(f"  vm-ledger-reap: error (skipping): {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -16365,6 +16475,13 @@ def main(argv: list[str] | None = None) -> int:
     # daemon-independent (reads /proc + the earlyoom journal only), so it
     # runs on a daemon outage too.
     cpu_guard_pass(args.dry_run)
+
+    # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
+    # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
+    # can never wedge the CPU/RAM off-VM routing decision. Daemon-INDEPENDENT (a
+    # local file only) + fail-soft, so it sits in this block next to the other
+    # daemon-independent escalate/reap passes and runs on a daemon outage too.
+    vm_ledger_reap_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy

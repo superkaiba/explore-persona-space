@@ -1,0 +1,712 @@
+{
+  "commit": "2f7a77505f",
+  "created": "2026-07-03T06:41:20Z",
+  "figsize": [
+    10.5,
+    4.6
+  ],
+  "points": [
+    {
+      "held-out predicted expression score": 29.0031,
+      "graded refusal score (judge, 0-100)": 27.3435,
+      "label": "librarian persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.9321,
+      "graded refusal score (judge, 0-100)": 33.8791,
+      "label": "PersonaHub 03",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.9271,
+      "graded refusal score (judge, 0-100)": 23.0029,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.2506,
+      "graded refusal score (judge, 0-100)": 24.9328,
+      "label": "few-shot marker (k=4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.9374,
+      "graded refusal score (judge, 0-100)": 25.4302,
+      "label": "imperative rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.1045,
+      "graded refusal score (judge, 0-100)": 12.4227,
+      "label": "markdown table format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.2067,
+      "graded refusal score (judge, 0-100)": 30.1802,
+      "label": "fact-behavior probe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.8439,
+      "graded refusal score (judge, 0-100)": 29.6669,
+      "label": "surgeon persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 29.665,
+      "graded refusal score (judge, 0-100)": 25.8218,
+      "label": "PersonaHub 04",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 22.7483,
+      "graded refusal score (judge, 0-100)": 18.9971,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.1412,
+      "graded refusal score (judge, 0-100)": 25.3697,
+      "label": "few-shot French (k=4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.4098,
+      "graded refusal score (judge, 0-100)": 26.7599,
+      "label": "polite rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.7083,
+      "graded refusal score (judge, 0-100)": 20.314,
+      "label": "xml format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 32.7233,
+      "graded refusal score (judge, 0-100)": 52.2079,
+      "label": "harmful-behavior probe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.532,
+      "graded refusal score (judge, 0-100)": 25.9527,
+      "label": "programmer persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 32.9369,
+      "graded refusal score (judge, 0-100)": 31.9334,
+      "label": "PersonaHub 05",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.3585,
+      "graded refusal score (judge, 0-100)": 21.8312,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 26.3349,
+      "graded refusal score (judge, 0-100)": 24.9618,
+      "label": "few-shot JSON (k=4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.3069,
+      "graded refusal score (judge, 0-100)": 21.1744,
+      "label": "casual rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.2616,
+      "graded refusal score (judge, 0-100)": 20.0145,
+      "label": "bullets format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.9628,
+      "graded refusal score (judge, 0-100)": 28.1814,
+      "label": "medical doctor persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.8718,
+      "graded refusal score (judge, 0-100)": 34.3884,
+      "label": "PersonaHub 06",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 19.8976,
+      "graded refusal score (judge, 0-100)": 21.2382,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 26.4818,
+      "graded refusal score (judge, 0-100)": 27.5759,
+      "label": "few-shot pirate (k=4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 24.1911,
+      "graded refusal score (judge, 0-100)": 25.5779,
+      "label": "legalese rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.9154,
+      "graded refusal score (judge, 0-100)": 27.2162,
+      "label": "bare default",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.5439,
+      "graded refusal score (judge, 0-100)": 27.7919,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 29.1192,
+      "graded refusal score (judge, 0-100)": 32.1525,
+      "label": "PersonaHub 07",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 18.7907,
+      "graded refusal score (judge, 0-100)": 21.1192,
+      "label": "WildChat long 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 24.5984,
+      "graded refusal score (judge, 0-100)": 23.669,
+      "label": "few-shot marker (k=2)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 27.9446,
+      "graded refusal score (judge, 0-100)": 23.7227,
+      "label": "enthusiastic rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.1545,
+      "graded refusal score (judge, 0-100)": 26.3055,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.6054,
+      "graded refusal score (judge, 0-100)": 24.8575,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 29.018,
+      "graded refusal score (judge, 0-100)": 34.6291,
+      "label": "PersonaHub 08",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 22.6869,
+      "graded refusal score (judge, 0-100)": 20.368,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 24.7142,
+      "graded refusal score (judge, 0-100)": 26.5494,
+      "label": "few-shot marker (k=8)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 26.0658,
+      "graded refusal score (judge, 0-100)": 25.3966,
+      "label": "archaic rephrase",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.3778,
+      "graded refusal score (judge, 0-100)": 24.7297,
+      "label": "marker-behavior probe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 29.6727,
+      "graded refusal score (judge, 0-100)": 27.8262,
+      "label": "PersonaHub 01",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 22.0448,
+      "graded refusal score (judge, 0-100)": 21.0837,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 28.9036,
+      "graded refusal score (judge, 0-100)": 19.6203,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 25.8075,
+      "graded refusal score (judge, 0-100)": 25.194,
+      "label": "few-shot JSON (k=2)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 19.9864,
+      "graded refusal score (judge, 0-100)": 24.8401,
+      "label": "json format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 31.9168,
+      "graded refusal score (judge, 0-100)": 33.9459,
+      "label": "sycophancy-behavior probe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 32.1861,
+      "graded refusal score (judge, 0-100)": 28.3783,
+      "label": "PersonaHub 02",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 20.3409,
+      "graded refusal score (judge, 0-100)": 26.3201,
+      "label": "WildChat short 2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 24.3772,
+      "graded refusal score (judge, 0-100)": 20.7372,
+      "label": "WildChat long 5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 24.7622,
+      "graded refusal score (judge, 0-100)": 26.8605,
+      "label": "few-shot JSON (k=8)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 23.0709,
+      "graded refusal score (judge, 0-100)": 29.9638,
+      "label": "code comment format",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 31.631,
+      "graded refusal score (judge, 0-100)": 32.1936,
+      "label": "refusal-behavior probe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out predicted expression score": 31.1048,
+      "y": 27.3435,
+      "label": "librarian persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.6953,
+      "y": 33.8791,
+      "label": "PersonaHub 03",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.8618,
+      "y": 23.0029,
+      "label": "WildChat short 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.7332,
+      "y": 24.9328,
+      "label": "few-shot marker (k=4)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 22.1796,
+      "y": 25.4302,
+      "label": "imperative rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.2579,
+      "y": 12.4227,
+      "label": "markdown table format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 30.4164,
+      "y": 30.1802,
+      "label": "fact-behavior probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 28.5397,
+      "y": 29.6669,
+      "label": "surgeon persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 28.7575,
+      "y": 25.8218,
+      "label": "PersonaHub 04",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 27.9717,
+      "y": 18.9971,
+      "label": "WildChat short 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.8307,
+      "y": 25.3697,
+      "label": "few-shot French (k=4)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 22.1934,
+      "y": 26.7599,
+      "label": "polite rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 33.2024,
+      "y": 20.314,
+      "label": "xml format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 30.7124,
+      "y": 52.2079,
+      "label": "harmful-behavior probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 27.7679,
+      "y": 25.9527,
+      "label": "programmer persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 28.1932,
+      "y": 31.9334,
+      "label": "PersonaHub 05",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.1945,
+      "y": 21.8312,
+      "label": "WildChat short 5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 23.7936,
+      "y": 24.9618,
+      "label": "few-shot JSON (k=4)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.5481,
+      "y": 21.1744,
+      "label": "casual rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.5356,
+      "y": 20.0145,
+      "label": "bullets format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 28.172,
+      "y": 28.1814,
+      "label": "medical doctor persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.2988,
+      "y": 34.3884,
+      "label": "PersonaHub 06",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 19.9491,
+      "y": 21.2382,
+      "label": "WildChat long 1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 27.6923,
+      "y": 27.5759,
+      "label": "few-shot pirate (k=4)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 29.303,
+      "y": 25.5779,
+      "label": "legalese rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 32.8641,
+      "y": 27.2162,
+      "label": "bare default",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 25.5334,
+      "y": 27.7919,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 31.7534,
+      "y": 32.1525,
+      "label": "PersonaHub 07",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 25.9188,
+      "y": 21.1192,
+      "label": "WildChat long 2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.8757,
+      "y": 23.669,
+      "label": "few-shot marker (k=2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 30.1997,
+      "y": 23.7227,
+      "label": "enthusiastic rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 29.357,
+      "y": 26.3055,
+      "label": "helpful assistant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 29.4116,
+      "y": 24.8575,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 30.624,
+      "y": 34.6291,
+      "label": "PersonaHub 08",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 20.9299,
+      "y": 20.368,
+      "label": "WildChat long 3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 21.3296,
+      "y": 26.5494,
+      "label": "few-shot marker (k=8)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.8768,
+      "y": 25.3966,
+      "label": "archaic rephrase",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 32.4164,
+      "y": 24.7297,
+      "label": "marker-behavior probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 30.9605,
+      "y": 27.8262,
+      "label": "PersonaHub 01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 22.6674,
+      "y": 21.0837,
+      "label": "WildChat short 1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 23.5731,
+      "y": 19.6203,
+      "label": "WildChat long 4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 19.8778,
+      "y": 25.194,
+      "label": "few-shot JSON (k=2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 17.6002,
+      "y": 24.8401,
+      "label": "json format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 32.2392,
+      "y": 33.9459,
+      "label": "sycophancy-behavior probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 28.2401,
+      "y": 28.3783,
+      "label": "PersonaHub 02",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 17.3624,
+      "y": 26.3201,
+      "label": "WildChat short 2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 23.1831,
+      "y": 20.7372,
+      "label": "WildChat long 5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 25.3176,
+      "y": 26.8605,
+      "label": "few-shot JSON (k=8)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 24.4565,
+      "y": 29.9638,
+      "label": "code comment format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out predicted expression score": 26.4472,
+      "y": 32.1936,
+      "label": "refusal-behavior probe",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 100
+}

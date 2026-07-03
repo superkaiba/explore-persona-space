@@ -784,7 +784,14 @@ issue #N:
   under left-pad (RoPE / additive positional embeddings index from 0 by
   default and silently diverge from the serial path's natural indexing),
   attention-mask threading through nested module wrappers, per-sequence
-  stop-token / EOS handling under batched generation. Skip only when the
+  stop-token / EOS handling under batched generation. Calibration caveat:
+  the 0.999 bar is safe on the tiny-CPU-model smoke (fp32 default); when
+  the gate ALSO runs on the real bf16 model over single-position states,
+  deep-layer bf16 padded-batch jitter alone can breach it (#779 r12:
+  layer 27 at 0.996907 with a bug-free path) — use the two-bar recipe in
+  `.claude/rules/gotchas.md` (early-layer per-layer 0.999 + flattened
+  0.995 with measured headroom; attribute a marginal miss with a
+  real-model fp32 re-probe before loosening). Skip only when the
   change is purely additive (no serial path being replaced); cite the
   smoke output in `### (c) How to verify`. Rationale: task #502
   (2026-06-04) — a batched re-implementation of #493's serial

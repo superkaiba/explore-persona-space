@@ -24,6 +24,7 @@ brief:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -51,6 +52,7 @@ from explore_persona_space.backends import (
 )
 from explore_persona_space.backends.gcp import (
     _JANITOR_FENCE_GRACE_SECONDS,
+    _ZOMBIE_GUEST_PHASES,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -1358,6 +1360,76 @@ def test_gcp_probe_error_is_backend_probe_error() -> None:
     assert issubclass(GcpProbeError, BackendProbeError)
 
 
+# ---------------------------------------------------------------------------
+# Reconnect refusal of RUNNING + terminal-phase zombies (#908/#763)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+def test_reconnect_refuses_running_instance_with_terminal_guest_phase(phase: str) -> None:
+    """A RUNNING instance whose workload already published a terminal/wedged
+    eps/phase is a gate-park/finished zombie, NOT a live run to rejoin —
+    reconnecting to it silently no-ops the new dispatch (#763 leg 2: the
+    phase-C launch "reconnected" to the gate-parked done VM and never ran)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+    )
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+
+
+def test_reconnect_returns_handle_when_running_with_nonterminal_phase() -> None:
+    """A live mid-run instance (phase=workload) keeps the idempotent
+    reconnect path byte-for-byte (#908 must not break healthy re-entry)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_returns_handle_when_phase_unwritten() -> None:
+    """gcloud 404/not-found = attribute not written yet (early boot) —
+    reconnect normally (`_read_guest_phase` returns "")."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "guest attribute eps/phase not found")],
+    )
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_phase_probe_failure_raises_probe_error() -> None:
+    """A guest-attribute probe FAILURE (non-404 rc != 0) is UNKNOWN state:
+    it must read as NEITHER "live, reconnect" (resurrects the #763 silent
+    no-op) NOR "zombie, delete" (could reclaim a healthy VM) — the #535
+    "couldn't ask" discipline; the launch fails typed + retriable."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+@pytest.mark.parametrize("status", ["PROVISIONING", "STOPPING"])
+def test_reconnect_probes_phase_only_for_running_status(status: str) -> None:
+    """The phase gate is RUNNING-only (mirrors the janitor's
+    should_probe_phase scoping): PROVISIONING/STAGING have no phase yet and
+    STOPPING is the seconds-long teardown transition — both reconnect as
+    today with NO guest-attribute probe issued. Mis-scoping would silently
+    widen the R5 dead-end via the fake's 404 default."""
+    runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload(status), "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert not [a for a in runner.calls if "get-guest-attributes" in a], runner.calls
+
+
 def test_launch_skips_create_when_reconnect_finds_live_instance(no_marker_posts) -> None:
     """Regression guard for the idempotency contract: a re-launch on
     a still-live instance must NOT double-provision."""
@@ -1539,12 +1611,140 @@ def test_stale_named_instance_bad_json_raises_probe_error() -> None:
 def test_stale_named_instance_refuses_to_delete_live_status() -> None:
     """A non-deletable status (only reachable as a TOCTOU race vs the
     reconnect probe) must FAIL loudly — never auto-delete a possibly-live
-    VM (data loss). The success criterion's data-loss guard."""
+    VM (data loss). The success criterion's data-loss guard. (Post-#908
+    the RUNNING path first re-probes the phase; the fake's guest-attr 404
+    default reads "" = non-terminal, so the raise is preserved.)"""
     from explore_persona_space.backends.gcp import GcpBackendError
 
     runner = _Runner(list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")])
     with pytest.raises(GcpBackendError, match="non-deletable status"):
         _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+# ---------------------------------------------------------------------------
+# Pre-launch reclaim of RUNNING + terminal-phase zombies (#908/#763)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+def test_stale_named_instance_returns_record_for_running_terminal_phase(phase: str) -> None:
+    """The #908 matched delete: the SAME RUNNING+terminal-phase record that
+    reconnect refuses must be deletable here, or the refusal dead-ends in
+    the #632 "already exists" create collision."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+    )
+    stale = _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.name == "eps-issue-137"
+    assert stale.status == "RUNNING"
+    assert stale.guest_phase == phase
+    assert stale.zone == "us-central1-b"
+
+
+def test_stale_named_instance_still_refuses_running_nonterminal_phase() -> None:
+    """A RUNNING record whose re-probed phase is NON-terminal keeps the loud
+    TOCTOU raise — never auto-delete a possibly-live instance (#908
+    preserves the existing semantics for every non-zombie RUNNING record)."""
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    with pytest.raises(GcpBackendError, match="non-deletable status"):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_stale_named_instance_phase_probe_failure_raises_probe_error() -> None:
+    """A phase-probe failure on a RUNNING record is UNKNOWN state: no
+    StaleNamedInstance (no delete on unknown state), no GcpBackendError —
+    a typed, retriable GcpProbeError (#535 discipline)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    with pytest.raises(GcpProbeError):
+        _stale_named_instance_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+@pytest.mark.parametrize("phase", sorted(_ZOMBIE_GUEST_PHASES))
+def test_reconnect_skip_set_matches_prelaunch_delete_set_for_phase_zombie(phase: str) -> None:
+    """THE consistency pin, as a BEHAVIORAL SWEEP over the shared constant:
+    for EVERY member of _ZOMBIE_GUEST_PHASES, identical mocked project
+    state (one RUNNING record + that phase) must make reconnect SKIP
+    (None) AND the stale probe return a DELETABLE record. A one-sided
+    membership edit diverges loudly, and a future membership change
+    auto-extends coverage (the #632 skip/delete identical-sets invariant)."""
+
+    def _fresh_runner() -> _Runner:
+        return _Runner(
+            list_results=[GcloudRunResult(0, _instance_payload("RUNNING"), "")],
+            guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+        )
+
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=_fresh_runner()) is None
+    stale = _stale_named_instance_or_none(
+        spec=_spec(), config=_test_config(), runner=_fresh_runner()
+    )
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.guest_phase == phase
+
+
+def test_launch_deletes_terminal_phase_zombie_then_creates_fresh(no_marker_posts) -> None:
+    """End-to-end #908/#763 leg 2: a launch against a RUNNING+done zombie
+    deletes it then creates fresh — never a silent no-op reconnect
+    (pre-#908, this exact state returned reason=reconnect and the new
+    workload never ran)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "445566"}])
+    runner = _Runner(
+        # 1st list = reconnect probe; 2nd list = stale-name probe.
+        list_results=[
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),
+        ],
+        # 1st guest-attr = reconnect's phase gate; 2nd = the stale probe's
+        # local RE-probe (the phase is never carried over between them).
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec())
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "445566"
+
+    # Delete fired, in the zombie record's zone, BEFORE the create.
+    delete_calls = [c for c in runner.calls if "delete" in c and "instances" in c]
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(delete_calls) == 1, runner.calls
+    assert "eps-issue-137" in delete_calls[0]
+    assert "--zone=us-central1-b" in delete_calls[0]
+    assert len(create_calls) == 1, runner.calls
+    assert runner.calls.index(delete_calls[0]) < runner.calls.index(create_calls[0])
+
+    # The flow exercised the LIVE render_guest_attributes_argv path, not a
+    # stub: recorded probe calls carry the real argv shape.
+    ga_calls = [
+        c for c in runner.calls if "get-guest-attributes" in c and "--query-path=eps/phase" in c
+    ]
+    assert len(ga_calls) == 2, runner.calls
+
+    # Marker flags the reclaim (same field as the #632 status-stale path).
+    assert len(posted) == 1
+    body = json.loads(posted[0]["note"])
+    assert body["pre_launch_deleted_stale_instance"] is True
 
 
 def test_launch_deletes_stale_terminated_instance_then_creates(no_marker_posts) -> None:
@@ -1853,6 +2053,34 @@ def test_preflight_quota_headroom_fails_open_on_reconnect_probe_error() -> None:
         preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
         is None
     )
+
+
+def test_quota_preflight_skips_when_running_zombie_occupies_name(caplog) -> None:
+    """#908 §4.1(e): reconnect now refuses a RUNNING+terminal-phase zombie,
+    but the zombie's allocated GPUs still COUNT in the regions-describe
+    usage read — in a tight-quota regime the headroom verdict would block
+    the GCP lane BEFORE launch's stale reclaim can delete the zombie and
+    free the quota. The preflight must SKIP (no opinion; no regions
+    describe issued), the same disposition as the reconnect-handle path,
+    and log the zombie-reclaim disposition."""
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),  # reconnect probe
+            GcloudRunResult(0, _instance_payload("RUNNING"), ""),  # stale-name probe
+        ],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+            GcloudRunResult(0, _guest_attr_payload("done"), ""),
+        ],
+    )
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.gcp"):
+        headroom = preflight_quota_headroom(
+            spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner
+        )
+    assert headroom is None
+    # No regions-describe headroom decision can block the lane.
+    assert not [a for a in runner.calls if "regions" in a]
+    assert "skipping the headroom check" in caplog.text
 
 
 def test_preflight_quota_headroom_no_opinion_on_unmapped_intent() -> None:
@@ -4147,12 +4375,27 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         "            fh.write(json.dumps({'kind': kind, **kw}) + '\\n')\n"
         "    def upload_file(self, *, path_or_fileobj, path_in_repo, repo_id, repo_type):\n"
         "        self._rec('file', path_in_repo=path_in_repo, repo_id=repo_id,\n"
-        "                  repo_type=repo_type)\n"
+        "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
         "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
         "                      ignore_patterns=None):\n"
+        "        # Walk the staged tree AT CALL TIME (#885): record every staged\n"
+        "        # relpath, with raw content for small files (else the size) so the\n"
+        "        # tail-sentinel / newest-first behavioral asserts can read what was\n"
+        "        # actually uploaded.\n"
+        "        staged = {}\n"
+        "        for dp, _dns, fns in os.walk(folder_path):\n"
+        "            for fn in fns:\n"
+        "                p = os.path.join(dp, fn)\n"
+        "                rel = os.path.relpath(p, folder_path).replace(os.sep, '/')\n"
+        "                size = os.path.getsize(p)\n"
+        "                if size <= 4096:\n"
+        "                    with open(p, 'rb') as fh:\n"
+        "                        staged[rel] = fh.read().decode('utf-8', 'replace')\n"
+        "                else:\n"
+        "                    staged[rel] = size\n"
         "        self._rec('folder', folder_path=folder_path, path_in_repo=path_in_repo,\n"
         "                  repo_id=repo_id, repo_type=repo_type,\n"
-        "                  ignore_patterns=ignore_patterns)\n"
+        "                  ignore_patterns=ignore_patterns, staged=staged)\n"
     )
     (shim / "utils" / "__init__.py").write_text("")
 
@@ -4179,8 +4422,14 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
         (root / "data" / "issue_137" / "sub" / "hf_dl" / "x.bin").write_text("y" * 64)
         (root / "data" / "issue137").mkdir(parents=True)
         (root / "data" / "issue137" / "battery.json").write_text("{}")
+        # #885: a per-worker fan-out log under $WORKLOAD_ROOT/logs/ (the
+        # worker-logs sweep target; small -> plain-copied, not tailed).
+        (root / "logs" / "issue_137").mkdir(parents=True)
+        (root / "logs" / "issue_137" / "corpus_gpu0_all.log").write_text("worker traceback\n")
     else:
-        root.mkdir()
+        # exist_ok: #885 behavioral tests pre-create root/logs/** fixtures
+        # before invoking the harness with make_dirs=False.
+        root.mkdir(parents=True, exist_ok=True)
 
     env = dict(os.environ)
     env.update(
@@ -4192,6 +4441,10 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
             "EPS_LOG_PATH": str(log) if make_crash else "",
             "WORKLOAD_ROOT": str(root),
             "EPS_PERSIST_TRANSCRIPT": str(transcript),
+            # #885: isolate the worker-logs staged tree per test — the
+            # production default is the shared literal /tmp/eps-worker-logs,
+            # which concurrent pytest sessions on this shared VM would race.
+            "EPS_PERSIST_LOG_STAGE_DIR": str(tmp_path / "staged-worker-logs"),
         }
     )
     env.update(env_overrides or {})
@@ -4212,25 +4465,29 @@ def _run_persist_heredoc(tmp_path, *, env_overrides=None, make_crash=True, make_
 def test_persist_heredoc_uploads_in_order_and_covers_data_dir(tmp_path) -> None:
     """#854 behavioral (execution, not string-presence): the REAL heredoc,
     run exactly as production runs it, uploads crash_report → workload.log
-    → eval_results dir → data dirs → timestamped log copy → transcript,
-    passes the cache excludes to upload_folder, prunes nested caches from
-    the dir stats, and exits 0."""
+    → worker_logs (one staged-tree commit, #885) → eval_results dir →
+    data dirs → timestamped log copy → transcript, passes the cache
+    excludes to upload_folder, prunes nested caches from the dir stats,
+    and exits 0."""
     proc, calls, paths = _run_persist_heredoc(tmp_path)
     assert proc.returncode == 0, proc.stderr
     seq = [(c["kind"], c["path_in_repo"]) for c in calls]
     assert seq[0] == ("file", "issue137_partial/att-x/crash_report.json")
     assert seq[1] == ("file", "issue137_partial/att-x/workload.log")
-    assert seq[2] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
-    assert seq[3] == ("folder", "issue137_partial/att-x/data_issue_137")
-    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue137")
+    assert seq[2] == ("folder", "issue137_partial/att-x/worker_logs")
+    assert seq[3] == ("folder", "issue137_partial/att-x/eval_results_issue_137")
+    assert seq[4] == ("folder", "issue137_partial/att-x/data_issue_137")
+    assert seq[5] == ("folder", "issue137_partial/att-x/data_issue137")
     assert (
-        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[5][1])
-        and seq[5][0] == "file"
+        re.fullmatch(r"issue137_partial/att-x/workload_\d{8}T\d{6}Z\.log", seq[6][1])
+        and seq[6][0] == "file"
     )
-    assert seq[6] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
-    assert len(seq) == 7, seq
+    assert seq[7] == ("file", "issue137_partial/att-x/crash_persist_transcript.log")
+    assert len(seq) == 8, seq
+    # The worker-logs commit staged the fixture worker log verbatim (#885).
+    assert calls[2]["staged"] == {"issue_137/corpus_gpu0_all.log": "worker traceback\n"}
     # The data-dir upload carries the cache excludes (top-level AND nested).
-    data_call = calls[3]
+    data_call = calls[4]
     assert "hf_dl/**" in data_call["ignore_patterns"]
     assert "**/hf_dl/**" in data_call["ignore_patterns"]
     assert data_call["repo_id"] == "org/repo" and data_call["repo_type"] == "dataset"
@@ -4258,6 +4515,7 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert proc.returncode == 0, proc.stderr
     assert "[crash-persist] SKIP crash_report.json: no such file" in proc.stdout
     assert "[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing" in proc.stdout
+    assert "[crash-persist] SKIP worker_logs: no such dir" in proc.stdout
     assert "[crash-persist] SKIP eval_results_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue_137: no such dir" in proc.stdout
     assert "[crash-persist] SKIP data_issue137: no such dir" in proc.stdout
@@ -4283,6 +4541,101 @@ def test_persist_heredoc_prints_skips_and_honors_env_cap(tmp_path) -> None:
     assert proc2.returncode == 0, proc2.stderr
     assert "[crash-persist] SKIP data_issue_137: empty after cache excludes" in proc2.stdout
     assert not any(c["kind"] == "folder" for c in calls2)
+
+
+# ---------------------------------------------------------------------------
+# #885 — crash-persist worker-logs sweep ($WORKLOAD_ROOT/logs/**)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_diagnostics_sweeps_worker_logs() -> None:
+    """#885: the crash persist ALSO sweeps $WORKLOAD_ROOT/logs/** — the
+    per-worker fan-out logs carrying the real traceback (the canonical
+    workload.log ends at the fan-out line; two #779 crashes each needed a
+    manual boot-disk detach). Newest-first, per-file tail cap + file-count
+    bound at STAGE time, staged into /tmp/eps-worker-logs, uploaded as ONE
+    upload_folder commit (never a per-file upload_file loop — the #664
+    gotcha), ordered AFTER the canonical workload.log and BEFORE the
+    partial dirs."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "EPS_PERSIST_LOG_FILE_CAP_BYTES" in script
+    assert "EPS_PERSIST_LOG_MAX_FILES" in script
+    assert "/tmp/eps-worker-logs" in script
+    assert 'logs_root = root / "logs"' in script
+    # The worker-logs upload surface is exactly ONE upload_folder commit of
+    # the staged tree (acceptance criterion 6).
+    assert 'path_in_repo=f"{dest}/worker_logs"' in script
+    # The CALL, not just the def (a defined-but-never-called sweep is dead).
+    assert "\n_up_logs()" in script
+    # Ordering: canonical workload.log upload -> _up_logs() -> partial dirs.
+    assert (
+        script.index('_up_file(log_path, f"{dest}/workload.log")')
+        < script.index("\n_up_logs()")
+        < script.index("for local, name in (")
+    )
+
+
+def test_persist_heredoc_worker_logs_tail_sentinel_and_newest_first(tmp_path) -> None:
+    """#885 behavioral (executed heredoc): with a 16-byte tail cap and a
+    1-file bound over two worker logs where the OLDER file is the LARGER
+    one, the sweep stages exactly the NEWER file (newest-by-mtime — a
+    size-sort mutant would stage the older one) and its staged bytes equal
+    the exact 16-byte tail sentinel (a dropped-seek head-read mutant would
+    stage head filler); the TAILED + dropped-count SKIP lines print AND
+    tee into the transcript."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    older = logs / "older_but_bigger.log"
+    newer = logs / "newer_crashing_worker.log"
+    older.write_bytes(b"H" * 200)  # LARGER but older; no sentinel
+    newer.write_bytes(b"h" * 64 + b"TAIL-SENTINEL-OK")  # 80 bytes; distinct 16-byte tail
+    base = os.stat(newer).st_mtime
+    os.utime(older, (base - 3600, base - 3600))
+    os.utime(newer, (base, base))
+    proc, calls, paths = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={
+            "EPS_PERSIST_LOG_FILE_CAP_BYTES": "16",
+            "EPS_PERSIST_LOG_MAX_FILES": "1",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    folder_calls = [c for c in calls if c["kind"] == "folder"]
+    assert [c["path_in_repo"] for c in folder_calls] == ["issue137_partial/att-x/worker_logs"]
+    # Exactly ONE staged file == the NEWER one (kills a size-sort mutant);
+    # its content == the exact tail sentinel bytes (kills a dropped-seek
+    # head-read mutant).
+    assert folder_calls[0]["staged"] == {"issue_137/newer_crashing_worker.log": "TAIL-SENTINEL-OK"}
+    assert (
+        "[crash-persist] TAILED worker_logs/issue_137/newer_crashing_worker.log:"
+        " kept last 16 of 80 bytes"
+    ) in proc.stdout
+    assert (
+        "[crash-persist] SKIP 1 older worker log(s) beyond EPS_PERSIST_LOG_MAX_FILES=1"
+    ) in proc.stdout
+    assert proc.returncode == 0
+    transcript_text = paths["transcript"].read_text()
+    assert "TAILED worker_logs/issue_137/newer_crashing_worker.log" in transcript_text
+    assert "SKIP 1 older worker log(s)" in transcript_text
+
+
+def test_persist_heredoc_worker_logs_max_files_lt_one_skips_loudly(tmp_path) -> None:
+    """#885: EPS_PERSIST_LOG_MAX_FILES < 1 is the documented disable — a
+    loud SKIP, never a silent empty sweep and never an upload."""
+    root = tmp_path / "workload"
+    logs = root / "logs" / "issue_137"
+    logs.mkdir(parents=True)
+    (logs / "w.log").write_text("worker traceback\n")
+    proc, calls, _ = _run_persist_heredoc(
+        tmp_path,
+        make_dirs=False,
+        env_overrides={"EPS_PERSIST_LOG_MAX_FILES": "0"},
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[crash-persist] SKIP worker_logs: EPS_PERSIST_LOG_MAX_FILES=0 < 1" in proc.stdout
+    assert not any(c["kind"] == "folder" for c in calls)
 
 
 # ---------------------------------------------------------------------------
@@ -6897,3 +7250,25 @@ def test_watchdog_resets_when_both_probes_succeed() -> None:
     _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=True)
     assert "PHASE_CALLED:wedged" not in out, out
     assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_launch_handle_extra_carries_repo_branch(no_marker_posts) -> None:
+    """#909 AC5: the GCP launch handle persists ``spec.extra['repo_branch']``
+    (so the async GCP→RunPod failover reconstruction re-executes against the
+    ISSUE branch, not `main`); "" when unset — an additive key only."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(extra={"repo_branch": "issue-909"}))
+    assert handle.extra["repo_branch"] == "issue-909"
+
+    runner2 = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
+    handle2 = backend2.launch(_spec())
+    assert handle2.extra["repo_branch"] == ""

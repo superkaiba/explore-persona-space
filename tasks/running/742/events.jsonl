@@ -235,3 +235,21 @@
 {"ts": "2026-07-02T22:46:20Z", "kind": "epm:progress", "version": 83, "by": "unknown", "note": "[poll-tick] 5th launch 15h45m. 5/8 cells done; ultrachat harmful_compliance grinding. Disk 52G free (fleet pressure)."}
 {"ts": "2026-07-02T23:48:36Z", "kind": "epm:progress", "version": 84, "by": "unknown", "note": "[poll-tick] 5th launch 16h35m. 5/8 cells done. Freed 9G disk (Codex-sandbox uv-cache dup); 40G free now; 58G held by live #779 mirror-dl (not mine to reap). Pipeline steady."}
 {"ts": "2026-07-03T00:39:41Z", "kind": "epm:progress", "version": 85, "by": "unknown", "note": "[poll-tick] 5th launch 17h25m. 5/8 cells done; ultrachat harmful_compliance still in flight. Disk 39G free."}
+{"ts": "2026-07-03T01:30:41Z", "kind": "epm:progress", "version": 86, "by": "unknown", "note": "[poll-tick] 5th launch 18h15m. 5/8 cells done. Disk 38G free."}
+{"ts": "2026-07-03T02:21:56Z", "kind": "epm:progress", "version": 87, "by": "unknown", "note": "[poll-tick] 5th launch 19h05m. 5/8 cells done. Disk 46G free."}
+{"ts": "2026-07-03T03:13:00Z", "kind": "epm:progress", "version": 88, "by": "unknown", "note": "[poll-tick] 5th launch 19h55m. 5/8 cells done; ultrachat harmful_compliance long-running. Disk 45G free."}
+{"ts": "2026-07-03T04:03:58Z", "kind": "epm:progress", "version": 89, "by": "unknown", "note": "[poll-tick] 5th launch 20h45m. 6/8 cells done (+ultrachat__harmful_compliance). 2 remain: ultrachat sycophancy (~7h) + refusal (~3-4h). Disk 35G free."}
+{"ts": "2026-07-03T04:55:00Z", "kind": "epm:progress", "version": 90, "by": "unknown", "note": "[poll-tick] 5th launch 21h35m. 6/8 cells done; ultrachat sycophancy in progress. Disk 33G free."}
+{"ts": "2026-07-03T05:46:14Z", "kind": "epm:progress", "version": 91, "by": "unknown", "note": "[poll-tick] 5th launch 22h25m. 6/8 cells done; ultrachat sycophancy grinding. Disk 29G free (fleet pressure from live #779 58G mirror-dl)."}
+{"ts": "2026-07-03T06:37:49Z", "kind": "epm:progress", "version": 92, "by": "unknown", "note": "[poll-tick] 5th launch 23h15m. 6/8 cells done; ultrachat sycophancy grinding (~2.5h in). Disk 28G free."}
+{"ts": "2026-07-03T07:28:54Z", "kind": "epm:progress", "version": 93, "by": "unknown", "note": "[poll-tick] 5th launch 24h05m. 6/8 cells done; ultrachat sycophancy ~3.5h in. Disk 39G free."}
+{"ts": "2026-07-03T08:20:45Z", "kind": "epm:progress", "version": 94, "by": "unknown", "note": "[poll-tick] 5th launch 24h55m. 6/8 cells done; ultrachat sycophancy grinding. Disk 35G free."}
+{"ts": "2026-07-03T09:11:47Z", "kind": "epm:progress", "version": 95, "by": "unknown", "note": "[poll-tick] 5th launch 25h45m. 6/8 cells done; ultrachat sycophancy grinding. Disk 33G free."}
+{"ts": "2026-07-03T10:04:38Z", "kind": "epm:progress", "version": 96, "by": "unknown", "note": "[poll-tick] 5th launch 26h35m. 6/8 cells done; ultrachat sycophancy ~6h in. Disk pressure (26G) — pruned uv cache."}
+{"ts": "2026-07-03T10:59:33Z", "kind": "epm:progress", "version": 97, "by": "unknown", "note": "[poll-tick] 5th launch 27h25m. 6/8 cells done; ultrachat sycophancy ~7h in. Disk 23G — ran guard; crash-resume protects my run regardless."}
+{"ts": "2026-07-03T11:50:53Z", "kind": "epm:progress", "version": 98, "by": "unknown", "note": "[poll-tick] 5th launch 28h15m. 6/8 cells done; ultrachat sycophancy ~8h in. Disk 41G free."}
+{"ts": "2026-07-03T12:42:11Z", "kind": "epm:progress", "version": 99, "by": "unknown", "note": "[poll-tick] 5th launch 29h05m. 6/8 cells done; ultrachat sycophancy ~9h in (betley's took ~8-10h w/ resume). Disk 26G."}
+{"ts": "2026-07-03T13:33:42Z", "kind": "epm:progress", "version": 100, "by": "unknown", "note": "[poll-tick] 5th launch 29h55m. 6/8 cells done; ultrachat sycophancy ~10h in. Disk 28G."}
+{"ts": "2026-07-03T14:26:38Z", "kind": "epm:progress", "version": 101, "by": "unknown", "note": "[poll-tick] 5th launch 30h45m. 6/8 cells done; ultrachat sycophancy ~11h in. Disk 25G."}
+{"ts": "2026-07-03T15:17:45Z", "kind": "epm:progress", "version": 102, "by": "unknown", "note": "[poll-tick] 5th launch 31h35m. 7/8 cells done (+ultrachat__sycophancy). ONLY ultrachat__refusal remains (~3-4h). Disk 35G."}
+{"ts": "2026-07-03T16:08:52Z", "kind": "epm:progress", "version": 103, "by": "unknown", "note": "[poll-tick] 5th launch 32h25m. 7/8 cells done; ultrachat refusal (final cell) in progress. Disk 29G."}

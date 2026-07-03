@@ -1596,3 +1596,90 @@ def test_poller_cuda_ima_failover_exhausted_emits_code(tmp_path, monkeypatch, ca
         [{"kind": "epm:failure v1", "note": marker_note, "ts": "2026-06-30T00:00:00Z"}]
     )
     assert retriable is False
+
+
+# ---------------------------------------------------------------------------
+# #909 — repo_branch threading through BOTH lanes' handles + reconstructors
+# (AC5): the failover re-execution must sync the ISSUE branch, not `main`.
+# ---------------------------------------------------------------------------
+
+
+def test_production_runpod_handle_repo_branch_roundtrips_reconstructor(monkeypatch):
+    """The PRODUCTION-shaped RunPod handle (via the REAL launch, provision
+    no-op'd) carries ``repo_branch``, and ``_runspec_from_runpod_handle``
+    round-trips it into ``spec.extra`` after the sidecar serialize/deserialize."""
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    _real_run = RP.subprocess.run
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            return None
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    handle = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=909,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue909_dispatch.sh",
+            extra={"repo_branch": "issue-909"},
+        )
+    )
+    assert handle.extra["repo_branch"] == "issue-909"
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    spec = bp._runspec_from_runpod_handle(roundtripped, 909)
+    assert spec.extra.get("repo_branch") == "issue-909"
+    assert spec.workload_cmd == "bash scripts/issue909_dispatch.sh"
+
+
+def test_gcp_reconstructor_threads_repo_branch():
+    from scripts import backend_poll as bp
+
+    handle = _gcp_handle({**_GCP_EXTRA_659, "repo_branch": "issue-909"})
+    spec = bp._runspec_from_gcp_handle(handle, 659)
+    assert spec.extra.get("repo_branch") == "issue-909"
+
+
+def test_reconstructors_tolerate_legacy_handles_without_repo_branch():
+    """A pre-#909 handle (no ``repo_branch`` key) still reconstructs — and an
+    empty-string value (the post-#909 unset default) does NOT thread a
+    falsy branch into the spec."""
+    from explore_persona_space.backends.base import RunHandle
+    from scripts import backend_poll as bp
+
+    # GCP legacy: _GCP_EXTRA_659 has no repo_branch key.
+    gcp_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
+    assert gcp_spec.extra.get("repo_branch") is None
+    # GCP post-#909 unset default: "" stays out of the spec extra.
+    gcp_spec_empty = bp._runspec_from_gcp_handle(
+        _gcp_handle({**_GCP_EXTRA_659, "repo_branch": ""}), 659
+    )
+    assert "repo_branch" not in gcp_spec_empty.extra
+    # RunPod legacy: hand-built pre-#909 handle without the key.
+    legacy = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-689",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        extra={
+            "issue": 689,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/x.sh",
+            "hydra_args": [],
+            "gpus": None,
+            "time_budget_hours": None,
+        },
+    )
+    rp_spec = bp._runspec_from_runpod_handle(legacy, 689)
+    assert rp_spec.extra.get("repo_branch") is None
+    assert rp_spec.workload_cmd == "bash scripts/x.sh"

@@ -1,10 +1,12 @@
 ---
-title: The linear context→answer-profile map exists in pretrained Qwen2.5-7B at ~87%
-  of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn
-  chat assistant targets, while the user-turn map has no practical predictive power
-  (R² < 0) despite above-null structure (MODERATE confidence)
+title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct
+  strength and is nonlinearly recoverable across two-turn cells — including a weak
+  user-turn map (MLP R² 0.19–0.23) that the linear probe misses entirely (MODERATE
+  confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
+- followup-manual
 created_at: '2026-07-02T00:14:16Z'
 has_clean_result: true
 parent_id: 779
@@ -21,29 +23,32 @@ relates_to:
 - identity-contextual-vs-base
 - identity-cb-duality
 ---
-# The linear context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and turns strongly nonlinear (MLP-recoverable) for two-turn chat assistant targets, while the user-turn map has no practical predictive power (R² < 0) despite above-null structure (MODERATE confidence)
+# The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells — including a weak user-turn map (MLP R² 0.19–0.23) that the linear probe misses entirely (MODERATE confidence)
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_825.md](https://github.com/superkaiba/explore-persona-space/blob/bf9087a56ed8b7696148f3a7f528b9cfa16b2f78/docs/methodology/issue_825.md) · [gist](https://gist.github.com/superkaiba/cd6dd04dbacb42587b5458b918710cdb)
+**Methodology:** [docs/methodology/issue_825.md](https://github.com/superkaiba/explore-persona-space/blob/8f9f9a6707bf771cc73a0109a1c93a69ab4f7cb0/docs/methodology/issue_825.md) · [gist](https://gist.github.com/superkaiba/cd6dd04dbacb42587b5458b918710cdb)
 
 ## Takeaways
 
 - **Pretrained Qwen2.5-7B carries the linear context→answer-profile map at 87.3% of instruct strength** (held-out R² 0.588 vs 0.673 at layer 19; shuffle nulls ≈ −0.02).
-- Two-turn chat assistant targets turn strongly nonlinear: an MLP (multilayer perceptron) probe recovers R² 0.557 (instruct) / 0.487 (pretrained) where ridge reads +0.076 / −0.461.
-- User-turn maps have no practical predictive power — R² −1.08 to −1.32 at layer 26 — yet sit above shuffle nulls; scoped to LLM-written second user turns.
+- Two-turn assistant targets are nonlinear, not absent: an MLP (multilayer perceptron) probe recovers R² 0.49–0.56 across chat AND naturalistic cells where ridge reads +0.076 to −0.461.
+- User-turn MLP R² rises 0.19–0.23 → 0.27–0.33 when the model writes the user turn itself (3 of 4 cells pass the plan's support margins; ridge below zero everywhere) — a descriptive provenance effect, not yet evidence the model encodes its own predicted turn.
+- Exception: pretrained/chat self-written turns degenerate (307 vs 79 tokens, 9.0% repetition, assistant-voice drift) and the map *weakens* (MLP −0.10; ridge −0.35 to −0.65) — the plan's named provenance-sensitive-negative outcome.
 - Pretrained assistant→user transfer sign-flips with depth (ΔR² −0.62 at layer 14 → +0.23 at layer 26); provisional — single seed, n = 2000.
-- The replication gate vs the parent rig PASSed (layer-profile rank correlation 0.963, ΔR² 0.004 at layer 19); the render-integrity gate PASSed on regenerated evidence (cross-format span mismatch 3.0%, gate ≤ 10%).
+- Gates: replication vs the parent rig PASSed (rank correlation 0.963, ΔR² 0.004 at layer 19); render integrity PASSed (span mismatch 3.0%, gate ≤ 10%); the self-written-turn round's four assistant-map anchors reproduced the parent within ±0.004 (gate ±0.05).
 
 ## Goal
 
-**This experiment in context:** The parent experiment ([#779](https://eps.superkaiba.com/tasks/779)) established a strong linear map from a context's mean residual-stream activation to the model's answer profile on single-turn Qwen2.5-7B-Instruct, peaking near layer 19. This experiment holds that rig fixed and asks two questions: does the same linear map already exist in the *pretrained* base model (before any post-training), and does it hold when the prediction target is the *user's* next turn rather than the assistant's — extended with a two-turn conversational track and cross-role transfer cells.
+**This experiment in context:** The parent experiment ([#779](https://eps.superkaiba.com/tasks/779)) established a strong linear map from a context's mean residual-stream activation to the model's answer profile on single-turn Qwen2.5-7B-Instruct, peaking near layer 19. This experiment holds that rig fixed and asks two questions: does the same linear map already exist in the *pretrained* base model (before any post-training), and does it hold when the prediction target is the *user's* next turn rather than the assistant's — extended with a two-turn conversational track, cross-role transfer cells, and a user-turn-provenance axis (externally-written vs self-written user turns).
 
 **Broader narrative:** Whether the context→answer-profile map is inherited from pretraining or created by post-training locates where context/persona conditioning enters the training pipeline; whether it is assistant-generation-specific or a general next-turn property bounds how far base-model context geometry can be used to predict downstream fine-tuning behavior (the project's leakage-prediction line).
 
 ## Methodology
 
-**Design:** Two models (pretrained Qwen2.5-7B; Qwen2.5-7B-Instruct) × two target roles (assistant, user) × two context formats (chat template, naturalistic transcript). The single-turn track (Track S; n = 5000 prompts per cell, 2 cells) replicates the parent rig on both models; the two-turn track (Track M; n = 2000 conversations per cell) fits 8 within-cell maps plus 4 cross-role transfer cells. Single seed throughout (fit seed 0, generation seed 42).
+**Rounds:** Round 1 = the parent run (below). Round 2 (`mlp-unprobed-cells`, cheap-band auto-run): the parent's exact MLP probe extended to the 6 unprobed cells via `scripts/issue825_mlp_followup_dispatch.sh` @07589e890b — turnstore staged from HF @deb7a452 (4 m-track prefixes), 8-cell ridge refit as carrier + two-anchor ±0.05 regression gate (PASS, deltas +0.0000), 6-cell MLP, no recipe changes; outputs at `eval_results/issue_825/mlp-unprobed-cells/`. Three launches (~2.5 GPU-h vs 2 budgeted): two stage hangs (xet finalization, fixed by HF_XET_DISABLE=1), then a fully-successful fit whose gate crashed on a wrong dict path — outputs rescued from the crash-persist upload, corrected gate re-run locally. Round 3 (`onpolicy-user-turn`, user-requested): one changed variable — second-user-turn provenance, Haiku-written → written by the measured model itself per (model, format) cell; parent fit recipe unchanged; 4 assistant-map anchors refit as a rig gate; matched-rows parent refits for the two cells whose keep rate fell below 95%; via `scripts/issue825_onpolicy_dispatch.sh` @debc28c31d, outputs at `eval_results/issue_825/onpolicy-user-turn/`. Four GCP launches (~2.6 GPU-h vs 3 budgeted): three crashed in extraction on a zero-width-span tokenizer edge case in short self-written turns (fixed by generation-time span validation), the fourth ran clean.
+
+**Design:** Two models (pretrained Qwen2.5-7B; Qwen2.5-7B-Instruct) × two target roles (assistant, user) × two context formats (chat template, naturalistic transcript). The single-turn track (Track S; n = 5000 prompts per cell, 2 cells) replicates the parent rig on both models; the two-turn track (Track M; n = 2000 conversations per cell) fits 8 within-cell maps plus 4 cross-role transfer cells. Round 3 adds a user-turn-provenance arm: the same 4 user cells refit on conversations whose second user turn each measured model wrote itself. Single seed throughout (fit seed 0, generation seed 42).
 
 **Training:** N/A — no model training. Complete analysis + generation constants:
 
@@ -56,6 +61,10 @@ relates_to:
 | Track-S sampling | 1 sample/prompt, T = 1.0, top_p = 0.95, max_tokens = 1024, seed 42, chat template | [#779](https://eps.superkaiba.com/tasks/779) pass-B parity |
 | Track-M assistant turns | vLLM greedy, seed 42 | task body |
 | Track-M second user turn | claude-haiku-4-5, T = 1.0, 22 rotated user-persona briefs | plan §11 (tier-3 synthetic) |
+| Round-3 second user turn | written by the measured model itself (vLLM, T = 1.0, top_p = 1.0, max_tokens = 512, seed 42); chat cells: chat-template render + opened user header, stop `<\|im_end\|>`; naturalistic cells: transcript + `User: `, stop on blank line / `Assistant:` | plan v7 §11 (parent u2 sampling parity) |
+| Round-3 row handling | user-cell filters applied at fit time via per-cell row allowlists (kept n = 1914 / 1722 / 1999 / 1738); anchors fit all 2000 rows | plan v7 (anchor row-parity fix) |
+| Round-3 support margins | MLP: point delta ≥ +0.10 clearing 2 standard errors; ridge: delta ≥ +0.30 at layer 19 or 26, or any frozen-layer R² > 0 | plan v7 §11 |
+| Round-3 audit floors | keep rate ≥ 0.80; distinct-3-gram rate ≥ 0.5 (headline inclusion, non-halting) | plan v7 §11 (80% yield convention) |
 | Row filters | ≥ 8 content tokens, ≤ 2048 total tokens | plan §11 |
 | MLP probe | PCA-64 input, 1800 s/cell CPU budget | [#779](https://eps.superkaiba.com/tasks/779) `mlp_fit_predict` |
 | Per-position store cap | ≤64 positions/turn, peak layers only | plan §11 (storage bound; pilot ≥80% coverage) |
@@ -63,9 +72,9 @@ relates_to:
 | Models | Qwen2.5-7B (pretrained) vs Qwen2.5-7B-Instruct | plan |
 | Activation dtype | bf16 (plan deviation from fp16: fp16 max 65504 overflows Qwen residual outlier dims) | run log |
 
-**Evaluation:** The dependent variable is held-out R² (5-fold cross-validation) of a ridge map h from c_x — the mean residual-stream activation over the context tokens at a given layer — to v(x), the answer-profile vector of the target turn; R² below 0 means the map predicts worse than the global mean. Teacher-forced NLL of the realized target turn is the secondary read. Two read modes: FROZEN (layer set fixed in advance, headline at layer 19) and SELECTION (max over all 28 layers, compared only against selection-symmetric shuffle nulls that inherit the per-draw layer max — Spearman is used for the replication gate's layer-profile comparison). Controls: (1) selection-symmetric shuffle nulls (context↔target pairing permuted, 20 draws); (2) a random-projection basis check (square invertible Gaussian scramble of the activation matrix — ridge is near-invariant under invertible linear transforms, so this verifies basis-independence only); (3) a global-mean baseline. Gates: G1 replication vs the parent rig (layer-profile Spearman + absolute ΔR² at layer 19 within 0.05), G2 render/BPE integrity, G3 two-turn signal above null at n = 2000. Nonlinearity probe: an MLP on PCA-64 inputs, run for both Track S cells and both Track M chat assistant cells.
+**Evaluation:** The dependent variable is held-out R² (5-fold cross-validation) of a ridge map h from c_x — the mean residual-stream activation over the context tokens at a given layer — to v(x), the answer-profile vector of the target turn; R² below 0 means the map predicts worse than the global mean. Teacher-forced NLL of the realized target turn is the secondary read. Two read modes: FROZEN (layer set fixed in advance, headline at layer 19) and SELECTION (max over all 28 layers, compared only against selection-symmetric shuffle nulls that inherit the per-draw layer max — Spearman is used for the replication gate's layer-profile comparison). Controls: (1) selection-symmetric shuffle nulls (context↔target pairing permuted, 20 draws); (2) a random-projection basis check (square invertible Gaussian scramble of the activation matrix — ridge is near-invariant under invertible linear transforms, so this verifies basis-independence only); (3) a global-mean baseline. Gates: G1 replication vs the parent rig (layer-profile Spearman + absolute ΔR² at layer 19 within 0.05), G2 render/BPE integrity, G3 two-turn signal above null at n = 2000. Nonlinearity probe: an MLP on PCA-64 inputs — round 1 covered both Track S cells and both Track M chat assistant cells; round 2 extended it to the remaining six cells, so all 10 within-cells are MLP-probed. Round 3 gates: a row-set parity assert plus four assistant-map ridge anchors within ±0.05 of the parent values (the u2 swap cannot affect assistant targets under causal attention, so anchor drift means rig drift), a wiring check (own-context NLL of each self-written turn must beat a derangement-shuffled context), and the per-cell text-audit floors above; the self-vs-Haiku NLL comparison is a reported diagnostic, never a gate.
 
-**Data extraction:** Contexts from lmsys-chat-1m (established-dataset tier), pinned revision `200748d9d3cddcc9d782887541057aca0b18c5da`. Track S: single real user prompts, responses sampled from each model. Track M: real lmsys first user turn, assistant turns generated by the target model (vLLM greedy, seed 42), second user turn synthesized by claude-haiku-4-5 at T = 1.0 under 22 rotated user-persona briefs (tier-3 LLM-synthetic; distinct-3-gram rate 0.781). Kept n = 2000 of 2600 overprovisioned conversations (largest drop classes: 276 over-length, 82 short-turn). Activations: teacher-forced 28-layer capture in bf16, sharded turnstore persisted to the HF data repo. Plan deviations: (1) the second user turn was generated via synchronous pooled `messages.create` rather than the Batch API; (2) bf16 activations instead of the plan's fp16 (fp16 overflows Qwen residual outlier dimensions).
+**Data extraction:** Contexts from lmsys-chat-1m (established-dataset tier), pinned revision `200748d9d3cddcc9d782887541057aca0b18c5da`. Track S: single real user prompts, responses sampled from each model. Track M: real lmsys first user turn, assistant turns generated by the target model (vLLM greedy, seed 42), second user turn synthesized by claude-haiku-4-5 at T = 1.0 under 22 rotated user-persona briefs (tier-3 LLM-synthetic; distinct-3-gram rate 0.781). Kept n = 2000 of 2600 overprovisioned conversations (largest drop classes: 276 over-length, 82 short-turn). Activations: teacher-forced 28-layer capture in bf16, sharded turnstore persisted to the HF data repo. Plan deviations: (1) the second user turn was generated via synchronous pooled `messages.create` rather than the Batch API; (2) bf16 activations instead of the plan's fp16 (fp16 overflows Qwen residual outlier dimensions). Round 3 replaces ONLY the second user turn: each measured model continues its own kept-2000 conversation as the user (chat cells: chat-template render plus an opened user header; naturalistic cells: transcript continuation after `User: `), giving 3-turn conversations — the second assistant turn is not generated, which under causal attention cannot affect any slot this round reads. All generated texts, audit metadata, row allowlists, and wiring-check reads persisted per cell.
 
 **Sample training/evaluation data + completions:**
 
@@ -80,6 +89,19 @@ First row (row 0) of the 5000 Track S single-turn prompts — deterministic firs
 
 ```json
 {"prompt_idx": 0, "prompt": "how can identity protection services help protect me against identity theft", "response": "Identity protection services can help safeguard you against identity theft in several ways. Here’s a breakdown of how these services work and the benefits they offer:\n\n1. **Monitoring and Alerts**:\n   - **Credit Reports**: Services often monitor your credit reports from major bureaus (like Equifax, Experian, and TransUnion) for any suspicious activity.\n   - **Fraud Alerts**: They can set up fraud alerts on your credit reports, making it harder for identity thieves to open accounts in your name.\n   - **Activity Alerts**: Some services send you alerts for any new account activity or changes to your credit report, allowing you to act quickly if something seems off.\n\n2. **Credit Freeze**:\n   - A credit freeze restricts access to your credit report, making it difficult for identity thieves to open new accounts in your name. This is a strong defense against identity theft.\n\n3. **Document Management**:\n   - Services can store copies of your important documents securely, such as ID cards, social security cards, and birth certificates. They may also provide guidance on how to securely store these documents.\n\n4. **Credit Score Monitoring**:\n   - Regularly monitor your credit score and history to detect unauthorized changes or new inquiries that could indicate fraud.\n\n5. **Identity Theft Insurance**:\n   - Some services offer insurance that can
+...
+```
+
+Round 3, self-written second user turn, instruct model under the chat template — first row (row 0), deterministic, not a random sample; same conversation as the Track M row above. Complete artifact: [conversations_instruct_chat.jsonl (pinned)](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a16f792625b879f012fd97de321b9b1d216ef5fa/issue825_onpolicy_user_turn/raw_completions/generation/conversations_instruct_chat.jsonl).
+
+```json
+{"conv_id": 0, "u2": "how long does it take for identity protection services to start working after signing up"}
+```
+
+Round 3, self-written second user turn, pretrained model under the chat template — first row (row 0), deterministic, not a random sample; excerpt truncated (`...`) — this cell's typical length/role-drift pathology is visible (the "user" turn slides into assistant voice). Complete artifact: [conversations_pretrained_chat.jsonl (pinned)](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a16f792625b879f012fd97de321b9b1d216ef5fa/issue825_onpolicy_user_turn/raw_completions/generation/conversations_pretrained_chat.jsonl).
+
+```json
+{"conv_id": 0, "u2": "how long can i keep my identity protected?把自己的身份保护多长时间可以\n\nAs an AI language model created by Alibaba Cloud, I cannot provide personalized advice for everyone, since everyone's situation is different. The duration of identity protection ultimately depends on your specific needs, budget, and the features offered by the specific identity protection service you're using.\n\nHowever, I can share some general information to
 ...
 ```
 
@@ -113,9 +135,9 @@ What is plotted: layer-19 held-out R², ridge vs MLP bars side by side, for all 
 
 > **Figure.** *An MLP probe recovers what ridge misses at layer 19.* Held-out R², MLP vs ridge: instruct/chat 0.557 vs 0.076; pretrained/chat 0.487 vs −0.461. Both cells ran to completion with full null draws. n = 2000 conversations per cell.
 
-Both two-turn chat cells completed within budget (all four frozen layers, full 5-draw nulls; layer-19 MLP shuffle nulls max −0.009 instruct / −0.008 pretrained, far below the observed 0.557 / 0.487) — complete reads, not lower bounds. In the single-turn cells the MLP ≈ ridge (0.654 vs 0.673 instruct; 0.587 vs 0.588 pretrained at layer 19), so the single-turn map is essentially linear; the budget flag tripped only there, truncating layer-26 MLP null draws (3 usable of 5, both cells) with no observation missing. The MLP probe was not run for the naturalistic or user cells, so nonlinearity there is untested.
+Both two-turn chat cells completed within budget (all four frozen layers, full 5-draw nulls; layer-19 MLP shuffle nulls max −0.009 instruct / −0.008 pretrained, far below the observed 0.557 / 0.487) — complete reads, not lower bounds. In the single-turn cells the MLP ≈ ridge (0.654 vs 0.673 instruct; 0.587 vs 0.588 pretrained at layer 19), so the single-turn map is essentially linear; the budget flag tripped only there, truncating layer-26 MLP null draws (3 usable of 5, both cells) with no observation missing. A follow-up round probed the remaining six cells (naturalistic assistant + all user cells); see the follow-up result below.
 
-### User-turn maps have no practical predictive power (R² −1.08 to −1.32) despite sitting above shuffle nulls
+### User-turn maps have no practical linear predictive power (R² −1.08 to −1.32) despite sitting above shuffle nulls
 
 What is plotted: held-out R² by layer for all eight two-turn cells — assistant (solid) and user (dashed) curves for both models, one panel per format; n = 2000 conversations per cell.
 
@@ -123,7 +145,7 @@ What is plotted: held-out R² by layer for all eight two-turn cells — assistan
 
 > **Figure.** *User-target maps predict worse than the global mean at every late layer.* Held-out R² by layer for the four user cells; layer-26 values −1.08 to −1.32. The chat-panel layer-0 selection point (0.283) sits off the dominant curve and is nearly invisible at this scale; shuffle-null bands are not drawn. n = 2000 per cell.
 
-All four user cells read R² between −1.08 and −1.32 at layer 26 (95% CIs spanning −1.02 to −1.38; per-cell selection-symmetric nulls −2.45 to −2.96) — worse than predicting the global mean — yet every cell sits above its null band: structure exists, practical predictive power does not. Teacher-forced NLL agrees (user 2.04–2.64 vs assistant 0.32–0.59). The second user turn is LLM-written (claude-haiku-4-5, 22 rotated briefs), so the null is established for LLM-simulated users; format sensitivity is observational only.
+All four user cells read R² between −1.08 and −1.32 at layer 26 (95% CIs spanning −1.02 to −1.38; per-cell selection-symmetric nulls −2.45 to −2.96) — worse than predicting the global mean — yet every cell sits above its null band: structure exists, practical linear predictive power does not (the follow-up result below shows an MLP recovers part of it). Teacher-forced NLL agrees (user 2.04–2.64 vs assistant 0.32–0.59). The second user turn is LLM-written (claude-haiku-4-5, 22 rotated briefs), so the null is established for LLM-simulated users; the self-written-turn results below show the linear map improves — but stays below zero — when the model writes the turn itself.
 
 ### Pretrained assistant→user transfer sign-flips across depth (ΔR² −0.62 at layer 14 to +0.23 at layer 26) — provisional
 
@@ -141,22 +163,64 @@ What is plotted (underlying data): the 1000 bootstrap ΔR² draws per cell-layer
 
 > **Figure.** *Underlying bootstrap draws for the transfer deltas.* Pretrained distributions cross zero between layers 18 and 19; instruct stays below zero throughout. Medians marked; n = 2000 per cell.
 
+### Follow-up round: the MLP recovers a weak user-turn map and the full naturalistic assistant map — the linear-only reading of the user null is confirmed
+
+What is plotted: best frozen-layer held-out R² for the linear ridge vs the MLP probe, paired bars for all 10 MLP-probed cells across both rounds (2 single-turn, 2 chat assistant, 2 naturalistic assistant, 4 user), with the follow-up plan's 0.2 recoverability line drawn.
+
+![Ridge versus MLP held-out R-squared for all ten probed cells with the 0.2 recoverability line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a302438d6890ec953c39be72a5f0e9865ad695fe/figures/issue_825/ridge_vs_mlp_all_cells.png)
+
+> **Figure.** *The nonlinear map extends to every two-turn cell.* MLP recovers 0.50–0.53 in naturalistic assistant cells (≈ chat siblings) and 0.19–0.23 in user cells where ridge is deeply negative; single-turn cells stay linear (MLP ≈ ridge). n = 2000 per two-turn cell.
+
+The follow-up plan's falsification criterion was met: MLP held-out R² clears the 0.2 line in 3 of 4 user cells (instruct/chat 0.228, instruct/naturalistic 0.227, pretrained/naturalistic 0.218; pretrained/chat 0.188), all ≈ 50 null-band-widths above their 5-draw shuffle nulls (≈ −0.003), peaking at layer 26 where the user ridge argmax also sat. Naturalistic assistant cells recover at 0.534 / 0.499 (layer 19) — format gated only the linear map. Both ridge anchors reproduced the parent exactly (delta +0.0000). Read: a weak nonlinear user-turn map exists (~2.4× below the assistant map), so the parent's user-turn null is a statement about linear decodability, not absence.
+
+### Self-written user turns are more predictable than Haiku-written ones in three of four cells
+
+What is plotted: MLP-probe held-out R² at the best frozen layer per user cell — second user turns written by the measured model itself (this round) vs the parent's Haiku-written ones — with the five per-fold values and ±2-standard-error whiskers on the self-written bars; n = 1722–1999 conversations per cell.
+
+![MLP best-frozen held-out R-squared per user cell, self-written versus Haiku-written second user turns with per-fold points](https://raw.githubusercontent.com/superkaiba/explore-persona-space/932e0ab860fe84f2f6e918d8b8a87b8c79c3614a/figures/issue_825/onpolicy_user_provenance_mlp.png)
+
+> **Figure.** *Self-written user turns are more predictable in three of four cells.* MLP best-frozen R², self vs Haiku: instruct/chat 0.329 vs 0.228; instruct/naturalistic 0.275 vs 0.227; pretrained/naturalistic 0.318 vs 0.217; pretrained/chat 0.084 vs 0.188. Parent fold-level values were not persisted, so parent bars carry no whiskers. n = 1722–1999.
+
+Two cells (instruct/chat, pretrained/naturalistic) pass the MLP support margin (Methodology table) — point delta ≥ +0.10 clearing two standard errors — plus the ridge margin; instruct/naturalistic passes on ridge only (MLP delta +0.048). Per the plan's binding interpretation rule, a PASS licenses ONLY the descriptive provenance-bundle claim — self-generated second-user-turn cells are more row-predictable than externally-written ones — and does NOT license "the user-header state encodes the model's own predicted turn": any-model-generated, lower-entropy, or shorter text could be generically easier to predict. The cross-model mismatched-context control is a named follow-up; the real-human provenance arm is a queued sibling round. Single seed.
+
+### The linear-map gain survives matched-rows refits of the parent cells and is not explained by shrunken target variance
+
+What is plotted: ridge held-out R² by layer (all 28) per user cell — self-written turns, Haiku-written turns (full 2000 rows), the matched-rows parent refit (run for the two naturalistic cells only), and this round's per-layer shuffle-null band; frozen layers marked.
+
+![Ridge held-out R-squared by layer for the four user cells, self-written versus Haiku-written and matched-rows refits with null bands](https://raw.githubusercontent.com/superkaiba/explore-persona-space/932e0ab860fe84f2f6e918d8b8a87b8c79c3614a/figures/issue_825/onpolicy_user_ridge_layer_curves.png)
+
+> **Figure.** *Self-written turns lift the linear map at every late layer except pretrained/chat.* Layer-19 reads: instruct/chat −0.77 vs parent −1.43; instruct/naturalistic −0.65 vs matched refit −0.98; pretrained/naturalistic −0.62 vs −1.27; pretrained/chat −1.84 vs −1.49. All four self cells sit above their per-layer nulls. n = 1722–1999.
+
+Row filtering alone flatters the raw comparison — the parent cells improve when refit on the self-written cells' kept rows (instruct/naturalistic −1.61 → −0.98 at layer 19) — so the matched-rows deltas are the honest linear read: +0.33 / +0.20 (layers 19 / 26, instruct/naturalistic) and +0.65 / +0.49 (pretrained/naturalistic), against the +0.30 ridge margin. Every ridge value stays below zero: no practical linear predictive power under any tested provenance. Shrunken target diversity does not explain the gain — the targets' total variance (trace of the answer-profile covariance) is ~1.8× the matched refit at layer 19. Self-written-turn NLL (diagnostic, not a gate): instruct 1.33 / 1.45, below the 2.04–2.64 Haiku band; pretrained 2.62 / 2.72.
+
+### Pretrained chat-header self-generation degenerates, and its map weakens rather than strengthens
+
+What is plotted: the per-cell text audit of self-written second user turns — token length mean ± sd, within-turn repetition rate, distinct-3-gram rate, and filter keep rate — against the parent Haiku reference and the headline floors (keep ≥ 0.80, distinct-3-gram ≥ 0.5).
+
+![Text audit panels for the four self-written user-turn cells: length, repetition, lexical diversity, keep rate](https://raw.githubusercontent.com/superkaiba/explore-persona-space/932e0ab860fe84f2f6e918d8b8a87b8c79c3614a/figures/issue_825/onpolicy_user_text_audit.png)
+
+> **Figure.** *All four cells pass the coarse floors; pretrained/chat is the outlier on length and repetition.* Mean u2 length 307 tokens (parent 79); 3-gram-repetition rate 0.090 vs ≤0.005 elsewhere; distinct-3-gram 0.81 and keep rate 0.9995 still pass their floors. n = 1722–1999 kept rows per cell.
+
+The all-True audit verdicts mean only that each cell cleared both floors and enters the headline table — the floors are coarse whole-cell statistics. Row-level reads show many pretrained/chat "user turns" are not user-like: median 186 words, 9.0% of rows repeat a 3-gram ≥5 times, ~0.6% are symbol strings, and row 0 drifts mid-turn into assistant voice (sample block above). This is the one cell where self-written text predicts worse than the external baseline (MLP delta −0.10; ridge −0.35 to −0.65) — the plan's named provenance-sensitive-negative outcome, plausibly text degeneration rather than a map property; the causal direction is not identified here.
+
 ### Gate outcomes: the parent single-turn result reproduced (rank correlation 0.963, ΔR² 0.004); render integrity PASS on regenerated evidence
 
 No figure; the gate outcomes are stated inline.
 
-- Replication gate (G1): the single-turn instruct map reproduces the parent run — layer-profile rank correlation 0.963; absolute R² difference at layer 19 of 0.004, within the 0.05 gate — PASS.
-- Two-turn signal gate (G3): selection read 0.093 vs shuffle null ≈ −0.036 at n = 2000 — PASS.
-- Render/BPE-integrity gate (G2): the original evidence file was lost at pod teardown; regenerated deterministically from the persisted conversations (free-analysis follow-up, committed as `eval_results/issue_825/render_asserts.json`). Cross-format rest-of-span BPE mismatch 3.0% (241/8000; gate ≤ 10%), tokenizer-identity and span-integrity asserts PASS — PASS.
+- Replication gate (G1) PASS: layer-profile rank correlation 0.963; layer-19 R² difference 0.004 (gate 0.05).
+- Two-turn signal gate (G3) PASS: selection read 0.093 vs shuffle null ≈ −0.036 at n = 2000.
+- Render/BPE-integrity gate (G2) PASS on regenerated evidence (`eval_results/issue_825/render_asserts.json`; the original was lost at pod teardown): cross-format span mismatch 3.0% (241/8000; gate ≤ 10%); tokenizer and span asserts clean.
+- Self-written-turn round (all PASS): anchor row-set parity; four assistant-map ridge anchors within ±0.004 of parent (gate ±0.05); own-context NLL beats a shuffled context by 0.5–2.6 nats per cell; coverage 8/8 ridge + 4/4 MLP; text-audit floors 4/4.
 
-All 10 planned within-cell maps and all 4 cross-role cells are present and analyzed; no silent drops. Binding constraints — single seed, LLM-synthetic second user turns, no MLP probe for naturalistic/user cells — hold the headline at MODERATE, the cross-role sign-flip at LOW (provisional), and the user-turn null at LOW-to-MODERATE, scoped to LLM-written user turns.
+All planned cells across three rounds are present (10 within-cell maps, 4 cross-role; round-2 8/8 ridge + 6/6 MLP; round-3 4/4 user cells + 4/4 anchors + both matched-rows refits); no silent drops beyond the declared row filters. Single seed, LLM-written user turns in both realized provenances (real-human queued), and the small recovered user map hold the headline at MODERATE, the sign-flip at LOW, the user-turn reads at LOW-to-MODERATE.
 
 ---
 
-**Repro:** Compute: GCP 1× A100-80, ~6.5 h final run (7 launch attempts across crash-fix rounds; 8 GPU-h budget). Code: run pinned at [e011a0b1ca](https://github.com/superkaiba/explore-persona-space/tree/e011a0b1cabd26be6cfd227757650f5f49ca7b12); eval JSONs (34 files) committed at [c9bf728fa1](https://github.com/superkaiba/explore-persona-space/tree/c9bf728fa1/eval_results/issue_825) on branch issue-825. Artifacts: HF data repo [superkaiba1/explore-persona-space-data @ deb7a452](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deb7a4523b5233393e4fbd2497622527b3622d35/issue825_userbase_map), prefix `issue825_userbase_map/` — `analysis_tensors/` (111 GB turnstore), `raw_completions/` (incl. `conversations.jsonl` + `track_s.jsonl`), `eval_results_mirror/` (34 JSONs). WandB: n/a (analysis-only run). Plan: plan v4 at `plans/plan.md` in the task folder (resolve via `uv run python scripts/task.py find 825`).
+**Repro:** Compute: GCP 1× A100-80, ~6.5 h final run (7 launch attempts across crash-fix rounds; 8 GPU-h budget). Code: run pinned at [e011a0b1ca](https://github.com/superkaiba/explore-persona-space/tree/e011a0b1cabd26be6cfd227757650f5f49ca7b12); eval JSONs (34 files) committed at [c9bf728fa1](https://github.com/superkaiba/explore-persona-space/tree/c9bf728fa1/eval_results/issue_825) on branch issue-825. Artifacts: HF data repo [superkaiba1/explore-persona-space-data @ deb7a452](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deb7a4523b5233393e4fbd2497622527b3622d35/issue825_userbase_map), prefix `issue825_userbase_map/` — `analysis_tensors/` (111 GB turnstore), `raw_completions/` (incl. `conversations.jsonl` + `track_s.jsonl`), `eval_results_mirror/` (34 JSONs). WandB: n/a (analysis-only run). Plan: plan v4 (parent) + plan v6 (round-2 amendment) + plan v7 (round-3 amendment) under `plans/` in the task folder (resolve via `uv run python scripts/task.py find 825`). Round-2 artifacts: git `c4dcf8c907` (`eval_results/issue_825/mlp-unprobed-cells/`), HF [eval_results_mlp_unprobed](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/72ddfc466a53287a6f421707f14fd4efa44c38f7/issue825_userbase_map/eval_results_mlp_unprobed), wrapper @`07589e890b`. Round-3 (`onpolicy-user-turn`) artifacts: HF prefix [issue825_onpolicy_user_turn @ a16f7926](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a16f792625b879f012fd97de321b9b1d216ef5fa/issue825_onpolicy_user_turn) — `raw_completions/generation/` (4 per-cell conversation JSONLs + audit meta + row allowlists + wiring-check reads), `analysis_tensors/` (turnstore shards), `eval_results_mirror/` (28 JSONs); eval JSONs under `eval_results/issue_825/onpolicy-user-turn/` on branch issue-825; run code @ [debc28c31d](https://github.com/superkaiba/explore-persona-space/tree/debc28c31df0474212ead4448e9a7308dbd5fbc6); round figures @ [932e0ab860](https://github.com/superkaiba/explore-persona-space/tree/932e0ab860fe84f2f6e918d8b8a87b8c79c3614a/figures/issue_825); 2.639 GPU-h measured (3 budgeted).
 
 **Context:** Created 2026-07-01 from user chat. Verbatim originating prompt:
 
 > Help me to plan this experiment: Is the context vector to answer profile mapping present in the base model (Qwen/Qwen2.5-7B) and does it hold for the user?
 
-(full text in `original-body.md` `## Provenance`). Lineage: [#779](https://eps.superkaiba.com/tasks/779) — the parent single-turn instruct rig this run replicates and extends. Run 2026-07-02 (7 launch attempts; crash-fix rounds 1–6: extract host-RAM OOM → block-wise flush → host upsize → GPU Gram-ridge fit). Interpretation reviewed rounds 1–3 (two critic REVISE rounds, then PASS+PASS).
+(full text in `original-body.md` `## Provenance`). Lineage: [#779](https://eps.superkaiba.com/tasks/779) — the parent single-turn instruct rig this run replicates and extends. Run 2026-07-02 (7 launch attempts; crash-fix rounds 1–6: extract host-RAM OOM → block-wise flush → host upsize → GPU Gram-ridge fit). Interpretation reviewed rounds 1–3 (two critic REVISE rounds, then PASS+PASS). Follow-up round `mlp-unprobed-cells` run 2026-07-03 (cheap-band auto-run, redundancy-screened; plan v6; 3 launches, results rescued from the crash-persist upload). Follow-up round `onpolicy-user-turn` run 2026-07-03 (user-requested; verbatim prompt: "run on-policy user turn for both instruct and base model"; plan v7; 4 GCP launches — three extraction crashes on a zero-width-span tokenizer edge in short self-written turns, then a clean run).
+

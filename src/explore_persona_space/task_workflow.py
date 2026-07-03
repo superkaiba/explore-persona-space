@@ -145,6 +145,47 @@ KINDS = (
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
 
+# Workflow-pipeline versions a task can be pinned to (EPS workflow-v2 plan,
+# Assumption 2). "v1" is the current pipeline; "v2" is the report-only
+# pipeline the `/issue` dispatcher branches to when a task's frontmatter
+# carries `workflow: v2`. The default for a NEW task resolves as
+# explicit-arg > env EPM_DEFAULT_WORKFLOW > DEFAULT_WORKFLOW_VERSION; the
+# flip of the default to "v2" is a later one-line env/config change after the
+# dogfood, NOT wired here. `workflow_version()` fail-opens to v1 so legacy
+# tasks (no `workflow:` key) resolve to the current pipeline everywhere.
+WORKFLOW_VERSIONS = ("v1", "v2")
+DEFAULT_WORKFLOW_VERSION = "v1"
+
+
+def workflow_version(frontmatter: dict[str, Any]) -> str:
+    """Return the workflow-pipeline version a task is pinned to.
+
+    Reads the ``workflow`` frontmatter key and fail-OPENS to
+    :data:`DEFAULT_WORKFLOW_VERSION` ("v1") for an absent, empty, or unknown
+    value — so legacy tasks (which have no ``workflow:`` key) resolve to the
+    current v1 pipeline everywhere and a garbage value never crashes a caller.
+    """
+    value = frontmatter.get("workflow")
+    if isinstance(value, str) and value.strip() in WORKFLOW_VERSIONS:
+        return value.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
+def _resolve_workflow_version(explicit: str | None) -> str:
+    """Resolve a NEW task's workflow version at creation time.
+
+    Precedence: explicit arg > env ``EPM_DEFAULT_WORKFLOW`` >
+    :data:`DEFAULT_WORKFLOW_VERSION`. An unknown value at any layer falls
+    through to the next (fail-open to v1). The CLI validates the explicit arg
+    with ``argparse`` choices, so an unknown value here can only reach us from
+    a programmatic caller — treat it as unset rather than crash.
+    """
+    for candidate in (explicit, os.environ.get("EPM_DEFAULT_WORKFLOW")):
+        if isinstance(candidate, str) and candidate.strip() in WORKFLOW_VERSIONS:
+            return candidate.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
 # Intermediate pipeline statuses a `followups_running` task may NOT re-enter
 # mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
 # § Same-issue follow-up loop, step 3): the round HOLDS `followups_running`
@@ -747,6 +788,29 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
     """
     v = fm.get("paper")
     return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
+#: Body sentinel for the v2 report clean-result form (workflow v2 — the
+#: report-only track: Motivation / Methodology / Metrics / Results-as-plots
+#: written by agents, TLDR / Next-steps written by Thomas). Placed on the line
+#: after the H1 ``# Experiment: ...`` title, mirroring the ``<!-- clean-result-v4 -->``
+#: convention. ``scripts/verify_report.py`` is the mechanical verifier for this
+#: form. Unlike ``paper: true`` (a frontmatter flag), a report body is
+#: identified by this BODY sentinel.
+REPORT_V1_SENTINEL = "<!-- report-v1 -->"
+
+
+def is_report_body(body: str) -> bool:
+    """True when ``body`` is a v2 report clean-result (carries ``REPORT_V1_SENTINEL``).
+
+    Detects the v2 report form by its body sentinel, the analogue of
+    :func:`is_paper_task` for the report track. Consumers (dashboard rendering,
+    promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
+    report body as a valid clean-result form alongside the markdown-v4 and paper
+    tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
+    frontmatter flag, only this sentinel.
+    """
+    return REPORT_V1_SENTINEL in body
 
 
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
@@ -1379,6 +1443,479 @@ def stage_dispatch_should_skip(
         f"breadcrumb at {events[crumb_idx].get('ts', '')}, effective age {age_minutes:.1f}m "
         f"< window {window_minutes}m{refreshed}"
     )
+
+
+# ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
+
+# Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
+# advisory content — excluded from pre-dispatch triage candidates. Anything
+# NOT listed is a candidate (over-approximation by design: a false positive
+# costs one first-line read; a false negative is the #779 failure mode).
+TRIAGE_EXEMPT_KINDS = frozenset(
+    {
+        "epm:status-changed",
+        "epm:step-completed",
+        "epm:backend-selected",
+        "epm:codex-task-spawned",
+        "epm:codex-task-completed",
+        "epm:codex-task-failed",
+        "epm:pod-provisioned",
+        "epm:pod-terminated",
+        "epm:pod-stopped",
+        "epm:run-launched",
+        "epm:run-finished",
+        "epm:upload-verification",
+        "epm:merged",
+        "epm:methodology-doc-generated",
+        "epm:workflow-fix-task-filed",
+        "epm:workflow-fix-applied",
+        "epm:workflow-fix-failed",
+        "epm:workflow-fix-candidate",
+        # Session-pipeline review/lifecycle verdict kinds — structurally posted
+        # by THIS task's own planner/review/implementation loop, never the
+        # vehicle for a cross-session advisory (fact-check on #779: including
+        # these halves the per-dispatch read load, 30 -> 20 candidates, with
+        # zero externals lost).
+        "epm:code-review",
+        "epm:code-review-codex",
+        "epm:review-reconcile",
+        "epm:experiment-implementation",
+        "epm:concern-raised",
+        "epm:concern-addressed",
+        "epm:concern-deferred",
+        "epm:interp-critique",
+        "epm:interp-critique-codex",
+        "epm:clean-result-critique",
+        "epm:clean-result-critique-codex",
+        "epm:plan",
+        "epm:plan-approved",
+        "epm:plan-verify",
+        "epm:consistency",
+        "epm:clarify",
+        "epm:clarify-answers",
+        "epm:test-verdict",
+        "epm:smoke-architecture-check",
+    }
+)
+
+# ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
+# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
+# "unknown", and on #779 both self- and PM-chat-posted markers carried
+# by="unknown" — so this set only strips known machine identities; it never
+# claims to identify externality (that is the orchestrator's judgment call,
+# SKILL.md § Pre-dispatch external-marker triage).
+TRIAGE_MACHINE_BY = frozenset(
+    {
+        "poll_pipeline",
+        "task.py",
+        "backends.router",
+        "backends.gcp",
+        "backends.slurm",
+        "backends.slurm_monitor",
+        "backends.selector",
+        "autonomous-gate",
+        "codex_task",
+        "task_state shim",
+    }
+)
+
+# Compute-launch marker kinds — ALWAYS close the triage window.
+# epm:run-launched is the RunPod/experimenter launch record;
+# epm:cluster-launched is what the default GCP/SLURM lanes post (SKILL.md
+# Step 6b marker trail; #779's own window contains one at 14:56:21Z, by
+# backends.gcp).
+TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
+
+# The auditable triage-record line. A dispatch record carrying this line is
+# DUTY-BOUND (it performed the triage) and closes the window; a note that IS
+# a triage record is also excluded from candidates.
+TRIAGE_LINE_PREFIX = "external-markers triaged:"
+
+
+def triage_candidates_since_last_dispatch(
+    events: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+    launch_kinds: frozenset[str] = TRIAGE_LAUNCH_KINDS,
+) -> list[dict]:
+    """Return pre-dispatch triage candidates since the latest DUTY-BOUND dispatch record.
+
+    THE BOUNDARY MATCHES THE TRIAGE DUTY SURFACE: the window opens AFTER the
+    most recent event that is either (i) a compute-launch marker (kind in
+    ``launch_kinds`` — ``epm:run-launched`` or ``epm:cluster-launched``), or
+    (ii) ANY event whose note contains the ``external-markers triaged:`` line
+    (a triaged compute breadcrumb, or the adjacent ``epm:progress`` triage
+    note the pod/backend-launch form posts). When no such record exists the
+    window is the whole list (task start). A NON-compute breadcrumb (review /
+    analyzer / verifier stages) never closes the window — those dispatches
+    carry no triage duty, so they cannot orphan an advisory; an UNTRIAGED
+    compute breadcrumb (pre-fix or concurrent session) also does not close it
+    (fail-toward-triage). Within the window an event is a candidate unless:
+    kind in ``exempt_kinds``, ``by`` in ``machine_by``, the note is
+    empty/absent, the note is itself breadcrumb-shaped (lstripped note begins
+    ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
+    or the note contains the triage line (it is a triage record, not an
+    advisory). Chronological order preserved. Deliberately over-approximates —
+    it ENUMERATES for LLM-side triage and never classifies externality
+    (``by`` cannot: default "unknown").
+    """
+    boundary = -1
+    for idx in range(len(events) - 1, -1, -1):
+        event = events[idx]
+        note = event.get("note", "") or ""
+        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+            boundary = idx
+            break
+    candidates: list[dict] = []
+    for event in events[boundary + 1 :]:
+        if event.get("kind", "") in exempt_kinds:
+            continue
+        if event.get("by", "") in machine_by:
+            continue
+        note = event.get("note", "") or ""
+        if not note.strip():
+            continue
+        if note.lstrip().startswith("stage-dispatch "):
+            continue
+        if TRIAGE_LINE_PREFIX in note:
+            continue
+        candidates.append(event)
+    return candidates
+
+
+# ─── Same-issue follow-up label grouping (#894) ────────────────────────────
+#
+# Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)
+# under different `followup_label`s, so the highest-version-per-kind marker
+# map is the WRONG read for dispatch: a later label's completion must never
+# strand an earlier queued label (#763: scope v1 `neutral-contrast-and-cofit`
+# stayed invisible after scope v2's round ran). These helpers are the SINGLE
+# implementation of the label-grouped predicate; `/issue` Step 0, the Step 9b
+# loop, the resume table, and `scripts/autonomous_session_watch.py` all defer
+# here.
+
+FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
+FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
+
+# An UNLABELED scope note inherits the previous entry's label ONLY when it
+# carries an explicit correction signal (the #658-v2 shape: "CORRECTION to
+# the earlier epm:followup-scope (...)"). An unlabeled note WITHOUT the
+# signal is a DISTINCT queued follow-up (#685 v2) and must NOT merge into
+# the previous label.
+CORRECTION_SIGNAL = re.compile(r"correction|supersede|re-?post", re.IGNORECASE)
+
+# The same-issue loop's stage-dispatch breadcrumb prefix (mirrors
+# `autonomous_session_watch._FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`; the
+# watcher script cannot be imported from the library, so the literal is
+# duplicated here — both sides cite each other).
+_FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
+
+# Round-completion words for the class-3 retro-close evidence read
+# (`followup_retro_close_evidence`). Case-sensitive by design — a missed
+# close is safe (the label stays queued), a wrong close is not.
+_ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+
+def parse_followup_note_field(note: str, field: str) -> str | None:
+    """Extract ``<field>``'s value from a followup-scope / run-marker note.
+
+    Matches the FIRST line whose core (after stripping any leading mix of
+    ``-``/``*`` bullets, bold markers, and whitespace) starts with
+    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
+    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
+    The value is the first whitespace token of the remainder, stripped of
+    backticks / quotes / ``*`` and a trailing comma (#664 ships a
+    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
+    COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
+    field — corpus-clean today, pinned against future drift), and
+    single-line space-separated run notes (first-token rule; labels are
+    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
+    wins: #763 v2 embeds a second bold label deep inside its
+    verbatim-proposal section, and the top-of-note canonical line is hit
+    first. Returns ``None`` when the field is absent or its value is empty.
+    """
+    for line in (note or "").splitlines():
+        # One regex pass strips any interleaved mix of whitespace, bullet
+        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
+        # chain stops at the space in "- **field:** x" and misses the bold
+        # marker behind it).
+        core = re.sub(r"^[\s\-*]+", "", line)
+        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+            rest = core[len(field) + 1 :].lstrip("*").strip()
+            tokens = rest.split()
+            value = tokens[0] if tokens else ""
+            value = value.strip("`'\"*").rstrip(",")
+            return value or None
+    return None
+
+
+def _scope_scan_key(event: dict) -> tuple[datetime, int]:
+    """Chronological scan key ``(ts, version)`` for followup-scope grouping.
+
+    CHRONOLOGICAL with version tiebreak — NOT ``(version, ts)``: per-kind
+    version monotonicity is VIOLATED in the wild (#480 carries TWO
+    ``version: 1`` scope rows with a v2 chronologically between them);
+    ``(ts, version)`` is robust there and identical to ``(version, ts)`` on
+    every conforming task (#658, #763). A malformed/missing ts sorts first.
+    """
+    ts = _stage_event_ts(event)
+    if ts is None:
+        ts = datetime.min.replace(tzinfo=UTC)
+    version = event.get("version")
+    if not isinstance(version, int):
+        version = 0
+    return (ts, version)
+
+
+def followup_label_groups(events: list[dict]) -> list[dict]:
+    """Group ``epm:followup-scope`` entries by ``followup_label``.
+
+    Scans scopes in ``(ts, version)`` order (see :func:`_scope_scan_key`).
+    Per entry the label is resolved as:
+
+    - ``parsed`` — the note carries a parseable ``followup_label``;
+    - ``inherited-from-previous`` — unlabeled BUT the note carries a
+      correction signal (:data:`CORRECTION_SIGNAL`): a correction follows
+      the scope it corrects (#658 v2), so it attributes to the previous
+      label;
+    - ``pseudo-ts`` — unlabeled with NO correction signal: a DISTINCT queued
+      follow-up under the pseudo-label ``unlabeled-<ts>`` (#685 v2). NEVER
+      silently dropped, but NON-dispatchable (``unlabeled-<ts>`` violates the
+      kebab-slug field contract and would name
+      ``eval_results/issue_<N>/<label>/`` artifact dirs with colons) — Step 0
+      surfaces these loudly as repair items instead of executing a malformed
+      round. Dispatchability is FOUNDING-based: a group FOUNDED as
+      ``pseudo-ts`` stays ``dispatchable: False`` even when a later unlabeled
+      CORRECTION inherits into it (the inherit raises the group's
+      authoritative entry but cannot repair the malformed label — only a
+      re-post with a proper kebab-slug ``followup_label`` can).
+
+    Returns one dict per label, in first-armed order, with JSON-native
+    values: ``{followup_label, source, user_initiated, armed_ts,
+    authoritative, label_parse, dispatchable, n_entries}``. Within a label
+    the AUTHORITATIVE entry is the last in scan order (corrections land
+    append-only — the #658 v3→v7 ``persona-vectors-style-rb`` chain);
+    ``armed_ts`` is the FIRST entry's ts (a later correction never re-queues
+    the label). ``source`` is the first parseable ``source`` across the
+    group's entries in scan order (a correction note that omits ``source``
+    must not demote a user-chat round), else ``"unknown"``.
+    """
+    scopes = sorted(
+        (e for e in events if e.get("kind") == FOLLOWUP_SCOPE_KIND),
+        key=_scope_scan_key,
+    )
+    prev_label: str | None = None
+    groups: dict[str, dict] = {}
+    sources: dict[str, list[str]] = {}
+    founded_pseudo: dict[str, bool] = {}
+    for ev in scopes:
+        note = ev.get("note") or ""
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            parse_mode = "parsed"
+        elif prev_label is not None and CORRECTION_SIGNAL.search(note):
+            label, parse_mode = prev_label, "inherited-from-previous"
+        else:
+            label, parse_mode = f"unlabeled-{ev.get('ts', '')}", "pseudo-ts"
+        prev_label = label
+        group = groups.get(label)
+        if group is None:
+            group = {
+                "followup_label": label,
+                "armed_ts": ev.get("ts", ""),
+                "authoritative": ev,
+                "label_parse": parse_mode,
+                "n_entries": 0,
+            }
+            groups[label] = group
+            sources[label] = []
+            founded_pseudo[label] = parse_mode == "pseudo-ts"
+        group["n_entries"] += 1
+        group["authoritative"] = ev  # last in (ts, version) order wins
+        group["label_parse"] = parse_mode
+        src = parse_followup_note_field(note, "source")
+        if src:
+            sources[label].append(src)
+    result: list[dict] = []
+    for label, group in groups.items():
+        group["source"] = sources[label][0] if sources[label] else "unknown"
+        group["user_initiated"] = group["source"] in USER_INITIATED_FOLLOWUP_SOURCES
+        # FOUNDING-based: a pseudo-founded group is a repair item forever —
+        # a later unlabeled CORRECTION inheriting into it must NOT flip it
+        # dispatchable (the label is still the malformed `unlabeled-<ts>`).
+        group["dispatchable"] = not founded_pseudo[label] and group["label_parse"] in (
+            "parsed",
+            "inherited-from-previous",
+        )
+        result.append(group)
+    return result
+
+
+def unrun_followup_labels(events: list[dict]) -> list[dict]:
+    """Label groups (per :func:`followup_label_groups`) with NO matching
+    ``epm:same-issue-followup-run`` marker — the UNRUN queue.
+
+    A LABEL is unrun iff no run marker carries the same ``followup_label``
+    (workflow.yaml § markers — the label-keyed satisfier; the label's run
+    marker closes ALL of its scope entries). Pseudo-label groups are
+    INCLUDED (they must surface as repair items) but carry
+    ``dispatchable: False`` — consumers that execute rounds filter on
+    ``dispatchable``. A run marker with an unparseable label closes NOTHING
+    (conservative in the anti-stranding direction; the counterweight is the
+    Step 0 stale-label disposition rule / :func:`followup_retro_close_evidence`).
+
+    Ordered deterministically: user-initiated labels first
+    (:data:`USER_INITIATED_FOLLOWUP_SOURCES`), then oldest ``armed_ts``,
+    then the authoritative entry's ``version``.
+    """
+    run_labels = {
+        parse_followup_note_field(e.get("note") or "", "followup_label")
+        for e in events
+        if e.get("kind") == FOLLOWUP_RUN_KIND
+    } - {None}
+    unrun = [g for g in followup_label_groups(events) if g["followup_label"] not in run_labels]
+
+    def _order(group: dict) -> tuple[bool, str, int]:
+        version = group["authoritative"].get("version")
+        return (
+            not group["user_initiated"],
+            group["armed_ts"],
+            version if isinstance(version, int) else 0,
+        )
+
+    unrun.sort(key=_order)
+    return unrun
+
+
+def executing_followup_label(events: list[dict]) -> dict | None:
+    """Resolve WHICH unrun label the current / most-recent round is executing.
+
+    Shared by the Step 9b step-3 mid-round re-read, the step-4
+    completion-marker label derivation, and the watcher's
+    ``_post_followup_run_marker`` (SKILL.md Step 9b § Same-issue follow-up
+    loop). Resolution order:
+
+    1. The newest ``epm:progress`` note beginning
+       ``stage-dispatch stage=followup-`` that is strictly newer than the
+       newest ``epm:same-issue-followup-run`` ts and carries a
+       ``label=<slug>`` token (via :func:`_breadcrumb_fields`) → that
+       label's group, if unrun. This wins over the queue head because a
+       user-chat label posted MID-ROUND would jump the head; the breadcrumb
+       pins the round actually dispatched.
+    2. Fallback: the head of the DISPATCHABLE subset of
+       :func:`unrun_followup_labels` (Step 0 only ever dispatches
+       dispatchable heads, so head == executing round whenever no labeled
+       breadcrumb exists — breadcrumbs predating the #894 ``label=``
+       contract lack the token).
+    3. ``None`` when no dispatchable unrun labels exist.
+    """
+    unrun = unrun_followup_labels(events)
+    crumb_label = _newest_followup_dispatch_crumb_label(events)
+    if crumb_label is not None:
+        for group in unrun:
+            if group["followup_label"] == crumb_label:
+                return group
+    for group in unrun:
+        if group["dispatchable"]:
+            return group
+    return None
+
+
+def _newest_followup_dispatch_crumb_label(events: list[dict]) -> str | None:
+    """``label=`` of the newest follow-up stage-dispatch breadcrumb strictly
+    newer than the newest ``epm:same-issue-followup-run`` ts, else ``None``
+    (no labeled crumb, or every labeled crumb predates the latest recorded
+    round). Helper for :func:`executing_followup_label`."""
+    newest_run_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is not None and (newest_run_ts is None or ts > newest_run_ts):
+            newest_run_ts = ts
+    crumb_label: str | None = None
+    crumb_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = (ev.get("note") or "").lstrip()
+        if not note.startswith(_FOLLOWUP_STAGE_DISPATCH_PREFIX):
+            continue
+        label = _breadcrumb_fields(note).get("label")
+        if not label:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is None:
+            continue
+        if newest_run_ts is not None and ts <= newest_run_ts:
+            continue
+        if crumb_ts is None or ts > crumb_ts:
+            crumb_ts = ts
+            crumb_label = label
+    return crumb_label
+
+
+def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
+    """MECHANICAL, exact-label evidence that ``label``'s round already ran.
+
+    The predicate behind the Step 0 stale-label disposition rule (legacy
+    tasks like #658 carry ghost labels whose rounds demonstrably ran without
+    an ``epm:same-issue-followup-run`` record). Three evidence classes, all
+    EXACT-match — prose mention / substring / prefix evidence NEVER closes:
+
+    1. an ``epm:methodology-doc-generated`` note carrying ``extends=<label>``
+       (exact token, via :func:`parse_followup_note_field` or the
+       ``key=value`` breadcrumb grammar);
+    2. an ``epm:free-analysis-followup-run`` whose ``followup_ref`` EXACTLY
+       equals ``label`` (string equality — a PREFIX match like
+       ``<label>-9a-ter-fit`` never closes);
+    3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
+       note with the exact parenthesized round token ``(<label>)`` AND a
+       round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
+       line.
+
+    Returns the one-line evidence string of the FIRST matching class (class
+    order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
+    corroboration, not ambiguity — the canonical #658 ghost label carries
+    both a 9a-quater ``extends=`` record and a status-PASS round note);
+    ``None`` when NO class matches — the caller then never closes (a
+    merely-prose / substring / prefix mention is not evidence; ambiguity
+    NEVER closes).
+    """
+    for ev in events:
+        kind = ev.get("kind")
+        note = ev.get("note") or ""
+        if kind == "epm:methodology-doc-generated":
+            extends = parse_followup_note_field(note, "extends")
+            if extends != label:
+                extends = _breadcrumb_fields(note).get("extends")
+            if extends == label:
+                return (
+                    f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
+                )
+    for ev in events:
+        if ev.get("kind") != "epm:free-analysis-followup-run":
+            continue
+        ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
+        if ref == label:
+            return (
+                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
+            )
+    token = f"({label})"
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
+            continue
+        for line in (ev.get("note") or "").splitlines():
+            if token in line and _ROUND_COMPLETION_WORD.search(line):
+                return (
+                    f"{kind} at {ev.get('ts', '?')} carries the round token "
+                    f"({label}) plus a round-completion word"
+                )
+    return None
 
 
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
@@ -2185,6 +2722,12 @@ class NewTaskRequest:
     # The clean-result `## Reproducibility` `**Context:**` row carries it
     # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
     origin_prompt: str | None = None
+    # Workflow-pipeline version this task runs under: "v1" (current default)
+    # or "v2" (report-only pipeline). None -> resolved at creation via
+    # _resolve_workflow_version(): explicit > env EPM_DEFAULT_WORKFLOW >
+    # DEFAULT_WORKFLOW_VERSION. Always written to frontmatter `workflow:` so
+    # the `/issue` dispatcher can branch (EPS workflow-v2 plan, Assumption 2).
+    workflow: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -2213,6 +2756,11 @@ def create_task(req: NewTaskRequest) -> int:
             fm["parent_id"] = req.parent_id
         if req.origin_prompt and req.origin_prompt.strip():
             fm["origin_prompt"] = req.origin_prompt.strip()
+        # Pin the workflow-pipeline version (explicit > EPM_DEFAULT_WORKFLOW >
+        # v1). Always written so the /issue dispatcher can branch; purely
+        # additive — legacy tasks with no `workflow:` key fail-open to v1 via
+        # workflow_version() (EPS workflow-v2 plan, Assumption 2).
+        fm["workflow"] = _resolve_workflow_version(req.workflow)
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.
@@ -2371,6 +2919,14 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
     marked a clean-result before the HF upload lands. Clearing (``value=False``)
     and every non-paper task skip the manifest gate.
+
+    A **v2 report** body (carries ``REPORT_V1_SENTINEL`` — see
+    :func:`is_report_body`) is a valid non-paper clean-result form: it is not a
+    ``paper: true`` task and carries no ``paper_manifest.json``, so it flows
+    through the non-paper path here and flips ``has_clean_result`` with no extra
+    gate. Its own mechanical gate is ``scripts/verify_report.py`` (run before
+    ``set-clean-result`` / at promote time), the report-track analogue of
+    ``verify_task_body.py`` / ``verify_paper.py``.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
@@ -3830,6 +4386,8 @@ __all__ = [
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
+    "FOLLOWUP_RUN_KIND",
+    "FOLLOWUP_SCOPE_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",
@@ -3838,6 +4396,7 @@ __all__ = [
     "STATUSES",
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
+    "USER_INITIATED_FOLLOWUP_SOURCES",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -3848,7 +4407,10 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "executing_followup_label",
     "find_task_path",
+    "followup_label_groups",
+    "followup_retro_close_evidence",
     "get_goal",
     "get_relates_to",
     "get_task",
@@ -3860,6 +4422,7 @@ __all__ = [
     "list_concerns",
     "list_events",
     "new_plan_version",
+    "parse_followup_note_field",
     "post_event",
     "primary_checkout_root",
     "promote",
@@ -3875,4 +4438,5 @@ __all__ = [
     "set_status",
     "set_title",
     "tasks_dir",
+    "unrun_followup_labels",
 ]

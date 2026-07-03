@@ -223,15 +223,27 @@ def summaries_fit_cell(ctx: AH.Ctx, capture_dir: Path, trait: str, li: int) -> d
 
 
 def baseline_entry(trait: str, mode: str) -> dict:
-    """Pull the mean-summary (v_x) baseline numbers from arm_headline.json."""
-    if not BASELINE_JSON.exists():
-        return {"note": "arm_headline.json not found"}
-    with open(BASELINE_JSON) as f:
-        base = json.load(f)
-    e = base.get("arm_headline", {}).get(trait, {}).get(mode)
+    """Pull the mean-summary (v_x) baseline numbers from arm_headline*.json.
+
+    The committed baseline is SPLIT across two files (same params, disjoint
+    trait coverage): ``arm_headline.json`` carries evil (the VM free-analysis
+    run) and ``arm_headline_pod.json`` carries sycophancy + hallucination (the
+    sibling pod rerun). Try the primary file first, then the pod file.
+    """
+    e = None
+    src = None
+    for path in (BASELINE_JSON, BASELINE_JSON.with_name("arm_headline_pod.json")):
+        if not path.exists():
+            continue
+        with open(path) as f:
+            base = json.load(f)
+        e = base.get("arm_headline", {}).get(trait, {}).get(mode)
+        if e is not None:
+            src = path.name
+            break
     if e is None:
         return {"note": "baseline entry missing"}
-    out: dict = {"monitors": {}, "recon_r2_mean": {}}
+    out: dict = {"monitors": {}, "recon_r2_mean": {}, "source": src}
     for arm in ARMS:
         for kind in ("dot", "cos"):
             mm = e["monitors"].get(f"h_{arm}_{kind}")
@@ -276,7 +288,7 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                 pts, los, his = [], [], []
                 for g in groups:
                     if g == "v_x mean (r7 baseline)":
-                        mm = entry["baseline_mean_summary"]["monitors"].get(f"h_{arm}_cos")
+                        mm = entry["baseline_mean_summary"].get("monitors", {}).get(f"h_{arm}_cos")
                         if mm is None:
                             pts.append(np.nan)
                             los.append(0.0)
@@ -284,7 +296,9 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                             continue
                         pt, lo, hi = mm["point"], mm["lo"], mm["hi"]
                     else:
-                        mm = entry["per_arm"][arm]["summaries"][g]["cos"][mode]
+                        # saved entries are already mode-flattened (main stores
+                        # d["summaries"][s]["cos"][mode]), so no [mode] here
+                        mm = entry["per_arm"][arm]["summaries"][g]["cos"]
                         pt, lo, hi = mm["point"], mm["lo"], mm["hi"]
                     pts.append(pt)
                     los.append(max(0.0, pt - lo) if np.isfinite(lo) else 0.0)
@@ -298,8 +312,8 @@ def make_figure(res: dict, fig_dir: Path) -> str:
                     color=colors[ai],
                     label=f"h — {ARM_LABELS[arm]}" if (row == 0 and col == 0) else None,
                 )
-            pv = entry["references"]["pv_raw"][mode]["point"]
-            orc = entry["references"]["oracle"][mode]["point"]
+            pv = entry["references"]["pv_raw"]["point"]
+            orc = entry["references"]["oracle"]["point"]
             ax.axhline(pv, color="gray", ls="--", lw=1.0)
             ax.axhline(orc, color="black", ls=":", lw=1.0)
             ax.axhline(0.0, color="gray", lw=0.5)
@@ -427,6 +441,14 @@ def main() -> int:
                     for s in SUMMARIES
                 },
             )
+
+    # Refresh baseline_mean_summary on EXISTING (resumed) entries too — the
+    # fits above are skipped on resume, but a baseline that was missing when
+    # the entry was checkpointed (e.g. the pod-file split) heals here.
+    for trait in C.TRAITS:
+        for mode in AH.MODES:
+            if mode in sec.get(trait, {}):
+                sec[trait][mode]["baseline_mean_summary"] = baseline_entry(trait, mode)
 
     res.setdefault("figures", {})["arm_headline_summaries"] = make_figure(res, args.fig_dir)
     C.write_json_atomic(args.out_json, res)

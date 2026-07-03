@@ -36,8 +36,10 @@ import fcntl
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -115,22 +117,104 @@ DUPLICATE_DISPATCH_NOTE_SENTINEL = "[spawn-session:duplicate-dispatch-suppressed
 # bookkeeping (#843 M1b) via :func:`spawn_output_suppressed`.
 DISPATCH_LEASE_HELD_SENTINEL = "DISPATCH-LEASE HELD"
 REGISTRATION_COLLISION_SENTINEL = "REGISTRATION-COLLISION"
+TAKEOVER_HELD_SENTINEL = "TAKEOVER-SENTINEL HELD"
+
+# ─── deliberate-takeover sentinel (#866/#903) ────────────────────────────────
+#
+# A session deliberately taking over a stalled autonomous session renames its
+# registration `issue-<N>.json` -> `issue-<N>.json.paused-takeover-<suffix>`
+# (free-form suffix; `manual-issue-` same shape). While the sentinel is FRESH
+# (file mtime within EPS_TAKEOVER_TTL_H, default 6h; `touch` renews) the
+# orphan-respawn pass skips the issue and `spawn-issue --auto` suppresses —
+# a stale/missing sentinel is ignored everywhere (FAIL OPEN: crash recovery
+# resumes at the TTL). Full convention doc:
+# `.claude/rules/background-automation.md` § Deliberate session takeover.
+TAKEOVER_SENTINEL_TTL_H_DEFAULT = 6.0  # hours; #903 (goal-specified ~6h)
+
+# Tolerance for ordinary clock jitter before a FUTURE-dated sentinel mtime is
+# treated as NOT fresh. A genuinely future-dated mtime (clock skew / a
+# `touch -d` typo) would otherwise be PERMANENTLY fresh — an indefinite
+# crash-recovery suppression that inverts the fail-open guarantee (#903
+# round-1 critique). Failing open here is visible: the per-tick skip line
+# never fires for the ignored sentinel, so "respawn resumed despite sentinel"
+# is the observable anomaly.
+FUTURE_MTIME_SLACK_S = 300.0
 
 
 def spawn_output_suppressed(stdout: str | None) -> str | None:
     """Which duplicate-suppression sentinel (if any) a rc-0 ``spawn-issue
     --auto`` subprocess printed: :data:`DISPATCH_LEASE_HELD_SENTINEL` /
-    :data:`REGISTRATION_COLLISION_SENTINEL`, else ``None`` (a real spawn).
+    :data:`REGISTRATION_COLLISION_SENTINEL` / :data:`TAKEOVER_HELD_SENTINEL`,
+    else ``None`` (a real spawn).
 
     Shared by the watcher's dispatch/respawn callers + the file-time filer so
     a suppressed no-op is never booked as a successful spawn — no dispatch
     marker, no attempt/backoff, no respawn bookkeeping (#843 M1b)."""
     if not stdout:
         return None
-    for sentinel in (DISPATCH_LEASE_HELD_SENTINEL, REGISTRATION_COLLISION_SENTINEL):
+    for sentinel in (
+        DISPATCH_LEASE_HELD_SENTINEL,
+        REGISTRATION_COLLISION_SENTINEL,
+        TAKEOVER_HELD_SENTINEL,
+    ):
         if sentinel in stdout:
             return sentinel
     return None
+
+
+def _takeover_ttl_s() -> float:
+    """Takeover-sentinel TTL in seconds (env ``EPS_TAKEOVER_TTL_H``, hours;
+    missing or malformed value falls back to
+    :data:`TAKEOVER_SENTINEL_TTL_H_DEFAULT` — a typo'd var must not disable
+    crash recovery, mirroring the watcher's ``_orphan_staleness_s``)."""
+    raw = os.environ.get("EPS_TAKEOVER_TTL_H")
+    if not raw:
+        return TAKEOVER_SENTINEL_TTL_H_DEFAULT * 3600.0
+    try:
+        return float(raw) * 3600.0
+    except ValueError:
+        return TAKEOVER_SENTINEL_TTL_H_DEFAULT * 3600.0
+
+
+def takeover_sentinel_fresh(
+    issue: int, now: float | None = None, registry_dir: Path | None = None
+) -> Path | None:
+    """Newest FRESH deliberate-takeover sentinel for issue ``issue``, else None.
+
+    Convention (#866/#903): a session deliberately taking over a stalled
+    autonomous session renames ``~/.eps-autonomous/issue-<N>.json`` ->
+    ``issue-<N>.json.paused-takeover-<suffix>`` (``manual-issue-`` same
+    shape). Fresh = file mtime within ``EPS_TAKEOVER_TTL_H`` (default 6h);
+    ``touch`` the sentinel to renew. FAIL OPEN: stale / missing / unreadable /
+    future-dated (beyond :data:`FUTURE_MTIME_SLACK_S`) -> ``None`` (today's
+    respawn behavior preserved). ``registry_dir``/``now`` are injectable for
+    tests (the :func:`resolve_session_for_issue` pattern). The exact-``N``-
+    then-``.json`` boundary makes the glob prefix-collision-safe
+    (``issue-1.json.paused-takeover-*`` cannot match issue 14)."""
+    reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
+    now = time.time() if now is None else now
+    ttl = _takeover_ttl_s()
+    best: Path | None = None
+    best_mtime = float("-inf")
+    if not reg.is_dir():
+        return None
+    for pattern in (
+        f"issue-{issue}.json.paused-takeover-*",
+        f"manual-issue-{issue}.json.paused-takeover-*",
+    ):
+        for p in reg.glob(pattern):
+            try:
+                mt = p.stat().st_mtime
+            except OSError:
+                continue  # unreadable -> ignored (fail open)
+            if mt > now + FUTURE_MTIME_SLACK_S:
+                # Future-dated mtime would be PERMANENTLY fresh — an
+                # indefinite crash-recovery suppression that inverts the
+                # fail-open guarantee. Treat as NOT fresh (fail open).
+                continue
+            if now - mt < ttl and mt > best_mtime:
+                best, best_mtime = p, mt
+    return best
 
 
 def _dispatch_lease_ttl_s() -> float:
@@ -799,6 +883,10 @@ def daemon_port() -> int:
 # orphan-adoption path that recovers on this exact race.
 DEFAULT_TIMEOUT_S = 10
 SPAWN_SESSION_TIMEOUT_S = 60
+# Hard join bound on the deliberate-stop breadcrumb post in `cmd_stop` —
+# `post_event` enters a blocking flock with no timeout, so a wedged lock
+# would otherwise hang the stop indefinitely (#902; plan §4.4 D5).
+STOP_BREADCRUMB_JOIN_TIMEOUT_S = 10.0
 
 
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1312,6 +1400,27 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         prompt = f"/issue {issue}"
     else:
         prompt = None
+    # #866/#903: a fresh `paused-takeover` sentinel means a deliberate session
+    # takeover is driving this issue — suppress automated spawns at the ONE
+    # choke point every automated caller funnels through (crash-recovery
+    # `_respawn`, stalled respawn, orphan sweep, infra-drain, capacity-retry,
+    # `file_infra_task.py`). Placed BEFORE lease acquisition: a gate landing
+    # after it would leave a TTL-held lease suppressing crash recovery past
+    # the sentinel TTL. Manual spawns warn-and-proceed (the #843 lease
+    # posture — the incident class is 100% automated races).
+    sentinel = takeover_sentinel_fresh(issue)
+    if sentinel is not None:
+        if args.auto:
+            print(
+                f"{TAKEOVER_HELD_SENTINEL} issue #{issue}: a deliberate session takeover "
+                f"is in flight (sentinel {sentinel}, ttl={_takeover_ttl_s():.0f}s); "
+                f"NOT spawning. Manual override: rm {sentinel} (or wait for the TTL)."
+            )
+            return  # exit 0 — suppressed IS dispatch success (#843 M1b semantics)
+        print(
+            f"  note: fresh takeover sentinel {sentinel} — a deliberate takeover may be "
+            f"in flight; proceeding (manual spawns are not gated)"
+        )
     lease: dict[str, Any] | None = None
     if args.auto:
         # #843 M1: atomic per-issue dispatch lease, acquired BEFORE the daemon
@@ -1940,11 +2049,150 @@ def cmd_list(args: argparse.Namespace) -> None:
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    """Stop a Happy session by id."""
+    """Stop a Happy session by id; degrade usefully on a daemon-untracked sid (#903).
+
+    For an issue-mapped OPERATOR stop, posts a ``deliberate-stop``
+    breadcrumb (structured ``epm:progress`` note) on the owning task
+    BEFORE the stop RPC, so a later exit-137/143 diagnosis can attribute
+    the kill (failure_patterns.md § kill-source verification; #779/#902).
+    Watcher-sourced stops (``--stop-source watcher``) post NOTHING — the
+    watcher keeps its own registry/sidecar evidence, and an auto-post
+    here would manufacture false operator attributions plus unsentineled
+    notes that reset staleness clocks. The post runs in a daemon thread
+    with a hard join timeout (:data:`STOP_BREADCRUMB_JOIN_TIMEOUT_S`) so
+    a wedged workflow flock can never hang the stop (fail-soft: WARN +
+    proceed on any failure or timeout).
+    """
+    if args.stop_source == "operator":
+        try:  # fail-soft: the WHOLE mapped branch (map load + post)
+            issue = _load_session_issue_map().get(args.session_id)
+            if issue is not None:
+                note = (
+                    f"deliberate-stop pid=n/a target=happy-session:{args.session_id} "
+                    f"reason={args.reason}"
+                )
+                # Exceptions inside the daemon thread are captured into a
+                # mutable cell and WARNed after the join (they cannot
+                # propagate across threads to the outer try).
+                exc_cell: list[BaseException] = []
+
+                def _post() -> None:
+                    try:
+                        from explore_persona_space.task_workflow import post_event
+
+                        post_event(issue, "epm:progress", by="spawn_session-stop", note=note)
+                    except BaseException as exc:  # loud via exc_cell — never silent
+                        exc_cell.append(exc)
+
+                t = threading.Thread(target=_post, daemon=True)
+                t.start()
+                t.join(timeout=STOP_BREADCRUMB_JOIN_TIMEOUT_S)
+                if t.is_alive():
+                    print(
+                        f"WARN: deliberate-stop breadcrumb on #{issue} still posting after "
+                        f"{STOP_BREADCRUMB_JOIN_TIMEOUT_S:g}s (wedged lock?); proceeding "
+                        f"with stop",
+                        file=sys.stderr,
+                    )
+                elif exc_cell:
+                    print(
+                        f"WARN: deliberate-stop breadcrumb failed: {exc_cell[0]!r}",
+                        file=sys.stderr,
+                    )
+                else:
+                    print(f"Posted deliberate-stop breadcrumb on #{issue}")
+        except Exception as exc:  # fail-soft side channel: never block the stop
+            print(f"WARN: deliberate-stop breadcrumb failed: {exc!r}", file=sys.stderr)
     resp = post("/stop-session", {"sessionId": args.session_id})
-    if not resp.get("success"):
-        sys.exit(f"stop failed: {resp}")
-    print(f"Stopped session {args.session_id}")
+    if resp.get("success"):
+        print(f"Stopped session {args.session_id}")
+        return
+    _stop_fallback(args.session_id, resp, kill=bool(getattr(args, "kill", False)))
+
+
+def _stop_fallback(sid: str, resp: dict, *, kill: bool) -> None:
+    """Failure path of :func:`cmd_stop` (#903): resolve a daemon-untracked
+    session id to its live happy node wrapper pid via the ``~/.happy/logs``
+    reverse map and either report a structured kill-by-pid recipe or — under
+    ``kill=True`` — SIGTERM the pid after a stacked identity re-verification
+    (comm + happy-wrapper cmdline signature + not-the-daemon-pid; ambiguity
+    always refuses to the report-only recipe, never a kill — the
+    kill-before-relaunch ownership discipline,
+    ``.claude/rules/crash-fix-rounds.md``). SIGKILL escalation stays manual
+    by design."""
+    if sid in _live_session_ids():
+        sys.exit(
+            f"stop failed for DAEMON-TRACKED session {sid}: {resp!r} — the daemon "
+            f"knows this session but refused the stop; retry once, then check "
+            f"~/.happy/logs/ for the daemon-side error."
+        )
+    import session_resolver  # lazy: session_resolver imports spawn_session at top level
+
+    pid = session_resolver.find_node_pid_for_session(sid)
+    if pid is None:
+        sys.exit(
+            f"stop failed: session {sid} is UNKNOWN to the Happy daemon "
+            f"(daemon-untracked) and no live happy node references it in "
+            f"~/.happy/logs/. If you know the wrapper pid: verify ownership first "
+            f"(`ps -o pid,lstart,cmd -p <pid>`; `ls -l /proc/<pid>/cwd`), then "
+            f"`kill -TERM <pid>`, wait ~10s, re-check `ps -p <pid>`. "
+            f"Raw daemon reply: {resp!r}"
+        )
+    if not kill:
+        sys.exit(
+            f"stop failed: session {sid} is daemon-untracked, but live happy node "
+            f"pid {pid} references it (~/.happy/logs reverse map). Re-run with "
+            f"--kill to SIGTERM it, or manually: verify `ps -o pid,lstart,cmd -p {pid}` "
+            f"then `kill -TERM {pid}`. Raw daemon reply: {resp!r}"
+        )
+    # --kill identity binding (#903 round-1 critique Must-Fix): comm alone is
+    # NOT ownership on a shared VM full of unrelated node processes (the Happy
+    # daemon, the eps-dashboard `next start`, every other wrapper), and the
+    # resolver's log scan can only return a RECYCLED pid for a genuinely dead
+    # session. Three stacked checks, each refusing to the report-only recipe
+    # on mismatch (never a kill on ambiguity — crash-fix-rounds.md
+    # § Kill-before-relaunch):
+    comm = session_resolver._read_proc_comm(pid)
+    if comm != "node":
+        sys.exit(
+            f"refusing --kill: pid {pid} comm={comm!r} != 'node' (pid may have been "
+            f"reused). Verify manually: ps -o pid,lstart,cmd -p {pid}; kill -TERM {pid}"
+        )
+    cmdline = session_resolver._read_proc_cmdline(pid) or ""
+    if "happy" not in cmdline:
+        # The happy-wrapper signature: `node .../happy/dist/index.mjs claude ...`.
+        sys.exit(
+            f"refusing --kill: pid {pid} cmdline {cmdline!r} lacks the happy-wrapper "
+            f"signature (pid likely recycled to an unrelated node process). "
+            f"Verify manually: ps -o pid,lstart,cmd -p {pid}"
+        )
+    # Never signal the Happy daemon itself (its log sits in the same dir; the
+    # `-daemon.log` suffix is regex-excluded by the resolver, but this is the
+    # last-line belt): read ~/.happy/daemon.state.json's pid, refuse on match.
+    daemon_pid = session_resolver._happy_daemon_pid()
+    if daemon_pid is not None and pid == daemon_pid:
+        sys.exit(f"refusing --kill: pid {pid} is the Happy DAEMON pid; wrong resolution.")
+    claude_pid = session_resolver.resolve_claude_pid(pid)  # best-effort, pre-kill (may be None)
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(20):  # ~10s @ 0.5s
+        time.sleep(0.5)
+        # Module-level seam: the resolver's `_pid_alive` is the ONE liveness
+        # probe (tests monkeypatch it + time.sleep) — no inline /proc check.
+        if not session_resolver._pid_alive(pid):
+            survivor = ""
+            if claude_pid is not None and session_resolver._pid_alive(claude_pid):
+                survivor = (
+                    f" WARNING: inner claude pid {claude_pid} still alive — the "
+                    f"wrapper's SIGTERM cleanup may have failed; verify/kill manually."
+                )
+            print(
+                f"Stopped daemon-untracked session {sid} via SIGTERM to node pid {pid}.{survivor}"
+            )
+            return
+    sys.exit(
+        f"SIGTERM sent to pid {pid} but it survived ~10s; escalate manually after "
+        f"re-verifying: kill -KILL {pid}"
+    )
 
 
 def resolve_session_for_issue(
@@ -2178,6 +2426,28 @@ def main(argv: list[str] | None = None) -> None:
 
     p_stop = sub.add_parser("stop", help="stop a Happy session by id")
     p_stop.add_argument("--session-id", required=True)
+    p_stop.add_argument(
+        "--reason",
+        default="operator stop via spawn_session.py stop",
+        help="one-line reason recorded in the deliberate-stop breadcrumb",
+    )
+    p_stop.add_argument(
+        "--stop-source",
+        choices=("operator", "watcher"),
+        default="operator",
+        help=(
+            "watcher-driven stops post no breadcrumb (the watcher keeps its "
+            "own registry/sidecar evidence trail)"
+        ),
+    )
+    p_stop.add_argument(
+        "--kill",
+        action="store_true",
+        help=(
+            "if the sid is daemon-untracked but resolvable to a live happy node "
+            "pid, SIGTERM that pid (comm re-verified first; no automatic SIGKILL)"
+        ),
+    )
     p_stop.set_defaults(fn=cmd_stop)
 
     p_resume = sub.add_parser(
