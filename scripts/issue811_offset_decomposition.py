@@ -361,9 +361,11 @@ def main() -> int:
         )
 
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: fail LOUD on a load failure (rb-fact-silent-drop-headline);
+    # None means ONLY the data-declared degenerate flag (plan §8).
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact unavailable — dropping fact")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     layout = loadact.list_store_layout_local(local_root, behaviors)
@@ -442,6 +444,16 @@ def main() -> int:
                     rec["verdict"],
                 )
 
+    # Requested-set completeness gate BEFORE the final (complete=True) write (r9
+    # reconciler standing rec): every requested behavior x layer x summary cell must
+    # be present — a silently skipped cell must never ship inside a payload stamped
+    # complete. `behaviors` is the post-degenerate-drop tuple (the set that ran).
+    expected_keys = {f"{b}/L{ly}/{s}" for s in summaries for b in behaviors for ly in layers}
+    missing_keys = sorted(expected_keys - set(out_cells))
+    assert not missing_keys, (
+        f"[offset-completeness-assert] {len(missing_keys)}/{len(expected_keys)} requested "
+        f"cells missing before final write: {missing_keys}"
+    )
     _write(final=True)
     max_dev = max(c["repro"]["rel_deviation"] for c in out_cells.values())
     # NOTE: this script now ALSO runs INSIDE issue811_dispatch.sh (the maxp arm's

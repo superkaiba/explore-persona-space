@@ -392,7 +392,10 @@ def main() -> int:
     )
     logger.info("[phase=points] %d rows → %s", len(rows), POINTS_JSON)
     make_figure(results)
-    logger.info("[phase=done] max |ρ_refit − ρ_run| = %.3e", worst_dev)
+    # No [phase=done] tag: that token is RESERVED for the dispatcher's single
+    # terminal line (pod-side reporting contract, #545); this script is not
+    # dispatcher-invoked, but keep the log surface consistent anyway.
+    logger.info("chain-scatter figure complete: max |ρ_refit − ρ_run| = %.3e", worst_dev)
     return 0
 
 

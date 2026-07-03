@@ -18,6 +18,7 @@ when ``EPM_SKIP_UPLOAD=1`` (a local CPU smoke that reads the store from disk).
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -67,14 +68,33 @@ def _shard_oversize_jsonl(path: Path) -> list[Path]:
     Returns the file list to upload (the original when under the ceiling).
     Never gzip (LFS-matched); shards land NEXT to the original, which is then
     excluded from the upload set. Realistic #811 R files are ~100 KB, so this is
-    a policy guard, not an expected path.
+    a policy guard, not an expected path. A SINGLE line exceeding the shard
+    target cannot be line-split at all — it RAISES with the row's identity
+    (never ships as an oversize shard, which the Hub would force-route to LFS
+    at >10 MB; r10 Minor). Content hygiene: the raise names identity keys only,
+    never the text field.
     """
     if path.stat().st_size <= TEXT_SHARD_BYTES:
         return [path]
     shards: list[Path] = []
     idx, size, buf = 0, 0, []
     with path.open() as fh:
-        for line in fh:
+        for lineno, line in enumerate(fh, start=1):
+            if len(line.encode()) > TEXT_SHARD_TARGET:
+                try:
+                    row = json.loads(line)
+                    ident = {
+                        k: row.get(k)
+                        for k in ("behavior", "source_cid", "target_cid", "neg_cid", "probe_idx")
+                        if k in row
+                    }
+                except Exception:
+                    ident = {"parse": "failed"}
+                raise ValueError(
+                    f"single JSONL row of {len(line.encode())} B > {TEXT_SHARD_TARGET} B shard "
+                    f"target in {path.name}:{lineno} (row identity: {ident}) — cannot "
+                    "line-split; a >10 MB blob would force-route to LFS (Upload Policy)"
+                )
             if size + len(line.encode()) > TEXT_SHARD_TARGET and buf:
                 shard = path.with_name(f"{path.stem}.shard{idx:02d}.jsonl")
                 shard.write_text("".join(buf))

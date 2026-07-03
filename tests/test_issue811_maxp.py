@@ -82,6 +82,71 @@ def test_blob_to_record_reads_maxp_keys():
     np.testing.assert_allclose(rec.vplus, vplus_maxp.astype(np.float64))
 
 
+class _StubTok:
+    """Dependency-free stand-in for the tokenizer: token count = word count."""
+
+    def encode(self, text, add_special_tokens=False):
+        return [0] * max(1, len(text.split()))
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    import json
+
+    return [json.loads(ln) for ln in path.read_text().splitlines()]
+
+
+def test_persist_r_text_per_source_files_survive_across_sources(tmp_path):
+    """r10 Codex MAJOR raw-completion-source-collision: two per-source invocations
+    over the SAME (behavior, target) — different source_cid, DIFFERENT text — must
+    BOTH survive with their own source_cid metadata (the dispatcher loops sources
+    over overlapping target sets; a per-(behavior, target)-only filename kept only
+    the last source's rows)."""
+    out_root = tmp_path / "store"
+    tok = _StubTok()
+    ex.persist_r_text(
+        out_root, "em", "src_a", tok, {("tgt1", 0): "alpha response"}, stage="extraction"
+    )
+    ex.persist_r_text(
+        out_root, "em", "src_b", tok, {("tgt1", 0): "beta response differs"}, stage="extraction"
+    )
+    raw_dir = tmp_path / "raw_completions" / "extraction"
+    rows_a = _read_jsonl(raw_dir / "responses_em_src_a_tgt1.jsonl")
+    rows_b = _read_jsonl(raw_dir / "responses_em_src_b_tgt1.jsonl")
+    assert rows_a[0]["source_cid"] == "src_a" and rows_a[0]["text"] == "alpha response"
+    assert rows_b[0]["source_cid"] == "src_b" and rows_b[0]["text"] == "beta response differs"
+
+
+def test_persist_r_text_negpanel_is_per_source_too(tmp_path):
+    """The negpanel JSONL collides identically across sources — it carries
+    source_cid in the filename as well."""
+    out_root = tmp_path / "store"
+    tok = _StubTok()
+    ex.persist_r_text(out_root, "em", "src_a", tok, {("tgt1", 0): "r"}, {("neg1", 0): "neg a"})
+    ex.persist_r_text(
+        out_root, "em", "src_b", tok, {("tgt1", 0): "r"}, {("neg1", 0): "neg b differs"}
+    )
+    raw_dir = tmp_path / "raw_completions" / "extraction"
+    rows_a = _read_jsonl(raw_dir / "responses_em_src_a_negpanel.jsonl")
+    rows_b = _read_jsonl(raw_dir / "responses_em_src_b_negpanel.jsonl")
+    assert rows_a[0]["source_cid"] == "src_a" and rows_a[0]["text"] == "neg a"
+    assert rows_b[0]["source_cid"] == "src_b" and rows_b[0]["text"] == "neg b differs"
+
+
+def test_load_rb_fact_required_raises_on_hub_error(monkeypatch):
+    """r10 CONCERN rb-fact-silent-drop-headline: a Hub error under required=True
+    RAISES (never a silent fact-drop); required=False keeps the #722 warn+None."""
+    import huggingface_hub
+    import issue722_fit_M as fitM
+
+    def _boom(*a, **k):
+        raise OSError("simulated transient Hub 504")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _boom)
+    with pytest.raises(RuntimeError, match="rb-fact-silent-drop-headline"):
+        fitM._load_rb_fact(required=True)
+    assert fitM._load_rb_fact() is None  # #722 default behavior verbatim
+
+
 def test_blob_to_record_maxp_fails_loud_on_mean_only_store():
     h = loadact.HIDDEN
     blob = {

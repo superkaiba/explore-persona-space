@@ -1127,16 +1127,22 @@ def persist_r_text(
     *,
     stage: str = "extraction",
 ) -> Path | None:
-    """Persist the greedy base responses R as per-target JSONL (Upload Policy).
+    """Persist the greedy base responses R as per-(source, target) JSONL (Upload Policy).
 
-    Writes ``<out_root>/../raw_completions/<stage>/responses_{behavior}_{target}.jsonl``
+    Writes ``<out_root>/../raw_completions/<stage>/responses_{behavior}_{source}_{target}.jsonl``
     — one row per probe: ``{behavior, source_cid, target_cid, probe_idx, text,
     n_tokens}`` (plan §10; closes the v1 generation-discard WARN: the persisted R
     text makes the discarded per-token span tensors REGENERABLE via one
-    teacher-forced forward pass). Atomic per-file replace (tmp + os.replace); R is
-    greedy-deterministic per environment, so a per-source re-write of the same
-    (behavior, target) file is content-identical. Negative-panel R (when present)
-    lands in ``responses_{behavior}_negpanel.jsonl``. Returns the raw dir, or
+    teacher-forced forward pass). ``source_cid`` is part of the FILENAME: the
+    dispatcher invokes this once per source over overlapping target sets, so a
+    per-(behavior, target)-only path is overwritten by every later source and only
+    the last source's rows (and metadata) survive — losing the exact R earlier
+    sources' activations were computed from (r10 Codex MAJOR
+    raw-completion-source-collision; vLLM batching makes cross-invocation greedy
+    text non-guaranteed-identical). Atomic per-file replace (tmp + os.replace) —
+    a RE-RUN of the SAME (behavior, source) cell rewrites its own files only.
+    Negative-panel R (when present) lands in
+    ``responses_{behavior}_{source}_negpanel.jsonl``. Returns the raw dir, or
     ``None`` when there is nothing to persist (e.g. before any generation).
     CONTENT HYGIENE: text goes to FILES only — never logged/printed (em rows are
     Betley harmful-content).
@@ -1159,7 +1165,7 @@ def persist_r_text(
         )
     n_rows = 0
     for tcid, rows in by_target.items():
-        path = raw_dir / f"responses_{behavior}_{tcid}.jsonl"
+        path = raw_dir / f"responses_{behavior}_{source_cid}_{tcid}.jsonl"
         tmp = raw_dir / f"{path.name}.{os.getpid()}.tmp"
         tmp.write_text("".join(json.dumps(r) + "\n" for r in rows))
         os.replace(tmp, path)
@@ -1176,7 +1182,7 @@ def persist_r_text(
             }
             for (ncid, qi), text in sorted(neg_r_lookup.items())
         ]
-        path = raw_dir / f"responses_{behavior}_negpanel.jsonl"
+        path = raw_dir / f"responses_{behavior}_{source_cid}_negpanel.jsonl"
         tmp = raw_dir / f"{path.name}.{os.getpid()}.tmp"
         tmp.write_text("".join(json.dumps(r) + "\n" for r in rows))
         os.replace(tmp, path)

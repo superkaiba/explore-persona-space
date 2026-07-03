@@ -279,8 +279,18 @@ def _load_rb_main() -> dict:
     return torch.load(local, weights_only=False)
 
 
-def _load_rb_fact() -> dict | None:
-    """Load the NEW r_b_fact.pt (this task's fact direction); None if absent."""
+def _load_rb_fact(*, required: bool = False) -> dict | None:
+    """Load the NEW r_b_fact.pt (this task's fact direction); None if absent.
+
+    ``required=False`` (the #722 default) preserves prior behavior verbatim: any
+    load failure warns + returns None and the caller drops fact. ``required=True``
+    (the #811 call sites, where fact carries the round's headline) RE-RAISES a
+    load failure — a transient Hub error at fit time must crash the fit loudly,
+    never silently void the fact headline (#811 r10 CONCERN
+    rb-fact-silent-drop-headline). A payload flagged ``degenerate`` still returns
+    None under BOTH modes: that is a data-declared drop (plan §8), not a load
+    failure.
+    """
     from huggingface_hub import hf_hub_download
 
     try:
@@ -291,6 +301,12 @@ def _load_rb_fact() -> dict | None:
             revision=_rb_revision(),
         )
     except Exception as e:  # not yet extracted (e.g. fit-only smoke) — caller drops fact
+        if required:
+            raise RuntimeError(
+                "r_b_fact.pt REQUIRED (fact is in the requested behaviors) but failed to "
+                f"load from {DATA_REPO}@{_rb_revision()}: {e!r} — refusing the silent "
+                "fact-drop (rb-fact-silent-drop-headline)"
+            ) from e
         logger.warning("r_b_fact.pt unavailable (%s); fact headline will be skipped", e)
         return None
     payload = torch.load(local, weights_only=False)
