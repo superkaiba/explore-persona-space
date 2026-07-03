@@ -5801,8 +5801,8 @@
     "889": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/889",
-      "status": "proposed",
+      "path": "tasks/planning/889",
+      "status": "planning",
       "title": "workflow-fix: pre-dispatch triage gate for external audit markers"
     },
     "89": {
