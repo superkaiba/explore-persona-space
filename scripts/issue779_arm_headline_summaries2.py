@@ -417,10 +417,16 @@ def make_figure(res: dict, args: argparse.Namespace) -> str:
     fig, axes = plt.subplots(3, 3, figsize=(20, 13), layout="tight")
     colors = paper_palette(max(len(ARMS), len(SWEEP_VARIANTS)))
     # Rows 0-1: frozen-layer grid (modes x traits), grouped bars per variant/arm.
+    # Guard: with --only b (or a partial resume) section A is absent — leave the
+    # panel empty instead of KeyError-ing after the sweep already ran.
+    head = res.get("summaries2_headline", {})
     for row, mode in enumerate(AH.MODES):
         for col, trait in enumerate(C.TRAITS):
             ax = axes[row][col]
-            entry = res["summaries2_headline"][trait][mode]
+            entry = head.get(trait, {}).get(mode)
+            if entry is None:
+                ax.set_axis_off()
+                continue
             arms_here = entry["arms_evaluated"]
             width = 0.8 / len(arms_here)
             xpos = np.arange(len(all_variants))
