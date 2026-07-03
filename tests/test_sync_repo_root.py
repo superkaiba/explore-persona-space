@@ -569,7 +569,7 @@ def test_stale_husk_auto_aborted_then_continue(origin_and_clone, capsys):
     t = time.time() - 7200
     os.utime(husk, (t, t))
 
-    rc, rep, err = _run(local, capsys=capsys)
+    rc, rep, _err = _run(local, capsys=capsys)
     # Stale husk aborted + loud report; the run CONTINUES into the pull, which
     # re-hits the same genuine content conflict → clean exit-2 abort.
     assert any("STALE-HUSK ABORT" in m for m in rep["messages"])
@@ -582,7 +582,7 @@ def test_young_husk_untouched_exit_5(origin_and_clone, capsys):
     _origin, local, other = origin_and_clone
     husk = _make_conflicted_rebase_husk(local, other)
 
-    rc, rep, err = _run(local, capsys=capsys)
+    rc, _rep, err = _run(local, capsys=capsys)
     assert rc == 5
     assert husk.exists()  # untouched
     assert "young rebase-merge husk" in err
@@ -599,7 +599,7 @@ def test_head_not_main_exit_5_zero_mutations(origin_and_clone, capsys):
         _git(local, "status", "--porcelain=v2", "--untracked-files=all").stdout,
         _worktree_digest(local),
     )
-    rc, rep, err = _run(local, capsys=capsys)
+    rc, _rep, err = _run(local, capsys=capsys)
     assert rc == 5
     assert "not 'main'" in err
     assert before == (
@@ -638,7 +638,7 @@ def test_writer_holding_task_lock_past_bound_exits_5(origin_and_clone, monkeypat
     fd = os.open(lock2, os.O_WRONLY | os.O_CREAT, 0o600)
     fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     try:
-        rc, rep, err = _run(local, capsys=capsys)
+        rc, _rep, err = _run(local, capsys=capsys)
     finally:
         os.close(fd)
     assert rc == 5
@@ -708,7 +708,7 @@ def test_push_rejected_twice_exits_3(origin_and_clone, capsys):
     _write(local, "new.txt", "new\n")
     _commit(local, "new.txt")
 
-    rc, rep, err = _run(local, capsys=capsys)
+    rc, _rep, err = _run(local, capsys=capsys)
     assert rc == 3
     assert not (local / ".git" / "rebase-merge").exists()
     assert "push failed after the one retry" in err

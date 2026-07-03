@@ -853,6 +853,43 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
+def _push_leg(
+    repo: Path,
+    ledger: list[SweepAction],
+    rescue_dir: Path,
+    report: dict,
+    timeout_s: float,
+) -> None:
+    """Push with ONE retry: a rejection routes through the SAME sweep-wrapped
+    pull pipeline (fresh collisions can materialize in the interim window),
+    then pushes again; a second rejection exits 3 (plan §4.5)."""
+    ahead, _ = _counts(repo)
+    if ahead == 0:
+        return
+    push = _run_bounded(_git_argv(repo, "push", "origin", "main"), timeout_s)
+    if push.timed_out:
+        raise SyncAbortError(EXIT_TIMEOUT, f"push timed out after {timeout_s:.0f}s.")
+    if push.rc != 0:
+        _msg(
+            report,
+            "push rejected — one retry through the sweep-wrapped pull "
+            f"pipeline. stderr: {push.stderr.strip()}",
+        )
+        _pull_pipeline(repo, ledger, rescue_dir, report, timeout_s)
+        push = _run_bounded(_git_argv(repo, "push", "origin", "main"), timeout_s)
+        if push.timed_out:
+            raise SyncAbortError(EXIT_TIMEOUT, f"push timed out after {timeout_s:.0f}s.")
+        if push.rc != 0:
+            raise SyncAbortError(
+                EXIT_PUSH_FAILED,
+                "push failed after the one retry — an out-of-band pusher "
+                "or a rejecting remote; report + stop (never loop).\n"
+                f"stderr: {push.stderr.strip()}",
+            )
+    report["actions_performed"] = True
+    _msg(report, "push to origin/main succeeded.")
+
+
 def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: float) -> int:
     """Everything under the root-sync lock: bounded second lock → preflight →
     fetch → dry-run report OR pull pipeline → push with one retry → integrity."""
@@ -893,34 +930,7 @@ def _run_locked(repo: Path, args: argparse.Namespace, report: dict, timeout_s: f
                 _pull_pipeline(repo, ledger, rescue_dir, report, timeout_s)
 
             if not args.no_push:
-                ahead, _ = _counts(repo)
-                if ahead > 0:
-                    push = _run_bounded(_git_argv(repo, "push", "origin", "main"), timeout_s)
-                    if push.timed_out:
-                        raise SyncAbortError(
-                            EXIT_TIMEOUT, f"push timed out after {timeout_s:.0f}s."
-                        )
-                    if push.rc != 0:
-                        _msg(
-                            report,
-                            "push rejected — one retry through the sweep-wrapped pull "
-                            f"pipeline. stderr: {push.stderr.strip()}",
-                        )
-                        _pull_pipeline(repo, ledger, rescue_dir, report, timeout_s)
-                        push = _run_bounded(_git_argv(repo, "push", "origin", "main"), timeout_s)
-                        if push.timed_out:
-                            raise SyncAbortError(
-                                EXIT_TIMEOUT, f"push timed out after {timeout_s:.0f}s."
-                            )
-                        if push.rc != 0:
-                            raise SyncAbortError(
-                                EXIT_PUSH_FAILED,
-                                "push failed after the one retry — an out-of-band pusher "
-                                "or a rejecting remote; report + stop (never loop).\n"
-                                f"stderr: {push.stderr.strip()}",
-                            )
-                    report["actions_performed"] = True
-                    _msg(report, "push to origin/main succeeded.")
+                _push_leg(repo, ledger, rescue_dir, report, timeout_s)
 
             _post_sync_integrity(repo, report)
             report["state"] = "synced" if report.get("actions_performed") else "already"
