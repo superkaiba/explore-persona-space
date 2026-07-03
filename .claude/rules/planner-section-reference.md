@@ -351,9 +351,10 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
 
-**Serial-fit-loop & draw-battery sizing (REQUIRED whenever any §9 component
-loops a fit / solve / factorization / draw over cells, folds, layers, arms,
-traits, seeds, or draws).**
+**Serial-fit-loop, draw-battery & store-serialization sizing (REQUIRED
+whenever any §9 component loops a fit / solve / factorization / draw — or a
+per-item serialization / per-file upload — over cells, folds, layers, arms,
+traits, seeds, draws, or output files).**
 (a) Write the multiplier arithmetic EXPLICITLY in the row's basis:
 `total_calls = draws × cells × folds × …` and
 `projected_wall = total_calls × per_call_cost / parallelism`. A battery/null
@@ -373,6 +374,13 @@ substitution.
 (d) A row with `total_calls` >~500 or projected serial wall > 4 h triggers the
 floor cross-check (`.claude/rules/plan-compute-sizing.md`) and the batching
 requirement (`.claude/rules/vectorize-many-cell-fits.md`).
+(e) For a store-heavy phase (>~10^3 output files or >~50 GB written), ground
+`per_call_cost` on a MEASURED one-item serialization + upload wall-time at
+production shape — bytes/file-counts alone are not a basis — and default
+client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
+(#813: `savez_compressed` 103.8 s vs plain `savez` 1.2 s per file for a
+1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
+`.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
