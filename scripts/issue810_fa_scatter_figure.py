@@ -36,6 +36,9 @@ def main() -> None:
     head = d["a_length_partialled_readout"]["headline_turn_nl_L22"]
     assert c["cell"]["summary"] == "turn_nl" and c["cell"]["layer"] == 22, c["cell"]
 
+    from issue810_common import reader_context_labels
+
+    labels = reader_context_labels()
     trip = c["triples"]
     x = np.array([t["prediction"] for t in trip], dtype=float)
     y = np.array([t["graded_e0"] for t in trip], dtype=float)
@@ -61,7 +64,7 @@ def main() -> None:
         ax.text(
             x[i],
             y[i] + (0.7 if rank % 2 else -0.7),
-            ids[i],
+            labels[ids[i]],
             fontsize=5.5,
             ha=ha,
             va="bottom" if rank % 2 else "top",

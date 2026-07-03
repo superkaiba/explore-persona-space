@@ -234,6 +234,36 @@ def load_json(path: Path | str):
         return json.load(f)
 
 
+def reader_context_labels(max_len: int = 26) -> dict[str, str]:
+    """Reader-facing plain-English label per battery context id (figure point labels).
+
+    Loads the 50-context battery (local ``data/issue594/battery.json`` when
+    present, else the sha-pinned HF snapshot ``battery50.json``) and maps each
+    instance id to its human ``label`` field — underscores become spaces and
+    long PersonaHub descriptions are truncated at a word boundary to
+    ``max_len`` chars plus an ellipsis. Raises if the battery does not yield
+    exactly 50 ids.
+    """
+    local = PROJECT_ROOT / "data" / "issue594" / "battery.json"
+    if local.exists():
+        blob = load_json(local)
+    else:
+        from huggingface_hub import hf_hub_download
+
+        p = hf_hub_download(HF_DATA_REPO, BATTERY50_HF_FILE, repo_type="dataset")
+        assert_sha256(p, BATTERY50_SHA256, "battery50.json")
+        blob = load_json(p)
+    out: dict[str, str] = {}
+    for inst in blob["instances"]:
+        lab = str(inst["label"]).replace("_", " ")
+        if len(lab) > max_len:
+            lab = lab[:max_len].rsplit(" ", 1)[0].rstrip(" ,.") + "…"
+        out[str(inst["id"])] = lab
+    if len(out) != 50:
+        raise RuntimeError(f"battery labels: expected 50 ids, got {len(out)}")
+    return out
+
+
 def dump_json(obj, path: Path | str) -> None:
     """Atomic-ish JSON write (tmp + rename); parent dirs created."""
     path = Path(path)

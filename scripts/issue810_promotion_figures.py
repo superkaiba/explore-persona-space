@@ -24,6 +24,7 @@ import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
+from issue810_common import reader_context_labels
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette_role,
@@ -41,6 +42,7 @@ def gitload(path: str) -> dict:
 def fig_recon_per_context() -> None:
     boot = gitload("eval_results/issue_810/analysis/bootstrap_deltaskill.json")
     pcd = boot["per_context_decomposition"]
+    labels = reader_context_labels()
     layer = 21
     ids = pcd["mean"]["context_ids"]
     assert ids == pcd["maxp"]["context_ids"], "context id order mismatch"
@@ -65,14 +67,15 @@ def fig_recon_per_context() -> None:
         alpha=0.85,
         zorder=2,
     )
-    # Label the most off-diagonal contexts (largest |log ratio difference|),
-    # alternating vertical anchors so neighboring labels do not collide.
+    # Label the most off-diagonal contexts (largest |log ratio difference|) with
+    # reader-facing plain-English context names (battery labels, never raw
+    # slugs), alternating vertical anchors so neighboring labels do not collide.
     gap = np.abs(np.log(ratio["maxp"]) - np.log(ratio["mean"]))
     for rank, i in enumerate(np.argsort(gap)[-10:]):
         ax.text(
             ratio["mean"][i] * 1.05,
             ratio["maxp"][i] * (1.06 if rank % 2 else 0.94),
-            ids[i],
+            labels[ids[i]],
             fontsize=5.5,
             va="bottom" if rank % 2 else "top",
             color="#444444",
