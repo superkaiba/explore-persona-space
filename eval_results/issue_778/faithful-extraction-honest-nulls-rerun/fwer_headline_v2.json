@@ -1,0 +1,146 @@
+{
+  "label": "faithful-extraction-honest-nulls-rerun",
+  "construction": "registered min-p FWER over the monitoring headline cells at the pre-registered fixed paper-steering layer; joint null by draw-index pairing across independently-seeded per-cell streams; leave-self-out within-cell rank-p per draw; FWER p = (#{b: min_c rank-p_c(b) <= observed min-p} + 1)/(m+1). Independence joint null \u2014 conservative under positive cross-cell dependence (disclosed). Finetune cells excluded (effect-size-only pre-declaration).",
+  "headline_cells": [
+    "evil_monitoring_corrected:overall",
+    "evil_monitoring_corrected:within",
+    "evil_monitoring_manyshot:overall",
+    "evil_monitoring_manyshot:within",
+    "sycophancy_monitoring_corrected:overall",
+    "sycophancy_monitoring_corrected:within",
+    "sycophancy_monitoring_manyshot:overall",
+    "sycophancy_monitoring_manyshot:within",
+    "hallucination_monitoring_corrected:overall",
+    "hallucination_monitoring_corrected:within",
+    "hallucination_monitoring_manyshot:overall",
+    "hallucination_monitoring_manyshot:within"
+  ],
+  "n_headline_cells": 12,
+  "expected_headline_cells": 12,
+  "expected_n_draws": 10000,
+  "allow_gate_skip_smoke_only": false,
+  "primary_family_by_trait": {
+    "evil": "within_class",
+    "sycophancy": "neg_arm_only",
+    "hallucination": "neg_arm_only"
+  },
+  "layer_resolution": {
+    "paper_layers_1indexed": {
+      "evil": 20,
+      "sycophancy": 20,
+      "hallucination": 16
+    },
+    "rb_indices_0indexed": {
+      "evil": 19,
+      "sycophancy": 19,
+      "hallucination": 15
+    },
+    "source": "arXiv 2507.21509 source tarball, appendix/judge_human_eval.tex 'Selecting the most informative layer' (Qwen: layer 20 evil+sycophancy, layer 16 hallucination; 1-indexed; 'activation' = layer OUTPUT) + released repo @ b8e0f044 eval_persona.py:259/:49 (vector[layer] with ActivationSteerer layer_idx=layer-1). Resolved 2026-07-02 BEFORE any per-layer v2 result (fail-closed; hallucination CONFIRMED in the fixed-layer primary family)."
+  },
+  "families": {
+    "isotropic": {
+      "n_draws": 10000,
+      "observed_min_p": 0.00019998000199980003,
+      "observed_min_p_cell": "evil_monitoring_manyshot:overall",
+      "fwer_adjusted_p": 0.0024997500249975004,
+      "mc_se": 0.0004993497045968913,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0021997800219978004,
+        "p50": 0.056644335566443355,
+        "p97_5": 0.26447355264473554
+      }
+    },
+    "within_class": {
+      "n_draws": 10000,
+      "observed_min_p": 0.00029997000299970003,
+      "observed_min_p_cell": "evil_monitoring_manyshot:overall",
+      "fwer_adjusted_p": 0.0036996300369963003,
+      "mc_se": 0.0006071196566234415,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.002197280271972805,
+        "p50": 0.0565943405659434,
+        "p97_5": 0.2685756424357564
+      }
+    },
+    "neg_arm_only": {
+      "n_draws": 10000,
+      "observed_min_p": 9.999000099990002e-05,
+      "observed_min_p_cell": "evil_monitoring_corrected:overall",
+      "fwer_adjusted_p": 0.0012998700129987,
+      "mc_se": 0.0003603026992610529,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0020997900209979003,
+        "p50": 0.056194380561943806,
+        "p97_5": 0.265883411658834
+      }
+    },
+    "neutral_cov": {
+      "n_draws": 10000,
+      "observed_min_p": 0.00019998000199980003,
+      "observed_min_p_cell": "sycophancy_monitoring_manyshot:overall",
+      "fwer_adjusted_p": 0.0024997500249975004,
+      "mc_se": 0.0004993497045968913,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0021997800219978004,
+        "p50": 0.055894410558944105,
+        "p97_5": 0.2667758224177582
+      }
+    },
+    "rb_projected_out": {
+      "n_draws": 10000,
+      "observed_min_p": 9.999000099990002e-05,
+      "observed_min_p_cell": "evil_monitoring_corrected:overall",
+      "fwer_adjusted_p": 0.0012998700129987,
+      "mc_se": 0.0003603026992610529,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0020997900209979003,
+        "p50": 0.0565943405659434,
+        "p97_5": 0.2634836516348364
+      }
+    },
+    "target_shuffle": {
+      "n_draws": 10000,
+      "observed_min_p": 9.999000099990002e-05,
+      "observed_min_p_cell": "evil_monitoring_corrected:overall",
+      "fwer_adjusted_p": 0.0012998700129987,
+      "mc_se": 0.0003603026992610529,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0020997900209979003,
+        "p50": 0.056194380561943806,
+        "p97_5": 0.2637811218878111
+      }
+    },
+    "primary_mixed": {
+      "n_draws": 10000,
+      "observed_min_p": 9.999000099990002e-05,
+      "observed_min_p_cell": "sycophancy_monitoring_corrected:within",
+      "fwer_adjusted_p": 0.0012998700129987,
+      "mc_se": 0.0003603026992610529,
+      "p_floor": 9.999000099990002e-05,
+      "null_min_p_quantiles": {
+        "p2_5": 0.0021997800219978004,
+        "p50": 0.056394360563943605,
+        "p97_5": 0.2631811818818117
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "3ee5a9cf26044618200351d41e3d769c32e6918b",
+    "timestamp": "2026-07-02T21:58:45-0700",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  }
+}
