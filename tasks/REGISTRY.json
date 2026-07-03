@@ -6185,8 +6185,8 @@
     "938": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/938",
-      "status": "reviewing",
+      "path": "tasks/completed/938",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 MooseFS FUSE wedge on pod .venv (silent launch hang)"
     },
     "939": {
