@@ -169,6 +169,55 @@ def capture_prompts(
 # ── KILL-A spot-gate ─────────────────────────────────────────────────────────────
 
 
+# KILL-A acceptance thresholds (round-3 metric fix). The stored parent cx_last was
+# computed on the parent's H100; this capture may run on an A100 with a different
+# batch-summation order, so bf16 activations carry ~0.5%-scale cross-hardware noise
+# that is inherent + harmless (the anchor fit uses the STORED rows anyway). The old
+# max-ELEMENTWISE rel-error metric divides that noise by near-zero stored elements and
+# explodes (att-3: cosine 0.9998+ but elementwise rel 3.1e5). Robust triple instead:
+#   (a) cosine ≥ 0.999   — catches wrong position / layer / normalization / scaling
+#                          bugs (those collapse cosine well below 0.99; att-3 min was
+#                          0.99984, the empirical anchor for this floor);
+#   (b) norm-rel ≤ 2e-2  — ‖recaptured−stored‖/‖stored‖; ~4× the expected ~5e-3 bf16
+#                          cross-hardware noise, so real corruption fails but noise passes;
+#   (c) norm-ratio ∈ [0.99, 1.01] — global magnitude match (catches a dtype up/downcast
+#                          that leaves direction intact but rescales).
+# The old elementwise max is retained as a LOGGED diagnostic (``elem_rel_err``), never a gate.
+_KILLA_COS_FLOOR = 0.999
+_KILLA_NORM_REL_TOL = 2e-2
+_KILLA_NORM_RATIO_BAND = (0.99, 1.01)
+
+
+def _probe_accept(
+    stored: np.ndarray,
+    got: np.ndarray,
+    *,
+    cos_floor: float = _KILLA_COS_FLOOR,
+    norm_rel_tol: float = _KILLA_NORM_REL_TOL,
+    norm_ratio_band: tuple[float, float] = _KILLA_NORM_RATIO_BAND,
+) -> dict:
+    """Robust per-probe acceptance metric for KILL-A (the LIVE dispatched gate metric).
+
+    ``stored`` / ``got`` are the (L, H) stored-vs-recaptured parent cx_last rows.
+    Returns a dict with cosine / norm_rel / norm_ratio / elem_rel_err (diagnostic) +
+    a bool ``pass`` = all three of the triple hold. Full flat over (L, H)."""
+    s_norm = float(np.linalg.norm(stored))
+    g_norm = float(np.linalg.norm(got))
+    cos = float(np.sum(got * stored) / (g_norm * s_norm + 1e-12))
+    norm_rel = float(np.linalg.norm(got - stored) / (s_norm + 1e-12))
+    norm_ratio = float(g_norm / (s_norm + 1e-12))
+    elem_rel = float(np.max(np.abs(got - stored) / (np.abs(stored) + 1e-6)))  # DIAGNOSTIC only
+    lo, hi = norm_ratio_band
+    ok = (cos >= cos_floor) and (norm_rel <= norm_rel_tol) and (lo <= norm_ratio <= hi)
+    return {
+        "cosine": cos,
+        "norm_rel": norm_rel,
+        "norm_ratio": norm_ratio,
+        "elem_rel_err": elem_rel,
+        "pass": bool(ok),
+    }
+
+
 def kill_a_spot_gate(
     model,
     tokenizer,
@@ -180,14 +229,19 @@ def kill_a_spot_gate(
     n_probe: int,
     batch_fill: int,
     rel_tol: float,
+    cos_floor: float = _KILLA_COS_FLOOR,
+    norm_rel_tol: float = _KILLA_NORM_REL_TOL,
+    norm_ratio_band: tuple[float, float] = _KILLA_NORM_RATIO_BAND,
 ) -> dict:
-    """Re-capture ``n_probe`` regenerated parent contexts MIXED into a realistic
-    batch and assert each matches its stored ``cx_last`` row to ``rel_tol``.
+    """Re-capture ``n_probe`` regenerated parent contexts MIXED into a realistic batch
+    and assert each matches its stored ``cx_last`` row under the robust triple
+    (cosine / norm-rel / norm-ratio — see the ``_KILLA_*`` threshold comment above).
 
     The probe parent contexts are placed at the FRONT of a batch padded out with
     ``new_prompts`` to ``batch_fill`` total, so the batch's length distribution +
     left-pad regime match the full capture (NOT an isolated tiny all-parent batch).
-    Returns a summary dict; raises AssertionError (KILL-A) on any miss.
+    ``rel_tol`` (the old max-elementwise tol) is retained for LOGGING only — it no
+    longer gates. Returns a summary dict; raises AssertionError (KILL-A) on any miss.
     """
     probe_idx = np.linspace(0, len(parent_prompts) - 1, num=n_probe, dtype=int).tolist()
     probe_prompts = [parent_prompts[i] for i in probe_idx]
@@ -201,36 +255,61 @@ def kill_a_spot_gate(
     probe_captured = captured[:n_probe]  # rows 0..n_probe-1 are the parent probes
 
     checks = []
-    worst = 0.0
     for j, pidx in enumerate(probe_idx):
-        stored = stored_cx_last[pidx]  # (L, H)
-        got = probe_captured[j]  # (L, H)
-        denom = np.abs(stored) + 1e-6
-        rel = float(np.max(np.abs(got - stored) / denom))
-        cos = float(np.sum(got * stored) / (np.linalg.norm(got) * np.linalg.norm(stored) + 1e-8))
-        worst = max(worst, rel)
-        checks.append({"parent_index": int(pidx), "rel_err": rel, "cosine": cos})
+        m = _probe_accept(
+            stored_cx_last[pidx],
+            probe_captured[j],
+            cos_floor=cos_floor,
+            norm_rel_tol=norm_rel_tol,
+            norm_ratio_band=norm_ratio_band,
+        )
+        m["parent_index"] = int(pidx)
+        checks.append(m)
+    worst_norm_rel = max((c["norm_rel"] for c in checks), default=0.0)
+    min_cos = min((c["cosine"] for c in checks), default=1.0)
+    worst_elem = max((c["elem_rel_err"] for c in checks), default=0.0)
     summary = {
         "n_probe": n_probe,
         "batch_fill": len(batch_prompts),
-        "rel_tol": rel_tol,
-        "worst_rel_err": worst,
+        "cos_floor": cos_floor,
+        "norm_rel_tol": norm_rel_tol,
+        "norm_ratio_band": list(norm_ratio_band),
+        "rel_tol": rel_tol,  # legacy elementwise tol — LOGGED, not gating
+        "min_cosine": min_cos,
+        "worst_norm_rel": worst_norm_rel,
+        "worst_elem_rel_err": worst_elem,  # diagnostic (the old brittle metric)
         "checks": checks,
     }
-    failed = [c for c in checks if c["rel_err"] > rel_tol]
+    failed = [c for c in checks if not c["pass"]]
     if failed:
         logger.error(
-            "[KILL-A] spot-gate FAILED: worst rel_err %.4g > tol %.4g (%d/%d probes). "
-            "If the batched-vs-per-sequence numerics are the cause, retry with the "
-            "batch-1 fallback; if the fp32/bf16 precision mismatch is the cause "
-            "(the parent's GPU forward was bf16), retry with --capture-dtype bf16.",
-            worst,
-            rel_tol,
+            "[KILL-A] spot-gate FAILED: %d/%d probes miss the triple (min cosine %.5f, "
+            "worst norm_rel %.4g vs tol %.4g, norm-ratio band %s). Diagnostic worst "
+            "elementwise rel_err %.4g (NOT a gate). If the batched-vs-per-sequence "
+            "numerics are the cause, retry with the batch-1 fallback; if the fp32/bf16 "
+            "precision mismatch is the cause (the parent's GPU forward was bf16), retry "
+            "with --capture-dtype bf16.",
             len(failed),
             n_probe,
+            min_cos,
+            worst_norm_rel,
+            norm_rel_tol,
+            norm_ratio_band,
+            worst_elem,
         )
         raise AssertionError(f"KILL-A spot-gate failed: {summary}")
-    logger.info("[KILL-A] PASS: worst rel_err %.4g ≤ tol %.4g (%d probes)", worst, rel_tol, n_probe)
+    logger.info(
+        "[KILL-A] PASS: %d probes clear the triple — min cosine %.5f (≥ %.3f), worst "
+        "norm_rel %.4g (≤ %.3g), norm-ratio band %s. Diagnostic worst elementwise "
+        "rel_err %.4g (not gated).",
+        n_probe,
+        min_cos,
+        cos_floor,
+        worst_norm_rel,
+        norm_rel_tol,
+        norm_ratio_band,
+        worst_elem,
+    )
     summary["pass"] = True
     return summary
 
