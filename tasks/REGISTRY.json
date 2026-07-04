@@ -6666,8 +6666,8 @@
     "988": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/988",
-      "status": "planning",
+      "path": "tasks/approved/988",
+      "status": "approved",
       "title": "workflow-fix: bound bare list_repo_files call sites (hang class)"
     },
     "989": {
