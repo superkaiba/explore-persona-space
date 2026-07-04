@@ -6080,7 +6080,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/922",
       "status": "interpreting",
-      "title": "Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP) on real chat contexts"
+      "title": "Answer-time activation trajectories are forecastable from the prompt alone through 32 tokens with a rolled per-layer affine map (HIGH confidence)"
     },
     "923": {
       "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",

@@ -1,6 +1,6 @@
 ---
-title: 'Next-token activation prediction: per-layer maps h_{l,t} -> h_{l,t+1} (identity/ridge/MLP)
-  on real chat contexts'
+title: Answer-time activation trajectories are forecastable from the prompt alone
+  through 32 tokens with a rolled per-layer affine map (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-03T10:21:41Z'
