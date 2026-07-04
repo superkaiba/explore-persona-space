@@ -5,7 +5,7 @@ title: The context→answer activation mapping is near turn-stationary across tu
 kind: experiment
 tags: []
 created_at: '2026-07-04T04:06:00Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: "Run this issue in the background with happy coder:\n# How does the\
   \ mapping change as the context gets longer\n# Motivation\n- All our mapping experiments\
   \ have been on mostly short contexts\n- We want to see if this mapping holds up\
