@@ -1256,6 +1256,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # Machine-readable stall cause (#664) — zombie-GPU-allocation stall on
         # the RunPod lane; None on every other lane / verdict.
         "stall_reason",
+        # #983 post-done phase-consistency guard — emitted by both
+        # poll_pipeline.py.main and backend_poll._serialize_poll_result
+        # (getattr-defended defaults False / [] on lanes that never set them).
+        "post_done_phase_advisory_posted",
+        "post_done_phase_lines",
         # GCP-lane GPU-idle advisory + escalation parity (#730 / #727 RunPod
         # analogue) — always emitted by backend_poll.main, default False on
         # every non-GCP / non-running tick.
