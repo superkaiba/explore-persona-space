@@ -1,6 +1,6 @@
 {
-  "commit": "aea7d9bf87",
-  "created": "2026-07-04T04:32:14Z",
+  "commit": "c42ca5c2b1",
+  "created": "2026-07-04T05:39:30Z",
   "figsize": [
     12.5,
     4.4
@@ -8,588 +8,588 @@
   "points": [
     {
       "Layer": 0.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.7815839479005531,
+      "In-sample variance share\n(PCA-48 target space)": 0.7815839479005531,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 1.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.7564944042999474,
+      "In-sample variance share\n(PCA-48 target space)": 0.7564944042999474,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 2.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.7835205344274349,
+      "In-sample variance share\n(PCA-48 target space)": 0.7835205344274349,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 3.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.7913375829318208,
+      "In-sample variance share\n(PCA-48 target space)": 0.7913375829318208,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 4.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8175019925178981,
+      "In-sample variance share\n(PCA-48 target space)": 0.8175019925178981,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 5.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.797476027917995,
+      "In-sample variance share\n(PCA-48 target space)": 0.797476027917995,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 6.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8039925062087517,
+      "In-sample variance share\n(PCA-48 target space)": 0.8039925062087517,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 7.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8456529101315327,
+      "In-sample variance share\n(PCA-48 target space)": 0.8456529101315327,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 8.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8594252117843361,
+      "In-sample variance share\n(PCA-48 target space)": 0.8594252117843361,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 9.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9036990092840129,
+      "In-sample variance share\n(PCA-48 target space)": 0.9036990092840129,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 10.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9024963474691335,
+      "In-sample variance share\n(PCA-48 target space)": 0.9024963474691335,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 11.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8946783810131325,
+      "In-sample variance share\n(PCA-48 target space)": 0.8946783810131325,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 12.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8930410273669336,
+      "In-sample variance share\n(PCA-48 target space)": 0.8930410273669336,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 13.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8919581016885764,
+      "In-sample variance share\n(PCA-48 target space)": 0.8919581016885764,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 14.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8894906331076974,
+      "In-sample variance share\n(PCA-48 target space)": 0.8894906331076974,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 15.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8619897447084531,
+      "In-sample variance share\n(PCA-48 target space)": 0.8619897447084531,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 16.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8579514847860505,
+      "In-sample variance share\n(PCA-48 target space)": 0.8579514847860505,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 17.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8528585839679106,
+      "In-sample variance share\n(PCA-48 target space)": 0.8528585839679106,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 18.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8369155271091667,
+      "In-sample variance share\n(PCA-48 target space)": 0.8369155271091667,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 19.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8552420359449825,
+      "In-sample variance share\n(PCA-48 target space)": 0.8552420359449825,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 20.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8593085834222078,
+      "In-sample variance share\n(PCA-48 target space)": 0.8593085834222078,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 21.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8759671093379261,
+      "In-sample variance share\n(PCA-48 target space)": 0.8759671093379261,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 22.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.893952576882934,
+      "In-sample variance share\n(PCA-48 target space)": 0.893952576882934,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 23.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9040689633890452,
+      "In-sample variance share\n(PCA-48 target space)": 0.9040689633890452,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 24.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9108913969700376,
+      "In-sample variance share\n(PCA-48 target space)": 0.9108913969700376,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 25.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9109789572708064,
+      "In-sample variance share\n(PCA-48 target space)": 0.9109789572708064,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 26.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.9045223712536595,
+      "In-sample variance share\n(PCA-48 target space)": 0.9045223712536595,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 27.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.8858532399950498,
+      "In-sample variance share\n(PCA-48 target space)": 0.8858532399950498,
       "series": "Query main effect",
       "_kind": "line",
       "_group": 0
     },
     {
       "Layer": 0.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06817151543962297,
+      "In-sample variance share\n(PCA-48 target space)": 0.06817151543962297,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 1.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08811633835041295,
+      "In-sample variance share\n(PCA-48 target space)": 0.08811633835041295,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 2.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08169461589061097,
+      "In-sample variance share\n(PCA-48 target space)": 0.08169461589061097,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 3.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08130198853126508,
+      "In-sample variance share\n(PCA-48 target space)": 0.08130198853126508,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 4.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07173732663087644,
+      "In-sample variance share\n(PCA-48 target space)": 0.07173732663087644,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 5.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08338879682008214,
+      "In-sample variance share\n(PCA-48 target space)": 0.08338879682008214,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 6.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08730465454834724,
+      "In-sample variance share\n(PCA-48 target space)": 0.08730465454834724,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 7.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06523487858201309,
+      "In-sample variance share\n(PCA-48 target space)": 0.06523487858201309,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 8.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06294205447644628,
+      "In-sample variance share\n(PCA-48 target space)": 0.06294205447644628,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 9.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.041544482356879395,
+      "In-sample variance share\n(PCA-48 target space)": 0.041544482356879395,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 10.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.042764594480611574,
+      "In-sample variance share\n(PCA-48 target space)": 0.042764594480611574,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 11.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.04643937239295329,
+      "In-sample variance share\n(PCA-48 target space)": 0.04643937239295329,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 12.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.04654188322756566,
+      "In-sample variance share\n(PCA-48 target space)": 0.04654188322756566,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 13.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.047751029857935855,
+      "In-sample variance share\n(PCA-48 target space)": 0.047751029857935855,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 14.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.048856065750278316,
+      "In-sample variance share\n(PCA-48 target space)": 0.048856065750278316,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 15.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06547862662206713,
+      "In-sample variance share\n(PCA-48 target space)": 0.06547862662206713,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 16.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06597305896371548,
+      "In-sample variance share\n(PCA-48 target space)": 0.06597305896371548,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 17.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06541585451839026,
+      "In-sample variance share\n(PCA-48 target space)": 0.06541585451839026,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 18.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07756650599276327,
+      "In-sample variance share\n(PCA-48 target space)": 0.07756650599276327,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 19.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.0724124993724764,
+      "In-sample variance share\n(PCA-48 target space)": 0.0724124993724764,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 20.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06919066440054879,
+      "In-sample variance share\n(PCA-48 target space)": 0.06919066440054879,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 21.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.05807665604027965,
+      "In-sample variance share\n(PCA-48 target space)": 0.05807665604027965,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 22.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.047432338366460186,
+      "In-sample variance share\n(PCA-48 target space)": 0.047432338366460186,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 23.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.04205387669309582,
+      "In-sample variance share\n(PCA-48 target space)": 0.04205387669309582,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 24.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.03584425837118778,
+      "In-sample variance share\n(PCA-48 target space)": 0.03584425837118778,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 25.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.03424257422844083,
+      "In-sample variance share\n(PCA-48 target space)": 0.03424257422844083,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 26.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.03798866584719405,
+      "In-sample variance share\n(PCA-48 target space)": 0.03798866584719405,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 27.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.043815287460609864,
+      "In-sample variance share\n(PCA-48 target space)": 0.043815287460609864,
       "series": "Context main effect",
       "_kind": "line",
       "_group": 1
     },
     {
       "Layer": 0.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.15024453665982399,
+      "In-sample variance share\n(PCA-48 target space)": 0.15024453665982399,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 1.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.15538925734963974,
+      "In-sample variance share\n(PCA-48 target space)": 0.15538925734963974,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 2.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.13478484968195412,
+      "In-sample variance share\n(PCA-48 target space)": 0.13478484968195412,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 3.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.12736042853691418,
+      "In-sample variance share\n(PCA-48 target space)": 0.12736042853691418,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 4.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.1107606808512255,
+      "In-sample variance share\n(PCA-48 target space)": 0.1107606808512255,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 5.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.11913517526192306,
+      "In-sample variance share\n(PCA-48 target space)": 0.11913517526192306,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 6.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.10870283924290106,
+      "In-sample variance share\n(PCA-48 target space)": 0.10870283924290106,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 7.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08911221128645434,
+      "In-sample variance share\n(PCA-48 target space)": 0.08911221128645434,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 8.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07763273373921782,
+      "In-sample variance share\n(PCA-48 target space)": 0.07763273373921782,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 9.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.05475650835910748,
+      "In-sample variance share\n(PCA-48 target space)": 0.05475650835910748,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 10.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.054739058050254946,
+      "In-sample variance share\n(PCA-48 target space)": 0.054739058050254946,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 11.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.058882246593914486,
+      "In-sample variance share\n(PCA-48 target space)": 0.058882246593914486,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 12.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.060417089405500564,
+      "In-sample variance share\n(PCA-48 target space)": 0.060417089405500564,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 13.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.060290868453487696,
+      "In-sample variance share\n(PCA-48 target space)": 0.060290868453487696,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 14.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.061653301142024254,
+      "In-sample variance share\n(PCA-48 target space)": 0.061653301142024254,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 15.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07253162866947974,
+      "In-sample variance share\n(PCA-48 target space)": 0.07253162866947974,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 16.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07607545625023394,
+      "In-sample variance share\n(PCA-48 target space)": 0.07607545625023394,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 17.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08172556151369903,
+      "In-sample variance share\n(PCA-48 target space)": 0.08172556151369903,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 18.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.08551796689807024,
+      "In-sample variance share\n(PCA-48 target space)": 0.08551796689807024,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 19.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07234546468254102,
+      "In-sample variance share\n(PCA-48 target space)": 0.07234546468254102,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 20.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07150075217724337,
+      "In-sample variance share\n(PCA-48 target space)": 0.07150075217724337,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 21.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.06595623462179424,
+      "In-sample variance share\n(PCA-48 target space)": 0.06595623462179424,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 22.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.0586150847506059,
+      "In-sample variance share\n(PCA-48 target space)": 0.0586150847506059,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 23.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.05387715991785902,
+      "In-sample variance share\n(PCA-48 target space)": 0.05387715991785902,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 24.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.053264344658774616,
+      "In-sample variance share\n(PCA-48 target space)": 0.053264344658774616,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 25.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.054778468500752735,
+      "In-sample variance share\n(PCA-48 target space)": 0.054778468500752735,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 26.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.05748896289914627,
+      "In-sample variance share\n(PCA-48 target space)": 0.05748896289914627,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
     },
     {
       "Layer": 27.0,
-      "In-sample variance share of the\nper-cell mean answer activation": 0.07033147254434015,
+      "In-sample variance share\n(PCA-48 target space)": 0.07033147254434015,
       "series": "Context \u00d7 query interaction",
       "_kind": "line",
       "_group": 2
