@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 995,
+  "highest_id": 996,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6633,6 +6633,13 @@
       "path": "tasks/proposed/995",
       "status": "proposed",
       "title": "daily-fix: batch_judge retry read-after-write 404 post-create"
+    },
+    "996": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/996",
+      "status": "proposed",
+      "title": "daily-fix: task.py bounded wait on live rebase detached HEAD"
     }
   }
 }
