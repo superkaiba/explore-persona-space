@@ -722,9 +722,11 @@ def test_upload_class_covers_verify_rate_train_mix_and_datagen_sidecars(tmp_path
 
 
 def test_upload_class_marker_carveout_skips_duplicate_train_mix(tmp_path, monkeypatch):
-    """Marker carve-out: train_mix_path IS the datagen-dir pos.jsonl (already
-    uploaded under raw_completions) — _upload_class records the skip instead of
-    duplicating, and the absent verify//rate/ dirs record a graceful None."""
+    """Marker carve-out: train_mix_path is the interleaved train_mix.jsonl INSIDE
+    the datagen mix dir (r12 — assembled by _assemble_marker_mix beside
+    pos.jsonl/cn.jsonl, already uploaded under raw_completions) — _upload_class
+    records the skip instead of duplicating, and the absent verify//rate/ dirs
+    record a graceful None."""
     from types import SimpleNamespace
 
     cfg = _cfg(tmp_path, upload=True)
@@ -732,11 +734,12 @@ def test_upload_class_marker_carveout_skips_duplicate_train_mix(tmp_path, monkey
     mix_dir.mkdir(parents=True)
     (mix_dir / "pos.jsonl").write_text("{}\n")
     (mix_dir / "cn.jsonl").write_text("{}\n")
+    (mix_dir / "train_mix.jsonl").write_text("{}\n{}\n")
 
     folder_calls = _fake_hub_boundary(monkeypatch)
     build_result = SimpleNamespace(
         adapter_path=str(tmp_path / "adapter"),
-        train_mix_path=str(mix_dir / "pos.jsonl"),
+        train_mix_path=str(mix_dir / "train_mix.jsonl"),
         data_paths={"datagen_dir": str(mix_dir)},
     )
     out = pilot._upload_class("marker", build_result, cfg, pilot.PilotSeams())
@@ -752,6 +755,9 @@ def test_upload_class_marker_carveout_skips_duplicate_train_mix(tmp_path, monkey
     ).arguments["expected_repo_paths"]
     assert "issue906_pilot/marker/raw_completions/pos.jsonl" in datagen_expected
     assert "issue906_pilot/marker/raw_completions/cn.jsonl" in datagen_expected
+    # The interleaved mix itself rides the same raw_completions bulk commit —
+    # that is what makes the train_mix skip a coverage statement, not a gap.
+    assert "issue906_pilot/marker/raw_completions/train_mix.jsonl" in datagen_expected
 
 
 def test_upload_class_marker_verify_rollouts_covered(tmp_path, monkeypatch):
@@ -768,6 +774,7 @@ def test_upload_class_marker_verify_rollouts_covered(tmp_path, monkeypatch):
     mix_dir.mkdir(parents=True)
     (mix_dir / "pos.jsonl").write_text("{}\n")
     (mix_dir / "cn.jsonl").write_text("{}\n")
+    (mix_dir / "train_mix.jsonl").write_text("{}\n{}\n")
     verify_dir = cfg.out_root / "marker" / "verify"
     verify_dir.mkdir(parents=True)
     (verify_dir / "marker_rollouts__base.jsonl").write_text("{}\n")
@@ -776,7 +783,7 @@ def test_upload_class_marker_verify_rollouts_covered(tmp_path, monkeypatch):
     folder_calls = _fake_hub_boundary(monkeypatch)
     build_result = SimpleNamespace(
         adapter_path=str(tmp_path / "adapter"),
-        train_mix_path=str(mix_dir / "pos.jsonl"),
+        train_mix_path=str(mix_dir / "train_mix.jsonl"),
         data_paths={"datagen_dir": str(mix_dir)},
     )
     out = pilot._upload_class("marker", build_result, cfg, pilot.PilotSeams())

@@ -935,18 +935,84 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
     }
 
 
+def _marker_train_config(cfg: PilotConfig, *, tokenizer=None):
+    """The marker class's REAL ``TrainLoraConfig`` via the canonical recipe builder.
+
+    ``build_train_config(recipe_for("marker"), ...)`` dataclass-constructs the
+    actual engine config — fail-loud ``TypeError`` on any kwarg drift vs
+    ``TrainLoraConfig`` (the r12 crash class: a ``contrastive_negatives_path``
+    kwarg that the engine never defined died at config construction).
+    ``run_name`` / ``seed`` / ``gpu_id`` mirror the content classes'
+    ``build_organism`` path (``organisms.py`` ``build_train_config(...,
+    run_name=organism.slug(), seed=organism.seed, gpu_id=gpu_id)``).  When a
+    ``tokenizer`` is provided, ``build_train_config`` re-asserts the marker
+    token id (marker-leakage-measurement.md; the #537 "[ZLT]" no-op incident).
+
+    Module-level (not a closure) so the CPU contract tests bind the EXACT
+    production config construction with no GPU
+    (``tests/test_issue906_train_contract.py``).
+    """
+    from explore_persona_space.artifacts.organisms import ModelOrganism
+    from explore_persona_space.artifacts.recipe import build_train_config
+
+    org = ModelOrganism("marker", cfg.source_context, arm="primary", seed=cfg.seed)
+    return build_train_config(
+        org.recipe,
+        run_name=org.slug(),
+        seed=cfg.seed,
+        gpu_id=cfg.gpu_id,
+        tokenizer=tokenizer,
+    )
+
+
+def _assemble_marker_mix(pos_path, cn_path, mix_dir, seed: int):
+    """Interleave pos + cn rows into ONE seeded-shuffled ``train_mix.jsonl``.
+
+    The real ``train_lora`` contract (r12 crash fix): ``TrainLoraConfig`` has NO
+    ``contrastive_negatives_path`` field — negatives thread by interleaving rows
+    in the single mix, exactly as ``organisms._assemble_mix`` does for content
+    classes.  ``MarkerOnlyDataCollator`` routes each row by content:
+    marker-bearing rows train the marker + turn-end tail; marker-free negative
+    rows train the ``<|im_end|>`` tail at the same slot.
+
+    Returns ``(train_mix_path, pos_rows, cn_rows)``.
+    """
+    import json
+    import random
+
+    def _read_rows(path) -> list[dict]:
+        with open(path, encoding="utf-8") as f:
+            return [json.loads(line) for line in f if line.strip()]
+
+    pos_rows = _read_rows(pos_path)
+    cn_rows = _read_rows(cn_path)
+    if not pos_rows:
+        raise ValueError(f"marker mix builder emitted zero positive rows at {pos_path}")
+    mix_rows = [*pos_rows, *cn_rows]
+    random.Random(seed).shuffle(mix_rows)
+    train_mix_path = Path(mix_dir) / "train_mix.jsonl"
+    with open(train_mix_path, "w", encoding="utf-8") as f:
+        for row in mix_rows:
+            f.write(json.dumps(row) + "\n")
+    return train_mix_path, pos_rows, cn_rows
+
+
 def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path):
     """Programmatic marker carve-out: build training mix -> train_lora -> adapter path.
 
     Bypasses ``build_organism`` / ``UnsupportedOrganismError`` by constructing the
-    marker training mix directly, asserting token-id 83399 in-process, then calling
-    ``train_lora`` with MARKER_OVERRIDES.  Returns a lightweight namespace mimicking
-    the fields ``run_class`` needs from ``build_organism``'s result.
+    marker training mix directly, asserting token-id 83399 in-process, assembling
+    ONE interleaved ``train_mix.jsonl`` (pos + contrastive-negative rows, seeded
+    shuffle — the real ``train_lora`` contract: there is no separate
+    negatives-path kwarg; ``MarkerOnlyDataCollator`` routes each row by content),
+    then calling ``train_lora(base, mix, out, cfg=_marker_train_config(...))``.
+    Returns a lightweight namespace mimicking the fields ``run_class`` needs from
+    ``build_organism``'s result.
 
-    Positive rows: one row per (source_system_prompt, question) with a stubbed
-    completion placeholder — real training uses MarkerOnlyDataCollator which masks
-    the response and trains only the marker + turn-end tail tokens; the completion
-    text itself never receives gradient.
+    Positive rows: one row per (source_system_prompt, question) with the base
+    model's on-policy greedy response + the marker token — real training uses
+    MarkerOnlyDataCollator which masks the response and trains only the marker +
+    turn-end tail tokens; the response text itself never receives gradient.
     Contrastive negative rows: one row per (neg_sp, question) from the default_v1
     panel (~1:1 ratio); negatives train the ``<|im_end|>`` token at the same slot.
     """
@@ -955,7 +1021,6 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
     from explore_persona_space.artifacts.context import CONTEXTS
     from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
     from explore_persona_space.artifacts.recipe import (
-        MARKER_OVERRIDES,
         MARKER_TEXT,
         MARKER_TOKEN_ID,
     )
@@ -982,6 +1047,11 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
     )
     questions = list(behavior.train_question_bank)[:n_questions]
 
+    # Tokenizer handle for the config-time marker-token re-assert; the seam
+    # (stub-datagen) path never loads one — build_train_config skips the assert
+    # on tokenizer=None, and the inline branch below has already asserted the
+    # token id in-process.
+    tokenizer = None
     if seams.marker_datagen_fn is not None:
         pos_path, cn_path = seams.marker_datagen_fn(source_sp, neg_sps, mix_dir, seed=cfg.seed)
     else:
@@ -1069,30 +1139,50 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
-    # Training mix path (pos + cn interleaved).  train_lora with marker_only_loss=True
-    # wires MarkerOnlyDataCollator automatically.
+    # ── Assemble the interleaved training mix (pos + cn in ONE JSONL) ───────
+    train_mix_path, pos_rows, cn_rows = _assemble_marker_mix(pos_path, cn_path, mix_dir, cfg.seed)
+
+    # ── Train ───────────────────────────────────────────────────────────────
+    # Config via the canonical recipe builder (_marker_train_config constructs
+    # the REAL TrainLoraConfig — fail-loud on kwarg drift) and the REAL
+    # train_lora call shape (organisms.py build path: positional
+    # (base_model, data_path, output_dir) + cfg=).  train_lora returns
+    # (output_dir, training_loss).  marker_only_loss=True in the recipe wires
+    # MarkerOnlyDataCollator + the MarkerBandStopCallback [5, 12]-nat stop.
     adapter_dir = build_dir / "adapter"
+    train_cfg = _marker_train_config(cfg, tokenizer=tokenizer)
+    logger.info(
+        "[marker-train-cfg] resolved TrainLoraConfig: run_name=%s lr=%g epochs=%d "
+        "marker_only_loss=%s band=[%g, %g] mix_rows=%d (pos=%d cn=%d)",
+        train_cfg.run_name,
+        train_cfg.lr,
+        train_cfg.epochs,
+        train_cfg.marker_only_loss,
+        train_cfg.marker_band_low_nats,
+        train_cfg.marker_band_high_nats,
+        len(pos_rows) + len(cn_rows),
+        len(pos_rows),
+        len(cn_rows),
+    )
     train_fn = seams.train_fn or train_lora
-    train_fn(
+    adapter_out, train_loss = train_fn(
         cfg.base_model,
-        str(pos_path),  # primary data_path; cn_path passed via overrides
+        str(train_mix_path),
         str(adapter_dir),
-        cfg=None,
-        callbacks=None,
-        contrastive_negatives_path=str(cn_path),
-        **MARKER_OVERRIDES,
+        cfg=train_cfg,
     )
 
     # Return a minimal namespace mirroring the fields run_class reads.
     import types
 
     return types.SimpleNamespace(
-        adapter_path=str(adapter_dir),
-        train_mix_path=str(pos_path),
+        adapter_path=str(adapter_out),
+        train_mix_path=str(train_mix_path),
         data_paths={"datagen_dir": str(mix_dir)},
         provenance={
             "mix_counts_planned": {"positive": len(questions), "negative": len(questions)},
-            "mix_counts_realized": {"positive": len(questions), "negative": len(questions)},
+            "mix_counts_realized": {"positive": len(pos_rows), "negative": len(cn_rows)},
+            "training_loss": float(train_loss),
         },
         selection=None,  # marker uses band-stop, not dose-checkpoint selection
     )
@@ -1737,8 +1827,10 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         # Policy requires training mixes on HF before pod teardown. Explicit
         # filenames= mode — a recursive scan of build/ would sweep in
         # train/checkpoint-* JSONs (incl. the >10 MB tokenizer.json -> LFS).
-        # Marker carve-out: train_mix_path IS the datagen-dir pos.jsonl,
-        # already uploaded under raw_completions above — record the skip.
+        # Marker carve-out: train_mix_path is the interleaved train_mix.jsonl
+        # INSIDE the datagen mix dir (assembled beside pos.jsonl / cn.jsonl by
+        # _assemble_marker_mix, r12), already uploaded under raw_completions
+        # above — record the skip.
         train_mix_path = Path(build_result.train_mix_path)
         if train_mix_path.parent == datagen_dir:
             out["train_mix"] = "covered-by-raw-completions-upload"
