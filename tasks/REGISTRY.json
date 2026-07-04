@@ -6841,8 +6841,8 @@
     "998": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/998",
-      "status": "planning",
+      "path": "tasks/approved/998",
+      "status": "approved",
       "title": "daily-fix: exempt verbatim sample lines from humanize ban scan"
     },
     "999": {
