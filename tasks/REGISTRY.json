@@ -6420,8 +6420,8 @@
     "963": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/963",
-      "status": "reviewing",
+      "path": "tasks/completed/963",
+      "status": "completed",
       "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
     },
     "964": {
