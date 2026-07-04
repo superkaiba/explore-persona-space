@@ -45,7 +45,7 @@ import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 # Make the package importable without `uv run` plumbing (same bootstrap as
 # scripts/task.py). Sibling-import semantics on purpose: a worktree copy of
@@ -888,6 +888,25 @@ SPAWN_SESSION_TIMEOUT_S = 60
 # would otherwise hang the stop indefinitely (#902; plan §4.4 D5).
 STOP_BREADCRUMB_JOIN_TIMEOUT_S = 10.0
 
+# The Happy daemon waits 15s for the spawned child's /session-started webhook,
+# then resolves {"success": false, "error": "Session webhook timeout for PID <n>"}
+# (regular path) / "... (tmux)" (tmux path) WITHOUT killing the child — the fork
+# stays live and tracked (bundle index-q9G4ktSK.mjs lines 5346/5466; incident
+# task #956, 2026-07-03: two consecutive 500s leaked two live-but-empty
+# sessions, third attempt succeeded). On this shape post() reaps the
+# half-spawned child, then retries ONCE after a backoff sized at 2x the
+# daemon's 15s webhook window.
+WEBHOOK_TIMEOUT_RE = re.compile(r"Session webhook timeout for PID (\d+)(?P<tmux> \(tmux\))?")
+WEBHOOK_TIMEOUT_MAX_RETRIES = 1
+WEBHOOK_TIMEOUT_RETRY_BACKOFF_S = 30.0
+# Greppable prefix for every reap-related stderr line, so "fix engaged" is
+# distinguishable in production spawn logs (nohup/session transcripts).
+WEBHOOK_REAP_LOG_PREFIX = "webhook-timeout reap:"
+# Bounded wait for a SIGTERMed / daemon-stopped child to die (~10s), the
+# 20 x 0.5s shape _stop_fallback (#903) already uses.
+REAP_PID_DEATH_POLL_TRIES = 20
+REAP_PID_DEATH_POLL_INTERVAL_S = 0.5
+
 
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     """POST a JSON body to the local Happy daemon and return the parsed
@@ -901,47 +920,104 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     finished creating after we gave up — turning the orphan/duplicate
     hazard into an idempotent spawn (see
     :func:`_reconcile_spawn_after_timeout`). For any other route, a timeout
-    surfaces as a clean failure so the caller can safely retry."""
+    surfaces as a clean failure so the caller can safely retry.
+
+    On an HTTP error whose body matches the daemon's ``Session webhook
+    timeout for PID <n>`` shape (the daemon forked a child but its
+    /session-started webhook missed the 15s window — the child stays ALIVE
+    and TRACKED daemon-side), post() reaps the half-spawned child (daemon
+    /stop-session — by session id when a late webhook already landed, else
+    by the daemon's ``PID-<pid>`` stop branch; identity-checked SIGTERM only
+    as the untracked-but-alive fallback) and retries once after
+    :data:`WEBHOOK_TIMEOUT_RETRY_BACKOFF_S`. A failed/unconfirmed reap exits
+    nonzero WITHOUT retrying — retrying over an unconfirmed leak or a
+    surviving inner claude could double-spawn (#956)."""
     url = f"http://127.0.0.1:{daemon_port()}{path}"
     payload = json.dumps(body).encode()
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     timeout = SPAWN_SESSION_TIMEOUT_S if path == "/spawn-session" else DEFAULT_TIMEOUT_S
-    spawn_started_at = time.time() if path == "/spawn-session" else None
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        try:
-            err_body = json.loads(e.read())
-        except Exception:
-            err_body = {"raw": str(e)}
-        sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
-    except TimeoutError as e:
-        # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
-        # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
-        # /spawn-session, surface cleanly for everything else.
-        if path == "/spawn-session" and spawn_started_at is not None:
-            adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
-            if adopted is not None:
-                print(
-                    f"  NOTE: /spawn-session POST timed out after {timeout}s; "
-                    f"daemon completed the spawn after the client gave up. "
-                    f"Adopted session {adopted} (directory match).",
-                    file=sys.stderr,
-                )
-                return {"success": True, "sessionId": adopted}
-        sys.exit(
-            f"Happy daemon {path} timed out after {timeout}s: {e}. "
-            "Retry is safe ONLY if you can confirm no session was created "
-            "(check `spawn_session.py list`)."
+    max_attempts = 1 + (WEBHOOK_TIMEOUT_MAX_RETRIES if path == "/spawn-session" else 0)
+    for attempt in range(1, max_attempts + 1):
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
-    except urllib.error.URLError as e:
-        sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+        # Per-attempt so a retry's client-socket timeout reconciles against
+        # ITS OWN freshness window (#956), not attempt 1's.
+        spawn_started_at = time.time() if path == "/spawn-session" else None
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            try:
+                err_body = json.loads(e.read())
+            except Exception:
+                err_body = {"raw": str(e)}  # non-dict / non-JSON body guard (tested)
+            m = None
+            err_text = ""
+            if path == "/spawn-session":
+                err_text = (
+                    err_body.get("error", "") if isinstance(err_body, dict) else str(err_body)
+                )
+                m = WEBHOOK_TIMEOUT_RE.search(err_text or "")
+            if m is None:
+                # UNCHANGED failure surface for every non-webhook-timeout
+                # error and every non-/spawn-session route.
+                sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
+            outcome = _reap_half_spawned_session(
+                int(m.group(1)), body.get("directory"), is_tmux=m.group("tmux") is not None
+            )
+            print(
+                f"  {WEBHOOK_REAP_LOG_PREFIX} /spawn-session webhook-timeout (HTTP {e.code}, "
+                f"attempt {attempt}/{max_attempts}): {err_text!r}; reap: {outcome.detail}",
+                file=sys.stderr,
+            )
+            if not outcome.reaped:
+                sys.exit(
+                    f"Happy daemon /spawn-session returned HTTP {e.code}: {err_body}. "
+                    f"Could NOT confirm the half-spawned child (PID {m.group(1)}) was "
+                    f"fully reaped ({outcome.detail}); NOT retrying (a retry over an "
+                    "unconfirmed leak could double-spawn). Clean up manually "
+                    "(spawn_session.py list / stop), then re-run."
+                )
+            if attempt >= max_attempts:
+                sys.exit(
+                    f"Happy daemon /spawn-session returned HTTP {e.code} (webhook "
+                    f"timeout) {max_attempts} times; the half-spawned child was reaped "
+                    f"each time (last: {outcome.detail}). The daemon looks loaded — "
+                    "retry later (no session leaked)."
+                )
+            print(
+                f"  {WEBHOOK_REAP_LOG_PREFIX} retrying /spawn-session in "
+                f"{WEBHOOK_TIMEOUT_RETRY_BACKOFF_S:.0f}s "
+                f"(attempt {attempt + 1}/{max_attempts})...",
+                file=sys.stderr,
+            )
+            time.sleep(WEBHOOK_TIMEOUT_RETRY_BACKOFF_S)
+            continue
+        except TimeoutError as e:
+            # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
+            # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
+            # /spawn-session, surface cleanly for everything else.
+            if path == "/spawn-session" and spawn_started_at is not None:
+                adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
+                if adopted is not None:
+                    print(
+                        f"  NOTE: /spawn-session POST timed out after {timeout}s; "
+                        f"daemon completed the spawn after the client gave up. "
+                        f"Adopted session {adopted} (directory match).",
+                        file=sys.stderr,
+                    )
+                    return {"success": True, "sessionId": adopted}
+            sys.exit(
+                f"Happy daemon {path} timed out after {timeout}s: {e}. "
+                "Retry is safe ONLY if you can confirm no session was created "
+                "(check `spawn_session.py list`)."
+            )
+        except urllib.error.URLError as e:
+            sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+    raise AssertionError("unreachable: every post() attempt returns or exits")
 
 
 def _reconcile_spawn_after_timeout(
@@ -1002,11 +1078,179 @@ def _reconcile_spawn_after_timeout(
     return candidates[0][1]
 
 
-def _live_children() -> list[dict[str, Any]]:
+class _ReapOutcome(NamedTuple):
+    """Outcome of :func:`_reap_half_spawned_session` (#956)."""
+
+    reaped: bool  # True == no live half-spawned process remains (wrapper AND inner claude)
+    detail: str  # human-readable outcome for the stderr NOTE / exit message
+
+
+def _reap_half_spawned_session(
+    pid: int, directory: str | None, *, is_tmux: bool = False
+) -> _ReapOutcome:
+    """Reap the child the daemon forked for a /spawn-session that failed with
+    'Session webhook timeout for PID <pid>' (#956). The daemon does NOT kill
+    that child; unreaped it becomes a live-but-empty unmapped session nothing
+    cleans up for >=12h. Legs, in order:
+
+    1. LATE-HANDSHAKE probe: strict /list. The daemon's /list FILTERS OUT
+       never-handshaken children (bundle line 4079), so an entry for ``pid``
+       (which by construction carries a happySessionId) means the webhook
+       landed LATE -> stop via /stop-session {sessionId: <sid>}. /list
+       ABSENCE is the NORMAL never-handshaken state, NOT "already gone".
+    2. DAEMON PID-STOP (primary no-sid leg): /stop-session
+       {sessionId: "PID-<pid>"} — the daemon's stopSession PID- branch
+       (bundle line 5559) SIGTERMs the tracked child itself and untracks it.
+       The daemon only kills a pid it tracks, so this leg carries no
+       PID-recycle exposure. success:true does NOT prove death (the daemon
+       swallows kill errors, lines 5564-5573) -> always confirm with the
+       client-side death poll.
+    3. ALREADY-GONE verdict: PID-stop success:false (daemon reachable, pid
+       untracked — onChildExited untracked a self-exited child) AND
+       _pid_alive(pid) false.
+    4. FALLBACK identity-checked SIGTERM (untracked-but-alive anomaly only:
+       e.g. the daemon restarted between fork and reap, orphaning the child
+       from tracking): the #903 _stop_fallback identity trio (comm=='node',
+       happy-wrapper cmdline, not-the-daemon-pid) PLUS a /proc/<pid>/cwd ==
+       spawn-directory bind. Ambiguity always REFUSES the kill
+       (reaped=False). SKIPPED for the tmux variant (pane-PID /proc identity
+       signature unverified for tmux; fail loud with a tmux hint).
+
+    ANY transport failure talking to the daemon (unreachable /list or
+    /stop-session) returns reaped=False — 'daemon said success:false' and
+    'daemon unreachable' are deliberately NOT conflated (the former is
+    evidence about tracking state; the latter is no evidence at all).
+
+    Survivor rule (DIVERGES from the #903 _stop_fallback precedent, which
+    only WARNS on a surviving inner claude — safe there because no retry
+    follows a takeover stop): after ANY kill leg (sid-stop, PID-stop, or
+    fallback SIGTERM), if the pre-kill-resolved inner claude pid is still
+    alive once the wrapper died, return reaped=False — retrying over a live
+    inner claude recreates the live-unmapped-work class at process level
+    (double-spawn risk)."""
+    import session_resolver  # lazy: session_resolver imports spawn_session at top level
+
+    # Pre-kill: resolve the inner claude while the wrapper's /proc tree is
+    # still walkable (post-kill resolution is impossible). Best-effort; a
+    # read-only /proc walk is harmless even if pid later fails identity.
+    claude_pid = session_resolver.resolve_claude_pid(pid)
+
+    def _confirm_dead_and_no_survivor(via: str) -> _ReapOutcome:
+        if not _await_pid_death(pid, session_resolver):
+            return _ReapOutcome(False, f"{via} ACKed but PID {pid} survived ~10s")
+        if claude_pid is not None and session_resolver._pid_alive(claude_pid):
+            return _ReapOutcome(
+                False,
+                f"{via}: wrapper PID {pid} dead but inner claude PID {claude_pid} "
+                "SURVIVED — retry blocked (double-spawn risk); kill it manually, then re-run",
+            )
+        return _ReapOutcome(True, f"reaped via {via} (PID {pid} dead)")
+
+    # --- Leg 1: late-handshake probe (strict /list) ---
+    try:
+        children = _live_children(strict=True)
+    except RuntimeError as e:
+        return _ReapOutcome(False, f"daemon /list unreachable while verifying PID {pid}: {e}")
+    match = next((c for c in children if c.get("pid") == pid), None)
+    sid = (match or {}).get("happySessionId")
+    if isinstance(sid, str) and sid:
+        try:
+            ok = _stop_session_raw(sid)
+        except RuntimeError as e:
+            return _ReapOutcome(False, f"daemon unreachable during sid-stop of {sid}: {e}")
+        if ok:
+            return _confirm_dead_and_no_survivor(f"daemon sid-stop of late-handshaken {sid}")
+        # ok False: entry vanished between /list and the stop (self-exit race,
+        # concurrent stop) -> fall through to the PID-stop leg.
+    # --- Leg 2: daemon PID-stop (primary no-sid leg) ---
+    try:
+        ok = _stop_session_raw(f"PID-{pid}")
+    except RuntimeError as e:
+        return _ReapOutcome(False, f"daemon unreachable during PID-stop of PID {pid}: {e}")
+    if ok:
+        return _confirm_dead_and_no_survivor(f"daemon PID-stop (PID-{pid})")
+    # --- Leg 3: already-gone verdict (daemon reachable, pid untracked) ---
+    if not session_resolver._pid_alive(pid):
+        return _ReapOutcome(
+            True, f"child PID {pid} already exited (untracked by daemon, not alive)"
+        )
+    # --- Leg 4: untracked-but-alive anomaly -> identity-checked SIGTERM fallback ---
+    refusal = _fallback_identity_sigterm(pid, directory, is_tmux, session_resolver)
+    if refusal is not None:
+        return refusal
+    return _confirm_dead_and_no_survivor(f"fallback SIGTERM of untracked PID {pid}")
+
+
+def _fallback_identity_sigterm(
+    pid: int, directory: str | None, is_tmux: bool, session_resolver
+) -> _ReapOutcome | None:
+    """Leg 4 of :func:`_reap_half_spawned_session`: the untracked-but-alive
+    anomaly (e.g. a daemon restart between fork and reap orphaned the child
+    from tracking). Runs the #903 ``_stop_fallback`` identity trio
+    (comm=='node' / happy-wrapper cmdline / not-the-daemon-pid) PLUS a
+    ``/proc/<pid>/cwd == spawn-directory`` bind; ambiguity always REFUSES the
+    kill (a ``reaped=False`` outcome, never a signal). Returns a REFUSAL
+    :class:`_ReapOutcome`, or ``None`` after an actually-issued SIGTERM (the
+    caller then runs the shared death-poll + survivor confirmation).
+    SKIPPED for the tmux variant (the pane PID may be a shell wrapper, so the
+    /proc signature is unverified there — refuse with a tmux hint)."""
+    if is_tmux:
+        return _ReapOutcome(
+            False,
+            f"PID {pid} is tmux-spawned, untracked by the daemon, and still alive; the "
+            "/proc identity signature is unverified for tmux pane PIDs — refusing the "
+            "client-side kill. tmux path: clean up via tmux, then re-run.",
+        )
+    comm = session_resolver._read_proc_comm(pid)
+    if comm != "node":
+        return _ReapOutcome(False, f"PID {pid} comm={comm!r} != 'node' (recycled?); refusing kill")
+    cmdline = session_resolver._read_proc_cmdline(pid) or ""
+    if "happy" not in cmdline:
+        return _ReapOutcome(
+            False, f"PID {pid} cmdline lacks the happy-wrapper signature; refusing kill"
+        )
+    daemon_pid = session_resolver._happy_daemon_pid()
+    if daemon_pid is not None and pid == daemon_pid:
+        return _ReapOutcome(False, f"PID {pid} is the Happy DAEMON pid; refusing kill")
+    if directory:
+        try:
+            proc_cwd: str | None = os.readlink(f"/proc/{pid}/cwd")
+        except OSError:
+            proc_cwd = None  # unreadable cwd is not disqualifying; 3 checks above hold
+        if proc_cwd is not None and proc_cwd != directory:
+            return _ReapOutcome(
+                False, f"PID {pid} cwd {proc_cwd!r} != spawn dir {directory!r}; refusing kill"
+            )
+    os.kill(pid, signal.SIGTERM)
+    return None
+
+
+def _await_pid_death(pid: int, session_resolver) -> bool:
+    """~10s bounded death poll (20 x 0.5s), the _stop_fallback (#903) shape.
+    session_resolver._pid_alive is the ONE liveness seam (tests monkeypatch
+    it + spawn_session.time.sleep)."""
+    for _ in range(REAP_PID_DEATH_POLL_TRIES):
+        time.sleep(REAP_PID_DEATH_POLL_INTERVAL_S)
+        if not session_resolver._pid_alive(pid):
+            return True
+    return False
+
+
+def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
     """Raw child-session dicts (``happySessionId`` / ``pid`` / ``startedBy``)
     the daemon is actively tracking. Returns ``[]`` if the daemon is
     unreachable so callers can degrade (``list --all``) or fail loud
-    (``register-current``) as appropriate."""
+    (``register-current``) as appropriate.
+
+    NOTE: the daemon's /list returns ONLY handshaken children (it filters
+    ``happySessionId !== undefined``, bundle line 4079) — a just-forked,
+    never-handshaken child is NOT in this list by design. With ``strict=True``
+    a daemon-unreachable / unparseable / wrong-shape /list (a parseable
+    non-dict body, or a non-list ``children`` field) RAISES RuntimeError
+    instead of returning ``[]`` — used by the #956 reap's late-handshake
+    probe, where a silent ``[]`` must not read as "no late handshake" when
+    the daemon was simply unreachable. LENIENT mode keeps its historical
+    semantics untouched for existing callers."""
     try:
         url = f"http://127.0.0.1:{daemon_port()}/list"
         req = urllib.request.Request(
@@ -1014,8 +1258,17 @@ def _live_children() -> list[dict[str, Any]]:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError):
+    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError) as e:
+        if strict:
+            raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
+    if strict:
+        if not isinstance(data, dict):
+            raise RuntimeError(f"daemon /list returned non-dict JSON: {repr(data)[:200]}")
+        children = data.get("children", [])
+        if not isinstance(children, list):
+            raise RuntimeError(f"daemon /list 'children' is not a list: {repr(children)[:200]}")
+        return children
     children = data.get("children", [])
     return children if isinstance(children, list) else []
 
@@ -1308,6 +1561,42 @@ def _stop_spawned_session(session_id: str) -> bool:
         return bool(stop_resp.get("success"))
     except SystemExit:
         return False
+
+
+def _stop_session_raw(session_id: str) -> bool:
+    """Daemon ``/stop-session`` with transport failures kept DISTINGUISHABLE
+    from the daemon's own verdict: returns the response ``success`` boolean
+    (stopSession's return — true == a tracked entry was found+killed+untracked,
+    false == no tracked entry for this sessionId/PID-<pid>); RAISES
+    RuntimeError on any transport failure (daemon unreachable, timeout, HTTP
+    error, unparseable body). Used by the #956 reap, where 'daemon said no
+    such pid' feeds the already-gone verdict but 'daemon unreachable' must
+    block the retry. :func:`_stop_spawned_session` (which conflates the two
+    as False) keeps its existing callers unchanged.
+
+    Response-shape guard: a PARSEABLE body that is not a ``{success: bool}``
+    dict — non-dict JSON (e.g. ``[]``), or a missing / non-bool ``success``
+    field — ALSO raises RuntimeError. Wrong shape carries no verdict about
+    tracking state, so it blocks the retry exactly like a transport failure;
+    it never degrades to False (False is the daemon's own 'pid untracked'
+    verdict and feeds the already-gone branch)."""
+    url = f"http://127.0.0.1:{daemon_port()}/stop-session"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps({"sessionId": session_id}).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
+            data = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
+        raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
+        raise RuntimeError(
+            f"daemon /stop-session returned unexpected response shape: {repr(data)[:200]}"
+        )
+    return bool(data.get("success"))
 
 
 def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: str) -> None:

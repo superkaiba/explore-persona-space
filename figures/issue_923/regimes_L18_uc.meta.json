@@ -1,0 +1,84 @@
+{
+  "commit": "b004c6bb91",
+  "created": "2026-07-04T05:48:21Z",
+  "figsize": [
+    8.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.09271415167138453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4476865407310563,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.5404902223995558,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4598371316002853,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context-only",
+      "Held-out skill R\u00b2 (layer 18)": 0.09161300755505897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query-only",
+      "Held-out skill R\u00b2 (layer 18)": 0.4621229062579555,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Stitched pair",
+      "Held-out skill R\u00b2 (layer 18)": 0.5537359138130143,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full prompt",
+      "Held-out skill R\u00b2 (layer 18)": 0.5021400445416913,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.07768896798268776,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.6336251466489484,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.7113141146316363,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.5591066189103788,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}

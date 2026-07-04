@@ -423,6 +423,20 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
 
+#: The RunPod terminal rung PROVISIONED a pod but the #909 workload-start leg
+#: FAILED (``RunPodWorkloadStartError`` carrying the partial handle, #954). A
+#: pod EXISTS and BILLS (left RUNNING for diagnosis per the #909 contract), so
+#: this is NOT :data:`ROUTE_REASON_NO_COMPUTE` — mislabeling it as
+#: ``no_compute_available`` invites the watcher's capacity-retry pass to
+#: re-drive the whole auto ladder (a fresh paid GCP attempt) while the pod
+#: bills invisibly (the #931 incident). The string is deliberately IDENTICAL
+#: to the ``dispatch_issue.py`` explicit-override arm's established
+#: ``reason: runpod_workload_start_failed`` (#909) — one reason per failure
+#: class across paths (cross-module parity pinned in ``tests/test_router.py``).
+#: It is NOT in ``autonomous_session_watch.TRANSIENT_CAPACITY_REASONS``, so
+#: the watcher never auto re-drives it.
+ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED: str = "runpod_workload_start_failed"
+
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
 #: Mirrors ``scripts/router_acceptance.py``'s
@@ -2551,8 +2565,74 @@ def _runpod_terminal_rung(
         try:
             handle = _prepare_and_launch(runpod_backend, runpod_spec, kind="runpod")
         except Exception as exc:
-            # RunPod is the LAST resort — ANY failure here (prepare /
-            # provisioning / transport) is genuinely "no compute anywhere".
+            # Lazy import (module convention — matches the existing lazy
+            # ``backends.runpod`` import below; runpod.py imports only ``base``
+            # at module top, so no cycle either way — lazy is belt-and-braces).
+            from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+            partial_handle = exc.handle if isinstance(exc, RunPodWorkloadStartError) else None
+            if partial_handle is not None:
+                # Pod provisioned + RUNNING; the workload did not start (#954).
+                # Persist the SAME launch records the success path writes — the
+                # sidecar hook and the in-flock lease (incl. the M3b
+                # gcp_failover_of stamp) — so downstream stays chained and no
+                # concurrent/later triggerer launches again. Then re-raise
+                # TYPED: NoComputeAvailableError would be FALSE (a pod exists
+                # and bills).
+                _invoke_on_launched(on_launched, partial_handle)
+                # LEASE-WRITE GUARD (#954 round-1 critique, alternatives MF2):
+                # the typed error is the load-bearing signal — a lease-write
+                # failure must NEVER replace it (the failover legs'
+                # ``except RunPodWorkloadStartError`` would otherwise never
+                # fire: no distinct terminal, no sidecar re-point, exactly when
+                # rescue is needed). Same "never mask the original error"
+                # invariant as the dispatch/relaunch sidecar writes. On a write
+                # failure the failover legs' post-route sidecar write +
+                # sentinel remain the (weaker) relaunch bound, and the
+                # RouteAttempt detail records it for a human.
+                lease_note = ""
+                try:
+                    new_lease = _lease_after_submit(
+                        lease, runpod_spec, "runpod", None, partial_handle
+                    )
+                    if gcp_failover_of_identity is not None:
+                        new_lease.gcp_failover_of = gcp_failover_of_identity
+                    write(new_lease)
+                except Exception as lease_exc:
+                    logger.warning(
+                        "route: runpod partial-launch lease write failed (%s: %s); "
+                        "typed error preserved (issue %d).",
+                        type(lease_exc).__name__,
+                        lease_exc,
+                        spec.issue,
+                    )
+                    lease_note = f"; lease_write_failed ({type(lease_exc).__name__}: {lease_exc})"
+                attempts.append(
+                    RouteAttempt(
+                        kind="runpod",
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="runpod_workload_start_failed",
+                        detail=(
+                            f"runpod pod {partial_handle.pod_name} PROVISIONED but "
+                            f"workload start FAILED ({exc}); pod left RUNNING for "
+                            f"diagnosis{lease_note}"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                _post_terminal_failure_marker(
+                    spec=spec,
+                    marker_poster=marker_poster,
+                    reason=ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
+                    chosen_kind="runpod",
+                    attempts=attempts,
+                )
+                raise
+            # RunPod is the LAST resort — ANY OTHER failure here (prepare /
+            # provisioning / transport, or a handle-less workload-start error
+            # from the pre-provision guard) is genuinely "no compute anywhere".
             # Record it + surface the typed terminal so the orchestrator's
             # failure classifier still gets a NoComputeAvailableError.
             attempts.append(

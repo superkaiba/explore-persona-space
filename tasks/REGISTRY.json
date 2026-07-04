@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 954,
+  "highest_id": 969,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4973,8 +4973,8 @@
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/779",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/779",
+      "status": "awaiting_promotion",
       "title": "Trait-expressing training data makes the learned context->answer map worse, leaving the raw persona-vector projection the strongest transfer-trained pre-generation trait monitor (MODERATE confidence)"
     },
     "78": {
@@ -6084,11 +6084,11 @@
     },
     "923": {
       "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/923",
-      "status": "running",
-      "title": "Context/query decomposition of the mean answer activation: ridge read-outs from disjoint last-context / last-query vectors vs the full-prompt vector (no training)"
+      "path": "tasks/interpreting/923",
+      "status": "interpreting",
+      "title": "Stitched context-only and query-only read-outs beat the full-prompt last-token ridge read-out at recovering the mean answer activation on held-out families and queries (MODERATE confidence)"
     },
     "924": {
       "has_clean_result": false,
@@ -6122,8 +6122,8 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/928",
-      "status": "running",
+      "path": "tasks/interpreting/928",
+      "status": "interpreting",
       "title": "Thinking-model CoT decomposition of the context\u2192answer activation map: composed vs joint vs CoT-augmented"
     },
     "929": {
@@ -6300,8 +6300,8 @@
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/952",
-      "status": "proposed",
+      "path": "tasks/running/952",
+      "status": "running",
       "title": "Token-position-resolved on/off-policy characterization of the context\u2192answer activation map + divergence-conditioned evaluation (Qwen vs Claude)"
     },
     "953": {
@@ -6314,9 +6314,45 @@
     "954": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/954",
-      "status": "running",
+      "path": "tasks/completed/954",
+      "status": "completed",
       "title": "workflow-fix: mint RunPod handle sidecar on GCP\u2192RunPod failover"
+    },
+    "955": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/955",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md anthropic system-role lift + live-probe rule for dispatcher seams"
+    },
+    "956": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/956",
+      "status": "completed",
+      "title": "workflow-fix: reap/retry half-spawned session on daemon webhook timeout"
+    },
+    "957": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/957",
+      "status": "completed",
+      "title": "workflow-fix: OOM-protect detached VM-side compute phases (choom -600 + pivot rule)"
+    },
+    "958": {
+      "goal": "Characterize whether the mappings (trained so far on mostly short contexts) hold up or change systematically as the context gets longer and spans many chat turns \u2014 training BOTH the context\u2192answer mapping AND the prefix\u2192answer mapping on the SAME data: (a) is the mapping from (prefix + query 1 \u2192 answer 1) the same as the mapping from (prefix + query 2 \u2192 answer 2); (b) can later answers (answer 2, 3, 4, \u2026) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot. Open design question for the planner: how to obtain multiple queries per prefix to average over for the prefix\u2192answer mapping.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/958",
+      "status": "running",
+      "title": "How does the context\u2192answer mapping change as the context gets longer (multi-turn)"
+    },
+    "959": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/959",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body URL-permanence check vs verbatim-blockquote prompts"
     },
     "96": {
       "has_clean_result": true,
@@ -6324,6 +6360,76 @@
       "path": "tasks/archived/96",
       "status": "archived",
       "title": "Contrastive wrong-answer SFT degrades ARC-C on source persona with cosine-dependent leakage to similar personas (MODERATE confidence)"
+    },
+    "960": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/960",
+      "status": "reviewing",
+      "title": "workflow-fix: gotchas.md cuDNN-TF32 parity-gate trap (float64-clone gate recipe)"
+    },
+    "961": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/961",
+      "status": "running",
+      "title": "workflow-fix: retro-close predicate ignores queued-context label mentions"
+    },
+    "962": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/962",
+      "status": "proposed",
+      "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
+    },
+    "963": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/963",
+      "status": "proposed",
+      "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
+    },
+    "964": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/964",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body warn on body-linked figures untracked at branch HEAD"
+    },
+    "965": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/965",
+      "status": "proposed",
+      "title": "workflow-fix: PreToolUse deny-hook for harmful-bank file reads"
+    },
+    "966": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/966",
+      "status": "proposed",
+      "title": "workflow-fix: distinctive --by for PM/watcher advisory markers"
+    },
+    "967": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/967",
+      "status": "proposed",
+      "title": "workflow-fix: watcher post-hoc external-marker triage observer"
+    },
+    "968": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/968",
+      "status": "proposed",
+      "title": "workflow-fix: tag-parity lint for hollow-verification-gate"
+    },
+    "969": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/969",
+      "status": "proposed",
+      "title": "workflow-fix: v4-scope pre_reg prose restriction in body audit"
     },
     "97": {
       "has_clean_result": false,

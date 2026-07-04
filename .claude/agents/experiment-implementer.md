@@ -653,7 +653,10 @@ with the turn.
   `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
   write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
-  #539, 2026-06-09: a bg launch died with its shell).
+  #539, 2026-06-09: a bg launch died with its shell). Protect the launched
+  session from earlyoom collateral kills per SKILL.md § "Detached VM-side
+  long compute phases" (#957): the `choom -n -600` session sweep + the
+  `choom=ok|failed` breadcrumb token.
 
 ### Commit work-in-progress as you go
 

@@ -3636,3 +3636,117 @@ def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) ->
     assert body["lane_suffix_unhonored_by_lane"] == "nibi"
     messages = [r.getMessage() for r in caplog.records]
     assert any("GCP-only" in m for m in messages), messages
+
+
+# ---------------------------------------------------------------------------
+# #954 — the explicit-override typed arm persists the PARTIAL handle sidecar
+# ---------------------------------------------------------------------------
+
+
+def _partial_runpod_handle_954():
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-909",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-909.log",
+        extra={
+            "issue": 909,
+            "workload_executed": False,
+            "workload_start_error": "ssh TimeoutExpired",
+        },
+    )
+
+
+def test_cmd_launch_workload_start_failed_writes_sidecar_and_names_pod(
+    monkeypatch, tmp_path
+) -> None:
+    """#954 AC7: a typed-with-handle workload-start failure on the explicit
+    override path exits 2 with ``reason: runpod_workload_start_failed``
+    (unchanged) PLUS ``pod_name`` + ``sidecar_written: true``, and the handle
+    sidecar exists on disk at the canonical path — the billing pod is visible
+    to the handle machinery (poll / finalize / re-drive stay chained). The
+    backend mock raises from ``launch`` below ``dispatch_for_issue`` (the real
+    ``route()`` runs), so assumption 5 — no exception wrapping — is
+    exercised."""
+    from explore_persona_space.backends.issue_dispatch import read_handle_sidecar
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=RunPodWorkloadStartError(
+            "workload did NOT verify alive on pod-909", handle=_partial_runpod_handle_954()
+        ),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "runpod_workload_start_failed"  # unchanged (#909)
+    assert body["pod_name"] == "pod-909"
+    assert body["sidecar_written"] is True
+    # The handle sidecar exists on disk at the canonical (tmp-pinned) path.
+    sidecar = tmp_path / ".claude" / "cache" / "issue-909-handle.json"
+    assert sidecar.is_file()
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    assert recovered.pod_name == "pod-909"
+    assert recovered.extra["workload_executed"] is False
+    assert recovered.extra["workload_start_error"]
+
+
+def test_cmd_launch_workload_start_failed_sidecar_write_oserror_fail_loud(
+    monkeypatch, tmp_path
+) -> None:
+    """#954 (round-1 critique, statistics MF): the Surface-5 fail-loud contract
+    — a sidecar-write OSError NEVER masks the typed failure: rc 2, ``reason``
+    unchanged, ``pod_name`` present, ``sidecar_written: false`` + the OSError
+    recorded in the JSON note (no unhandled OSError escapes the typed arm)."""
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=RunPodWorkloadStartError(
+            "workload did NOT verify alive on pod-909", handle=_partial_runpod_handle_954()
+        ),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    def _raising_write(handle, path):
+        raise OSError("Disk quota exceeded (EDQUOT) writing the sidecar")
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "runpod_workload_start_failed"
+    assert body["pod_name"] == "pod-909"
+    assert body["sidecar_written"] is False
+    assert "handle sidecar write FAILED" in body["note"]
+    assert "EDQUOT" in body["note"]
+    # The typed failure's own message is still the note's lead.
+    assert "did NOT verify alive" in body["note"]

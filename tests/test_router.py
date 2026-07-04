@@ -5988,3 +5988,241 @@ def test_translation_helper_cpu_intents_pass_through_verbatim():
             cpu_intent,
             None,
         )
+
+
+# ---------------------------------------------------------------------------
+# #954 — PARTIAL RunPod terminal-rung failure: pod PROVISIONED, workload start
+# FAILED (RunPodWorkloadStartError carrying the partial handle). The rung must
+# persist the SAME launch records the success path writes (on_launched sidecar
+# hook + in-flock lease incl. the M3b gcp_failover_of stamp), record a DISTINCT
+# RouteAttempt + terminal marker (runpod_workload_start_failed), and re-raise
+# TYPED — never collapse into NoComputeAvailableError (a pod exists and BILLS;
+# the #931 incident's mislabel invited a second paid dispatch).
+# ---------------------------------------------------------------------------
+
+
+class _WorkloadStartFailedRunpod(_BaseBackend):
+    """RunPod double modeling the #954 PARTIAL failure: ``launch`` provisions
+    (records the spec) then raises the typed workload-start error CARRYING the
+    partial handle — the exact shape ``RunPodBackend.launch`` produces when the
+    #909 execution leg fails after the pod exists."""
+
+    def __init__(self) -> None:
+        self.launches: list[RunSpec] = []
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+        self.launches.append(spec)
+        partial = RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={
+                "issue": spec.issue,
+                "workload_executed": False,
+                "workload_start_error": "branch sync timed out (ssh TimeoutExpired)",
+            },
+        )
+        raise RunPodWorkloadStartError("branch sync timed out (ssh TimeoutExpired)", handle=partial)
+
+
+class _WorkloadStartFailedNoHandleRunpod(_BaseBackend):
+    """The HANDLE-LESS typed error (the pre-provision guard shape): nothing was
+    provisioned, nothing bills — the rung's blanket NoCompute branch applies."""
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+        raise RunPodWorkloadStartError(
+            "execute_workload requested with empty workload_cmd — refusing before provisioning"
+        )
+
+
+def test_runpod_terminal_rung_workload_start_failed_persists_launch_records_and_reraises_typed(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC1: a typed-with-handle workload-start failure at the terminal rung
+    (i) invokes on_launched with the PARTIAL handle, (ii) writes the in-flock
+    lease incl. the M3b gcp_failover_of stamp, (iii) records the DISTINCT
+    RouteAttempt + terminal marker, and (iv) re-raises the TYPED error — never
+    NoComputeAvailableError."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    rp = _WorkloadStartFailedRunpod()
+    hooked: list[RunHandle] = []
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    with pytest.raises(RunPodWorkloadStartError) as ei:
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            on_launched=hooked.append,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            gcp_failover_of_identity=identity,
+        )
+    # (iv) The TYPED class, not the NoCompute collapse.
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert ei.value.handle is not None
+    assert ei.value.handle.pod_name == "pod-137"
+    # (i) on_launched fired exactly once, with the PARTIAL handle.
+    assert len(hooked) == 1
+    assert hooked[0] is ei.value.handle
+    # (ii) The in-flock lease records the submit + the M3b identity stamp.
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.backend == "runpod"
+    assert lease.gcp_failover_of == identity
+    # (iii) Terminal marker with the DISTINCT reason + the RouteAttempt outcome.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED)
+    assert finals
+    attempt = finals[-1]["attempts"][-1]
+    assert attempt["outcome"] == "runpod_workload_start_failed"
+    assert "pod-137" in attempt["detail"]
+    assert "RUNNING for" in attempt["detail"]
+    # No NoCompute marker was posted for this launch.
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+
+
+def test_runpod_terminal_rung_workload_start_failed_without_handle_keeps_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC2: a HANDLE-LESS typed error (the pre-provision guard — nothing
+    provisioned, nothing bills) keeps the pre-#954 blanket branch byte-for-byte:
+    NoComputeAvailableError raised, ROUTE_REASON_NO_COMPUTE marker, NO lease
+    write, on_launched NOT called."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _WorkloadStartFailedNoHandleRunpod()
+    hooked: list[RunHandle] = []
+    with pytest.raises(NoComputeAvailableError):
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            on_launched=hooked.append,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert hooked == []  # on_launched never fired
+    assert lease_store.read(137) is None  # no lease write
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["attempts"][-1]["outcome"] == "runpod_fallback_failed"
+
+
+def test_concurrent_triggerer_after_partial_workload_start_failure_no_second_launch(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC4-ii: triggerer 1 partial-fails (typed raise; lease stamped
+    IN-FLOCK); an M3b concurrent second triggerer with the SAME GCP identity
+    short-circuits in-flock — total launch count stays 1 (the load-bearing
+    invariant; sequential calls on a shared LeaseStore model the
+    serialized-by-flock outcome, exactly as M2.6 does)."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    rp = _WorkloadStartFailedRunpod()
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger():
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    with pytest.raises(RunPodWorkloadStartError):
+        _trigger()  # triggerer 1: partial failure, lease stamped in-flock
+    second = _trigger()  # triggerer 2: in-flock re-check short-circuits
+
+    assert len(rp.launches) == 1  # EXACTLY ONCE — no second paid launch
+    assert second.extra.get("failover_already_launched") is True
+
+
+def test_runpod_workload_start_failed_reason_cross_module_parity():
+    """#954 AC5 (SR1 pattern): the router constant equals the established
+    ``dispatch_issue.py`` literal, and the reason is NOT in the watcher's
+    TRANSIENT_CAPACITY_REASONS allowlist — the capacity-retry pass never auto
+    re-drives a run whose pod exists and bills."""
+    import inspect
+
+    import scripts.dispatch_issue as cli
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    assert ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED == "runpod_workload_start_failed"
+    # The dispatch CLI's typed arm uses the SAME literal (one reason per
+    # failure class across paths, #909/#954).
+    assert '"runpod_workload_start_failed"' in inspect.getsource(cli)
+    assert ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED not in TRANSIENT_CAPACITY_REASONS
+
+
+def test_runpod_terminal_rung_partial_lease_write_failure_preserves_typed_error(
+    tmp_path, marker_poster, captured_markers
+):
+    """#954 AC1 guard (round-1 critique, alternatives MF2): a lease-write
+    failure on the partial branch must NEVER replace the typed error — the
+    failover legs' ``except RunPodWorkloadStartError`` is the rescue path, and
+    an OSError escaping here would blind it exactly when rescue is needed. The
+    marker still posts with the DISTINCT reason, and the RouteAttempt detail
+    records the lease_write_failed note."""
+    from contextlib import contextmanager
+
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    class _RaisingWriteLeaseStore(LeaseStore):
+        @contextmanager
+        def transaction(self, issue):
+            with super().transaction(issue) as (lease, _write):
+
+                def _raising_write(new_lease):
+                    raise OSError("Disk quota exceeded (EDQUOT) writing the lease")
+
+                yield lease, _raising_write
+
+    store = _RaisingWriteLeaseStore(lease_dir=tmp_path / ".eps-routing")
+    rp = _WorkloadStartFailedRunpod()
+    with pytest.raises(RunPodWorkloadStartError):  # STILL the typed class
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            gcp_failover_of_identity={"pod_name": "eps-issue-137", "job_id": "i-1"},
+        )
+    finals = _by_reason(captured_markers, "runpod_workload_start_failed")
+    assert finals  # the terminal marker still posted
+    assert "lease_write_failed" in finals[-1]["attempts"][-1]["detail"]
