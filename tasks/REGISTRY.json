@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1011,
+  "highest_id": 1012,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -114,6 +114,13 @@
       "path": "tasks/proposed/1011",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body WARN on orphaned committed per-context companion figures"
+    },
+    "1012": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1012",
+      "status": "proposed",
+      "title": "workflow-fix: reconcile stale ensemble round ranges (1-3) with the cap-5 policy"
     },
     "102": {
       "has_clean_result": false,
