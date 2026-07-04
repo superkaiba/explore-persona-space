@@ -389,12 +389,18 @@ def _overflow_repo_for_bucket(
 ) -> str | None:
     """Return the overflow repo id iff ``<bucket>/OVERFLOW_POINTER.json`` exists on the
     canonical repo (i.e. this bucket's LFS was rerouted), else None. Fail-soft on any
-    listing/parse error → None (falls back to the canonical repo, backward-compatible)."""
-    from huggingface_hub import hf_hub_download, list_repo_files
+    probe/parse error → None (falls back to the canonical repo, backward-compatible).
+
+    Existence is probed with the SINGLE-path ``HfApi.file_exists`` — never a full
+    ``list_repo_files`` membership test: the canonical data repo is ~1M files, and a
+    full listing pages the whole tree (~15-30+ min, or a hang) before the ``in`` check
+    even runs (gotchas.md § snapshot_download/list_repo_files on the ~1M-file repo;
+    hit live by the #841 wincell-stability run, 2026-07-04)."""
+    from huggingface_hub import HfApi, hf_hub_download
 
     pointer_rel = f"{bucket.rstrip('/')}/OVERFLOW_POINTER.json"
     try:
-        if pointer_rel not in list_repo_files(canonical_repo, repo_type=repo_type):
+        if not HfApi().file_exists(canonical_repo, pointer_rel, repo_type=repo_type):
             return None
         local = hf_hub_download(canonical_repo, filename=pointer_rel, repo_type=repo_type)
         return json.loads(Path(local).read_text()).get("overflow_repo")
