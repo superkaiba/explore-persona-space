@@ -6335,8 +6335,8 @@
     "957": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/957",
-      "status": "reviewing",
+      "path": "tasks/completed/957",
+      "status": "completed",
       "title": "workflow-fix: OOM-protect detached VM-side compute phases (choom -600 + pivot rule)"
     },
     "958": {
