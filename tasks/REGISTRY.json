@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 994,
+  "highest_id": 995,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6626,6 +6626,13 @@
       "path": "tasks/proposed/994",
       "status": "proposed",
       "title": "daily-fix: headless /daily dies at 600s bg-wait ceiling"
+    },
+    "995": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/995",
+      "status": "proposed",
+      "title": "daily-fix: batch_judge retry read-after-write 404 post-create"
     }
   }
 }
