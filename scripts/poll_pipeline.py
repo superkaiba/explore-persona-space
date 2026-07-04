@@ -847,7 +847,9 @@ def _maybe_synthesize_results_envelope(
 ) -> dict[str, Any] | None:
     """#899 fallback: rescue a raw Step 7 results payload on a results filename.
 
-    Returns a synthesized enveloped dict, or None (caller keeps the skip path).
+    Returns a synthesized enveloped dict WITHOUT a ``"version"`` key (the
+    drain threads ``version=None`` to ``post_event``, which derives max+1
+    per kind; #975), or None (caller keeps the skip path).
     Fires ONLY for: basename endswith ``-results.json`` AND no envelope key
     present AND all 10 Step 7 payload keys present (extras tolerated).
 
@@ -880,8 +882,9 @@ def _maybe_synthesize_results_envelope(
         return None
     log.error(
         "sentinel %s carried a complete Step 7 results payload but no envelope "
-        "keys %s; synthesizing kind=epm:results version=1 and posting — "
-        "pod-side writer should emit the envelope (#899)",
+        "keys %s; synthesizing kind=epm:results (version omitted -> post_event "
+        "derives max+1; #975) and posting — pod-side writer should emit the "
+        "envelope (#899)",
         remote_path,
         missing,
     )
@@ -890,7 +893,14 @@ def _maybe_synthesize_results_envelope(
     return {
         "sentinel_schema_version": SENTINEL_SCHEMA_VERSION_SUPPORTED,
         "kind": "epm:results",
-        "version": 1,
+        # "version" DELIBERATELY OMITTED (#975): key absence is the drain's
+        # signal to pass version=None to post_event, which derives
+        # max(existing for kind)+1 — a hardcoded 1 landed below an existing
+        # higher version on re-runs (the #480/#389/#825 collision class).
+        # Real sentinels always carry the key (_SENTINEL_REQUIRED_KEYS), so
+        # absence is unambiguous. NOTE: this dict is returned by
+        # _parse_sentinel WITHOUT re-validation — do not add a required-keys
+        # re-check on it without revisiting this omission.
         "note": note,
         "by": "pod-sentinel-envelope-fallback",  # secondary provenance
     }
@@ -1645,7 +1655,7 @@ def _persist_oversize_note(
     issue: int,
     remote_path: str,
     kind: str,
-    version: int,
+    version: int | None,
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
@@ -1665,7 +1675,11 @@ def _persist_oversize_note(
        <epoch>.txt`` (task folder resolved via ``find_task_path``, so the
        branch-guarded ``main`` resolver picks the correct path even when
        the poller is invoked from elsewhere).
-    2. Post a SHORT pointer marker of the same ``(kind, version)`` whose
+    2. Post a SHORT pointer marker of the same ``(kind, version)``
+       (``version=None`` — the #899 synthesized-envelope case — lets
+       ``post_event`` derive max+1 at the pointer post; safe because the
+       oversize ``ValueError`` raises BEFORE any version is derived or
+       consumed) whose
        ``note`` (a) cites the artifact path, (b) records original length,
        and (c) is a leading excerpt of the original. The excerpt is
        hard-bounded under ``EVENT_NOTE_MAX`` so the pointer post itself
@@ -1728,11 +1742,12 @@ def _persist_oversize_note(
     # reserve ~512 chars for the pointer header and use the remainder for
     # a leading excerpt of the original, so operators see the start of the
     # payload inline without needing to open the artifact.
+    version_repr = str(version) if version is not None else "derived-at-post (max+1)"
     header = (
         f"[oversize note persisted; original {len(full_note)} chars > "
         f"{EVENT_NOTE_MAX} cap]\n"
         f"Full payload: {rel_artifact}\n"
-        f"Original kind={kind} version={version} by={by}\n"
+        f"Original kind={kind} version={version_repr} by={by}\n"
         f"--- leading excerpt ---\n"
     )
     excerpt_budget = max(0, EVENT_NOTE_MAX - len(header) - 32)  # 32-byte safety
@@ -1794,8 +1809,10 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     Exception (#899): a fully-envelope-less body on a ``-results.json``
     basename that carries the complete Step 7 results-payload key set is
     RESCUED via ``_maybe_synthesize_results_envelope`` (returns a
-    synthesized ``kind=epm:results version=1`` envelope + a loud
-    ``log.error``) instead of being skipped. Envelope-carrying sentinels
+    synthesized ``kind=epm:results`` envelope with NO ``version`` key — the
+    drain then posts with ``version=None`` so ``post_event`` derives max+1
+    (#975) — plus a loud ``log.error``) instead of being skipped.
+    Envelope-carrying sentinels
     (including partial envelopes and unsupported schema versions) keep the
     strict path unchanged.
     """
@@ -1867,6 +1884,7 @@ def drain_sentinels_via(
     sentinel cycled indefinitely). It is degraded gracefully via
     ``_persist_oversize_note`` (full note -> ``<task>/artifacts/sentinel-
     note-*.txt`` + a truncated pointer marker of the same ``(kind, version)``
+    — or a freshly derived version for the synthesized-envelope case, #975 —
     that cites the artifact) and the sentinel is renamed ``.processed`` to
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
@@ -1879,7 +1897,24 @@ def drain_sentinels_via(
         if data is None:
             continue
         kind = data["kind"]
-        version = int(data["version"])
+        if "version" in data:
+            # Real pod-side sentinel: "version" is a REQUIRED envelope key
+            # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
+            # explicit version always wins in post_event — verbatim contract.
+            # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
+            # real sentinel carrying "version": null keeps today's loud
+            # int(None) TypeError instead of silently deriving (#975).
+            version: int | None = int(data["version"])
+        else:
+            # Only reachable via the #899 synthesized envelope, which omits
+            # the key (#975): post_event derives max(existing for kind)+1 so
+            # a re-drained / re-run rescue never lands BELOW an existing
+            # higher version (the #480 collision class). If the rename below
+            # fails and a future tick re-drains the same rescue, the
+            # duplicate lands at a fresh max+1 (v5, v6, ...) with
+            # byte-equivalent content — highest-version-wins resume stays
+            # correct, strictly better than stacked v1s.
+            version = None
         note = data.get("note")
         if note is None:
             note = data.get("payload")
