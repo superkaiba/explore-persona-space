@@ -611,9 +611,34 @@ such corpora or banks:
    mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a
    review Minor otherwise, costing a re-roll round; arriving pre-pinned
    skips it.
-9. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
-   convention (`git log --oneline -10` for style).
-10. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+9. **One production-body test per seam-stubbed function.** If any test
+   stubs / monkeypatches / fakes out a production function you ADDED (or
+   whose body you MODIFIED) this round — a `monkeypatch.setattr` /
+   `unittest.mock.patch` target, a seams/hooks dataclass field overridden
+   with a fake, a fake injected through a resolver/dispatch table — ALSO
+   commit at least ONE test that EXECUTES the real body and reaches its
+   external call sites + attribute dereferences, faking ONLY the external
+   GPU/API/network/filesystem boundary with fakes that are
+   signature-conformant BY CONSTRUCTION
+   (`unittest.mock.create_autospec(real_callee)`, a real dataclass
+   instance, or a fake whose `def` mirrors the real signature — never a
+   bare `Mock()`/`MagicMock()`, which accepts ANY call). A
+   dispatch/resolver test that asserts the dispatcher called the name
+   is NOT body coverage. The obligation closes
+   TRANSITIVELY over round-added callees: your body-executing test must
+   ALSO reach the external calls + dereferences of any function
+   added/modified this round that the stubbed body calls — a crash-class
+   body must not escape by moving one call deeper. `code-reviewer` runs
+   this exact check as Step 3.8, and a wrong-signature /
+   nonexistent-field finding in a seam-stubbed body is Critical — write
+   the test it will demand (incident #906: five review rounds shipped
+   crash-class bodies behind `PilotSeams` stubs while 43/43 mocked tests
+   stayed green). Canonical statement + rationale:
+   `.claude/rules/code-style.md`
+   § One production-body test per seam-stubbed function.
+10. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+    convention (`git log --oneline -10` for style).
+11. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
     issue #N (see Report Format below). The `/issue` skill reads this marker
     and spawns `code-reviewer`.
 
@@ -675,7 +700,7 @@ If the approved plan body contains a `### TDD: yes` line, or the user explicitly
 2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v<n> -->` (max+1 per § Posting review-round markers) on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
 3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation` marker at the next version (max+1 per § Posting review-round markers; v1 only when the task has no prior implementation rows) and proceed to code-review.
 
-If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
+If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation — and one production-body test per seam-stubbed function (mandatory checklist item 9).
 
 ### On revision rounds (after code-reviewer FAIL)
 
