@@ -6406,8 +6406,8 @@
     "964": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/964",
-      "status": "planning",
+      "path": "tasks/approved/964",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body warn on body-linked figures untracked at branch HEAD"
     },
     "965": {
