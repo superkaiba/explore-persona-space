@@ -35,7 +35,7 @@ relates_to:
 # The chain-of-thought summary predictively mediates the thinking model's context→answer activation map (MODERATE confidence)
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_928.md](https://github.com/superkaiba/explore-persona-space/blob/c9dc39499f4be2e1bcfdc2e8f7ba01df82c9d921/docs/methodology/issue_928.md) · [gist](https://gist.github.com/superkaiba/9ab1fdeb5bfb699d0b309541c519a31b)
+**Methodology:** [docs/methodology/issue_928.md](https://github.com/superkaiba/explore-persona-space/blob/e9b8cf6c1b927116e816b9c27d11296a6552e229/docs/methodology/issue_928.md) · [gist](https://gist.github.com/superkaiba/9ab1fdeb5bfb699d0b309541c519a31b)
 
 ## Takeaways
 
