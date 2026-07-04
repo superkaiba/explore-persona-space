@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1005,
+  "highest_id": 1006,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -65,6 +65,13 @@
       "path": "tasks/proposed/1005",
       "status": "proposed",
       "title": "Replicate the CoT decomposition on DeepSeek-R1-Distill-Qwen-7B (template-forced thinking): does scaffold compliance eliminate the flagged-context covariate?"
+    },
+    "1006": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1006",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan.py check \u2014 registered verdict lattices must be mutually exclusive + exhaustive"
     },
     "101": {
       "has_clean_result": false,
