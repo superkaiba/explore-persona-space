@@ -50,7 +50,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 6 Contrastive negatives | critic.md Methodology 6 | v2-owner: methodology-baselines-critic |
 | 7 Replication fidelity | critic.md Methodology 7 | v2-owner: methodology-baselines-critic |
 | 8 Few-shot / ICL demonstration content | critic.md Methodology 8 | v2-owner: methodology-baselines-critic |
-| 9 Trained-artifact + code reuse fitness (a)-(i) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
+| 9 Trained-artifact + code reuse fitness (a)-(j) | critic.md Methodology 9 | v2-owner: consistency-checker + methodology-baselines-critic |
 | 10 CPU/analysis-phase placement (i)-(iv) | critic.md Methodology 10 | v2-owner: efficiency-critic |
 | 11 Marker stopping recipe + runtime-guard smoke-verifiability | critic.md Methodology 11 | v2-owner: methodology-baselines-critic |
 | 12 Multi-arm resolution-band simultaneity | critic.md Methodology 12 | v2-owner: methodology-baselines-critic |
@@ -114,6 +114,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | Step 3.5 cached-artifact coverage (`cached-artifact-coverage-unverified`) | code-reviewer.md Step 3.5 | v2-owner: code-correctness-critic |
 | Step 3.6 long-loop restartability | code-reviewer.md Step 3.6 | v2-owner: efficiency-critic |
 | Step 3.7 bug-class sibling sweep | code-reviewer.md Step 3.7 | v2-owner: code-correctness-critic |
+| Step 3.8 seam-stubbed production-body verification | code-reviewer.md Step 3.8 | v2-owner: code-correctness-critic |
 | Step 4 run / verify tests | code-reviewer.md Step 4 | v2-owner: code-correctness-critic |
 | Step 4.5 regression-test presence for BLOCKER fixes | code-reviewer.md Step 4.5 | v2-owner: code-correctness-critic |
 | Step 5 security sweep | code-reviewer.md Step 5 | v2-owner: code-correctness-critic |

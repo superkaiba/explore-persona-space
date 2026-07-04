@@ -149,13 +149,13 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    genuinely new or changed values, not for values a sibling already settled.
 
 5. **Check what's reusable — search trained artifacts BEFORE designing new
-   training, then run the (a)–(i) fitness check on every candidate.** When a
+   training, then run the (a)–(j) fitness check on every candidate.** When a
    plan would reuse a prior HF adapter / checkpoint / training-mix /
    raw-completion bucket / eval JSON — or a parent's fit/analysis helper —
    instead of retraining, READ
    `.claude/rules/artifact-reuse.md` IN FULL before recording any reuse in
    §10 / §11 — the search recipe, the Hub-API existence check, and the full
-   (a)–(i) fitness checklist live there; on a failed check other than (i) do
+   (a)–(j) fitness checklist live there; on a failed check other than (i) do
    NOT reuse
    (state which check failed in §12 Assumptions + name the rebuild plan); on a
    failed throughput check (i), fix the SOURCE module (batch / parametrize it
@@ -313,7 +313,10 @@ ones). Rows: cited HF reuse artifacts (Hub-verified via
 `huggingface_hub.list_repo_files`, never the `hf` CLI) · reused code/helper
 throughput inspection when code reuse is present (the item-(i) triple:
 helper/function name, batched-or-serial verdict, device handling — "N/A — no
-artifact reuse" does NOT cover reused fit/analysis code) · per-stage
+artifact reuse" does NOT cover reused fit/analysis code) · pairwise
+provenance-coherence dates when a mutually-dependent artifact pair is reused
+(the item-(j) input-vs-capture `last_commit` comparison at the consumed
+revisions) · per-stage
 output-artifact destinations (`raw_completions/<stage>/`,
 `analysis_tensors/`) · the `discarded_artifacts:` slot
 ({name, reason, regen_recipe}; text/JSON is NEVER a valid discard).

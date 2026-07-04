@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(i) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(i)
+# Trained-artifact (and code) reuse — the fitness check (a)-(j)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(i); this file is the full checklist AND, as of
+summary naming checks (a)-(j); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -232,6 +232,59 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   batched-or-serial verdict, device handling — in the plan's reuse map
   (§10 / §11) and reflect the implied wall-time in the corresponding §9
   compute row.
+- **(j) Pairwise provenance coherence (mutually-dependent artifact PAIRS).**
+  When the reuse consumes two-or-more artifacts that must be mutually
+  consistent because one was PRODUCED UNDER the other — a question/prompt
+  bank vs activations / teacher-forced reads captured under it; a training
+  mix vs the adapter trained on it; a completion pool vs judge outputs
+  scored over it — checks (e)/(f) pin each member's CURRENT bytes
+  individually but say nothing about whether the members come from the SAME
+  generation. Verify the consumed INPUT does not POSTDATE the dependent
+  CAPTURE, comparing last-modified dates AT THE REVISION EACH MEMBER IS
+  ACTUALLY CONSUMED FROM. Mechanics — first group the pair's members by
+  concrete storage location (repo_id + repo_type + consumed revision; the
+  members often live in DIFFERENT stores: adapters/checkpoints in the model
+  repo, mixes/raw-completion buckets in the data repo, judge/eval JSONs in
+  git), then date each member:
+  - HF-resident member: `HfApi().get_paths_info(repo_id, [<member file
+    paths>], expand=True, repo_type=..., revision=<the revision the
+    consumer will fetch>)` → per-path `last_commit` (`oid`, `date`) — a
+    per-path POST, safe on the ~1M-file data repo (measured ~0.5 s; paths
+    must be non-empty FILE paths, else HTTP 400). One call per repo; a
+    same-repo single-file pair may batch both paths into one call.
+  - Folder / multi-file member (a LoRA adapter subfolder, a sharded
+    store): probe the EXACT consumed file set (every member file the
+    consumer loads, or the artifact's named manifest file) and reduce to
+    the MAX member-file `last_commit.date` — an unprobed sibling can be
+    the regenerated file.
+  - Git-resident member (a committed `eval_results/...` input):
+    `git log -1 --format=%cI <consumed ref> -- <path>`.
+  Require `max(input member dates) <= min(capture member dates)` at the
+  consumed revisions; ALSO read any `reconstruction` / regeneration
+  metadata field the artifact itself carries (#922's question artifact
+  documented its own regeneration). Two caveats: commit/upload time is a
+  PROXY for production time — a capture-side re-commit that postdates the
+  input's regeneration is NOT evidence the capture was regenerated under
+  the new input unless its provenance metadata says so; and an input
+  regenerated AFTER the capture is inconsistent REGARDLESS of sha pins — a
+  pin freezes current bytes, not pair coherence. RE-RUN this comparison
+  whenever any member's pin/revision is refreshed (a crash-fix round
+  re-pinning one member re-opens the check). On a failure, either (1)
+  re-capture / regenerate the DEPENDENT artifact under the current input,
+  or (2) pin the input at the pre-regeneration REVISION the capture was
+  made under (`hf_hub_download(..., revision=<capture-era commit>)`) —
+  (2) only after confirming WHY the input was regenerated (a bug-fix
+  regeneration invalidates the old input, forcing (1)). A documented
+  remedy-(2) pin PASSES this check: the probe runs at the consumed
+  revision, so pinning the pre-regeneration revision restores coherence
+  by construction. A pair uploaded in one commit passes trivially.
+  (Incident #922 r4, att-20260703-163130: #779's question artifacts were
+  regenerated — HF commit 9578892ef4, 2026-07-02 — AFTER the dependent
+  `cx.pt` activation capture — a8060198a4, 2026-07-01; every prior check
+  passed on each member individually and the run crashed at the parity
+  assert after a full GCE cycle. Sibling class: the #601 pinned-pair
+  COVERAGE mismatch —
+  `.claude/agent-memory/experiment-implementer/feedback_pinned_artifact_pair_mutual_inconsistency.md`.)
 
 A failing check other than (i) → retrain / regenerate; a failing throughput
 check (i) → fix the SOURCE module (batch / parametrize it there — never a

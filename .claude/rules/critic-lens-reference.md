@@ -168,7 +168,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    CDN/region/`HF_TOKEN` gate blocks the lane from staging it), without an upload-first /
    rename-to-consumer-path step, a consumer-adaptation, OR a self-contained §4 regen phase — the
    resulting numbers will silently confound the result, or phase2 crashes at the pre-train `assert
-   data_path.exists()` on a git-clone-only lane; or the plan reuses a parent's fit/analysis CODE
+   data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact
+   PAIR (bank vs capture, mix vs adapter) without the item-(j) provenance-coherence check — a
+   consumed input regenerated AFTER its dependent capture crashed #922 at the parity assert after
+   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's fit/analysis CODE
    without the checklist-item-(i) throughput inspection (inner per-cell/per-fold/per-draw loop
    batched? device parametrized? — `.claude/rules/vectorize-many-cell-fits.md`; #761's reused
    serial `_ridge_predict_loco` ran ~100× over plan, #763/#812 inherited a hardcoded
@@ -178,7 +181,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(i) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(j) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse).
