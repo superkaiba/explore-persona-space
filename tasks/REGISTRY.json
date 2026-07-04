@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1038,
+  "highest_id": 1039,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -310,6 +310,13 @@
       "path": "tasks/proposed/1038",
       "status": "proposed",
       "title": "daily-held: schedule #681 bind-migration cutover + disk sign-off"
+    },
+    "1039": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1039",
+      "status": "proposed",
+      "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
     },
     "104": {
       "has_clean_result": false,
