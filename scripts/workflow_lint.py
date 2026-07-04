@@ -5559,21 +5559,28 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
 # every row in LESSONS.md must point at an existing rule file. Closes the
 # silent-drift class: a rule added/removed without an index update would
 # otherwise re-open the #722 load-timing gap (a lesson with no always-on index
-# row). The row format is the stable, machine-parseable:
-#   - **<name>** ([`.claude/rules/<name>.md`](<name>.md)) — fires when: ...
+# row). The row format is the stable, machine-parseable (#992 slim — the
+# name appears once, linkified; the link target is relative to
+# `.claude/rules/`):
+#   - **[<name>](<name>.md)** — fires when: ...
 _LESSONS_ROW_RE = re.compile(
-    r"^- \*\*(?P<name>[a-z0-9-]+)\*\* \(\[`\.claude/rules/(?P=name)\.md`\]"
-    r"\((?P=name)\.md\)\)",
+    r"^- \*\*\[(?P<name>[a-z0-9-]+)\]\((?P=name)\.md\)\*\*",
     re.MULTILINE,
 )
 
 
-_LESSONS_MAX_BYTES = (
-    8000  # leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated raise)
-)
+# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim).
+_LESSONS_MAX_BYTES = 8000
+# Early-warning band (#992): a stderr-only advisory WARN once the index
+# crosses this, so a near-cap landing is visible a few rows before the
+# 8000-byte FAIL (early warning only — advisory, never a FAIL).
+_LESSONS_WARN_BYTES = 7200
 
 
-def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
+def check_lessons_index(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
     diverge OR the index exceeds the leanness cap.
 
@@ -5585,14 +5592,27 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
     (the always-on token budget — the whole point of the index is leanness;
     the Option-B rejected alternative was inlining all rule bodies, paying
-    tens of K tokens per call). `repo_root` is a unit-test override hook;
-    production callers pass None (canonical repo root). Bundled into the
-    no-flags default run.
+    tens of K tokens per call). Failure mode (d) additionally carries an
+    advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
+    under the cap emits an early-warning WARN — stderr-only / advisory, never
+    a FAIL — so a near-cap landing is visible a few rows before the next
+    addition FAILs. `repo_root` is a unit-test override hook; production
+    callers pass None (canonical repo root). `warn_sink` mirrors
+    `check_lens_coverage`'s hook: WARNs append there when provided, else go
+    to stderr with a ``WARN: `` prefix; WARNs never enter the returned FAIL
+    list. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     rules_dir = root / ".claude" / "rules"
     lessons = rules_dir / "LESSONS.md"
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     if not lessons.is_file():
         errors.append(
             f"{lessons}: missing — the always-on lessons index (#739) must "
@@ -5608,6 +5628,12 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
         )
+    elif len(raw) > _LESSONS_WARN_BYTES:
+        _warn(
+            f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
+            f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
+            f"decision before the next addition FAILs."
+        )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
     # and stale set-diffs read empty, silently passing the check (#739 r2).
@@ -5618,8 +5644,9 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
         errors.append(
             f".claude/rules/LESSONS.md: no index row for rule "
             f"'{missing}' (.claude/rules/{missing}.md). Add a "
-            f"'- **{missing}** ([`.claude/rules/{missing}.md`]"
-            f"({missing}.md)) — fires when: ...' row."
+            f"'- **[{missing}]({missing}.md)** — fires when: ...' row, "
+            f"or reformat an existing old-format row for '{missing}' to "
+            f"that format."
         )
     for stale in sorted(indexed - rule_files):
         errors.append(
@@ -6128,8 +6155,8 @@ def check_lens_coverage(
     whose State (last) column does not start with one of the four exact prefixes
     :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
     ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
-    ``.claude/rules/LESSONS.md`` (the ``- **<name>**`` bullets) with NO row in
-    the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    ``.claude/rules/LESSONS.md`` (the ``- **[<name>](<name>.md)**`` rows) with
+    NO row in the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
     owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
     provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
     enter the returned FAIL list. ``repo_root`` is a unit-test override; a

@@ -2809,10 +2809,24 @@ def _write_lessons_fixture(rules_dir, rule_names, indexed_names):
     rules_dir.mkdir(parents=True, exist_ok=True)
     for name in rule_names:
         (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
-    rows = "\n".join(
-        f"- **{n}** ([`.claude/rules/{n}.md`]({n}.md)) — fires when: x." for n in indexed_names
-    )
+    rows = "\n".join(f"- **[{n}]({n}.md)** — fires when: x." for n in indexed_names)
     (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{rows}\n", encoding="utf-8")
+
+
+def _write_lessons_at_exact_bytes(rules_dir, total_bytes):
+    """Write a valid one-rule LESSONS.md padded to EXACTLY `total_bytes` bytes.
+
+    Pads with ASCII 'x' prose after the row; asserts the realized byte count
+    (the em-dash in the row is multibyte, so bytes != chars).
+    """
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    (rules_dir / "alpha.md").write_text("# alpha\n", encoding="utf-8")
+    base = "# LESSONS\n\n## Rules\n\n- **[alpha](alpha.md)** — fires when: x.\n\n"
+    pad = total_bytes - len(base.encode("utf-8")) - 1  # -1: trailing newline
+    assert pad > 0, "total_bytes too small for the fixture skeleton"
+    content = base + "x" * pad + "\n"
+    assert len(content.encode("utf-8")) == total_bytes
+    (rules_dir / "LESSONS.md").write_bytes(content.encode("utf-8"))
 
 
 def test_check_lessons_index_fails_on_missing_row(tmp_path):
@@ -2850,7 +2864,7 @@ def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
-    rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
+    rows = "- **[alpha](alpha.md)** — fires when: x.\n"
     # Pad with prose so the index breaches the byte cap regardless of its value.
     padding = "x" * (_LESSONS_MAX_BYTES + 100)
     (rules / "LESSONS.md").write_text(
@@ -2871,6 +2885,43 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
+
+
+def test_check_lessons_index_warns_in_warn_band(tmp_path):
+    # The #992 early-warning band: an index strictly between _LESSONS_WARN_BYTES
+    # and _LESSONS_MAX_BYTES emits one advisory WARN (warn_sink / stderr),
+    # never a FAIL; the over-cap FAIL branch takes precedence over the WARN.
+    from workflow_lint import _LESSONS_MAX_BYTES, _LESSONS_WARN_BYTES
+
+    # Pin the band constant itself (#992 plan latitude: 7000-7400, below cap).
+    assert 7000 <= _LESSONS_WARN_BYTES <= 7400 < _LESSONS_MAX_BYTES
+
+    rules = tmp_path / ".claude" / "rules"
+
+    # (1) Sub-warn-band fixture -> no FAIL, empty sink.
+    sink: list[str] = []
+    _write_lessons_fixture(rules, ["alpha"], ["alpha"])
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert sink == []
+
+    # (2) EXACTLY at the threshold -> still no warn (the band is strictly-greater).
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES)
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert sink == []
+
+    # (3) One byte over the threshold -> no FAIL, exactly one warn-band message.
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_WARN_BYTES + 1)
+    assert check_lessons_index(repo_root=tmp_path, warn_sink=sink) == []
+    assert len(sink) == 1 and "warn band" in sink[0]
+
+    # (4) Over the cap -> the FAIL branch fires; no warn message rides along.
+    sink = []
+    _write_lessons_at_exact_bytes(rules, _LESSONS_MAX_BYTES + 100)
+    errs = check_lessons_index(repo_root=tmp_path, warn_sink=sink)
+    assert errs and any("leanness cap" in e for e in errs)
+    assert sink == []
 
 
 def test_compute_shape_review_lens_live_tree_passes() -> None:
