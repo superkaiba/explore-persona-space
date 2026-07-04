@@ -23,6 +23,10 @@ JSONs so the same entrypoint renders the smoke subset and the production
   6. btdr_ownbest_trace      — own-best-layer LOCO skill per row vs k alongside
      the committed-layer trace (the binding analyzer concern's layer-shift
      companion; descriptive, selection-favored, never banded).
+  7. btdr_mechanism_percontext — the 50 per-context centered cosines behind
+     each mechanism median (the two primary singles + the turn-end-token
+     counter-case × three doses; strip + median tick; Lens-11 companion to
+     btdr_mechanism_by_k).
 
 Inputs (committed on `issue-810` + this round's driver outputs):
   eval_results/issue_810/boundary-truncation-dose-response/paired_dose_response.json
@@ -305,6 +309,50 @@ def fig_mechanism_by_k(paired: dict, mech: dict, mech_k0: dict, fig_dir: Path) -
     plt.close(fig)
 
 
+def fig_mechanism_percontext(mech: dict, fig_dir: Path) -> None:
+    """Per-context strips behind the mechanism medians (round-4 companion layout).
+
+    One jittered 50-context strip per (row × dose) cell at the row's committed
+    layer, median tick + most-moved context labeled; rows = the two primary
+    singles + the turn-end token (the counter-case).
+    """
+    rows = [*SINGLES, "im_end"]
+    ks = sorted(mech["truncate_fracs"])
+    cells = [(r, k) for r in rows for k in ks]
+    colors = _row_color(rows)
+    rng = np.random.default_rng(42)
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    for i, (r, k) in enumerate(cells):
+        pc = mech["by_k"][f"k{_pct(k)}"][r]["per_context_centered_cos_at_best_layer"]
+        names = list(pc.keys())
+        vals = np.array([pc[n] for n in names])
+        x = i + rng.uniform(-0.18, 0.18, size=len(vals))
+        ax.scatter(x, vals, s=14, color=colors[r], alpha=0.65)
+        ax.scatter(
+            [i],
+            [float(np.median(vals))],
+            marker="_",
+            s=420,
+            linewidths=2.6,
+            color="#2d2d2d",
+            zorder=3,
+        )
+        # label the single most-moved context (lowest cosine) per cell, reader-facing
+        j = int(np.argmin(vals))
+        ax.text(i, vals[j] - 0.04, context_label(names[j]), fontsize=6, ha="center", color="0.35")
+    ax.axhline(0.8, color="#a05050", ls="--", lw=1.2, label="echo-consistency anchor (0.8)")
+    labels = [f"{ROW_LABELS.get(r, r)}\nkeep {_pct(k)}%" for r, k in cells]
+    ax.set_xticks(range(len(cells)), labels=labels, fontsize=7)
+    ax.set_ylabel("centered cosine per context (committed layer)")
+    ax.set_title(
+        "Per-context similarity of full vs truncated boundary states, by dose",
+        fontweight="bold",
+    )
+    ax.legend(loc="lower right", fontsize=8)
+    savefig_paper(fig, "btdr_mechanism_percontext", dir=fig_dir)
+    plt.close(fig)
+
+
 def _own_best(recon: dict, row: str) -> float:
     cells = [c for c in recon["by_summary"][row] if c.get("ridge_skill") is not None]
     return max(float(c["ridge_skill"]) for c in cells)
@@ -373,7 +421,8 @@ def main() -> None:
     fig_paired_draws(paired, fig_dir)
     fig_mechanism_by_k(paired, mech, mech_k0, fig_dir)
     fig_ownbest_trace(paired, he, r1, r3, dose_dir, fig_dir)
-    print(f"wrote 6 figures to {fig_dir}")
+    fig_mechanism_percontext(mech, fig_dir)
+    print(f"wrote 7 figures to {fig_dir}")
 
 
 if __name__ == "__main__":
