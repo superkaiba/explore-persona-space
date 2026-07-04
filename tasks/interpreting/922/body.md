@@ -4,7 +4,7 @@ title: Answer-time activation trajectories are forecastable from the prompt alon
 kind: experiment
 tags: []
 created_at: '2026-07-03T10:21:41Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 841
 origin_prompt: Run an issue in the background which is 841 but predicting the next
   token activation from previous token activation, one mapping per layer, trying the
