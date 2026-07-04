@@ -535,6 +535,49 @@ def list_repo_files_complete(
     return sorted(files)
 
 
+def list_hf_files_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> list[str]:
+    """Files under ``path`` via ONE server-side scoped tree walk — never a
+    full-repo listing (#920: a bare listing wedges >600 s on the ~1M-file
+    data repo).
+
+    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
+    relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
+    on file paths — verified on hub 0.36.2, #939 — so an
+    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
+    probe); an absent path returns ``[]``. Repository/Revision-not-found and
+    transport/auth errors PROPAGATE (the file_exists fallback only fires
+    after the tree call proved repo+revision resolve, so its swallowing of
+    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
+    ValueError — a falsy path would silently degrade to the full-repo
+    listing this helper exists to avoid.
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = path.strip("/")
+    if not normalized:
+        raise ValueError("list_hf_files_under_path: empty path (would full-list the repo)")
+    try:
+        files = list_repo_files_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+        )
+    except EntryNotFoundError:
+        if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+            return [normalized]
+        return []
+    prefix = normalized + "/"
+    # Defensive client-side filter: a no-op against real scoped results (every
+    # returned path is under the prefix) but keeps strict test fakes — whose
+    # list_repo_tree ignores path_in_repo — matching the same semantics.
+    return [f for f in files if f == normalized or f.startswith(prefix)]
+
+
 def _is_storage_quota_403(err: Exception) -> bool:
     """Persistent account-wide public-storage 403 (NOT transient). Mirrors the
     issue658 predicate; upload-policy.md § HF storage-quota 403."""
@@ -701,17 +744,16 @@ def _upload(
                 what="upload_folder",
             )
 
-        # Verify upload: check that files actually exist on Hub. Use the
-        # paginated tree walk (not repo_info().siblings, which truncates at
-        # ~7901 entries) so verification of a large repo never spuriously
-        # reports 0 committed files.
+        # Verify upload: check that files actually exist on Hub. Scoped verify
+        # (#920/#988): never full-list the repo to confirm one upload — a bare
+        # listing wedges >600 s on the ~1M-file data repo. Exact-file uploads
+        # resolve via the helper's file_exists fallback; folder uploads via
+        # the server-side scoped tree walk (paginated, so a large subtree
+        # never spuriously reports 0 committed files).
         expected_prefix = (path_in_repo or local_path.name).rstrip("/")
-        uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
-        if is_file_upload:
-            committed_files = [f for f in uploaded_files if f == expected_prefix]
-        else:
-            prefix = expected_prefix + "/"
-            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
+        committed_files = list_hf_files_under_path(
+            api, repo_id, expected_prefix, repo_type=repo_type
+        )
 
         if not committed_files:
             logger.error(
@@ -837,10 +879,17 @@ def _upload_folder_filtered(
         )
 
         # EXACT expected-set verification on a fresh paginated listing (mirror
-        # the #664 per-cell rule). list_repo_files_complete walks the paginated
-        # tree — NOT repo_info().siblings, which truncates (see the _upload
-        # comment) — so a large repo never spuriously reports a missing file.
-        uploaded_files = set(list_repo_files_complete(api, repo_id, repo_type=repo_type))
+        # the #664 per-cell rule), SCOPED to path_in_repo (#920/#988): every
+        # element of expected_repo_paths is <path_in_repo>/<rel> by this
+        # function's contract (see the expected_repo_paths arg doc + the sole
+        # caller upload_raw_completions_to_data_repo), so the scoped walk sees
+        # every checkable path — never a full ~1M-file repo listing. An
+        # expected path OUTSIDE the prefix would have been flagged missing by
+        # the old full listing too (it was never uploaded under this prefix),
+        # so flagging it against the scoped set is not a semantics change.
+        uploaded_files = set(
+            list_hf_files_under_path(api, repo_id, path_in_repo.rstrip("/"), repo_type=repo_type)
+        )
         missing = [p for p in expected_repo_paths if p not in uploaded_files]
         if missing:
             logger.error(
@@ -1267,9 +1316,16 @@ def list_hub_datasets(
 ) -> list[str]:
     """List all files in the HF Hub dataset repo.
 
+    Prefix-shape dispatch (#920/#988): a DIR-LIKE ``path_prefix`` (ends with
+    ``/``) routes to a server-side SCOPED tree walk; an empty or BARE-name
+    prefix keeps the full listing (see the branch comments below).
+
     Args:
         repo_id: HF Hub dataset repo ID.
         path_prefix: Filter to files under this prefix (e.g. 'leakage/').
+            A bare (non-slash) prefix like 'dpo' is a PARTIAL-NAME match
+            that also matches 'dpo_v2/...' — load-bearing for
+            scripts/sync_datasets.py.
 
     Returns:
         List of file paths in the repo.
@@ -1280,9 +1336,23 @@ def list_hub_datasets(
 
     try:
         api = HfApi(token=token)
-        files = list_repo_files_complete(api, repo_id, repo_type="dataset")
-        if path_prefix:
+        if path_prefix.endswith("/"):
+            # Dir-like prefix: server-side scoped walk (#920/#988). Client-side
+            # filter kept for exactness (a no-op against real scoped results).
+            files = list_hf_files_under_path(
+                api, repo_id, path_prefix.rstrip("/"), repo_type="dataset"
+            )
             files = [f for f in files if f.startswith(path_prefix)]
+        else:
+            # Empty prefix = the function's list-everything contract; a bare
+            # (non-slash) prefix is a PARTIAL-NAME match ("dpo" must also match
+            # dpo_v2/...) that no server-side scope can express. DELIBERATE
+            # full listing — bounded use only; on the ~1M-file data repo this
+            # is the #920 hang class, so prefer a dir-like prefix wherever the
+            # caller can.
+            files = list_repo_files_complete(api, repo_id, repo_type="dataset")
+            if path_prefix:
+                files = [f for f in files if f.startswith(path_prefix)]
         return sorted(files)
     except Exception as e:
         logger.error("Failed to list datasets: %s", e)
@@ -1340,17 +1410,28 @@ def _kind_to_repo_type(kind: str | None) -> str:
 def _hf_artifact_exists(api, repo_id: str, repo_type: str, revision: str | None, path: str) -> bool:
     """Check whether a specific HF repo (and optional in-repo path) resolves.
 
+    Scoped probe (#920/#988): the cited path is checked via ONE server-side
+    scoped tree walk (dir paths) with an exact-file ``file_exists`` fallback
+    (blob paths) — never a full-repo listing, which wedges >600 s on the
+    ~1M-file data repo. A repo-root URL (empty ``path``) is proven by one
+    cheap ``repo_info`` call (retry-wrapped for transport 5xx parity with the
+    old retried listing).
+
     A reachable repo whose tree is missing the cited ``path`` is a normal
     ``False`` — NOT an exception. Genuine transport / auth errors propagate so
     the caller fails loud rather than reporting a real artifact as missing.
     """
-    files = list_repo_files_complete(api, repo_id, repo_type=repo_type, revision=revision)
     if not path:
-        # URL points at the repo root (no file/dir path) — repo resolving is enough.
+        # URL points at the repo root — repo (+revision) resolving is enough.
+        # ONE cheap repo_info call, NOT a full listing (#920 hang class).
+        _retry_upload(
+            lambda: api.repo_info(repo_id, repo_type=repo_type, revision=revision),
+            what=f"repo_info({repo_id})",
+        )
         return True
-    path = path.strip("/")
-    # Match an exact file OR any file under a cited directory path.
-    return any(f == path or f.startswith(path + "/") for f in files)
+    return bool(
+        list_hf_files_under_path(api, repo_id, path, repo_type=repo_type, revision=revision)
+    )
 
 
 def _wandb_run_exists(entity: str, project: str, run_id: str) -> bool:

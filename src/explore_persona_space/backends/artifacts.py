@@ -222,19 +222,35 @@ def _default_list_hf_repo_files(
     *,
     repo_type: str,
     revision: str | None = None,
+    path_in_repo: str | None = None,
 ) -> list[str]:
     """Default HF Hub file lister.
 
-    Uses ``huggingface_hub.list_repo_files`` — the API the upload-policy
-    rule pins as authoritative (``hf`` CLI has no ``api`` subcommand, so
-    it silently returns 0 files; never use it here). Raises on transport
-    / auth failure — the verifier turns that into a FAIL with reason
-    rather than silently passing.
+    Uses the Python Hub API — the API the upload-policy rule pins as
+    authoritative (``hf`` CLI has no ``api`` subcommand, so it silently
+    returns 0 files; never use it here). Raises on transport / auth
+    failure — the verifier turns that into a FAIL with reason rather than
+    silently passing.
+
+    ``path_in_repo`` scopes the walk SERVER-side (#920/#988); an absent
+    path returns [] (mapped inside ``list_hf_files_under_path``). ``None``
+    keeps the full listing for seam-contract compatibility — a future
+    caller passing ``None`` against the ~1M-file DATA repo re-enters the
+    #920 hang class, so data-repo callers must scope.
     """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        list_repo_files_complete,
+    )
+
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    return list(api.list_repo_files(repo_id=repo_id, repo_type=repo_type, revision=revision))
+    if path_in_repo is not None:
+        return list_hf_files_under_path(
+            api, repo_id, path_in_repo, repo_type=repo_type, revision=revision
+        )
+    return list_repo_files_complete(api, repo_id, repo_type=repo_type, revision=revision)
 
 
 def _default_wandb_run_exists(run_path: str) -> bool:
@@ -336,9 +352,13 @@ class VerifierIO:
 
     Fields:
 
-    * ``list_hf_repo_files(repo_id, *, repo_type, revision=None) ->
-      list[str]`` — must enumerate every file in the repo at the given
-      revision. ``None`` revision = repo default.
+    * ``list_hf_repo_files(repo_id, *, repo_type, revision=None,
+      path_in_repo=None) -> list[str]`` — must enumerate the repo's files
+      at the given revision; ``path_in_repo`` scopes the walk server-side
+      (#920/#988 — production callers scope; ``None`` full-lists, kept for
+      seam compatibility). ``None`` revision = repo default. Fakes may
+      ignore ``path_in_repo`` and return the full list — the caller's
+      client-side ``_path_matches`` filter preserves the semantics.
     * ``wandb_run_exists(run_path) -> bool`` — must return True iff the
       WandB run resolves. Transport errors propagate.
     * ``git_tracked(repo_root, rel_paths) -> set[str]`` — must return the
@@ -669,11 +689,29 @@ def _check_hf_paths(
     declared; PASS when every path resolved; FAIL with the missing list
     when any did not. Transport / auth errors propagate (the caller
     turns them into a FAIL with reason).
+
+    Scoped listings (#920/#988): ONE server-side scoped walk PER declared
+    path (typically 1-4 paths, ~1-2 s each) replaces the single full-repo
+    listing (>600 s wedge on the ~1M-file data repo). ``_path_matches``
+    stays as the client-side verdict — a no-op against real scoped results,
+    but it keeps full-list test fakes (whose seam ignores ``path_in_repo``)
+    matching the same semantics.
     """
     if not paths:
         return {"status": "SKIP", "detail": "no paths declared"}
+    # Hoisted empty-path guard: under the old full-listing shape an EMPTY
+    # declared path raised ValueError from _path_matches OUTSIDE the try (a
+    # config error, not a FAIL verdict); keep that contract rather than let
+    # the scoped call convert it into a caught FAIL.
+    for p in paths:
+        if not p:
+            raise ValueError("_path_matches: empty path is not a valid declaration")
+    missing: list[str] = []
     try:
-        files = io._list_hf()(repo_id, repo_type=repo_type)
+        for p in paths:
+            files = io._list_hf()(repo_id, repo_type=repo_type, path_in_repo=p.rstrip("/"))
+            if not _path_matches(files, p):
+                missing.append(p)
     except Exception as exc:
         # Fail-loud per CLAUDE.md "no silent True on transport error".
         # We catch + surface as FAIL (not re-raise) so the verdict's
@@ -683,7 +721,6 @@ def _check_hf_paths(
             "status": "FAIL",
             "detail": f"HF list_repo_files({repo_id!r}, {repo_type!r}) raised: {exc}",
         }
-    missing = [p for p in paths if not _path_matches(files, p)]
     if missing:
         return {
             "status": "FAIL",
