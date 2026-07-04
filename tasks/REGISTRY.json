@@ -6694,8 +6694,8 @@
     "991": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/991",
-      "status": "proposed",
+      "path": "tasks/planning/991",
+      "status": "planning",
       "title": "daily-fix: system-role guard at api_dispatch dispatch_calls"
     },
     "992": {
