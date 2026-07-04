@@ -659,10 +659,15 @@ def test_cache_hit_skips_api_call(tmp_path):
 def test_cache_partial_resume_only_calls_uncached(tmp_path):
     items = make_items(5)
     cache = JudgeCache(tmp_path / "cache")
-    # Pre-seed the cache for the first 3 items via a real put through the adapter.
+    # Pre-seed the cache for the first 3 items via a real put through the
+    # adapter, under the SAME builder the dispatch below uses (#1018: the
+    # built-request fingerprint is part of the cache key).
     for it in items[:3]:
         api_dispatch._cache_put(
-            cache, it, api_dispatch.DispatchResult(it.item_id, result={"label": "cached"})
+            cache,
+            it,
+            api_dispatch.DispatchResult(it.item_id, result={"label": "cached"}),
+            build_request,
         )
     client = FakeAsyncClient()
     res = _run(
@@ -680,6 +685,158 @@ def test_cache_partial_resume_only_calls_uncached(tmp_path):
     assert client.calls == 2  # only items 3,4 hit the API
     assert res["item_000"].result == {"label": "cached"}
     assert res["item_004"].result == {"label": "ok"}
+
+
+# ── #1018: rubric-keyed adapter cache + checkpoint rubric-binding ────────────
+
+
+def _build_request_with_system(system: str):
+    """Builder factory: two returned builders differ ONLY in the ``system`` param."""
+
+    def _build(item: DispatchItem) -> dict:
+        return {
+            "model": "claude-sonnet-4-5-20250929",
+            "max_tokens": 64,
+            "system": system,
+            "messages": [{"role": "user", "content": item.payload["q"]}],
+        }
+
+    return _build
+
+
+def test_api_dispatch_cache_no_cross_hit_on_different_builder(tmp_path):
+    """#1018 acceptance 5: same items under two ``build_request`` builders
+    differing only in ``system`` do NOT share cache entries (the built-request
+    fingerprint is part of the key); the SAME builder still gets the full
+    cache-hit/resume behavior of ``test_cache_hit_skips_api_call``."""
+    items = make_items(3)
+    build_a = _build_request_with_system("RUBRIC A: score alignment.")
+    build_b = _build_request_with_system("RUBRIC B: score refusal.")
+
+    client_a = FakeAsyncClient()
+    res_a = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_a,
+            parse_response=parse_response,
+            async_clients={"a": client_a},
+            sync_clients={"a": object()},
+            cache=JudgeCache(tmp_path / "cache"),
+            force_path="sync",
+        )
+    )
+    assert client_a.calls == 3
+    assert all(not r.error for r in res_a.values())
+
+    # Builder B, SAME cache dir: every item re-dispatches (no cross-hit).
+    client_b = FakeAsyncClient()
+    res_b = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_b,
+            parse_response=parse_response,
+            async_clients={"a": client_b},
+            sync_clients={"a": object()},
+            cache=JudgeCache(tmp_path / "cache"),
+            force_path="sync",
+        )
+    )
+    assert client_b.calls == 3, "builder-B dispatch was served from builder-A's cache (#810)"
+    assert all(not r.error for r in res_b.values())
+
+    # Builder A again, SAME cache dir: zero API calls (same-builder full hit).
+    client_a2 = FakeAsyncClient()
+    res_a2 = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_a,
+            parse_response=parse_response,
+            async_clients={"a": client_a2},
+            sync_clients={"a": object()},
+            cache=JudgeCache(tmp_path / "cache"),
+            force_path="sync",
+        )
+    )
+    assert client_a2.calls == 0
+    assert {k: v.result for k, v in res_a2.items()} == {k: v.result for k, v in res_a.items()}
+
+
+def test_api_dispatch_batch_checkpoint_rubric_mismatch_fails_loud(tmp_path):
+    """#1018 acceptance 6 (§3.2(d)): a COLLECTED batch checkpoint created under
+    builder A is NEVER replayed for a dispatch under builder B reusing the same
+    ``checkpoint_dir`` — the loaded state.json carries a request fingerprint
+    that is recomputed on load and FAILS LOUD on mismatch (no rubric-A result
+    returned or cache-persisted under B's key); re-dispatching under builder A
+    with the pending set unchanged resumes cleanly."""
+    items = make_items(4)
+    ckpt = tmp_path / "ckpt"
+    build_a = _build_request_with_system("RUBRIC A: score alignment.")
+    build_b = _build_request_with_system("RUBRIC B: score refusal.")
+
+    res_a = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_a,
+            parse_response=parse_response,
+            async_clients={"a": object()},
+            sync_clients={"a": FakeBatchClient("a")},
+            checkpoint_dir=ckpt,
+            chunk_size=2,
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+    assert set(res_a) == {it.item_id for it in items}
+    assert all(not r.error for r in res_a.values())
+    # Static pin: the checkpoint state carries the run-level request fingerprint.
+    state = json.loads((ckpt / "state.json").read_text())
+    assert state.get("request_fingerprint"), "state.json lacks request_fingerprint (#1018)"
+
+    # Builder B on the SAME checkpoint_dir: loud ValueError, nothing returned,
+    # nothing laundered into B's cache.
+    cache_b = JudgeCache(tmp_path / "cache_b")
+    with pytest.raises(ValueError, match="request_fingerprint"):
+        _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_b,
+                parse_response=parse_response,
+                async_clients={"a": object()},
+                sync_clients={"a": FakeBatchClient("a")},
+                checkpoint_dir=ckpt,
+                chunk_size=2,
+                force_path="batch",
+                poll_interval=0.0,
+                cache=cache_b,
+            )
+        )
+    assert list((tmp_path / "cache_b").glob("*.json")) == [], (
+        "rubric-A batch results were persisted under builder B's cache key"
+    )
+
+    # Builder A again, pending set unchanged: fingerprint matches -> clean
+    # resume (all sub-batches already collected; results merged from disk).
+    res_a2 = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_a,
+            parse_response=parse_response,
+            async_clients={"a": object()},
+            sync_clients={"a": FakeBatchClient("a")},
+            checkpoint_dir=ckpt,
+            chunk_size=2,
+            force_path="batch",
+            poll_interval=0.0,
+        )
+    )
+    assert set(res_a2) == {it.item_id for it in items}
+    assert all(not r.error for r in res_a2.values())
 
 
 # ── 8. atomic checkpoint write ───────────────────────────────────────────────
@@ -946,10 +1103,16 @@ def test_batch_resume_missing_custom_id_fails_loud(tmp_path):
         sb["batch_id"] = None
     (ckpt / "state.json").write_text(json.dumps(state))
     shrunken = items[:1]  # drop 3 of 4 items -> their custom_ids absent
-    with pytest.raises(RuntimeError, match="absent from the current dispatch items"):
-        _run(
+
+    # #1018: a shrunken pending set now fails loud at STATE LOAD — the run-level
+    # request_fingerprint (computed over the item set) no longer matches, so
+    # the mismatch guard fires BEFORE any submit (the documented
+    # partial-persist corner; supersedes reaching the submit-time RuntimeError
+    # on this path).
+    def _resume(items_arg):
+        return _run(
             dispatch_calls(
-                shrunken,
+                items_arg,
                 model="claude-sonnet-4-5-20250929",
                 build_request=build_request,
                 parse_response=parse_response,
@@ -961,6 +1124,20 @@ def test_batch_resume_missing_custom_id_fails_loud(tmp_path):
                 poll_interval=0.0,
             )
         )
+
+    with pytest.raises(ValueError, match="request_fingerprint"):
+        _resume(shrunken)
+
+    # Defense-in-depth: the submit-time missing-custom_id RuntimeError still
+    # guards the residual case where the fingerprint MATCHES but a custom_id is
+    # absent (a hand-edited / forged state). Forge the fingerprint to the
+    # shrunken set's value to get past the load guard and pin the deep guard.
+    state["request_fingerprint"] = api_dispatch._batch_run_fingerprint(
+        shrunken, api_dispatch._guarded_build_request(build_request)
+    )
+    (ckpt / "state.json").write_text(json.dumps(state))
+    with pytest.raises(RuntimeError, match="absent from the current dispatch items"):
+        _resume(shrunken)
 
 
 # ── Finding 1: 429-exhaustion category + separate 429 budget (#684) ────────────
