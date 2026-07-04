@@ -6497,8 +6497,8 @@
     "974": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/974",
-      "status": "reviewing",
+      "path": "tasks/completed/974",
+      "status": "completed",
       "title": "workflow-fix: WARN-only check_ood_folds in verify_plan"
     },
     "975": {
