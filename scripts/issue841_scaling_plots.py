@@ -44,6 +44,9 @@ EVAL_DIR = PROJECT_ROOT / "eval_results" / "issue_841" / "scaling-capture"
 FIG_DIR = "figures/"
 FIG_SUBDIR = "issue_841/scaling-capture"
 DATA_LIMITED_BAND = tuple(range(17, 26))
+# Reader-facing legend labels for the transport classes (no bare code slugs in
+# rendered figure legends — match the body's plain-English condition names).
+CLASS_LABELS = {"ridge": "affine ridge", "mlp": "MLP map", "direct_hop": "direct-hop ridge"}
 
 
 def _set_style() -> None:
@@ -153,14 +156,14 @@ def plot_transport_scaling(stage1: dict) -> None:
         mpd = [0.0] + [by_n[str(n)]["mean_paired_delta"] for n in ns_scaling]
         mpd_lo = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][0] for n in ns_scaling]
         mpd_hi = [0.0] + [by_n[str(n)]["mean_paired_delta_ci"][1] for n in ns_scaling]
-        ax1.plot(xs, win, marker="o", label=cls)
+        ax1.plot(xs, win, marker="o", label=CLASS_LABELS.get(cls, cls))
         ax2.errorbar(
             xs,
             mpd,
             yerr=[np.array(mpd) - np.array(mpd_lo), np.array(mpd_hi) - np.array(mpd)],
             marker="o",
             capsize=3,
-            label=cls,
+            label=CLASS_LABELS.get(cls, cls),
         )
     # 20/136 baseline + chance line from the ridge (headline) class.
     ridge = pbc.get("ridge")
@@ -170,7 +173,7 @@ def plot_transport_scaling(stage1: dict) -> None:
         ax1.axhline(
             ridge["by_n"][str(n0)]["chance_expectation"], color="red", linestyle="--", linewidth=1
         )
-        ax1.set_ylabel(f"win_count (of {ridge['total_cells']} cells)")
+        ax1.set_ylabel(f"conjunction wins (of {ridge['total_cells']} cells)")
     ax1.set_xscale("log")
     ax1.set_xlabel("fit-set size n")
     ax1.set_title("DV2 transport wins vs n (per class)")

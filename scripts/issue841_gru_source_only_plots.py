@@ -198,12 +198,13 @@ def exp_delta_forest(my_stage1: dict, save) -> None:
             for mode in MODES:
                 d_r = prim["sources"][src]["deltas"]["vs_ridge"].get(mode, {})
                 d_p = prim["sources"][src]["deltas"]["vs_prefix_gru"].get(mode, {})
-                labels.append(f"{src}/{mode[:3]}")
+                mode_word = "system" if mode == "system" else "many-shot"
+                labels.append(f"source {src} · {mode_word}")
                 rows_y.append(len(rows_y))
                 vr.append((d_r.get("delta", np.nan), d_r.get("lo", np.nan), d_r.get("hi", np.nan)))
                 vp.append((d_p.get("delta", np.nan), d_p.get("lo", np.nan), d_p.get("hi", np.nan)))
         yy = np.arange(len(labels))
-        for arr, off, lab in ((vr, -0.15, "− ridge"), (vp, 0.15, "− prefix-GRU")):
+        for arr, off, lab in ((vr, -0.15, "minus affine ridge"), (vp, 0.15, "minus prefix-GRU")):
             pts = [a[0] for a in arr]
             lo = [a[0] - a[1] if np.isfinite(a[1]) else 0.0 for a in arr]
             hi = [a[2] - a[0] if np.isfinite(a[2]) else 0.0 for a in arr]
