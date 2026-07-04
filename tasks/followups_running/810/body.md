@@ -333,7 +333,7 @@ Both figures show paired Δskill (full − truncated) per row at its committed l
 
 ![Paired deficit versus retained dose](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_dose_trace_delta.png)
 
-> **Figure.** *The deficit declines gradedly with dose — no step at zero.* Paired Δskill, committed layers, 95% CI whiskers, ±0.02 margin, n=50. Turn-end newline +0.076 → +0.051 → +0.032 → +0.018; header start +0.072 → +0.071 → +0.029 → +0.030. Pool points stay inside the margin (CIs not always contained); only the header pools' CIs exclude zero, at 25%.
+> **Figure.** *The deficit declines gradedly with dose — no step at zero.* Paired Δskill, committed layers, 95% CI whiskers, ±0.02 margin, n=50. Turn-end newline +0.076 → +0.051 → +0.032 → +0.018; header start +0.072 → +0.071 → +0.029 → +0.030. Header-pool CIs exclude zero at 25–75% (mean: 25/75% only), max point over the margin at 25% (+0.025); boundary pools don't.
 
 ![Per-context traces, two primary singles](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_percontext_spaghetti.png)
 
