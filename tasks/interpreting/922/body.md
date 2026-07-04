@@ -107,7 +107,7 @@ What is plotted: held-out identity-relative R² on the next-position residual up
 
 ![Single-step update predictability across layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/hero1_position_atlas.png)
 
-> **Figure.** *The current state alone predicts about half the next update at every depth.* Lines: context-only ridge and MLP, token-informed ridge and MLP (diagnostic ceiling), embedding-only ridge; grey band: shuffled-context null (100 draws, band at the 2.5th–97.5th percentiles). x-axis: embedding row then blocks 0–27.
+> **Figure.** *The current state alone predicts about half the next update at every depth.* Lines: context-only ridge and MLP, token-informed ridge and MLP (diagnostic ceiling), embedding-only ridge; grey band: shuffled-context null (100 draws, band at the 2.5th–97.5th percentiles). The per-layer points, each pooling 16,748 transitions, are the per-unit grain (no separate companion plot). x-axis: embedding row then blocks 0–27.
 
 The context-only affine ridge reaches 0.43–0.56 at every block, far above the shuffled-context band (−0.47 to −0.57: a wrong-context map is worse than copying). The token-informed ceiling adds at least 0.10 at 22 of 28 blocks, but the gap shrinks from 0.26 to 0.05 with depth (state-determined ratio 0.68 to 0.90; rank correlation 0.94, p = 7.7e-14): deep updates are mostly state-determined, early ones need the injected token. The MLP is worse than ridge everywhere — position dynamics are as linear as this model's depth dynamics.
 
@@ -127,9 +127,9 @@ The roll beats both nulls everywhere: skill 0.48–0.61 at horizon 1, plateauing
 
 ### Rolling forward adds nothing for trait read-out over reading the prompt-end state directly
 
-What is plotted: within-condition correlation between each activation read and the judged trait score per trait and prompt mode (n = 260 units/trait), plus the per-unit sycophancy scatter.
+What is plotted: within-condition correlation between each activation read and the judged trait score per trait and prompt mode (n = 260 units/trait), plus the per-unit sycophancy scatter. This read consumes cached context states over the full 39-cell panel, untouched by transfer-capture shrinkage.
 
-![Trait read-out correlation bars](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/hero3_readout_bars.png)
+![Trait read-out correlation bars](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7d9451ee7003e4a98d8ed9b4c362feb992f3deeb/figures/issue_922/hero3_readout_bars.png)
 
 > **Figure.** *The frozen read is never beaten by rolling.* Within-condition Pearson r per read, error bars 95% bootstrap. Left: system-prompt mode; right: many-shot mode. Starred panels read on the captured 27-cell subset; unstarred use the full cached 39-cell panel.
 
@@ -137,7 +137,7 @@ What is plotted: within-condition correlation between each activation read and t
 
 > **Figure.** *The per-unit data behind the sycophancy bars.* Each point is one condition-question unit: judged sycophancy score (y) versus horizon-mean rolled projection onto the trait direction at block 26 (x).
 
-The horizon-mean rolled read never beats the frozen read: significantly below in five of six cells, spanning zero in the sixth. Simulating forward loses read-out signal. The frozen read reproduces the upstream direct context-to-trait predictor to within 1.4e-7 (3 of 3 traits). The direct per-horizon read is trait-dependent: above frozen for sycophancy in both modes (+0.048, +0.072; CIs clear), significantly below for evil, zero-spanning for hallucination. This read consumes cached context states over the full 39-cell panel, untouched by the transfer-capture shrinkage.
+The horizon-mean rolled read never beats the frozen read — significantly below in five of six cells, spanning zero in the sixth — so simulating forward loses read-out signal. The frozen read reproduces the upstream direct context-to-trait predictor to within 1.4e-7 (3 of 3 traits). The direct per-horizon read is trait-dependent: above frozen for sycophancy in both modes (+0.048, +0.072; CIs clear), significantly below for evil, zero-spanning for hallucination.
 
 ### Context reshapes the transition operator, but the effect is small, single-step only, and buys no forecasting
 
@@ -157,17 +157,17 @@ What is plotted: paired horizon-mean skill delta (rolled minus direct, horizons 
 
 > **Figure.** *In-corpus tie, decisive rolled advantage off-corpus.* Left: paired horizon-mean rollout-skill delta (rolled minus direct), 95% bootstrap error bars; blue in-corpus, pink all 432 transfer windows, green evil-only 144. Right: per-window horizon-mean skill, rolled (y) versus direct (x), block 20; 99% of windows above the diagonal.
 
-In-corpus, the plan's equal-weight paired statistic spans zero at four of six blocks (−0.011 to +0.003), positive only at blocks 24 and 26, landing on the plan's falsify branch: recursion adds nothing in-corpus. The pooled-recompute companion is positive at all six (+0.009 to +0.059) because it weights contexts by error mass; the equal-weight tie stands. Transfer flips it. The roll wins at all six blocks by 0.14–0.24 (evil-restricted 0.12–0.26); the global dynamics generalize where the per-horizon regressions stay corpus-bound.
+In-corpus, the plan's equal-weight paired statistic spans zero at four of six blocks (−0.011 to +0.003), positive only at blocks 24 and 26, landing on its falsify branch: recursion adds nothing in-corpus. The pooled-recompute companion is positive at all six (+0.009 to +0.059) because it weights contexts by error mass; the equal-weight tie stands. Transfer flips it; the roll wins at all six blocks by 0.14–0.24 (evil-restricted 0.12–0.26), and the global dynamics generalize where the per-horizon regressions stay corpus-bound.
 
 ### The global dynamics generalize to out-of-corpus persona conditions; conditioned and per-horizon maps degrade
 
-What is plotted: transfer minus in-corpus single-step identity-relative R² per layer, for maps applied unchanged to the 432 persona-condition windows (27 of 39 planned cells: the many-shot cells with unrecoverable exemplar text were dropped rather than zero-filled — concern `manyshot-exemplars-unreconstructable`).
+What is plotted: transfer minus in-corpus single-step identity-relative R² per layer, for maps applied unchanged to the 432 persona-condition windows (27 of 39 planned cells: the many-shot cells with unrecoverable exemplar text were dropped rather than zero-filled — concern `manyshot-exemplars-unreconstructable`). The operator-valued forms have no transfer cells (exploratory).
 
 ![Transfer degradation per layer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/exploratory_transfer_delta.png)
 
 > **Figure.** *The global map barely degrades off-corpus; the conditioned map degrades 2–4 times more.* Transfer-minus-in-corpus delta in single-step identity-relative R² by layer: context-only ridge (blue), token-informed ridge (orange), additive-conditioned ridge (green). Zero = no degradation.
 
-The global map loses only 0.02–0.07 (block 20: 0.477 to 0.410), keeping rollout skill 0.36–0.44 at horizon 32 (0.31–0.44 evil-restricted); the additive-conditioned ridge loses up to 0.22, and the direct maps also degrade (0.25 versus the roll's 0.41). The operator-valued forms have no transfer cells (exploratory). The headline does not rest on the 288 regenerated-question windows (concern `eval-questions-regenerated-parity-rescope`): every transfer claim holds on the evil-only exact-provenance companion (roll advantage 0.12–0.26). Sycophancy/hallucination transfer numbers are descriptive only.
+The global map loses only 0.02–0.07 (block 20: 0.477 to 0.410), keeping rollout skill 0.36–0.44 at horizon 32 (0.31–0.44 evil-restricted); the additive-conditioned ridge loses up to 0.22, and the direct maps also degrade (0.25 versus the roll's 0.41). The headline does not rest on the 288 regenerated-question windows (concern `eval-questions-regenerated-parity-rescope`): every transfer claim holds on the evil-only exact-provenance companion (roll advantage 0.12–0.26). Sycophancy/hallucination transfer numbers are descriptive only.
 
 ### Every iterated closed-form map is a contraction and every gradient-fit conditioned operator is expansive
 
