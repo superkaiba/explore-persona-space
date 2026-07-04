@@ -87,6 +87,137 @@ def deadline_from_expires_at(expires_at, grace_min: int = 30) -> "_dt.datetime":
     return expires_at + _dt.timedelta(minutes=grace_min)
 
 
+# ── Batch create-grace 404 helpers (single source of truth; #995) ─────────────
+#
+# A retrieve can 404 transiently within seconds of the SAME process's own
+# ``batches.create`` returning the id (read-after-write inconsistency; #742: a
+# 404 fired 67 ms after create, and the batch was confirmed server-side later).
+# These helpers make that ONE narrow case retryable with bounded backoff at the
+# sanctioned first-poll-loop retrieve sites (batch_judge, judge_dispatch,
+# api_dispatch, AnthropicBatch.poll). Everything else stays terminal:
+# deadline-time final retrieves, ``results()`` streams, and any poll with no
+# known create time (a resumed poll of a persisted batch_id) fail fast on 404.
+
+BATCH_CREATE_404_GRACE_S = 60.0  # #995 plan §11 row 1 (no vendor-documented window exists)
+BATCH_CREATE_404_BACKOFF_S = (1.0, 2.0, 4.0, 8.0, 15.0, 30.0)  # §11 row 2; sum = 60s = window
+
+
+def parse_batch_submitted_at(raw: str | None) -> "_dt.datetime | None":
+    """Parse a persisted sub-batch ``submitted_at`` to an aware-UTC datetime.
+
+    The persisted format is ``time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())``
+    (judge_dispatch / api_dispatch ``state.json``); py3.11 ``fromisoformat``
+    accepts the trailing ``Z``. ``None``/empty (an old state.json without the
+    key) -> ``None``, which disables the grace entirely — the resume default.
+    A naive datetime is assumed UTC (mirrors :func:`deadline_from_expires_at`).
+    """
+    if not raw:
+        return None
+    parsed = _dt.datetime.fromisoformat(raw)
+    if parsed.tzinfo is None:  # naive -> assume UTC
+        parsed = parsed.replace(tzinfo=_dt.UTC)
+    return parsed
+
+
+def is_batch_create_grace_404(
+    exc: BaseException,
+    *,
+    created_at: "_dt.datetime | None",
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    grace_s: float = BATCH_CREATE_404_GRACE_S,
+) -> bool:
+    """True iff ``exc`` is an ``anthropic.NotFoundError`` within ``grace_s`` of create.
+
+    ``created_at=None`` (unknown create time — a resumed poll of a persisted
+    ``batch_id``, or an old state.json) ALWAYS returns False: the 404 stays
+    terminal (fail-fast; preserves api_dispatch's wrong-org-404 semantics).
+
+    ``0.0 <= elapsed``: NEGATIVE elapsed (now before created_at — an injected
+    test clock, or a backwards wall-clock step) is OUT of window. Production
+    elapsed is >= 0 by construction (in-process capture; the strftime
+    ``submitted_at`` truncates DOWN to the second, only inflating elapsed), so
+    the guard costs nothing there and pins the vacuous-True test hazard.
+    """
+    if not isinstance(exc, anthropic.NotFoundError) or created_at is None:
+        return False
+    now = (now_fn or (lambda: _dt.datetime.now(_dt.UTC)))()
+    elapsed = (now - created_at).total_seconds()
+    return 0.0 <= elapsed <= grace_s
+
+
+def _log_batch_grace_recovery(
+    batch_id: str,
+    attempts: int,
+    first_retry_at: "_dt.datetime | None",
+    created_at: "_dt.datetime | None",
+    now: "_dt.datetime",
+) -> None:
+    """One INFO when a create-grace-404 retrieve eventually succeeds (#995).
+
+    Records attempts used + elapsed-in-retry + elapsed-since-create — the only
+    empirical data that could ever ground ``BATCH_CREATE_404_GRACE_S``.
+    """
+    in_retry_s = (now - first_retry_at).total_seconds() if first_retry_at is not None else 0.0
+    since_create_s = (now - created_at).total_seconds() if created_at is not None else float("nan")
+    logger.info(
+        "Batch %s retrieve recovered after %d create-grace 404 retry(ies) "
+        "(%.1fs in retry, %.1fs since create; read-after-write resolved)",
+        batch_id,
+        attempts,
+        in_retry_s,
+        since_create_s,
+    )
+
+
+def retrieve_with_create_grace(
+    retrieve_fn: "Callable[[], object]",
+    *,
+    created_at: "_dt.datetime | None",
+    batch_id: str | None = None,  # logging only
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    sleep_fn: "Callable[[float], None] | None" = None,
+    grace_s: float = BATCH_CREATE_404_GRACE_S,
+    backoff_s: tuple[float, ...] = BATCH_CREATE_404_BACKOFF_S,
+):
+    """Call ``retrieve_fn()``; retry an in-grace-window NotFoundError with backoff.
+
+    DUAL-bounded: re-raises when the grace window has expired OR the backoff
+    schedule is exhausted (max ``len(backoff_s)`` retries), whichever first.
+    Any other exception propagates unchanged. ``created_at=None`` disables the
+    grace entirely (single call; 404 terminal — the resume default).
+    """
+    sleep_fn = sleep_fn or time.sleep
+    resolved_now = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    attempts = 0
+    first_retry_at: _dt.datetime | None = None
+    for delay in (*backoff_s, None):
+        try:
+            result = retrieve_fn()
+        except anthropic.NotFoundError as e:
+            if delay is None or not is_batch_create_grace_404(
+                e, created_at=created_at, now_fn=now_fn, grace_s=grace_s
+            ):
+                raise
+            attempts += 1
+            if first_retry_at is None:
+                first_retry_at = resolved_now()
+            logger.warning(
+                "Batch %s retrieve 404 within %.0fs of create (read-after-write "
+                "suspected); retrying in %.0fs",
+                batch_id or "?",
+                grace_s,
+                delay,
+            )
+            sleep_fn(delay)
+        else:
+            if attempts:
+                _log_batch_grace_recovery(
+                    batch_id or "?", attempts, first_retry_at, created_at, resolved_now()
+                )
+            return result
+    raise AssertionError("unreachable: the final iteration returns or re-raises")
+
+
 # ── Content block helpers ───────────────────────────────────────────────────
 
 
@@ -443,6 +574,13 @@ class AnthropicBatch:
             self.client = anthropic.Anthropic(api_key=anthropic_api_key)
         else:
             self.client = anthropic.Anthropic()
+        # Create-time memo (#995): batch_id -> aware-UTC create timestamp, read
+        # by poll() when no explicit ``created_at`` kwarg is given. Covers
+        # direct create->poll callers (e.g. scripts/issue658_judge_e0_batch.py)
+        # with zero caller wiring. Instance-scoped and bounded by
+        # shards-per-run: a NEW process/instance has no memo, so a resumed poll
+        # stays terminal on 404 (fail-fast default preserved).
+        self._created_at: dict[str, _dt.datetime] = {}
 
     def _custom_id(self, index: int, prompt: Prompt) -> str:
         return f"{index}_{prompt.model_hash()}"
@@ -474,7 +612,10 @@ class AnthropicBatch:
         return requests
 
     def create(self, requests: list[dict]):
-        return self.client.messages.batches.create(requests=requests)
+        """Create a batch; memo its create time for poll()'s 404 grace (#995)."""
+        batch = self.client.messages.batches.create(requests=requests)
+        self._created_at[batch.id] = _dt.datetime.now(_dt.UTC)
+        return batch
 
     def retrieve(self, batch_id: str):
         return self.client.messages.batches.retrieve(batch_id)
@@ -488,6 +629,14 @@ class AnthropicBatch:
     def list_batches(self, limit: int = 20) -> list:
         return list(self.client.messages.batches.list(limit=limit))
 
+    def _effective_created_at(
+        self, batch_id: str, created_at: "_dt.datetime | None"
+    ) -> "_dt.datetime | None":
+        """Explicit ``created_at`` kwarg wins over the instance create-time memo (#995)."""
+        if created_at is not None:
+            return created_at
+        return self._created_at.get(batch_id)
+
     async def poll(
         self,
         batch_id: str,
@@ -495,6 +644,8 @@ class AnthropicBatch:
         grace_min: int = 30,
         now_fn: "Callable[[], _dt.datetime] | None" = None,
         sleep_fn: "Callable[[float], object] | None" = None,
+        *,
+        created_at: "_dt.datetime | None" = None,
     ):
         """Poll until processing ends OR the batch's own ``expires_at`` + grace.
 
@@ -512,13 +663,57 @@ class AnthropicBatch:
         #658 (the G1 judge sat at ``succeeded:0`` for 9h). ``now_fn``/``sleep_fn``
         are injectable for tests (default wall-clock + ``asyncio.sleep``); the
         kwargs are additive so ``__call__`` and other callers are unaffected.
+
+        Create-grace 404 (#995): a ``NotFoundError`` raised by the loop retrieve
+        within ``BATCH_CREATE_404_GRACE_S`` of the batch's own create is retried
+        (read-after-write inconsistency; the #742 shape). The effective create
+        time is the keyword-only ``created_at`` if given, else the instance
+        create-time memo written by :meth:`create` — so direct create->poll
+        callers are covered with no wiring, while a NEW-process resume (no memo,
+        no kwarg) keeps the terminal-404 default with exactly one retrieve call.
+        DUAL-bounded: window expiry (via ``now_fn``) OR the attempt cap
+        ``len(BATCH_CREATE_404_BACKOFF_S)``, so a frozen injected clock plus an
+        always-404 fake can never spin. The deadline-time final retrieve below
+        stays UNGUARDED (a 404 ~24h after create is genuinely anomalous).
         """
         now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
         sleep_fn = sleep_fn or asyncio.sleep
         elapsed_min = 0
         deadline: _dt.datetime | None = None
+        grace_attempts = 0
+        first_grace_404_at: _dt.datetime | None = None
         while True:
-            batch = self.retrieve(batch_id)
+            try:
+                batch = self.retrieve(batch_id)
+            except anthropic.NotFoundError as e:
+                grace_attempts += 1
+                if grace_attempts > len(
+                    BATCH_CREATE_404_BACKOFF_S
+                ) or not is_batch_create_grace_404(
+                    e,
+                    created_at=self._effective_created_at(batch_id, created_at),
+                    now_fn=now_fn,
+                ):
+                    raise
+                if first_grace_404_at is None:
+                    first_grace_404_at = now_fn()
+                logger.warning(
+                    "Batch %s retrieve 404 within create grace (attempt %d, "
+                    "read-after-write suspected); retrying",
+                    batch_id,
+                    grace_attempts,
+                )
+                await sleep_fn(min(interval_s, 5.0))
+                continue
+            if first_grace_404_at is not None:  # succeeded after >=1 grace retry: log ONCE
+                _log_batch_grace_recovery(
+                    batch_id,
+                    grace_attempts,
+                    first_grace_404_at,
+                    self._effective_created_at(batch_id, created_at),
+                    now_fn(),
+                )
+                first_grace_404_at = None
             if batch.processing_status == "ended":
                 return batch
             if deadline is None:
@@ -569,7 +764,9 @@ class AnthropicBatch:
                 json.dump(batch_response.model_dump(mode="json"), f)
 
         logger.info("Batch %s: %d requests submitted", batch_id, len(prompts))
-        await self.poll(batch_id)
+        # Explicit created_at (#995): equivalent to the create-time memo, but
+        # self-documenting at the one in-class create->poll call site.
+        await self.poll(batch_id, created_at=self._created_at.get(batch_id))
 
         raw_results = self.results(batch_id)
 

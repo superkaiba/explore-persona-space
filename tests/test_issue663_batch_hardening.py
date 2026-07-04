@@ -169,7 +169,9 @@ def test_legacy_submit_poll_bounded_when_expires_at_absent():
     client = _DeadlineSubmitClient(flip_to_ended_on=None, expires_at=None)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
     past_fallback = T0 + dt.timedelta(hours=26)
-    clock = iter(itertools.chain([T0], itertools.repeat(past_fallback)))
+    # Extra leading T0: the #995 create-grace anchor (created_at = now_fn())
+    # consumes one tick right after create; behavioral assertions unchanged.
+    clock = iter(itertools.chain([T0, T0], itertools.repeat(past_fallback)))
     with pytest.raises(BatchDeadlineExceeded):
         _submit_and_poll_batch(
             reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
@@ -239,7 +241,10 @@ def test_legacy_submit_poll_deadline_no_flip():
     ends by its deadline (#663 §6 Test 3c)."""
     client = _DeadlineSubmitClient(flip_to_ended_on=None)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(3)]
-    clock = iter(itertools.chain([T0, T0 + dt.timedelta(hours=1)], itertools.repeat(PAST_DEADLINE)))
+    # Extra leading T0: the #995 create-grace anchor consumes one tick post-create.
+    clock = iter(
+        itertools.chain([T0, T0, T0 + dt.timedelta(hours=1)], itertools.repeat(PAST_DEADLINE))
+    )
     with pytest.raises(BatchDeadlineExceeded):
         _submit_and_poll_batch(
             reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
@@ -251,7 +256,8 @@ def test_legacy_submit_poll_partial_harvest_on_flip():
     (not raised), joining results on custom_id (#663 §6 Test 3c)."""
     client = _DeadlineSubmitClient(flip_to_ended_on=3)
     reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
-    clock = iter(itertools.chain([T0], itertools.repeat(PAST_DEADLINE)))
+    # Extra leading T0: the #995 create-grace anchor consumes one tick post-create.
+    clock = iter(itertools.chain([T0, T0], itertools.repeat(PAST_DEADLINE)))
     result = _submit_and_poll_batch(
         reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
     )

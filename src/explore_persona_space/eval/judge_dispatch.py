@@ -77,6 +77,7 @@ Dry-run CLI (zero API calls; OTPM from ``EPM_JUDGE_OTPM`` or 400k assumed)::
 import argparse
 import asyncio
 import datetime as _dt
+import functools
 import hashlib
 import json
 import logging
@@ -92,6 +93,8 @@ from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
+    parse_batch_submitted_at,
+    retrieve_with_create_grace,
 )
 
 if TYPE_CHECKING:
@@ -709,9 +712,26 @@ def _poll_one_sub_batch_step(
     error_dict_factory: Callable[[str], dict],
     now_fn: "Callable[[], _dt.datetime]",
     sb: dict,
+    sleep_fn: "Callable[[float], None] | None" = None,
 ) -> None:
-    """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue."""
-    batch = client.messages.batches.retrieve(sb["batch_id"])
+    """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue.
+
+    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
+    ``BATCH_CREATE_404_GRACE_S`` of this sub-batch's persisted ``submitted_at``
+    (l.636, the #742 crash site) is retried with bounded backoff. A resumed poll
+    with an old/absent ``submitted_at`` stays terminal on the first 404. This
+    step is sync and already blocks the async outer loop on the retrieve; the
+    worst-case +60s of grace sleeps is consistent with existing behavior. The
+    overdue final retrieve below stays UNGUARDED (plan §4.3). ``sleep_fn`` is
+    additive + injectable for tests (default ``time.sleep``).
+    """
+    batch = retrieve_with_create_grace(
+        functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+        created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+        batch_id=sb["batch_id"],
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     counts = getattr(batch, "request_counts", None)
     if counts is not None:
         logger.info(

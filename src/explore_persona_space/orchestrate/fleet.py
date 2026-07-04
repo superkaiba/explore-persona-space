@@ -341,6 +341,13 @@ def _poll_batch_to_ended(
     1.5x -> ``max_poll_interval``, capped by the deadline, NOT a step count).
     Raises ``BatchDeadlineExceeded`` if the batch is still not ended at the
     deadline after one final retrieve — never a silent default (CLAUDE.md fail-fast).
+
+    NOTE (#995): retrieves here are deliberately NOT wrapped in
+    ``llm.anthropic_client.retrieve_with_create_grace`` — ``JudgeHandle.reconcile()``
+    runs deferred, often in a DIFFERENT process, and the handle records no create
+    timestamp, so the conservative terminal-404 default is correct. If a
+    fleet-path read-after-write incident ever occurs, the shared helper is one
+    import + one additive ``created_at`` kwarg away.
     """
     import datetime as _dt
     import time as _time
