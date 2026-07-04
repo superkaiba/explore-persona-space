@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 996,
+  "highest_id": 997,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6640,6 +6640,13 @@
       "path": "tasks/proposed/996",
       "status": "proposed",
       "title": "daily-fix: task.py bounded wait on live rebase detached HEAD"
+    },
+    "997": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/997",
+      "status": "proposed",
+      "title": "daily-fix: HF upload/verify transient 429/500 retry robustness"
     }
   }
 }
