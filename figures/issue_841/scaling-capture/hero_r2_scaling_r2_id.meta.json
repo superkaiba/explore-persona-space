@@ -1,449 +1,449 @@
 {
-  "commit": "566eb04d01",
-  "created": "2026-07-03T22:26:24Z",
+  "commit": "c53689d169",
+  "created": "2026-07-04T06:38:44Z",
   "figsize": [
-    6.5,
-    4.2
+    9.0,
+    5.5
   ],
   "points": [
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8735151939381314,
-      "series": "ridge t17",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8735151939381314,
+      "series": "ridge, transition 17",
       "_kind": "line",
       "_group": 0
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8915408740342838,
-      "series": "ridge t17",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8915408740342838,
+      "series": "ridge, transition 17",
       "_kind": "line",
       "_group": 0
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.9033398893471254,
-      "series": "ridge t17",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.9033398893471254,
+      "series": "ridge, transition 17",
       "_kind": "line",
       "_group": 0
     },
     {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.9085934026810866,
-      "series": "ridge t17",
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.9085934026810866,
+      "series": "ridge, transition 17",
       "_kind": "line",
       "_group": 0
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.9106663949729725,
-      "series": "ridge t17",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.9106663949729725,
+      "series": "ridge, transition 17",
       "_kind": "line",
       "_group": 0
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.843663770818347,
-      "series": "ridge t18",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8317389801613172,
+      "series": "MLP, transition 17",
       "_kind": "line",
       "_group": 1
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8650162656815785,
-      "series": "ridge t18",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8638016362477617,
+      "series": "MLP, transition 17",
       "_kind": "line",
       "_group": 1
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8787272325056171,
-      "series": "ridge t18",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8851653153089104,
-      "series": "ridge t18",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8879422134203703,
-      "series": "ridge t18",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8480417622261478,
-      "series": "ridge t19",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.843663770818347,
+      "series": "ridge, transition 18",
       "_kind": "line",
       "_group": 2
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8706207725169317,
-      "series": "ridge t19",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8650162656815785,
+      "series": "ridge, transition 18",
       "_kind": "line",
       "_group": 2
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8845119433745333,
-      "series": "ridge t19",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8787272325056171,
+      "series": "ridge, transition 18",
       "_kind": "line",
       "_group": 2
     },
     {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8907810526436591,
-      "series": "ridge t19",
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8851653153089104,
+      "series": "ridge, transition 18",
       "_kind": "line",
       "_group": 2
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8936055320508638,
-      "series": "ridge t19",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8879422134203703,
+      "series": "ridge, transition 18",
       "_kind": "line",
       "_group": 2
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8108994476010126,
-      "series": "ridge t20",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8059564197187785,
+      "series": "MLP, transition 18",
       "_kind": "line",
       "_group": 3
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8368929362482643,
-      "series": "ridge t20",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8471765682104011,
+      "series": "MLP, transition 18",
       "_kind": "line",
       "_group": 3
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8534368232729869,
-      "series": "ridge t20",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8610140266122753,
-      "series": "ridge t20",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.864831385174057,
-      "series": "ridge t20",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8274240680492375,
-      "series": "ridge t21",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8480417622261478,
+      "series": "ridge, transition 19",
       "_kind": "line",
       "_group": 4
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8498713560436443,
-      "series": "ridge t21",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8706207725169317,
+      "series": "ridge, transition 19",
       "_kind": "line",
       "_group": 4
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8638897183283918,
-      "series": "ridge t21",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8845119433745333,
+      "series": "ridge, transition 19",
       "_kind": "line",
       "_group": 4
     },
     {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8707411995348762,
-      "series": "ridge t21",
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8907810526436591,
+      "series": "ridge, transition 19",
       "_kind": "line",
       "_group": 4
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8743047709763148,
-      "series": "ridge t21",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8936055320508638,
+      "series": "ridge, transition 19",
       "_kind": "line",
       "_group": 4
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8221256617044187,
-      "series": "ridge t22",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8059788997256463,
+      "series": "MLP, transition 19",
       "_kind": "line",
       "_group": 5
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.844957038484918,
-      "series": "ridge t22",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8463992637980159,
+      "series": "MLP, transition 19",
       "_kind": "line",
       "_group": 5
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8593483358322549,
-      "series": "ridge t22",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8661587387331757,
-      "series": "ridge t22",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8702304400349354,
-      "series": "ridge t22",
-      "_kind": "line",
-      "_group": 5
-    },
-    {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8116359192364916,
-      "series": "ridge t23",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8108994476010126,
+      "series": "ridge, transition 20",
       "_kind": "line",
       "_group": 6
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8342190212985545,
-      "series": "ridge t23",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8368929362482643,
+      "series": "ridge, transition 20",
       "_kind": "line",
       "_group": 6
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8483478528408225,
-      "series": "ridge t23",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8534368232729869,
+      "series": "ridge, transition 20",
       "_kind": "line",
       "_group": 6
     },
     {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8556477083360621,
-      "series": "ridge t23",
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8610140266122753,
+      "series": "ridge, transition 20",
       "_kind": "line",
       "_group": 6
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8601797628929739,
-      "series": "ridge t23",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.864831385174057,
+      "series": "ridge, transition 20",
       "_kind": "line",
       "_group": 6
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8116697578649652,
-      "series": "ridge t24",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7633634601906952,
+      "series": "MLP, transition 20",
       "_kind": "line",
       "_group": 7
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8356836530059968,
-      "series": "ridge t24",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8151414569633705,
+      "series": "MLP, transition 20",
       "_kind": "line",
       "_group": 7
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8495858572580852,
-      "series": "ridge t24",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.8571683233236905,
-      "series": "ridge t24",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8617812954745396,
-      "series": "ridge t24",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8080455029454592,
-      "series": "ridge t25",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8274240680492375,
+      "series": "ridge, transition 21",
       "_kind": "line",
       "_group": 8
     },
     {
-      "fit-set size n": 10000.0,
-      "held-out r2_id": 0.8330540015703298,
-      "series": "ridge t25",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8498713560436443,
+      "series": "ridge, transition 21",
       "_kind": "line",
       "_group": 8
     },
     {
-      "fit-set size n": 25000.0,
-      "held-out r2_id": 0.8478701206629642,
-      "series": "ridge t25",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8638897183283918,
+      "series": "ridge, transition 21",
       "_kind": "line",
       "_group": 8
     },
     {
-      "fit-set size n": 50000.0,
-      "held-out r2_id": 0.856052974999331,
-      "series": "ridge t25",
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8707411995348762,
+      "series": "ridge, transition 21",
       "_kind": "line",
       "_group": 8
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8607271972431465,
-      "series": "ridge t25",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8743047709763148,
+      "series": "ridge, transition 21",
       "_kind": "line",
       "_group": 8
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8317389801613172,
-      "series": "MLP t17",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7856928388685962,
+      "series": "MLP, transition 21",
       "_kind": "line",
       "_group": 9
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8638016362477617,
-      "series": "MLP t17",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8318785152768355,
+      "series": "MLP, transition 21",
       "_kind": "line",
       "_group": 9
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8059564197187785,
-      "series": "MLP t18",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8221256617044187,
+      "series": "ridge, transition 22",
       "_kind": "line",
       "_group": 10
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8471765682104011,
-      "series": "MLP t18",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.844957038484918,
+      "series": "ridge, transition 22",
       "_kind": "line",
       "_group": 10
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.8059788997256463,
-      "series": "MLP t19",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8593483358322549,
+      "series": "ridge, transition 22",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8661587387331757,
+      "series": "ridge, transition 22",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8702304400349354,
+      "series": "ridge, transition 22",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7861649501610151,
+      "series": "MLP, transition 22",
       "_kind": "line",
       "_group": 11
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8463992637980159,
-      "series": "MLP t19",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8312314693202887,
+      "series": "MLP, transition 22",
       "_kind": "line",
       "_group": 11
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7633634601906952,
-      "series": "MLP t20",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8116359192364916,
+      "series": "ridge, transition 23",
       "_kind": "line",
       "_group": 12
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8151414569633705,
-      "series": "MLP t20",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8342190212985545,
+      "series": "ridge, transition 23",
       "_kind": "line",
       "_group": 12
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7856928388685962,
-      "series": "MLP t21",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8483478528408225,
+      "series": "ridge, transition 23",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8556477083360621,
+      "series": "ridge, transition 23",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8601797628929739,
+      "series": "ridge, transition 23",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7741388627588394,
+      "series": "MLP, transition 23",
       "_kind": "line",
       "_group": 13
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8318785152768355,
-      "series": "MLP t21",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8235915965766916,
+      "series": "MLP, transition 23",
       "_kind": "line",
       "_group": 13
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7861649501610151,
-      "series": "MLP t22",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8116697578649652,
+      "series": "ridge, transition 24",
       "_kind": "line",
       "_group": 14
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8312314693202887,
-      "series": "MLP t22",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8356836530059968,
+      "series": "ridge, transition 24",
       "_kind": "line",
       "_group": 14
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7741388627588394,
-      "series": "MLP t23",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8495858572580852,
+      "series": "ridge, transition 24",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8571683233236905,
+      "series": "ridge, transition 24",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8617812954745396,
+      "series": "ridge, transition 24",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7801751058993177,
+      "series": "MLP, transition 24",
       "_kind": "line",
       "_group": 15
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8235915965766916,
-      "series": "MLP t23",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8342427258228583,
+      "series": "MLP, transition 24",
       "_kind": "line",
       "_group": 15
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7801751058993177,
-      "series": "MLP t24",
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8080455029454592,
+      "series": "ridge, transition 25",
       "_kind": "line",
       "_group": 16
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8342427258228583,
-      "series": "MLP t24",
+      "fit-set size (number of chat contexts)": 10000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8330540015703298,
+      "series": "ridge, transition 25",
       "_kind": "line",
       "_group": 16
     },
     {
-      "fit-set size n": 4000.0,
-      "held-out r2_id": 0.7925821496777615,
-      "series": "MLP t25",
+      "fit-set size (number of chat contexts)": 25000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8478701206629642,
+      "series": "ridge, transition 25",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "fit-set size (number of chat contexts)": 50000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.856052974999331,
+      "series": "ridge, transition 25",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8607271972431465,
+      "series": "ridge, transition 25",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "fit-set size (number of chat contexts)": 4000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.7925821496777615,
+      "series": "MLP, transition 25",
       "_kind": "line",
       "_group": 17
     },
     {
-      "fit-set size n": 100000.0,
-      "held-out r2_id": 0.8347837568896959,
-      "series": "MLP t25",
+      "fit-set size (number of chat contexts)": 100000.0,
+      "held-out identity-relative R\u00b2 on the update": 0.8347837568896959,
+      "series": "MLP, transition 25",
       "_kind": "line",
       "_group": 17
     }
