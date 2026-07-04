@@ -34,6 +34,8 @@ relates_to:
 # The chain-of-thought summary predictively mediates the thinking model's context→answer activation map (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_928.md](https://github.com/superkaiba/explore-persona-space/blob/c9dc39499f4be2e1bcfdc2e8f7ba01df82c9d921/docs/methodology/issue_928.md) · [gist](https://gist.github.com/superkaiba/9ab1fdeb5bfb699d0b309541c519a31b)
+
 ## Takeaways
 
 - The linear context→answer activation map transfers to the thinking model OpenThinker2-7B: held-out skill 0.78 vs 0.80 on the non-thinking parent, same input/output cell (n=50; qualitative parity).
