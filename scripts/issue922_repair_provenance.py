@@ -239,6 +239,32 @@ def _gen_hf(model: str, tokenizer, prompts: list[str]) -> list[str]:
     return tokenizer.batch_decode(gen[:, enc["input_ids"].shape[1] :], skip_special_tokens=True)
 
 
+def _ensure_completions_uploaded(completions: Path) -> None:
+    """Resume-path upload backstop: re-upload the completions when Hub-absent.
+
+    A crash between the local gen write and the gen-time upload must not
+    strand the never-discardable completion text on a same-disk rerun: probe
+    the EXACT Hub path (single-path ``file_exists`` — never a full listing,
+    gotchas #833) and re-run the same fail-loud bulk upload (scoped
+    exact-listing verify inside ``upload_dir_bulk``) when absent.
+    """
+    from huggingface_hub import HfApi
+
+    path_in_repo = f"{C.HF_OUT_PREFIX}/repair/raw_completions/{completions.name}"
+    if HfApi().file_exists(C.HF_DATA_REPO, path_in_repo, repo_type="dataset"):
+        logger.info("[gen] resume: completions already on the Hub (%s)", path_in_repo)
+        return
+    logger.warning("[gen] resume: completions ABSENT on the Hub — re-uploading %s", path_in_repo)
+    ev = C.upload_dir_bulk(
+        completions.parent,
+        f"{C.HF_OUT_PREFIX}/repair/raw_completions",
+        allow_patterns=[completions.name],
+        commit_message="issue922 repair: fresh on-policy completions (seed42; resume re-upload)",
+        allow_overflow=False,
+    )
+    logger.info("[gen] resume re-upload: %s", json.dumps(ev))
+
+
 def phase_gen(args) -> int:
     """Generate fresh on-policy completions to the CURRENT questions; persist + upload."""
     from transformers import AutoTokenizer
@@ -246,7 +272,8 @@ def phase_gen(args) -> int:
     if args.completions.exists():
         # Resume predicate keyed on EVERY output-affecting regime key (#722 r3
         # rule): a stale gen JSON silently invalidates the captured shard (the
-        # shard validator cannot see response text), so never regenerate over a
+        # shard validator now content-validates via the persisted hashes; this
+        # stays the first line of defense), so never regenerate over a
         # regime-matching artifact, and never reuse a mismatched one.
         with open(args.completions) as f:
             prior = json.load(f)
@@ -258,6 +285,10 @@ def phase_gen(args) -> int:
         )
         if same:
             logger.info("[gen] %s exists + regime-valid — skip (resume)", args.completions)
+            if not args.skip_upload:
+                # Never-discardable text: verify it actually landed on the Hub
+                # (a crash between write and upload strands it otherwise).
+                _ensure_completions_uploaded(args.completions)
             return 0
         logger.warning("[gen] existing completions FAIL regime check — regenerating")
 
@@ -453,6 +484,38 @@ def _augment_npz_keys(npz_path: Path, store: dict) -> None:
     )
 
 
+def assert_gen_capture_identity(gen_items: list[dict], meta_by_ci: dict, cap_tok) -> None:
+    """Fail-loud gen ↔ capture identity between completions items and shard meta.
+
+    Three per-window checks, each naming the offending ci (concern
+    ``eval-repaired-response-identity-unchecked``): (1) (trait, cond_id, qi)
+    window-key identity; (2) ``response_sha256`` persisted in the capture
+    record equals sha256 of the CURRENT completion text — content identity,
+    catching a same-length different-content stale shard the token-count key
+    cannot see; (3) ``ans_len`` equals the fresh completion's token count
+    under the capture tokenizer. The shard validator's expected-hash leg
+    (``issue922_capture_positions.validate_shard``) is the first line of
+    defense at capture time; this is the fail-loud second at score time.
+    """
+    for it in gen_items:
+        ci = int(it["ci"])
+        rec = meta_by_ci[ci]
+        got_key = (rec["trait"], rec["cond_id"], int(rec["qi"]))
+        want_key = (it["trait"], it["cond_id"], int(it["qi"]))
+        assert got_key == want_key, ("gen/capture window-key desync at ci", ci, got_key, want_key)
+        want_sha = hashlib.sha256(it["response"].encode()).hexdigest()
+        got_sha = rec.get("response_sha256")
+        assert got_sha == want_sha, (
+            "gen/capture response-content desync at ci",
+            ci,
+            got_sha,
+            want_sha,
+        )
+        want_len = len(cap_tok(it["response"], add_special_tokens=False)["input_ids"])
+        got_len = int(rec["ans_len"])
+        assert got_len == want_len, ("gen/capture desync at ci", ci, got_len, want_len)
+
+
 def _k32_reads(roll: dict, k: int = C.READOUT_K_MAX) -> dict:
     """Per-block k=READOUT_K_MAX skill mean+CI for the headline variants."""
     out: dict = {}
@@ -543,11 +606,9 @@ def phase_score(args) -> int:
     )
     for rec in repaired["meta"].values():
         assert rec.get("response_provenance") == "fresh_onpolicy", rec.get("response_provenance")
-    # gen ↔ capture integrity: each captured window's ans_len must equal the
-    # fresh completion's token count under the capture tokenizer — catches a
-    # shard captured under DIFFERENT completions (the shard validator cannot
-    # see response text; the gen resume predicate is the first line of
-    # defense, this is the fail-loud second).
+    # gen ↔ capture identity: per-window (trait, cond, qi) keys + response
+    # content hashes + token counts between the CURRENT completions items and
+    # the captured shard (see assert_gen_capture_identity).
     assert args.completions.exists(), f"score requires the gen artifact: {args.completions}"
     with open(args.completions) as f:
         gen_items = json.load(f)["items"]
@@ -558,10 +619,7 @@ def phase_score(args) -> int:
         len(gen_items),
         len(repaired["ctx_ids"]),
     )
-    for it in gen_items:
-        want = len(cap_tok(it["response"], add_special_tokens=False)["input_ids"])
-        got = int(repaired["meta"][int(it["ci"])]["ans_len"])
-        assert got == want, ("gen/capture desync at ci", it["ci"], got, want)
+    assert_gen_capture_identity(gen_items, repaired["meta"], cap_tok)
 
     keys_rep = _window_keys(repaired)
     keys_cached = _window_keys(cached)
