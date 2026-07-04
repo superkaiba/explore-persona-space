@@ -6427,8 +6427,8 @@
     "968": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/968",
-      "status": "proposed",
+      "path": "tasks/planning/968",
+      "status": "planning",
       "title": "workflow-fix: tag-parity lint for hollow-verification-gate"
     },
     "969": {
