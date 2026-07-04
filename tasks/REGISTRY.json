@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1008,
+  "highest_id": 1009,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -86,6 +86,13 @@
       "path": "tasks/proposed/1008",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body WARN on HF file-count claims vs scoped listing"
+    },
+    "1009": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1009",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas \u2014 vLLM bank length-validation at load"
     },
     "101": {
       "has_clean_result": false,
