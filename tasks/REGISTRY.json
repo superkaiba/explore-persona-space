@@ -6764,8 +6764,8 @@
     "996": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/996",
-      "status": "planning",
+      "path": "tasks/approved/996",
+      "status": "approved",
       "title": "daily-fix: task.py bounded wait on live rebase detached HEAD"
     },
     "997": {
