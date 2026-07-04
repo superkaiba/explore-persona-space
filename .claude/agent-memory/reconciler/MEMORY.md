@@ -23,6 +23,7 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Persist-before-reduce: ordering not existence; derived expected-set ≠ hollow gate](feedback_persist_before_reduce_ordering_vs_existence.md) — Claude counts a site persisted because the file exists (write AFTER remote judge); Codex FAILs a glob-derived upload verify though producers make the state unreachable; prior-round CONCERN severity binds. #906 r9.
 - [Claude misses when the plan's HEADLINE decision statistic isn't produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — Claude PASSes verifying OTHER plan items while never checking the pre-registered headline estimator is actually computed + persisted; grep the named estimator's call site. #841 r1 (affine-with-bias ridge) + r2 (paired bootstrap_delta_ci). FAIL.
 - [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS verdict → FAIL; classification by what the bug DOES, not fix size. 11-incident ledger + defenses.
 - [Claude misses same-file siblings (sibling-scan family)](feedback_claude_misses_same_file_siblings.md) — must-fix-table walks miss the bug CLASS: sibling code paths, render branches, resamplers (set-vs-list comp), scripts, figure-vs-analyze layers (now promoted to code-reviewer Step 3.7).
