@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1035,
+  "highest_id": 1036,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -289,6 +289,13 @@
       "path": "tasks/proposed/1035",
       "status": "proposed",
       "title": "daily-fix: batch_judge tolerates transient 404 on poll retrieve"
+    },
+    "1036": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1036",
+      "status": "proposed",
+      "title": "daily-fix: lint bans || true on result-upload phases in dispatch scripts"
     },
     "104": {
       "has_clean_result": false,
