@@ -6540,8 +6540,8 @@
     "977": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/977",
-      "status": "planning",
+      "path": "tasks/approved/977",
+      "status": "approved",
       "title": "workflow-fix: port GCP find-newer sentinel wait to RunPod"
     },
     "978": {
