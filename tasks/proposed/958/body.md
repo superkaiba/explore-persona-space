@@ -17,12 +17,19 @@ origin_prompt: "Run this issue in the background with happy coder:\n# How does t
   \ try to predict second answer from query 2 using the first mapping, etc.\n\n(no\
   \ approval needed from me)"
 workflow: v1
+goal: 'Characterize whether the context→answer mapping (trained so far on mostly short
+  contexts) holds up or changes systematically as the context gets longer and spans
+  many chat turns: (a) is the mapping from (prefix + query 1 → answer 1) the same
+  as the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer
+  2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping;
+  (c) does any systematic change with context length offer an account of persona drift
+  / context rot.'
 ---
 # How does the mapping change as the context gets longer
 
 ## Goal
 
-Characterize whether the context→answer mapping studied in the project's mapping experiments (trained so far on mostly short contexts) holds up — or changes systematically — as the context gets longer and spans many chat turns: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2) at later turns; (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs (e.g. prefix + query 1, and other prefix/query combinations) using the earlier-turn mapping; and (c) does any systematic change in the mapping with context length offer an account of persona drift / context rot.
+Characterize whether the context→answer mapping (trained so far on mostly short contexts) holds up or changes systematically as the context gets longer and spans many chat turns: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change with context length offer an account of persona drift / context rot.
 
 ## Motivation
 
