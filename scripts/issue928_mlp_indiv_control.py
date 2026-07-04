@@ -71,7 +71,7 @@ import logging
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT / "src") not in sys.path:
@@ -195,14 +195,42 @@ def _hf_fetch_one(path_in_repo: str, revision: str, dest: Path) -> None:
     raise RuntimeError(f"HF fetch failed after 4 attempts: {path_in_repo}") from last
 
 
+def store_local_relpath(hub_rel: str) -> str:
+    """Map a ``STORE_HF_PREFIX``-relative Hub path onto the LOCAL layout ``Store`` expects.
+
+    On the Hub ALL 51 store files — the 50 per-context ``.pt`` blobs AND
+    ``manifest.json`` — live flat under ``.../analysis_tensors/store/
+    percq_summaries/`` (the extractor uploads the manifest INSIDE that folder:
+    ``issue928_extract_thinking_store.py`` puts it at
+    ``{STORE_PREFIX}/manifest.json`` where ``STORE_PREFIX`` already ends in
+    ``/percq_summaries``), while ``Store(store_dir)`` reads
+    ``<store>/manifest.json`` + ``<store>/percq_summaries/<ctx>.pt``. Mirroring
+    the Hub prefix verbatim staged the manifest at
+    ``<store>/percq_summaries/manifest.json`` and crashed ``Store()`` at init
+    (att-20260704-120700). Mapping: any ``manifest.json`` goes to the store
+    ROOT; every other file keeps its prefix-relative path (the ``.pt`` blobs
+    already sit under ``percq_summaries/``).
+    """
+    if PurePosixPath(hub_rel).name == "manifest.json":
+        return "manifest.json"
+    return hub_rel
+
+
 def stage_store(store_dir: Path, revision: str) -> None:
     """Stage the pinned per-question store (manifest + 50 blobs) if not local.
 
     SCOPED ``list_repo_tree(path_in_repo=...)`` enumeration (never
     ``snapshot_download`` / bare ``list_repo_files`` on the ~1M-file data repo —
     gotchas #833) + per-file ``hf_hub_download`` at the PINNED revision, ≤6
-    workers. Completeness = every listed file exists locally.
+    workers. Local destinations go through ``store_local_relpath`` so the
+    staged tree is EXACTLY the layout ``Store(store_dir)`` reads — the
+    entry-time missing-check, the fetch destinations, and the completeness
+    check all key on the SAME mapped paths. Completeness = every listed file
+    exists locally at its mapped path; fail-loud if the enumeration carries no
+    ``manifest.json`` (a stage without it is a doomed ``Store()`` init).
     """
+    from collections import Counter
+
     from huggingface_hub import HfApi
 
     api = HfApi()
@@ -219,7 +247,19 @@ def stage_store(store_dir: Path, revision: str) -> None:
     ]
     if not entries:
         raise RuntimeError(f"no files under {STORE_HF_PREFIX} at revision {revision}")
-    rels = {e.path[len(STORE_HF_PREFIX) + 1 :]: e.path for e in entries}
+    pairs = [(store_local_relpath(e.path[len(STORE_HF_PREFIX) + 1 :]), e.path) for e in entries]
+    dupes = sorted(rel for rel, n in Counter(rel for rel, _ in pairs).items() if n > 1)
+    if dupes:
+        raise RuntimeError(
+            f"HF→local store layout mapping collision under {STORE_HF_PREFIX} at "
+            f"revision {revision}: {dupes[:3]}"
+        )
+    rels = dict(pairs)
+    if "manifest.json" not in rels:
+        raise RuntimeError(
+            f"no manifest.json under {STORE_HF_PREFIX} at revision {revision} — "
+            "Store() requires it at the store root; refusing a doomed stage"
+        )
     missing = {rel: full for rel, full in rels.items() if not (store_dir / rel).is_file()}
     if not missing:
         logger.info("[phase=stage] store already local (%d files) — skip", len(rels))

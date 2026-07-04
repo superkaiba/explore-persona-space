@@ -428,6 +428,64 @@ def test_multihead_row_groups_none_matches_explicit_singletons():
         assert np.array_equal(res_none.preds_by_key[cell.key], res_singl.preds_by_key[cell.key])
 
 
+def test_stage_store_maps_hub_layout_to_local_store_layout(tmp_path, monkeypatch):
+    """Crash-fix pin for att-20260704-120700 (fails pre-fix with the production
+    FileNotFoundError): on the Hub ALL 51 store files — the per-context ``.pt``
+    blobs AND ``manifest.json`` — live flat under
+    ``.../analysis_tensors/store/percq_summaries/`` (the extractor uploaded the
+    manifest INSIDE that folder), while ``Store(store_dir)`` reads
+    ``<store>/manifest.json`` + ``<store>/percq_summaries/<ctx>.pt``.
+    ``stage_store`` must map the REAL Hub layout onto the local ``Store``
+    layout; mirroring the Hub prefix verbatim staged the manifest at
+    ``<store>/percq_summaries/manifest.json`` and crashed ``Store()`` at init.
+    The fake Hub below serves a real loadable store through the exact
+    production path shapes (verified against the live listing at the pinned
+    revision), and the second ``stage_store`` call pins that the entry-time
+    missing-check uses the SAME mapping (no refetch of staged files)."""
+    from types import SimpleNamespace
+
+    import huggingface_hub
+    import issue928_mlp_indiv_control as drv
+    from issue928_fit_decomposition import Store
+
+    src = _make_synth_store(tmp_path / "src")
+    # The REAL production Hub layout: everything flat under <prefix>/percq_summaries/.
+    hub_files = {f"{drv.STORE_HF_PREFIX}/percq_summaries/manifest.json": src / "manifest.json"}
+    for p in sorted((src / "percq_summaries").glob("*.pt")):
+        hub_files[f"{drv.STORE_HF_PREFIX}/percq_summaries/{p.name}"] = p
+
+    calls = {"download": 0}
+
+    class _FakeApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, **_kw):
+            assert path_in_repo == drv.STORE_HF_PREFIX, path_in_repo
+            return [SimpleNamespace(path=p, size=1) for p in sorted(hub_files)]
+
+    def _fake_download(repo_id, filename, repo_type=None, revision=None):
+        calls["download"] += 1
+        return str(hub_files[filename])
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download)
+    monkeypatch.setattr(drv.time, "sleep", lambda _s: None)  # fail fast, not 4x20s retries
+
+    dest = tmp_path / "staged"
+    drv.stage_store(dest, "test-revision")
+    assert (dest / "manifest.json").is_file()  # the exact production crash path
+    store = Store(dest)  # pre-fix: FileNotFoundError .../manifest.json (att-20260704-120700)
+    assert len(store.ctx_ids) == 4 and store.groups.shape[0] == 8
+
+    # Entry-time missing-check uses the SAME mapping: a fully-staged store refetches nothing.
+    n = calls["download"]
+    drv.stage_store(dest, "test-revision")
+    assert calls["download"] == n
+
+    # The pure mapping function, pinned directly (manifest -> store root; blobs unchanged).
+    assert drv.store_local_relpath("percq_summaries/manifest.json") == "manifest.json"
+    assert drv.store_local_relpath("manifest.json") == "manifest.json"
+    assert drv.store_local_relpath("percq_summaries/c0.pt") == "percq_summaries/c0.pt"
+
+
 def test_mlp_indiv_control_resume_skips_and_keys_on_identity(tmp_path, monkeypatch):
     """Round-6 restartability pin (the branch's r2/r3 standard, fails pre-fix):
     ``run_mlp_fits`` persists per-(arm, layer) durable units and a re-run with
