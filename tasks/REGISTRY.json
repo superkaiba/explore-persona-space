@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 961,
+  "highest_id": 1001,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -22,6 +22,20 @@
       "path": "tasks/completed/100",
       "status": "completed",
       "title": "Characterize assistant persona robustness: dose-response and perturbation-type sweep"
+    },
+    "1000": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1000",
+      "status": "proposed",
+      "title": "daily-fix: thin trigger-dense wording from issue-tick surfaces"
+    },
+    "1001": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1001",
+      "status": "proposed",
+      "title": "workflow-fix: marker-training-recipe.md training-row token-budget rule (#260 sibling)"
     },
     "101": {
       "has_clean_result": false,
@@ -6078,8 +6092,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing per-layer transition structures \u2014 (a) a global next-token map rolled from the last prompt token, (b1) an additively context-conditioned map (global operator + context drift), (b2) an operator-valued map where the context RESHAPES the transition itself (A(c) via FiLM-diagonal / low-rank delta / gated mixture of K operators, capacity-matched to b1), and (c) a direct per-horizon map c -> h_{t+k} (no recursion; #779's answer-profile map = its horizon-mean nested baseline) \u2014 over the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior read-out vs #779's direct context->trait predictor.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/922",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/922",
+      "status": "awaiting_promotion",
       "title": "Answer-time activation trajectories are forecastable from the prompt alone through 32 tokens with a rolled per-layer affine map (HIGH confidence)"
     },
     "923": {
@@ -6120,11 +6134,11 @@
     },
     "928": {
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/928",
       "status": "interpreting",
-      "title": "Thinking-model CoT decomposition of the context\u2192answer activation map: composed vs joint vs CoT-augmented"
+      "title": "The chain-of-thought summary predictively mediates the thinking model's context\u2192answer activation map (MODERATE confidence)"
     },
     "929": {
       "has_clean_result": false,
@@ -6144,8 +6158,8 @@
       "goal": "Test whether the linear context\u2192answer-profile map (#779/#825 held-out ridge recipe, c_x \u2192 v(x)) generalizes to a character\u2192behavior map in STORIES on Qwen2.5-7B-Instruct \u2014 (a) real stories fed with NO chat template, predicting the mean activation of a character's dialogue span from that character's context vector, and (b) assistant-written multi-character stories under the chat template \u2014 quantifying similarity to the chat-template context\u2192answer map via cross-regime transfer R\u00b2, matched-layer map/weight similarity, and layer-profile rank correlation; specificity control: the same machinery anchored on random persona-irrelevant separator/punctuation tokens (separator activation \u2192 mean activation of the following span until the next separator) to test whether span-mean predictability is character/persona-specific or a generic delimiter-span property.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/931",
-      "status": "running",
+      "path": "tasks/interpreting/931",
+      "status": "interpreting",
       "title": "Story-character generalization of the context\u2192answer map (no chat template) + separator-token specificity control"
     },
     "932": {
@@ -6364,16 +6378,72 @@
     "960": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/960",
-      "status": "reviewing",
+      "path": "tasks/completed/960",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md cuDNN-TF32 parity-gate trap (float64-clone gate recipe)"
     },
     "961": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/961",
-      "status": "running",
+      "path": "tasks/completed/961",
+      "status": "completed",
       "title": "workflow-fix: retro-close predicate ignores queued-context label mentions"
+    },
+    "962": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/962",
+      "status": "planning",
+      "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
+    },
+    "963": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/963",
+      "status": "planning",
+      "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
+    },
+    "964": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/964",
+      "status": "running",
+      "title": "workflow-fix: verify_task_body warn on body-linked figures untracked at branch HEAD"
+    },
+    "965": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/965",
+      "status": "planning",
+      "title": "workflow-fix: PreToolUse deny-hook for harmful-bank file reads"
+    },
+    "966": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/966",
+      "status": "planning",
+      "title": "workflow-fix: distinctive --by for PM/watcher advisory markers"
+    },
+    "967": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/967",
+      "status": "planning",
+      "title": "workflow-fix: watcher post-hoc external-marker triage observer"
+    },
+    "968": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/968",
+      "status": "planning",
+      "title": "workflow-fix: tag-parity lint for hollow-verification-gate"
+    },
+    "969": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/969",
+      "status": "running",
+      "title": "workflow-fix: v4-scope pre_reg prose restriction in body audit"
     },
     "97": {
       "has_clean_result": false,
@@ -6382,6 +6452,76 @@
       "status": "archived",
       "title": "Multi-seed confirmation of prompt-search EM replication (followup to #94)"
     },
+    "970": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/970",
+      "status": "planning",
+      "title": "workflow-fix: add SUCCESS|FAILURE to audit verdict_caps"
+    },
+    "971": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/971",
+      "status": "planning",
+      "title": "workflow-fix: recover head-name-less rebase husk in root sync"
+    },
+    "972": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/972",
+      "status": "planning",
+      "title": "workflow-fix: artifact-reuse check (i) also covers Hub-API call scoping"
+    },
+    "973": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/973",
+      "status": "archived",
+      "title": "workflow-fix: sandbox test_vm_disk_guard against live tasks"
+    },
+    "974": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/974",
+      "status": "planning",
+      "title": "workflow-fix: WARN-only check_ood_folds in verify_plan"
+    },
+    "975": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/975",
+      "status": "running",
+      "title": "workflow-fix: poll_pipeline synthesized envelope version max+1"
+    },
+    "976": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/976",
+      "status": "approved",
+      "title": "workflow-fix: widen runpod stale-sentinel clear to wildcard"
+    },
+    "977": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/977",
+      "status": "proposed",
+      "title": "workflow-fix: port GCP find-newer sentinel wait to RunPod"
+    },
+    "978": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/978",
+      "status": "proposed",
+      "title": "workflow-fix: distinct reason arm for RunPodWorkloadStartError"
+    },
+    "979": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/979",
+      "status": "proposed",
+      "title": "workflow-fix: watcher greps USER PAUSE note before respawn"
+    },
     "98": {
       "has_clean_result": true,
       "kind": "experiment",
@@ -6389,12 +6529,152 @@
       "status": "archived",
       "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score \u2014 no gradient access required (MODERATE confidence)"
     },
+    "980": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/980",
+      "status": "proposed",
+      "title": "workflow-fix: watcher alert for on_hold task with RUNNING pod"
+    },
+    "981": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/981",
+      "status": "proposed",
+      "title": "workflow-fix: rescope BPE-delimiter memory immunity claim"
+    },
+    "982": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/982",
+      "status": "proposed",
+      "title": "workflow-fix: add c16 N/A escape phrase to adv-planner list"
+    },
+    "983": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/983",
+      "status": "proposed",
+      "title": "workflow-fix: poll guard on phase lines after done-detection"
+    },
+    "984": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/984",
+      "status": "proposed",
+      "title": "workflow-fix: VM-scope cross-ref on upload-policy env one-liner"
+    },
+    "985": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/985",
+      "status": "proposed",
+      "title": "workflow-fix: production-body test rule for seam-stubbed fns"
+    },
+    "986": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/986",
+      "status": "proposed",
+      "title": "workflow-fix: cap-headroom check in check_agent_spec_size"
+    },
+    "987": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/987",
+      "status": "proposed",
+      "title": "workflow-fix: dispatch lane infra from main on issue branches"
+    },
+    "988": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/988",
+      "status": "proposed",
+      "title": "workflow-fix: bound bare list_repo_files call sites (hang class)"
+    },
+    "989": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/989",
+      "status": "proposed",
+      "title": "daily-fix: 4xx short-circuit in hub _is_transient_upload_error"
+    },
     "99": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/99",
       "status": "archived",
       "title": "If you train one persona to misbehave, cosine similarity to that persona predicts which other personas catch it \u2014 except for misalignment, which leaks broadly to nearly everyone (MODERATE confidence)"
+    },
+    "990": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/990",
+      "status": "proposed",
+      "title": "workflow-fix: exclude deliberate-stop events from progress ts"
+    },
+    "991": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/991",
+      "status": "proposed",
+      "title": "daily-fix: system-role guard at api_dispatch dispatch_calls"
+    },
+    "992": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/992",
+      "status": "proposed",
+      "title": "workflow-fix: LESSONS.md byte-cap headroom restructure"
+    },
+    "993": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/993",
+      "status": "proposed",
+      "title": "daily-fix: annotate-or-delete archived call_api seam script"
+    },
+    "994": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/994",
+      "status": "proposed",
+      "title": "daily-fix: headless /daily dies at 600s bg-wait ceiling"
+    },
+    "995": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/995",
+      "status": "proposed",
+      "title": "daily-fix: batch_judge retry read-after-write 404 post-create"
+    },
+    "996": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/996",
+      "status": "proposed",
+      "title": "daily-fix: task.py bounded wait on live rebase detached HEAD"
+    },
+    "997": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/997",
+      "status": "proposed",
+      "title": "daily-fix: HF upload/verify transient 429/500 retry robustness"
+    },
+    "998": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/998",
+      "status": "proposed",
+      "title": "daily-fix: exempt verbatim sample lines from humanize ban scan"
+    },
+    "999": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/999",
+      "status": "proposed",
+      "title": "daily-fix: fix session_progress_report write_self_report crash"
     }
   }
 }
