@@ -31,6 +31,7 @@ from pathlib import Path
 
 from explore_persona_space.task_workflow import (
     TRIAGE_LINE_PREFIX,
+    TRIAGE_MACHINE_BY,
     triage_candidates_since_last_dispatch,
 )
 
@@ -265,3 +266,13 @@ def test_issue779_replay_flags_all_ten_external_markers():
     # free-analysis landings / epm:failure / epm:results rows). A deliberate
     # exempt-set change re-derives this number against the frozen fixture.
     assert len(out) == 18
+
+
+def test_advisory_by_values_are_never_machine_stripped():
+    # #966: pm-chat / watcher / spawn-helper identities are ADVISORY emitter
+    # identities, not machine bookkeeping — adding one to TRIAGE_MACHINE_BY
+    # would strip exactly the advisory content triage exists to surface.
+    for by in ("pm-chat", "autonomous_session_watch", "spawn_session-stop", "spawn_session"):
+        assert by not in TRIAGE_MACHINE_BY, by
+    out = triage_candidates_since_last_dispatch([_ev("2026-07-03T00:00:00Z", by="pm-chat")])
+    assert len(out) == 1
