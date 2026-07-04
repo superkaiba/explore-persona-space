@@ -1,6 +1,6 @@
 {
-  "commit": "288ea47b1c",
-  "created": "2026-07-03T22:13:41Z",
+  "commit": "bef7283a47",
+  "created": "2026-07-04T02:12:02Z",
   "figsize": [
     20.0,
     13.0
@@ -119,112 +119,112 @@
       "_group": 0
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "within-cond r (cos readout)": 0.012201650315100065,
       "error": 0.1475728835524225,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "within-cond r (cos readout)": 0.17729559497906672,
       "error": 0.29431653256579393,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "within-cond r (cos readout)": -0.3550213111830124,
       "error": 0.09824107746003644,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "within-cond r (cos readout)": 0.06029069334645743,
       "error": 0.2909225171608567,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "within-cond r (cos readout)": 0.08259294454637207,
       "error": 0.1861415234827784,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "within-cond r (cos readout)": 0.15744451045487062,
       "error": 0.1531991695931111,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "within-cond r (cos readout)": -0.11410620430620963,
       "error": 0.2003652001512163,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "within-cond r (cos readout)": -0.13245387695652772,
       "error": 0.18481399064812887,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "within-cond r (cos readout)": 0.046683615201775254,
       "error": 0.2334339685153126,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "within-cond r (cos readout)": 0.19748021122141607,
       "error": 0.2655448779742662,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "within-cond r (cos readout)": -0.04679055736148791,
       "error": 0.1584484348855611,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "within-cond r (cos readout)": -0.020383356449064097,
       "error": 0.18837809032843644,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "within-cond r (cos readout)": -0.10645612169425622,
       "error": 0.21566572510895127,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "within-cond r (cos readout)": -0.17378490204160724,
       "error": 0.21695585268234135,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "within-cond r (cos readout)": -0.14087579701895034,
       "error": 0.24651411085969915,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "within-cond r (cos readout)": -0.06449458562015038,
       "error": 0.28575248733232717,
       "_kind": "bar",
@@ -1031,112 +1031,112 @@
       "_group": 9
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "y": -0.1011951406266004,
       "error": 0.04374976097280526,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "y": -0.0004198214185475845,
       "error": 0.027112303383210325,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "y": 0.03978694581055476,
       "error": 0.09974569845975757,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "y": 0.12884571477944293,
       "error": 0.17014143162992584,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "y": 0.1494146928282769,
       "error": 0.06965347139931802,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "y": 0.28314700357170636,
       "error": 0.0736274420910584,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "y": 0.47062757930288546,
       "error": 0.06766887821853679,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "y": 0.5622418064577965,
       "error": 0.11062219853183872,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "y": 0.23937482628528584,
       "error": 0.06668630948084661,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "y": 0.051112319392376794,
       "error": 0.09668930103397957,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "y": 0.5458121667669412,
       "error": 0.06933602260241373,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "y": 0.5901910138412804,
       "error": 0.05677152270117125,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "y": 0.607991282091781,
       "error": 0.08295648416803353,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "y": 0.5683998787623006,
       "error": 0.07933481057123393,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "y": 0.3758000575833048,
       "error": 0.04934893093736875,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "y": 0.4200720108896032,
       "error": 0.049377848551925535,
       "_kind": "bar",
@@ -1943,112 +1943,112 @@
       "_group": 18
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "y": -0.02968362518314366,
       "error": 0.03520466982126215,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "y": -0.01469465641189318,
       "error": 0.08536384319724669,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "y": 0.20026955509739533,
       "error": 0.131151635089158,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "y": 0.20141324046985698,
       "error": 0.1264117807938944,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "y": 0.02907421868204472,
       "error": 0.07192787578706537,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "y": -0.0745021599603785,
       "error": 0.05824014250844167,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "y": 0.2581466119930961,
       "error": 0.04181681529386794,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "y": 0.16311684128339748,
       "error": 0.04073617221259483,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "y": 0.10316338347873592,
       "error": 0.10377664459834723,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "y": 0.12951307164992712,
       "error": 0.1547341731948392,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "y": 0.21140284797906336,
       "error": 0.06799178468884726,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "y": 0.20726272690710001,
       "error": 0.0676932886831633,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "y": 0.1885744146855146,
       "error": 0.06479326653661202,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "y": 0.14267412147058672,
       "error": 0.051578165644497,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "y": 0.3248963547670183,
       "error": 0.12777162295533598,
       "_kind": "bar",
       "_group": 19
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "y": 0.24591463184293783,
       "error": 0.13148381451213534,
       "_kind": "bar",
@@ -2855,112 +2855,112 @@
       "_group": 27
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "within-cond r (cos readout)": 0.21809969330990864,
       "error": 0.07335855449236639,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "within-cond r (cos readout)": 0.2977641325767488,
       "error": 0.108155978508402,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "within-cond r (cos readout)": -0.13933369194463185,
       "error": 0.13492085510472224,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "within-cond r (cos readout)": -0.02176955844195093,
       "error": 0.18927524503876253,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "within-cond r (cos readout)": 0.1803107664550511,
       "error": 0.09340001519601887,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "within-cond r (cos readout)": -0.0037513949958682064,
       "error": 0.06864389584622252,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "within-cond r (cos readout)": 0.20792366909044266,
       "error": 0.17831078993861416,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "within-cond r (cos readout)": 0.5252780386043582,
       "error": 0.20259249270192523,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "within-cond r (cos readout)": 0.20655473402812263,
       "error": 0.11793578272743732,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "within-cond r (cos readout)": 0.29988053678486876,
       "error": 0.09684937209668495,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "within-cond r (cos readout)": 0.059750591929561635,
       "error": 0.15967897253549385,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "within-cond r (cos readout)": 0.17388214110105568,
       "error": 0.17638015637835888,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "within-cond r (cos readout)": 0.47096178403088684,
       "error": 0.18869214104060958,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "within-cond r (cos readout)": 0.256348021046065,
       "error": 0.1864208119253199,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "within-cond r (cos readout)": 0.3552890552354276,
       "error": 0.1212214097744671,
       "_kind": "bar",
       "_group": 28
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "within-cond r (cos readout)": 0.1856141061611011,
       "error": 0.17001597133976176,
       "_kind": "bar",
@@ -3767,112 +3767,112 @@
       "_group": 36
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "y": 0.003629523117427822,
       "error": 0.0743861546991932,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "y": 0.12045036114571443,
       "error": 0.10109693532516495,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "y": 0.01706451288084584,
       "error": 0.10683235668834891,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "y": 0.10015019537927203,
       "error": 0.10727143778125695,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "y": 0.20179529107242686,
       "error": 0.01630756927613304,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "y": 0.2941196404955451,
       "error": 0.09622466546522015,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "y": 0.37079757078355996,
       "error": 0.13972466355764473,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "y": 0.5587971749929632,
       "error": 0.19242137598483033,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "y": 0.3584103711708469,
       "error": 0.1285118701219261,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "y": 0.08507355112054533,
       "error": 0.09454899876216744,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "y": 0.5035296056237283,
       "error": 0.09229015293116671,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "y": 0.5233294317794426,
       "error": 0.07479642202749615,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "y": 0.6003287370359972,
       "error": 0.1635939420093593,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "y": 0.5620063979630177,
       "error": 0.18274738267116886,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "y": 0.4838944653170363,
       "error": 0.08116542683809935,
       "_kind": "bar",
       "_group": 37
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "y": 0.5546688723447696,
       "error": 0.07385007346437611,
       "_kind": "bar",
@@ -4679,112 +4679,112 @@
       "_group": 45
     },
     {
-      "category": "v_im_end",
+      "category": "turn-end template token",
       "y": -0.39264214101139244,
       "error": 0.15128820773097817,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_im_start",
+      "category": "next-turn start token",
       "y": 0.11812816607734118,
       "error": 0.03973244759193783,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_user",
+      "category": "user role token",
       "y": -0.031313278454972185,
       "error": 0.10941725583061915,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_nl_after_user",
+      "category": "newline after user role",
       "y": -0.07206962274739058,
       "error": 0.06000142567536996,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_tmpl_mean",
+      "category": "template-token mean",
       "y": 0.2538394470765234,
       "error": 0.06302710980188439,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_tmpl_max",
+      "category": "template-token max",
       "y": 0.014702446717893761,
       "error": 0.09654921404103076,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_full_mean",
+      "category": "full-sequence mean",
       "y": 0.2639925013969814,
       "error": 0.1410509518405681,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "v_full_max",
+      "category": "full-sequence max",
       "y": 0.29235744363450505,
       "error": 0.10280372346514133,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmean_v_last_turn",
+      "category": "cross-layer mean: turn-final token",
       "y": 0.18357580034799034,
       "error": 0.10142960369750281,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmax_v_last_turn",
+      "category": "cross-layer max: turn-final token",
       "y": 0.21990880944088853,
       "error": 0.05594198232447137,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmean_v_last_content",
+      "category": "cross-layer mean: last content token",
       "y": 0.44030705323959723,
       "error": 0.1177121190176697,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmax_v_last_content",
+      "category": "cross-layer max: last content token",
       "y": 0.3965489590044794,
       "error": 0.11928582867841689,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmean_v_max",
+      "category": "cross-layer mean: token max-pool",
       "y": 0.40858910394223,
       "error": 0.13387213561363415,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmax_v_max",
+      "category": "cross-layer max: token max-pool",
       "y": 0.2834645732071227,
       "error": 0.10318088885208673,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmean_v_first",
+      "category": "cross-layer mean: first answer token",
       "y": 0.15809003245833628,
       "error": 0.08274844332712614,
       "_kind": "bar",
       "_group": 46
     },
     {
-      "category": "xlmax_v_first",
+      "category": "cross-layer max: first answer token",
       "y": 0.3100015661193636,
       "error": 0.1277305786399922,
       "_kind": "bar",
@@ -5481,1372 +5481,1372 @@
     {
       "layer": 0.0,
       "within-cond r (cos readout)": 0.014914279949874078,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": 0.15650291115477805,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.07249489627554523,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.11439620566191197,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.15459929903989628,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.17505992437343945,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.17317482257382213,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.2753437530275473,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.3438535818786528,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.10700418699839653,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.17041366649907952,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": -0.015641692874523556,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": 0.04918268706828098,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": 0.25959449274019153,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.22914807191028624,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.33775927825911545,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.2793109536854689,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.23486487135084916,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.17706330585998986,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.217932389761952,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.35865627700057684,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.36570686114651596,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.49501564003092613,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.4663805904171129,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.4013285388644992,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.23433446364586868,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.2781739593096065,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.2341667106402286,
-      "series": "v_max (system)",
+      "series": "token max-pool (system)",
       "_kind": "line",
       "_group": 54
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": -0.23550561533522452,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": -0.08141518694409657,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.012499566350842494,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.2697499141739201,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.4233536883138543,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.3266808332870961,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.2885757935360048,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.19748823763996154,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.4750864460726085,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.4117870014889413,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.40849221727064366,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": 0.24848517096205058,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": 0.43767526736861856,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": 0.4541981461825664,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.46397745409650126,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.5292279016091881,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.5226128028484537,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.516067836700453,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.5863575788021407,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.6235678116886878,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.6389554323934155,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.5984951636621932,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.6543517055017851,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.5936318391616384,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.5213844526920693,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.5645196225972273,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.4965225279597608,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.552313961760625,
-      "series": "v_max (many_shot)",
+      "series": "token max-pool (many-shot)",
       "_kind": "line",
       "_group": 55
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": 0.15262101743522158,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": 0.259200937524831,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.20090502603366533,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.18286748838800065,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.06609517054194175,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.012037567039400739,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": -0.0623492437827151,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.006041387579343541,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.13908262097510599,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.05556284119217369,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.01856685017005376,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": -0.13424581387249887,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": -0.183767965297166,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": -0.04677193172981073,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": -0.00113789658695565,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.19286377177686864,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.2814850057334778,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.2034949002492557,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.13466689999899972,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.18714231692345046,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.3710760400984722,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.38372452530253626,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.4482154966528,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.3721931068281763,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.32010303416142555,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.2729450141007947,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.26659439464497076,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.23910478824902823,
-      "series": "v_full_mean (system)",
+      "series": "full-sequence mean (system)",
       "_kind": "line",
       "_group": 56
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": -0.29276594512103477,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": -0.06613330673324738,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": -0.011253096824695337,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.20622475593601064,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.3594183102674028,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.24475256957676195,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.2829173852332781,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.33429228870826694,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.48397720610359535,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.40291115015594875,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.2761375698398639,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": 0.2842578638517018,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": 0.258186588676907,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": 0.24457616947458918,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.2801764756601286,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.3498289270650234,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.36172931954198445,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.43790198488624393,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.48745060707628624,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.647071845197725,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.6683783248551395,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.5496915869292369,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.5966930985171927,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.5594957229341705,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.5783394485631341,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.6225279404420171,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.5916109608731657,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.4183951004356637,
-      "series": "v_full_mean (many_shot)",
+      "series": "full-sequence mean (many-shot)",
       "_kind": "line",
       "_group": 57
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": 0.01784199658974829,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": 0.16230687940890456,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.09314773993975928,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.13858678379455505,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.1535503465777066,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.18564843462967526,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.17630406161636433,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.3196260004216,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.35382177945696547,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.09644466340741949,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.15983397589582288,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": -0.018376795208798452,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": 0.09229655508477926,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": 0.2577501114238336,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.2243102156755605,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.31596627403694494,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.2902536420463414,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.217281028115554,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.17488329444291792,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.22007127946570448,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.3640625087110997,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.38716046771736545,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.4941610465096121,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.4689712511491869,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.4070996556550877,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.26129952839201026,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.2926241982373504,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.24406863835947007,
-      "series": "v_full_max (system)",
+      "series": "full-sequence max (system)",
       "_kind": "line",
       "_group": 58
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": -0.24643856702698833,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": -0.08185012020090676,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.02431418160130744,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.26963688157367927,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.40430748471617445,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.3160819772004545,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.27036780551850775,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.3392819596129692,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.5367288107757956,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.4038944916984156,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.42293986901995095,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": 0.21782468439081978,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": 0.4704350365363009,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": 0.44710598330475426,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.4820507879682093,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.5361945113760339,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.5571625186902229,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.5154138126046162,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.5766106125952951,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.6271684286232178,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.6459536425641993,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.6239838588833816,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.6685513055319454,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.6133818317637029,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.5389268685278612,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.5761433259969064,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.5042492592753453,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.5418454444375035,
-      "series": "v_full_max (many_shot)",
+      "series": "full-sequence max (many-shot)",
       "_kind": "line",
       "_group": 59
     },
     {
       "layer": 0.0,
       "within-cond r (cos readout)": 0.21809147287589464,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 1.0,
       "within-cond r (cos readout)": 0.19287629659059013,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 2.0,
       "within-cond r (cos readout)": 0.19463775188070903,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 3.0,
       "within-cond r (cos readout)": 0.216481275803417,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 4.0,
       "within-cond r (cos readout)": 0.24177994759749116,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 5.0,
       "within-cond r (cos readout)": 0.1832490826004845,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 6.0,
       "within-cond r (cos readout)": 0.09888434634153272,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 7.0,
       "within-cond r (cos readout)": 0.05766753386790928,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 8.0,
       "within-cond r (cos readout)": 0.08641362173347703,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 9.0,
       "within-cond r (cos readout)": 0.026490250667413645,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 10.0,
       "within-cond r (cos readout)": 0.10864967417291774,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 11.0,
       "within-cond r (cos readout)": -0.15647880583096568,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 12.0,
       "within-cond r (cos readout)": -0.16590399438463593,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 13.0,
       "within-cond r (cos readout)": -0.14096764862033284,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 14.0,
       "within-cond r (cos readout)": 0.1722517146635759,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 15.0,
       "within-cond r (cos readout)": 0.2844304760715904,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 16.0,
       "within-cond r (cos readout)": 0.2975599123664315,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 17.0,
       "within-cond r (cos readout)": 0.2998766817835419,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 18.0,
       "within-cond r (cos readout)": 0.3047898059770817,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 19.0,
       "within-cond r (cos readout)": 0.37162910567540186,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 20.0,
       "within-cond r (cos readout)": 0.4996336809662557,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 21.0,
       "within-cond r (cos readout)": 0.40718659001342217,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 22.0,
       "within-cond r (cos readout)": 0.2843696527178564,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 23.0,
       "within-cond r (cos readout)": 0.2253516323050834,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 24.0,
       "within-cond r (cos readout)": 0.1721096828629486,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 25.0,
       "within-cond r (cos readout)": 0.15263719599708328,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 26.0,
       "within-cond r (cos readout)": 0.16937499331061323,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },
     {
       "layer": 27.0,
       "within-cond r (cos readout)": 0.2370946426199131,
-      "series": "pv_raw (system)",
+      "series": "raw projection (system)",
       "_kind": "line",
       "_group": 60
     },

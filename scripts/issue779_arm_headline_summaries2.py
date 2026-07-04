@@ -73,6 +73,33 @@ XL_VARIANTS = tuple(
 SWEEP_VARIANTS = ("v_max", "v_full_mean", "v_full_max")
 ARMS = AS.ARMS
 
+# Reader-facing figure labels for the capture-key slugs (clean-result Lens 2/3:
+# no opaque capture keys in figure labels / sidecar categories). Keys stay the
+# canonical JSON/capture identifiers; only the FIGURE surfaces use these.
+VARIANT_LABELS = {
+    # pass-2 next-turn-template positions (see issue779_capture_answer_summaries_pass2)
+    "v_im_end": "turn-end template token",
+    "v_im_start": "next-turn start token",
+    "v_user": "user role token",
+    "v_nl_after_user": "newline after user role",
+    "v_tmpl_mean": "template-token mean",
+    "v_tmpl_max": "template-token max",
+    "v_full_mean": "full-sequence mean",
+    "v_full_max": "full-sequence max",
+    # cross-layer (mean/max across all 28 layers) of each pass-1 summary
+    "xlmean_v_last_turn": "cross-layer mean: turn-final token",
+    "xlmax_v_last_turn": "cross-layer max: turn-final token",
+    "xlmean_v_last_content": "cross-layer mean: last content token",
+    "xlmax_v_last_content": "cross-layer max: last content token",
+    "xlmean_v_max": "cross-layer mean: token max-pool",
+    "xlmax_v_max": "cross-layer max: token max-pool",
+    "xlmean_v_first": "cross-layer mean: first answer token",
+    "xlmax_v_first": "cross-layer max: first answer token",
+    # pass-1 pooling variant used in the per-layer sweep
+    "v_max": "token max-pool",
+    "pv_raw": "raw projection",
+}
+
 DEFAULT_CAPTURE_DIR = AS.DEFAULT_CAPTURE_DIR  # pass-1 shards
 DEFAULT_P2_DIR = AS.DEFAULT_CAPTURE_DIR / "pass2"
 
@@ -452,7 +479,12 @@ def make_figure(res: dict, args: argparse.Namespace) -> str:
                 )
             ax.axhline(0.0, color="gray", lw=0.5)
             ax.set_xticks(xpos)
-            ax.set_xticklabels(all_variants, rotation=60, ha="right", fontsize=6)
+            ax.set_xticklabels(
+                [VARIANT_LABELS.get(v, v) for v in all_variants],
+                rotation=60,
+                ha="right",
+                fontsize=6,
+            )
             mode_lbl = "system" if mode == "system" else "many-shot"
             ax.set_title(f"{trait} — {mode_lbl} (L{entry['layer']})", fontsize=9)
             if col == 0:
@@ -465,13 +497,14 @@ def make_figure(res: dict, args: argparse.Namespace) -> str:
         for vi, name in enumerate(SWEEP_VARIANTS):
             for mode, ls in zip(AH.MODES, ("-", "--"), strict=True):
                 ys = [sweep[f"L{li}"]["traits"][trait][name][mode]["point"] for li in layers_sorted]
+                mode_lbl = "system" if mode == "system" else "many-shot"
                 ax.plot(
                     layers_sorted,
                     ys,
                     ls,
                     color=colors[vi],
                     lw=1.2,
-                    label=f"{name} ({mode})" if col == 0 else None,
+                    label=f"{VARIANT_LABELS.get(name, name)} ({mode_lbl})" if col == 0 else None,
                 )
         pv = [sweep[f"L{li}"]["traits"][trait]["pv_raw"]["system"]["point"] for li in layers_sorted]
         ax.plot(
@@ -480,7 +513,7 @@ def make_figure(res: dict, args: argparse.Namespace) -> str:
             ":",
             color="gray",
             lw=1.0,
-            label="pv_raw (system)" if col == 0 else None,
+            label="raw projection (system)" if col == 0 else None,
         )
         for mode in AH.MODES:
             ax.axvline(AH.FROZEN_LAYERS[trait][mode], color="black", lw=0.5, alpha=0.4)
@@ -493,7 +526,11 @@ def make_figure(res: dict, args: argparse.Namespace) -> str:
         h, lb = ax.get_legend_handles_labels()
         handles += h
         labels += lb
-    fig.legend(handles, labels, loc="lower center", ncol=6, fontsize=7)
+    # Anchor the legend just below the canvas (savefig.bbox=tight includes it)
+    # so it never overlaps the bottom row's x-axis labels.
+    fig.legend(
+        handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.005), ncol=5, fontsize=7
+    )
     figs = savefig_paper(fig, "arm_headline_summaries2", dir=args.fig_dir)
     plt.close(fig)
     return str(figs.get("png", ""))
