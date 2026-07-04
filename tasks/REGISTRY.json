@@ -6469,8 +6469,8 @@
     "972": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/972",
-      "status": "approved",
+      "path": "tasks/running/972",
+      "status": "running",
       "title": "workflow-fix: artifact-reuse check (i) also covers Hub-API call scoping"
     },
     "973": {
