@@ -104,8 +104,8 @@
     "1010": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1010",
-      "status": "reviewing",
+      "path": "tasks/completed/1010",
+      "status": "completed",
       "title": "workflow-fix: thread disk requirement into RunPod CPU fallback (containerDiskInGb + refuse-on-infeasible)"
     },
     "102": {
