@@ -53,12 +53,15 @@ re-dispatched); batch-routed retries resume through their nested
 across resumes so a threshold flip cannot strand an in-flight nested
 batch or a partial file); and a complete-but-unmerged
 ``results_retry.json`` (crash between its atomic write and the state
-flip) is merged with zero API calls. A sub-batch wedged at zero succeeded
-requests past ``EPS_BATCH_STUCK_HOURS`` (default 4h; ``<=0`` disables) is
-CANCELED (escape intent persisted BEFORE the cancel side effect), its
-partial results harvested at ``ended``, and its ``canceled`` ids re-dispatched
-through the retry machinery pre-pinned to the SYNC path (#1019, incident
-#810).
+flip) is merged with zero API calls. A sub-batch still ``in_progress`` and
+wedged at zero succeeded requests past ``EPS_BATCH_STUCK_HOURS`` (default
+4h; ``<=0`` disables) is CANCELED (escape intent persisted BEFORE the
+cancel side effect), its partial results harvested at ``ended``, and its
+``canceled`` ids re-dispatched through the retry machinery pre-pinned to
+the SYNC path (#1019, incident #810). A batch already ``canceling`` with no
+persisted intent (an operator's out-of-band Console cancel) is never
+adopted by the escape — its canceled rows keep the #663 error-dict
+no-retry contract.
 
 NOTE: ``_build_params`` is underscore-private by convention but imported
 by ``explore_persona_space.eval.alignment`` (single source of truth for
@@ -737,8 +740,15 @@ def _harvest_sub_batch(
         # Frozen-counts fingerprint (#1019 §12 A5): the escape fired on
         # succeeded==0, so nonzero API-succeeded results harvested here mean
         # request_counts was frozen/stale (a false-positive stuck fire).
-        n_succeeded = (
-            len(sb_scores) - len(retriable) - len(expired) - len(quarantined) - len(canceled)
+        # Count TRUE API-succeeded rows only: unknown-rtype rows sit in no
+        # list (plain subtraction would count them as succeeded) but carry
+        # "batch_error: " error dicts; a "parse_error" row IS API-succeeded.
+        non_succeeded = {*retriable, *expired, *quarantined, *canceled}
+        n_succeeded = sum(
+            1
+            for cid, score in sb_scores.items()
+            if cid not in non_succeeded
+            and not str(score.get("reasoning", "")).startswith("batch_error: ")
         )
         logger.warning(
             "Stuck-canceled sub-batch %s harvested: n_succeeded=%d n_canceled=%d "
@@ -812,10 +822,13 @@ def _poll_one_sub_batch_step(
     """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue.
 
     Stuck-batch escape (#1019): AFTER the ended-harvest and overdue blocks (their
-    precedence is load-bearing), a sub-batch at ``request_counts.succeeded == 0``
-    for >= ``EPS_BATCH_STUCK_HOURS`` since ``submitted_at`` is canceled via
-    :func:`_cancel_stuck_sub_batch` (intent-first crash-safe ordering); the
-    enclosing poll loop then harvests it when the API flips canceling -> ended.
+    precedence is load-bearing), a sub-batch still ``in_progress`` at
+    ``request_counts.succeeded == 0`` for >= ``EPS_BATCH_STUCK_HOURS`` since
+    ``submitted_at`` is canceled via :func:`_cancel_stuck_sub_batch` (intent-first
+    crash-safe ordering); the enclosing poll loop then harvests it when the API
+    flips canceling -> ended. A batch already ``canceling`` with NO persisted
+    intent (an out-of-band Console cancel) is NEVER adopted — its canceled rows
+    surface as error dicts, not retries (#1019 round 2).
 
     Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
     ``BATCH_CREATE_404_GRACE_S`` of this sub-batch's persisted ``submitted_at``
@@ -873,9 +886,18 @@ def _poll_one_sub_batch_step(
     # marker (which survives every crash ordering). Ordering is load-bearing:
     # the ended-harvest and overdue blocks above run FIRST, so a finished
     # batch is never touched and BatchDeadlineExceeded keeps precedence.
+    # FRESH ENTRY additionally requires ``processing_status == "in_progress"``
+    # (#1019 round 2, concern out-of-band-canceling-retried): a batch already
+    # ``canceling`` at the poll — an operator's out-of-band Console cancel —
+    # must NOT be adopted by the escape; stamping intent on it would route the
+    # operator-canceled ids into the sync retry, violating the out-of-band
+    # no-retry contract (see :func:`_load_collected_into`). The escape-intent
+    # RESUME leg below deliberately keeps accepting canceling/ended — that leg
+    # completes OUR OWN already-committed escape after a crash.
     stuck_hours = batch_stuck_threshold_hours()
     if (
         stuck_hours is not None
+        and batch.processing_status == "in_progress"  # never adopt an out-of-band cancel
         and sb.get("stuck_cancel_intent_at") is None  # escape entered at most once
         and counts is not None  # fail-safe: no counts, no verdict
         and counts.succeeded == 0
@@ -898,7 +920,11 @@ def _poll_one_sub_batch_step(
     # Escape-intent RESUME leg: intent persisted but cancel never confirmed
     # (crash between the intent write and the cancel/confirm writes) ->
     # re-drive the cancel. Bounded: the race guard accepts canceling/ended,
-    # so this converges in one step.
+    # so this converges in one step. Deliberately keyed on the persisted
+    # INTENT alone — not stuck_hours, not processing_status: an escape
+    # committed by the intent write is COMPLETED on resume even when
+    # EPS_BATCH_STUCK_HOURS has since been set to 0 (disabling the knob stops
+    # NEW escapes; it never strands a half-done one).
     elif sb.get("stuck_cancel_intent_at") is not None and sb.get("stuck_canceled_at") is None:
         _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn)
 
