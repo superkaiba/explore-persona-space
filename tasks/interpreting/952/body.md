@@ -70,9 +70,9 @@ relates_to:
 
 ## Takeaways
 
-- **Predicting answer activations from context favors Qwen's own answers over Claude-written answers by only ~0.02 R², uniformly across positions at read-out layer 20** (first-vs-last-16 contrast +0.004, margin ±0.03).
-- **Sixteen absorbed answer tokens fully close the plain-external gap at the layer-20 decision cell** (closure +0.025, interval excludes zero); the closure does not replicate at layer 17 (+0.014).
-- **The distinct-style penalty does not close:** +0.044 after 16 absorbed tokens, +0.028 after 128; the style-minus-plain closure difference is −0.031, opposite the predicted direction.
+- **Predicting answer activations from context favors Qwen's own answers over Claude-written answers by only ~0.02 R², uniformly from the second token onward at read-out layer 20** (first-vs-last-16 contrast +0.004, margin ±0.03; the ordering nominally reverses at token 1).
+- **Sixteen absorbed answer tokens close the plain-external gap at the layer-20 decision cell** (end gap −0.002; closure +0.025, interval excludes zero but dips below the 0.02 margin); the closure does not replicate at layer 17 (+0.014).
+- **The distinct-style gap does not close:** on intersection-of-survivors reads it is +0.044 [+0.028, +0.060] after 16 absorbed tokens and +0.028 [+0.012, +0.045] after 128; the style-minus-plain closure difference is −0.031, opposite the predicted direction.
 - **On the surviving identity/style bank (41 pairs; 2 of 4 categories), no divergence-specific external penalty emerges at the 0.05 margin** (p = 0.64; ceiling 0.887 vs null band +0.028).
 - **Binding caveats:** inverted judge calibration and ~18% cap-truncated bank queries dilute the bank read; single split, single capture; teacher-forced representation-level scope, not on-policy behavior prediction.
 
@@ -133,7 +133,7 @@ Divergence-bank items are referenced by file + index only (standing content rule
 
 ## Results
 
-### The own-answer advantage is small and position-uniform at the read-out layer, with a reversal at the first token
+### The own-answer advantage is small and position-uniform at the read-out layer
 
 Held-out test pooled R² per arm across the 42 answer-position slots at layer 20 (top figure); the per-unit view is the per-context R² ECDF pooled over the first-16 slots (bottom figure, n = 629 test contexts).
 
@@ -145,9 +145,9 @@ Held-out test pooled R² per arm across the 42 answer-position slots at layer 20
 
 > **Figure.** *The per-context distributions behind the pooled curves separate cleanly by arm.* ECDF of per-context R² (first-16 slots pooled), 629 test contexts per arm; the mismatched arm centers on zero.
 
-The plain-external gap is ~0.02–0.03 from the second token onward and flat: the first-16 minus last-16 contrast is +0.0044, inside the ±0.03 margin, so opening concentration is falsified at this layer. The ordering reverses at the first token (own 0.50, plain 0.52, distinct-style 0.55). 40 of 42 slots select layer 20 on validation, yet gaps this size flip with layer — the equivalence read is layer-scoped. 45 of 629 test contexts have a train near-duplicate (pointwise-fold caveat).
+The plain-external gap is ~0.02–0.03 from the second token onward and flat: the first-16 minus last-16 contrast is +0.0044, inside the ±0.03 margin, so opening concentration is falsified at this layer. The ordering nominally reverses at the first token (own 0.50, plain 0.52, distinct-style 0.55; no per-slot interval accompanies these three points). 40 of 42 slots select layer 20 on validation, yet gaps this size flip with layer, so the equivalence read is layer-scoped. 45 of 629 test contexts have a train near-duplicate (pointwise-fold caveat).
 
-### Sixteen absorbed prefix tokens close the plain-external penalty at the layer-20 decision cell, but the closure is layer-fragile and the style penalty persists
+### Sixteen absorbed prefix tokens close the plain-external gap at the layer-20 decision cell
 
 Own-minus-external pooled R² gap on the common surviving subset, predicting the identical remainder target, before vs after t absorbed prefix tokens (top-left bars, layer 20); descriptive closure curves (top-right); per-t survivor counts and fraction excluded (bottom).
 
@@ -155,7 +155,7 @@ Own-minus-external pooled R² gap on the common surviving subset, predicting the
 
 > **Figure.** *The plain-external gap vanishes once 16 of the answer's own tokens are absorbed; the distinct-style gap does not.* Matched-population matched-target contrasts at layer 20; paired test n = 629 / 534 / 403 / 266 at t = 16 / 32 / 64 / 128. Curves descriptive only; attrition strip below (fraction excluded up to 0.44).
 
-Absorbing 16 tokens closes the plain gap at the layer-20 decision cell: +0.023 → −0.002 (closure +0.025; the interval excludes zero and the point clears the 0.02 margin, though the interval dips below it). At layer 17 the closure is +0.014 with an interval spanning zero — layer-specific, so a local-readout account of the closure is not excluded. The style gap does not close: its closure is −0.005 (interval spans zero), the style-minus-plain difference −0.031 excludes zero opposite the prediction, and the style penalty persists on intersection-of-survivors reads (+0.044 at 16 tokens, +0.028 at 128).
+Absorbing 16 tokens closes the plain gap at the layer-20 decision cell: +0.023 → −0.002 (closure +0.025; the interval excludes zero and the point clears the 0.02 margin, though the interval dips below it). The closure is layer-fragile: at layer 17 it is +0.014 with an interval spanning zero, so a local-readout account is not excluded. The style gap does not close. Its closure is −0.005 (interval spans zero), the style-minus-plain difference −0.031 excludes zero opposite the prediction, and the style gap persists on intersection-of-survivors reads (+0.044 [+0.028, +0.060] at 16 tokens, +0.028 [+0.012, +0.045] at 128).
 
 ### No divergence-specific external penalty is detected on the surviving identity/style bank — an informative null on a weakened instrument
 
@@ -165,7 +165,7 @@ Paired per-context R² drop (entity-swapped control minus divergent query) per a
 
 > **Figure.** *Per-pair drops scatter around the diagonal — the external map degrades on divergent queries no more than the own map does.* 41 kept pairs; on model-identity pairs both arms' bars are negative (divergent answers more predictable than their controls in both arms).
 
-Pooled over 41 pairs the divergence-specific external penalty is −0.005 (median −0.003, trimmed +0.003); a sign-flip permutation over pair signs (the paired null) gives p = 0.64, and the interval's upper bound (+0.023) excludes the 0.05 margin. Detection was attainable: ceiling 0.887 vs null-band bound +0.028. Scope: 2 of 4 planned categories survived (no refusal or safety read); the judge calibration inverted, rehabilitated only after the fact; cap-truncated style queries are a named dilution channel — a weakened-instrument null is not excluded. Both maps transfer to the bank above the trivial floor (own 0.145, plain 0.137 per-context mean R²), so the null is not map collapse.
+Pooled over 41 pairs the divergence-specific external penalty is −0.005 (median −0.003, trimmed +0.003); a sign-flip permutation over pair signs (the paired null) gives p = 0.64, and the interval's upper bound (+0.023) excludes the 0.05 margin. Detection was attainable: ceiling 0.887 vs null-band bound +0.028. Scope: 2 of 4 planned categories survived (no refusal or safety read); the judge calibration inverted (controls initially outscored divergents, and the kept set was re-checked only post hoc); cap-truncated style queries are a named dilution channel, so a weakened-instrument explanation of the null remains open. Both maps transfer to the bank above the trivial floor (own 0.145, plain 0.137 per-context mean R²), so the null is not map collapse.
 
 ### The prefix pathway carries the signal: a shuffled-context answer becomes nearly as predictable as the own answer once 128 of its own tokens are absorbed
 
@@ -175,9 +175,9 @@ Remainder-mean test R² with the predictor pooled over the context plus the firs
 
 > **Figure.** *The mismatched curve climbs from ≈ 0 toward the content arms as its own prefix is absorbed.* Four arms, 8 prefix lengths, layer 20; content arms sit near 0.55–0.64 throughout; the mismatched arm reaches 0.52 at t = 128 on this pooled read.
 
-With 128 of its own tokens absorbed, a shuffled-context answer's remainder reaches R² 0.351 — 95.6% of the own arm's 0.367 — clearing the 50% recovery criterion. The context-only leg is not fully clean: mismatched position R² exceeds the ±0.05 band at answer tokens 1–2 (0.110, 0.065) and the turn-end template slots (0.106, 0.096), and dips to −0.050 to −0.059 on remainder-mean cells; content positions from token 3 onward stay within ±0.033. Openings carry generic answer statistics, a caveat attached to the prefix-closure result (which rests on the prefix leg).
+With 128 of its own tokens absorbed, a shuffled-context answer's remainder reaches R² 0.351 (95.6% of the own arm's 0.367), which clears the 50% recovery criterion. The context-only leg is not fully clean: mismatched position R² exceeds the ±0.05 band at answer tokens 1–2 (0.110, 0.065) and the turn-end template slots (0.106, 0.096), and dips to −0.050 to −0.059 on remainder-mean cells; content positions from token 3 onward stay within ±0.033. Openings carry generic answer statistics, a caveat attached to the prefix-closure result (which rests on the prefix leg).
 
-### Teacher-forced surprisal on external text collapses within a handful of tokens, dissociating from activation predictability at the first token
+### Teacher-forced surprisal on external text collapses within a handful of tokens and dissociates from activation predictability at the first token
 
 Mean teacher-forced token surprisal per answer position per arm (top figure); per-position pooled R² against mean surprisal, one point per slot per arm (bottom figure).
 
@@ -189,7 +189,7 @@ Mean teacher-forced token surprisal per answer position per arm (top figure); pe
 
 > **Figure.** *Within an arm, high-surprisal positions are not systematically less predictable.* One point per position slot (tokens 1–16, 32, 64, 128) per arm.
 
-The fast collapse is consistent with the prefix-absorption mechanism, and the distinct-style arm stays off-distribution longest — matching its persistent penalty. The first token dissociates the two quantities: external openings are the most surprising tokens yet the most predictable activations, plausibly because stereotyped answer openers occupy a low-variance activation region. Teacher-forced surprisal is not validated as behavioral adaptation; no on-policy read exists in this run.
+The fast collapse is consistent with the prefix-absorption mechanism, and the distinct-style arm stays off-distribution longest, consistent with its persistent style gap. The first token dissociates the two quantities: external openings are the most surprising tokens yet the most predictable activations, plausibly because stereotyped answer openers occupy a low-variance activation region. Teacher-forced surprisal is not validated as behavioral adaptation; no on-policy read exists in this run.
 
 ---
 **Repro:** ≈7 GPU-h across three GCE attempts (1× A100-80, `eps-issue-952`; attempts 1–2 aborted on bank prerequisites — a missing bank input file, then an overlong bank row — attempt 3 ran end-to-end) + ~1 min VM CPU for the 10,000-draw stats battery (59.6 s wall) and figures · Code @ [d30b153ac3](https://github.com/superkaiba/explore-persona-space/tree/d30b153ac301e2c2f52ac4ea38616ad2c8e4ab30/src/explore_persona_space/experiments/issue_952) (`run_952.py`, `ridge_battery.py`) and [scripts @ d30b153ac3](https://github.com/superkaiba/explore-persona-space/tree/d30b153ac301e2c2f52ac4ea38616ad2c8e4ab30/scripts) (`issue952_bank_build.py`, `issue952_stats.py`, `issue952_figures.py`) · Figures + committed stats: [figures/issue_952 @ a9f25d29d5](https://github.com/superkaiba/explore-persona-space/tree/a9f25d29d5577b3cbe10984594325092674848fa/figures/issue_952), [eval_results/issue_952/stats_summary.json @ a9f25d29d5](https://github.com/superkaiba/explore-persona-space/blob/a9f25d29d5577b3cbe10984594325092674848fa/eval_results/issue_952/stats_summary.json) · Headline eval JSONs (position / prefix / divergence / bank verification / split / validation matrix): [HF issue952_position_divergence/eval_results @ 5b62649](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5b62649cefb34902fd630f21630164e8d1d99764/issue952_position_divergence/eval_results) · Analysis tensors, 6 span files (`truncated == false` verified for all 6), surprisal arrays, per-context bootstrap inputs (59 files): [HF …/analysis_tensors @ 5b62649](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5b62649cefb34902fd630f21630164e8d1d99764/issue952_position_divergence/analysis_tensors) · Bank raw completions + judge outputs: [HF …/raw_completions @ 5b62649](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5b62649cefb34902fd630f21630164e8d1d99764/issue952_position_divergence/raw_completions) · Workload log: [HF …/logs @ 5b62649](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5b62649cefb34902fd630f21630164e8d1d99764/issue952_position_divergence/logs) · Reused completions (4 arms + derangement map + common-valid mask) from [#823](https://eps.superkaiba.com/tasks/823): [HF issue823_own_vs_external/raw_completions @ 8039d15f](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8039d15f30deb845765cbb24d9cdb8708a5e7b0f/issue823_own_vs_external/raw_completions) — fit: same base model and arm recipes; the fp16 re-capture passed the cos > 0.999 equivalence gate against the parent's fp32 means (worst min-cos 0.99957, 4,920/4,920 per arm) · Reused alignment reference from [#779](https://eps.superkaiba.com/tasks/779): [HF issue779_monitoring/analysis_tensors/pass_b @ c9407050](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c94070508aa1c1f9c015ceb072231a2e51b28b3f/issue779_monitoring/analysis_tensors/pass_b) — fit: extraction-path gate reference only, no fit inputs · Prompt source: `lmsys/lmsys-chat-1m` @ revision `200748d9d3cddcc9d782887541057aca0b18c5da` (gated) · WandB: n/a — no training.
