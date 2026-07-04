@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1010,
+  "highest_id": 1011,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -107,6 +107,13 @@
       "path": "tasks/completed/1010",
       "status": "completed",
       "title": "workflow-fix: thread disk requirement into RunPod CPU fallback (containerDiskInGb + refuse-on-infeasible)"
+    },
+    "1011": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1011",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN on orphaned committed per-context companion figures"
     },
     "102": {
       "has_clean_result": false,
