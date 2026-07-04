@@ -6392,8 +6392,8 @@
     "962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/962",
-      "status": "reviewing",
+      "path": "tasks/completed/962",
+      "status": "completed",
       "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
     },
     "963": {
