@@ -36,6 +36,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_958.md](https://github.com/superkaiba/explore-persona-space/blob/1564585c1303e20f8c344a26b3438a846aeae065/docs/methodology/issue_958.md) · [gist](https://gist.github.com/superkaiba/1776ed043cba0edaef3d6534584bf4da)
+
 ## Takeaways
 
 - Ridge maps fit at turns 2–4 of real LMSYS conversations transfer across turns with deficits of 0.000–0.023 skill against own-turn skill 0.45–0.49 (threshold 0.10; twin fit-noise floor ±0.01; n = 500) — near-symmetric in direction, and not explained by static inputs (the input distributions shift measurably with depth).
