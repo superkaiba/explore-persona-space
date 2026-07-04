@@ -34,6 +34,7 @@ from explore_persona_space.eval.alignment import JUDGE_SYSTEM_PROMPT
 from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
+    batch_stuck_threshold_hours,
     deadline_from_expires_at,
     retrieve_with_create_grace,
 )
@@ -355,6 +356,13 @@ def _submit_and_poll_batch(
       retrieve within ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create is
       retried with bounded backoff (read-after-write inconsistency, the #742
       shape); outside the window — or past the backoff schedule — it re-raises.
+    - **Stuck-batch cancel (#1019)**: a chunk at ``request_counts.succeeded == 0``
+      for >= ``EPS_BATCH_STUCK_HOURS`` (default 4h; ``<=0`` disables) since its
+      own create is CANCELED (once per chunk; a re-retrieved ``canceling``/
+      ``ended`` counts as accepted cancellation) and the loop keeps polling to
+      ``ended``; canceled rows surface as error dicts — this path has no retry
+      machinery, so a 4h-bounded completion with flagged error rows replaces
+      the prior up-to-24h park behind a wedged batch (#810).
 
     ``now_fn``/``sleep_fn`` are injectable for tests (default wall-clock +
     ``time.sleep``). Polling keeps the 30s->1.5x->120s backoff capped by the
@@ -378,6 +386,7 @@ def _submit_and_poll_batch(
         )
         deadline: _dt.datetime | None = None
         current_interval = poll_interval
+        stuck_canceled = False  # #1019: cancel a wedged chunk at most once
         while True:
             # #995: a 404 within BATCH_CREATE_404_GRACE_S of this chunk's own
             # create is retried with bounded backoff (read-after-write; the #742
@@ -416,6 +425,44 @@ def _submit_and_poll_batch(
                     batch = final
                     break
                 raise BatchDeadlineExceeded(batch_id, deadline)
+            # Stuck-batch escape (#1019, incident #810): zero succeeded past the
+            # threshold -> cancel ONCE (per-chunk local guard; this path has no
+            # state.json and no retry machinery, so no intent marker is needed)
+            # and keep polling — the API flips canceling -> ended and the
+            # collection below surfaces canceled rows as error dicts. Appended
+            # AFTER the ended-break and overdue checks (precedence load-bearing).
+            # ``created_at`` (captured right after batches.create) is the anchor.
+            if (
+                not stuck_canceled
+                and (stuck_hours := batch_stuck_threshold_hours()) is not None
+                and counts is not None
+                and counts.succeeded == 0
+                and (now_fn() - created_at).total_seconds() / 3600.0 >= stuck_hours
+            ):
+                import anthropic as anthropic_mod
+
+                logger.warning(
+                    "STUCK BATCH (legacy path): %s at succeeded=0 past %.1fh — canceling; "
+                    "canceled rows surface as error dicts (no retry machinery on this "
+                    "path) (#810 escape)",
+                    batch_id,
+                    stuck_hours,
+                )
+                try:
+                    client.messages.batches.cancel(batch_id)
+                except anthropic_mod.APIStatusError:
+                    # Race: the batch may already be canceling (out-of-band) or
+                    # ended. BOTH are accepted cancellation outcomes — the loop
+                    # harvests at ended either way. Anything else re-raises.
+                    final = client.messages.batches.retrieve(batch_id)
+                    if final.processing_status not in ("canceling", "ended"):
+                        raise
+                    logger.info(
+                        "Cancel of %s raced with state %s; accepted as canceled",
+                        batch_id,
+                        final.processing_status,
+                    )
+                stuck_canceled = True
             sleep_fn(current_interval)
             current_interval = min(current_interval * 1.5, max_poll_interval)
 
