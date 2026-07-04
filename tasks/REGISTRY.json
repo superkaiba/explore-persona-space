@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1017,
+  "highest_id": 1018,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -156,6 +156,13 @@
       "path": "tasks/proposed/1017",
       "status": "proposed",
       "title": "workflow-fix: codex twin round-bound 1-3 vs cap-5 delta rounds"
+    },
+    "1018": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1018",
+      "status": "proposed",
+      "title": "daily-fix: rubric-bearing JudgeCache._hash_key"
     },
     "102": {
       "has_clean_result": false,
