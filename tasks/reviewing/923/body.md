@@ -65,6 +65,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_923.md](https://github.com/superkaiba/explore-persona-space/blob/1a4d59a4ae271a3d036c00c2d671265949f9ae2b/docs/methodology/issue_923.md) · [gist](https://gist.github.com/superkaiba/ac16d1734da76e1234253dfa1a0e7a9b)
+
 ## Takeaways
 
 - Stitched context-only + query-only ridge reads beat the full-prompt last-token read at layer 18 on held-out families × queries: 0.540 vs 0.460 (UltraChat), 0.539 vs 0.498 (Betley), across all 28 layers — with the deficit concentrated in held-out format contexts and the full-prompt arm carrying roughly three times the stitched arm's bootstrap uncertainty.
