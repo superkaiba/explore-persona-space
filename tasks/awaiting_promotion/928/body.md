@@ -6,6 +6,7 @@ tags:
 - from-810
 - thinking-model
 - cot-decomposition
+- followup-auto
 created_at: '2026-07-03T11:47:21Z'
 has_clean_result: true
 parent_id: 810
