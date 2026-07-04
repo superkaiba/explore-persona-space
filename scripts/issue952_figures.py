@@ -73,10 +73,10 @@ ARM_LABEL = {
     "mismatch": "Mismatched (shuffled pairing)",
 }
 CATEGORY_LABEL = {
-    "china_politics": "Geo-political (cat-1)",
-    "model_identity": "Model identity (cat-2)",
-    "refusal_boundary": "Compliance boundary (cat-3)",
-    "style_format": "Style / formatting (cat-4)",
+    "china_politics": "Geo-political",
+    "model_identity": "Model identity",
+    "refusal_boundary": "Compliance boundary",
+    "style_format": "Style / formatting",
 }
 # One position axis: F16 (1..16), deciles (5%..95%), L16 aligned from the end
 # (-16..-1; -1 = trailing newline, -2 = end-of-turn token — template slots).
@@ -192,12 +192,14 @@ def hero2_matched_prefix(stats: dict, closure: dict, out_dir: pathlib.Path) -> N
         ax_bars.set_xticks(xs)
         ax_bars.set_xticklabels(labels, fontsize=6, rotation=35, ha="right")
         ax_bars.axhline(0, color="#444444", lw=0.8)
-        ax_bars.set_ylabel("Own - external gap G (matched subset,\nidentical target)")
+        ax_bars.set_ylabel(
+            "Own-answer R² minus external-answer R²\n(matched survivors, identical target)"
+        )
         set_title_subtitle(
             ax_bars,
             "Does absorbing the answer prefix close the own-advantage?",
-            f"Left bar: G at t=0; right bar: G at t (layer {l_star},\n"
-            "common survivors, identical target)",
+            f"Left bar: R² gap with no prefix absorbed (t=0); right bar: gap after t prefix\n"
+            f"tokens absorbed (layer {l_star}, common survivors, identical target)",
         )
     else:
         ax_bars.text(0.5, 0.5, "no matched cells (smoke)", ha="center", va="center")
