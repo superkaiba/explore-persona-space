@@ -13,7 +13,11 @@ What this module ships (post slice 6):
 * ``prepare`` — currently a no-op (provision triggers bootstrap inline).
 * ``launch`` — delegates to ``scripts/pod_lifecycle.py provision`` via
   the existing subprocess entrypoint and returns a :class:`RunHandle`
-  built from the resulting ``pods_ephemeral.json`` row.
+  built from the resulting ``pods_ephemeral.json`` row. On the
+  backend-executed leg (#909) the rendered launcher chains the
+  success-gated completion-sentinel write and (#977) waits on fresh
+  detached ``/workspace/logs/*.pid`` workloads before the sentinel
+  write (GCP #601 parity).
 * ``estimate_start`` — returns "now" (UTC); RunPod pods come up within
   a few minutes, so a precise estimate would be noise.
 * ``poll`` — delegates to :func:`scripts.poll_pipeline.poll_once` so
@@ -408,6 +412,44 @@ def _render_launch_script(
     supersession semantics as the experimenter step-11.3 clear). The
     launcher exits with the workload's own rc so the exit status is
     unchanged by the chain.
+
+    Detached-workload wait before the sentinel write (#977, the GCP #601
+    parity — ``gcp.py``'s find-newer wait): ``workload_cmd`` is expected
+    to BLOCK until the workload completes; a SELF-DAEMONIZING command
+    (one that setsid-forks the real driver and returns at daemonize
+    time) would otherwise publish ``phase=done`` minutes into a
+    multi-hour run. So the rc==0 branch, BEFORE the sentinel write,
+    waits on every live pid found in a FRESH ``/workspace/logs/*.pid``
+    (mtime at or after the in-launcher workload-start epoch, captured
+    immediately before ``workload_cmd``). Contract (write-before-return):
+    a detached workload MUST write its driver pid to such a fresh
+    pidfile BEFORE ``workload_cmd`` returns — the ``launch_issue_<N>.sh``
+    convention — for the wait to bind; a pidfile written only AFTER
+    ``workload_cmd`` returns may be missed by the loop's scan and
+    degrades to the pre-#977 behavior (premature sentinel) — the same
+    residual GCP #601 carries, documented, not fixed here. Two deliberate
+    mechanism deltas from the GCP reference: freshness is the INCLUSIVE
+    ``stat -c %Y >= $WORKLOAD_START_EPOCH`` (the verify-script idiom;
+    GCP's strictly-newer ``find -newer`` would miss a pidfile written in
+    the same second as the start-mark at coarse MooseFS mtime
+    granularity), and self-exclusion is by PID VALUE
+    (``[ "$wpid" = "$$" ]``, race-free at any mtime granularity — the
+    launcher writes its OWN pid to the canonical pidfile pre-workload,
+    so a naive port would self-deadlock) rather than by pidfile PATH — a
+    convention-following detached driver OVERWRITES the canonical
+    pidfile with its own pid, so a path-based skip would miss exactly
+    the driver that must be waited on, while ``$$`` cannot be reused
+    while this launcher is alive. Blocking workloads write no fresh
+    pidfile, so the wait is a no-op pass-through. No in-script timeout
+    (faithful parity — an in-script timeout would re-create the
+    premature-done class on a slow-but-healthy run); the wait is bounded
+    externally by the pod TTL + the poller's stall escalation + the
+    watcher's pod-safety pass (the GCP analogue is
+    ``--max-run-duration``). The sentinel is written after the wait
+    regardless of the DETACHED process's exit status (``kill -0``
+    polling cannot recover a non-child's exit code on either lane; the
+    detached driver's own results sentinel / failure classification is
+    the poller's outcome channel).
     """
     launcher = _launcher_path(issue)
     epoch_file = _launch_epoch_path(issue)
@@ -450,11 +492,38 @@ def _render_launch_script(
             'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
+            "WORKLOAD_START_EPOCH=$(date +%s)",
             workload_cmd,
             "WORKLOAD_RC=$?",
             "# Completion sentinel: written ONLY when the workload exited 0 (the",
             "# backend-owned twin of the GCP/SLURM terminal sentinel write).",
             'if [ "$WORKLOAD_RC" -eq 0 ]; then',
+            "  # Wait for detached workloads (#601 GCP parity, #977): a workload_cmd",
+            "  # that self-daemonizes (forks the real driver) returns immediately —",
+            "  # writing the sentinel here would publish done at daemonize time.",
+            "  # (Comment says 'forks', not the s-word: the liveness tests token-scan",
+            "  # the rendered script for the detach line's own tokens.) Contract: a",
+            "  # detached workload writes its pid to a fresh /workspace/logs/*.pid",
+            "  # (the launch_issue_<N>.sh convention). Freshness = stat mtime >=",
+            "  # workload-start epoch (inclusive, the verify-script predicate — a",
+            "  # strictly-newer find would miss a same-second pidfile at MooseFS",
+            "  # mtime granularity). Self-exclusion is by PID VALUE, never path:",
+            "  # a convention-following driver OVERWRITES the canonical pidfile,",
+            "  # so a path skip would miss it, while $$ cannot be reused while",
+            "  # this launcher is alive. Blocking workloads write no fresh pidfile",
+            "  # -> no-op. Bounded externally by the pod TTL + the poller's stall",
+            "  # escalation (the GCP analogue is --max-run-duration).",
+            "  for pf in /workspace/logs/*.pid; do",
+            '    [ -f "$pf" ] || continue',
+            '    [ "$(stat -c %Y "$pf" 2>/dev/null || echo 0)"'
+            ' -ge "$WORKLOAD_START_EPOCH" ] || continue',
+            '    wpid=$(cat "$pf" 2>/dev/null) || continue',
+            '    [ -n "$wpid" ] || continue',
+            '    [ "$wpid" = "$$" ] && continue',
+            '    echo "[launcher] waiting on detached workload pid=$wpid ($pf)"',
+            '    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
+            '    echo "[launcher] detached workload pid=$wpid exited"',
+            "  done",
             f"  mkdir -p {sentinel_dir}",
             f"  printf '%s\\n' '{sentinel_json}' > {sentinel_path}",
             "fi",
