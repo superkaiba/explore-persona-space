@@ -5239,7 +5239,10 @@ re-invocation).**
    window** — effective age is measured from the LATEST of the
    breadcrumb and any subsequent liveness marker (`epm:codex-task-*`,
    `epm:smoke-architecture-check`, `epm:proposed-tests`, or a
-   non-breadcrumb `epm:progress`): a healthy long-running round keeps
+   non-breadcrumb `epm:progress` — excluding anti-liveness notes: a
+   `deliberate-stop` stop record and `[autonomous_session_watch:...]` /
+   `[spawn-session:...]` telemetry never refresh the window, #810/#949):
+   a healthy long-running round keeps
    refreshing its window; a dead one goes silent and re-dispatches once
    the window expires. The mechanical form of this rule is
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
