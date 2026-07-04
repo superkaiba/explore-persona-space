@@ -1282,11 +1282,46 @@ def _issue_cells_for_handle(issue: int, handle) -> list:
     return []
 
 
+def _list_issue664_hub_files(repo_id: str, prefixes: tuple[str, ...]) -> set[str]:
+    """Union of server-side SCOPED listings for the wedge gate (#920/#988).
+
+    Replaces the bare full-repo ``list_repo_files`` on the ~1M-file data repo
+    (which wedges >600 s, #920) with one scoped tree walk per root prefix.
+    An absent prefix contributes zero files (EntryNotFoundError is mapped to
+    [] inside list_hf_files_under_path) — identical to a full listing having
+    no files under it. Transport/auth/RepositoryNotFound errors PROPAGATE
+    (the gate must fail loud, never fail open, before an irreversible
+    terminate).
+
+    NOTE the listing is now TOKEN-BEARING (``HfApi(token=HF_TOKEN)``) where
+    the old module-level ``huggingface_hub.list_repo_files`` call was
+    anonymous — on a token problem the failure direction is loud/safe (an
+    auth error propagates and blocks the terminate), never a silent
+    fail-open.
+    """
+    import os
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    files: set[str] = set()
+    for prefix in prefixes:
+        files.update(
+            list_hf_files_under_path(api, repo_id, prefix, repo_type="dataset", revision="main")
+        )
+    return files
+
+
 def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     """Per-cell three-state inputs-on-HF gate for the irreversible auto-terminate.
 
-    Classifies each selected cell ``complete | partial | absent`` from ONE fresh
-    ``list_repo_files`` (EXACT expected file set per S1, not prefix-presence).
+    Classifies each selected cell ``complete | partial | absent`` from a UNION
+    of three server-side SCOPED listings (EXACT expected file set per S1, not
+    prefix-presence) — the three root prefixes are the ONLY prefixes
+    ``issue664_dispatch._classify_cell_hub_state`` matches files against, so
+    the union is a superset of every file the classifier can see (#988).
     Terminate is allowed iff there are ZERO partial cells — a COMPLETE cell's
     data is preserved, a not-yet-run ABSENT cell is rerunnable, and only a
     half-uploaded PARTIAL cell would lose recoverable work.
@@ -1303,12 +1338,12 @@ def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     scripts_dir = str(_Path(__file__).resolve().parent)
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-    import huggingface_hub
     import issue664_common as C
     import issue664_dispatch as D
 
-    files = set(
-        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    files = _list_issue664_hub_files(
+        C.HF_DATA_REPO,
+        (C.HF_RAW_COMPLETIONS_PREFIX, C.HF_STORE_PREFIX, C.HF_MARKER_SLOT_PREFIX),
     )
     complete: list[str] = []
     partial: list[str] = []

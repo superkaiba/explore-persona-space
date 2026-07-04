@@ -436,13 +436,20 @@ def test_hf_hub_upload():
     check("hf_upload_returns_path", bool(result), f"got: '{result}'")
     log(f"Upload completed in {elapsed:.0f}s: {result}")
 
-    # Verify files on hub
+    # Verify files on hub (scoped walk, #920/#988: never full-list the repo
+    # to confirm one adapter subfolder)
     if result:
         from huggingface_hub import HfApi
 
+        from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
         api = HfApi(token=hf_token)
-        files = api.list_repo_files(repo_id="superkaiba1/explore-persona-space", repo_type="model")
-        adapter_files = [f for f in files if f.startswith("integration_test/adapter_test/")]
+        adapter_files = list_hf_files_under_path(
+            api,
+            "superkaiba1/explore-persona-space",
+            "integration_test/adapter_test",
+            repo_type="model",
+        )
         check("hf_files_on_hub", len(adapter_files) > 0, f"found {len(adapter_files)} files")
         log(f"  Files on hub: {adapter_files[:5]}...")
 
