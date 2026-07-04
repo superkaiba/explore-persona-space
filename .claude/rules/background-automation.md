@@ -170,7 +170,8 @@ themselves in a worktree.
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the gate-push pass, the program-orchestrator recovery pass, the
-stale-registration pass, the CPU/memory-pressure guard pass, and three session reapers — the session-vs-status
+stale-registration pass, the CPU/memory-pressure guard pass, the
+triage-observer pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
@@ -622,6 +623,61 @@ smoke — dry-run performs zero writes and zero `subprocess.run`). NOTE: the
 disk-guard ack-sentinel mechanism is DELIBERATELY omitted here — CPU/memory
 episodes self-terminate on recovery (unlike a persistently-full disk), so the
 recovery reset already bounds re-alert churn.
+
+**Post-hoc external-marker triage observer (task #967, `triage_observer_pass`).**
+A daemon-INDEPENDENT, **NON-GATING** pass (runs every 10-min tick in the
+daemon-independent block right after `cpu_guard_pass`) auditing the `/issue`
+Step 9 pre-dispatch external-marker triage duty POST-HOC (origin incident
+#779: 10 unread external audit markers, an 18–20h serial grid launched
+anyway). It sweeps REGISTRY tasks at ACTIVE ∪ {`awaiting_promotion`,
+`blocked`} whose `events.jsonl` mtime falls inside a 48h lookback
+(`EPM_TRIAGE_OBSERVER_LOOKBACK_H`), re-runs the #889 enumerator's window
+semantics at each recent HISTORICAL dispatch record
+(`task_workflow.audit_dispatch_triage`; per-task cursor so each record is
+evaluated exactly once), and flags three violation classes: (a)
+`launch-missing-line` (**warn**) — a launch marker with no triage line and no
+adjacent boundary triage record within `EPM_TRIAGE_OBSERVER_ADJACENCY_S`
+(30 min); (b) `breadcrumb-missing-line` — a line-less `stage-dispatch`
+breadcrumb, THREE-WAY classified on its normalized stage token: a
+known-benign family (`TRIAGE_NONCOMPUTE_STAGES` — extensible: append the
+token + a live-example citation) never flags, POSITIVE compute evidence (a
+`pid=` field or an exact `TRIAGE_COMPUTE_STAGE_TOKENS` match — grid / sweep /
+battery / fit / fits / relaunch, never substring) is **warn**, an unknown
+token is **info**; (c) `none-with-candidates` — a `none` disposition whose
+pre-record boundary window re-enumerates non-empty after a 120s grace trim
+(`EPM_TRIAGE_OBSERVER_GRACE_S`) — **info**, escalated to **warn** only on an
+external-signature hit (`TRIAGE_EXTERNAL_SIGNATURES`). A MATURITY GATE
+defers records younger than the adjacency window (the compliant adjacent-next
+note may still land) — the cursor advances only past matured records, so a
+record is judged exactly once, after its compliance window closes. Records
+before `TRIAGE_DUTY_EPOCH_TS` (2026-07-03T05:00Z, the #889 landing) are
+legacy and never flagged. **Channels:** every flag appends one row to the
+dedicated sidecar `.claude/cache/triage-observer-events.jsonl`; `warn` flags
+additionally get one deduped fail-soft `_telegram_push` digest line and one
+`epm:progress` review-nudge note on the task (anti-liveness
+`[autonomous_session_watch:triage-observer]` sentinel; its `by="unknown"`
+deliberately makes the note a triage candidate at the task's NEXT dispatch —
+the flag is itself the advisory), capped at `EPM_TRIAGE_OBSERVER_MARKER_CAP`
+(5) marker posts per tick — a warn beyond the cap is PERMANENTLY
+sidecar+push-only, never deferred. **Fire-once dedup:** key
+`(issue, record_ts, violation-class)` in the state singleton
+`~/.eps-autonomous/triage-observer.json` (atomic write; entries self-pruned
+at `completed`/`archived`); a violation is a fixed historical record, so
+there is no re-alert and no ack sentinel. **NON-GATING is a hard invariant:**
+the pass never mutates task status, never stops a session, never blocks a
+dispatch — pinned by tests at BOTH the subprocess-argv and the
+in-process-mutator levels. **Invisible-by-construction residuals** (the
+observer cannot see them): (i) a LYING triage line — mechanical presence +
+enumerator-consistency are audited, truthfulness is not (a `2 applied` line
+that misdescribes what was applied passes); (ii) record-less launches —
+compute started via direct SSH with no launch marker and no breadcrumb
+leaves nothing to audit (the `/issue` skill-drift rule is the control for
+that class). Known bounded miss: a 9a-ter compute fit dispatched under a
+`free-analysis-followup` breadcrumb with no triage line surfaces only at
+`info` (its duty is content-dependent). Kill switch
+`EPM_DISABLE_TRIAGE_OBSERVER=1`; `--triage-observer-only` runs just this
+pass (pair with `--dry-run` for a live smoke — dry-run performs zero writes
+and zero `subprocess.run`).
 
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 

@@ -791,6 +791,18 @@ Sibling: Step 3.8 covers the BODY half of this family — a test that stubs the
 production function itself launders a never-executed body exactly as a hollow
 gate launders an unverified hot loop.
 
+**Hub-call-scoping sub-check (any diff type).** When the diff INTRODUCES or
+modifies a Hub verify / staging / existence-probe call against the ~1M-file
+data repo, confirm it is prefix-scoped (`list_repo_tree(path_in_repo=<prefix>)`
+for subtree listings, `file_exists` for single-path probes) with a bounded
+outer retry on a first-page 429/5xx — an unscoped full-tree `list_repo_files`
+/ `snapshot_download` there is a substantive Major (recipe:
+`.claude/rules/gotchas.md` #833). Plan-time twin for REUSED, diff-untouched
+helpers: `.claude/rules/artifact-reuse.md` check (i) leg (3) (#810: a reused
+verify crawl wedged a live A100 run in 429 storms). Record
+`Hub-call-scoping sub-check: N/A — no data-repo Hub calls in diff` when
+absent. Full listings of the SMALL model repo are fine — data repo only.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a

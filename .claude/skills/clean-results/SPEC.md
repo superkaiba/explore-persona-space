@@ -641,6 +641,14 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   ``same-issue follow-up round `<followup_label>` `` clause, the
   machine-countable form check 20's round-scaled prose budget reads;
   #921) · created/run dates.
+  Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
+  the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
+  scanning — the quote is provenance text, not a provenance link; #959;
+  applies identically to grandfathered v3 `## Reproducibility` bodies).
+  Pinned-link requirements continue to bind on every non-quoted footer
+  row. A verbatim prompt containing URLs must `>`-prefix EVERY prompt
+  line — an un-prefixed lazy-continuation line stays scanned
+  (fail-closed).
   This footer is the ONLY place run-context provenance lives in the body
   (the "state facts, not sources" rule still bans weaving prompt/person
   attributions into Takeaways / Results prose).

@@ -276,5 +276,6 @@ typically fires BOTH rules (statistical validity there, compute shape here).
 
 **Sibling check:** `.claude/rules/artifact-reuse.md` item (i) — reusing a parent's
 fit/analysis helper requires the plan-time throughput inspection (inner loop batched?
-device parametrized?) against this rule, with failures fixed at the source module
+device parametrized? data-repo Hub calls scoped?) against this rule, with failures
+fixed at the source module
 (#761/#763/#812).

@@ -515,6 +515,26 @@ for the cheap intents and SUPERSEDES that terminal for them ONLY:
   terminal, NOT a RunPod fallback (the watcher's capacity-retry pass keys on
   `no_compute_available`, so the distinct reason means a structurally-unservable
   `cpu-bigmem` RunPod launch is never auto-retried).
+- **Footprint feasibility gate + disk threading (#1010, incident #958).** A
+  plan-STATED footprint (`spec.extra["boot_disk_gb"]` / `["min_ram_gb"]`, from
+  `dispatch_issue.py --boot-disk-gb` / `--min-ram-gb`) is checked at
+  `_runpod_terminal_rung` against `router.RUNPOD_CPU_INSTANCE_CAPS`
+  (probe-verified effective `containerDiskInGb` caps — cpu3g-2-8 → 20,
+  cpu3c-8-16 → 50 honored floor — plus fixed RAM); an unsatisfiable footprint
+  refuses BEFORE any RunPod API call with the typed
+  `CpuFallbackInfeasibleError` / `reason: cpu_fallback_infeasible_for_plan`
+  (a `CpuExhaustedNoRunpodLaneError` subclass; NOT in
+  `TRANSIENT_CAPACITY_REASONS` — the instance can never grow to fit the
+  plan). A feasible `boot_disk_gb` is THREADED into the provision argv
+  (`--container-disk-gb max(50, boot_disk_gb)`, `RunPodBackend.launch`), and
+  `pod_lifecycle`'s CPU branch clamps a default-band over-cap effective
+  payload to the instance cap (the untouched default effective 50 exceeds the
+  cpu3g cap — pre-#1010 every default cpu-small RunPod provision failed
+  validation) while an explicit above-band request refuses pre-API.
+  ADOPTION: launch composers pass `--boot-disk-gb` whenever a CPU stage sizes
+  disk > 50 GB and `--min-ram-gb` whenever it sizes RAM > 16 GB — flag-less
+  launches keep today's behavior (experimenter pre-launch gate as the sole
+  defense).
 
 Tests of record: `tests/test_router.py` (`test_router_cpu_small_capacity_miss_falls_over_to_runpod`,
 `test_router_cpu_intent_capacity_miss_no_runpod_fallback` — the cpu-bigmem
