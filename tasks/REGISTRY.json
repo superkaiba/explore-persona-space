@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1020,
+  "highest_id": 1021,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -184,6 +184,13 @@
       "path": "tasks/proposed/1020",
       "status": "proposed",
       "title": "daily-fix: codex_task result-fetch retry + job re-attach"
+    },
+    "1021": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1021",
+      "status": "proposed",
+      "title": "daily-fix: flip stale blocked to running on relaunch"
     },
     "104": {
       "has_clean_result": false,
