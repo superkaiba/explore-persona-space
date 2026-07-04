@@ -870,13 +870,29 @@ def test_upload_class_marker_verify_missing_rollout_fails_loud(tmp_path, monkeyp
     assert "issue906_pilot/marker/verify" not in {b.arguments["path_in_repo"] for b in folder_calls}
 
 
-def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
-    """r9 CONCERN genreduce-rollout-text-not-persisted (wiring): the REAL
-    _verify_marker_class INLINE path (marker_verify_fn seam = None) persists
-    greedy rollout text for BOTH model sides to
-    verify/marker_rollouts__{base,trained}.jsonl and reports the paths under
-    rollout_paths. Only the HF weights / tokenizer / PEFT boundaries are faked;
-    _read_marker_slots + validate_marker_slot_record run REAL."""
+GAUGE_FREE_ADAPTER_CONFIG = {
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "modules_to_save": None,
+    "r": 16,
+    "lora_alpha": 32,
+    "use_rslora": True,
+}
+
+
+def _write_adapter_config(adapter_dir: Path, config: dict) -> Path:
+    """Write an on-disk adapter_config.json (the r14 fix reads it from disk)."""
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    (adapter_dir / "adapter_config.json").write_text(json.dumps(config))
+    return adapter_dir
+
+
+def _marker_verify_fakes(monkeypatch):
+    """Fake ONLY the HF weights / tokenizer / PEFT boundaries for _verify_marker_class.
+
+    Returns the FakeLM class so callers can spy on the PEFT load. The gauge
+    assert itself is NOT faked — post-r14 it parses the on-disk
+    adapter_config.json, so tests control it via the file contents.
+    """
     import peft
     import transformers
 
@@ -886,9 +902,6 @@ def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
         QWEN_IM_END_ID,
     )
 
-    cfg = _cfg(tmp_path)
-    class_dir = cfg.out_root / "marker"
-    behavior = BEHAVIORS["marker"]
     vocab = 200000  # >= marker id 83399 and im_end id 151645
 
     class FakeLM:
@@ -911,11 +924,6 @@ def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
             out.logits = torch.zeros(1, input_ids.shape[1], vocab)
             return out
 
-    class FakeTrained(FakeLM):
-        def __init__(self):
-            # .get("default", None) -> None skips the gauge assert
-            self.peft_config: dict = {}
-
     class FakeTok:
         eos_token_id = QWEN_IM_END_ID
 
@@ -933,10 +941,28 @@ def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
     monkeypatch.setattr(
         transformers.AutoModelForCausalLM, "from_pretrained", lambda *a, **k: FakeLM()
     )
-    monkeypatch.setattr(peft.PeftModel, "from_pretrained", lambda *a, **k: FakeTrained())
+    monkeypatch.setattr(peft.PeftModel, "from_pretrained", lambda *a, **k: FakeLM())
+    return FakeLM
+
+
+def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
+    """r9 CONCERN genreduce-rollout-text-not-persisted (wiring): the REAL
+    _verify_marker_class INLINE path (marker_verify_fn seam = None) persists
+    greedy rollout text for BOTH model sides to
+    verify/marker_rollouts__{base,trained}.jsonl and reports the paths under
+    rollout_paths. Only the HF weights / tokenizer / PEFT boundaries are faked;
+    _read_marker_slots + validate_marker_slot_record + the on-disk gauge
+    assert (r14 fix) run REAL."""
+    from explore_persona_space.artifacts.recipe import QWEN_IM_END_ID
+
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "marker"
+    behavior = BEHAVIORS["marker"]
+    adapter_dir = _write_adapter_config(tmp_path / "adapter", GAUGE_FREE_ADAPTER_CONFIG)
+    _marker_verify_fakes(monkeypatch)
 
     result = pilot._verify_marker_class(
-        behavior, str(tmp_path / "adapter"), cfg, pilot.PilotSeams(), class_dir
+        behavior, str(adapter_dir), cfg, pilot.PilotSeams(), class_dir
     )
 
     rollout_paths = result["rollout_paths"]
@@ -953,6 +979,48 @@ def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
         assert all(r["completion"] == f"tok:11,12,{QWEN_IM_END_ID}" for r in rows)
     # The three-space reduce still ran on the same records.
     assert len(result["per_context"]) == n_contexts
+
+
+def test_verify_marker_class_gauge_assert_parses_adapter_config_from_disk(tmp_path, monkeypatch):
+    """r14 crash regression (epm:failure v5): the inline gauge assert parses the
+    adapter's ON-DISK adapter_config.json as a dict and TRIPS on a
+    gauge-violating config BEFORE the PEFT load. FAILS PRE-FIX: the pre-r15
+    code passed trained_model.peft_config's LoraConfig OBJECT (AttributeError
+    in production; silently SKIPPED under the r9 test's empty peft_config fake,
+    so a violating on-disk config raised nothing)."""
+    import peft
+
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "marker"
+    behavior = BEHAVIORS["marker"]
+    adapter_dir = _write_adapter_config(
+        tmp_path / "adapter",
+        {**GAUGE_FREE_ADAPTER_CONFIG, "target_modules": ["q_proj", "lm_head"]},
+    )
+    _marker_verify_fakes(monkeypatch)
+
+    def _peft_load_must_not_run(*a, **k):  # the assert precedes the load
+        raise AssertionError("PeftModel.from_pretrained ran before the gauge assert")
+
+    monkeypatch.setattr(peft.PeftModel, "from_pretrained", _peft_load_must_not_run)
+
+    with pytest.raises(AssertionError, match="gauge-free"):
+        pilot._verify_marker_class(behavior, str(adapter_dir), cfg, pilot.PilotSeams(), class_dir)
+
+
+def test_verify_marker_class_missing_adapter_config_fails_loud(tmp_path, monkeypatch):
+    """r14 fix corollary: a missing adapter_config.json fails LOUD (RuntimeError
+    naming the path) — never a silent gauge-assert skip (the pre-fix
+    .get('default', None) -> None branch skipped the assert entirely)."""
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "marker"
+    behavior = BEHAVIORS["marker"]
+    adapter_dir = tmp_path / "adapter"
+    adapter_dir.mkdir()  # exists, but carries NO adapter_config.json
+    _marker_verify_fakes(monkeypatch)
+
+    with pytest.raises(RuntimeError, match=r"adapter_config\.json not found"):
+        pilot._verify_marker_class(behavior, str(adapter_dir), cfg, pilot.PilotSeams(), class_dir)
 
 
 def test_upload_pilot_dir_explicit_filenames_fail_loud_on_missing(tmp_path):

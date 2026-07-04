@@ -1525,13 +1525,28 @@ def _verify_marker_class(
             base_model_hf, eval_contexts, rollout_path=Path(rollout_paths["base"]), **_slots_kwargs
         )
 
-        # Load adapter for trained reads; validate gauge-freedom first.
+        # Gauge assert BEFORE the PEFT load: parse the adapter's on-disk
+        # adapter_config.json — assert_gauge_free_adapter_config takes the
+        # PARSED dict (every other repo caller passes
+        # json.loads(cfg_path.read_text()); eval_issue562_panel.py,
+        # issue734_dispatch.py, behavior_testbed_545/eval_battery.py). The r14
+        # production crash (epm:failure v5) passed the PEFT LoraConfig OBJECT
+        # from trained_model.peft_config instead, which has no .get ->
+        # AttributeError at the verify phase. A missing config file fails loud
+        # — never a silent gauge-assert skip.
+        adapter_cfg_path = Path(adapter_path) / "adapter_config.json"
+        if not adapter_cfg_path.is_file():
+            raise RuntimeError(
+                f"adapter_config.json not found at {adapter_cfg_path}; cannot run the "
+                "gauge-freedom assert before the marker logit read "
+                "(marker-leakage-measurement.md § Gauge assert)."
+            )
+        assert_gauge_free_adapter_config(
+            json.loads(adapter_cfg_path.read_text()), context=str(adapter_cfg_path)
+        )
+        # Load adapter for trained reads (gauge-freedom already validated).
         trained_model = PeftModel.from_pretrained(base_model_hf, adapter_path)
         trained_model.eval()
-        # Gauge assert: LoRA must not touch lm_head/embed_tokens.
-        adapter_cfg = trained_model.peft_config.get("default", None)
-        if adapter_cfg is not None:
-            assert_gauge_free_adapter_config(adapter_cfg, context="marker_verify")
         slot_records_trained = _read_marker_slots(
             trained_model,
             eval_contexts,
