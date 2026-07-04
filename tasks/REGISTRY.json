@@ -26,8 +26,8 @@
     "1000": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1000",
-      "status": "proposed",
+      "path": "tasks/planning/1000",
+      "status": "planning",
       "title": "daily-fix: thin trigger-dense wording from issue-tick surfaces"
     },
     "1001": {
