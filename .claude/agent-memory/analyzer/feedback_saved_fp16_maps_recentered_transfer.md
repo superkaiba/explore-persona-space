@@ -15,3 +15,10 @@ Two load-bearing steps:
    VM `/` is tight; replicate the loader's all-layer NaN keep-mask before slicing one layer so row
    sets match the run. Staging on the data disk: `/mnt/eps-data` ROOT is root-owned — write under
    `/mnt/eps-data/thomasjiralerspong/`.
+3. **Track-S chat cell S1 is slots[:,0] → profiles[:,1]** (`issue825_fit_cells._normalize_cell`:
+   Track S = "assistant slot -> a1 profile", target_turn_index **1**, NOT 0). A hand-rolled streamed
+   loader that slices profiles[:,0] silently reproduces a WRONG Y (#931 r3: transfer read 0.023 vs
+   the committed 0.073; caught only by the validate-against-a-committed-row-FIRST step, then cost a
+   full 43 GB re-stream). Cache the sliced (X, Y, ids) npz right after streaming so a downstream
+   crash never re-streams; shards are bf16 — convert via `t.float().numpy()`, never `np.asarray`.
+   Also: the store has 10 .pt shards (the "20 files" count includes .json sidecars).
