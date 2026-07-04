@@ -5625,7 +5625,8 @@ cells × folds × draws × epochs and the projected wall-time it implies;
 (2) the NAMED batched helper implementing the inner loop (e.g.
 `analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
 `analysis/null_battery.py`), or why the work is genuinely not batchable;
-(3) for reused parent code, that its inner loop + device routing were
+(3) for reused parent code, that its inner loop, device routing, + data-repo
+Hub-call scoping were
 INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
