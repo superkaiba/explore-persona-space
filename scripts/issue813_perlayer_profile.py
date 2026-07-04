@@ -66,6 +66,7 @@ import issue658_fit_predictors as fit658  # noqa: E402
 import issue667_marker_mapchange as marker_mc  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue813_save_maps as savemaps813  # noqa: E402
+from issue813_per_example_maps import _require_npz_keys  # noqa: E402  (fail-loud NPZ preflight)
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
@@ -153,6 +154,9 @@ def c_C_drift_per_layer(
     """
     path = reduced_root / behavior / substrate / "summary.npz"
     d = np.load(path, allow_pickle=True)
+    # v7 concern `perlayer-npz-key-coverage-preflight`: fail loud on missing keys
+    # BEFORE any keyed read (was a bare d["c_C_base"] read).
+    _require_npz_keys(path, d, ("c_C_base", "c_C_trained"))
     c0 = np.asarray(d["c_C_base"], dtype=np.float64)  # (n, 28, HIDDEN)
     cp = np.asarray(d["c_C_trained"], dtype=np.float64)
     assert c0.shape[1:] == (N_LAYERS, HIDDEN), c0.shape
@@ -239,10 +243,65 @@ def profile_cell(
         "marker_two_read": behavior == "marker",
         "layers": list(layers),
         "per_layer": rows,
+        "regime_version": PERLAYER_REGIME_VERSION,
         "git_sha": _git_sha(),
         "hf_revision": HF_REVISION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+
+
+# Bump when an output-affecting code change lands. Committed profiles produced
+# before the regime stamp existed are grandfathered as version 1 (this retrofit
+# changes no compute code). Part of the resume regime key — v7 concern
+# `perlayer-resume-stale-regime`.
+PERLAYER_REGIME_VERSION = 1
+_PROFILE_SCHEMA_KEYS = (
+    "behavior",
+    "substrate",
+    "headline_layer",
+    "layers",
+    "per_layer",
+    "hf_revision",
+)
+_ROW_SCHEMA_KEYS = ("layer", "delta_over_floor", "delta_med", "floor_combined_p95", "c_C_drift_med")
+
+
+def _profile_resume_valid(
+    path: Path, behavior: str, substrate: str, layers: tuple[int, ...]
+) -> bool:
+    """Exact-regime resume predicate (v7 concern `perlayer-resume-stale-regime`).
+
+    A cached profile is reused IFF it parses AND carries the schema keys AND its
+    EXACT layer list matches the requested one (per-row `layer` values included,
+    not just the count) AND its pinned HF revision + headline layer + regime
+    version match — never row count alone (the prior predicate compared only
+    ``len(per_layer) == len(layers)``).
+    """
+    try:
+        obj = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("[phase=resume] cached %s unreadable (%s) — recompute", path.name, e)
+        return False
+    missing = [k for k in _PROFILE_SCHEMA_KEYS if k not in obj]
+    if missing:
+        logger.warning("[phase=resume] cached %s missing keys %s — recompute", path.name, missing)
+        return False
+    checks = {
+        "behavior": obj.get("behavior") == behavior,
+        "substrate": obj.get("substrate") == substrate,
+        "headline_layer": obj.get("headline_layer") == HEADLINE_LAYER,
+        "hf_revision": obj.get("hf_revision") == HF_REVISION,
+        # absent regime_version == grandfathered v1 (pre-stamp committed profiles)
+        "regime_version": obj.get("regime_version", 1) == PERLAYER_REGIME_VERSION,
+        "layer_list": list(obj.get("layers", [])) == list(layers)
+        and [r.get("layer") for r in obj.get("per_layer", [])] == list(layers),
+        "row_schema": all(all(k in r for k in _ROW_SCHEMA_KEYS) for r in obj.get("per_layer", [])),
+    }
+    bad = [k for k, ok in checks.items() if not ok]
+    if bad:
+        logger.warning("[phase=resume] cached %s regime mismatch on %s — recompute", path.name, bad)
+        return False
+    return True
 
 
 def equivalence_gate(cell_profile: dict, delta_dir: Path) -> tuple[bool, str]:
@@ -316,20 +375,26 @@ def main() -> int:
     for behavior in args.behaviors:
         for substrate in args.substrates:
             out_path = args.out_dir / f"{behavior}__{substrate}.json"
-            if out_path.exists() and not args.no_resume:
+            # v7 concern `perlayer-resume-stale-regime`: exact-regime predicate
+            # (schema keys + exact layer list + pinned rev + regime version),
+            # never the prior count-only `len(per_layer) == len(layers)`.
+            if (
+                out_path.exists()
+                and not args.no_resume
+                and _profile_resume_valid(out_path, behavior, substrate, layers)
+            ):
                 existing = json.loads(out_path.read_text())
-                if len(existing.get("per_layer", [])) == len(layers):
-                    logger.info(
-                        "[phase=perlayer] %s/%s resume-skip (%d layers present)",
-                        behavior,
-                        substrate,
-                        len(layers),
-                    )
-                    # Re-gate the loaded profile so a resumed run still validates against L14.
-                    if HEADLINE_LAYER in layers:
-                        ok, detail = equivalence_gate(existing, args.delta_dir)
-                        gate_results.append((f"{behavior}/{substrate}", ok, detail))
-                    continue
+                logger.info(
+                    "[phase=perlayer] %s/%s resume-skip (exact regime match, %d layers)",
+                    behavior,
+                    substrate,
+                    len(layers),
+                )
+                # Re-gate the loaded profile so a resumed run still validates against L14.
+                if HEADLINE_LAYER in layers:
+                    ok, detail = equivalence_gate(existing, args.delta_dir)
+                    gate_results.append((f"{behavior}/{substrate}", ok, detail))
+                continue
             logger.info(
                 "[phase=perlayer] profile %s/%s (%d layers)", behavior, substrate, len(layers)
             )
