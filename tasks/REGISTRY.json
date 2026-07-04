@@ -5333,7 +5333,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/825",
       "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells \u2014 including a weak user-turn map (MLP R\u00b2 0.19\u20130.23) that the linear probe misses entirely (MODERATE confidence)"
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells \u2014 including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,

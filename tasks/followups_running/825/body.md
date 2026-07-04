@@ -1,8 +1,8 @@
 ---
 title: The context→answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct
   strength and is nonlinearly recoverable across two-turn cells — including a weak
-  user-turn map (MLP R² 0.19–0.23) that the linear probe misses entirely (MODERATE
-  confidence)
+  user-turn map, replicated on real human conversations, that the linear probe misses
+  entirely (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
