@@ -914,7 +914,7 @@ def _split_mlp_eval(Xg, W1, b1, W2, b2, mu, sd):
     return torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
 
 
-def fit_batched_split_mlp(
+def fit_batched_split_mlp(  # noqa: C901 -- linear batched trainer; loss selector + parity options add branches
     groups: list[SplitMLPGroup],
     *,
     seed: int = DEFAULT_MLP_SEED,
@@ -926,17 +926,38 @@ def fit_batched_split_mlp(
     chunk_size: int = 8,
     num_threads: int | None = None,
     smooth_l1_beta: float = 1.0,
+    loss: str = "smooth_l1",
+    standardize_inputs: bool = True,
+    patience: int | None = None,
 ) -> SplitMLPResult:
     """Fit ALL groups' fixed-split multi-output MLPs as one batched ensemble.
 
     Member ``g`` is a ``Linear(d_in, hidden) → GELU → Linear(hidden, p)`` net
     trained on group ``g``'s ``X_train → Y_train`` with AdamW(lr, wd) + SmoothL1
-    (``smooth_l1_beta``), standardized on the group's own train rows. When
+    (``smooth_l1_beta``; ``loss="mse"`` swaps train AND val loss to MSE — the
+    #931 registered default-preserving extension so the batched fitter can
+    reproduce ``fit_h.mlp_fit_predict``'s MSE recipe for the G1b parity fit),
+    standardized on the group's own train rows. When
     validation is supplied, the per-member BEST-validation-loss params are kept
     (batched early stopping — equivalent to patience≥remaining-epochs); else the
     final-epoch params. Chunked over groups so peak memory scales with
     ``chunk_size × n × d`` (the #841 tensors are large-d, unlike #722's tiny-d
     LOCO folds — chunk small).
+
+    Two further default-preserving #931 parent-parity options (both needed so
+    the batched fitter reproduces ``fit_h.mlp_fit_predict`` EXACTLY — the r1
+    G1b recipe-mismatch fix): ``standardize_inputs=False`` skips the internal
+    per-member train-row standardization (identity mu=0/sd=1) for callers that
+    pre-standardize on the parent's FULL fold-train stats (the parent
+    standardizes BEFORE its val split; the internal path standardizes on the
+    post-split train rows only). ``patience=<k>`` (requires validation) applies
+    the parent's per-member early stopping: an improvement is
+    ``vloss < best_val - 1e-6`` (the parent's threshold), a member whose val
+    loss has not improved for ``k`` consecutive epochs is FROZEN at its best
+    snapshot, and the epoch loop breaks once every member in the chunk has
+    stopped. Defaults (``True``/``None``) are bit-identical to the prior
+    behavior (``vloss < best_val``, no freeze — pinned by
+    ``tests/test_vectorized_split_mlp.py``).
 
     SEEDING: each group's init is drawn under
     ``torch.manual_seed(split_group_init_seed(seed, group.key))`` — a stable
@@ -954,8 +975,21 @@ def fit_batched_split_mlp(
     """
     from torch.func import stack_module_state
 
+    assert loss in ("smooth_l1", "mse"), f"unknown loss {loss!r}"
+
+    def _loss_per_member(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """Per-member (c,) mean loss under the selected criterion."""
+        if loss == "mse":
+            return torch.nn.functional.mse_loss(pred, target, reduction="none").mean(dim=(1, 2))
+        return torch.nn.functional.smooth_l1_loss(
+            pred, target, reduction="none", beta=smooth_l1_beta
+        ).mean(dim=(1, 2))
+
     if not groups:
         return SplitMLPResult({}, {}, {}, 0, chunk_size)
+    if patience is not None:
+        assert patience > 0, f"patience must be positive, got {patience}"
+        assert groups[0].X_val is not None, "patience early stopping requires validation splits"
     if num_threads is not None and device == "cpu":
         torch.set_num_threads(int(num_threads))
 
@@ -1028,10 +1062,16 @@ def fit_batched_split_mlp(
         Xval = Xval_g[sl].to(dev) if has_val else None
         Yval = Yval_g[sl].to(dev) if has_val else None
 
-        # Per-group train-only standardization (ddof=1 via the SS form).
-        mu = Xtr.mean(1)  # (c, d_in)
-        var = Xtr.var(1, correction=1)  # (c, d_in)
-        sd = var.clamp(min=0.0).sqrt() + 1e-6
+        if standardize_inputs:
+            # Per-group train-only standardization (ddof=1 via the SS form).
+            mu = Xtr.mean(1)  # (c, d_in)
+            var = Xtr.var(1, correction=1)  # (c, d_in)
+            sd = var.clamp(min=0.0).sqrt() + 1e-6
+        else:
+            # Caller pre-standardized (parent-parity: full fold-train stats
+            # applied BEFORE the val split) — identity transform inside.
+            mu = torch.zeros((c, d_in), device=dev)
+            sd = torch.ones((c, d_in), device=dev)
 
         for w in (W1, b1, W2, b2):
             w.requires_grad_(True)
@@ -1040,22 +1080,25 @@ def fit_batched_split_mlp(
         best_val = torch.full((c,), float("inf"), device=dev)
         best_epoch = torch.full((c,), -1, dtype=torch.long, device=dev)
         best = {k: v.detach().clone() for k, v in (("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2))}
+        bad = torch.zeros((c,), dtype=torch.long, device=dev)
+        stopped = torch.zeros((c,), dtype=torch.bool, device=dev)
         pred = per_member = None  # keep bound for the del below at max_epochs=0 (#926)
         for epoch in range(max_epochs):
             opt.zero_grad(set_to_none=True)
             pred = _split_mlp_eval(Xtr, W1, b1, W2, b2, mu, sd)  # (c, n_train, p)
-            per_member = torch.nn.functional.smooth_l1_loss(
-                pred, Ytr, reduction="none", beta=smooth_l1_beta
-            ).mean(dim=(1, 2))  # (c,)
+            per_member = _loss_per_member(pred, Ytr)  # (c,)
             per_member.sum().backward()
             opt.step()
             if has_val:
                 with torch.no_grad():
                     vpred = _split_mlp_eval(Xval, W1, b1, W2, b2, mu, sd)
-                    vloss = torch.nn.functional.smooth_l1_loss(
-                        vpred, Yval, reduction="none", beta=smooth_l1_beta
-                    ).mean(dim=(1, 2))  # (c,)
-                improved = vloss < best_val
+                    vloss = _loss_per_member(vpred, Yval)  # (c,)
+                if patience is None:
+                    improved = vloss < best_val
+                else:
+                    # Parent semantics (fit_h.mlp_fit_predict): improvement is
+                    # vloss < best_val - 1e-6; a stopped member's best is FROZEN.
+                    improved = (vloss < best_val - 1e-6) & ~stopped
                 if improved.any():
                     best_val = torch.where(improved, vloss, best_val)
                     best_epoch = torch.where(
@@ -1067,6 +1110,11 @@ def fit_batched_split_mlp(
                     imb = improved.view(c, 1)
                     best["b1"] = torch.where(imb, b1.detach(), best["b1"])
                     best["b2"] = torch.where(imb, b2.detach(), best["b2"])
+                if patience is not None:
+                    bad = torch.where(improved, torch.zeros_like(bad), bad + 1)
+                    stopped = stopped | (bad >= patience)
+                    if bool(stopped.all()):
+                        break
         if not has_val:
             best = {"W1": W1.detach(), "b1": b1.detach(), "W2": W2.detach(), "b2": b2.detach()}
 

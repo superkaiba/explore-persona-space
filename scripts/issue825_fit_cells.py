@@ -608,12 +608,28 @@ def run_cell(
 POWER_CURVE_NS = (250, 500, 1000, 2000, 5000)
 
 
-def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None:
+def run_power_curve(
+    xy: dict,
+    out_dir: Path,
+    *,
+    n_folds: int,
+    seed: int,
+    ns: tuple[int, ...] | list[int] | None = None,
+    out_name: str = "power_curve.json",
+) -> None:
+    """R^2(n) power curve on nested seeded subsets (prefixes of one permutation).
+
+    ``ns`` parametrizes the subsample sizes; the default (None) preserves the
+    committed ``POWER_CURVE_NS`` tuple — the #931-registered source-module
+    change so matched-n reads can request n in {1000, 2000, n_A, n_B}.
+    ``out_name`` parametrizes the output filename (default preserved).
+    """
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    subsample_ns = tuple(int(v) for v in (POWER_CURVE_NS if ns is None else ns))
     rng = np.random.default_rng(seed + 13)
     order = rng.permutation(len(conv_ids))  # nested subsets: prefixes of one perm
     curve = []
-    for n_sub in POWER_CURVE_NS:
+    for n_sub in subsample_ns:
         if n_sub > len(order):
             curve.append({"n": n_sub, "r2_per_layer": None, "note": "n exceeds data"})
             continue
@@ -635,10 +651,10 @@ def run_power_curve(xy: dict, out_dir: Path, *, n_folds: int, seed: int) -> None
             }
         )
     _write_json(
-        out_dir / "power_curve.json",
+        out_dir / out_name,
         {
             "metadata": _metadata(seed, len(conv_ids)),
-            "subsample_ns": list(POWER_CURVE_NS),
+            "subsample_ns": list(subsample_ns),
             "nested": True,
             "curve": curve,
         },
