@@ -6617,8 +6617,8 @@
     "983": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/983",
-      "status": "proposed",
+      "path": "tasks/planning/983",
+      "status": "planning",
       "title": "workflow-fix: poll guard on phase lines after done-detection"
     },
     "984": {
