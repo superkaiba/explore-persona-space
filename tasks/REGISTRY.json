@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1029,
+  "highest_id": 1030,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -247,6 +247,13 @@
       "path": "tasks/proposed/1029",
       "status": "proposed",
       "title": "daily-fix: GCP pre-workload boot failures advance the failover ladder"
+    },
+    "1030": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1030",
+      "status": "proposed",
+      "title": "daily-fix: task_workflow git robustness (dup markers, MERGE_HEAD)"
     },
     "104": {
       "has_clean_result": false,
