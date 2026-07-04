@@ -6743,8 +6743,8 @@
     "994": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/994",
-      "status": "approved",
+      "path": "tasks/running/994",
+      "status": "running",
       "title": "daily-fix: headless /daily dies at 600s bg-wait ceiling"
     },
     "995": {
