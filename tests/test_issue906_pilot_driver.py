@@ -727,8 +727,13 @@ def test_build_class_passes_bank_target_n_in_full_mode(tmp_path, monkeypatch):
         datagen_fn,
         train_fn,
         rate_fn,
+        tokenizer,
     ):
         captured_kwargs.append(dict(datagen_kwargs))
+        # r14 contract: with the train seam stubbed (offline test), _build_class
+        # must NOT load a real tokenizer — the budget gate is skipped downstream
+        # (real-tokenizer coverage lives in test_issue906_content_mix_budget.py).
+        assert tokenizer is None
         raise RuntimeError("stop here — we only need datagen_kwargs")
 
     cfg = _smoke_config(tmp_path, datagen_target_n=None, mode="full")
@@ -741,11 +746,14 @@ def test_build_class_passes_bank_target_n_in_full_mode(tmp_path, monkeypatch):
 
     # build_organism is imported as a local inside _build_class from
     # explore_persona_space.artifacts.organisms — patch there, not on the pilot module.
+    # train_fn seam stubbed: keeps the test offline (no real-tokenizer load in r14's
+    # _build_class) — the fake raises before any training anyway.
+    seams = pilot.PilotSeams(train_fn=lambda *a, **k: ("", 0.0))
     with (
         patch("explore_persona_space.artifacts.organisms.build_organism", fake_build_organism),
         pytest.raises(RuntimeError, match="stop here"),
     ):
-        pilot._build_class(behavior, fake_org, cfg, pilot.PilotSeams(), tmp_path / "class")
+        pilot._build_class(behavior, fake_org, cfg, seams, tmp_path / "class")
 
     assert captured_kwargs, "build_organism was never called"
     assert captured_kwargs[0].get("target_n") == 75, (

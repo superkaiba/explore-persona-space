@@ -548,6 +548,19 @@ def _build_class(behavior, org, cfg: PilotConfig, seams: PilotSeams, class_dir: 
         # under- or over-count relative to the actual bank.
         datagen_kwargs["target_n"] = len(list(behavior.train_question_bank))
 
+    # r14 (content-mix-token-budget-unenforced): when the REAL trainer will run
+    # (train_fn seam unset), load the base tokenizer so build_organism enforces
+    # the recipe max_length token budget at mix assembly — SFTTrainer
+    # right-truncation on content mixes is SILENT (no fail-loud collator), so
+    # an overlong WildChat-lineage row would otherwise degrade its completion
+    # supervision without an error. Stub-seam runs (smoke/tests) pass None and
+    # skip the gate (offline contract; pinned by the real-tokenizer tests).
+    tokenizer = None
+    if seams.train_fn is None:
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(cfg.base_model, trust_remote_code=True)
+
     return build_organism(
         org,
         out_root=build_dir,
@@ -558,6 +571,7 @@ def _build_class(behavior, org, cfg: PilotConfig, seams: PilotSeams, class_dir: 
         datagen_fn=seams.datagen_fn or generate_training_data,
         train_fn=seams.train_fn or train_lora,
         rate_fn=rate_fn,
+        tokenizer=tokenizer,
     )
 
 
@@ -971,26 +985,27 @@ def _marker_train_config(cfg: PilotConfig, *, tokenizer=None):
 # mix. Measured on the att-20260704-061624 crash rows: 4/200 rows (2%) overflow
 # the 2048 budget (two extreme-tail WildChat prompts of 2181/1718 prompt-only
 # tokens), median full-row 487/419 tokens — so 0.10 separates "tail outliers"
-# from "wrong budget" with wide margin on both sides.
+# from "wrong budget" with wide margin on both sides. MUST equal
+# organisms.MIX_MAX_REJECT_FRAC (the r14 shared gate's floor; kept a literal
+# here because the driver's heavyweight imports are function-local — pinned by
+# tests/test_issue906_content_mix_budget.py::test_floor_constant_shared).
 MARKER_MIX_MAX_REJECT_FRAC = 0.10
 
 
 def _marker_row_token_len(row: dict, tokenizer) -> int:
-    """Full tokenized row length under the trainer's render.
+    """Full tokenized row length under the trainer's render (r13 name).
 
-    Matches the TRL prompt-completion tokenization the marker training run
-    performs (and ``sft.py::_tokenize_probe_row`` mirrors): render
+    Delegates to the shared ``organisms.mix_row_token_len`` (r14 refactor —
+    ONE render implementation behind both the marker and content mix gates):
     ``prompt + completion`` in ONE ``apply_chat_template`` call with
-    ``add_generation_prompt=False``. SFTTrainer right-truncates each row at
-    ``cfg.max_length``, so a row longer than the budget loses its trailing
-    `` ※<|im_end|>\\n`` slot tokens — the r13 collator crash.
+    ``add_generation_prompt=False``, matching TRL's prompt-completion
+    tokenization. SFTTrainer right-truncates at ``cfg.max_length``, so an
+    overlong marker row loses its trailing `` ※<|im_end|>\\n`` slot tokens —
+    the r13 collator crash.
     """
-    ids = tokenizer.apply_chat_template(
-        row["prompt"] + row["completion"], tokenize=True, add_generation_prompt=False
-    )
-    if isinstance(ids, dict):
-        ids = ids["input_ids"]
-    return len(ids)
+    from explore_persona_space.artifacts.organisms import mix_row_token_len
+
+    return mix_row_token_len(row, tokenizer)
 
 
 def _enforce_marker_mix_token_budget(
@@ -1002,74 +1017,27 @@ def _enforce_marker_mix_token_budget(
     to 2181/1718 prompt-only tokens; with the 512-token greedy response the
     full rows hit 2696/2233 tokens > the marker recipe's ``max_length=2048``,
     so SFTTrainer's right-truncation cut the appended `` ※<|im_end|>`` tail and
-    ``MarkerOnlyDataCollator`` fail-louded mid-train. Enforce at BUILD time:
+    ``MarkerOnlyDataCollator`` fail-louded mid-train.
 
-    - Question-aligned inputs (``len(pos) == len(cn)``, the inline builder's
-      contract — pos row i and cn row i share question i): drop the QUESTION
-      from BOTH sides when either side overflows, preserving the 1:1
-      contrastive ratio + same-question alignment
-      (.claude/rules/contrastive-negatives.md).
-    - Unequal inputs (defensive fallback): drop each overflowing row
-      independently.
-    - Fail loud when the rejected fraction exceeds
-      ``MARKER_MIX_MAX_REJECT_FRAC`` — a systematic overflow means the budget
-      itself is wrong.
-
-    Returns ``(kept_pos, kept_cn, stats)``.
+    r14: thin wrapper over the shared ``organisms.enforce_mix_token_budget``
+    (question-paired pos/cn drop — on the inline builder's index-aligned,
+    unique-question rows this is EXACTLY the r13 pair-drop; fail-loud above
+    the rejection floor; asymmetric-drop warning; cn-emptied guard). Telemetry
+    routes to this module's logger so the ``[marker-mix-budget]`` log/error
+    contract is unchanged. Returns ``(kept_pos, kept_cn, stats)``.
     """
-    pos_lens = [_marker_row_token_len(r, tokenizer) for r in pos_rows]
-    cn_lens = [_marker_row_token_len(r, tokenizer) for r in cn_rows]
-    all_lens = pos_lens + cn_lens
-    max_row_tokens = max(all_lens) if all_lens else 0
-    if len(pos_rows) == len(cn_rows):
-        bad = {i for i, n in enumerate(pos_lens) if n > max_length}
-        bad |= {i for i, n in enumerate(cn_lens) if n > max_length}
-        kept_pos = [r for i, r in enumerate(pos_rows) if i not in bad]
-        kept_cn = [r for i, r in enumerate(cn_rows) if i not in bad]
-    else:
-        kept_pos = [r for r, n in zip(pos_rows, pos_lens, strict=True) if n <= max_length]
-        kept_cn = [r for r, n in zip(cn_rows, cn_lens, strict=True) if n <= max_length]
-    n_rejected_pos = len(pos_rows) - len(kept_pos)
-    n_rejected_cn = len(cn_rows) - len(kept_cn)
-    n_rejected = n_rejected_pos + n_rejected_cn
-    total = len(pos_rows) + len(cn_rows)
-    rejected_frac = (n_rejected / total) if total else 0.0
-    stats = {
-        "enforced": True,
-        "budget": int(max_length),
-        "max_row_tokens": int(max_row_tokens),
-        "n_rejected": n_rejected,
-        "n_rejected_pos": n_rejected_pos,
-        "n_rejected_cn": n_rejected_cn,
-        "n_kept_pos": len(kept_pos),
-        "n_kept_cn": len(kept_cn),
-        "rejected_frac": rejected_frac,
-        "reject_frac_floor": MARKER_MIX_MAX_REJECT_FRAC,
-    }
-    logger.info(
-        "[marker-mix-budget] max_row_tokens=%d budget=%d n_rejected=%d (pos=%d cn=%d) "
-        "kept=%d/%d rejected_frac=%.3f floor=%.2f",
-        max_row_tokens,
-        max_length,
-        n_rejected,
-        n_rejected_pos,
-        n_rejected_cn,
-        total - n_rejected,
-        total,
-        rejected_frac,
-        MARKER_MIX_MAX_REJECT_FRAC,
+    from explore_persona_space.artifacts.organisms import enforce_mix_token_budget
+
+    kept_pos, kept_cn, _generic, stats = enforce_mix_token_budget(
+        pos_rows,
+        cn_rows,
+        tokenizer,
+        int(max_length),
+        generic_rows=None,
+        max_reject_frac=MARKER_MIX_MAX_REJECT_FRAC,
+        label="marker-mix-budget",
+        log=logger,
     )
-    if rejected_frac > MARKER_MIX_MAX_REJECT_FRAC:
-        raise RuntimeError(
-            f"[marker-mix-budget] {n_rejected}/{total} mix rows "
-            f"({rejected_frac:.1%}) exceed the training max_length={max_length} "
-            f"(max row = {max_row_tokens} tokens) — above the "
-            f"{MARKER_MIX_MAX_REJECT_FRAC:.0%} rejection floor. The budget is "
-            "systematically too small for this question/generation setting: raise "
-            "recipe.MARKER_OVERRIDES['max_length'] (grounded on the measured row-"
-            "length distribution) or cap the greedy generation length; do NOT "
-            "silently shrink the mix."
-        )
     return kept_pos, kept_cn, stats
 
 
