@@ -6328,8 +6328,8 @@
     "956": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/956",
-      "status": "reviewing",
+      "path": "tasks/completed/956",
+      "status": "completed",
       "title": "workflow-fix: reap/retry half-spawned session on daemon webhook timeout"
     },
     "957": {
