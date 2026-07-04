@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1013,
+  "highest_id": 1014,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -128,6 +128,13 @@
       "path": "tasks/proposed/1013",
       "status": "proposed",
       "title": "workflow-fix: v4 no-issue-refs check misses markdown-linked refs in Methodology prose"
+    },
+    "1014": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1014",
+      "status": "proposed",
+      "title": "workflow-fix: check 17 lacks a Context-row lineage-token requirement"
     },
     "102": {
       "has_clean_result": false,
