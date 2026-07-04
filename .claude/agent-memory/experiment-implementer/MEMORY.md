@@ -86,3 +86,4 @@
 - [splitlines shreds JSONL with Unicode line boundaries](feedback_splitlines_jsonl_unicode_boundaries.md) — never read/count JSONL via str.splitlines(); raw U+2028/NEL in ensure_ascii=False user text shreds records (#825); use file iteration or split("\n")
 - [Anthropic system-role lift at dispatcher seams](feedback_anthropic_system_role_lift.md) — Messages API 400s on role:system in messages; lift to top-level system=; live system-bearing probe required (#906)
 - [Signature-bind faked-boundary constructors](feedback_kwargs_constructor_bind.md) — **kwargs callees hide config-dataclass kwarg drift; replicate the callee's cfg resolution in CPU tests (#906 r12)
+- [Marker training-row token budget](feedback_marker_row_token_budget.md) — unbounded prompt tails truncate the marker+im_end loss slot; build-time tokenized budget gate (#906 r13)
