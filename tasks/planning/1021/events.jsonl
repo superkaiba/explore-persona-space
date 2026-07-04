@@ -9,3 +9,4 @@
 {"ts": "2026-07-04T22:11:08Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6x0bjf-y1b16f phase=done after 91s."}
 {"ts": "2026-07-04T22:16:24Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6x948l-c3vm4w effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-07-04T22:18:58Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6x948l-c3vm4w phase=done after 152s."}
+{"ts": "2026-07-04T22:25:08Z", "kind": "epm:consistency", "version": 1, "by": "unknown", "note": "SKIPPED (N/A) — kind: infra workflow-fix; no parent experiment recipe to diff. The consistency-checker's checks (single-variable-change vs parent, baseline model, eval suite, seeds, data hash) are experiment-recipe-specific and have no referent for this task. Recorded per /issue Step 2b."}
