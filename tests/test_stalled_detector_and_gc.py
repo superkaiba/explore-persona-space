@@ -1053,6 +1053,9 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
     # #967: never sweep the LIVE registry/events tree from a unit test.
     monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))

@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1029,
+  "highest_id": 1040,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -160,8 +160,8 @@
     "1018": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1018",
-      "status": "running",
+      "path": "tasks/reviewing/1018",
+      "status": "reviewing",
       "title": "daily-fix: rubric-bearing JudgeCache._hash_key"
     },
     "1019": {
@@ -181,15 +181,15 @@
     "1020": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1020",
-      "status": "running",
+      "path": "tasks/reviewing/1020",
+      "status": "reviewing",
       "title": "daily-fix: codex_task result-fetch retry + job re-attach"
     },
     "1021": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1021",
-      "status": "running",
+      "path": "tasks/completed/1021",
+      "status": "completed",
       "title": "daily-fix: flip stale blocked to running on relaunch"
     },
     "1022": {
@@ -248,12 +248,89 @@
       "status": "proposed",
       "title": "daily-fix: GCP pre-workload boot failures advance the failover ladder"
     },
+    "1030": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1030",
+      "status": "proposed",
+      "title": "daily-fix: task_workflow git robustness (dup markers, MERGE_HEAD)"
+    },
+    "1031": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1031",
+      "status": "proposed",
+      "title": "daily-fix: plan-time RAM/RSS routing gate + p90 fence sizing"
+    },
+    "1032": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1032",
+      "status": "proposed",
+      "title": "daily-fix: replan guard \u2014 re-read Goal before posting a plan version"
+    },
+    "1033": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1033",
+      "status": "proposed",
+      "title": "daily-fix: poller CPU-phase stall predicate + per-instance idle counter"
+    },
+    "1034": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1034",
+      "status": "proposed",
+      "title": "daily-fix: HF quota-headroom preflight before multi-TB uploads"
+    },
+    "1035": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1035",
+      "status": "proposed",
+      "title": "daily-fix: batch_judge tolerates transient 404 on poll retrieve"
+    },
+    "1036": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1036",
+      "status": "proposed",
+      "title": "daily-fix: lint bans || true on result-upload phases in dispatch scripts"
+    },
+    "1037": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1037",
+      "status": "proposed",
+      "title": "daily-fix: issue-763 branch surgery \u2014 strip foreign files, re-merge"
+    },
+    "1038": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1038",
+      "status": "proposed",
+      "title": "daily-held: schedule #681 bind-migration cutover + disk sign-off"
+    },
+    "1039": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1039",
+      "status": "proposed",
+      "title": "daily-held: extend watcher zombie sweep to non-EPS wrappers?"
+    },
     "104": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/completed/104",
       "status": "completed",
       "title": "[Aim 4] Prompt-search with distributional-match fitness to EM finetune (broader eval)"
+    },
+    "1040": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1040",
+      "status": "proposed",
+      "title": "Fix issue920_*.py torch-before-dotenv import order (test_shared_vm_thread_caps red on main)"
     },
     "105": {
       "has_clean_result": true,
@@ -6855,22 +6932,22 @@
     "997": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/997",
-      "status": "running",
+      "path": "tasks/reviewing/997",
+      "status": "reviewing",
       "title": "daily-fix: HF upload/verify transient 429/500 retry robustness"
     },
     "998": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/998",
-      "status": "running",
+      "path": "tasks/completed/998",
+      "status": "completed",
       "title": "daily-fix: exempt verbatim sample lines from humanize ban scan"
     },
     "999": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/999",
-      "status": "reviewing",
+      "path": "tasks/completed/999",
+      "status": "completed",
       "title": "daily-fix: fix session_progress_report write_self_report crash"
     }
   }

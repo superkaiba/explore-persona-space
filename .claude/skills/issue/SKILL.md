@@ -3750,6 +3750,27 @@ rejects the marker and the poll keeps reading the frozen startup-script
 phase, and an omitted `pod=` is accepted only via the launch-time
 `epm:cluster-launched` timestamp baseline, so include it explicitly.
 
+**A successful relaunch also reconciles a stale `blocked`.** Immediately
+after posting the fresh `epm:run-launched`, read the current status
+(`task.py view <N> --json`); if it is EXACTLY `blocked`, run
+`uv run python scripts/task.py set-status <N> running --note 'relaunch
+succeeded; clearing stale blocked (epm:run-launched <ts>)'`. The stale
+`blocked` arises when an earlier failed round (a cap-hit, a
+STATE-TO-`blocked` exit, or a failed crash-fix cycle) parked the task and
+a LATER round's relaunch succeeded without flipping it back — #742 ran
+healthy ~35h at status `blocked` (2026-07-01→07-02) and the
+dashboard/watcher read wrong until the user asked. Guards: (a) flip ONLY
+`blocked` → `running`, never any other status — a same-issue follow-up
+round holds `followups_running`, never `blocked`, so the flip is inert
+there by construction; (b) the flip is a same-turn serial action after
+YOUR OWN relaunch — never flip on someone else's marker (the watcher's
+stale-blocked FLAG pass is deliberately flag-only; a human reconciles on
+its evidence); (c) if the relaunched run then fails, the normal failure
+path re-blocks — the flip does not suppress it; (d) RE-READ the status
+immediately before the `set-status` call — a non-`blocked` read at that
+instant ABORTS the flip (a human may have reconciled off the watcher
+flag concurrently; a redundant flip attempt is refused, never forced).
+
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
@@ -4360,6 +4381,12 @@ When this skill is re-invoked in `running`:
    *Before applying either row, the Crash-fix circuit-breaker below checks for
    a same-signature repeat or a spent escape ladder and pivots to re-planning if
    either fires.*
+
+   *Either row's respawn, when its round ends in a successful relaunch
+   (fresh `epm:run-launched`), also triggers the stale-`blocked` reconcile
+   rule ("A successful relaunch also reconciles a stale `blocked`", Step
+   6d.2 poll-loop section) — a task parked `blocked` by an earlier failed
+   round must not stay `blocked` through a healthy relaunched run (#742).*
 
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is
@@ -5540,6 +5567,38 @@ audit log records it, and proceed straight to 9a-ter.
      Δ-notation, undefined jargon — anti-patterns from CLAUDE.md
      "Statistics" rules and the clean-result-critic statistical-framing
      lens)
+
+   **Hard ban gate scoping (binding; incidents #498/#518/#923):** the
+   `/humanize` skill's mandatory `check_bans.sh` absolute-ban gate runs
+   over AUTHORED PROSE ONLY — for clean-result work the ELIDED copy below
+   IS the ban-gate input (a repo-side override of the user-global skill's
+   whole-body gate wording), never the raw whole body. SPEC-required
+   verbatim sample completions legitimately contain ban-listed strings
+   ("Certainly!", "Sure, I'd be happy to help"), and rewriting them to
+   satisfy the gate destroys scientific evidence. Gate the body file —
+   `/tmp/issue-<N>-humanize-loop.md` when the loop produced revisions; if
+   the loop made no revisions, materialize the current body to that path
+   first — AFTER eliding the verbatim-quotation surfaces: fenced ``` blocks,
+   `<details>...</details>` example blocks, `>`-blockquoted lines (with or
+   without a following space), and `**Completion:**` sample lines:
+   ```bash
+   awk '/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\/details>/)d=0; next} /^>/{next} /^\*\*Completion:\*\*/{next} {print} END{if(f||d) exit 3}' \
+     /tmp/issue-<N>-humanize-loop.md > /tmp/issue-<N>-ban-scan.md \
+     && ~/.claude/skills/humanize/check_bans.sh /tmp/issue-<N>-ban-scan.md
+   ```
+   awk exit 3 = structurally unbalanced body (unclosed fence/`<details>`) —
+   a hard workflow error: the gate does NOT run; fix the body structure
+   and re-run. A hit SURVIVING elision is PRESUMPTIVELY authored prose —
+   default: real FAIL, rewrite it; if inspection shows it is verbatim
+   sample text the elision missed (indented fence, inline `<details>`,
+   multi-line completion), strengthen the elision instead and document
+   the disposition — NEVER rewrite the sample. A hit whose ONLY
+   occurrences were elided is a FALSE POSITIVE: treat the gate as PASS on
+   authored prose, NEVER rewrite the sample, and DOCUMENT the disposition
+   in the `epm:humanize-loop` note (step 5), naming the banned string AND
+   its location. Never move authored prose into a blockquote/fence to
+   dodge the gate.
+
 3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
    reached.
 4. If the loop revised the prose surfaces, write the new body to
@@ -5554,7 +5613,11 @@ audit log records it, and proceed straight to 9a-ter.
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
    scores + a one-line note ("converged in cycle K" or "exited at cap,
-   residual debt: axis X scored 2 — flagged to user").
+   residual debt: axis X scored 2 — flagged to user"). When the ban gate
+   recorded a verbatim-sample false positive, append the disposition to
+   the note, naming the string and its location (the #923 form: "ban
+   gate: PASS on authored prose; 1 hit ('Certainly!', ## Methodology
+   sample block) — false positive, left in place").
 
 **Skill availability fallback:** if `/humanize` is not loaded in the
 runtime (plugin missing), skip 9a-humanize entirely and proceed to
