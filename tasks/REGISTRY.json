@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 955,
+  "highest_id": 956,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6324,6 +6324,13 @@
       "path": "tasks/planning/955",
       "status": "planning",
       "title": "workflow-fix: gotchas.md anthropic system-role lift + live-probe rule for dispatcher seams"
+    },
+    "956": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/956",
+      "status": "proposed",
+      "title": "workflow-fix: reap/retry half-spawned session on daemon webhook timeout"
     },
     "96": {
       "has_clean_result": true,
