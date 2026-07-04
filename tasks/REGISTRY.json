@@ -181,8 +181,8 @@
     "1020": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1020",
-      "status": "running",
+      "path": "tasks/reviewing/1020",
+      "status": "reviewing",
       "title": "daily-fix: codex_task result-fetch retry + job re-attach"
     },
     "1021": {
