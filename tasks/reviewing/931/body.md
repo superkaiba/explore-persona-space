@@ -48,6 +48,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_931.md](https://github.com/superkaiba/explore-persona-space/blob/154271c6dad0a5552d30c5774adad4b49546c650/docs/methodology/issue_931.md) · [gist](https://gist.github.com/superkaiba/82e954e1214062417e5fdf6d87d9e702)
+
 ## Takeaways
 
 - The chat context→answer linear map does not transfer to fiction: chat-side matched transfer fractions peak at +0.05 of ceiling, an order of magnitude below the 0.5 same-map bar.
