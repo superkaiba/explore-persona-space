@@ -5156,8 +5156,8 @@ aggregation / permutation battery) MUST be launched fully detached:
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
-    pgrep -s "$PHASE_PID" | xargs -rn1 sudo -n choom -n -600 -p >/dev/null \
-      || echo "[warn] choom failed — phase is earlyoom-UNPROTECTED (record choom=failed)"
+    bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
+      || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
 The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
 shell runs with job control ON, where `setsid` forks and a bare `$!` is the

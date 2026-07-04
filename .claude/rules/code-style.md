@@ -43,9 +43,10 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   2026-07-02: a healthy ~2h fit killed mid-flight); the `bash -c` wrapper makes `$!` the workload
   pid (a bare top-level `$!` after `setsid … &` is the vanished intermediate). Immediately after
   the pid verify, protect from earlyoom collateral kills:
-  `pgrep -s "$PHASE_PID" | xargs -rn1 sudo -n choom -n -600 -p` (session-wide; children inherit;
-  −600 not −1000 so a runaway fit still dies first; `choom=ok` only when the sweep pipeline
-  exited zero — on `sudo -n` / sweep failure proceed unprotected and record `choom=failed`).
+  `bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID"`
+  (session-wide; children inherit; −600 not −1000 so a runaway fit still dies first; pipefail
+  makes an empty/failed pgrep FAIL the sweep — `choom=ok` only when the sweep pipeline exited
+  zero; on any failure proceed unprotected and record `choom=failed`).
   Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` in the stage-dispatch breadcrumb
   (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
   relaunch-once-then-pod-pivot rule; #811).
