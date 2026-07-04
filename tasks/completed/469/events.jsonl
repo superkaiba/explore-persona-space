@@ -1,3 +1,4 @@
 {"ts": "2026-06-02T19:25:43Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
 {"ts": "2026-06-09T21:43:05Z", "kind": "epm:promoted", "version": 1, "by": "user", "classification": "useful"}
 {"ts": "2026-06-09T21:43:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "completed", "note": "promoted as useful"}
+{"ts": "2026-07-04T09:23:26Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Record-correcting restore (from #964's 550-body no-regress smoke): body-linked figures/issue_462/hero_rho_vs_epoch.png was tracked ONLY at pinned sha 17d86622a1 (absent from main, no issue-462 branch family) — the exact #841-class silent tracking loss the new verifier check 29 surfaces. Restored byte-identical to main: commit 4753bcd0b644f21d4c2b8548af09450648a11f7a (scratch-worktree push). The body's SHA-pinned URL was never broken; this re-establishes the canonical live copy."}
