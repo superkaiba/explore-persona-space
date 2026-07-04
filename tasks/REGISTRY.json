@@ -6392,8 +6392,8 @@
     "962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/962",
-      "status": "planning",
+      "path": "tasks/approved/962",
+      "status": "approved",
       "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
     },
     "963": {
@@ -6497,8 +6497,8 @@
     "976": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/976",
-      "status": "approved",
+      "path": "tasks/running/976",
+      "status": "running",
       "title": "workflow-fix: widen runpod stale-sentinel clear to wildcard"
     },
     "977": {

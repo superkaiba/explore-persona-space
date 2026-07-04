@@ -1,0 +1,84 @@
+{
+  "commit": "c56111cea5",
+  "created": "2026-07-04T07:30:33Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Pooled held-out skill R\u00b2 (layer 18)": -3.0343501848988685,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5305117437527918,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Masked-context\nquery read, Betley",
+      "Pooled held-out skill R\u00b2 (layer 18)": -2.488410225618569,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Stitched pair\n(masked), Betley",
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.06347561826027082,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Masked-context\nquery read, UltraChat",
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Stitched pair\n(masked), UltraChat",
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4074758314080362,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5314788096686047,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}
