@@ -13,3 +13,4 @@
 {"ts": "2026-07-04T10:57:41Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0, n_pass=4, n_skip=16 (kind-exempt, kind=infra); plan version v3"}
 {"ts": "2026-07-04T10:57:56Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v3 ready for approval; ensemble round-1 Must-Fix folded in; consistency PASS. [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-07-04T10:58:01Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
+{"ts": "2026-07-04T10:59:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched implementer (kind: infra); awaiting epm:results."}
