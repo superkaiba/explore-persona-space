@@ -6371,8 +6371,8 @@
     "961": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/961",
-      "status": "approved",
+      "path": "tasks/running/961",
+      "status": "running",
       "title": "workflow-fix: retro-close predicate ignores queued-context label mentions"
     },
     "97": {
