@@ -6114,8 +6114,8 @@
       "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/923",
-      "status": "interpreting",
+      "path": "tasks/reviewing/923",
+      "status": "reviewing",
       "title": "Stitched context-only and query-only read-outs beat the full-prompt last-token ridge read-out at recovering the mean answer activation on held-out families and queries (MODERATE confidence)"
     },
     "924": {
