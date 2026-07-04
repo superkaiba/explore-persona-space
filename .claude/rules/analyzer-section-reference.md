@@ -546,6 +546,35 @@ and NOT figure captions. Those reader-facing surfaces are what Thomas
 adapts for Slack; the appendix + Data verbatim rows are agent-facing and
 tolerate denser prose.
 
+**Hard ban gate scoping (binding; incidents #498/#518/#923):** if you run
+the `/humanize` hard ban gate (`~/.claude/skills/humanize/check_bans.sh`),
+run it over AUTHORED PROSE ONLY — the ELIDED copy below IS the ban-gate
+input for clean-result work (a repo-side override of the user-global
+skill's whole-body gate wording), never the raw whole draft. The
+`**Sample training/evaluation data + completions:**` slot REQUIRES verbatim
+raw model outputs, which legitimately contain ban-listed strings
+("Certainly!", "Sure, I'd be happy to help"). Elide the verbatim surfaces
+first — fenced ``` blocks, `<details>...</details>` example blocks,
+`>`-blockquoted lines (with or without a following space), `**Completion:**`
+sample lines:
+
+    awk '/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\/details>/)d=0; next} /^>/{next} /^\*\*Completion:\*\*/{next} {print} END{if(f||d) exit 3}' \
+      .claude/cache/experiment-<N>-clean-result.md > /tmp/experiment-<N>-ban-scan.md \
+      && ~/.claude/skills/humanize/check_bans.sh /tmp/experiment-<N>-ban-scan.md
+
+awk exit 3 = structurally unbalanced draft (unclosed fence/`<details>`) — a
+hard workflow error: the gate does NOT run; fix the draft structure and
+re-run. A hit surviving elision is PRESUMPTIVELY authored prose — default:
+real FAIL, rewrite it; if inspection shows it is verbatim sample text the
+elision missed (indented fence, inline `<details>`, multi-line completion),
+strengthen the elision instead and document the disposition — NEVER rewrite
+the sample. A hit whose only occurrences were elided is a FALSE POSITIVE:
+PASS on authored prose, NEVER rewrite or scrub the sample to satisfy the
+gate (it is experimental evidence), and document the disposition so the
+orchestrator carries it into the `epm:humanize-loop` note, naming the
+banned string AND its location (the #923 form). Never move authored prose
+into a blockquote/fence to dodge the gate.
+
 ## Step 5: Verify
 
 Run the pre-publish clean-result validator against the local body file:

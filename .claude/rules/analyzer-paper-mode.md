@@ -60,6 +60,10 @@ INTO the paper instead of a markdown body:
   (Abstract / Introduction / Results interpretation / Discussion), in
   **academic mode** (`/humanize academic` — em-dash zero-tolerance, copula
   avoidance, classical academic terms), not blog/quick mode.
+  Ban-gate scoping applies identically (SKILL.md § 9a-humanize): the
+  Appendix's verbatim worked examples / judge prompts are elided from the
+  `check_bans.sh` scan input; a hit only inside them is a documented false
+  positive — never rewrite sample data to satisfy the gate.
 - **Step 6.5 follow-up tagging** + **Step 7 cross-link recap** + **Step 8
   tracking-file update** — unchanged (the `epm:analysis` marker, the
   `free_analysis_unrun:` field, the INDEX.md line all still apply).
