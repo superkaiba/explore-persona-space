@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-16) ─
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -154,10 +154,11 @@ def test_good_plan_passes_all():
         "c15_failloud_test_coverage": "SKIP",
         "c16_reference_headline_distinction": "SKIP",
         "c17_causal_branch_scope": "PASS",
+        "c18_paired_contrast_source_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 18
+    assert len(results) == 19
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2059,6 +2060,241 @@ def test_c17_fenced_offender_does_not_trigger():
     assert _status(plan, "c17_causal_branch_scope") == "PASS"
 
 
+# ─── Check 18 — paired-contrast per-arm source coverage ────────────────────
+
+# Verbatim corpus literals (embedded, never read from tasks/ paths — plans
+# move between status folders; this file's own convention). Sources: #810
+# plans/v13.md:33 (the founding FAIL registration — 9-row paired bootstrap
+# whose named full-side pack lacked im_end/turn_nl), #810 plans/v15.md:71
+# (the reviewer-converged PASS declaration — the D2 subset-assert shape),
+# task #608 plans/v2.md:164 (the replay-found incidental subset-CI
+# false-satisfier: "pair" substring-matches inside "paired"; word-bounding
+# must reject it). The REAL files are exercised by the §3.4 implementation
+# calibration replay, not by this suite.
+C18_V13_REGISTRATION = "- **H1-he (echo — the headline).** Empty-answer header/boundary rows reconstruct ≈ as well as their full-answer twins. **Registered per-row statistic:** paired per-context LOCO Δskill(full − empty) at each row's committed best layer, via the shared-index 2,000-draw bootstrap (7 pairs vs round-3 rows; `im_end`/`turn_nl` pair vs round-1). **Echo supported:** every header pool's Δ CI includes 0 or |Δ| < 0.02 (the round-3 D_uh margin), AND best empty-row LOFO ≥ 0.805. **Falsified (integration):** best header/boundary empty-row LOFO < 0.805 AND that row's paired Δ CI excludes 0 from above (\"clearly-positive\"). Expected: echo."
+C18_V15_DECLARATION = "4. **NEW `scripts/issue810_he_mechanism.py`** (thin driver, the only new analysis file — the `issue810_uh_crosslayer.py` precedent): loads `uh_summaries.pt` (full side for the 7 uh/bnd rows) + `he_summaries.pt` (empty) + — MUST-FIX addition — the round-3 HF store `issue658_theory_assumptions/answer_position_sweep_user_header/<ctx>.pt` (per-file `hf_hub_download`, ~430 MB total, cpu-mid-safe) as the FULL side for the `im_end`/`turn_nl` pairs (NOT in the uh pack — verified by three reviewers); their refit-parity assert targets the ROUND-1 committed skills in `eval_results/issue_810/reconstruction_skill_by_summary.json` (valid: both positions are causally upstream of the extension), ≤1e-6. ROW-COVERAGE SMOKE ASSERT (mechanizable): `set(registered_pair_rows) ⊆ union(keys(full_side_sources))` for every source named here, asserted at driver start; (a) cross-context-centers each (row, layer) across the 50 contexts and emits per-context cosine + pooled R² (1 − ‖full−empty‖²/‖full‖², centered); (b) refits the full-side per-context LOCO predictions from `uh_summaries.pt` (asserting skills match committed ≤1e-6 — the `a26da411bb` precedent) and runs the paired shared-index 2,000-draw bootstrap on Δskill(full−empty) per row at the committed best layers. All numpy/torch-CPU, batched."
+C18_608_CI_LINE = "Per-cell own-rate SE ≈ 0.01–0.02 binomial, ≈ 0.03–0.05 claim-clustered (effective N = 50 claims) — the +0.05 support threshold and ±0.02 equivalence band sit respectively above and below that noise floor. Formal tests — REGISTERED CONVENTIONS (v2): per-source claim-level paired bootstrap on g(s) (per-claim 10-rollout rates → paired claim differences → resample 50 claims with replacement → 10,000 draws → two-sided 95% percentile CI; base rates not resampled — base cancels in g); H1 falsification uses the CI-CONTAINMENT reading (CI ⊆ [−0.05, +0.05] for ≥5/6 sources, per §1); boundary-indeterminate outcomes are reported as indeterminate with continuous estimates, never as evidence against H1. 6-source sign test reported one-sided AND two-sided (two-sided: 6/6 p=0.031, 5/6 p=0.219; one-sided: 6/6 p=0.016, 5/6 p=0.109) as a descriptive pattern — the per-source CIs carry the inference. κ-calibration per §4 Phase G; the May-vs-June drift comparison is descriptive only (the single unified judge pass removes it from the inferential path)."
+
+
+def _c18_plan(*parts: str) -> str:
+    """GOOD_PLAN + a Hypothesis section carrying ``parts`` in order
+    (GOOD_PLAN contains zero `paired` mentions — pinned in the
+    not-triggered test below, so the base plan can never trigger c18)."""
+    return GOOD_PLAN + "\n## Hypothesis\n\n" + "\n\n".join(parts) + "\n"
+
+
+def test_c18_not_triggered_skips():
+    assert "paired" not in GOOD_PLAN.lower()  # fixture precondition
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "SKIP"
+    assert "no registered paired contrast" in r.detail
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c18_kind_exempt_skips(kind):
+    plan = _c18_plan(C18_V13_REGISTRATION)
+    assert _status(plan, "c18_paired_contrast_source_coverage", kind=kind) == "SKIP"
+
+
+def test_c18_810_v13_shape_fails():
+    ok, by_id = _run(_c18_plan(C18_V13_REGISTRATION))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "FAIL"
+    assert "Row-coverage" in r.detail  # copy-adaptable remedy option
+    assert "N/A — no paired contrast" in r.detail  # escape phrase quoted
+    assert "#810 v13 class" in r.detail  # paste fingerprint (guard a)
+    assert C18_V13_REGISTRATION[:90] in r.detail  # quoted trigger prefix
+    assert ok is False
+
+
+def test_c18_810_v15_subset_assert_passes():
+    # D2: subset expression + word-bounded row/pair vocab + coverage vocab
+    # on the real v15:71 declaration line.
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION, C18_V15_DECLARATION))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "row-coverage declaration found" in r.detail
+    assert "fact-checker" in r.detail  # a PASS is never "coverage verified"
+    # Guard (b) must not trip on the real literal (no cross-issue #NN token).
+    assert verify_plan._c18_candidate_ok(C18_V15_DECLARATION)
+
+
+def test_c18_incidental_subset_ci_line_does_not_satisfy():
+    # MF-A anchor: the #608 v2:164 CI-containment convention carries a subset
+    # expression + coverage vocab ("sources") but NO word-bounded row/pair
+    # token — "paired" must not substring-satisfy the pairs? vocabulary.
+    assert verify_plan._C18_SUBSET_RE.search(C18_608_CI_LINE)
+    assert not verify_plan._C18_ROWPAIR_RE.search(C18_608_CI_LINE)
+    plan = _c18_plan(C18_V13_REGISTRATION, C18_608_CI_LINE)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_quoted_sibling_assert_does_not_satisfy():
+    # Guard (b): quoting another issue's driver assert as a worked example is
+    # a citation, not a declaration of THIS plan's inputs.
+    quoted = (
+        "As in #810 v15: `set(registered_pair_rows) ⊆ union(keys(full_side_sources))` "
+        "asserted for all 9 rows at driver start."
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, quoted)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_deferral_row_coverage_line_does_not_satisfy():
+    # MF-B: the v1 bare `this run` by-construction alternative was removed —
+    # a deferral anti-declaration carries zero source evidence.
+    deferral = "Row-coverage: deferred to a later revision of this run's analysis."
+    plan = _c18_plan(C18_V13_REGISTRATION, deferral)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_one_arm_declaration_passes_by_design():
+    # Accepted residual (e), pinned as the DOCUMENTED disposition (not a
+    # bug): the #810 v15 exemplar declaration is itself full-side-only, so a
+    # structural both-arm requirement would reject the incident's own
+    # reviewer-converged fix. One-arm truthfulness stays with the
+    # fact-checker (the check's scope-discipline paragraph).
+    one_arm = "Row-coverage: full arm = uh_summaries.pt (all 9 rows)."
+    plan = _c18_plan(C18_V13_REGISTRATION, one_arm)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_row_coverage_line_with_artifacts_passes():
+    decl = (
+        "Row-coverage: full arm = uh_summaries.pt (7 uh/bnd rows) + round-3 store "
+        "(im_end, turn_nl); empty arm = he_summaries.pt (all 9 rows)."
+    )
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION, decl))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "declaration surface" in r.detail
+
+
+def test_c18_row_coverage_forward_window_passes():
+    # The multi-line header + per-arm bullet shape: evidence within the
+    # 3-physical-line forward window.
+    decl = (
+        "Row-coverage (per arm):\n"
+        "- full arm: uh_summaries.pt (7 uh/bnd rows) + the round-3 store (im_end, turn_nl)\n"
+        "- empty arm: he_summaries.pt (all 9 rows)"
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_by_construction_declaration_passes():
+    decl = "Row-coverage: both arms computed by this plan's own fits over the shared probe grid."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_na_escape_passes():
+    plan = _c18_plan(C18_V13_REGISTRATION) + (
+        "\nN/A — no paired contrast (the paired statistic above recaps the sibling's "
+        "registration).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c18_quoted_na_phrase_does_not_escape():
+    plan = _c18_plan(
+        C18_V13_REGISTRATION,
+        "The remedy menu offers \"declare 'N/A — no paired contrast' on its own line\" "
+        "as one option.",
+    )
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_kind_analysis_warns_not_fails():
+    ok, by_id = _run(_c18_plan(C18_V13_REGISTRATION), kind="analysis")
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "WARN"
+    assert "kind-degrade" in r.detail
+    assert ok is True  # WARN never flips exit 0
+
+
+def test_c18_fenced_registration_does_not_trigger():
+    plan = GOOD_PLAN + "\n## Hypothesis\n\n```\n" + C18_V13_REGISTRATION + "\n```\n"
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_registration_outside_registration_section_skips():
+    plan = GOOD_PLAN + "\n## Prior Work\n\n" + C18_V13_REGISTRATION + "\n"
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_h1_title_match_does_not_scope():
+    # H2+ restriction: a doc-spanning H1 *title* matching the section family
+    # (here the `nulls?` member, via "turn-null") must not scope the whole
+    # doc into the registration family.
+    plan = (
+        "# Plan — real-user-turn-null sweep\n\n"
+        + "filler word " * 200
+        + "\n\n## 1. Goal\n\nx\n\n## 2. Design\n\ny\n\n## Prior Work\n\n"
+        + C18_V13_REGISTRATION
+        + "\n"
+    )
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_paircount_form_triggers():
+    # The pair-count trigger route in ISOLATION: `paired` + an enumerated
+    # pair count, no `regist` substring anywhere on the line (precondition
+    # asserted — a deleted _C18_PAIRCOUNT_RE fails this test, never
+    # vacuously passes it).
+    line = (
+        "- The headline statistic is a paired bootstrap CI over the 9 pairs, "
+        "all pre-named; report all 9 jointly."
+    )
+    assert not verify_plan._C18_REGIST_RE.search(line)
+    assert verify_plan._C18_PAIRCOUNT_RE.search(line)
+    assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_pasted_fail_detail_does_not_self_satisfy():
+    # The project convention pastes bounce text verbatim into revised plans:
+    # the FAIL detail carries the fingerprint (guard a) and a cross-issue
+    # token (guard b), and its wording supplies no D1 evidence / D2 subset
+    # expression, so a pasted detail can never satisfy the check.
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION))
+    detail = by_id["c18_paired_contrast_source_coverage"].detail
+    assert verify_plan._C18_PASTE_FINGERPRINT in detail
+    replan = _c18_plan(C18_V13_REGISTRATION, detail)
+    assert _status(replan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_bare_coverage_vocab_without_evidence_does_not_satisfy():
+    # v13:218's reporting-completeness shape: "covers" prose without the
+    # row-coverage token or a subset expression is not a declaration.
+    line = "- Every registered read emits its verdict; the paired table covers all 9 rows."
+    plan = _c18_plan(C18_V13_REGISTRATION, line)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_generic_covers_prose_not_a_declaration():
+    # No D1 match without the literal row-coverage token.
+    line = "Both packs cover every registered row and every source is verified upstream."
+    plan = _c18_plan(C18_V13_REGISTRATION, line)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_figures_enumeration_line_does_not_trigger():
+    # §3.4 calibration tuning: a figures-enumeration line mentions paired
+    # panels + "registered rows visually distinguished" without registering
+    # any statistic (the #537 v4-v6 / #931 v1-v4 spurious-trigger class) —
+    # the leading figures label excludes it from the trigger scan.
+    line = (
+        "**Figures (over-produce; analyzer picks heroes):** hero forest plot "
+        "(registered rows visually distinguished); EM contrastive vs "
+        "non-contrastive paired cells; per-row diagonal implant-strength bars."
+    )
+    assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "SKIP"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -2108,12 +2344,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 10
+    assert payload["n_skip"] == 11
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 18
-    assert len({c["id"] for c in payload["checks"]}) == 18
+    assert len(payload["checks"]) == 19
+    assert len({c["id"] for c in payload["checks"]}) == 19
 
 
 def test_cli_exit_one_on_fail(tmp_path):
