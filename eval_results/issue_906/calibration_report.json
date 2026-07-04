@@ -1,0 +1,210 @@
+{
+  "schema": "issue906_phase1_calibration_v1",
+  "mode": "full",
+  "git_commit": "39f7e9ba",
+  "timestamp_utc": "2026-07-04T11:46:07Z",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "source_context": "persona_software_engineer",
+  "seed": 42,
+  "config": {
+    "mode": "full",
+    "classes": [
+      "marker"
+    ],
+    "source_context": "persona_software_engineer",
+    "seed": 42,
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "out_root": "data/issue_906/pilot",
+    "report_path": "eval_results/issue_906/calibration_report.json",
+    "reference_root": ".",
+    "generic_data_path": "/tmp/i906in/issue906_inputs/generic_corpus.jsonl",
+    "gpu_id": 0,
+    "n_eval_completions": 5,
+    "n_judge_draws": 5,
+    "n_extraction_rollouts": 10,
+    "eval_temperature": 1.0,
+    "datagen_target_n": null,
+    "eval_question_limit": null,
+    "extraction_question_limit": null,
+    "upload": true
+  },
+  "gpu_device_name": "NVIDIA A100-SXM4-80GB",
+  "classes": {
+    "marker": {
+      "behavior": "marker",
+      "programmatic": true,
+      "dv": {
+        "primary": "marker_slot_stats",
+        "companion": null
+      },
+      "status": "success",
+      "timings_seconds": {
+        "build": 2543.477,
+        "verify": 7379.808,
+        "total": 11360.805
+      },
+      "recipe": {
+        "arm": "primary",
+        "train_method": "lora",
+        "stopping_kind": "marker_band_stop",
+        "generic_frac": 0.0,
+        "neg_ratio": 1.0,
+        "lr": 5e-06,
+        "lora_r": 16,
+        "lora_alpha": 32,
+        "epochs": 20
+      },
+      "build": {
+        "adapter_path": "data/issue_906/pilot/marker/build/adapter",
+        "train_mix_path": "data/issue_906/pilot/marker/build/mix/train_mix.jsonl",
+        "mix_counts_planned": {
+          "positive": 100,
+          "negative": 100
+        },
+        "mix_counts_realized": {
+          "positive": 98,
+          "negative": 98
+        },
+        "dose_selection": null
+      },
+      "marker_verify": {
+        "contract_keys": [
+          "logp",
+          "z_marker",
+          "z_eos",
+          "logZ"
+        ],
+        "n_eval_questions": 50,
+        "n_eval_contexts": 6,
+        "rollout_paths": {
+          "base": "data/issue_906/pilot/marker/verify/marker_rollouts__base.jsonl",
+          "trained": "data/issue_906/pilot/marker/verify/marker_rollouts__trained.jsonl"
+        },
+        "source_logp_delta": 6.311219444274904,
+        "max_bystander_logp_delta": 7.365419921875002,
+        "mean_bystander_logp_delta": 6.203141,
+        "per_context": [
+          {
+            "context_id": "source",
+            "logp_trained": -21.983203125,
+            "logp_base": -28.294422569274904,
+            "logp_delta": 6.311219444274904,
+            "z_marker_trained": 4.154296875,
+            "z_marker_base": -0.6194225692749024,
+            "z_marker_delta": 4.773719444274902,
+            "eos_margin_trained": -13.488828125000001,
+            "eos_margin_base": -21.1121960067749,
+            "eos_margin_delta": 7.6233678817749,
+            "logZ_trained": 26.1375,
+            "logZ_base": 27.675
+          },
+          {
+            "context_id": "neg_sp_police",
+            "logp_trained": -18.9371484375,
+            "logp_base": -25.0700146484375,
+            "logp_delta": 6.1328662109375,
+            "z_marker_trained": 6.1428515625,
+            "z_marker_base": 1.1474853515625,
+            "z_marker_delta": 4.995366210937499,
+            "eos_margin_trained": -14.42875,
+            "eos_margin_base": -22.6132958984375,
+            "eos_margin_delta": 8.184545898437499,
+            "logZ_trained": 25.08,
+            "logZ_base": 26.2175
+          },
+          {
+            "context_id": "neg_sp_ph4",
+            "logp_trained": -22.448046875,
+            "logp_base": -29.813466796875,
+            "logp_delta": 7.365419921875002,
+            "z_marker_trained": 3.454453125,
+            "z_marker_base": -1.313466796875,
+            "z_marker_delta": 4.767919921875,
+            "eos_margin_trained": -12.4608984375,
+            "eos_margin_base": -18.062048339843752,
+            "eos_margin_delta": 5.601149902343753,
+            "logZ_trained": 25.9025,
+            "logZ_base": 28.5
+          },
+          {
+            "context_id": "neg_reph_curious",
+            "logp_trained": -24.0125,
+            "logp_base": -29.17583740234375,
+            "logp_delta": 5.16333740234375,
+            "z_marker_trained": 3.335,
+            "z_marker_base": -1.23583740234375,
+            "z_marker_delta": 4.57083740234375,
+            "eos_margin_trained": -13.939843749999998,
+            "eos_margin_base": -19.850100097656252,
+            "eos_margin_delta": 5.910256347656254,
+            "logZ_trained": 27.3475,
+            "logZ_base": 27.94
+          },
+          {
+            "context_id": "neg_wc_short",
+            "logp_trained": -19.5915625,
+            "logp_base": -26.7823046875,
+            "logp_delta": 7.190742187500003,
+            "z_marker_trained": 7.2759375,
+            "z_marker_base": 1.1676953125,
+            "z_marker_delta": 6.1082421875,
+            "eos_margin_trained": -19.5740625,
+            "eos_margin_base": -26.7723046875,
+            "eos_margin_delta": 7.1982421875,
+            "logZ_trained": 26.8675,
+            "logZ_base": 27.95
+          },
+          {
+            "context_id": "neg_default_assistant",
+            "logp_trained": -24.0125,
+            "logp_base": -29.17583740234375,
+            "logp_delta": 5.16333740234375,
+            "z_marker_trained": 3.335,
+            "z_marker_base": -1.23583740234375,
+            "z_marker_delta": 4.57083740234375,
+            "eos_margin_trained": -13.939843749999998,
+            "eos_margin_base": -19.850100097656252,
+            "eos_margin_delta": 5.910256347656254,
+            "logZ_trained": 27.3475,
+            "logZ_base": 27.94
+          }
+        ]
+      },
+      "api_calls": {
+        "datagen": {},
+        "verify_judge": {},
+        "extract_judge": {
+          "skipped": "programmatic behavior — no direction"
+        },
+        "claude_generation_calls": 0,
+        "total_judge_draws": 0,
+        "note": "Marker carve-out: no Claude judge API calls. Training mix is built inline; verification is a batched HF forward pass."
+      },
+      "upload": {
+        "status": "ok",
+        "adapter": "superkaiba1/explore-persona-space/issue906_pilot/marker/adapter",
+        "generations": "superkaiba1/explore-persona-space-data/issue906_pilot/marker/raw_completions",
+        "train_mix": "covered-by-raw-completions-upload",
+        "verify": "superkaiba1/explore-persona-space-data/issue906_pilot/marker/verify",
+        "dose_ladder": null,
+        "extract": null,
+        "baseline": null,
+        "on_policy_control": null
+      }
+    }
+  },
+  "summary": {
+    "n_classes": 1,
+    "n_success": 1,
+    "n_error": 0,
+    "any_errors": false,
+    "upload_failures": false,
+    "judge_refusal_fractions": {
+      "marker": null
+    },
+    "install_rate_deltas": {
+      "marker": null
+    },
+    "first_class_warmup_suspected": false
+  }
+}

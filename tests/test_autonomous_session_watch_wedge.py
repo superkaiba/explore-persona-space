@@ -698,6 +698,42 @@ def test_wedge_done_task_falls_through_to_status_class_stop(isolated_registry, m
     assert "auto-stop" in [label for _i, label in posts]
 
 
+def test_wedge_on_hold_task_falls_through_to_status_class_stop(isolated_registry, monkeypatch):
+    # #980 mirror of the MF6 closure for the user-paused status: a wedged pod
+    # whose task is `on_hold` does NOT go to the wedge arm (whose confirmed-safe
+    # path would terminate + RELAUNCH a workload the user deliberately paused) —
+    # it falls through to the status-class auto-stop arm, which stops it after
+    # the 2-miss guard (no keep-running tag, no live follow-up).
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "on_hold")
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: False)
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    # A wedge-arm helper that MUST NOT be reached for a paused-status wedged pod.
+    monkeypatch.setattr(
+        asw,
+        "_process_wedged_pod",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("wedge arm reached on on_hold task")),
+    )
+    info = _wedged_info()
+    # Tick 1: missed 0 -> 1, no stop. Tick 2: hits the 2-miss guard -> STOP via
+    # the status-class auto-stop arm (the canonical escaped-pod handler).
+    asw._process_pod(692, "p692", info, now, dry_run=False, threshold=2)
+    assert stops == []
+    asw._process_pod(692, "p692", info, now, dry_run=False, threshold=2)
+    assert stops == [692]
+    assert "auto-stop" in [label for _i, label in posts]
+
+
 def test_non_wedged_pod_clears_stale_wedge_state(isolated_registry, monkeypatch):
     # A pod that is NOT wedged (port present) clears any stale wedge clock so a
     # one-tick blip never matures, then proceeds to the status-class arm.

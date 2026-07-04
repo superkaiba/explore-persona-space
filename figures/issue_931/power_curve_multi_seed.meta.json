@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "git_commit": "139b35fa71b187ec8852d70e522785fcc5018bbc",
-    "timestamp": "2026-07-04T17:33:57Z",
-    "seed": 0,
-    "n": 0,
-    "script": "scripts/issue931_power_curve_multi_seed.py",
-    "issue": 931
+    "script": "/tmp/i931_regen_pcms_fig.py (legend-corrected regen of scripts/issue931_power_curve_multi_seed.py make_figure)",
+    "source_json": "eval_results/issue_931/power_curve_multi_seed.json @ 13e209c8e3",
+    "source_json_git_commit": "139b35fa71b187ec8852d70e522785fcc5018bbc",
+    "regen_at_git_commit": "2a8046e39ef2c8f6bb4a5a501e025ad9d8eba4bd",
+    "timestamp": "2026-07-04T17:44:42Z",
+    "legend_note": "draw-mean label corrected from 'group-stratified seeds' to 'seeded uniform row draws' (the exact reduction of group-stratified sampling on the all-singleton chat store; scheme id issue931_pcms.seeded_uniform_row_draw.v1)"
   },
   "what": "per-draw L19 held-out R^2 points (5 seeds per n), draw-mean curve +/- SD, and the committed single-draw nested-prefix curve being superseded",
   "points": {

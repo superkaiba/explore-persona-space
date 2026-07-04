@@ -5651,8 +5651,19 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
 AGENT_SPEC_WARN_BYTES = 28_000
 AGENT_SPEC_FAIL_BYTES = 40_000
 
+# A grandfather cap must hug the measured size: cap - size <= this bound
+# (the documented "measured + <=3 KB margin" convention, mechanized by #986).
+# STRICTLY-GREATER like the other thresholds (headroom exactly 3_000 passes).
+# A larger headroom means a loose cap-raise (defeats the regrowth ratchet) or
+# a stale cap after a trim (ratchet DOWN when trimmed) — both FAIL. Scope:
+# this bounds BANKED SLACK only — a reviewed growth+cap-raise in one commit
+# still passes; the check forces growth into a visible dict edit, it does not
+# approve it.
+AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES; post-#829 for the first two
 # entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
 # grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
 # once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
@@ -5687,7 +5698,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
 }
 
 
-def check_agent_spec_size(
+def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
     *, repo_root: Path | None = None, warn_sink: list[str] | None = None
 ) -> list[str]:
     """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
@@ -5697,9 +5708,12 @@ def check_agent_spec_size(
     size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
     ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
     and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
-    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing), an entry
     whose file dropped to <= the FAIL threshold (remove the entry — ratchet
-    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    down), and an entry whose cap sits more than
+    ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose cap / stale cap — lower it), and a config self-check FAILs any cap
+    <= the FAIL threshold. WARNs
     go to ``warn_sink`` when provided (unit-test hook), else stderr with a
     ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
     is a unit-test override; production callers pass None. Bundled into the
@@ -5768,8 +5782,10 @@ def check_agent_spec_size(
             )
 
     # Grandfather-entry hygiene: entries must point at existing files that
-    # still NEED grandfathering (size > FAIL threshold).
-    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+    # still NEED grandfathering (size > FAIL threshold) AND whose cap hugs the
+    # measured size (headroom <= AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES —
+    # the regrowth ratchet is meaningless under a loose cap; #986).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
         gf_path = agents_dir / gf_name
         if not gf_path.is_file():
             errors.append(
@@ -5777,12 +5793,24 @@ def check_agent_spec_size(
                 f"entry — .claude/agents/{gf_name} does not exist; remove the "
                 f"entry."
             )
-        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            continue
+        gf_size = gf_path.stat().st_size
+        if gf_size <= AGENT_SPEC_FAIL_BYTES:
             errors.append(
                 f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
-                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f".claude/agents/{gf_name} is {gf_size} bytes "
                 f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
                 f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/agents/{gf_name} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors

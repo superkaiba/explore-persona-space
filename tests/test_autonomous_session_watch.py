@@ -37,6 +37,7 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    AUTO_STOP_PAUSED,
     CAPACITY_RETRY_BACKOFF_S_DEFAULT,
     CAPACITY_RETRY_MAX_PER_DAY_DEFAULT,
     INFRA_DRAIN_BACKOFF_S_DEFAULT,
@@ -49,6 +50,7 @@ from autonomous_session_watch import (  # noqa: E402
     ORPHAN_STALENESS_S_DEFAULT,
     PARK,
     POD_ACTIVE,
+    POD_SAFETY_AUTO_STOP,
     PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
     RESPAWN_SPAWN_GRACE_S,
@@ -467,6 +469,39 @@ def test_task_followup_active_user_chat_scope_marker():
     )
 
 
+def test_followup_active_pause_shaped_timeline():
+    # #980: the pause-shaped event timeline. `set-status <N> on_hold` posts
+    # `epm:status-changed` (it is in _DONE_TRANSITION_KINDS), so at pause
+    # time the park is the newest done-transition and any PRIOR run-launched
+    # is stale -> NOT a live follow-up -> the auto-stop proceeds. A follow-up
+    # signal posted AFTER the park correctly re-arms the skip.
+    import autonomous_session_watch as asw
+
+    # run-launched OLDER than the on_hold park -> False (stop proceeds).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:run-launched", "ts": "2026-07-01T10:00:00Z", "note": ""},
+                # the pause commit point (`set-status <N> on_hold`)
+                {"kind": "epm:status-changed", "ts": "2026-07-01T12:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+    # followup-scope NEWER than the park -> True (followup-skip applies).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-07-01T12:00:00Z", "note": ""},
+                {"kind": "epm:followup-scope", "ts": "2026-07-01T13:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
@@ -545,13 +580,19 @@ def test_status_class_sets_disjoint():
     # A status must not be both "auto-stop" and "pod-active" — that would make
     # the classifier order-dependent.
     assert AUTO_STOP_DONE.isdisjoint(POD_ACTIVE)
+    # #980: the widened pod-safety trigger set must stay disjoint from
+    # POD_ACTIVE too, and the paused overlay must not overlap the DONE set
+    # (a member in both would make the union's provenance ambiguous).
+    assert POD_SAFETY_AUTO_STOP.isdisjoint(POD_ACTIVE)
+    assert AUTO_STOP_PAUSED.isdisjoint(AUTO_STOP_DONE)
     # blocked is deliberately in NEITHER (kept, alert-only-if-stale).
     assert "blocked" not in AUTO_STOP_DONE
     assert "blocked" not in POD_ACTIVE
 
 
 def test_status_classes_subset_of_authoritative_enum():
-    # Every status named by AUTO_STOP_DONE / POD_ACTIVE MUST exist in the
+    # Every status named by AUTO_STOP_DONE / AUTO_STOP_PAUSED / POD_ACTIVE MUST
+    # exist in the
     # authoritative runtime enum task_workflow.STATUSES — otherwise the member
     # is a phantom that can never match what `_task_status` returns (the prior
     # round shipped `cancelled` / `uploading` / `followups_running` as phantoms,
@@ -562,6 +603,7 @@ def test_status_classes_subset_of_authoritative_enum():
 
     enum = set(STATUSES)
     assert enum >= AUTO_STOP_DONE, f"phantom AUTO_STOP_DONE members: {AUTO_STOP_DONE - enum}"
+    assert enum >= AUTO_STOP_PAUSED, f"phantom AUTO_STOP_PAUSED members: {AUTO_STOP_PAUSED - enum}"
     assert enum >= POD_ACTIVE, f"phantom POD_ACTIVE members: {POD_ACTIVE - enum}"
 
 
@@ -572,8 +614,59 @@ def test_status_class_done_statuses():
     import autonomous_session_watch as asw
 
     now = 1_000_000.0
-    for s in sorted(AUTO_STOP_DONE):
+    # #980: iterate the full pod-safety trigger set (DONE + on_hold).
+    for s in sorted(POD_SAFETY_AUTO_STOP):
         assert asw._status_class(s, latest_progress_ts=now, now=now) == "auto-stop-done"
+
+
+def test_status_class_on_hold_is_auto_stop_done():
+    # #980: a user-paused task's RUNNING pod is an escaped pod — the #919
+    # pause affordance stops the pod BEFORE parking, so on_hold + RUNNING
+    # means the teardown leg failed. Progress freshness is irrelevant on the
+    # auto-stop arm (both None and fresh classify the same).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    assert asw._status_class("on_hold", latest_progress_ts=None, now=now) == "auto-stop-done"
+    assert asw._status_class("on_hold", latest_progress_ts=now, now=now) == "auto-stop-done"
+    assert "on_hold" in AUTO_STOP_PAUSED
+    assert "on_hold" in POD_SAFETY_AUTO_STOP
+
+
+def test_on_hold_not_in_auto_stop_done_or_session_reconcile():
+    # #980 decoupling pin: `on_hold` widens ONLY the pod-safety trigger set.
+    # Folding it into AUTO_STOP_DONE would silently widen the
+    # SESSION_RECONCILE_DONE alias and start reaping paused tasks' sessions
+    # (the user may be live-parked in them — same conservatism as `blocked`).
+    from autonomous_session_watch import SESSION_RECONCILE_DONE
+
+    assert "on_hold" not in AUTO_STOP_DONE
+    assert "on_hold" not in SESSION_RECONCILE_DONE
+    assert AUTO_STOP_DONE | {"on_hold"} == POD_SAFETY_AUTO_STOP
+
+
+def test_pod_safety_on_hold_exemptions_still_apply():
+    # #980: the keep-running tag and the inferred-follow-up predicate key on
+    # status_class == "auto-stop-done", which `on_hold` now produces — both
+    # exemptions extend to a paused task with zero decide-layer changes.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    status_class = asw._status_class("on_hold", None, now)
+    assert decide_pod_safety(
+        status_class=status_class,
+        missed=5,
+        stale=False,
+        alerted=False,
+        keep_running=True,
+    ) == ("keep-running-skip", 0)
+    assert decide_pod_safety(
+        status_class=status_class,
+        missed=5,
+        stale=False,
+        alerted=False,
+        followup_active=True,
+    ) == ("followup-skip", 0)
 
 
 def test_status_class_pod_active_fresh_vs_stale():
@@ -816,6 +909,79 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     asw.pod_safety_pass(dry_run=False, threshold=1, now=now)  # threshold=1 -> stop immediately
     assert stops == [7]
+
+
+def test_process_pod_on_hold_plain_two_tick_stop(isolated_registry, monkeypatch):
+    # #980 incident shape, PLAIN (non-wedged, port-present) pod: a task parked
+    # `on_hold` whose #919 pause teardown leg failed leaves a healthy RUNNING
+    # pod. _process_pod must treat it exactly like the DONE escaped-pod case:
+    # tick 1 accumulates (missed=1, no stop), tick 2 hits the 2-miss guard and
+    # stops ONCE with the `auto-stop` marker posted, then the state clears.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    stops: list[int] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "on_hold")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    info = _p(980, "p980", "pod-980")[3]  # healthy PodInfo (SSH port present)
+    state_path = isolated_registry / "pod-safety-980.json"
+
+    asw._process_pod(980, "p980", info, now, dry_run=False, threshold=2)
+    assert stops == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+
+    asw._process_pod(980, "p980", info, now, dry_run=False, threshold=2)
+    assert stops == [980]
+    assert posts == [(980, "auto-stop")]
+    assert not state_path.exists()  # cleared after stop
+
+
+@pytest.mark.parametrize("status", sorted(POD_SAFETY_AUTO_STOP))
+def test_pod_safety_auto_stop_dry_run_no_mutation(isolated_registry, monkeypatch, capsys, status):
+    # Dry-run coverage on the auto-stop arm across the full #980 trigger set
+    # (DONE + on_hold): under dry_run=True a would-stop candidate produces the
+    # "would stop pod" log line ONLY — no `pod.py stop` subprocess, no marker
+    # post, no per-pod state save.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [_p(980, "p980", "pod-980")]
+    )
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    # Any subprocess spawn under dry-run is a mutation-path leak — fail loud.
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("subprocess.run under dry_run")),
+    )
+
+    # threshold=1 -> the decision layer picks "stop" on the first tick.
+    asw.pod_safety_pass(dry_run=True, threshold=1, now=now)
+
+    out = capsys.readouterr().out
+    assert "would stop pod" in out
+    assert posts == []  # _stop_pod returns False under dry-run -> no marker
+    assert not (isolated_registry / "pod-safety-980.json").exists()  # no state save
 
 
 def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypatch):
@@ -6115,7 +6281,10 @@ def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
 
 
 def test_session_reconcile_done_set_is_pod_auto_stop_set():
-    # The DONE set shares the pod-safety auto-stop set: awaiting_promotion /
+    # The DONE set shares the pod-safety DONE set AUTO_STOP_DONE — NOT the
+    # wider pod-safety trigger set POD_SAFETY_AUTO_STOP (#980 widened the pod
+    # pass to on_hold; sessions of paused tasks are deliberately kept):
+    # awaiting_promotion /
     # completed / archived (2026-06-10 user request: "stop the happy sessions
     # once they reach awaiting promotion"). followups_running (a same-issue
     # follow-up round is executing) and blocked (under investigation) are
@@ -6126,6 +6295,7 @@ def test_session_reconcile_done_set_is_pod_auto_stop_set():
     assert {"completed", "awaiting_promotion", "archived"} == SESSION_RECONCILE_DONE
     assert "followups_running" not in SESSION_RECONCILE_DONE
     assert "blocked" not in SESSION_RECONCILE_DONE
+    assert "on_hold" not in SESSION_RECONCILE_DONE
 
 
 @pytest.mark.parametrize(
@@ -6142,13 +6312,16 @@ def test_session_reconcile_done_set_is_pod_auto_stop_set():
         "reviewing",
         "followups_running",
         "blocked",
+        "on_hold",
     ],
 )
 @pytest.mark.parametrize("idle", [True, False])
 @pytest.mark.parametrize("missed", [0, 1, 5])
 def test_session_reconcile_non_done_always_clears(status, idle, missed):
     # Any non-parked status (including the follow-up-executing
-    # followups_running, the user-parked blocked, and an unreadable None)
+    # followups_running, the user-parked blocked, the user-paused on_hold —
+    # #980 widened the POD pass to on_hold but sessions of paused tasks are
+    # deliberately kept — and an unreadable None)
     # clears the episode — never an action, even with autostop armed and a
     # huge miss count.
     from autonomous_session_watch import decide_session_reconcile
@@ -10334,6 +10507,24 @@ def test_capacity_retry_DOES_redrive_no_compute_available():
     retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
     assert retriable is True
     assert reason == "no_compute_available"
+
+
+def test_cpu_fallback_infeasible_block_is_not_transient_capacity():
+    """#1010: a `cpu_fallback_infeasible_for_plan` block (the RunPod
+    CPU-fallback footprint-feasibility refusal, incident #958) is NOT a
+    transient-capacity block — the RunPod instance can never grow to fit the
+    plan, so the watcher's capacity-retry pass must never hot-retry it. The
+    #677 mirror: GREEN purely because the reason is NOT in
+    TRANSIENT_CAPACITY_REASONS (a future careless widening turns it RED)."""
+    import autonomous_session_watch as asw
+
+    note = "failure_class: infra\nreason: cpu_fallback_infeasible_for_plan"
+    ev = _fail_ev("2026-07-04T00:00:00Z", note)
+    retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
+    assert retriable is False
+    assert reason == "cpu_fallback_infeasible_for_plan"
+    # Downstream: always "skip", even out of backoff with the day-cap unspent.
+    assert decide_capacity_retry("blocked", retriable, _CR_NOW - 99999, None, 0, _CR_NOW) == "skip"
 
 
 # ── I/O-wrapper scoping: only transient-infra blocks re-driven, halts untouched ──

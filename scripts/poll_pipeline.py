@@ -1003,6 +1003,17 @@ class PollResult:
     # copies it through ``RunPodBackend.poll``. Declared LAST so existing
     # positional ``PollResult(...)`` constructions are unaffected.
     crash_signature: str | None = None
+    # #983: True when THIS tick posted the [post-done-phase-advisory] marker —
+    # a poll AFTER a corroborated done observed genuinely NEW [phase=...]
+    # lines after the recorded done line (the .py-dispatcher subprocess
+    # fan-out false-done class, #930 §4.6 residual gap (i)). Observability
+    # only; never changes ``status``. Defaulted so cross-backend
+    # PollResult(...) call sites need no change.
+    post_done_phase_advisory_posted: bool = False
+    # The new-phase-lines the #983 guard observed THIS tick — surfaced
+    # regardless of the once-per-episode dedup (an already-advised episode
+    # still reports what it sees). Empty when no episode is active.
+    post_done_phase_lines: tuple[str, ...] = ()
 
 
 def _ssh_probe(
@@ -2048,6 +2059,221 @@ def latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
 # Back-compat alias for the pre-#612 private name (tests + any external
 # caller still importing ``_latest_phase`` keep working unchanged).
 _latest_phase = latest_phase
+
+
+# ── #983 post-done phase-consistency guard ──────────────────────────────────
+#
+# The #545 corroboration block gates the INITIAL done verdict within a tick,
+# and the #597 noise regex gates which line may parse as done at all — both
+# are parse-time defenses. This guard is the CROSS-TICK audit they are
+# structurally blind to: once a corroborated ``status=done`` has been
+# accepted, a LATER poll that observes genuinely NEW ``[phase=...]`` lines
+# AFTER the recorded done line proves the earlier done may have been FALSE —
+# the ``.py``-dispatcher subprocess fan-out class (#930 §4.6 residual gap
+# (i): a parent exits (pid-dead corroborates) or its sentinel lands early
+# while detached children keep emitting phase lines). Advisory-only: ONE
+# loud ``[post-done-phase-advisory]`` ``epm:progress`` marker + best-effort
+# Telegram push per done-episode; the status verdict is NEVER changed (the
+# same contract as every sibling tripwire in this file).
+
+# Chars stored/compared per phase-bearing line (bounded state file). The
+# record and compare sides BOTH truncate through ``_phase_bearing_lines``,
+# so a done line longer than the cap still anchors by identity on re-polls.
+_POST_DONE_LINE_MAX = 400
+# New phase lines quoted in the advisory note (each further capped to 200
+# chars there), keeping the note far below EVENT_NOTE_MAX.
+_POST_DONE_NOTE_MAX_LINES = 5
+
+
+def _phase_bearing_lines(log_tail: str) -> list[str]:
+    """Ordered (oldest -> newest) raw texts of phase-bearing lines.
+
+    Same per-line predicate as ``latest_phase``: PHASE_RE must match; a
+    done-token line also matching DONE_QUOTED_NOISE_RE (#597 failure message
+    quoting the token) is skipped. Truncated to ``_POST_DONE_LINE_MAX`` so
+    the state-file identity comparison is bounded. ``latest_phase`` itself
+    is untouched (public cross-module contract).
+    """
+    out: list[str] = []
+    for line in log_tail.splitlines():
+        m = PHASE_RE.search(line)
+        if not m:
+            continue
+        if m.group(1) == "done" and DONE_QUOTED_NOISE_RE.search(line):
+            continue
+        out.append(line[:_POST_DONE_LINE_MAX])
+    return out
+
+
+@dataclass(frozen=True)
+class PostDonePhaseUpdate:
+    """Outcome of one post-done-guard tick (``_post_done_phase_update``)."""
+
+    should_post: bool
+    done_line: str  # "" = no active done episode
+    done_epoch: int  # 0 = no active episode
+    done_pod: str  # "" = no active episode; the episode voids on a pod change
+    advisory_posted: bool  # once-per-episode dedup flag, carried forward
+    new_phase_lines: tuple[str, ...]  # observed-this-tick (surfaced even when deduped)
+
+
+def _post_done_phase_update(
+    *,
+    current_phase: str,
+    log_tail: str,
+    pod: str,
+    prev_done_line: str,
+    prev_done_epoch: int,
+    prev_done_pod: str,
+    prev_posted: bool,
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> PostDonePhaseUpdate:
+    """Pure decision core for the #983 post-done phase-consistency guard.
+
+    ``current_phase`` MUST be the POST-#545-corroboration phase from
+    ``poll_once`` (never a raw ``latest_phase`` re-derivation), so an
+    uncorroborated done-parse (pid alive + no results sentinel — e.g. a
+    mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line)
+    can NEVER arm an episode. The episode-start condition is deliberately
+    the corroborated ``current_phase == "done"``, NOT ``status == "done"``,
+    so a gate-sentinel tick whose pipeline also reached done (gate wins the
+    status precedence) still records the episode. Once set, the episode is
+    never overwritten within a run; only the run-scope clamp or a pod
+    change voids it. Comparison is line-identity anchored (positions are
+    unstable under the ``tail -500`` sliding window; timestamps are not
+    guaranteed by PHASE_RE): candidates are the phase-bearing lines
+    strictly after the anchor's LAST occurrence, or ALL visible phase
+    lines when the anchor scrolled out (append-only log => everything
+    above it scrolled out first). Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    # Run-scope clamp (mirrors the last_phase_change_epoch relaunch clamp in
+    # poll_once): an episode recorded BEFORE the current run's
+    # epm:run-launched belongs to a previous run — void it.
+    if (
+        prev_done_epoch > 0
+        and run_age_sec is not None
+        and prev_done_epoch < now_epoch - run_age_sec
+    ):
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    # Cross-pod voiding: a diagnostic poll against a DIFFERENT pod — or a
+    # follow-up pod probed before its epm:run-launched lands — must not
+    # compare the new pod's tail against the old pod's done anchor.
+    if prev_done_line and prev_done_pod and prev_done_pod != pod:
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    if not prev_done_line:
+        if current_phase == "done":
+            lines = _phase_bearing_lines(log_tail)
+            if lines:
+                # By construction (the reversed scan in latest_phase) the
+                # LAST phase-bearing non-noise line IS the matched done line.
+                return PostDonePhaseUpdate(False, lines[-1], now_epoch, pod, False, ())
+        return PostDonePhaseUpdate(False, "", 0, "", False, ())
+    # Active episode: find phase lines strictly AFTER the recorded done line.
+    lines = _phase_bearing_lines(log_tail)
+    try:
+        anchor = len(lines) - 1 - lines[::-1].index(prev_done_line)  # LAST occurrence
+        candidates = lines[anchor + 1 :]
+    except ValueError:
+        # Done line scrolled out of the bounded tail: the log is append-only,
+        # so every line ABOVE it scrolled out first — any phase line still
+        # visible is NEWER than the recorded done.
+        candidates = lines
+    new_lines = tuple(ln for ln in candidates if ln != prev_done_line)  # FP control (i)
+    return PostDonePhaseUpdate(
+        bool(new_lines) and not prev_posted,
+        prev_done_line,
+        prev_done_epoch,
+        prev_done_pod,
+        prev_posted,
+        new_lines,
+    )
+
+
+def _maybe_post_post_done_phase_advisory(
+    *,
+    issue: int,
+    pod: str,
+    current_phase: str,
+    log_tail: str,
+    prev_state: dict[str, str],
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> tuple[str, int, str, bool, bool, tuple[str, ...]]:
+    """Post-done-guard wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(done_line, done_epoch, done_pod, posted_flag,
+    posted_this_tick, new_phase_lines)`` for the caller to persist via
+    ``_save_state``. Guarded state parses (a corrupt epoch resets to 0,
+    never raises into ``poll_once``). A post failure is logged and
+    ``posted_flag`` is NOT set, so the next tick retries — identical
+    contract to ``_maybe_post_gpu_width_advisory``. Advisory only: never
+    changes the status verdict, never stops anything.
+    """
+    prev_line = prev_state.get("post_done_line", "") or ""
+    try:
+        prev_epoch = int(float(prev_state.get("post_done_epoch", "0") or 0))
+    except (TypeError, ValueError):
+        prev_epoch = 0
+    prev_pod = prev_state.get("post_done_pod", "") or ""
+    prev_posted = prev_state.get("post_done_advisory_posted", "0") == "1"
+    u = _post_done_phase_update(
+        current_phase=current_phase,
+        log_tail=log_tail,
+        pod=pod,
+        prev_done_line=prev_line,
+        prev_done_epoch=prev_epoch,
+        prev_done_pod=prev_pod,
+        prev_posted=prev_posted,
+        run_age_sec=run_age_sec,
+        now_epoch=now_epoch,
+    )
+    if not u.should_post:
+        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, u.new_phase_lines
+    quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+    note = (
+        f"[post-done-phase-advisory] {len(u.new_phase_lines)} NEW [phase=...] line(s) appeared "
+        f"AFTER the done line this poller reported as terminal "
+        f"({max(0, now_epoch - u.done_epoch) // 60} min ago):\n{quoted}\n"
+        f"recorded done line: {u.done_line[:200]}\n"
+        "The earlier status=done may have been FALSE (the .py-dispatcher subprocess fan-out "
+        "class — workflow_lint --check-phase-done-reserved residual gap (i), #930/#545): a "
+        "child script may still be running, and any orchestrator action keyed on the done "
+        "(advance to verifying, Step-8 pod termination) may have been premature. OTHER causes "
+        "with the same signature: a relaunch / manual re-run reused this log path without a "
+        "fresh epm:run-launched, or a concurrent writer appended to it — check the launch "
+        "record before chasing the dispatcher. VERIFY the run actually completed (results "
+        "sentinel + uploads) and fix the emitting dispatcher "
+        "per pod-side-reporting.md ([phase=done] is reserved for the single terminal line). "
+        "Advisory only: this tick's status verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            post_done_phase_advisory=True,
+        )
+    except Exception as exc:
+        log.error("post-done phase advisory post failed (next tick will retry): %s", exc)
+        return u.done_line, u.done_epoch, u.done_pod, False, False, u.new_phase_lines
+    # Fail-soft phone push — never blocks recording (the marker is durable).
+    _telegram_push(
+        f"[#{issue}] post-done phase advisory: {len(u.new_phase_lines)} new [phase=...] "
+        f"line(s) after the reported done on {pod} — earlier done may be FALSE "
+        "(advisory only; nothing stopped)."
+    )
+    log.warning(
+        "posted post-done phase advisory for #%d: %d new phase line(s) on pod %s",
+        issue,
+        len(u.new_phase_lines),
+        pod,
+    )
+    return u.done_line, u.done_epoch, u.done_pod, True, True, u.new_phase_lines
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -4035,6 +4261,34 @@ def poll_once(
         now_epoch=now_epoch,
     )
 
+    # ── #983 post-done phase-consistency guard ───────────────────────────
+    # Cross-tick audit of a previously-accepted done verdict: at the tick
+    # where the corroborated ``current_phase == "done"`` lands, record the
+    # matched done line; any LATER tick observing genuinely new
+    # ``[phase=...]`` lines after that anchor fires ONE loud advisory
+    # marker + Telegram push. Consumes the POST-#545-demotion
+    # ``current_phase`` (wired BELOW the demotion block, so an
+    # uncorroborated done can never arm an episode) and the pre-tripwire
+    # ``prev_state`` (its run-scope clamp is the direct ``run_age_sec``
+    # one, deliberately independent of the #873 anchor lifecycle).
+    # Advisory only — never flips ``status``, never stops anything.
+    (
+        post_done_line,
+        post_done_epoch,
+        post_done_pod,
+        post_done_posted_flag,
+        post_done_posted,
+        post_done_new_lines,
+    ) = _maybe_post_post_done_phase_advisory(
+        issue=issue,
+        pod=pod,
+        current_phase=current_phase,
+        log_tail=probe["log_tail"],
+        prev_state=prev_state,
+        run_age_sec=run_age_sec,
+        now_epoch=now_epoch,
+    )
+
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
@@ -4185,6 +4439,15 @@ def poll_once(
             # #873 run-scope anchor: the epm:run-launched epoch the tripwire
             # dedup keys above belong to (AC #6). A fresh launch clears them.
             "tripwire_run_epoch": str(tripwire_run_epoch),
+            # #983 post-done phase-consistency guard: the matched done
+            # line's identity (truncated text), when + on which pod it was
+            # accepted, and the once-per-episode dedup flag. Voided only by
+            # the direct run-scope clamp / a pod change (NOT via
+            # _TRIPWIRE_STATE_KEYS — the guard has its own natural epoch).
+            "post_done_line": post_done_line,
+            "post_done_epoch": str(post_done_epoch),
+            "post_done_pod": post_done_pod,
+            "post_done_advisory_posted": "1" if post_done_posted_flag else "0",
         },
     )
 
@@ -4225,6 +4488,8 @@ def poll_once(
         next_interval=next_interval,
         stall_reason=stall_reason,
         crash_signature=crash_signature,
+        post_done_phase_advisory_posted=post_done_posted,
+        post_done_phase_lines=post_done_new_lines,
     )
 
 
@@ -4301,6 +4566,9 @@ def main(argv: list[str] | None = None) -> int:
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
                 "stall_reason": result.stall_reason,
+                # #983 post-done phase-consistency guard surfaces.
+                "post_done_phase_advisory_posted": result.post_done_phase_advisory_posted,
+                "post_done_phase_lines": list(result.post_done_phase_lines),
             }
         )
     )

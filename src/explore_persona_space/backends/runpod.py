@@ -85,6 +85,14 @@ logger = logging.getLogger(__name__)
 #: output; a one-shot foreground tail gets a bit more headroom).
 LOG_TAIL_LINES = 200
 
+#: Floor for the #1010 CPU-fallback container-disk threading in
+#: :meth:`RunPodBackend.launch` — mirrors ``runpod_api.DEFAULT_CONTAINER_DISK_GB``
+#: (50), the value an un-threaded provision gets, so threading a plan's
+#: ``boot_disk_gb`` can only ever GROW the container disk relative to
+#: today's default, never shrink it. (Not imported from ``scripts/runpod_api``
+#: — this module's imports stay ``base``-only by documented convention.)
+_CPU_CONTAINER_DISK_FLOOR_GB = 50
+
 
 def _shell_quote(s: str) -> str:
     """Single-quote ``s`` for a remote bash command (poor-man's shlex.quote).
@@ -752,6 +760,29 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #1010: thread the plan's disk requirement into the RunPod CPU
+        # fallback's container disk (the pod's only writable disk on the CPU
+        # lane -- /workspace rides the overlay; incident #958). CPU intents
+        # ONLY: on GPU pods the big-data mount is the 200 GB /workspace
+        # VOLUME, not the container overlay, so boot_disk_gb does not map.
+        # Floored at runpod_api.DEFAULT_CONTAINER_DISK_GB (50,
+        # _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never REDUCE
+        # below today's behavior. The router's feasibility gate guarantees
+        # boot_disk_gb <= the instance cap on every AUTOMATED path; an
+        # explicit `backend: runpod` pin above the cap fails loud at
+        # pod_lifecycle's pre-API cap check / RunPod's own create-time
+        # validation.
+        boot_disk_gb = int((spec.extra or {}).get("boot_disk_gb") or 0)
+        if boot_disk_gb:
+            from explore_persona_space.backends.router import (
+                RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
+            )
+
+            if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+                cmd += [
+                    "--container-disk-gb",
+                    str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+                ]
         # subprocess.run raises CalledProcessError on non-zero exit; that
         # propagates to the selector, which logs + lets the orchestrator
         # surface the failure as `epm:failure` (slice 1 does NOT add a
@@ -1028,6 +1059,16 @@ class RunPodBackend(ComputeBackend):
             # getattr-guarded so a mixed-version worktree (a poll_once that
             # predates the field) degrades to None rather than crashing.
             crash_signature=getattr(raw, "crash_signature", None),
+            # #983: copy the post-done phase-consistency advisory surfaces
+            # through (same passthrough contract as stall_reason above —
+            # dropping them at this rewrap would silently strip the advisory
+            # from the backend_poll lane's JSON before
+            # ``_serialize_poll_result`` can surface it, the #664
+            # stall_reason lesson). getattr-guarded for a mixed-version
+            # worktree; the marker + Telegram push already fired inside
+            # ``poll_once`` regardless.
+            post_done_phase_advisory_posted=getattr(raw, "post_done_phase_advisory_posted", False),
+            post_done_phase_lines=tuple(getattr(raw, "post_done_phase_lines", ()) or ()),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

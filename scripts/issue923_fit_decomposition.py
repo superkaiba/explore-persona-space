@@ -1405,18 +1405,18 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     logger.info("PRESS/dual exactness selftest PASS: %s", st)
     if args.selftest_only:
         print(json.dumps(st, indent=2))
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
     if args.time_projection:
         time_projection(device)
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
     if args.fullh_spotcheck:
         print("[phase=fullh_spotcheck]", flush=True)
         fullh_spotcheck(
             args.packs_dir, args.data_dir, args.out_dir / "fullh_spotcheck.json", device
         )
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
 
     out_dir: Path = args.out_dir
@@ -1657,7 +1657,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             args.tensors_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/analysis_tensors/fits"
         )
         hub._upload(out_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/eval_results/fits")
-    print("[phase=done]", flush=True)
+    print("[script-complete]", flush=True)
     return 0
 
 

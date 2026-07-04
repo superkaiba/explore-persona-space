@@ -382,3 +382,156 @@ def test_identity_digest_keys_on_content_and_discards_stale_units(tmp_path):
     key_b = dict(key_a, store_identity=s_b.identity_digest())
     d2 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key_b)
     assert not (d2 / "layer_0.pt").exists()  # stale units from the old store discarded
+
+
+def test_group_mlp_matches_serial_references():
+    """Round-6 (indiv-mlp-nonlinearity-control) parity pin: the GROUP-fold
+    batched multihead MLP (`row_groups` + `standardization` extension of
+    ``fit_batched_loco_mlp_multihead``) must reproduce a same-seed serial
+    per-fold reference in BOTH standardization modes, and duplicate fits must
+    be bitwise deterministic. Fails pre-fix (the extension did not exist);
+    a future fold-leakage / standardization-mixing refactor fails here before
+    it can ship a wrong nonlinearity-control headline. Reduced epochs for CI
+    speed (measured deviations ~6e-7 at 40 epochs, ~1e-6 at production 300 —
+    both far under the 5e-5 gate)."""
+    from explore_persona_space.analysis.vectorized_mlp_skill import (
+        assert_group_mlp_matches_serial,
+    )
+
+    devs = assert_group_mlp_matches_serial(max_epochs=40)
+    assert devs, "MLP parity gate returned no checks"
+    assert {k for k in devs if "full_data" in k}, "full_data mode not covered"
+    assert {k for k in devs if "per_fold" in k}, "per_fold mode not covered"
+    assert max(devs.values()) < 5e-5
+
+
+def test_multihead_row_groups_none_matches_explicit_singletons():
+    """``row_groups=None`` (the legacy byte-for-byte path) must equal explicit
+    singleton labels EXACTLY — the None default is the pre-extension behavior,
+    so any drift here breaks every existing multihead caller silently."""
+    import numpy as np
+
+    from explore_persona_space.analysis.vectorized_mlp_skill import (
+        MLPGroup,
+        fit_batched_loco_mlp_multihead,
+    )
+
+    rng = np.random.default_rng(7)
+    cells = [
+        MLPGroup(("cA", 0), rng.standard_normal((10, 6)), rng.standard_normal((10, 3))),
+        MLPGroup(("cB", 1), rng.standard_normal((10, 6)), rng.standard_normal((10, 3))),
+    ]
+    kw = dict(seed=658, max_epochs=25, device="cpu", chunk_size=7)
+    res_none = fit_batched_loco_mlp_multihead(cells, **kw)
+    res_singl = fit_batched_loco_mlp_multihead(cells, row_groups=np.arange(10), **kw)
+    for cell in cells:
+        assert np.array_equal(res_none.preds_by_key[cell.key], res_singl.preds_by_key[cell.key])
+
+
+def test_stage_store_maps_hub_layout_to_local_store_layout(tmp_path, monkeypatch):
+    """Crash-fix pin for att-20260704-120700 (fails pre-fix with the production
+    FileNotFoundError): on the Hub ALL 51 store files — the per-context ``.pt``
+    blobs AND ``manifest.json`` — live flat under
+    ``.../analysis_tensors/store/percq_summaries/`` (the extractor uploaded the
+    manifest INSIDE that folder), while ``Store(store_dir)`` reads
+    ``<store>/manifest.json`` + ``<store>/percq_summaries/<ctx>.pt``.
+    ``stage_store`` must map the REAL Hub layout onto the local ``Store``
+    layout; mirroring the Hub prefix verbatim staged the manifest at
+    ``<store>/percq_summaries/manifest.json`` and crashed ``Store()`` at init.
+    The fake Hub below serves a real loadable store through the exact
+    production path shapes (verified against the live listing at the pinned
+    revision), and the second ``stage_store`` call pins that the entry-time
+    missing-check uses the SAME mapping (no refetch of staged files)."""
+    from types import SimpleNamespace
+
+    import huggingface_hub
+    import issue928_mlp_indiv_control as drv
+    from issue928_fit_decomposition import Store
+
+    src = _make_synth_store(tmp_path / "src")
+    # The REAL production Hub layout: everything flat under <prefix>/percq_summaries/.
+    hub_files = {f"{drv.STORE_HF_PREFIX}/percq_summaries/manifest.json": src / "manifest.json"}
+    for p in sorted((src / "percq_summaries").glob("*.pt")):
+        hub_files[f"{drv.STORE_HF_PREFIX}/percq_summaries/{p.name}"] = p
+
+    calls = {"download": 0}
+
+    class _FakeApi:
+        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, **_kw):
+            assert path_in_repo == drv.STORE_HF_PREFIX, path_in_repo
+            return [SimpleNamespace(path=p, size=1) for p in sorted(hub_files)]
+
+    def _fake_download(repo_id, filename, repo_type=None, revision=None):
+        calls["download"] += 1
+        return str(hub_files[filename])
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download)
+    monkeypatch.setattr(drv.time, "sleep", lambda _s: None)  # fail fast, not 4x20s retries
+
+    dest = tmp_path / "staged"
+    drv.stage_store(dest, "test-revision")
+    assert (dest / "manifest.json").is_file()  # the exact production crash path
+    store = Store(dest)  # pre-fix: FileNotFoundError .../manifest.json (att-20260704-120700)
+    assert len(store.ctx_ids) == 4 and store.groups.shape[0] == 8
+
+    # Entry-time missing-check uses the SAME mapping: a fully-staged store refetches nothing.
+    n = calls["download"]
+    drv.stage_store(dest, "test-revision")
+    assert calls["download"] == n
+
+    # The pure mapping function, pinned directly (manifest -> store root; blobs unchanged).
+    assert drv.store_local_relpath("percq_summaries/manifest.json") == "manifest.json"
+    assert drv.store_local_relpath("manifest.json") == "manifest.json"
+    assert drv.store_local_relpath("percq_summaries/c0.pt") == "percq_summaries/c0.pt"
+
+
+def test_mlp_indiv_control_resume_skips_and_keys_on_identity(tmp_path, monkeypatch):
+    """Round-6 restartability pin (the branch's r2/r3 standard, fails pre-fix):
+    ``run_mlp_fits`` persists per-(arm, layer) durable units and a re-run with
+    a matching manifest SKIPS them WITHOUT refitting while reproducing the
+    exact same outputs; the manifest key carries the generation identity
+    (store identity digest + pinned store revision + standardization + seed),
+    and any key change DISCARDS stale units."""
+    import issue928_mlp_indiv_control as drv
+    import numpy as np
+    from issue928_fit_decomposition import Store, prepare_checkpoint_dir
+
+    fix = drv.build_synth_fixture(tmp_path / "fix")
+    store = Store(fix["store"])
+    decomp = drv.load_decomp(fix["decomp"])
+
+    real_fit = drv.fit_batched_loco_mlp_multihead
+    monkeypatch.setattr(
+        drv,
+        "fit_batched_loco_mlp_multihead",
+        lambda *a, **k: real_fit(*a, **{**k, "max_epochs": 10}),
+    )
+    key = drv.fit_manifest_key(store, [25], "cpu", 64)
+    for field in ("store_identity", "store_revision", "standardization", "seed", "mlp", "device"):
+        assert field in key, field
+    ckpt = prepare_checkpoint_dir(tmp_path / "partial", "mlp_indiv", key)
+    units1, audits1 = drv.run_mlp_fits(store, [25], decomp, "cpu", 64, ckpt)
+    assert audits1 and audits1[0]["d_ctx2ans"]["max_rel_dev"] <= 1e-9  # WARN fix (b) ran
+    assert sorted(p.name for p in ckpt.glob("layer_*.pt")) == [
+        "layer_25_mlp_d_ctx2ans.pt",
+        "layer_25_mlp_g_aug.pt",
+    ]
+
+    def _boom(*_a, **_k):
+        raise AssertionError("resume must not refit — completed units must be skipped")
+
+    monkeypatch.setattr(drv, "fit_batched_loco_mlp_multihead", _boom)
+    units2, audits2 = drv.run_mlp_fits(store, [25], decomp, "cpu", 64, ckpt)
+    assert set(units2) == set(units1)
+    for k2 in units1:
+        assert np.array_equal(units1[k2]["preds"], units2[k2]["preds"])
+        assert np.array_equal(units1[k2]["ss_res"], units2[k2]["ss_res"])
+        assert np.array_equal(units1[k2]["ss_tot"], units2[k2]["ss_tot"])
+    assert len(audits2) == 1  # one ss_tot audit per layer, resumed path included
+
+    # A changed output-affecting key (standardization) DISCARDS stale units
+    # (#722 r3: never silently reuse wrong cached rows).
+    key2 = dict(key, standardization="per_fold")
+    ckpt2 = prepare_checkpoint_dir(tmp_path / "partial", "mlp_indiv", key2)
+    assert not list(ckpt2.glob("layer_*.pt"))

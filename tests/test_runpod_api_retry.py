@@ -691,3 +691,23 @@ def test_create_cpu_pod_raises_no_capacity_when_exhausted(monkeypatch):
     with pytest.raises(RunPodNoCapacityError):
         create_cpu_pod("pod-747", "cpu3g-2-8", cloud_type="ALL", enable_supply_fallback=False)
     assert len(rec2.queries) == 1  # primary only
+
+
+def test_create_cpu_pod_effective_container_disk_folds_volume(monkeypatch):
+    """#1010: the EFFECTIVE deployCpuPod payload is max(container_disk_gb,
+    volume_gb) — _deploy_cpu_once folds the CPU volume request into
+    containerDiskInGb (deployCpuPodInput has no volume field). This is the
+    payload-level truth the router caps table / probe / pod_lifecycle clamp
+    semantics rest on (render-only, no live call)."""
+    from runpod_api import create_cpu_pod
+
+    rec = _capture_cpu_graphql(monkeypatch, [_make_cpu_pod_payload()])
+    create_cpu_pod("pod-1010", "cpu3c-8-16", container_disk_gb=80, volume_gb=80)
+    assert "containerDiskInGb: 80" in rec.queries[0]
+
+    rec2 = _capture_cpu_graphql(monkeypatch, [_make_cpu_pod_payload()])
+    create_cpu_pod("pod-1010", "cpu3g-2-8", container_disk_gb=20, volume_gb=40)
+    # The fold: a 20 GB container request with the 40 GB CPU volume default
+    # still sends an EFFECTIVE 40 — a bare container_disk_gb clamp cannot
+    # bound the payload.
+    assert "containerDiskInGb: 40" in rec2.queries[0]

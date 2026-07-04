@@ -42,11 +42,13 @@ Check catalog (id — classification — kind scope)
       source coverage           (analysis), conditional   analysis
   c19 OOD generalization folds  WARN-only, conditional    experiment +
                                                           analysis
+  c20 verdict-lattice           FAIL (experiment) / WARN  experiment +
+      coherence                 (analysis), conditional   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
-also SKIP when their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+19, 20) also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -63,6 +65,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no re-extracted reference arms`` (check 16)
   - ``N/A — no paired contrast`` (check 18)
   - ``N/A — no held-out predictive DV`` (check 19)
+  - ``N/A — no registered verdict lattice`` (check 20)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -2429,6 +2432,580 @@ def check_ood_folds(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 20 — verdict-lattice coherence (conditional) ────────────────────
+
+# Trigger sections: hypothesis / success / kill / decision / verdict / gate —
+# the c8/c13 families plus "hypothes" + "verdict"; deliberately NOT
+# "evaluation" (c13 includes it for gate lines; a verdict LATTICE registered
+# only in an Evaluation recap is an accepted under-trigger — fails safe).
+_C20_SECTION_RE = re.compile(r"(?i)hypothes|success|kill|decision|verdict|gate")
+
+# Tier 1: the #923 v6 registered form — "…DISJOINT and exhaustive: <label> ⇔
+# <predicate>; …". The declaration claims a partition, so BOTH defect classes
+# (co-fire AND gap) are FAIL-capable.
+_C20_DECL_RE = re.compile(r"(?i)\bdisjoint\b[^.\n]{0,60}\bexhaustive\b[^:\n]{0,20}:")
+_C20_CLAUSE_RE = re.compile(r"([^;⇔\n]{1,80})\s*⇔\s*([^;\n]+)")
+
+# Tier 2: verdict-label anchor applied to a list item's FIRST bold span.
+_C20_LABEL_RE = re.compile(
+    r"(?i)^(?:h[-\s]?\w|intermediate|inconclusive|confirm|falsif|success|kill|pass\b|fail\b)"
+)
+_C20_BOLD_RE = re.compile(r"\*\*([^*\n]{1,80})\*\*")
+
+# Atom grammar. POINT: `<qty> ≥/> 0` → pos, `≤/< 0` → neg (interior
+# semantics, §4.4 convention); the `0(?!\.?\d)` lookahead keeps "p ≤ 0.05"
+# out (a decimal alpha is c13's shape, not a sign atom).
+_C20_POINT_RE = re.compile(r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*0(?!\.?\d)")
+_C20_POINT_POS = ("≥", ">=", ">")
+
+# CI atoms: a `CI`/`CIs` token, a tiny closed copula gap, then one idiom.
+# Axis binding: `paired` within the 40 chars BEFORE the CI token (window
+# clamped at the previous atom's span end — a preceding atom's own `paired`
+# wording never leaks into this atom's binding) → paired axis, else primary.
+# Idiom order matters: side-qualified excludes before the bare two-sided
+# exclude.
+_C20_CI_TOKEN_RE = re.compile(r"(?i)\bCIs?\b")
+_C20_CI_GAP_RE = re.compile(r"(?:\s+(?:is|are|stays?|remains?))?\s*")
+_C20_Z = r"(?:0|zero)(?!\.?\d)"
+_C20_CI_IDIOMS: list[tuple[re.Pattern[str], frozenset[str]]] = [
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"\s+on\s+the\s+positive\s+side"),
+        frozenset({"above"}),
+    ),
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"\s+on\s+the\s+negative\s+side"),
+        frozenset({"below"}),
+    ),
+    (re.compile(r"(?i)strictly\s+positive\b"), frozenset({"above"})),
+    (re.compile(r"(?i)strictly\s+negative\b"), frozenset({"below"})),
+    (
+        re.compile(r"(?i)wholly\s+(?:at\s+or\s+|at/)?above\s+" + _C20_Z),
+        frozenset({"above"}),
+    ),
+    (re.compile(r"(?i)at\s+or\s+above\s+" + _C20_Z), frozenset({"above"})),
+    (
+        re.compile(r"(?i)wholly\s+below\s+" + _C20_Z + r"|below\s+zero\b"),
+        frozenset({"below"}),
+    ),
+    (
+        re.compile(r"(?i)(?:includes?|contains?|straddl(?:es?|ing)|overlaps?)\s+" + _C20_Z),
+        frozenset({"straddle"}),
+    ),
+    (
+        re.compile(r"(?i)exclud(?:es|ing)\s+" + _C20_Z + r"|clear\s+of\s+" + _C20_Z),
+        frozenset({"below", "above"}),
+    ),
+]
+
+# OTHERWISE atom (complement label — fires iff no non-otherwise label fires).
+_C20_OTHERWISE_RE = re.compile(
+    r"(?i)\botherwise\b|\ball other\b|\bneither\b[^.;\n]{0,40}\bfires?\b|\bno binary verdict\b"
+)
+
+# Completeness-gate residue tokens: any CI token, comparator char, idiom
+# keyword, or NEGATOR (Must-Fix: "the CI never includes 0" would otherwise
+# parse as the positive atom with inverted polarity) OUTSIDE every recognized
+# atom span makes the label `unparsed` — the lattice is then never
+# FAIL-capable (WARN).
+_C20_RESIDUE_RE = re.compile(
+    r"(?i)\bCIs?\b|[<>≤≥]"
+    r"|\binclud\w*|\bexclud\w*|\bstraddl\w*|\bwholly\b|\bstrictly\b|\bclear of\b"
+    r"|\b(?:not|never|no|nor|unless|except|without)\b|\bfails?\s+to\b"
+)
+
+# Connectives: only AND / OR (incl. ", OR") / `with` (AND-equivalent) join
+# atoms; any other joiner (bare comma, if/when chains, and/or → two hits)
+# is fail-closed to `unparsed` — no silent default connective.
+_C20_CONNECTIVE_RE = re.compile(r"(?i)\b(?:and|or|with)\b")
+
+# Axis-identity fail-closed guard (ii): post-CI `paired` wording ("the CI of
+# the paired difference includes 0") is never silently bound to an axis.
+_C20_POST_CI_PAIRED_RE = re.compile(r"(?i)\bCIs?\b\s+(?:of|on|for|over)\s+(?:the\s+)?paired\b")
+
+# Precedence-phrase screen: an order-evaluated lattice is coherent in a way
+# the cell algebra cannot see → fail closed to `unparsed` (WARN).
+_C20_PRECEDENCE_RE = re.compile(
+    r"(?i)first matching|in (?:that |this )?order|takes precedence|evaluated in order|\bwins\b"
+)
+
+# Quantifier screen (tier 2): k-of-n / per-family predicates ("at >= 4/6
+# pre-registered layers", "for all traits") are outside the v1 cell algebra
+# -> SKIP.
+# Deliberately NOT bare "every" (v6's recap says "for every … cell").
+_C20_QUANT_RE = re.compile(
+    r"(?i)(?:at least\s+\d+|≥\s*\d+|>=\s*\d+)\s*(?:of|/)\s*\d+|\ball\s+\d+\b|\bfor (?:all|each)\b"
+)
+
+# Tier-2 segment machinery: sentence split, →/Consequence truncation, the
+# "confirmed if(f)" selector.
+_C20_SENT_SPLIT_RE = re.compile(r"(?<=\.)\s+")
+_C20_TRUNC_RE = re.compile(r"→|\bConsequence\b")
+_C20_CONFIRMED_RE = re.compile(r"(?i)\bconfirmed\s+iff?\b")
+# Tier-1 clause predicates truncate at the first sentence terminator so a
+# trailing recap sentence (v6's "Exactly one label fires for every … cell.")
+# never enters the otherwise clause as residue.
+_C20_SENT_END_RE = re.compile(r"\.(?=\s|$)")
+
+_C20_CI_STATES = ("below", "straddle", "above")
+
+
+def _c20_trigger_sections(plan: str) -> list[str]:
+    """Fence-stripped texts of the OUTERMOST sections whose heading matches
+    the c20 trigger families (a nested matching heading inside an
+    already-taken section is not re-collected)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    taken: list[tuple[int, int]] = []
+    out: list[str] = []
+    for h in _headings(plan):
+        if not _C20_SECTION_RE.search(h.text):
+            continue
+        if any(s <= h.line and h.end <= e for s, e in taken):
+            continue
+        taken.append((h.line, h.end))
+        out.append("\n".join(lines[j] for j in range(h.line, h.end) if not mask[j]))
+    return out
+
+
+def _c20_label_name(bold: str) -> str:
+    """Short display name for a harvested label: the bold span up to its
+    first parenthetical annotation, trailing colon stripped."""
+    return bold.split(" (")[0].rstrip(": ").strip()
+
+
+def _c20_any_ci_idiom(text: str) -> bool:
+    """True when ``text`` carries at least one CI-predicate idiom (the
+    harvest condition — presence-only; atom adjacency is parse-time)."""
+    return any(pat.search(text) for pat, _ in _C20_CI_IDIOMS)
+
+
+def _c20_harvest_labels(section_text: str) -> list[dict]:
+    """Tier-2 label harvest over one (fence-stripped) trigger section:
+    top-level list items whose FIRST bold span matches the verdict-label
+    anchor AND whose text carries a CI idiom (or an otherwise-token — an
+    idiom-free complement label like "**Inconclusive:** otherwise" still
+    joins the lattice it completes). Returns
+    ``[{name, text, idiom}]`` in document order."""
+    labels: list[dict] = []
+    for block in _hypothesis_blocks(section_text):
+        first_line = block.splitlines()[0] if block else ""
+        if not _C14_LIST_ITEM_RE.match(first_line):
+            continue
+        bm = _C20_BOLD_RE.search(block)
+        if bm is None:
+            continue
+        bold = bm.group(1).strip()
+        if not _C20_LABEL_RE.match(bold):
+            continue
+        has_idiom = _c20_any_ci_idiom(block)
+        if not (has_idiom or _C20_OTHERWISE_RE.search(block)):
+            continue
+        labels.append(
+            {"name": _c20_label_name(bold), "text": block[bm.end() :], "idiom": has_idiom}
+        )
+    return labels
+
+
+def _c20_has_atom(sentence: str) -> bool:
+    """True when ``sentence`` carries a full parseable atom (point, CI, or
+    otherwise) — idiom presence alone does not count (a CI idiom with no
+    adjacent CI token is a residue shape, not an atom)."""
+    if _C20_POINT_RE.search(sentence) or _C20_OTHERWISE_RE.search(sentence):
+        return True
+    for m in _C20_CI_TOKEN_RE.finditer(sentence):
+        gm = _C20_CI_GAP_RE.match(sentence, m.end())
+        if any(pat.match(sentence, gm.end()) for pat, _ in _C20_CI_IDIOMS):
+            return True
+    return False
+
+
+def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
+    """``(predicate_segment, unparsed_reason)`` for a tier-2 label: the
+    sentence containing "confirmed if(f)" when present, else the SINGLE
+    atom-bearing sentence; each sentence truncated at the first ``→`` /
+    ``Consequence`` token. >1 atom-bearing sentence without a confirmed-iff
+    selector is ambiguous → unparsed."""
+    sentences = [_C20_TRUNC_RE.split(s)[0] for s in _C20_SENT_SPLIT_RE.split(label_text)]
+    confirmed = [s for s in sentences if _C20_CONFIRMED_RE.search(s)]
+    if confirmed:
+        return confirmed[0], None
+    bearing = [s for s in sentences if _c20_has_atom(s)]
+    if len(bearing) > 1:
+        return None, ">1 atom-bearing sentence and no 'confirmed if(f)' selector — ambiguous"
+    if not bearing:
+        return None, "no sentence with a parseable atom"
+    return bearing[0], None
+
+
+def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
+    """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
+    (sorted by position) plus the set of normalized POINT quantities. The
+    axis-binding lookback is clamped at the previous atom's span end so a
+    preceding atom's `paired` token never mis-binds a later primary atom."""
+    atoms: list[tuple[str, frozenset[str], int, int]] = []
+    qtys: set[str] = set()
+    for m in _C20_POINT_RE.finditer(segment):
+        sign = "pos" if m.group("cmp") in _C20_POINT_POS else "neg"
+        qtys.add(m.group("qty").strip("`*").casefold())
+        atoms.append(("point", frozenset({sign}), m.start(), m.end()))
+    for m in _C20_CI_TOKEN_RE.finditer(segment):
+        gm = _C20_CI_GAP_RE.match(segment, m.end())
+        hit: tuple[re.Match[str], frozenset[str]] | None = None
+        for pat, states in _C20_CI_IDIOMS:
+            im = pat.match(segment, gm.end())
+            if im:
+                hit = (im, states)
+                break
+        if hit is None:
+            continue  # the stray CI token becomes completeness residue
+        # Clamp the lookback at the previous atom's span end: a paired atom
+        # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
+        # token into THIS atom's window, binding both atoms to the paired
+        # axis — a contradictory conjunction that never fires, manufacturing
+        # a tier-1 gap → false FAIL (round-1 code-review Minor).
+        prev_end = max((a[3] for a in atoms if a[3] <= m.start()), default=0)
+        lookback = segment[max(0, m.start() - 40, prev_end) : m.start()].lower()
+        axis = "paired" if "paired" in lookback else "primary"
+        atoms.append((axis, hit[1], m.start(), hit[0].end()))
+    atoms.sort(key=lambda a: a[2])
+    return atoms, qtys
+
+
+def _c20_build_dnf(
+    segment: str, atoms: list[tuple[str, frozenset[str], int, int]]
+) -> tuple[list[list[tuple[str, frozenset[str]]]] | None, str | None]:
+    """``(dnf, None)`` for the atom chain under AND > OR precedence with the
+    connective fail-closed rule, or ``(None, reason)``."""
+    for i in range(1, len(atoms)):
+        if atoms[i][2] < atoms[i - 1][3]:
+            return None, "overlapping atom spans"
+    conns: list[str] = []
+    for i in range(1, len(atoms)):
+        gap = segment[atoms[i - 1][3] : atoms[i][2]]
+        found = [c.lower() for c in _C20_CONNECTIVE_RE.findall(gap)]
+        if len(found) != 1:
+            return None, f"joiner between atoms is not exactly one of AND/OR/with ({gap.strip()!r})"
+        conns.append(found[0])
+    groups: list[list[tuple[str, frozenset[str]]]] = [[(atoms[0][0], atoms[0][1])]]
+    for i, conn in enumerate(conns, start=1):
+        if conn == "or":
+            groups.append([(atoms[i][0], atoms[i][1])])
+        else:  # and / with — AND-equivalent
+            groups[-1].append((atoms[i][0], atoms[i][1]))
+    return groups, None
+
+
+def _c20_parse_predicate(segment: str) -> dict:
+    """Compile one predicate segment to DNF over sign/CI atoms (or an
+    otherwise-label). Fail-closed: any completeness-gate residue (stray CI
+    token / comparator / idiom keyword / NEGATOR), any non-AND/OR/with
+    joiner between atoms, or an otherwise-token mixed with predicate atoms
+    marks the segment ``unparsed`` (reason in the returned dict)."""
+    out: dict = {"otherwise": False, "dnf": [], "unparsed": None, "point_qtys": set()}
+    atoms, out["point_qtys"] = _c20_collect_atoms(segment)
+    otherwise_spans = [(m.start(), m.end()) for m in _C20_OTHERWISE_RE.finditer(segment)]
+    if otherwise_spans and atoms:
+        out["unparsed"] = "an 'otherwise' token mixed with predicate atoms in one segment"
+        return out
+    spans = otherwise_spans if otherwise_spans else [(a[2], a[3]) for a in atoms]
+    residues = [
+        m.group(0)
+        for m in _C20_RESIDUE_RE.finditer(segment)
+        if not any(s <= m.start() and m.end() <= e for s, e in spans)
+    ]
+    if residues:
+        out["unparsed"] = "predicate token(s) outside every recognized atom: " + ", ".join(
+            repr(r) for r in residues[:4]
+        )
+        return out
+    if otherwise_spans:
+        out["otherwise"] = True
+        return out
+    if not atoms:
+        out["unparsed"] = "no recognized atom"
+        return out
+    dnf, reason = _c20_build_dnf(segment, atoms)
+    if dnf is None:
+        out["unparsed"] = reason
+        return out
+    out["dnf"] = dnf
+    return out
+
+
+def _c20_enumerate(labels: list[dict]) -> tuple[list, list]:
+    """Interior-cells-only 3-state enumeration over the REFERENCED axes with
+    point-in-CI coherence pruning (a bootstrap CI contains its point
+    estimate). Returns ``(cofires, gaps)`` — cofires as ``(cell, [label
+    names])``, gaps as bare cells. An otherwise-label fires exactly on the
+    cells no predicate label covers (killing gap findings by construction)."""
+    preds = [lab for lab in labels if not lab["parse"]["otherwise"]]
+    others = [lab for lab in labels if lab["parse"]["otherwise"]]
+    axes = {axis for lab in preds for conj in lab["parse"]["dnf"] for axis, _ in conj}
+    primary_vals: tuple = _C20_CI_STATES if "primary" in axes else (None,)
+    paired_vals: tuple = _C20_CI_STATES if "paired" in axes else (None,)
+    cofires: list[tuple[dict, list[str]]] = []
+    gaps: list[dict] = []
+    for primary in primary_vals:
+        if "point" not in axes:
+            point_vals: tuple = (None,)
+        elif primary is None:
+            point_vals = ("neg", "pos")
+        else:
+            point_vals = {"below": ("neg",), "straddle": ("neg", "pos"), "above": ("pos",)}[primary]
+        for point in point_vals:
+            for paired in paired_vals:
+                cell = {"point": point, "primary": primary, "paired": paired}
+                fired = [
+                    lab
+                    for lab in preds
+                    if any(
+                        all(cell[axis] in values for axis, values in conj)
+                        for conj in lab["parse"]["dnf"]
+                    )
+                ]
+                if not fired and others:
+                    fired = others
+                if len(fired) >= 2:
+                    cofires.append((cell, [lab["name"] for lab in fired]))
+                elif not fired:
+                    gaps.append(cell)
+    return cofires, gaps
+
+
+def _c20_cell_str(cell: dict) -> str:
+    """Plain-terms cell rendering for FAIL/WARN details."""
+    parts: list[str] = []
+    if cell["point"] is not None:
+        parts.append("point > 0" if cell["point"] == "pos" else "point < 0")
+    for axis in ("primary", "paired"):
+        v = cell[axis]
+        if v is not None:
+            word = {"below": "wholly below 0", "straddle": "straddles 0", "above": "wholly above 0"}
+            parts.append(f"{axis} CI {word[v]}")
+    return "{" + ", ".join(parts) + "}"
+
+
+_C20_REMEDY = (
+    " — restate the lattice as an explicit partition (`DISJOINT and exhaustive: "
+    "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`), add an otherwise-label, or "
+    "declare 'N/A — no registered verdict lattice' on its own line"
+)
+
+
+def _c20_offender_detail(tier_desc: str, cofires: list, gaps: list) -> str:
+    """Bounded offender detail: co-fire cells with both label names first,
+    gap cells as the secondary note, ≤4 shown each, remedy menu last."""
+    bits: list[str] = []
+    if cofires:
+        shown = "; ".join(
+            f"labels {' + '.join(names)} CO-FIRE on cell {_c20_cell_str(cell)}"
+            for cell, names in cofires[:4]
+        )
+        if len(cofires) > 4:
+            shown += "; …"
+        bits.append(shown)
+    if gaps:
+        shown = ", ".join(_c20_cell_str(c) for c in gaps[:4])
+        if len(gaps) > 4:
+            shown += ", …"
+        bits.append(f"no label fires on cell(s) {shown}")
+    return (
+        f"the registered verdict lattice ({tier_desc}) is not a partition: "
+        + "; ".join(bits)
+        + _C20_REMEDY
+    )
+
+
+def _c20_evaluate_lattice(labels: list[dict], *, tier: int, section_text: str) -> tuple[str, str]:
+    """Shared per-lattice verdict core → ``(state, detail)`` with state in
+    {"unparsed", "cofire", "gap", "clean"}. The kind/tier degradations
+    (§4.5 table) are applied by the caller."""
+    names = " / ".join(lab["name"] for lab in labels)
+    tier_desc = f"tier {tier}: {names}"
+    pm = _C20_PRECEDENCE_RE.search(section_text)
+    if pm:
+        return (
+            "unparsed",
+            f"label-precedence phrase {pm.group(0)!r} in the lattice's section makes the "
+            "labels order-evaluated — the cell algebra cannot verify an ordered lattice; "
+            "restate it as the explicit ⇔ partition form",
+        )
+    unparsed = [lab for lab in labels if lab["parse"]["unparsed"]]
+    if unparsed:
+        first = unparsed[0]
+        return (
+            "unparsed",
+            f"label '{first['name']}' ({tier_desc}) did not fully parse: "
+            f"{first['parse']['unparsed']} — the lattice is not FAIL-capable; restate it as "
+            "the explicit ⇔ partition form (`DISJOINT and exhaustive: <label> ⇔ <predicate>; "
+            "…`) so coherence is machine-checkable",
+        )
+    qtys = set()
+    for lab in labels:
+        qtys |= lab["parse"]["point_qtys"]
+    if len(qtys) > 1:
+        return (
+            "unparsed",
+            f"the lattice's labels reference {len(qtys)} distinct point quantities "
+            f"({', '.join(sorted(qtys)[:4])}) — a single-point-axis cell algebra cannot "
+            "represent them (never silently collapsed onto one axis); restate the lattice "
+            "over one point quantity or use the explicit ⇔ partition form",
+        )
+    cofires, gaps = _c20_enumerate(labels)
+    if cofires or gaps:
+        detail = _c20_offender_detail(tier_desc, cofires, gaps)
+        return ("cofire" if cofires else "gap", detail)
+    return (
+        "clean",
+        f"{tier_desc} — every interior sign/CI cell fires exactly one label "
+        "(partition verified in form; boundary semantics stay with the Statistics critic)",
+    )
+
+
+_C20_POST_CI_PAIRED_REASON = (
+    "post-CI 'paired' wording (e.g. 'the CI of the paired difference') is "
+    "not silently bound to an axis"
+)
+
+
+def _c20_find_declaration(sections: list[str]) -> tuple[str, list[tuple[str, str]]] | None:
+    """First DISJOINT-and-exhaustive ⇔ declaration across the trigger
+    sections → ``(section_text, [(label, predicate), …])``; None when no
+    declaration line exists (tier 2 then applies)."""
+    for sec in sections:
+        for line in sec.splitlines():
+            dm = _C20_DECL_RE.search(line)
+            if not dm:
+                continue
+            clauses = []
+            for chunk in line[dm.end() :].split(";"):
+                cm = _C20_CLAUSE_RE.match(chunk)
+                if cm:
+                    clauses.append((cm.group(1).strip(), cm.group(2).strip()))
+            return sec, clauses
+    return None
+
+
+def _c20_tier1_result(cid: str, name: str, kind: str, sec: str, clauses: list) -> CheckResult:
+    """Tier-1 verdict: the plan CLAIMED a partition, so co-fire AND gap are
+    both FAIL-capable (WARN under kind=analysis); unparsed clauses WARN."""
+    if len(clauses) < 2:
+        return _warn(
+            cid,
+            name,
+            "a DISJOINT-and-exhaustive declaration was found but fewer than 2 "
+            "`<label> ⇔ <predicate>` clauses parsed from it — the claimed partition is "
+            "not machine-checkable; use the canonical form (`DISJOINT and exhaustive: "
+            "<label> ⇔ <predicate>; …; <label> ⇔ otherwise`)",
+        )
+    labels = []
+    for clabel, cpred in clauses:
+        pred = _C20_SENT_END_RE.split(cpred)[0]
+        parse = _c20_parse_predicate(pred)
+        if _C20_POST_CI_PAIRED_RE.search(pred):
+            parse["unparsed"] = _C20_POST_CI_PAIRED_REASON
+        labels.append({"name": _c20_label_name(clabel), "parse": parse})
+    state, detail = _c20_evaluate_lattice(labels, tier=1, section_text=sec)
+    if state == "clean":
+        return _pass(cid, name, detail)
+    if state == "unparsed":
+        return _warn(cid, name, detail)
+    if kind == "analysis":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    return _fail(cid, name, detail)
+
+
+def _c20_tier2_result(cid: str, name: str, kind: str, lattices: list) -> CheckResult:
+    """Tier-2 verdict over every qualifying section's lattice (worst wins):
+    complete-parse co-fire FAILs (WARN under kind=analysis); gap-only and
+    any-unparsed WARN; any quantified label SKIPs the whole check."""
+    worst: tuple[int, str, str] | None = None  # (rank, state, detail)
+    rank = {"clean": 0, "gap": 1, "unparsed": 2, "cofire": 3}
+    for sec, labels in lattices:
+        for lab in labels:
+            seg, reason = _c20_segment(lab["text"])
+            if seg is not None and _C20_QUANT_RE.search(seg):
+                return _skip(
+                    cid,
+                    name,
+                    f"label '{lab['name']}' carries quantified verdict predicates out of v1 "
+                    "scope (k-of-n / per-family lattices are the Statistics critic's)",
+                )
+            if _C20_POST_CI_PAIRED_RE.search(lab["text"]):
+                seg, reason = None, _C20_POST_CI_PAIRED_REASON
+            if reason is not None:
+                lab["parse"] = {
+                    "otherwise": False,
+                    "dnf": [],
+                    "unparsed": reason,
+                    "point_qtys": set(),
+                }
+            else:
+                lab["parse"] = _c20_parse_predicate(seg)
+        state, detail = _c20_evaluate_lattice(labels, tier=2, section_text=sec)
+        if worst is None or rank[state] > worst[0]:
+            worst = (rank[state], state, detail)
+    assert worst is not None  # ≥1 lattice on this branch
+    _, state, detail = worst
+    if state == "clean":
+        return _pass(cid, name, detail)
+    if state == "cofire" and kind == "experiment":
+        return _fail(cid, name, detail)
+    if state == "cofire":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    if state == "gap":
+        return _warn(
+            cid,
+            name,
+            detail + " (tier-2 gap degrades to WARN: gap precision depends on harvest recall)",
+        )
+    return _warn(cid, name, detail)
+
+
+def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
+    """A REGISTERED VERDICT LATTICE — success/kill/intermediate labels
+    defined by interval predicates over point estimates and CIs — must be
+    mutually exclusive and exhaustive over the interior sign/CI cells.
+    Tier 1 (the explicit "DISJOINT and exhaustive: <label> ⇔ <predicate>"
+    declaration) is FAIL-capable on co-fire AND gap (the plan claimed a
+    partition); tier 2 (per-label prose, the #923 v4 shape) FAILs only on a
+    co-fire with a COMPLETE parse — gaps degrade to WARN (gap precision
+    depends on harvest recall), any unparsed label degrades the whole
+    lattice to WARN, and quantified (k-of-n) predicates SKIP as out of the
+    v1 cell algebra. FAIL (experiment) / WARN (analysis) / SKIP otherwise;
+    escape via a standalone ``N/A — no registered verdict lattice`` line.
+    Incident: #923 amendment plan v4/v5 §3 — a bare positive point estimate
+    with both CIs straddling 0 fired BOTH H-slot and Intermediate (and one
+    cell fired neither); caught only by the Codex statistics critic, fixed
+    by hand in v6."""
+    cid, name = "c20_verdict_lattice_coherence", "verdict-lattice coherence"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: registered verdict lattices are an experiment|analysis shape"
+        )
+    sections = _c20_trigger_sections(plan)
+    # Tier 1 takes precedence over tier 2 when a declaration exists anywhere.
+    tier1 = _c20_find_declaration(sections)
+    lattices: list[tuple[str, list[dict]]] = []
+    if tier1 is None:
+        for sec in sections:
+            labels = _c20_harvest_labels(sec)
+            if sum(1 for lab in labels if lab["idiom"]) >= 2:
+                lattices.append((sec, labels))
+    if tier1 is None and not lattices:
+        return _skip(
+            cid,
+            name,
+            "no registered verdict lattice detected (no DISJOINT-and-exhaustive ⇔ "
+            "declaration; fewer than 2 anchored CI-predicate labels in any trigger section)",
+        )
+    if _standalone_na_declared(plan, r"no registered verdict lattice"):
+        return _pass(cid, name, "explicit N/A declared (no registered verdict lattice)")
+    if tier1 is not None:
+        return _c20_tier1_result(cid, name, kind, tier1[0], tier1[1])
+    return _c20_tier2_result(cid, name, kind, lattices)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -2451,6 +3028,7 @@ CHECKS = [
     check_causal_claim_scope,
     check_paired_contrast_source_coverage,
     check_ood_folds,
+    check_verdict_lattice_coherence,
 ]
 
 

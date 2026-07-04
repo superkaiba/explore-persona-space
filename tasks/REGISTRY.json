@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1010,
+  "highest_id": 1014,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -69,8 +69,8 @@
     "1006": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1006",
-      "status": "running",
+      "path": "tasks/completed/1006",
+      "status": "completed",
       "title": "workflow-fix: verify_plan.py check \u2014 registered verdict lattices must be mutually exclusive + exhaustive"
     },
     "1007": {
@@ -104,9 +104,37 @@
     "1010": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1010",
-      "status": "proposed",
+      "path": "tasks/completed/1010",
+      "status": "completed",
       "title": "workflow-fix: thread disk requirement into RunPod CPU fallback (containerDiskInGb + refuse-on-infeasible)"
+    },
+    "1011": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1011",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body WARN on orphaned committed per-context companion figures"
+    },
+    "1012": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1012",
+      "status": "proposed",
+      "title": "workflow-fix: reconcile stale ensemble round ranges (1-3) with the cap-5 policy"
+    },
+    "1013": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1013",
+      "status": "proposed",
+      "title": "workflow-fix: v4 no-issue-refs check misses markdown-linked refs in Methodology prose"
+    },
+    "1014": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1014",
+      "status": "proposed",
+      "title": "workflow-fix: check 17 lacks a Context-row lineage-token requirement"
     },
     "102": {
       "has_clean_result": false,
@@ -6027,8 +6055,8 @@
     "906": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/running/906",
-      "status": "running",
+      "path": "tasks/completed/906",
+      "status": "completed",
       "title": "artifacts factory Phase 1: validate unified pipeline + calibrate cost on 4 pilot classes"
     },
     "907": {
@@ -6200,8 +6228,8 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/928",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/928",
+      "status": "awaiting_promotion",
       "title": "The chain-of-thought summary predictively mediates the thinking model's context\u2192answer activation map (MODERATE confidence)"
     },
     "929": {
@@ -6222,8 +6250,8 @@
       "goal": "Test whether the linear context\u2192answer-profile map (#779/#825 held-out ridge recipe, c_x \u2192 v(x)) generalizes to a character\u2192behavior map in STORIES on Qwen2.5-7B-Instruct \u2014 (a) real stories fed with NO chat template, predicting the mean activation of a character's dialogue span from that character's context vector, and (b) assistant-written multi-character stories under the chat template \u2014 quantifying similarity to the chat-template context\u2192answer map via cross-regime transfer R\u00b2, matched-layer map/weight similarity, and layer-profile rank correlation; specificity control: the same machinery anchored on random persona-irrelevant separator/punctuation tokens (separator activation \u2192 mean activation of the following span until the next separator) to test whether span-mean predictability is character/persona-specific or a generic delimiter-span property.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/931",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/931",
+      "status": "awaiting_promotion",
       "title": "The chat context\u2192answer map does not carry over to fiction, which hosts only a weak, mostly story-level character\u2192dialogue map with a small character-identity component (MODERATE confidence)"
     },
     "932": {
@@ -6376,11 +6404,11 @@
     },
     "952": {
       "goal": "On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validation/test split (validation selects layer + \u03bb, a disjoint test split compares methods and arms), characterize where the linear context\u2192answer-activation map differs between on-policy and off-policy answers, along three axes: (1) per-token-position predictability \u2014 fit h_t: c_last(x) \u2192 z_t^(a)(x) for answer positions t in the first-16 window, the last-16 window (span extended through `<|im_end|>` and its trailing newline \u2014 the last token before a next user turn would begin), and relative-position deciles, per arm a \u2208 {own-regenerated, external-plain, external-distinct-style, mismatched} (the four #823 arms, completions reused) over the 4998-context LMSYS pool; (2) prefix-conditioned prediction \u2014 sweep the predictor to the realized-answer activation at position t (t \u2208 {1,2,4,8,16,32,64,128}; t=0 = c_last baseline) predicting the individual / mean-pooled / max-pooled activations of positions > t, measuring how fast each arm's remainder becomes predictable as prefix is absorbed; and (3) divergence-conditioned evaluation \u2014 evaluate the SAME pool-trained maps on a generation-verified Qwen-vs-Claude divergence query bank (\u22484 quirk categories \u00d7 ~40\u201360 queries, each with matched same-template entity-swapped controls), testing whether off-policy predictability fails specifically where the two models' behaviors diverge while on-policy predictability holds.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/952",
-      "status": "running",
-      "title": "Token-position-resolved on/off-policy characterization of the context\u2192answer activation map + divergence-conditioned evaluation (Qwen vs Claude)"
+      "path": "tasks/interpreting/952",
+      "status": "interpreting",
+      "title": "The own-answer advantage in predicting answer activations from context is position-uniform at the selected read-out layer (MODERATE confidence)"
     },
     "953": {
       "has_clean_result": false,
@@ -6419,11 +6447,11 @@
     },
     "958": {
       "goal": "Characterize whether the mappings (trained so far on mostly short contexts) hold up or change systematically as the context gets longer and spans many chat turns \u2014 training BOTH the context\u2192answer mapping AND the prefix\u2192answer mapping on the SAME data: (a) is the mapping from (prefix + query 1 \u2192 answer 1) the same as the mapping from (prefix + query 2 \u2192 answer 2); (b) can later answers (answer 2, 3, 4, \u2026) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot. Open design question for the planner: how to obtain multiple queries per prefix to average over for the prefix\u2192answer mapping.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/958",
-      "status": "running",
-      "title": "How does the context\u2192answer mapping change as the context gets longer (multi-turn)"
+      "path": "tasks/awaiting_promotion/958",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, and at matched ridge shrinkage the turn-1 map also transfers positively to turns 5 through 8 (MODERATE confidence)"
     },
     "959": {
       "has_clean_result": false,
@@ -6596,71 +6624,71 @@
     "980": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/980",
-      "status": "reviewing",
+      "path": "tasks/completed/980",
+      "status": "completed",
       "title": "workflow-fix: watcher alert for on_hold task with RUNNING pod"
     },
     "981": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/981",
-      "status": "reviewing",
+      "path": "tasks/completed/981",
+      "status": "completed",
       "title": "workflow-fix: rescope BPE-delimiter memory immunity claim"
     },
     "982": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/982",
-      "status": "proposed",
+      "path": "tasks/archived/982",
+      "status": "archived",
       "title": "workflow-fix: add c16 N/A escape phrase to adv-planner list"
     },
     "983": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/983",
-      "status": "proposed",
+      "path": "tasks/completed/983",
+      "status": "completed",
       "title": "workflow-fix: poll guard on phase lines after done-detection"
     },
     "984": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/984",
-      "status": "proposed",
+      "path": "tasks/completed/984",
+      "status": "completed",
       "title": "workflow-fix: VM-scope cross-ref on upload-policy env one-liner"
     },
     "985": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/985",
-      "status": "proposed",
+      "path": "tasks/completed/985",
+      "status": "completed",
       "title": "workflow-fix: production-body test rule for seam-stubbed fns"
     },
     "986": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/986",
-      "status": "proposed",
+      "path": "tasks/completed/986",
+      "status": "completed",
       "title": "workflow-fix: cap-headroom check in check_agent_spec_size"
     },
     "987": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/987",
-      "status": "proposed",
+      "path": "tasks/completed/987",
+      "status": "completed",
       "title": "workflow-fix: dispatch lane infra from main on issue branches"
     },
     "988": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/988",
-      "status": "proposed",
+      "path": "tasks/running/988",
+      "status": "running",
       "title": "workflow-fix: bound bare list_repo_files call sites (hang class)"
     },
     "989": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/989",
-      "status": "proposed",
+      "path": "tasks/completed/989",
+      "status": "completed",
       "title": "daily-fix: 4xx short-circuit in hub _is_transient_upload_error"
     },
     "99": {
@@ -6673,29 +6701,29 @@
     "990": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/990",
-      "status": "proposed",
+      "path": "tasks/reviewing/990",
+      "status": "reviewing",
       "title": "workflow-fix: exclude deliberate-stop events from progress ts"
     },
     "991": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/991",
-      "status": "proposed",
+      "path": "tasks/running/991",
+      "status": "running",
       "title": "daily-fix: system-role guard at api_dispatch dispatch_calls"
     },
     "992": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/992",
-      "status": "proposed",
+      "path": "tasks/planning/992",
+      "status": "planning",
       "title": "workflow-fix: LESSONS.md byte-cap headroom restructure"
     },
     "993": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/993",
-      "status": "proposed",
+      "path": "tasks/running/993",
+      "status": "running",
       "title": "daily-fix: annotate-or-delete archived call_api seam script"
     },
     "994": {

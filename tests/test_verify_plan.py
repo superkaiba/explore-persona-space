@@ -156,10 +156,11 @@ def test_good_plan_passes_all():
         "c17_causal_branch_scope": "PASS",
         "c18_paired_contrast_source_coverage": "SKIP",
         "c19_ood_folds": "SKIP",
+        "c20_verdict_lattice_coherence": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 20
+    assert len(results) == 21
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2437,6 +2438,297 @@ def test_c19_fenced_vocabulary_does_not_trigger():
     assert _status(plan, "c19_ood_folds") == "SKIP"
 
 
+# ─── Check 20 — verdict-lattice coherence ──────────────────────────────────
+
+# Verbatim #923 §3 label bullets (plans/v4.md lines 49-51 = the co-firing v4
+# shape; plans/v6.md lines 49-51 = the hand-fixed disjoint declaration). The
+# REAL files are additionally exercised by the §10 acceptance commands; these
+# inlined copies keep the suite self-contained.
+C20 = "c20_verdict_lattice_coherence"
+C20_HEADING = "## 3. Hypothesis"
+C20_V4_HSLOT = """- **H-slot (slot artifact; scope's "pooling closes the gap"):** span-mean pooling recovers most of the full-prompt deficit. Confirmed if Δ_pool ≥ 0, OR the Δ_pool CI includes 0 AND the paired-diff CI excludes 0 on the positive side. Consequence: parent Takeaways bullets 1–2 are rescoped as last-token-slot-specific."""
+C20_HROBUST = """- **H-robust (summary-robust deficit; scope's falsification):** Δ_pool < 0 with the 2000-draw family-bootstrap 95% CI excluding 0. Consequence: the slot-artifact explanation is dead; the "no attention-mixing advantage for linear read-out" takeaway hardens from estimator-scoped to summary-robust."""
+C20_V4_INTERMEDIATE = """- **Intermediate:** Δ_pool CI includes 0 AND paired-diff CI includes 0 → no binary verdict; report the graded closure fraction 1 − Δ_pool/Δ_last with CI."""
+C20_V6_HSLOT = """- **H-slot (slot artifact; scope's "pooling closes the gap"):** span-mean pooling recovers most of the full-prompt deficit. Confirmed iff the Δ_pool CI is wholly at/above 0, OR (the Δ_pool CI includes 0 AND the paired-diff CI is strictly positive). A bare positive point estimate with both CIs straddling 0 is NOT H-slot (it is intermediate). A still-negative significant Δ_pool with a strictly-positive paired diff is reported as "deficit persists with partial closure" under H-robust — never as gap closure. Consequence when confirmed: parent Takeaways bullets 1–2 are rescoped as last-token-slot-specific."""
+C20_V6_INTERMEDIATE = """- **Intermediate:** Δ_pool CI includes 0 AND paired-diff CI includes 0 → no binary verdict; report the graded closure fraction 1 − Δ_pool/Δ_last with CI. The three labels are DISJOINT and exhaustive: H-robust ⇔ Δ_pool CI wholly below 0; H-slot ⇔ (Δ_pool CI wholly at/above 0) OR (Δ_pool CI straddles 0 AND paired-diff CI strictly positive); intermediate ⇔ otherwise. Exactly one label fires for every (Δ_pool, CI, paired-CI) cell."""
+
+C20_V4_BULLETS = "\n".join((C20_V4_HSLOT, C20_HROBUST, C20_V4_INTERMEDIATE))
+C20_V6_BULLETS = "\n".join((C20_V6_HSLOT, C20_HROBUST, C20_V6_INTERMEDIATE))
+
+
+def _c20_plan(bullets: str) -> str:
+    """GOOD_PLAN + a hypothesis section carrying the given label bullets."""
+    return GOOD_PLAN + "\n" + C20_HEADING + "\n\n" + bullets + "\n"
+
+
+def test_c20_not_triggered_skips():
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id[C20]
+    assert r.status == "SKIP"
+    assert "no registered verdict lattice" in r.detail
+
+
+def test_c20_kind_infra_skips():
+    assert _status(_c20_plan(C20_V4_BULLETS), C20, kind="infra") == "SKIP"
+
+
+def test_c20_923_v4_cofire_shape_fails():
+    ok, by_id = _run(_c20_plan(C20_V4_BULLETS))
+    r = by_id[C20]
+    assert r.status == "FAIL"
+    assert ok is False
+    # Both co-firing labels named, plus the co-fire cell in plain terms.
+    assert "H-slot" in r.detail and "Intermediate" in r.detail
+    assert "CO-FIRE" in r.detail
+    assert "{point > 0, primary CI straddles 0, paired CI straddles 0}" in r.detail
+    # The remedy menu closes the detail.
+    assert "DISJOINT and exhaustive" in r.detail
+    assert "N/A — no registered verdict lattice" in r.detail
+
+
+def test_c20_923_v4_gap_cell_named_in_detail():
+    _, by_id = _run(_c20_plan(C20_V4_BULLETS))
+    r = by_id[C20]
+    assert "no label fires" in r.detail
+    assert "{point < 0, primary CI straddles 0, paired CI wholly below 0}" in r.detail
+
+
+def test_c20_923_v6_disjoint_declaration_passes():
+    # Tier 1 (the ⇔ declaration) takes precedence over the per-label prose.
+    _, by_id = _run(_c20_plan(C20_V6_BULLETS))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert "tier 1" in r.detail
+
+
+def test_c20_declared_cofire_fails():
+    decl = (
+        "- The two labels are DISJOINT and exhaustive: H-a ⇔ Δ_pool CI includes 0; "
+        "H-b ⇔ Δ_pool CI includes 0 OR Δ_pool CI wholly below 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "FAIL"
+    assert ok is False
+    assert "CO-FIRE" in r.detail
+    assert "H-a" in r.detail and "H-b" in r.detail
+
+
+def test_c20_declared_gap_without_otherwise_fails():
+    decl = (
+        "- The two labels are DISJOINT and exhaustive: H-a ⇔ Δ_pool CI wholly below 0; "
+        "H-b ⇔ Δ_pool CI wholly at/above 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "FAIL"  # the plan claimed exhaustiveness — a gap falsifies it
+    assert ok is False
+    assert "no label fires" in r.detail
+    assert "straddles 0" in r.detail
+
+
+def test_c20_kind_analysis_degrades_to_warn():
+    ok, by_id = _run(_c20_plan(C20_V4_BULLETS), kind="analysis")
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+
+
+def test_c20_na_escape_passes():
+    plan = _c20_plan(C20_V4_BULLETS) + (
+        "\nN/A — no registered verdict lattice (the labels quote the parent's methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c20_unparseable_label_warns_not_fails():
+    # #405-style direction/magnitude vocabulary outside the v1 atom lexicon:
+    # the stray `≥` comparator is completeness-gate residue → WARN, never FAIL.
+    bullets = (
+        "- **H-flip:** Confirmed if the Δ_pool CI excluding 0, with the OPPOSITE "
+        "direction, more negative by ≥ 0.5 nats.\n"
+        "- **H-same:** Confirmed if the Δ_pool CI includes 0."
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "did not fully parse" in r.detail
+
+
+def test_c20_quantified_labels_skip():
+    # #922-class k-of-n predicates are out of the v1 cell algebra.
+    bullets = (
+        "- **H-transfer:** Confirmed if the paired CI is clear of zero at ≥4/6 "
+        "pre-registered layers.\n"
+        "- **H-null:** Confirmed if the paired CI includes 0 at ≥4/6 pre-registered layers."
+    )
+    _, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "SKIP"
+    assert "quantified" in r.detail
+
+
+def test_c20_prose_gap_only_warns():
+    bullets = (
+        "- **H-pos:** Confirmed if the Δ_pool CI is wholly at/above 0.\n"
+        "- **H-neg:** Confirmed if the Δ_pool CI is wholly below 0."
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"  # tier-2 gap degrades to WARN (harvest recall)
+    assert ok is True
+    assert "no label fires" in r.detail
+    assert "straddles 0" in r.detail
+
+
+def test_c20_otherwise_label_covers_gap_passes():
+    bullets = (
+        "- **H-pos:** Confirmed if the Δ_pool CI is wholly at/above 0.\n"
+        "- **H-neg:** Confirmed if the Δ_pool CI is wholly below 0.\n"
+        "- **Inconclusive:** otherwise — no binary verdict."
+    )
+    _, by_id = _run(_c20_plan(bullets))
+    assert by_id[C20].status == "PASS"
+
+
+def test_c20_single_label_skips():
+    bullets = "- **H-pos:** Confirmed if the Δ_pool CI is wholly at/above 0."
+    _, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "SKIP"  # a single gate is c8/c13 territory, not a lattice
+    assert "fewer than 2" in r.detail
+
+
+def test_c20_fenced_lattice_ignored():
+    plan = GOOD_PLAN + "\n" + C20_HEADING + "\n\n```\n" + C20_V4_BULLETS + "\n```\n"
+    assert _status(plan, C20) == "SKIP"
+
+
+def test_c20_negated_predicate_warns_not_fails():
+    # Must-Fix 1: "never includes 0" must NOT match the positive `includes 0`
+    # atom with inverted polarity (which would manufacture a co-fire FAIL
+    # against H-mid) — the negator is residue, so the lattice degrades to WARN.
+    bullets = (
+        "- **H-null:** Confirmed if the Δ_pool CI never includes 0.\n"
+        "- **H-mid:** Confirmed if the Δ_pool CI includes 0."
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+
+
+def test_c20_mixed_point_quantities_warn():
+    # Must-Fix 2i: two distinct point quantities cannot share the single
+    # point axis — fail closed to WARN, never a silent single-axis collapse.
+    bullets = (
+        "- **H-up:** Confirmed if Δ_pool ≥ 0 AND the Δ_pool CI excludes 0.\n"
+        "- **H-down:** Confirmed if D < 0 AND the paired-diff CI excludes 0."
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "distinct point quantities" in r.detail
+
+
+def test_c20_post_ci_paired_binding_warns():
+    # Must-Fix 2ii: post-CI "paired" wording is never silently bound to the
+    # primary axis.
+    bullets = (
+        "- **H-paired:** Confirmed if the CI of the paired difference includes 0.\n"
+        "- **H-clear:** Confirmed if the Δ_pool CI excludes 0."
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "not silently bound" in r.detail
+
+
+def test_c20_v6_prose_without_decl_tier2_warns():
+    # The v6 per-label bullets WITHOUT the ⇔ recap take the tier-2 path: the
+    # v6 wording drops v4's bare `Δ_pool ≥ 0` disjunct, so there is no
+    # co-fire, but {primary straddles, paired wholly below} is uncovered →
+    # WARN (not FAIL, not PASS). Guards tier-2 semantics against overfit to
+    # the v4 wording.
+    bullets = "\n".join((C20_V6_HSLOT, C20_HROBUST, C20_V4_INTERMEDIATE))
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "no label fires" in r.detail
+    assert "paired CI wholly below 0" in r.detail
+
+
+def test_c20_precedence_phrase_warns():
+    # Round-1 review Minor (Codex): an ordering declaration in the lattice's
+    # section makes the labels order-evaluated — the cell algebra cannot
+    # verify an ordered lattice, so _C20_PRECEDENCE_RE fails the lattice
+    # closed to unparsed → WARN, never FAIL/PASS.
+    bullets = (
+        "- **H-pos:** Confirmed if the Δ_pool CI is wholly at/above 0.\n"
+        "- **H-neg:** Confirmed if the Δ_pool CI is wholly below 0.\n"
+        "\nThe labels above are evaluated in order; the first match is reported.\n"
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "label-precedence phrase" in r.detail
+    assert "'evaluated in order'" in r.detail
+
+
+def test_c20_unrecognized_connective_warns():
+    # Round-1 review Minor (Codex): only AND / OR / `with` join atoms.
+    # `and/or` (two joiner hits) and a bare comma without OR (zero hits) both
+    # break the exactly-one-connective rule and fail closed to unparsed →
+    # WARN, never FAIL/PASS (a silently defaulted connective could invert
+    # the lattice algebra).
+    for joiner in (" and/or ", ", "):
+        bullets = (
+            "- **H-wide:** Confirmed if the Δ_pool CI excludes 0"
+            + joiner
+            + "the paired-diff CI excludes 0.\n"
+            "- **H-mid:** Confirmed if the Δ_pool CI includes 0."
+        )
+        ok, by_id = _run(_c20_plan(bullets))
+        r = by_id[C20]
+        assert r.status == "WARN", joiner
+        assert ok is True, joiner
+        assert "joiner between atoms is not exactly one of AND/OR/with" in r.detail
+
+
+def test_c20_paired_before_primary_binds_primary_axis():
+    # Round-1 review Minor (Claude): a paired-CI atom < 40 chars BEFORE a
+    # primary-CI atom must not leak its `paired` token into the next atom's
+    # axis lookback. Unclamped, BOTH H-int atoms bind the paired axis — a
+    # contradictory conjunction that never fires — so H-null (paired
+    # straddle, primary unconstrained) CO-FIREs with H-pos and the
+    # {primary straddle, paired below/above} cells go uncovered: a
+    # manufactured tier-1 FAIL. With the lookback clamped at the previous
+    # atom's span end the declaration is a clean 3x3 partition → PASS
+    # (the fixture is chosen so the wrong binding flips the verdict).
+    seg = "paired-diff CI excludes 0 AND Δ_pool CI straddles 0"
+    atoms, _ = verify_plan._c20_collect_atoms(seg)
+    assert [a[0] for a in atoms] == ["paired", "primary"]
+    decl = (
+        "- The labels are DISJOINT and exhaustive: "
+        "H-pos ⇔ the Δ_pool CI excludes 0; "
+        "H-int ⇔ paired-diff CI excludes 0 AND Δ_pool CI straddles 0; "
+        "H-null ⇔ paired-diff CI includes 0 AND Δ_pool CI straddles 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -2486,12 +2778,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 12
+    assert payload["n_skip"] == 13
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 20
-    assert len({c["id"] for c in payload["checks"]}) == 20
+    assert len(payload["checks"]) == 21
+    assert len({c["id"] for c in payload["checks"]}) == 21
 
 
 def test_cli_exit_one_on_fail(tmp_path):
