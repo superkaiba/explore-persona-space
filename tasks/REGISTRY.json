@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 981,
+  "highest_id": 982,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6528,6 +6528,13 @@
       "path": "tasks/proposed/981",
       "status": "proposed",
       "title": "workflow-fix: rescope BPE-delimiter memory immunity claim"
+    },
+    "982": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/982",
+      "status": "proposed",
+      "title": "workflow-fix: add c16 N/A escape phrase to adv-planner list"
     },
     "99": {
       "has_clean_result": true,
