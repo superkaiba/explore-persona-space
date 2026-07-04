@@ -93,11 +93,13 @@ from issue923_common import (  # noqa: E402
     dump_json,
     hf_revision,
     load_json,
+    load_pack,
     render_full_prompt,
     render_qry_empty_system,
     render_qry_no_system_block,
     save_pack,
     texts_hash,
+    user_turn_suffix,
 )
 
 from explore_persona_space.orchestrate import hub  # noqa: E402
@@ -245,14 +247,19 @@ def _flush_leftpad_batch(
     capture: LayerCapture,
     capture_layers: list[int],
     batch: list[dict],
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """One LEFT-padded forward; return (vbar, flast) each (B, Lc, H) fp16 CPU.
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """One LEFT-padded forward; return (vbar, flast, fpool) each (B, Lc, H) fp16 CPU.
 
     The #810 pattern: left-pad, explicit ``position_ids = cumsum(mask)-1``
     (RoPE indexes each row from its first real token — without it left-pad
     silently diverges from batch-1), GPU-side reductions (span-mask mean +
     last-prompt gather), only the (B, Lc, H) slices cross PCIe. Rows with
     ``ans_len == 0`` get a zero vbar (caller marks them invalid).
+
+    ``fpool`` (pooled-span-features round): a SECOND span-mask mean over the
+    OPTIONAL ``pool_start``/``pool_len`` row fields (prompt-relative positions,
+    same pad-offset arithmetic as the answer span). Rows without a pool span
+    (``pool_len`` absent/0) get a zero fpool — the caller marks them invalid.
     """
     device = model.device
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
@@ -262,6 +269,8 @@ def _flush_leftpad_batch(
     attn = torch.zeros((b, max_len), dtype=torch.long)
     span_start = torch.zeros(b, dtype=torch.long)
     span_len = torch.zeros(b, dtype=torch.long)
+    pool_start = torch.zeros(b, dtype=torch.long)
+    pool_len = torch.zeros(b, dtype=torch.long)
     last_idx = torch.zeros(b, dtype=torch.long)
     for bi, r in enumerate(batch):
         ids = r["full_ids"]
@@ -270,6 +279,8 @@ def _flush_leftpad_batch(
         attn[bi, pad:] = 1
         span_start[bi] = pad + r["prompt_len"]
         span_len[bi] = r["ans_len"]
+        pool_start[bi] = pad + r.get("pool_start", 0)
+        pool_len[bi] = r.get("pool_len", 0)
         last_idx[bi] = pad + r["prompt_len"] - 1
     input_ids = input_ids.to(device)
     attn = attn.to(device)
@@ -283,25 +294,35 @@ def _flush_leftpad_batch(
         )
     span_start = span_start.to(device)
     span_len = span_len.to(device)
+    pool_start = pool_start.to(device)
+    pool_len = pool_len.to(device)
     last_idx = last_idx.to(device)
     t_idx = torch.arange(max_len, device=device).unsqueeze(0)  # (1, T)
     span_mask = (t_idx >= span_start.unsqueeze(1)) & (
         t_idx < (span_start + span_len).unsqueeze(1)
     )  # (B, T)
-    vbar_layers, flast_layers = [], []
+    pool_mask = (t_idx >= pool_start.unsqueeze(1)) & (
+        t_idx < (pool_start + pool_len).unsqueeze(1)
+    )  # (B, T)
+    vbar_layers, flast_layers, fpool_layers = [], [], []
     for li in capture_layers:
         hs = capture.latest[li]  # (B, T, H) on device
         m = span_mask.to(hs.dtype)
         sums = torch.einsum("bt,bth->bh", m, hs)
         vbar = sums / span_len.clamp(min=1).unsqueeze(1).to(hs.dtype)
+        mp = pool_mask.to(hs.dtype)
+        psums = torch.einsum("bt,bth->bh", mp, hs)
+        fpool = psums / pool_len.clamp(min=1).unsqueeze(1).to(hs.dtype)
         gidx = last_idx.view(b, 1, 1).expand(b, 1, hs.shape[-1])
         flast = torch.gather(hs, 1, gidx).squeeze(1)
         vbar_layers.append(vbar.to(torch.float16))
         flast_layers.append(flast.to(torch.float16))
+        fpool_layers.append(fpool.to(torch.float16))
     capture.latest.clear()
     vbar = torch.stack(vbar_layers, dim=1).cpu()  # (B, Lc, H)
     flast = torch.stack(flast_layers, dim=1).cpu()
-    return vbar, flast
+    fpool = torch.stack(fpool_layers, dim=1).cpu()
+    return vbar, flast, fpool
 
 
 def batched_capture(
@@ -317,26 +338,32 @@ def batched_capture(
 
     Each row: ``{key, full_ids, prompt_len, ans_len}`` (``ans_len=0`` for a
     prompt-only row or an empty completion → ``valid`` False for the vbar).
+    Optional ``pool_start``/``pool_len`` fields add the pooled-span mean
+    (``fpool`` + ``pool_valid`` keys; zero rows where no pool span is given).
     """
     lc = len(capture_layers)
     hidden = model.config.hidden_size
     n = len(rows)
     vbar = torch.zeros(n, lc, hidden, dtype=torch.float16)
     flast = torch.zeros(n, lc, hidden, dtype=torch.float16)
+    fpool = torch.zeros(n, lc, hidden, dtype=torch.float16)
     valid = torch.zeros(n, dtype=torch.bool)
+    pool_valid = torch.zeros(n, dtype=torch.bool)
     for i, r in enumerate(rows):
         r["_row"] = i
     t0 = time.time()
     batches = _token_budget_batches(rows, batch_tokens)
     for bidx, batch in enumerate(batches):
-        vb, fl = _flush_leftpad_batch(model, tokenizer, capture, capture_layers, batch)
+        vb, fl, fp = _flush_leftpad_batch(model, tokenizer, capture, capture_layers, batch)
         for bi, r in enumerate(batch):
             vbar[r["_row"]] = vb[bi]
             flast[r["_row"]] = fl[bi]
+            fpool[r["_row"]] = fp[bi]
             valid[r["_row"]] = r["ans_len"] > 0
+            pool_valid[r["_row"]] = r.get("pool_len", 0) > 0
         if bidx % 20 == 0:
             logger.info("[%s] batch %d/%d (%.1fs)", tag, bidx + 1, len(batches), time.time() - t0)
-    return {"vbar": vbar, "flast": flast, "valid": valid}
+    return {"vbar": vbar, "flast": flast, "fpool": fpool, "valid": valid, "pool_valid": pool_valid}
 
 
 def masked_context_capture(
@@ -353,12 +380,17 @@ def masked_context_capture(
     Each row: ``{key, full_ids, ctx_len}``. Right-pad keeps real tokens at
     their unpadded absolute positions (positions preserved — the §4.1 (iii)
     contract), default position_ids are correct, the last real token sits at
-    ``seq_len - 1``. Returns (n, Lc, H) fp16 last-input-token activations.
+    ``seq_len - 1``. Returns (flast, fpool), each (n, Lc, H) fp16: the
+    last-input-token activations plus the pooled-span mean over the OPTIONAL
+    ``pool_start``/``pool_len`` row fields (ABSOLUTE positions — right-pad, no
+    offset; masked context positions are never inside the span by
+    construction). Rows without a pool span get a zero fpool.
     """
     lc = len(capture_layers)
     hidden = model.config.hidden_size
     n = len(rows)
     out = torch.zeros(n, lc, hidden, dtype=torch.float16)
+    out_pool = torch.zeros(n, lc, hidden, dtype=torch.float16)
     for i, r in enumerate(rows):
         r["_row"] = i
     device = model.device
@@ -371,26 +403,42 @@ def masked_context_capture(
         max_len = max(len(r["full_ids"]) for r in batch)
         input_ids = torch.full((b, max_len), pad_id, dtype=torch.long)
         seq_lens, ctx_lens = [], []
+        pool_start = torch.zeros(b, dtype=torch.long)
+        pool_len = torch.zeros(b, dtype=torch.long)
         for bi, r in enumerate(batch):
             ids = r["full_ids"]
             input_ids[bi, : len(ids)] = torch.tensor(ids, dtype=torch.long)  # RIGHT-pad
             seq_lens.append(len(ids))
             ctx_lens.append(r["ctx_len"])
+            pool_start[bi] = r.get("pool_start", 0)  # absolute (right-pad, no offset)
+            pool_len[bi] = r.get("pool_len", 0)
         mask4d = build_masked_context_4d_mask(ctx_lens, seq_lens, max_len, dtype, device)
         input_ids = input_ids.to(device)
         with torch.no_grad():
             _ = model(input_ids=input_ids, attention_mask=mask4d, **_logits_kwargs(model))
         last_idx = torch.tensor([sl - 1 for sl in seq_lens], device=device)
+        pool_start_d = pool_start.to(device)
+        pool_len_d = pool_len.to(device)
+        t_idx = torch.arange(max_len, device=device).unsqueeze(0)  # (1, T)
+        pool_mask = (t_idx >= pool_start_d.unsqueeze(1)) & (
+            t_idx < (pool_start_d + pool_len_d).unsqueeze(1)
+        )  # (B, T)
         for li_pos, li in enumerate(capture_layers):
             hs = capture.latest[li]
             gidx = last_idx.view(b, 1, 1).expand(b, 1, hs.shape[-1])
             flast = torch.gather(hs, 1, gidx).squeeze(1).to(torch.float16).cpu()
+            mp = pool_mask.to(hs.dtype)
+            psums = torch.einsum("bt,bth->bh", mp, hs)
+            fpool = (
+                (psums / pool_len_d.clamp(min=1).unsqueeze(1).to(hs.dtype)).to(torch.float16).cpu()
+            )
             for bi, r in enumerate(batch):
                 out[r["_row"], li_pos] = flast[bi]
+                out_pool[r["_row"], li_pos] = fpool[bi]
         capture.latest.clear()
         if bidx % 20 == 0:
             logger.info("[%s] batch %d/%d (%.1fs)", tag, bidx + 1, len(batches), time.time() - t0)
-    return out
+    return out, out_pool
 
 
 # ── 4D-mask invariance smoke (plan §8) ────────────────────────────────────────
@@ -490,34 +538,39 @@ def validate_mask_backend(args, model, tokenizer, capture_layers) -> tuple[str, 
 
 
 def equivalence_check(model, tokenizer, capture_layers, rows: list[dict]) -> dict:
-    """cosine(batched, serial) >= 0.999 per (cell x layer) for vbar AND flast.
+    """cosine(batched, serial) >= 0.999 per (cell x layer) for vbar, flast AND fpool.
 
     Serial reference = batch-1 forward, NO padding (the
     ``capture_v0_for_context`` regime); batched = the left-pad path above with
     the rows deliberately co-batched (B>=2, different lengths → real padding).
+    ``fpool`` is compared only for rows carrying a pool span.
     """
     capture = LayerCapture(model, len(model.model.layers))
     try:
-        serial_vbar, serial_flast = [], []
+        serial_vbar, serial_flast, serial_fpool = [], [], []
         for r in rows:
             ids = torch.tensor(r["full_ids"], dtype=torch.long).unsqueeze(0).to(model.device)
             with torch.no_grad():
                 _ = model(input_ids=ids, **_logits_kwargs(model))
-            vb_l, fl_l = [], []
+            vb_l, fl_l, fp_l = [], [], []
             for li in capture_layers:
                 hs = capture.latest[li][0]  # (T, H)
                 span = hs[r["prompt_len"] : r["prompt_len"] + r["ans_len"]]
                 vb_l.append(span.float().mean(dim=0).cpu())
                 fl_l.append(hs[r["prompt_len"] - 1].float().cpu())
+                if r.get("pool_len", 0) > 0:
+                    pspan = hs[r["pool_start"] : r["pool_start"] + r["pool_len"]]
+                    fp_l.append(pspan.float().mean(dim=0).cpu())
             capture.latest.clear()
             serial_vbar.append(torch.stack(vb_l))
             serial_flast.append(torch.stack(fl_l))
+            serial_fpool.append(torch.stack(fp_l) if fp_l else None)
         batched = batched_capture(
             model, tokenizer, capture, capture_layers, [dict(r) for r in rows], 10**9, "equiv"
         )
     finally:
         capture.remove()
-    min_cos_vbar, min_cos_flast = 1.0, 1.0
+    min_cos_vbar, min_cos_flast, min_cos_fpool = 1.0, 1.0, 1.0
     for i in range(len(rows)):
         for li_pos in range(len(capture_layers)):
             cv = torch.nn.functional.cosine_similarity(
@@ -528,8 +581,18 @@ def equivalence_check(model, tokenizer, capture_layers, rows: list[dict]) -> dic
             )
             min_cos_vbar = min(min_cos_vbar, float(cv))
             min_cos_flast = min(min_cos_flast, float(cf))
-    ok = min_cos_vbar >= 0.999 and min_cos_flast >= 0.999
-    return {"ok": ok, "min_cos_vbar": min_cos_vbar, "min_cos_flast": min_cos_flast}
+            if serial_fpool[i] is not None:
+                cp = torch.nn.functional.cosine_similarity(
+                    serial_fpool[i][li_pos], batched["fpool"][i, li_pos].float(), dim=0
+                )
+                min_cos_fpool = min(min_cos_fpool, float(cp))
+    ok = min_cos_vbar >= 0.999 and min_cos_flast >= 0.999 and min_cos_fpool >= 0.999
+    return {
+        "ok": ok,
+        "min_cos_vbar": min_cos_vbar,
+        "min_cos_flast": min_cos_flast,
+        "min_cos_fpool": min_cos_fpool,
+    }
 
 
 # ── row builders ──────────────────────────────────────────────────────────────
@@ -553,6 +616,606 @@ def build_prompt_row(tokenizer, instance: dict, q: str, key) -> dict:
     prompt_text = render_full_prompt(tokenizer, instance, q)
     ids = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
     return {"key": key, "full_ids": ids, "prompt_len": len(ids), "ans_len": 0}
+
+
+# ── pooled-span row builders (pooled-span-features round, plan v6 §4.1/§4.2) ──
+
+ASSISTANT_HEADER = "<|im_start|>assistant\n"
+IDENTITY_SAMPLE_PER_FAMILY = 100
+IDENTITY_MEDIAN_FLOOR = 0.99  # k1 hard gate (calibrated bf16 floor, commit 33a2a5df33)
+IDENTITY_WARN_FLOOR = 0.999  # sub-0.999: warn-and-record (bf16 batching numerics)
+
+
+def _user_block(q: str) -> str:
+    """The user-turn query block incl. its delimiters (the qry arms' owning span)."""
+    return f"<|im_start|>user\n{q}<|im_end|>\n"
+
+
+def _piecewise_ids(tokenizer, pieces: list[str]) -> list[list[int]]:
+    """Tokenize template pieces; assert piecewise == full-render tokenization.
+
+    The per-row fail-loud retokenization-equality assert (§4.1): special-token
+    boundaries make piecewise tokenization exact; BPE drift fails loud here
+    rather than silently mis-pooling a span.
+    """
+    ids = [tokenizer(p, add_special_tokens=False)["input_ids"] for p in pieces]
+    joined = [t for chunk in ids for t in chunk]
+    full = tokenizer("".join(pieces), add_special_tokens=False)["input_ids"]
+    assert joined == full, (
+        f"piecewise retokenization mismatch (BPE boundary drift): pieces="
+        f"{[p[:60] for p in pieces]!r}"
+    )
+    return ids
+
+
+def build_pool_qry_row(tokenizer, q: str, pres: str, key) -> dict:
+    """Pooled query-presentation row (i)/(ii): span = the user-turn block ONLY.
+
+    System turn ((i)) and assistant header are EXCLUDED from the owning span
+    (the §4.1 uniform span rule — arm-external template tokens would smuggle
+    context-adjacent signal into the query arms).
+    """
+    if pres == "i":
+        text = render_qry_empty_system(tokenizer, q)
+        sys_block = text[: -len(user_turn_suffix(q))]
+        pieces = [sys_block, _user_block(q), ASSISTANT_HEADER]
+        assert sys_block, "presentation (i) rendered an empty system block"
+    else:
+        assert pres == "ii", pres
+        text = render_qry_no_system_block(q)
+        pieces = [_user_block(q), ASSISTANT_HEADER]
+    assert "".join(pieces) == text, f"piece decomposition != render for pres {pres}"
+    ids = _piecewise_ids(tokenizer, pieces)
+    full_ids = [t for chunk in ids for t in chunk]
+    pool_start = len(ids[0]) if pres == "i" else 0
+    pool_len = len(ids[-2])  # the user-turn block piece
+    assert pool_len > 0, f"zero-width query span for {key} (pres {pres})"
+    return {
+        "key": key,
+        "full_ids": full_ids,
+        "prompt_len": len(full_ids),
+        "ans_len": 0,
+        "pool_start": pool_start,
+        "pool_len": pool_len,
+    }
+
+
+def build_pool_full_row(tokenizer, instance: dict, q: str, key) -> dict:
+    """Pooled full-prompt row: span = ALL real input tokens (ctx+template+query+header)."""
+    row = build_prompt_row(tokenizer, instance, q, key)
+    row["pool_start"] = 0
+    row["pool_len"] = len(row["full_ids"])
+    return row
+
+
+def build_pool_iii_row(tokenizer, instance: dict, q: str, key) -> dict:
+    """Pooled masked-context (iii) row: span = the query block at ABSOLUTE positions.
+
+    Right-pad keeps real tokens at their unpadded absolute positions, so the
+    span is [ctx_len, ctx_len + len(user_block)) with no pad offset; masked
+    context positions are never pooled (they precede the span), and the
+    assistant-header tokens are excluded (same owning-span rule as (i)/(ii)).
+    """
+    prefix_ids, full_ids = context_prefix_split(tokenizer, instance, q)
+    ids_user = tokenizer(_user_block(q), add_special_tokens=False)["input_ids"]
+    ids_asst = tokenizer(ASSISTANT_HEADER, add_special_tokens=False)["input_ids"]
+    assert prefix_ids + ids_user + ids_asst == full_ids, (
+        f"piecewise retokenization mismatch for (iii) row {key} "
+        "(prefix + user block + assistant header != full render)"
+    )
+    assert len(ids_user) > 0, f"zero-width query span for (iii) row {key}"
+    return {
+        "key": key,
+        "full_ids": full_ids,
+        "ctx_len": len(prefix_ids),
+        "pool_start": len(prefix_ids),
+        "pool_len": len(ids_user),
+    }
+
+
+def masked_equivalence_check(model, tokenizer, capture_layers, rows: list[dict]) -> dict:
+    """Batched right-pad 4D-mask capture vs an independent batch-1 slice reference.
+
+    cosine(batched, serial) >= 0.999 per (row x layer) for flast AND fpool —
+    the batched-rewrite equivalence gate for the NEW masked-span gather (the
+    left-pad path is covered by ``equivalence_check``).
+    """
+    dtype = next(model.parameters()).dtype
+    capture = LayerCapture(model, len(model.model.layers))
+    try:
+        serial_fl, serial_fp = [], []
+        for r in rows:
+            t = len(r["full_ids"])
+            ids = torch.tensor(r["full_ids"], dtype=torch.long).unsqueeze(0).to(model.device)
+            mask4d = build_masked_context_4d_mask([r["ctx_len"]], [t], t, dtype, model.device)
+            with torch.no_grad():
+                _ = model(input_ids=ids, attention_mask=mask4d, **_logits_kwargs(model))
+            fl, fp = [], []
+            for li in capture_layers:
+                hs = capture.latest[li][0]  # (T, H)
+                fl.append(hs[t - 1].float().cpu())
+                fp.append(
+                    hs[r["pool_start"] : r["pool_start"] + r["pool_len"]].float().mean(0).cpu()
+                )
+            capture.latest.clear()
+            serial_fl.append(torch.stack(fl))
+            serial_fp.append(torch.stack(fp))
+        bfl, bfp = masked_context_capture(
+            model, tokenizer, capture, capture_layers, [dict(r) for r in rows], 10**9, "meq"
+        )
+    finally:
+        capture.remove()
+    min_fl = min_fp = 1.0
+    for i in range(len(rows)):
+        for lp in range(len(capture_layers)):
+            cf = torch.nn.functional.cosine_similarity(serial_fl[i][lp], bfl[i, lp].float(), dim=0)
+            cp = torch.nn.functional.cosine_similarity(serial_fp[i][lp], bfp[i, lp].float(), dim=0)
+            min_fl = min(min_fl, float(cf))
+            min_fp = min(min_fp, float(cp))
+    return {
+        "ok": min_fl >= 0.999 and min_fp >= 0.999,
+        "min_cos_flast": min_fl,
+        "min_cos_fpool": min_fp,
+    }
+
+
+# ── pooled-span-features stage pipeline (plan v6 §4.2) ────────────────────────
+
+
+def _pool_inputs(args) -> tuple[list[dict], dict[str, list[str]]]:
+    """Battery instances + per-genre query pools with the SAME --smoke slicing as main().
+
+    The uc pool concatenates the 48-probe store pool + the ext pool so uc
+    ``q_idx`` is GLOBAL (0..143 production; ext lives at 48+) — matching the
+    fit-side grid join. Store pools stay full-length under --smoke (same
+    rationale as main(): truncating uc48 would shift the global ext indices).
+    """
+    _, instances = load_battery()
+    uc48 = [
+        r["text"] for r in load_json(PROJECT_ROOT / "data/issue594/probes_ultrachat.json")["probes"]
+    ]
+    uc_ext = [r["text"] for r in load_json(args.data_dir / "probes_uc_ext.json")["probes"]]
+    dolly = [r["text"] for r in load_json(args.data_dir / "probes_dolly.json")["probes"]]
+    betley = [r["text"] for r in load_json(args.data_dir / "probes_betley.json")["probes"]]
+    if args.smoke:
+        n_ctx = args.n_ctx or 1
+        nq = args.n_queries or 4
+        instances = instances[:n_ctx]
+        uc_ext, dolly = uc_ext[:nq], dolly[:2]
+    elif args.n_ctx:
+        instances = instances[: args.n_ctx]
+    pools = {"uc": uc48 + uc_ext, "betley": betley, "dolly": dolly}
+    return instances, pools
+
+
+def _save_pool_pack(path: Path, tensors: dict, run_meta: dict, stage: str, keys: list) -> None:
+    """Persist one pooled pack (fpool + flast + valid) with row metadata."""
+    save_pack(
+        path,
+        {"fpool": tensors["fpool"], "flast": tensors["flast"], "valid": tensors["pool_valid"]},
+        {**run_meta, "stage": stage, "rows": keys},
+    )
+
+
+def pooled_capture_stage(  # noqa: C901 — linear per-family pipeline, see phase markers
+    args, packs_dir: Path, shard_k: int, n_shards: int, shard_tag: str
+) -> None:
+    """Capture the five pooled feature families for one context/query shard.
+
+    Packs are shard-checkpointed: an existing pack file is SKIPPED (resume
+    granularity for the sequential single-GPU run; ``--fresh`` overwrites).
+    """
+    phase("pooled_load")
+    model, tokenizer = load_model_and_tokenizer(args)
+    n_layers = len(model.model.layers)
+    hidden = model.config.hidden_size
+    if not args.tiny_model:
+        assert n_layers == args.expected_layers, (n_layers, args.expected_layers)
+        assert hidden == args.expected_hidden, (hidden, args.expected_hidden)
+    capture_layers = list(range(n_layers))
+    batch_tokens = args.batch_tokens or (2048 if args.tiny_model else 16384)
+    instances, pools = _pool_inputs(args)
+    inst_shard = [inst for i, inst in enumerate(instances) if i % n_shards == shard_k]
+    logger.info(
+        "[pooled] shard %d/%d: %d contexts; pools uc=%d betley=%d dolly=%d",
+        shard_k,
+        n_shards,
+        len(inst_shard),
+        len(pools["uc"]),
+        len(pools["betley"]),
+        len(pools["dolly"]),
+    )
+    run_meta: dict = {
+        "shard": args.shard,
+        "smoke": args.smoke,
+        "model": args.model if not args.tiny_model else "tiny-random-qwen2",
+        "capture_layers": capture_layers,
+        "pools_hash": {g: texts_hash(p) for g, p in pools.items()},
+        "round": "pooled-span-features",
+        "metadata": reproducibility_metadata({"script": "issue923_capture:pooled"}),
+    }
+
+    phase("pooled_mask_smoke")
+    backend, mask_results, model_iii = validate_mask_backend(args, model, tokenizer, capture_layers)
+    run_meta["mask_backend"] = backend
+    run_meta["mask_invariance"] = mask_results
+
+    def _skip(path: Path) -> bool:
+        if path.exists() and not args.fresh:
+            logger.info("[pooled] %s exists — skipped (resume; --fresh overwrites)", path.name)
+            return True
+        return False
+
+    if args.smoke:
+        # Batched-rewrite equivalence gates (B>=2, real padding) for the NEW
+        # fpool reductions: left-pad path (TF rows carrying BOTH spans) + the
+        # masked right-pad path (independent batch-1 slice reference).
+        phase("pooled_equivalence")
+        eq_rows = []
+        for qi, q in enumerate(pools["uc"][:3]):
+            r = build_tf_row(tokenizer, instances[0], q, "smoke answer text", ("eq", qi))
+            r["pool_start"] = 0
+            r["pool_len"] = r["prompt_len"]
+            eq_rows.append(r)
+        run_meta["equivalence_pooled"] = equivalence_check(
+            model, tokenizer, capture_layers, eq_rows
+        )
+        assert run_meta["equivalence_pooled"]["ok"], run_meta["equivalence_pooled"]
+        logger.info("[pooled] left-pad equivalence PASS: %s", run_meta["equivalence_pooled"])
+        if backend != "dropped":
+            meq_rows = [
+                build_pool_iii_row(tokenizer, instances[0], q, ("meq", qi))
+                for qi, q in enumerate(pools["uc"][:3])
+            ]
+            run_meta["equivalence_masked"] = masked_equivalence_check(
+                model_iii, tokenizer, capture_layers, meq_rows
+            )
+            assert run_meta["equivalence_masked"]["ok"], run_meta["equivalence_masked"]
+            logger.info("[pooled] masked equivalence PASS: %s", run_meta["equivalence_masked"])
+
+    phase("pooled_capture")
+    capture = LayerCapture(model, n_layers)
+    try:
+        # (a) pool_fctx — prefix-only forwards, span = the WHOLE context block.
+        pack_path = packs_dir / f"pool_fctx_{shard_tag}.pt"
+        if not _skip(pack_path):
+            probe_q = pools["uc"][0]
+            rows, keys = [], []
+            for inst in inst_shard:
+                prefix_ids, _full = context_prefix_split(tokenizer, inst, probe_q)
+                rows.append(
+                    {
+                        "key": inst["id"],
+                        "full_ids": prefix_ids,
+                        "prompt_len": len(prefix_ids),
+                        "ans_len": 0,
+                        "pool_start": 0,
+                        "pool_len": len(prefix_ids),
+                    }
+                )
+                keys.append({"ctx_id": inst["id"], "ctx_len": len(prefix_ids)})
+            if rows:
+                tensors = batched_capture(
+                    model, tokenizer, capture, capture_layers, rows, batch_tokens, "pool_fctx"
+                )
+                _save_pool_pack(pack_path, tensors, run_meta, "pool_fctx", keys)
+
+        # (b) pool_fqry_{i,ii} — query-level, query-sharded, span = user block.
+        for pres in ("i", "ii"):
+            pack_path = packs_dir / f"pool_fqry_{pres}_{shard_tag}.pt"
+            if _skip(pack_path):
+                continue
+            rows, keys = [], []
+            for genre, pool in pools.items():
+                for qi, q in enumerate(pool):
+                    if qi % n_shards != shard_k:
+                        continue
+                    rows.append(build_pool_qry_row(tokenizer, q, pres, (genre, qi)))
+                    keys.append({"genre": genre, "q_idx": qi})
+            if rows:
+                tensors = batched_capture(
+                    model,
+                    tokenizer,
+                    capture,
+                    capture_layers,
+                    rows,
+                    batch_tokens,
+                    f"pool_fqry_{pres}",
+                )
+                _save_pool_pack(pack_path, tensors, run_meta, f"pool_fqry_{pres}", keys)
+
+        # (c) pool_ffull_{genre} — full prompt-only forwards for EVERY cell,
+        # ctx-sharded, span = all real input tokens.
+        for genre, pool in pools.items():
+            pack_path = packs_dir / f"pool_ffull_{genre}_{shard_tag}.pt"
+            if _skip(pack_path):
+                continue
+            rows, keys = [], []
+            for inst in inst_shard:
+                for qi, q in enumerate(pool):
+                    rows.append(build_pool_full_row(tokenizer, inst, q, (inst["id"], qi)))
+                    keys.append({"ctx_id": inst["id"], "q_idx": qi})
+            if rows:
+                tensors = batched_capture(
+                    model,
+                    tokenizer,
+                    capture,
+                    capture_layers,
+                    rows,
+                    batch_tokens,
+                    f"pool_ffull_{genre}",
+                )
+                _save_pool_pack(pack_path, tensors, run_meta, f"pool_ffull_{genre}", keys)
+    finally:
+        capture.remove()
+
+    # (d) pool_fqry_iii_{genre} — masked-context forwards, ctx-sharded, span =
+    # the query block at absolute positions (masked context never pooled).
+    if backend != "dropped":
+        capture_iii = LayerCapture(model_iii, len(model_iii.model.layers))
+        try:
+            for genre, pool in pools.items():
+                pack_path = packs_dir / f"pool_fqry_iii_{genre}_{shard_tag}.pt"
+                if _skip(pack_path):
+                    continue
+                rows, keys = [], []
+                for inst in inst_shard:
+                    for qi, q in enumerate(pool):
+                        rows.append(build_pool_iii_row(tokenizer, inst, q, (inst["id"], qi)))
+                        keys.append({"ctx_id": inst["id"], "q_idx": qi})
+                if not rows:
+                    continue
+                flast, fpool = masked_context_capture(
+                    model_iii,
+                    tokenizer,
+                    capture_iii,
+                    capture_layers,
+                    rows,
+                    batch_tokens,
+                    f"pool_fqry_iii_{genre}",
+                )
+                pool_valid = torch.tensor([r["pool_len"] > 0 for r in rows], dtype=torch.bool)
+                _save_pool_pack(
+                    pack_path,
+                    {"fpool": fpool, "flast": flast, "pool_valid": pool_valid},
+                    run_meta,
+                    f"pool_fqry_iii_{genre}",
+                    keys,
+                )
+        finally:
+            capture_iii.remove()
+    else:
+        logger.warning("pool_fqry_iii DROPPED (mask invariance failed under sdpa AND eager)")
+
+    dump_json(run_meta, packs_dir / f"pool_run_meta_{shard_tag}.json")
+
+
+def _fetch_parent_refs(ref_dir: Path) -> None:
+    """Fetch the parent capture packs (identity refs) at the PINNED dataset revision.
+
+    Small families (fctx / fqry_i / fqry_ii) fetch all 4 shards; the large
+    per-cell families fetch shard0 only (~100-row sample per family suffices
+    for the k1 gate; keeps the download ~2.5 GB).
+    """
+    from huggingface_hub import hf_hub_download
+
+    rev = hf_revision("datasets", HF_DATA_REPO)
+    names = (
+        [f"fctx_shard{k}of4.pt" for k in range(4)]
+        + [f"fqry_i_shard{k}of4.pt" for k in range(4)]
+        + [f"fqry_ii_shard{k}of4.pt" for k in range(4)]
+        + [
+            f"{stem}_shard0of4.pt"
+            for stem in (
+                "fqry_iii_uc",
+                "fqry_iii_betley",
+                "fqry_iii_dolly",
+                "ffull_uc48",
+                "ffull_betley",
+                "tgt_ucext",
+                "tgt_dolly",
+            )
+        ]
+    )
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        target = ref_dir / name
+        if target.exists():
+            continue
+        local = hf_hub_download(
+            HF_DATA_REPO,
+            f"{HF_PREFIX_923}/analysis_tensors/capture/{name}",
+            repo_type="dataset",
+            revision=rev,
+            local_dir=str(ref_dir / "hf_dl"),
+        )
+        target.write_bytes(Path(local).read_bytes())
+        logger.info("[identity] fetched parent ref %s", name)
+
+
+def pooled_identity_stage(args, packs_dir: Path) -> bool:  # noqa: C901
+    """k1 content-identity spot-check: cos(flast_new, flast_parent) per pack family.
+
+    ~100 seeded-sample rows per family; per-row score = MIN over layers of the
+    per-layer cosine (the parent fctx-check convention). Gate: family MEDIAN
+    >= 0.99 (hard, the calibrated bf16-batching floor); sub-0.999 rows/medians
+    are warned + recorded, never a failure. Covers the causal identity
+    (prompt-only flast == TF flast at the last prompt token) AND render/join
+    provenance in one check. Returns overall pass; artifact
+    ``identity_check.json`` is written (and uploaded) either way.
+    """
+    ref_dir = args.identity_ref_dir or (
+        PROJECT_ROOT / "data" / "issue_923" / "capture" / "parent_ref"
+    )
+    if args.identity_ref_dir is None:
+        _fetch_parent_refs(ref_dir)
+
+    def _load_ref(stem_glob: str, keyfn) -> dict:
+        idx: dict = {}
+        files = sorted(ref_dir.glob(stem_glob))
+        assert files, f"identity check: no parent ref packs matching {stem_glob} under {ref_dir}"
+        for f in files:
+            tensors, meta = load_pack(f)
+            for i, r in enumerate(meta["rows"]):
+                idx[keyfn(r)] = (tensors["flast"], i)
+        return idx
+
+    def _cellkey(r: dict):
+        return (r["ctx_id"], r["q_idx"])
+
+    def _qkey(r: dict):
+        return (r["genre"], r["q_idx"])
+
+    # pool_ffull_uc joins TWO parent stems: store cells (ffull_uc48, global
+    # q_idx already) + ext cells (tgt_ucext flast, LOCAL q_idx -> +48 offset).
+    ffull_uc_idx = _load_ref("ffull_uc48_shard*.pt", _cellkey)
+    for f in sorted(ref_dir.glob("tgt_ucext_shard*.pt")):
+        tensors, meta = load_pack(f)
+        for i, r in enumerate(meta["rows"]):
+            ffull_uc_idx[(r["ctx_id"], 48 + r["q_idx"])] = (tensors["flast"], i)
+
+    specs: list[tuple[str, dict, object]] = [
+        ("pool_fctx", _load_ref("fctx_shard*.pt", lambda r: r["ctx_id"]), lambda r: r["ctx_id"]),
+        ("pool_fqry_i", _load_ref("fqry_i_shard*.pt", _qkey), _qkey),
+        ("pool_fqry_ii", _load_ref("fqry_ii_shard*.pt", _qkey), _qkey),
+        ("pool_fqry_iii_uc", _load_ref("fqry_iii_uc_shard*.pt", _cellkey), _cellkey),
+        ("pool_fqry_iii_betley", _load_ref("fqry_iii_betley_shard*.pt", _cellkey), _cellkey),
+        ("pool_fqry_iii_dolly", _load_ref("fqry_iii_dolly_shard*.pt", _cellkey), _cellkey),
+        ("pool_ffull_uc", ffull_uc_idx, _cellkey),
+        ("pool_ffull_betley", _load_ref("ffull_betley_shard*.pt", _cellkey), _cellkey),
+        ("pool_ffull_dolly", _load_ref("tgt_dolly_shard*.pt", _cellkey), _cellkey),
+    ]
+    mask_dropped = False
+    meta_files = sorted(packs_dir.glob("pool_run_meta_*.json"))
+    if meta_files and load_json(meta_files[0]).get("mask_backend") == "dropped":
+        mask_dropped = True
+
+    rng = np.random.default_rng(SEED)
+    results: dict = {}
+    ok_all = True
+    for fam, ref_idx, keyfn in specs:
+        pool_files = sorted(packs_dir.glob(f"{fam}_shard*.pt"))
+        if not pool_files and fam.startswith("pool_fqry_iii") and mask_dropped:
+            results[fam] = {"skipped": "mask_backend dropped (recorded in run_meta)"}
+            continue
+        assert pool_files, f"identity check: no pooled packs matching {fam}_shard*.pt"
+        matched = []
+        for f in pool_files:
+            tensors, meta = load_pack(f)
+            for i, r in enumerate(meta["rows"]):
+                hit = ref_idx.get(keyfn(r))
+                if hit is not None:
+                    matched.append((tensors["flast"], i, hit))
+        assert matched, f"identity check: ZERO overlapping rows for {fam} — join broken"
+        if len(matched) > IDENTITY_SAMPLE_PER_FAMILY:
+            sel = rng.choice(len(matched), size=IDENTITY_SAMPLE_PER_FAMILY, replace=False)
+            matched = [matched[int(s)] for s in sorted(sel)]
+        cos_rows = []
+        for new_t, ni, (ref_t, ri) in matched:
+            cos = torch.nn.functional.cosine_similarity(
+                new_t[ni].float(), ref_t[ri].float(), dim=1
+            )  # per layer
+            cos_rows.append(float(cos.min()))
+        med = float(np.median(cos_rows))
+        fam_ok = med >= IDENTITY_MEDIAN_FLOOR
+        ok_all &= fam_ok
+        n_warn = sum(c < IDENTITY_WARN_FLOOR for c in cos_rows)
+        if not fam_ok:
+            logger.error("[identity] %s FAILED: median min-cos %.6f < %.2f", fam, med, 0.99)
+        elif n_warn:
+            logger.warning(
+                "[identity] %s: %d/%d rows below %.3f (bf16 numerics, recorded); median %.6f",
+                fam,
+                n_warn,
+                len(cos_rows),
+                IDENTITY_WARN_FLOOR,
+                med,
+            )
+        results[fam] = {
+            "n": len(cos_rows),
+            "median_min_cos": med,
+            "min": float(min(cos_rows)),
+            "n_below_0p999": n_warn,
+            "pass": fam_ok,
+            "cos_rows": cos_rows,  # per-row min-over-layers cos (figure input)
+        }
+    payload = {
+        "pass": bool(ok_all),
+        "median_floor": IDENTITY_MEDIAN_FLOOR,
+        "warn_floor": IDENTITY_WARN_FLOOR,
+        "families": results,
+        "metadata": reproducibility_metadata({"script": "issue923_capture:pooled_identity"}),
+    }
+    dump_json(payload, packs_dir / "identity_check.json")
+    if not args.no_upload:
+        hub._upload(
+            packs_dir / "identity_check.json",
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_PREFIX_923}/analysis_tensors/pooled_capture/identity_check.json",
+            upload_as_file=True,
+        )
+    logger.info("[identity] overall pass=%s: %s", ok_all, json.dumps(results))
+    return bool(ok_all)
+
+
+def pooled_upload_stage(args, packs_dir: Path) -> None:
+    """Upload the pooled packs dir (one folder commit) + verify + sentinel LAST.
+
+    Verification uses SCOPED ``list_repo_tree`` (server-side prefix) — a bare
+    ``list_repo_files`` full listing of the ~1M-file data repo times out
+    (the #833 gotcha).
+    """
+    from huggingface_hub import HfApi
+
+    prefix = f"{HF_PREFIX_923}/analysis_tensors/pooled_capture"
+    n_local = len([p for p in packs_dir.iterdir() if p.name != "UPLOAD_COMPLETE_POOLED.json"])
+    hub._upload(packs_dir, HF_DATA_REPO, "dataset", prefix)
+    listing = [
+        e.path
+        for e in HfApi().list_repo_tree(
+            HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+        )
+    ]
+    assert len(listing) >= n_local, (
+        f"pooled upload verification failed: hub {len(listing)} < local {n_local}"
+    )
+    complete = {
+        "uploaded": n_local,
+        "files": listing,
+        "metadata": reproducibility_metadata({"script": "issue923_capture:pooled_upload"}),
+    }
+    complete_path = packs_dir / "UPLOAD_COMPLETE_POOLED.json"
+    dump_json(complete, complete_path)
+    hub._upload(
+        complete_path,
+        HF_DATA_REPO,
+        "dataset",
+        f"{prefix}/UPLOAD_COMPLETE_POOLED.json",
+        upload_as_file=True,
+    )
+    logger.info("[pooled_upload] verified %d files under %s", len(listing), prefix)
+
+
+def pooled_main(args) -> int:
+    """Dispatcher for the pooled-span-features round stages (capture/upload/identity)."""
+    shard_k, n_shards = (int(x) for x in args.shard.split("/"))
+    assert 0 <= shard_k < n_shards, args.shard
+    packs_dir = args.out_dir / "packs_pooled"
+    packs_dir.mkdir(parents=True, exist_ok=True)
+    shard_tag = f"shard{shard_k}of{n_shards}"
+    if args.pooled_features:
+        pooled_capture_stage(args, packs_dir, shard_k, n_shards, shard_tag)
+    if args.pooled_upload and not args.no_upload:
+        phase("pooled_upload")
+        pooled_upload_stage(args, packs_dir)
+    if args.pooled_identity_check:
+        phase("pooled_identity")
+        if not pooled_identity_stage(args, packs_dir):
+            print("[phase=identity_gate_failed]", flush=True)
+            return 4
+    phase("done")
+    return 0
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -580,11 +1243,36 @@ def parse_args(argv=None):
     p.add_argument("--max-new-tokens-smoke", type=int, default=16)
     p.add_argument("--n-ctx", type=int, default=None)
     p.add_argument("--n-queries", type=int, default=None)
+    # pooled-span-features round (plan v6 §4.2) — separate stage pipeline:
+    p.add_argument(
+        "--pooled-features",
+        action="store_true",
+        help="capture the five pooled (span-mean) feature families for this shard",
+    )
+    p.add_argument(
+        "--pooled-upload",
+        action="store_true",
+        help="upload packs_pooled/ to analysis_tensors/pooled_capture (verify + sentinel)",
+    )
+    p.add_argument(
+        "--pooled-identity-check",
+        action="store_true",
+        help="k1 gate: cos(flast_new, flast_parent) per family; exit 4 on median<0.99",
+    )
+    p.add_argument(
+        "--identity-ref-dir",
+        type=Path,
+        default=None,
+        help="parent ref packs dir (default: fetch from HF at the pinned revision)",
+    )
+    p.add_argument("--fresh", action="store_true", help="overwrite existing pooled packs")
     return p.parse_args(argv)
 
 
 def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
     args = parse_args()
+    if args.pooled_features or args.pooled_upload or args.pooled_identity_check:
+        return pooled_main(args)
     shard_k, n_shards = (int(x) for x in args.shard.split("/"))
     assert 0 <= shard_k < n_shards, args.shard
     phases = [s.strip() for s in args.phases.split(",") if s.strip()]
@@ -890,7 +1578,8 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
                 if cmin <= 0.999:
                     logger.warning(
                         "[fctx-identity] %s min_cos=%.6f sub-0.999; bf16 numerics, recorded",
-                        inst["id"], cmin,
+                        inst["id"],
+                        cmin,
                     )
             run_meta["fctx_identity_check"] = id_cos
             save_pack(
@@ -953,7 +1642,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
                             keys.append({"ctx_id": inst["id"], "q_idx": qi})
                     if not rows:
                         continue
-                    flast = masked_context_capture(
+                    flast, _fpool_unused = masked_context_capture(
                         model_iii,
                         tokenizer,
                         capture_iii,

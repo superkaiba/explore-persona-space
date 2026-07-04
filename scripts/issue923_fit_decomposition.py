@@ -318,17 +318,22 @@ def _uc_ext_offset(ext_packs: list[tuple[dict, dict]], n_q: int) -> int:
     return off
 
 
-def _input_pack_identity(packs_dir: Path, reduce_dir: Path) -> list[list]:
+def _input_pack_identity(
+    packs_dir: Path, reduce_dir: Path, extra_dirs: tuple[Path, ...] = ()
+) -> list[list]:
     """Cheap content identity for every input pack the fit consumes.
 
     Sorted ``[name, size_bytes, mtime_ns]`` triples over the capture shards +
-    reduce packs. A re-captured / re-reduced / re-fetched pack changes its
-    triple, so the resume regime hash changes and a stale per-(genre, layer)
-    partial refuses loudly (the #722-r3 resume class) instead of silently
-    feeding OLD data into a `--fits-only` re-dispatch. False invalidation
-    (same bytes, fresh mtime) only costs a `--fresh` refit — the safe side.
+    reduce packs (+ any extra feature-pack dirs, e.g. the pooled packs). A
+    re-captured / re-reduced / re-fetched pack changes its triple, so the
+    resume regime hash changes and a stale per-(genre, layer) partial refuses
+    loudly (the #722-r3 resume class) instead of silently feeding OLD data
+    into a `--fits-only` re-dispatch. False invalidation (same bytes, fresh
+    mtime) only costs a `--fresh` refit — the safe side.
     """
     files = sorted(packs_dir.glob("*_shard*.pt")) + sorted(reduce_dir.glob("vbar_store_*.pt"))
+    for d in extra_dirs:
+        files += sorted(d.glob("*_shard*.pt"))
     return [[f.name, f.stat().st_size, f.stat().st_mtime_ns] for f in files]
 
 
@@ -389,37 +394,54 @@ class GridData:
 
 
 def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
-    packs_dir: Path, reduce_dir: Path, data_dir: Path, genres: list[str], ood: bool
+    packs_dir: Path,
+    reduce_dir: Path,
+    data_dir: Path,
+    genres: list[str],
+    ood: bool,
+    feature_source: str = "last",
+    pooled_packs_dir: Path | None = None,
 ):
     """Assemble GridData per genre (+ dolly) from capture shards + reduce packs.
 
     Returns (grids, fctx (n_ctx, Lc, H) fp32, fqry {pres: {genre: (n_q, Lc, H)}},
     battery ctx ids/families, run-level metadata incl. mask_backend).
+
+    ``feature_source="pool"`` (pooled-span-features round): every FEATURE array
+    reads the ``pool_*`` packs' ``fpool`` key from ``pooled_packs_dir``;
+    TARGETS keep reading ``vbar`` from the same tgt/reduce packs (byte-identical
+    inputs — the round's reuse premise).
     """
     from issue594_common import load_battery
+
+    pool = feature_source == "pool"
+    if pool:
+        assert pooled_packs_dir is not None, "feature_source=pool requires --pooled-packs-dir"
+    feat_dir = pooled_packs_dir if pool else packs_dir
+    feat_key = "fpool" if pool else "flast"
 
     _, instances = load_battery()
     folds_payload = load_json(data_dir / "fold_assignments.json")
     fam_map = folds_payload["families"]
 
-    fctx_packs = _collect_shards(packs_dir, "fctx")
+    fctx_packs = _collect_shards(feat_dir, "pool_fctx" if pool else "fctx")
     ctx_ids = sorted(
         {r["ctx_id"] for _t, m in fctx_packs for r in m["rows"]},
         key=lambda c: [i["id"] for i in instances].index(c),
     )
     ctx_idx = {c: i for i, c in enumerate(ctx_ids)}
     families = [fam_map[c] for c in ctx_ids]
-    lc = fctx_packs[0][0]["flast"].shape[1]
-    hidden = fctx_packs[0][0]["flast"].shape[2]
+    lc = fctx_packs[0][0][feat_key].shape[1]
+    hidden = fctx_packs[0][0][feat_key].shape[2]
     fctx = torch.zeros(len(ctx_ids), lc, hidden, dtype=torch.float16)
     for tensors, meta in fctx_packs:
         for i, r in enumerate(meta["rows"]):
-            fctx[ctx_idx[r["ctx_id"]]] = tensors["flast"][i]
+            fctx[ctx_idx[r["ctx_id"]]] = tensors[feat_key][i]
     mask_backend = fctx_packs[0][1].get("mask_backend", "unknown")
 
     fqry: dict[str, dict[str, torch.Tensor]] = {}
     for pres in ("i", "ii"):
-        packs = _collect_shards(packs_dir, f"fqry_{pres}")
+        packs = _collect_shards(feat_dir, f"pool_fqry_{pres}" if pool else f"fqry_{pres}")
         per_genre: dict[str, torch.Tensor] = {}
         for tensors, meta in packs:
             for i, r in enumerate(meta["rows"]):
@@ -432,13 +454,23 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
                         + 1
                     )
                     per_genre[g] = torch.zeros(n_qg, lc, hidden, dtype=torch.float16)
-                per_genre[g][r["q_idx"]] = tensors["flast"][i]
+                per_genre[g][r["q_idx"]] = tensors[feat_key][i]
         fqry[pres] = per_genre
 
     def _grid(genre: str, n_q: int, target: torch.Tensor, valid: torch.Tensor) -> GridData:
         ffull = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
         fvalid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
-        if genre == "uc":
+        if pool:
+            # ONE pack family per genre, GLOBAL q_idx (ext lives at 48+ for uc).
+            _fill_rows(
+                ffull,
+                fvalid,
+                _collect_shards(feat_dir, f"pool_ffull_{genre}"),
+                feat_key,
+                ctx_idx,
+                n_q,
+            )
+        elif genre == "uc":
             _fill_rows(
                 ffull, fvalid, _collect_shards(packs_dir, "ffull_uc48"), "flast", ctx_idx, n_q
             )
@@ -466,10 +498,12 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
             # (r1 blocker fqryiii-pack-absence-silently-drops-arm).
             fqryiii, iii_valid = None, None
         else:
-            iii_packs = _collect_shards(packs_dir, f"fqry_iii_{genre}")
+            iii_packs = _collect_shards(
+                feat_dir, f"pool_fqry_iii_{genre}" if pool else f"fqry_iii_{genre}"
+            )
             fqryiii = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
             iii_valid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
-            _fill_rows(fqryiii, iii_valid, iii_packs, "flast", ctx_idx, n_q)
+            _fill_rows(fqryiii, iii_valid, iii_packs, feat_key, ctx_idx, n_q)
         assert (fqryiii is None) == (mask_backend == "dropped")  # gate consistency
         common = valid & fvalid
         if iii_valid is not None:
@@ -716,12 +750,26 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
     ood: bool,
     device: str,
     smoke_blend_assert: bool = False,
+    perm_ood: np.ndarray | None = None,
+    extended_nulls: bool = False,
+    blend_null_this_layer: bool = True,
+    anova_override: dict | None = None,
 ) -> dict:
     """One (genre, layer) unit: observed fits (+ per-λ), blend, marginals, OOD, nulls.
 
     Every quantity the downstream stats need is emitted here so the unit is a
     self-contained checkpoint: pooled/per-family/per-(family,q) SS per arm,
     per-cell errors, per-λ pooled SS, per-draw null SS, blend α/β.
+
+    ``extended_nulls`` (pooled-span-features round, plan v6 §4.1): the null
+    battery ALSO covers (a) ``arm_blend`` — the null pipeline mirrors the
+    observed blend per draw (2 inner-split component refits on shared X-side
+    factors + a per-draw 2-parameter LS, batched over draws; outer per-draw
+    component predictions retained from the per-arm battery) and (b) the
+    ``ood_dolly`` scheme — independent within-grid cell-label permutations of
+    the train grid (``perm``) and the Dolly test grid (``perm_ood``), X fixed,
+    λ re-selected per draw. ``blend_null_this_layer`` implements the §9
+    descope ladder rung 1 (blend nulls at the L18 column only).
     """
     grid = grids[genre]
     dev = torch.device(device)
@@ -754,6 +802,8 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
     }
     null_res = {arm: np.zeros(n_perms) for arm in arms} if perm is not None else {}
     null_tot = {arm: np.zeros(n_perms) for arm in arms} if perm is not None else {}
+    blend_null_res = np.zeros(n_perms) if (perm is not None and extended_nulls) else None
+    blend_null_tot = np.zeros(n_perms) if (perm is not None and extended_nulls) else None
     valid_list = np.arange(n_cells)[grid.valid.numpy()]
     pos_of = {int(c): i for i, c in enumerate(valid_list)}
 
@@ -782,8 +832,37 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
         if perm is not None:
             Yall_amb = grid.target[valid_list, layer, :].double().to(dev)
             Yall = (Yall_amb - mu_y) @ Vy
+            Yall32 = Yall.float()
             tr_pos = np.array([pos_of[int(c)] for c in tr])
             te_pos = np.array([pos_of[int(c)] for c in te])
+
+        # Blend inner-split indices — HOISTED above the arm loop so the blend
+        # null battery can retain the outer per-draw component predictions;
+        # same rng draws/order as the original post-arm-loop computation, so
+        # the OBSERVED blend numbers are byte-identical.
+        blend_ok = False
+        itr = ival = None
+        inner_fam = None
+        if "arm_ctx" in arms and "arm_qry_i" in arms:
+            rng = np.random.default_rng(SEED + fold["fold_id"])
+            inner_fam_pool = [f for f in fams_present if f != fold["family"]]
+            inner_fam = inner_fam_pool[fold["fold_id"] % len(inner_fam_pool)]
+            tr_qs = np.unique(grid.q_of(tr))
+            val_qs = set(rng.choice(tr_qs, size=max(1, len(tr_qs) // 4), replace=False).tolist())
+            fam_of_tr = np.array([grid.families[c] for c in grid.ctx_of(tr)])
+            q_of_tr = grid.q_of(tr)
+            is_val = (fam_of_tr == inner_fam) | np.isin(q_of_tr, list(val_qs))
+            itr, ival = tr[~is_val], tr[is_val]
+            blend_ok = len(itr) >= 8 and len(ival) >= 2
+        blend_nulls_active = (
+            extended_nulls and blend_ok and perm is not None and blend_null_this_layer
+        )
+        outer_null_preds: dict[str, torch.Tensor] = {}
+        if blend_nulls_active:
+            for a2 in ("arm_ctx", "arm_qry_i"):
+                outer_null_preds[a2] = torch.empty(
+                    n_perms, len(te), Ytr.shape[1], dtype=torch.float32, device=dev
+                )
 
         arm_test_preds: dict[str, torch.Tensor] = {}
         for arm in arms:
@@ -823,7 +902,6 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
             if perm is not None:
                 eng, _xtr_n, Xte_n = fit["engine"]
                 eng32 = eng.cast(torch.float32)
-                Yall32 = Yall.float()
                 Xte32 = Xte_n.float()
                 for c0 in range(0, n_perms, NULL_CHUNK):
                     pb = torch.from_numpy(perm[c0 : c0 + NULL_CHUNK]).long().to(dev)
@@ -837,63 +915,106 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
                     t = ((Yte_b - ymu_b) ** 2).sum(dim=(1, 2)).double().cpu().numpy()
                     null_res[arm][c0 : c0 + len(r)] += r
                     null_tot[arm][c0 : c0 + len(t)] += t
+                    if arm in outer_null_preds:
+                        outer_null_preds[arm][c0 : c0 + len(r)] = pred_b
 
         # Blend (§4.2 inner-split protocol; derived arm, ctx + qry_i).
-        if "arm_ctx" in arms and "arm_qry_i" in arms:
-            rng = np.random.default_rng(SEED + fold["fold_id"])
-            inner_fam_pool = [f for f in fams_present if f != fold["family"]]
-            inner_fam = inner_fam_pool[fold["fold_id"] % len(inner_fam_pool)]
-            tr_qs = np.unique(grid.q_of(tr))
-            val_qs = set(rng.choice(tr_qs, size=max(1, len(tr_qs) // 4), replace=False).tolist())
-            fam_of_tr = np.array([grid.families[c] for c in grid.ctx_of(tr)])
-            q_of_tr = grid.q_of(tr)
-            is_val = (fam_of_tr == inner_fam) | np.isin(q_of_tr, list(val_qs))
-            itr, ival = tr[~is_val], tr[is_val]
-            if len(itr) >= 8 and len(ival) >= 2:
-                Yitr = (grid.target[itr, layer, :].double().to(dev) - mu_y) @ Vy
-                Yival = (grid.target[ival, layer, :].double().to(dev) - mu_y) @ Vy
-                preds_val = {}
-                for arm in ("arm_ctx", "arm_qry_i"):
-                    Xi, Xv = build_arm_design(
-                        arm, layer, grid, itr, grid, ival, fctx, fqry, seed_fold
-                    )
-                    preds_val[arm] = press_fit_predict(
-                        Xi.to(dev), Yitr, Xv.to(dev), standardize=False
-                    )["pred"]
-                pc, pq = preds_val["arm_ctx"], preds_val["arm_qry_i"]
-                m00 = float((pc * pc).sum())
-                m01 = float((pc * pq).sum())
-                m11 = float((pq * pq).sum())
-                b0 = float((pc * Yival).sum())
-                b1 = float((pq * Yival).sum())
-                det = m00 * m11 - m01 * m01
-                if abs(det) > 1e-12:
-                    alpha = (b0 * m11 - b1 * m01) / det
-                    beta = (m00 * b1 - m01 * b0) / det
-                else:
-                    alpha, beta = 0.5, 0.5
-                pred_blend = alpha * arm_test_preds["arm_ctx"] + beta * arm_test_preds["arm_qry_i"]
-                res_cells = ((Yte - pred_blend) ** 2).sum(dim=1).cpu().numpy()
-                a = acc["arm_blend"]
-                a["ss_res"] += float(res_cells.sum())
-                a["ss_tot"] += float(ss_tot_cells.sum())
-                pred_amb = mu_y + pred_blend @ Vy.T
-                a["ss_res_ambient"] += float(((Yte_amb - pred_amb) ** 2).sum())
-                a["ss_tot_ambient"] += float(ss_tot_amb_cells.sum())
-                fi = fam_index[fold["family"]]
-                a["fam_res"][fi] += float(res_cells.sum())
-                a["fam_tot"][fi] += float(ss_tot_cells.sum())
-                a["cell_res"][te] = res_cells
-                a["cell_tot"][te] = ss_tot_cells
-                res["blend"].setdefault("per_fold", []).append(
-                    {
-                        "fold_id": fold["fold_id"],
-                        "alpha": alpha,
-                        "beta": beta,
-                        "inner_val_family": inner_fam,
-                        "n_inner_val": len(ival),
-                    }
+        if "arm_ctx" in arms and "arm_qry_i" in arms and blend_ok:
+            Yitr = (grid.target[itr, layer, :].double().to(dev) - mu_y) @ Vy
+            Yival = (grid.target[ival, layer, :].double().to(dev) - mu_y) @ Vy
+            preds_val = {}
+            inner_engines = {}
+            for arm in ("arm_ctx", "arm_qry_i"):
+                Xi, Xv = build_arm_design(arm, layer, grid, itr, grid, ival, fctx, fqry, seed_fold)
+                fit_i = press_fit_predict(
+                    Xi.to(dev),
+                    Yitr,
+                    Xv.to(dev),
+                    return_engine=blend_nulls_active,
+                    standardize=False,
                 )
+                preds_val[arm] = fit_i["pred"]
+                if blend_nulls_active:
+                    inner_engines[arm] = fit_i["engine"]
+            pc, pq = preds_val["arm_ctx"], preds_val["arm_qry_i"]
+            m00 = float((pc * pc).sum())
+            m01 = float((pc * pq).sum())
+            m11 = float((pq * pq).sum())
+            b0 = float((pc * Yival).sum())
+            b1 = float((pq * Yival).sum())
+            det = m00 * m11 - m01 * m01
+            if abs(det) > 1e-12:
+                alpha = (b0 * m11 - b1 * m01) / det
+                beta = (m00 * b1 - m01 * b0) / det
+            else:
+                alpha, beta = 0.5, 0.5
+            pred_blend = alpha * arm_test_preds["arm_ctx"] + beta * arm_test_preds["arm_qry_i"]
+            res_cells = ((Yte - pred_blend) ** 2).sum(dim=1).cpu().numpy()
+            a = acc["arm_blend"]
+            a["ss_res"] += float(res_cells.sum())
+            a["ss_tot"] += float(ss_tot_cells.sum())
+            pred_amb = mu_y + pred_blend @ Vy.T
+            a["ss_res_ambient"] += float(((Yte_amb - pred_amb) ** 2).sum())
+            a["ss_tot_ambient"] += float(ss_tot_amb_cells.sum())
+            fi = fam_index[fold["family"]]
+            a["fam_res"][fi] += float(res_cells.sum())
+            a["fam_tot"][fi] += float(ss_tot_cells.sum())
+            a["cell_res"][te] = res_cells
+            a["cell_tot"][te] = ss_tot_cells
+            res["blend"].setdefault("per_fold", []).append(
+                {
+                    "fold_id": fold["fold_id"],
+                    "alpha": alpha,
+                    "beta": beta,
+                    "inner_val_family": inner_fam,
+                    "n_inner_val": len(ival),
+                }
+            )
+
+            # Blend NULLS (§4.1 extended coverage): per draw, the SAME
+            # pipeline as the observed blend — 2 inner-split component
+            # refits (λ re-selected per draw on shared X-side factors) +
+            # a batched per-draw 2-parameter LS; the outer component
+            # predictions were retained from the per-arm battery above.
+            if blend_nulls_active:
+                itr_pos = np.array([pos_of[int(c)] for c in itr])
+                ival_pos = np.array([pos_of[int(c)] for c in ival])
+                eng32_i = {a2: inner_engines[a2][0].cast(torch.float32) for a2 in inner_engines}
+                xv32 = {a2: inner_engines[a2][2].float() for a2 in inner_engines}
+                for c0 in range(0, n_perms, NULL_CHUNK):
+                    pb = torch.from_numpy(perm[c0 : c0 + NULL_CHUNK]).long().to(dev)
+                    nb = pb.shape[0]
+                    Yitr_b = Yall32[pb[:, itr_pos]]  # (B, m_i, P)
+                    Yival_b = Yall32[pb[:, ival_pos]]  # (B, n_ival, P)
+                    ymu_i = Yitr_b.mean(dim=1, keepdim=True)
+                    pv = {}
+                    for a2 in ("arm_ctx", "arm_qry_i"):
+                        mse_b, G_b = eng32_i[a2].press_mse(Yitr_b - ymu_i)
+                        lam_b = torch.argmin(mse_b, dim=1)
+                        pv[a2] = eng32_i[a2].predict(G_b, lam_b, xv32[a2]) + ymu_i
+                    pc_b, pq_b = pv["arm_ctx"], pv["arm_qry_i"]
+                    m00 = (pc_b * pc_b).sum(dim=(1, 2))
+                    m01 = (pc_b * pq_b).sum(dim=(1, 2))
+                    m11 = (pq_b * pq_b).sum(dim=(1, 2))
+                    b0 = (pc_b * Yival_b).sum(dim=(1, 2))
+                    b1 = (pq_b * Yival_b).sum(dim=(1, 2))
+                    det = m00 * m11 - m01 * m01
+                    okd = det.abs() > 1e-12
+                    safe_det = torch.where(okd, det, torch.ones_like(det))
+                    half = torch.full_like(det, 0.5)
+                    alpha_b = torch.where(okd, (b0 * m11 - b1 * m01) / safe_det, half)
+                    beta_b = torch.where(okd, (m00 * b1 - m01 * b0) / safe_det, half)
+                    pred_blend_b = (
+                        alpha_b.view(-1, 1, 1) * outer_null_preds["arm_ctx"][c0 : c0 + nb]
+                        + beta_b.view(-1, 1, 1) * outer_null_preds["arm_qry_i"][c0 : c0 + nb]
+                    )
+                    Ytr_b = Yall32[pb[:, tr_pos]]
+                    Yte_b = Yall32[pb[:, te_pos]]
+                    ymu_b = Ytr_b.mean(dim=1, keepdim=True)
+                    r = ((Yte_b - pred_blend_b) ** 2).sum(dim=(1, 2)).double().cpu().numpy()
+                    t = ((Yte_b - ymu_b) ** 2).sum(dim=(1, 2)).double().cpu().numpy()
+                    blend_null_res[c0 : c0 + len(r)] += r
+                    blend_null_tot[c0 : c0 + len(t)] += t
 
     # Marginal + OOD reads (exploratory; no nulls, no per-λ).
     def _plain_scheme(name: str, fold_list: list[dict], grid_te: GridData | None = None):
@@ -942,6 +1063,66 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
             ood_folds.append({"train": f["train"], "test": d_cells[d_fam == f["family"]]})
         _plain_scheme("ood_dolly", ood_folds, grid_te=dolly)
 
+        # Dolly OOD NULLS (§4.1 extended coverage): per draw, an INDEPENDENT
+        # within-grid cell-label permutation of the train grid (``perm``, the
+        # uc matrix the primary nulls use) and of the Dolly TEST grid
+        # (``perm_ood``); X fixed, fold target-PCA basis from the OBSERVED
+        # train targets (the #810 shared-pipeline-factors recipe), λ
+        # re-selected per draw. The two-grid within-grid permutation preserves
+        # each grid's marginal distribution under H0 (§11).
+        if extended_nulls and perm is not None and perm_ood is not None:
+            null_ood_res = {arm: np.zeros(n_perms) for arm in arms}
+            null_ood_tot = {arm: np.zeros(n_perms) for arm in arms}
+            d_valid_list = d_cells
+            d_pos_of = {int(c): i for i, c in enumerate(d_valid_list)}
+            for fold in ood_folds:
+                tr, te = fold["train"], fold["test"]
+                if len(tr) < 8 or len(te) < 2:
+                    continue
+                seedf = SEED * 1000 + layer * 100 + 73  # the observed ood scheme seed
+                Ytr_amb = grid.target[tr, layer, :].double().to(dev)
+                torch.manual_seed(seedf)
+                mu_y = Ytr_amb.mean(0, keepdim=True)
+                qdim = min(PCA_DIM, Ytr_amb.shape[0] - 1, Ytr_amb.shape[1])
+                _u4, _s4, Vy = torch.pca_lowrank(Ytr_amb - mu_y, q=qdim, center=False, niter=2)
+                Ytr = (Ytr_amb - mu_y) @ Vy
+                Yall_tr32 = (
+                    ((grid.target[valid_list, layer, :].double().to(dev)) - mu_y) @ Vy
+                ).float()
+                Yall_te32 = (
+                    ((dolly.target[d_valid_list, layer, :].double().to(dev)) - mu_y) @ Vy
+                ).float()
+                tr_pos = np.array([pos_of[int(c)] for c in tr])
+                te_pos_d = np.array([d_pos_of[int(c)] for c in te])
+                for arm in arms:
+                    if arm in ("arm_qry_iii", "arm_concat_iii") and dolly.fqryiii is None:
+                        continue
+                    Xtr, Xte = build_arm_design(arm, layer, grid, tr, dolly, te, fctx, fqry, seedf)
+                    fit = press_fit_predict(
+                        Xtr.to(dev), Ytr, Xte.to(dev), return_engine=True, standardize=False
+                    )
+                    eng32 = fit["engine"][0].cast(torch.float32)
+                    xte32 = fit["engine"][2].float()
+                    for c0 in range(0, n_perms, NULL_CHUNK):
+                        pb_tr = torch.from_numpy(perm[c0 : c0 + NULL_CHUNK]).long().to(dev)
+                        pb_te = torch.from_numpy(perm_ood[c0 : c0 + NULL_CHUNK]).long().to(dev)
+                        Ytr_b = Yall_tr32[pb_tr[:, tr_pos]]
+                        Yte_b = Yall_te32[pb_te[:, te_pos_d]]
+                        ymu_b = Ytr_b.mean(dim=1, keepdim=True)
+                        mse_b, G_b = eng32.press_mse(Ytr_b - ymu_b)
+                        lam_b = torch.argmin(mse_b, dim=1)
+                        pred_b = eng32.predict(G_b, lam_b, xte32) + ymu_b
+                        r = ((Yte_b - pred_b) ** 2).sum(dim=(1, 2)).double().cpu().numpy()
+                        t = ((Yte_b - ymu_b) ** 2).sum(dim=(1, 2)).double().cpu().numpy()
+                        null_ood_res[arm][c0 : c0 + len(r)] += r
+                        null_ood_tot[arm][c0 : c0 + len(t)] += t
+            with np.errstate(divide="ignore", invalid="ignore"):
+                res["null_ood"] = {
+                    arm: (1.0 - null_ood_res[arm] / null_ood_tot[arm]).tolist()
+                    for arm in arms
+                    if null_ood_tot[arm].sum() > 0
+                }
+
     for arm in [*arms, "arm_blend"]:
         a = acc[arm]
         a["skill"] = (1.0 - a["ss_res"] / a["ss_tot"]) if a["ss_tot"] > 0 else float("nan")
@@ -959,8 +1140,18 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
         for arm in arms:
             with np.errstate(divide="ignore", invalid="ignore"):
                 res["null"][arm] = (1.0 - null_res[arm] / null_tot[arm]).tolist()
+        if blend_null_res is not None and blend_null_tot.sum() > 0:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                res["null"]["arm_blend"] = (1.0 - blend_null_res / blend_null_tot).tolist()
     res["families_present"] = fams_present
-    res["anova"] = anova_shares(grid, layer, SEED * 1000 + layer)
+    # ANOVA is a function of TARGETS only; under feature_source=pool the parent
+    # round's per-(genre, layer) shares are injected (identical targets — §4.1
+    # "cites parent") instead of recomputing an identical artifact.
+    res["anova"] = (
+        anova_override
+        if anova_override is not None
+        else anova_shares(grid, layer, SEED * 1000 + layer)
+    )
     if smoke_blend_assert and "arm_blend" in acc and "arm_ctx" in res["arms"]:
         singles_min = min(res["arms"]["arm_ctx"]["skill"], res["arms"]["arm_qry_i"]["skill"])
         assert res["arms"]["arm_blend"]["skill"] >= singles_min - 0.15, (
@@ -979,6 +1170,202 @@ def family_bootstrap(fam_res, fam_tot, counts: np.ndarray) -> np.ndarray:
     den = counts @ np.asarray(fam_tot, dtype=np.float64)
     with np.errstate(divide="ignore", invalid="ignore"):
         return 1.0 - num / den
+
+
+# ── paired residual diff vs the parent round (pooled-span-features, plan v6) ──
+
+PARENT_QCOLS = {"uc": 144, "betley": 48}  # famq column counts (fold_assignments n_queries)
+
+
+def _replay_family_counts(
+    n_boot: int, genre_specs: list[tuple[str, int, int]]
+) -> dict[str, np.ndarray]:
+    """Regenerate ``compute_stats``' family-count draws EXACTLY (shared-draw contract).
+
+    Replays the seed-42 rng CALL ORDER of ``compute_stats`` — per genre in
+    order: the (n_boot, nf) family picks, then the (n_boot, qcols)
+    cross-classified query picks — so the counts returned here are
+    bit-identical to the ones BOTH rounds' ``compute_stats`` used.
+    """
+    rng = np.random.default_rng(SEED)
+    counts_by_genre: dict[str, np.ndarray] = {}
+    for genre, nf, qcols in genre_specs:
+        picks = rng.integers(0, nf, size=(n_boot, nf))
+        counts = np.zeros((n_boot, nf))
+        for j in range(nf):
+            counts[:, j] = (picks == j).sum(axis=1)
+        counts_by_genre[genre] = counts
+        _ = rng.integers(0, qcols, size=(n_boot, qcols))  # advance: the vpicks draw
+    return counts_by_genre
+
+
+def verdict_lattice(delta_pool_ci: list[float], paired_ci: list[float]) -> dict:
+    """§3 DISJOINT verdict lattice — exactly one of {H-robust, H-slot, intermediate}.
+
+    H-robust ⇔ the Δ_pool CI is wholly below 0; H-slot ⇔ (Δ_pool CI wholly
+    at/above 0) OR (Δ_pool CI straddles 0 AND the paired-diff CI is strictly
+    positive); intermediate ⇔ otherwise. When H-robust fires WITH a strictly
+    positive paired-diff CI, the note records "deficit persists with partial
+    closure" (§3 — never reported as gap closure).
+    """
+    lo, hi = float(delta_pool_ci[0]), float(delta_pool_ci[1])
+    plo, phi = float(paired_ci[0]), float(paired_ci[1])
+    wholly_below = hi < 0.0
+    wholly_at_or_above = lo >= 0.0
+    straddle = (not wholly_below) and (not wholly_at_or_above)
+    paired_strictly_positive = plo > 0.0
+    if wholly_below:
+        label = "H-robust"
+        note = "deficit persists with partial closure" if paired_strictly_positive else None
+    elif wholly_at_or_above or (straddle and paired_strictly_positive):
+        label = "H-slot"
+        note = None
+    else:
+        label = "intermediate"
+        note = None
+    return {
+        "label": label,
+        "note": note,
+        "delta_pool_ci95": [lo, hi],
+        "paired_diff_ci95": [plo, phi],
+        "predicates": {
+            "wholly_below": wholly_below,
+            "wholly_at_or_above": wholly_at_or_above,
+            "straddle": straddle,
+            "paired_strictly_positive": paired_strictly_positive,
+        },
+    }
+
+
+def paired_residual_diff(
+    pooled_fams: dict | None,
+    parent_fits_dir: Path,
+    n_boot: int,
+) -> dict:
+    """Paired family bootstrap of D = Δ_pool − Δ_last on SHARED seed-42 draws.
+
+    Pairs on the parent's persisted PER-FAMILY ``fam_res``/``fam_tot`` (paths
+    ``genres.{uc,betley}.18.arms.{arm_full,arm_concat_i}`` in
+    ``decomposition_skill.json`` — per-cell residuals are NOT in the JSON;
+    the family sums ARE the exact sufficient statistic for the family
+    bootstrap). Shared family-count draws (seed 42, replayed via
+    ``_replay_family_counts``) are applied to BOTH rounds' sums.
+
+    REPRODUCE-CHECK FIRST (v6 Must-Fix 1): per genre, the parent family sums
+    must reproduce ``headline.json``'s Δ_last AND its family-bootstrap 95% CI
+    to <= 1e-12 before ANY pairing; a mismatch fails loud (broken pairing
+    premise, never silently paired).
+
+    ``pooled_fams``: {genre: {arm: (fam_res, fam_tot)}} for this round at the
+    frozen headline layer; a genre absent from it records a skipped pairing.
+    Returns the ``paired_diff`` payload incl. the §3 disjoint verdict (primary
+    verdict = UC).
+    """
+    parent_skill = load_json(parent_fits_dir / "decomposition_skill.json")
+    parent_head = load_json(parent_fits_dir / "headline.json")
+    n_boot_parent = int(parent_head["stats"]["n_boot"])
+    assert n_boot_parent == n_boot, (
+        f"paired diff requires the parent's n_boot ({n_boot_parent}); got {n_boot}"
+    )
+    parent_genres = [g for g in ("uc", "betley") if g in parent_skill["genres"]]
+    genre_specs = []
+    for g in parent_genres:
+        fams = parent_head["stats"][g]["families"]
+        genre_specs.append((g, len(fams), PARENT_QCOLS[g]))
+    counts_by_genre = _replay_family_counts(n_boot, genre_specs)
+    hl = str(HEADLINE_LAYER)
+    out: dict = {"n_boot": n_boot, "seed": SEED, "genres": {}}
+    for g, _nf, _q in genre_specs:
+        counts = counts_by_genre[g]
+        p18 = parent_skill["genres"][g][hl]["arms"]
+
+        def _sums(node: dict, arm: str) -> tuple[np.ndarray, np.ndarray]:
+            return (
+                np.asarray(node[arm]["fam_res"], dtype=np.float64),
+                np.asarray(node[arm]["fam_tot"], dtype=np.float64),
+            )
+
+        pf_res, pf_tot = _sums(p18, "arm_full")
+        pc_res, pc_tot = _sums(p18, "arm_concat_i")
+        delta_last_obs = (1.0 - pf_res.sum() / pf_tot.sum()) - (1.0 - pc_res.sum() / pc_tot.sum())
+        delta_last_draws = family_bootstrap(pf_res, pf_tot, counts) - family_bootstrap(
+            pc_res, pc_tot, counts
+        )
+        ci_last = [
+            float(np.nanpercentile(delta_last_draws, 2.5)),
+            float(np.nanpercentile(delta_last_draws, 97.5)),
+        ]
+        ref = parent_head["stats"][g]["delta_r2"]
+        err = max(
+            abs(delta_last_obs - ref["value"]),
+            abs(ci_last[0] - ref["ci95"][0]),
+            abs(ci_last[1] - ref["ci95"][1]),
+        )
+        assert err <= 1e-12, (
+            f"paired-diff reproduce-check FAILED for {g}: max abs err {err} > 1e-12 "
+            f"(Δ_last {delta_last_obs} vs {ref['value']}; CI {ci_last} vs {ref['ci95']}) — "
+            "the family sums do not reproduce the parent headline; pairing premise broken"
+        )
+        entry: dict = {
+            "reproduce_check": {
+                "delta_last": delta_last_obs,
+                "ci95": ci_last,
+                "max_abs_err": err,
+                "pass": True,
+            }
+        }
+        if pooled_fams is None or g not in pooled_fams:
+            entry["paired"] = None
+            entry["note"] = "pooled side absent for this genre — pairing skipped"
+            out["genres"][g] = entry
+            continue
+        qf_res, qf_tot = pooled_fams[g]["arm_full"]
+        qc_res, qc_tot = pooled_fams[g]["arm_concat_i"]
+        delta_pool_obs = (1.0 - np.asarray(qf_res).sum() / np.asarray(qf_tot).sum()) - (
+            1.0 - np.asarray(qc_res).sum() / np.asarray(qc_tot).sum()
+        )
+        delta_pool_draws = family_bootstrap(qf_res, qf_tot, counts) - family_bootstrap(
+            qc_res, qc_tot, counts
+        )
+        d_draws = delta_pool_draws - delta_last_draws
+        ci_pool = [
+            float(np.nanpercentile(delta_pool_draws, 2.5)),
+            float(np.nanpercentile(delta_pool_draws, 97.5)),
+        ]
+        ci_d = [float(np.nanpercentile(d_draws, 2.5)), float(np.nanpercentile(d_draws, 97.5))]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            closure_draws = 1.0 - delta_pool_draws / delta_last_draws
+        closure_draws = np.where(np.abs(delta_last_draws) < 1e-9, np.nan, closure_draws)
+        closure_obs = (
+            float(1.0 - delta_pool_obs / delta_last_obs) if delta_last_obs != 0 else float("nan")
+        )
+        entry["paired"] = {
+            "delta_pool": float(delta_pool_obs),
+            "delta_pool_ci95": ci_pool,
+            "delta_last": float(delta_last_obs),
+            "delta_last_ci95": ci_last,
+            "D_value": float(delta_pool_obs - delta_last_obs),
+            "D_ci95": ci_d,
+            "closure_fraction": closure_obs,
+            "closure_ci95": [
+                float(np.nanpercentile(closure_draws, 2.5)),
+                float(np.nanpercentile(closure_draws, 97.5)),
+            ],
+            "n_closure_draws_dropped": int(np.isnan(closure_draws).sum()),
+            "closure_draws": closure_draws.tolist(),  # figure input (paired draws)
+            "D_draws": d_draws.tolist(),
+            "parent_null_note": (
+                "parent side un-gated (no registered null in the parent round) for "
+                "blend/Dolly surfaces"
+            ),
+        }
+        entry["verdict"] = verdict_lattice(ci_pool, ci_d)
+        out["genres"][g] = entry
+    uc_entry = out["genres"].get("uc", {})
+    if uc_entry.get("verdict"):
+        out["verdict"] = uc_entry["verdict"]["label"]  # §3 primary = UC at frozen L18
+        out["verdict_note"] = uc_entry["verdict"]["note"]
+    return out
 
 
 def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) -> dict:
@@ -1389,6 +1776,37 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     parser.add_argument("--fullh-spotcheck", action="store_true")
     parser.add_argument("--fresh", action="store_true", help="ignore existing partials")
     parser.add_argument("--no-upload", action="store_true")
+    # pooled-span-features round (plan v6 §4.2):
+    parser.add_argument(
+        "--feature-source",
+        choices=("last", "pool"),
+        default="last",
+        help="prompt-side feature summary: last token (parent behavior, default) "
+        "or the span-mean over the owning token span (pool_* packs)",
+    )
+    parser.add_argument(
+        "--pooled-packs-dir",
+        type=Path,
+        default=PROJECT_ROOT / "data/issue_923/capture/packs_pooled",
+        help="pooled feature packs dir (feature-source=pool only)",
+    )
+    parser.add_argument(
+        "--parent-fits-dir",
+        type=Path,
+        default=PROJECT_ROOT / "eval_results/issue_923/fits",
+        help="parent round fits dir (paired residual diff + anova citation)",
+    )
+    parser.add_argument(
+        "--paired-diff-smoke",
+        action="store_true",
+        help="run paired_residual_diff SELF-PAIRED on the parent's real persisted "
+        "family sums (reproduce-check + pairing machinery on real data) and exit",
+    )
+    parser.add_argument(
+        "--blend-null-l18-only",
+        action="store_true",
+        help="§9 descope ladder rung 1: blend nulls at the L18 column only",
+    )
     parser.add_argument(
         "--allow-missing-regen",
         action="store_true",
@@ -1407,6 +1825,30 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         print(json.dumps(st, indent=2))
         print("[phase=done]", flush=True)
         return 0
+    if args.paired_diff_smoke:
+        # Self-pairing on the parent's REAL persisted family sums: exercises the
+        # reproduce-check (<=1e-12 vs headline.json) + pairing + lattice on real
+        # data; D is identically 0 by construction, verdict = the parent CI's.
+        print("[phase=paired_diff_smoke]", flush=True)
+        parent_skill = load_json(args.parent_fits_dir / "decomposition_skill.json")
+        hl = str(HEADLINE_LAYER)
+        pooled_fams = {
+            g: {
+                arm: (
+                    np.asarray(parent_skill["genres"][g][hl]["arms"][arm]["fam_res"], float),
+                    np.asarray(parent_skill["genres"][g][hl]["arms"][arm]["fam_tot"], float),
+                )
+                for arm in ("arm_full", "arm_concat_i")
+            }
+            for g in parent_skill["genres"]
+        }
+        paired = paired_residual_diff(pooled_fams, args.parent_fits_dir, args.n_boot)
+        print(json.dumps(paired, indent=2))
+        for g, entry in paired["genres"].items():
+            assert entry["paired"] is not None, g
+            assert abs(entry["paired"]["D_value"]) < 1e-15, (g, entry["paired"]["D_value"])
+        print("[phase=done]", flush=True)
+        return 0
     if args.time_projection:
         time_projection(device)
         print("[phase=done]", flush=True)
@@ -1419,14 +1861,30 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         print("[phase=done]", flush=True)
         return 0
 
+    pool = args.feature_source == "pool"
     out_dir: Path = args.out_dir
-    if args.smoke and out_dir == PROJECT_ROOT / "eval_results/issue_923/fits":
-        out_dir = Path("/tmp/issue-923-smoke/fits")  # never clobber committed paths
-        args.tensors_dir = Path("/tmp/issue-923-smoke/fit_tensors")
+    if pool and out_dir == PROJECT_ROOT / "eval_results/issue_923/fits":
+        # follow-up-label rule: pooled outputs land in their own round dir.
+        out_dir = PROJECT_ROOT / "eval_results/issue_923/pooled-span-features"
+    if pool and args.tensors_dir == PROJECT_ROOT / "data/issue_923/fit_tensors":
+        args.tensors_dir = PROJECT_ROOT / "data/issue_923/fit_tensors_pooled"
+    if args.smoke and out_dir in (
+        PROJECT_ROOT / "eval_results/issue_923/fits",
+        PROJECT_ROOT / "eval_results/issue_923/pooled-span-features",
+    ):
+        # never clobber committed paths
+        out_dir = Path(f"/tmp/issue-923-smoke/fits{'_pooled' if pool else ''}")
+        args.tensors_dir = Path(f"/tmp/issue-923-smoke/fit_tensors{'_pooled' if pool else ''}")
     out_dir.mkdir(parents=True, exist_ok=True)
     partials = out_dir / "partials"
     partials.mkdir(parents=True, exist_ok=True)
-    meta = reproducibility_metadata({"script": "issue923_fit_decomposition", "smoke": args.smoke})
+    meta = reproducibility_metadata(
+        {
+            "script": "issue923_fit_decomposition",
+            "smoke": args.smoke,
+            "feature_source": args.feature_source,
+        }
+    )
 
     print("[phase=load]", flush=True)
     genres = [g.strip() for g in args.genres.split(",") if g.strip()]
@@ -1438,10 +1896,25 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         ood = True
     else:
         grids, fctx, fqry, folds_payload, load_meta = load_grids(
-            args.packs_dir, args.reduce_dir, args.data_dir, genres, ood=not args.no_ood
+            args.packs_dir,
+            args.reduce_dir,
+            args.data_dir,
+            genres,
+            ood=not args.no_ood,
+            feature_source=args.feature_source,
+            pooled_packs_dir=args.pooled_packs_dir if pool else None,
         )
         ood = not args.no_ood
         meta["mask_backend"] = load_meta["mask_backend"]
+
+    # Extended null coverage (blend + Dolly) is the pooled round's addition
+    # (§4.1); the parent (last-token) path stays byte-identical un-gated.
+    extended_nulls = pool
+    parent_anova = None
+    if pool and not args.smoke:
+        # ANOVA is a function of targets only (identical inputs): cite the
+        # parent's persisted shares instead of recomputing them (§4.2).
+        parent_anova = load_json(args.parent_fits_dir / "anova_shares.json")["anova"]
 
     lc = fctx.shape[1]
     layers = list(range(lc)) if args.layers == "all" else [int(x) for x in args.layers.split(",")]
@@ -1464,11 +1937,20 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         "lambdas": RIDGE_LAMBDAS,
         "smoke": args.smoke,
         "ood": ood,
+        "feature_source": args.feature_source,
+        "extended_nulls": extended_nulls,
+        "blend_null_l18_only": bool(args.blend_null_l18_only),
         "fold_hash": hashlib.sha256(json.dumps(folds_payload, sort_keys=True).encode()).hexdigest()[
             :12
         ],
         "pack_identity": (
-            "smoke" if args.smoke else _input_pack_identity(args.packs_dir, args.reduce_dir)
+            "smoke"
+            if args.smoke
+            else _input_pack_identity(
+                args.packs_dir,
+                args.reduce_dir,
+                extra_dirs=(args.pooled_packs_dir,) if pool else (),
+            )
         ),
     }
     regime_hash = hashlib.sha256(json.dumps(regime_key, sort_keys=True).encode()).hexdigest()[:12]
@@ -1476,6 +1958,12 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     print("[phase=fits]", flush=True)
     units: dict = {}
     perms: dict[str, np.ndarray] = {}
+    # Dolly TEST-grid permutation for the extended ood nulls — INDEPENDENT of
+    # the train-grid matrix (distinct seed, recorded in the null pack meta).
+    perm_ood = None
+    if extended_nulls and ood and "dolly" in grids:
+        n_valid_dolly = int(grids["dolly"].valid.sum())
+        perm_ood = make_perm_matrix(n_valid_dolly, args.n_perms, np.random.default_rng(SEED + 7))
     t0 = time.time()
     for genre in genres:
         grid = grids[genre]
@@ -1495,6 +1983,9 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                     f"partial {part_path} regime mismatch ({pmeta.get('regime_hash')} != "
                     f"{regime_hash}) — rerun with --fresh to overwrite"
                 )
+            anova_override = None
+            if parent_anova is not None:
+                anova_override = parent_anova[genre][str(layer)]  # fail loud on a miss
             unit = fit_layer_unit(
                 genre,
                 layer,
@@ -1509,6 +2000,10 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                 ood,
                 device,
                 smoke_blend_assert=args.smoke,
+                perm_ood=perm_ood,
+                extended_nulls=extended_nulls,
+                blend_null_this_layer=(not args.blend_null_l18_only or layer == HEADLINE_LAYER),
+                anova_override=anova_override,
             )
             # JSON-able unit: numpy → lists for the checkpoint.
             unit_ser = json.loads(json.dumps(unit, default=lambda o: o.tolist()))
@@ -1561,16 +2056,51 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             }
         skill_json["genres"][genre] = gl
     dump_json(skill_json, out_dir / "decomposition_skill.json")
-    dump_json(
-        {
-            "meta": meta,
-            "anova": {g: {str(ll): units[(g, ll)]["anova"] for ll in layers} for g in genres},
-        },
-        out_dir / "anova_shares.json",
-    )
+    if parent_anova is None:
+        dump_json(
+            {
+                "meta": meta,
+                "anova": {g: {str(ll): units[(g, ll)]["anova"] for ll in layers} for g in genres},
+            },
+            out_dir / "anova_shares.json",
+        )
+    else:
+        # §4.2: ANOVA skipped under pool — targets byte-identical; cite parent.
+        dump_json(
+            {
+                "meta": meta,
+                "skipped": True,
+                "reason": "feature_source=pool — targets identical to parent; see "
+                f"{args.parent_fits_dir / 'anova_shares.json'}",
+            },
+            out_dir / "anova_shares.json",
+        )
 
     null_summary: dict = {"meta": {**meta, "n_perms": args.n_perms}, "genres": {}}
     args.tensors_dir.mkdir(parents=True, exist_ok=True)
+
+    def _band_entry(m: np.ndarray, li_gate: int, obs_skill: float) -> dict:
+        """L18-column + max-over-layers band stats for one (arm, scheme) matrix."""
+        max_per_draw = np.nanmax(m, axis=1)
+        col = m[:, li_gate]
+        col_ok = col[~np.isnan(col)]
+        p975 = float(np.nanpercentile(col, 97.5))
+        return {
+            "observed_skill_L18": obs_skill,
+            "inside_l18_null_band": bool(obs_skill <= p975),
+            "l18_null_p_value": float((np.sum(col_ok >= obs_skill) + 1) / (col_ok.size + 1)),
+            "L18_column_quantiles": {
+                "p95": float(np.nanpercentile(col, 95)),
+                "p975": p975,
+                "p99": float(np.nanpercentile(col, 99)),
+            },
+            "max_over_layers_quantiles": {
+                "p95": float(np.nanpercentile(max_per_draw, 95)),
+                "p975": float(np.nanpercentile(max_per_draw, 97.5)),
+                "p99": float(np.nanpercentile(max_per_draw, 99)),
+            },
+        }
+
     for genre in genres:
         matrix = {
             arm: np.stack([np.asarray(units[(genre, ll)]["null"][arm]) for ll in layers], axis=1)
@@ -1578,13 +2108,39 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         }  # (n_perms, n_layers) per arm
         perm_sha = hashlib.sha256(perms[genre].tobytes()).hexdigest()
         npath = args.tensors_dir / f"null_matrix_{genre}.pt"
+        pack_tensors = {arm: torch.from_numpy(matrix[arm]) for arm in arms} | {
+            "perm_matrix": torch.from_numpy(perms[genre])
+        }
+        # Extended coverage (pooled round): blend column(s) + the Dolly scheme.
+        blend_layers = [ll for ll in layers if "arm_blend" in units[(genre, ll)].get("null", {})]
+        if blend_layers:
+            blend_matrix = np.stack(
+                [np.asarray(units[(genre, ll)]["null"]["arm_blend"]) for ll in blend_layers],
+                axis=1,
+            )
+            pack_tensors["arm_blend"] = torch.from_numpy(blend_matrix)
+        ood_layers = [ll for ll in layers if units[(genre, ll)].get("null_ood")]
+        ood_matrix = {}
+        if ood_layers:
+            for arm in arms:
+                if arm not in units[(genre, ood_layers[0])]["null_ood"]:
+                    continue
+                ood_matrix[arm] = np.stack(
+                    [np.asarray(units[(genre, ll)]["null_ood"][arm]) for ll in ood_layers],
+                    axis=1,
+                )
+                pack_tensors[f"ood::{arm}"] = torch.from_numpy(ood_matrix[arm])
+            if perm_ood is not None:
+                pack_tensors["perm_matrix_ood"] = torch.from_numpy(perm_ood)
         save_pack(
             npath,
-            {arm: torch.from_numpy(matrix[arm]) for arm in arms}
-            | {"perm_matrix": torch.from_numpy(perms[genre])},
+            pack_tensors,
             {
                 "layers": layers,
+                "blend_layers": blend_layers,
+                "ood_layers": ood_layers,
                 "seed": SEED,
+                "seed_ood": SEED + 7,
                 "perm_sha256": perm_sha,
                 "permutation": "full-grid cell-label (the #810 exchangeability recipe)",
                 "metadata": meta,
@@ -1595,36 +2151,91 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         gate_layer = layers[li18]
         gsum["gating_layer"] = gate_layer  # HEADLINE_LAYER, or the smoke fallback
         for arm in arms:
-            m = matrix[arm]
-            max_per_draw = np.nanmax(m, axis=1)
-            col = m[:, li18]
-            col_ok = col[~np.isnan(col)]
-            p975 = float(np.nanpercentile(col, 97.5))
             # Observed-vs-L18-null GATE (r1 blocker l18-null-gating-missing):
             # the registered rule — an arm whose observed L18 skill sits inside
             # its selection-matched L18-only null band is reported as null —
             # persisted per (genre, arm), separately from the max-over-layers
             # band (which gates any max/argmax read, not the frozen L18 one).
             obs_skill = units[(genre, gate_layer)]["arms"][arm]["skill"]
-            gsum["arms"][arm] = {
-                "observed_skill_L18": obs_skill,
-                "inside_l18_null_band": bool(obs_skill <= p975),
-                "l18_null_p_value": float((np.sum(col_ok >= obs_skill) + 1) / (col_ok.size + 1)),
-                "L18_column_quantiles": {
-                    "p95": float(np.nanpercentile(col, 95)),
-                    "p975": p975,
-                    "p99": float(np.nanpercentile(col, 99)),
-                },
-                "max_over_layers_quantiles": {
-                    "p95": float(np.nanpercentile(max_per_draw, 95)),
-                    "p975": float(np.nanpercentile(max_per_draw, 97.5)),
-                    "p99": float(np.nanpercentile(max_per_draw, 99)),
-                },
+            gsum["arms"][arm] = _band_entry(matrix[arm], li18, obs_skill)
+        if blend_layers and gate_layer in blend_layers:
+            bl18 = blend_layers.index(gate_layer)
+            gsum["arms"]["arm_blend"] = _band_entry(
+                blend_matrix, bl18, units[(genre, gate_layer)]["arms"]["arm_blend"]["skill"]
+            )
+        if ood_matrix and units[(genre, gate_layer)].get("ood_dolly"):
+            o18 = ood_layers.index(gate_layer) if gate_layer in ood_layers else len(ood_layers) - 1
+            gsum["ood_dolly"] = {
+                arm: _band_entry(
+                    ood_matrix[arm],
+                    o18,
+                    units[(genre, gate_layer)]["ood_dolly"][arm]["skill"],
+                )
+                for arm in ood_matrix
+                if arm in units[(genre, gate_layer)]["ood_dolly"]
             }
         null_summary["genres"][genre] = gsum
     dump_json(null_summary, out_dir / "null_summary.json")
-    dump_json({"meta": meta, "stats": stats}, out_dir / "headline.json")
-    if not args.smoke:
+
+    # Paired residual diff vs the parent round (pooled headline consumer; §4.2).
+    paired = None
+    if pool:
+        print("[phase=paired_diff]", flush=True)
+        if args.smoke:
+            # Smoke: SELF-PAIR on the parent's real persisted sums (the
+            # synthetic grid has no parent counterpart) — real-data path.
+            parent_skill = load_json(args.parent_fits_dir / "decomposition_skill.json")
+            hl18 = str(HEADLINE_LAYER)
+            pooled_fams = {
+                g: {
+                    arm: (
+                        np.asarray(parent_skill["genres"][g][hl18]["arms"][arm]["fam_res"], float),
+                        np.asarray(parent_skill["genres"][g][hl18]["arms"][arm]["fam_tot"], float),
+                    )
+                    for arm in ("arm_full", "arm_concat_i")
+                }
+                for g in parent_skill["genres"]
+            }
+            paired = paired_residual_diff(
+                pooled_fams,
+                args.parent_fits_dir,
+                load_json(args.parent_fits_dir / "headline.json")["stats"]["n_boot"],
+            )
+            paired["smoke_self_paired"] = True
+        else:
+            pooled_fams = {}
+            for genre in genres:
+                if genre not in PARENT_QCOLS or (genre, HEADLINE_LAYER) not in units:
+                    continue
+                u18 = units[(genre, HEADLINE_LAYER)]["arms"]
+                pooled_fams[genre] = {
+                    arm: (
+                        np.asarray(u18[arm]["fam_res"], dtype=np.float64),
+                        np.asarray(u18[arm]["fam_tot"], dtype=np.float64),
+                    )
+                    for arm in ("arm_full", "arm_concat_i")
+                }
+            paired = paired_residual_diff(pooled_fams, args.parent_fits_dir, args.n_boot)
+        logger.info(
+            "[paired_diff] verdict=%s note=%s",
+            paired.get("verdict"),
+            paired.get("verdict_note"),
+        )
+
+    dump_json(
+        {
+            "meta": meta,
+            "stats": stats,
+            **({"paired_diff": paired, "verdict": paired.get("verdict")} if paired else {}),
+        },
+        out_dir / "headline.json",
+    )
+    if not args.smoke and pool:
+        logger.info(
+            "[regen] SKIPPED under feature_source=pool — targets byte-identical to the "
+            "parent round; see the parent's regen_check.json"
+        )
+    if not args.smoke and not pool:
         try:
             rc = regen_check(args.packs_dir, args.reduce_dir)
         except AssertionError as e:  # tgt_regen packs absent
@@ -1653,10 +2264,14 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
 
     if not args.no_upload and not args.smoke:
         print("[phase=upload]", flush=True)
+        suffix = "fits_pooled" if pool else "fits"
         hub._upload(
-            args.tensors_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/analysis_tensors/fits"
+            args.tensors_dir,
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_PREFIX_923}/analysis_tensors/{suffix}",
         )
-        hub._upload(out_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/eval_results/fits")
+        hub._upload(out_dir, HF_DATA_REPO, "dataset", f"{HF_PREFIX_923}/eval_results/{suffix}")
     print("[phase=done]", flush=True)
     return 0
 

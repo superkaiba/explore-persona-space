@@ -5,6 +5,7 @@
     "Qwen/Qwen2.5-0.5B-Instruct": "7ae557604adf67be50417f59c2c2f167def9a775"
   },
   "datasets": {
-    "databricks/databricks-dolly-15k": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a"
+    "databricks/databricks-dolly-15k": "bdd27f4d94b9c1f951818a7da7fd7aeea5dbff1a",
+    "superkaiba1/explore-persona-space-data": "77d04e45096e120ca897fdb7b22730e157ce00a2"
   }
 }
