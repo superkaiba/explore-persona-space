@@ -562,6 +562,49 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 savefig_paper(fig, "exp_prefix_gap_percontext", dir=out_dir)
             plt.close(fig)
 
+        # Per-context R² ECDF behind the mismatched t=128 recovery read (own vs
+        # mismatched arms, per-layer prefix battery, layers 20 + 17) — the
+        # low-level per-unit view behind the 50%-recovery aggregate (Lens 11,
+        # clean-result round 4). Micro-pooling these arrays reproduces the
+        # stats-battery cells (L17: own 0.367 / mismatched 0.351; L20:
+        # own 0.425 / mismatched 0.405).
+        if "P_own_t128_L20_ssres" in npz:
+            fig, ax = plt.subplots(figsize=(6.0, 3.6), layout="constrained")
+            pal2 = paper_palette(2)
+            arm_color = {"own": pal2[0], "mismatch": pal2[1]}
+            layer_style = {20: "-", 17: "--"}
+            plotted_rec = False
+            for layer in (20, 17):
+                for arm in ("own", "mismatch"):
+                    ssr = npz[f"P_{arm}_t128_L{layer}_ssres"].astype(float)
+                    sst = npz[f"P_{arm}_t128_L{layer}_sstot"].astype(float)
+                    fin = np.isfinite(ssr) & np.isfinite(sst) & (sst > 1e-12)
+                    r2 = 1.0 - ssr[fin] / sst[fin]
+                    if len(r2) == 0:
+                        continue
+                    xs = np.sort(r2)
+                    ax.step(
+                        xs,
+                        np.arange(1, len(xs) + 1) / len(xs),
+                        color=arm_color[arm],
+                        ls=layer_style[layer],
+                        lw=1.4,
+                        label=f"{ARM_LABEL[arm]}, layer {layer}, n={len(r2)}",
+                    )
+                    plotted_rec = True
+            if plotted_rec:
+                ax.axvline(0, color="#444444", lw=0.8)
+                ax.set_xlabel("Per-context remainder R² with 128 own prefix tokens absorbed")
+                ax.set_ylabel("ECDF")
+                ax.legend(frameon=False, fontsize=7, loc="upper left")
+                set_title_subtitle(
+                    ax,
+                    "Per-context predictability behind the t = 128 recovery read",
+                    "Own vs mismatched answer arms; test contexts with 144-token spans",
+                )
+                savefig_paper(fig, "exp_t128_recovery_percontext", dir=out_dir)
+            plt.close(fig)
+
     # Turn-end split-out bars (template vs content L16 slots).
     cells = stats["cells"]
     fig, ax = plt.subplots(figsize=(6.5, 3.6), layout="constrained")
