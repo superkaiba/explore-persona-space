@@ -6729,8 +6729,8 @@
     "992": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/992",
-      "status": "approved",
+      "path": "tasks/running/992",
+      "status": "running",
       "title": "workflow-fix: LESSONS.md byte-cap headroom restructure"
     },
     "993": {
