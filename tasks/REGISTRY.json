@@ -160,8 +160,8 @@
     "1018": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1018",
-      "status": "reviewing",
+      "path": "tasks/completed/1018",
+      "status": "completed",
       "title": "daily-fix: rubric-bearing JudgeCache._hash_key"
     },
     "1019": {
