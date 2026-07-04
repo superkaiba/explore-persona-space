@@ -74,6 +74,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import datetime as _dt
+import functools
 import json
 import logging
 import os
@@ -88,6 +89,8 @@ from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests, 
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
+    parse_batch_submitted_at,
+    retrieve_with_create_grace,
 )
 
 logger = logging.getLogger(__name__)
@@ -926,6 +929,11 @@ async def _submit_one_sub_batch(
         try:
             sb["batch_id"] = batch.id
             sb["status"] = "submitted"
+            # #995: create-time anchor for the poll step's 404 grace (mirrors
+            # judge_dispatch). Additive state key — an OLD state.json lacks it,
+            # so a resume reads None via .get() -> no grace -> terminal 404,
+            # exactly the desired resume default.
+            sb["submitted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             expires_at = getattr(batch, "expires_at", None)
             if expires_at is not None:
                 sb["deadline"] = deadline_from_expires_at(
@@ -945,11 +953,32 @@ async def _poll_one_sub_batch_step(
     sync_clients: dict[str, Any],
     parse_response: ParseResponse,
     now_fn: Callable[[], _dt.datetime],
+    sleep_fn: Callable[[float], None] | None = None,
 ) -> None:
-    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end."""
+    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end.
+
+    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
+    ``BATCH_CREATE_404_GRACE_S`` of the sub-batch's persisted ``submitted_at``
+    is retried with bounded backoff INSIDE the ``to_thread`` worker (the event
+    loop is never blocked by the grace sleeps). Org-mismatch semantics are
+    preserved (``_load_or_init_batch_state``: a batch created on org B 404s if
+    polled on org A): create and poll share ``sb["org"]`` within a run, so a
+    wrong-org 404 arises only on resume (stale/absent ``submitted_at`` ->
+    terminal, unchanged) or from an org-routing code bug (delayed <=60s, then
+    still fails loud — never masked). The overdue final retrieve below stays
+    UNGUARDED (plan §4.3). ``sleep_fn`` is additive + injectable for tests
+    (default ``time.sleep``).
+    """
     org = sb["org"]
     client = sync_clients[org]
-    batch = await asyncio.to_thread(client.messages.batches.retrieve, sb["batch_id"])
+    batch = await asyncio.to_thread(
+        retrieve_with_create_grace,
+        functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+        created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+        batch_id=sb["batch_id"],
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     if sb.get("deadline") is None and getattr(batch, "expires_at", None) is not None:
         sb["deadline"] = deadline_from_expires_at(
             batch.expires_at, BATCH_DEADLINE_GRACE_MIN

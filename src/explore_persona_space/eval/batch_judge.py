@@ -18,6 +18,7 @@ Usage:
 """
 
 import datetime as _dt
+import functools
 import hashlib
 import json
 import logging
@@ -33,6 +34,7 @@ from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
+    retrieve_with_create_grace,
 )
 
 if TYPE_CHECKING:
@@ -297,6 +299,10 @@ def _submit_and_poll_batch(
     - **Two-level terminal split**: an ``invalid_request_error`` is quarantined
       (surfaced as an error dict, never retried here); other states surface as
       error dicts too.
+    - **Create-grace 404 retry (#995)**: a ``NotFoundError`` on the loop
+      retrieve within ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create is
+      retried with bounded backoff (read-after-write inconsistency, the #742
+      shape); outside the window — or past the backoff schedule — it re-raises.
 
     ``now_fn``/``sleep_fn`` are injectable for tests (default wall-clock +
     ``time.sleep``). Polling keeps the 30s->1.5x->120s backoff capped by the
@@ -310,6 +316,7 @@ def _submit_and_poll_batch(
     for ci, chunk in enumerate(chunks):
         batch = client.messages.batches.create(requests=chunk)
         batch_id = batch.id
+        created_at = now_fn()  # #995: anchor for the create-grace 404 retry below
         logger.info(
             "Batch %s created (sub-batch %d/%d, %d requests)",
             batch_id,
@@ -320,7 +327,18 @@ def _submit_and_poll_batch(
         deadline: _dt.datetime | None = None
         current_interval = poll_interval
         while True:
-            batch = client.messages.batches.retrieve(batch_id)
+            # #995: a 404 within BATCH_CREATE_404_GRACE_S of this chunk's own
+            # create is retried with bounded backoff (read-after-write; the #742
+            # shape). functools.partial, NOT a lambda: batch_id is reassigned per
+            # chunk iteration and ruff's B023 flags a loop-closure lambda. The
+            # deadline-time final retrieve below stays UNGUARDED (plan §4.3).
+            batch = retrieve_with_create_grace(
+                functools.partial(client.messages.batches.retrieve, batch_id),
+                created_at=created_at,
+                batch_id=batch_id,
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
             counts = getattr(batch, "request_counts", None)
             if counts is not None:
                 logger.info(
