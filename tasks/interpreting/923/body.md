@@ -1,6 +1,7 @@
 ---
-title: 'Context/query decomposition of the mean answer activation: ridge read-outs
-  from disjoint last-context / last-query vectors vs the full-prompt vector (no training)'
+title: Stitched context-only and query-only read-outs beat the full-prompt last-token
+  ridge read-out at recovering the mean answer activation on held-out families and
+  queries (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-03T10:36:02Z'
