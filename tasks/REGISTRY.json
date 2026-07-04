@@ -6399,8 +6399,8 @@
     "963": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/963",
-      "status": "planning",
+      "path": "tasks/approved/963",
+      "status": "approved",
       "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
     },
     "964": {
