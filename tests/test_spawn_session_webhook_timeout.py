@@ -14,7 +14,11 @@ What this pins (plan #956 v2 §7):
    ANY kill leg blocks the retry.
 4. Transport failures are never conflated with the daemon's ``success:false``
    verdict (strict /list + ``_stop_session_raw`` raise; lenient /list
-   returns ``[]``).
+   returns ``[]``). Round 2 (concern invalid-daemon-response-shape): a
+   PARSEABLE wrong-shape body — non-dict JSON, missing / non-bool
+   ``success``, non-list ``children`` — raises the SAME reap-contracted
+   RuntimeError (never AttributeError) under ``_stop_session_raw`` and
+   strict ``_live_children``; lenient ``_live_children`` is untouched.
 
 No live daemon: every daemon touchpoint (``urlopen``, ``_live_children``,
 ``_stop_session_raw``) and every /proc seam (``session_resolver._pid_alive``,
@@ -61,9 +65,10 @@ def sleeps(monkeypatch) -> list[float]:
 
 
 class _FakeResponse:
-    """Minimal context-manager stand-in for ``urlopen``'s response."""
+    """Minimal context-manager stand-in for ``urlopen``'s response. ``payload``
+    is any JSON-serializable object (a list payload fakes a non-dict body)."""
 
-    def __init__(self, payload: dict):
+    def __init__(self, payload: object):
         self._raw = json.dumps(payload).encode()
 
     def read(self) -> bytes:
@@ -90,8 +95,9 @@ def _webhook_body(pid: int, *, tmux: bool = False) -> dict:
 
 
 def _install_urlopen(monkeypatch, outcomes: list[object]) -> list[tuple]:
-    """Sequence ``urlopen`` outcomes; an Exception outcome is raised, a dict
-    is returned as a fake response. Returns the recorded call list."""
+    """Sequence ``urlopen`` outcomes; an Exception outcome is raised, any
+    other outcome is returned as a fake JSON response. Returns the recorded
+    call list."""
     calls: list[tuple] = []
 
     def fake_urlopen(req, timeout=None):
@@ -556,3 +562,63 @@ def test_non_dict_error_body_falls_back_to_raw_and_mixed_exception_retry(monkeyp
     assert spawn_session.WEBHOOK_TIMEOUT_RETRY_BACKOFF_S in sleeps
     # The per-attempt reset: attempt 2's window (2000.0), never attempt 1's.
     assert reconcile_calls == [({"directory": SPAWN_DIR}, 2000.0)]
+
+
+# ── 19. daemon response-shape guards (round 2: invalid-daemon-response-shape) ─
+
+
+@pytest.mark.parametrize("body", [[], {"ok": True}, {"success": "yes"}])
+def test_stop_session_raw_wrong_shape_raises_runtime_error(monkeypatch, body):
+    # A PARSEABLE wrong-shape /stop-session body — non-dict JSON (b"[]"),
+    # missing `success`, or a non-bool `success` — must raise the
+    # reap-contracted RuntimeError, never AttributeError (which would escape
+    # _reap_half_spawned_session's `except RuntimeError` and crash post()).
+    _install_urlopen(monkeypatch, [body])
+    with pytest.raises(RuntimeError, match="unexpected response shape"):
+        spawn_session._stop_session_raw("PID-1")
+
+
+def test_stop_session_raw_valid_dict_returns_success_bool(monkeypatch):
+    # The valid `{success: bool}` shape is byte-compatible with round 1.
+    _install_urlopen(monkeypatch, [{"success": True}, {"success": False}])
+    assert spawn_session._stop_session_raw("sess-x") is True
+    assert spawn_session._stop_session_raw("sess-x") is False
+
+
+def test_reap_stop_wrong_shape_body_blocks_retry(monkeypatch):
+    # The same non-dict body threaded through the REAL _stop_session_raw
+    # inside the reap: the RuntimeError is caught at the PID-stop leg and
+    # routes to the fail-loud reaped=False / no-retry path — the already-gone
+    # check is never consulted and no fallback kill fires.
+    _install_children(monkeypatch, [])
+    urlopen_calls = _install_urlopen(monkeypatch, [[]])  # daemon body b"[]"
+
+    def fail_alive(p):
+        raise AssertionError("_pid_alive must NOT be consulted on a wrong-shape response")
+
+    _patch_resolver(monkeypatch, claude_pid=None, alive=fail_alive)
+    kills = _install_kill(monkeypatch)
+    outcome = spawn_session._reap_half_spawned_session(3698, SPAWN_DIR)
+    assert outcome.reaped is False
+    assert "PID-stop" in outcome.detail
+    assert len(urlopen_calls) == 1
+    assert kills == []
+
+
+def test_live_children_strict_wrong_shape_raises_lenient_unchanged(monkeypatch):
+    # strict: parseable-but-wrong-shape /list bodies raise the reap-contracted
+    # RuntimeError (never AttributeError).
+    _install_urlopen(monkeypatch, [[], {"children": "nope"}])
+    with pytest.raises(RuntimeError, match="non-dict"):
+        spawn_session._live_children(strict=True)
+    with pytest.raises(RuntimeError, match="not a list"):
+        spawn_session._live_children(strict=True)
+    # lenient: today's semantics preserved exactly — a dict body with a
+    # non-list `children` degrades to [] ...
+    _install_urlopen(monkeypatch, [{"children": "nope"}, []])
+    assert spawn_session._live_children() == []
+    # ... and a parseable non-dict body keeps main's historical AttributeError
+    # (lenient behavior deliberately untouched by the round-2 concern fix;
+    # only the round-added STRICT path gained the clean-raise contract).
+    with pytest.raises(AttributeError):
+        spawn_session._live_children()
