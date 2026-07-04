@@ -6027,8 +6027,8 @@
     "906": {
       "has_clean_result": false,
       "kind": "batch",
-      "path": "tasks/running/906",
-      "status": "running",
+      "path": "tasks/verifying/906",
+      "status": "verifying",
       "title": "artifacts factory Phase 1: validate unified pipeline + calibrate cost on 4 pilot classes"
     },
     "907": {
