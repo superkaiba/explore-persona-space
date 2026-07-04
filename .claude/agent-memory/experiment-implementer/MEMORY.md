@@ -90,3 +90,4 @@
 - [Signature-bind faked-boundary constructors](feedback_kwargs_constructor_bind.md) — **kwargs callees hide config-dataclass kwarg drift; replicate the callee's cfg resolution in CPU tests (#906 r12)
 - [Marker training-row token budget](feedback_marker_row_token_budget.md) — unbounded prompt tails truncate the marker+im_end loss slot; build-time tokenized budget gate (#906 r13)
 - [Tiny-real CPU e2e beats mock-seam smokes](feedback_tiny_real_cpu_e2e.md) — full-path CPU pass with from-config tiny model catches shape bugs mock smokes surface one per GPU cycle (#906 r11-r15)
+- [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (pair-wise) in the LOADER; real corpora hide rare overlong rows smokes never sample (#952)
