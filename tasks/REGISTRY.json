@@ -6122,8 +6122,8 @@
       "goal": "On a thinking model chosen for maximal similarity to Qwen2.5-7B-Instruct, determine how the base-model linear context\u2192mean-answer activation map (#810) decomposes across the chain-of-thought \u2014 comparing (1) context\u2192CoT composed with CoT\u2192answer, (2) context\u2192(CoT+answer) jointly, and (3) (context+CoT)\u2192answer, against the direct context\u2192answer baseline \u2014 under mean-pool / max-pool / boundary-token summaries for each part (context, CoT, answer), in both the averaged-over-query regime (averaging over the query vector or over the CoT vector) and the individual context+query regime, scored by held-out R\u00b2 per layer on the parent line's folds.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/928",
-      "status": "planning",
+      "path": "tasks/approved/928",
+      "status": "approved",
       "title": "Thinking-model CoT decomposition of the context\u2192answer activation map: composed vs joint vs CoT-augmented"
     },
     "929": {
