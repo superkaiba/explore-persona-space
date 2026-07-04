@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1009,
+  "highest_id": 1010,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -100,6 +100,13 @@
       "path": "tasks/completed/101",
       "status": "completed",
       "title": "Compare default Qwen system prompt vs generic assistant prompt vs no system prompt in representation space and leakage"
+    },
+    "1010": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1010",
+      "status": "proposed",
+      "title": "workflow-fix: thread disk requirement into RunPod CPU fallback (containerDiskInGb + refuse-on-infeasible)"
     },
     "102": {
       "has_clean_result": false,
