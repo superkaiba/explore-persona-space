@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 953,
+  "highest_id": 954,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6310,6 +6310,13 @@
       "path": "tasks/running/953",
       "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 GCE manual-clone requires mirroring ALL [FAIL]-guarded metadata secrets"
+    },
+    "954": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/954",
+      "status": "proposed",
+      "title": "workflow-fix: mint RunPod handle sidecar on GCP\u2192RunPod failover"
     },
     "96": {
       "has_clean_result": true,
