@@ -66,6 +66,8 @@ relates_to:
 # The own-answer advantage in predicting answer activations from context is position-uniform at the selected read-out layer (MODERATE confidence)
 
 <!-- clean-result-v4 -->
+
+**Methodology:** [docs/methodology/issue_952.md](https://github.com/superkaiba/explore-persona-space/blob/d37bbdc8d4a27fc72e050c1797bda5c2985f0d89/docs/methodology/issue_952.md) · [gist](https://gist.github.com/superkaiba/480c8c9c32395d92735942649192f206)
 <!-- conciseness WARNs acknowledged: four result sections run 153-178 words (soft cap 120) and total prose exceeds the 800-word soft budget; the overage carries the layer-fragility, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
 
 ## Takeaways
