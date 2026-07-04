@@ -57,6 +57,7 @@ from workflow_lint import (  # noqa: E402
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
+    check_stale_label_disposition_clause,
     check_upload_as_file,
     check_vm_thread_cap_guidance,
     check_wandb_required,
@@ -3593,4 +3594,153 @@ def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatc
         f"the #891 vm-thread-cap diagnostic (naming code-style.md) is missing "
         f"from the no-flags default run's stderr — the check is not bundled "
         f"into no_flags:\n{err}"
+    )
+
+
+# --- #963 stale-label disposition-clause tests -------------------------------
+
+# Conforming fixture: deliberately re-wrapped at a DIFFERENT column than the
+# live SKILL.md, with FOUR of the five required tokens split mid-phrase across
+# a line break (the reflow proof for the whitespace-normalized matching), and
+# a span-end DECOY sentence AFTER the `\n\n` terminator that matches the
+# negative regex ("On None, skip ...") — which must NOT trip the check
+# (mechanically pins the paragraph-scoped extraction).
+_STALE_LABEL_CONFORMING = (
+    "# issue skill\n"
+    "\n"
+    "**Stale-label disposition rule (mechanical evidence only).** Run\n"
+    "`task_workflow.followup_retro_close_evidence(events, label)` before executing\n"
+    "a dispatched label. This check is a GHOST-label filter, NOT an\n"
+    "execution gate. A None return\n"
+    "means NO prior-run evidence exists and for a fresh never-run label\n"
+    "the label\n"
+    "EXECUTES as the dispatched round. The\n"
+    "skip-and-surface disposition applies ONLY when the orchestrator suspects\n"
+    "the label already ran.\n"
+    "\n"
+    "**Next.** On None, skip the label.\n"
+)
+
+_STALE_LABEL_EXECUTE_TOKEN = "the label EXECUTES as the dispatched round"
+
+
+def _write_stale_label_tree(tmp_path, body: str) -> None:
+    """Write ``.claude/skills/issue/SKILL.md`` under ``tmp_path`` with ``body``."""
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(body, encoding="utf-8")
+
+
+def test_stale_label_disposition_clause_live_tree_passes() -> None:
+    """The real SKILL.md carries the #894/#763 paragraph with all five tokens
+    and no unconditional skip-on-None coupling (pins Assumption 4)."""
+    assert check_stale_label_disposition_clause() == []
+
+
+def test_stale_label_disposition_clause_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A re-wrapped but token-identical paragraph PASSes (normalization works),
+    and the span-end DECOY ('On None, skip the label.' AFTER the blank-line
+    terminator) does not trip the negative regex (paragraph scoping works)."""
+    _write_stale_label_tree(tmp_path, _STALE_LABEL_CONFORMING)
+    assert check_stale_label_disposition_clause(repo_root=tmp_path) == []
+
+
+def test_stale_label_disposition_clause_flags_missing_execute_clause(tmp_path) -> None:
+    """Deleting the fresh-label-execute clause -> exactly one error naming
+    that token (the task's primary regression target)."""
+    body = _STALE_LABEL_CONFORMING.replace("EXECUTES as the dispatched round", "runs normally")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert repr(_STALE_LABEL_EXECUTE_TOKEN) in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_unconditional_skip_on_none(tmp_path) -> None:
+    """A paragraph regaining 'On None return, skip the label ...' INSIDE the
+    span FAILs via the negative regex. All five positive tokens are kept
+    present so the test isolates the regex: ``len(errors) == 1`` is asserted
+    mechanically, not incidentally."""
+    body = _STALE_LABEL_CONFORMING.replace(
+        "the label already ran.\n",
+        "the label already ran. On None return, skip the label and surface it.\n",
+    )
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "'On None ... skip'" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_duplicate_anchor(tmp_path) -> None:
+    """A SECOND copy of the bold anchor -> exactly one duplicate-anchor error
+    (MF2: span identity is load-bearing for the negative assertion — a stale
+    duplicate could satisfy the token scan while the operative paragraph
+    regresses)."""
+    body = (
+        _STALE_LABEL_CONFORMING
+        + "\n**Stale-label disposition rule (stale duplicate).** Old copy.\n"
+    )
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "UNIQUE" in errors[0], errors
+    assert "2 bold anchors" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_split_paragraph(tmp_path) -> None:
+    """A blank line inserted mid-paragraph (before the execute clause)
+    truncates the span at the first blank line and FAILs the downstream
+    tokens (pins Assumption 3's intended truncation behavior)."""
+    body = _STALE_LABEL_CONFORMING.replace("\nthe label\nEXECUTES", "\n\nthe label\nEXECUTES")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert errors, "expected missing-token FAILs on a split paragraph"
+    assert all("missing token" in e for e in errors), errors
+    assert any(repr(_STALE_LABEL_EXECUTE_TOKEN) in e for e in errors), errors
+
+
+def test_stale_label_disposition_clause_flags_missing_paragraph(tmp_path) -> None:
+    """SKILL.md present but anchor absent -> exactly one error naming the
+    bold anchor."""
+    _write_stale_label_tree(tmp_path, "# issue skill\n\nNo stale-label paragraph here.\n")
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing the bold anchor" in errors[0], errors
+    assert repr("**Stale-label disposition rule") in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_missing_file(tmp_path) -> None:
+    """An empty tmp tree (no SKILL.md at all) -> a missing-file error."""
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_wired_into_default_run(tmp_path, capsys, monkeypatch):
+    """The no-flags CLI-path REGISTRATION test (MF1): the default run must
+    exercise ``check_stale_label_disposition_clause`` — deleting the
+    ``no_flags`` tuple membership or the dispatch branch must fail this test
+    (mutation-visible), closing the dead-tripwire gap where all direct-call
+    tests stay green while the CLI never runs the check. Follows the
+    ``test_smoke_output_hygiene_wired_into_default_run`` /
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` house pattern:
+    doctored non-conforming tree (execute clause deleted), ``_REPO_ROOT``
+    monkeypatched to the fixture, ``main([])`` in-process. Other bundled
+    checks contribute unrelated errors on the minimal tree, so the assertion
+    keys on the #963 diagnostic string."""
+    import workflow_lint as wl
+
+    body = _STALE_LABEL_CONFORMING.replace("EXECUTES as the dispatched round", "runs normally")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a non-conforming tree:\n{err}"
+    assert "#963" in err, (
+        f"the #963 stale-label-disposition diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
     )
