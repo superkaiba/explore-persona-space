@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1037,
+  "highest_id": 1038,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -303,6 +303,13 @@
       "path": "tasks/proposed/1037",
       "status": "proposed",
       "title": "daily-fix: issue-763 branch surgery \u2014 strip foreign files, re-merge"
+    },
+    "1038": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1038",
+      "status": "proposed",
+      "title": "daily-held: schedule #681 bind-migration cutover + disk sign-off"
     },
     "104": {
       "has_clean_result": false,
