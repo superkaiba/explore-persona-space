@@ -6378,8 +6378,8 @@
     "962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/962",
-      "status": "proposed",
+      "path": "tasks/planning/962",
+      "status": "planning",
       "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
     },
     "963": {
