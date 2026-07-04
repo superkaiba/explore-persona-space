@@ -93,8 +93,6 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -105,6 +103,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
 
 logger = logging.getLogger("issue811.parity")
 
@@ -370,6 +370,104 @@ def check_mean_parity(
     return recs
 
 
+def compare_committed_mean_cells(
+    run_cells_dir: Path, committed_cells_dir: Path, out_json: Path
+) -> dict:
+    """maxp-round §6(b): this round's re-extracted MEAN fit cells vs the committed v1 cells.
+
+    REPORT-ONLY replication-stability read (never fatal — plan §6: a flipped
+    Δ/floor CALL is REPORTED as a finding, not silently averaged; the 3-way
+    adjudication uses THIS round's internally consistent store). For every
+    ``{behavior}_L{li}_mean.json`` under ``run_cells_dir``, loads the
+    SAME-filename committed cell under ``committed_cells_dir`` and compares
+    ``Delta_med`` / ``floor_combined`` / the above-vs-below-floor CALL
+    (``Delta_med / floor_combined > 1``). Expected agreement scale: the
+    resampled-R replication band (v1 measured matched-target cosines
+    0.997-0.9997; greedy R is deterministic per environment, not across
+    GPU/vLLM builds). Writes the row-level report to ``out_json`` and returns
+    it. Raises ONLY when ``run_cells_dir`` holds no mean cells at all (nothing
+    to compare = a wiring bug, not a replication finding).
+    """
+    import json as _json
+    import time as _time
+
+    run_files = sorted(run_cells_dir.glob("*_mean.json"))
+    if not run_files:
+        raise FileNotFoundError(
+            f"no *_mean.json under {run_cells_dir} — run the round's fit phase first"
+        )
+    rows: list[dict] = []
+    n_flips = 0
+    for rp in run_files:
+        run_cell = _json.loads(rp.read_text())
+        row: dict = {"cell": rp.name}
+        cp = committed_cells_dir / rp.name
+        if not cp.exists():
+            row["status"] = "no_committed_reference"
+            rows.append(row)
+            continue
+        ref_cell = _json.loads(cp.read_text())
+        for tag, cell in (("run", run_cell), ("committed", ref_cell)):
+            dm = float(cell["Delta_med"])
+            fl = float(cell["floor_combined"])
+            row[tag] = {
+                "Delta_med": dm,
+                "floor_combined": fl,
+                "ratio": (dm / fl) if fl > 0 else None,
+                "call_above_floor": bool(fl > 0 and dm / fl > 1.0),
+            }
+        flip = row["run"]["call_above_floor"] != row["committed"]["call_above_floor"]
+        row["call_flipped"] = flip
+        row["status"] = "call_flipped" if flip else "call_stable"
+        if flip:
+            n_flips += 1
+            logger.warning(
+                "[parity-committed] %s: Δ/floor CALL FLIPPED vs the committed v1 run "
+                "(run ratio=%.3g, committed ratio=%.3g) — REPORTED as a "
+                "replication-stability finding (plan §6b), NOT fatal.",
+                rp.name,
+                row["run"]["ratio"] if row["run"]["ratio"] is not None else float("nan"),
+                (
+                    row["committed"]["ratio"]
+                    if row["committed"]["ratio"] is not None
+                    else float("nan")
+                ),
+            )
+        else:
+            logger.info(
+                "[parity-committed] %s: call stable (run ratio=%s, committed ratio=%s)",
+                rp.name,
+                f"{row['run']['ratio']:.3g}" if row["run"]["ratio"] is not None else "n/a",
+                (
+                    f"{row['committed']['ratio']:.3g}"
+                    if row["committed"]["ratio"] is not None
+                    else "n/a"
+                ),
+            )
+        rows.append(row)
+    report = {
+        "meta": {
+            "issue": 811,
+            "followup": "maxp-winner-mapchange mean-call replication vs committed v1 cells",
+            "run_cells_dir": str(run_cells_dir),
+            "committed_cells_dir": str(committed_cells_dir),
+            "generated_at": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+        },
+        "n_cells": len(rows),
+        "n_call_flips": n_flips,
+        "rows": rows,
+    }
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(_json.dumps(report, indent=2, default=float))
+    logger.info(
+        "[parity-committed] %d mean cells compared, %d call flips -> %s",
+        len(rows),
+        n_flips,
+        out_json,
+    )
+    return report
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     ap = argparse.ArgumentParser(description="Issue #811 base-leg parity check vs #667 (plan §13)")
@@ -406,7 +504,42 @@ def main() -> int:
         default=V0_REL_L2_CEIL,
         help="(c) v0 gross-drift relative-L2 ceiling (R-resampling-aware)",
     )
+    ap.add_argument(
+        "--compare-committed",
+        action="store_true",
+        help="maxp-round §6(b) MODE: compare this round's fitted *_mean.json cells "
+        "vs the committed v1 cells (report-only; a flipped Δ/floor call is a "
+        "replication-stability finding, never fatal). Runs AFTER the fit phase; "
+        "the phase-0 activation checks above do not run in this mode.",
+    )
+    ap.add_argument(
+        "--run-cells-dir",
+        type=Path,
+        default=None,
+        help="(--compare-committed) this round's cells dir, e.g. "
+        "eval_results/issue_811/maxp-winner-mapchange/cells",
+    )
+    ap.add_argument(
+        "--committed-cells-dir",
+        type=Path,
+        default=PROJECT_ROOT / "eval_results/issue_811/cells",
+        help="(--compare-committed) the completed v1 run's committed cells dir",
+    )
+    ap.add_argument(
+        "--committed-out",
+        type=Path,
+        default=None,
+        help="(--compare-committed) report JSON path (default: "
+        "<run-cells-dir>/../mean_call_replication_vs_v1.json)",
+    )
     args = ap.parse_args()
+    if args.compare_committed:
+        assert args.run_cells_dir is not None, "--compare-committed requires --run-cells-dir"
+        out_json = args.committed_out or (
+            args.run_cells_dir.parent / "mean_call_replication_vs_v1.json"
+        )
+        compare_committed_mean_cells(args.run_cells_dir, args.committed_cells_dir, out_json)
+        return 0
     check_mean_parity(
         args.phase0_root,
         args.behavior,

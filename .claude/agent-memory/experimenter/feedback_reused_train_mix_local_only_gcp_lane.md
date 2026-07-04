@@ -24,14 +24,17 @@ have crashed phase2 (a registered deliverable) mid-run at degraded coverage.
 
 **How to apply:**
 - For ANY reused parent train mix / locally-built input the dispatcher reads
-  from `<repo>/data/...` (NOT from HF): confirm it is on HF (`list_repo_files`)
+  from `<repo>/data/...` (NOT from HF): confirm it is on HF
+  (`HfApi().file_exists(...)` / scoped `list_repo_tree(path_in_repo=...)` —
+  bare data-repo `list_repo_files` times out, #833)
   OR pre-staged on the lane's persistent disk. On the GCP lane, local presence
   at the VM repo root is NOT sufficient — `data/` is git-clone-only, never
   rsynced (sibling memory `feedback_gcp_lane_git_clone_only_data.md`).
 - The reused PARENT'S uploads are baseline/eval/adapters by default; the
   train MIX JSONLs are frequently never uploaded. Don't assume "reuse =
-  fetchable". Grep the dispatcher for the read path and `list_repo_files`
-  the data repo for that exact basename before trusting reuse.
+  fetchable". Grep the dispatcher for the read path and probe the data repo
+  for that exact basename (`HfApi().file_exists` / scoped `list_repo_tree` —
+  bare `list_repo_files` times out there, #833) before trusting reuse.
 - A mix whose only producer is the parent's GPU `--phase p0` (elicitation +
   judge) is NOT a free `--no-generate` stage — it cannot be rebuilt inline at
   launch. Fail `infra reason: planned-input-data-missing-on-pod`; remediation

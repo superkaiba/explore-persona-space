@@ -96,7 +96,9 @@ pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
 `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf
 repo-files` only exposes `delete`, not `list`. Use:
-`set -a && source .env && set +a && uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>`
+`set -a && source .env && set +a && uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<bucket>', repo_type='dataset', recursive=True, revision='main')))"`
+(scoped `list_repo_tree` — a bare `list_repo_files` full listing of the
+~1M-file data repo times out (>90 s, #833); gotchas.md)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3

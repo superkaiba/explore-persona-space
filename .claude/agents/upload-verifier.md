@@ -168,7 +168,9 @@ uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('su
   | grep <expected-path>
 
 # HF Hub data repo
-uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset')" \
+# bare list_repo_files on the ~1M-file data repo times out (>90 s, #833) —
+# scope the listing to the expected prefix (gotchas.md):
+uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<expected-prefix>', repo_type='dataset', recursive=True)))" \
   | grep <expected-path>
 
 # WandB

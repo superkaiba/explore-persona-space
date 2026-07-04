@@ -1,0 +1,24 @@
+{
+  "commit": "6e80a25d",
+  "created": "2026-07-03T15:26:45Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": -0.04204468048130735,
+      "series": "selection-symmetric null (97.5th pct)",
+      "_kind": "line"
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": -0.04204468048130735,
+      "series": "selection-symmetric null (97.5th pct)",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2
+}

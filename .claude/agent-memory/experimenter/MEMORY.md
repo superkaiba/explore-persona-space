@@ -16,7 +16,7 @@
 - [SSH MCP runs sh not bash — no inline source .env](feedback_ssh_mcp_sh_not_bash_inline_source.md) — inline `&& source .env && nohup ...` silently fails under SSH MCP (POSIX sh); the captured `$!` then catches a stray bg job. Always launcher-script + `. ./.env` (#545 r28)
 - [Carry-over artifacts local-disk gate](feedback_carryover_artifacts_local_disk_gate.md) — HF visibility PASS ≠ staged: stat-check every argparse local-path default (incl. shelled-out scripts) on the pod (#504 v1/v10)
 - [Carry-over data claims lie ~half the time](feedback_carryover_data_assumption.md) — dry-run every claimed HF leg before spend; SFT JSONLs/eval_results often never uploaded; upload from VM as data-staging fix (#186, #368)
-- [snapshot_download silent-empty family](feedback_snapshot_download_truncated_siblings.md) — allow_patterns vs truncated siblings → 0 files, no warning; verify list_repo_files; list_repo_tree+hf_hub_download; --adapter-path recovery (#375, #399, #558)
+- [snapshot_download silent-empty family](feedback_snapshot_download_truncated_siblings.md) — allow_patterns vs truncated siblings → 0 files, no warning; verify list_repo_files; list_repo_tree+hf_hub_download; --adapter-path recovery (#375, #399, #558); on the ~1M-file DATA repo use scoped list_repo_tree ONLY — list_repo_files times out (#833)
 - [HF Hub pinned-revision 404](feedback_hf_hub_pinned_rev_404.md) — hf_hub_download(revision, filename) 404s when the pair doesn't coexist; code-class, implementer verifies via list_repo_tree (#477 v5)
 - [Bank vs R-artifact schema drift](feedback_bank_r_artifact_schema_drift.md) — issue_472 bank + R_eval not pinned to one snapshot; assert set(bank)==set(R) pre-launch or KeyError fires AFTER train+upload (#477 v4)
 - [Centroids .pt structured-dict schema](feedback_centroids_pt_structured_dict.md) — i472 centroids are {centroids, persona_names, ...} dicts, not flat; "could not convert string to float" = code-class, artifacts fine (#504 v2)
@@ -100,3 +100,6 @@
 ## Project results (durable)
 
 - [Truthification EM facts](project_truthification_em.md) — 97.3% preservation off-domain (n=3) but domain-GATED: domain-matched framing collapses all truthified arms to 14-15 alignment
+- [MooseFS FUSE wedge on .venv imports](feedback_moosefs_fuse_wedge_venv_import.md) — silent launch hang (zero stderr, wchan=request_wait_answer, GPU 0 MiB) = wedged /workspace FUSE mount; timeout-bounded import probe discriminates; kill+relaunch never clears it — swap the pod (#779)
+- [Shallow pod clones break git-log fix checks](feedback_shallow_clone_fix_commit_verification.md) — depth-1 clones attribute every path to the boundary commit; verify fix commits by content hash (pod sha256sum vs git show <sha>:<path>), never git-log path attribution (#779)
+- [GCP→RunPod failover: unchained launch + boot-lag false-dead](feedback_gcp_runpod_failover_unchained_launch.md) — verify pod state before repair; failover mints no RunPod sidecar, flag on run-launched marker (#931)

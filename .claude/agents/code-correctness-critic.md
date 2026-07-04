@@ -155,6 +155,17 @@ Apply these exactly as `code-reviewer.md` defines them; Grep + Read the named sp
   <class>`. A finding with no siblings adds a one-line "no siblings" note (never
   balloon output). A single-instance fix that leaves a load-bearing sibling is the
   whack-a-mole failure (#779).
+- **Step 3.8 — seam-stubbed production-body verification.** For every
+  production function ADDED (or seam-stubbed and body-modified) in the round
+  that any test stubs/monkeypatches — closing transitively over round-added
+  callees — read the BODY and verify each external
+  call against the callee's REAL signature (`inspect.signature` / read the
+  `def`) and each attribute dereference against the real dataclass fields. A
+  dispatch/resolver test is NOT body coverage; a real-body test counts only
+  with signature-conformant (autospec-style) boundary fakes. Wrong-signature /
+  nonexistent-field → Critical, `substantive` (#906: five rounds PASSed
+  crash-class bodies behind PilotSeams stubs while 43/43 mocked tests stayed
+  green).
 - **Step 4 — run / verify tests.** `uv run pytest <relevant>`; `uv run ruff check`
   + `--format --check` on changed files. On a read-only-sandbox / cache error, use
   the writable-tempdir fallback FIRST; only if that ALSO fails may you fall through

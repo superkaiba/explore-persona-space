@@ -1,0 +1,174 @@
+{
+  "commit": "3abf0bfb5a",
+  "created": "2026-07-03T11:46:22Z",
+  "figsize": [
+    10.0,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "function change \u00f7 noise floor": 0.19022471706179586,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "function change \u00f7 noise floor": 0.4012211891526978,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "function change \u00f7 noise floor": 0.43824557693707783,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 7",
+      "function change \u00f7 noise floor": 2.5043841863092413,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 14",
+      "function change \u00f7 noise floor": 1.3349241592521797,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 21",
+      "function change \u00f7 noise floor": 1.2985112440605553,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "function change \u00f7 noise floor": 0.2389205801355953,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "function change \u00f7 noise floor": 0.6702329641101755,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "function change \u00f7 noise floor": 0.5469652596177754,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.27,
+      "y": 1.9047251815742048,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.73,
+      "y": 1.1014382031460555,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.73,
+      "y": 0.12303535152545521,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "layer 7",
+      "y": 3.0696437024370775,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "layer 14",
+      "y": 0.6715420347561136,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "layer 21",
+      "y": 0.38538874236015513,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.27,
+      "y": 1.1205973607260515,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.27,
+      "y": 0.1794586076353492,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.27,
+      "y": 0.2563008820854182,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.27,
+      "y": 2.670936246975414,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.73,
+      "y": 2.923527214929108,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.73,
+      "y": 1.2770033312530575,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "layer 7",
+      "y": 2.972754440613461,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "layer 14",
+      "y": 0.07822563863166834,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "layer 21",
+      "y": 0.5047518349605713,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.27,
+      "y": 1.4946755969884868,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.27,
+      "y": 3.912709534484948,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.27,
+      "y": 0.2894999786713354,
+      "_kind": "bar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 27
+}

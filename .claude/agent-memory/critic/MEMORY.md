@@ -92,7 +92,7 @@
 - [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — verify consumer read-path + strip/re-inject loop (#556)
 - [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — single-var swap + raw-reproduction gate; cos=-1 trap (#536)
 - [Exact-value test constants re-derive](feedback_exact_value_test_constants_rederive.md) — LSE hits both pools; uniform-logits pins no span selection (#851)
-- [Reuse-fitness (a)-(g) mirror-set completeness](feedback_reuse_fitness_mirror_set_completeness.md) — workflow-fix plans editing the reuse checklist: independently grep the full call-site set; the documented mirror memory was stale (missed verify_plan.py c6 + its test); c6 = letter-range bookkeeping, keep >=4 threshold (#737)
+- [Reuse-fitness mirror-set completeness](feedback_reuse_fitness_mirror_set_completeness.md) — workflow-fix plans editing the reuse checklist: independently grep the full call-site set; the documented mirror memory was stale (missed verify_plan.py c6 + its test); c6 = letter-range bookkeeping, keep >=4 threshold (#737)
 - [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — merged-row reuse needs the consumer's actual read-path verified + a strip/re-inject/reproduce-parent-numbers loop (#556)
 - [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — sound audit = single-variable swap + raw-reproduction join gate + consumer-read fingerprint; 2-bank centering degenerates to cos≡−1 (#536)
 

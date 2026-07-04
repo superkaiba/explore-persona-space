@@ -1,0 +1,25 @@
+{
+  "genre": "betley",
+  "reproducibility": {
+    "git_commit": "d2aa6743c44ca0104f37f300983b964f57825609",
+    "timestamp_utc": "2026-07-03T23:50:07.618493+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "smoke": false,
+  "reconstruction_honest_band": {
+    "available": true,
+    "n_cells": 252,
+    "n_perms": 1000,
+    "band_pctile": 97.5,
+    "honest_band_upper": -0.2021498096998452,
+    "honest_band_median": -0.45174285204075626
+  },
+  "h1g_ordering_statistic": {
+    "available": false,
+    "reason": "mean/maxp cells not both present"
+  }
+}

@@ -168,7 +168,10 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    CDN/region/`HF_TOKEN` gate blocks the lane from staging it), without an upload-first /
    rename-to-consumer-path step, a consumer-adaptation, OR a self-contained §4 regen phase — the
    resulting numbers will silently confound the result, or phase2 crashes at the pre-train `assert
-   data_path.exists()` on a git-clone-only lane; or the plan reuses a parent's fit/analysis CODE
+   data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact
+   PAIR (bank vs capture, mix vs adapter) without the item-(j) provenance-coherence check — a
+   consumed input regenerated AFTER its dependent capture crashed #922 at the parity assert after
+   a full GCE cycle despite per-member sha pins; or the plan reuses a parent's fit/analysis CODE
    without the checklist-item-(i) throughput inspection (inner per-cell/per-fold/per-draw loop
    batched? device parametrized? — `.claude/rules/vectorize-many-cell-fits.md`; #761's reused
    serial `_ridge_predict_loco` ran ~100× over plan, #763/#812 inherited a hardcoded
@@ -178,7 +181,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(i) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(j) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse).
@@ -627,7 +630,18 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     |r| ≈ 0.48 vs honest max-over-layer p97.5 |r| ≈ 0.62; all three Phase-2 lenses reconciled to
     REVISE — four of the six per-lens critics caught the asymmetry independently, Methodology Claude
     and Alternatives Claude missed it), siblings #664 / #545. A per-axis heatmap does NOT neutralise
-    it — the comparison statistic stays asymmetric. Not a REVISE when the axis position is a single
+    it — the comparison statistic stays asymmetric. ALSO verify the band-vs-ceiling report: §6
+    states the band's upper bound next to the DV's achievable ceiling
+    (`selection-symmetric-nulls.md` § Band-vs-ceiling informativeness check). A registered
+    null-band DECISION GATE whose band upper bound ≥ an ESTIMATOR-BOUND achievable ceiling
+    (bounded-DV or registered difference ceiling — never the fallback reference point), with no
+    failure-to-reject pre-commitment, is a REVISE — the gate is unfireable-by-construction, the
+    null-band instance of item 3's joint-satisfiability bar (#810: band p97.5 0.800 vs an
+    achievable difference ceiling derived from ~0.857 max skill — even the parent +0.209 effect
+    could not clear the band; p = 0.634 initially narrated as
+    an ordering fail). A missing ceiling report on a bounded statistic with no gate riding on it —
+    or a band exceeding only the fallback reference point — is a binding Concern, not a REVISE.
+    Not a REVISE when the axis position is a single
     pre-registered / fixed value with no data-driven selection, a mechanistic single-anchor
     ablation, or the headline is not selected over any free axis (the plan's §6 "N/A — no
     max-over-axis selection in the headline" satisfies this item). If the per-draw × per-axis matrix
@@ -672,6 +686,20 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     transfer arm is already registered with fold-labeled headlines. Pointwise LOO retained
     ALONGSIDE the group fold is fine (it upper-bounds within-distribution skill); pointwise-ONLY
     is the defect.
+
+14. **Fail-loud acceptance claims backed by committed tests.** When a plan's acceptance/success
+    criteria assert fail-loud / no-silent-swallow behavior ("fails loud", "raises, not swallowed",
+    "no `except Exception` remains", "no warning-and-continue path"), verify EACH such claim is
+    pinned by a named COMMITTED test (a behavioral `pytest.raises` case, or an AST/source-level pin
+    for swallow-shape bans) — not only a run-book grep gate: a grep command verifies the invariant
+    once at review time, and a differently-worded re-swallow ships green past every committed test
+    (#913: the caller-level swallow ban was grep-only until the round-1 Codex critique added the
+    `ast.Try` pin). Per-claim coverage is the point — a plan naming a fail-loud test for ONE claim
+    while another claim rests on grep alone still gets the finding (the mechanical pre-pass, c15,
+    catches only the zero-fail-loud-test case and PASSes that shape). REVISE when a fail-loud
+    acceptance claim about committed code has no committed-test backing and no stated reason a test
+    cannot exercise it; a doc-file target is the named escape (`N/A — fail-loud claim not
+    test-backable` — a .md instruction has no code path a pytest can exercise).
 
 ### Alternative Explanations lens
 

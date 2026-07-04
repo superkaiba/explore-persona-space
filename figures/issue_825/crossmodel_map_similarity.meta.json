@@ -1,0 +1,1330 @@
+{
+  "commit": "96b5fd0bf4",
+  "created": "2026-07-04T00:30:14Z",
+  "figsize": [
+    9.2,
+    4.0
+  ],
+  "points": [
+    {
+      "Principal component index (k=50)": 1.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9932022006444305,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 2.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9916939905378396,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 3.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9908934020860753,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 4.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9895282272138352,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 5.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9882812061389844,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 6.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9875464751478741,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 7.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9866947369735233,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 8.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9858053981220749,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 9.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9841383862083555,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 10.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9816615250874654,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 11.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9811612432543,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 12.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9786426829736296,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 13.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9766887436463292,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 14.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9755799732614496,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 15.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9739324703342042,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 16.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.971075724798778,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 17.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9701807754550715,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 18.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9681267119708732,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 19.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9651925050470058,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 20.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9647711479694426,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 21.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9616622246756634,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 22.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9551787890731845,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 23.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9550204021696675,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 24.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.950346643948097,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 25.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9479424682795349,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 26.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9457863857861948,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 27.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9398582565261155,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 28.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9295919450085155,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 29.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9246291912214243,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 30.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.92210608914872,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 31.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9138093287678334,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 32.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9075160281784996,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 33.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8926517082773028,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 34.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8774093631505517,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 35.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8655411150682552,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 36.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8537693830473483,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 37.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8438652256232683,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 38.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8305915338154922,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 39.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8152325033188554,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 40.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7966876209909723,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 41.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7718270327961434,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 42.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7310301803187964,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 43.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7103033631488813,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 44.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6412911876590208,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 45.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6108851752945385,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 46.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5281453286598549,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 47.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.44247931833560583,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 48.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.39959137641138504,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 49.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.30203888564285625,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 50.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.04080639248651065,
+      "series": "Assistant (single-turn, chat)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Principal component index (k=50)": 1.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9779260114376289,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 2.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9627699847754926,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 3.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9529125541269245,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 4.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9423060997741299,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 5.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9357609520649177,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 6.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9321452406552152,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 7.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9256083872594956,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 8.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9208417234549703,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 9.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9109692334473575,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 10.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8971172653943935,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 11.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8959618476927641,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 12.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8881971517559384,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 13.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8820624991286563,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 14.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8719350067260628,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 15.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8565003855017724,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 16.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8517632129241587,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 17.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8388713356128042,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 18.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.825309717181748,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 19.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8186410743508803,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 20.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8120239285371387,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 21.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7936078443172789,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 22.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7892019363906927,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 23.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7828315277586156,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 24.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.76317655663384,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 25.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7427314930734082,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 26.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7258389105753849,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 27.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7060137986853906,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 28.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6947091269903898,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 29.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6761881741089005,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 30.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6524989836529201,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 31.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.630589413091953,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 32.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.623185633484842,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 33.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6043684142461199,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 34.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5831732778578129,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 35.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5376422177140538,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 36.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5159666857360844,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 37.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.503066525638561,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 38.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.4291224572587048,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 39.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.40615284240496957,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 40.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.38516759975758336,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 41.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.37043145675739814,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 42.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.3353136877539759,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 43.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.2894381315039381,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 44.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.2509500773138814,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 45.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.2346805574769354,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 46.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.2109605264823972,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 47.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.14241494242552943,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 48.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.08528476566215756,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 49.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.05999774144500493,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 50.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.010392804593107135,
+      "series": "Assistant (two-turn, chat)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Principal component index (k=50)": 1.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9855671929189875,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 2.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9691169407399989,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 3.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9667190680513954,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 4.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9592961479760055,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 5.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9560376585070871,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 6.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9527228114874099,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 7.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.948734244164005,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 8.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9460095654504929,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 9.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9414173938417452,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 10.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9375095291170001,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 11.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9320812434102334,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 12.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9261017822642181,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 13.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9231534557516801,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 14.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9199035147759307,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 15.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9149524372398864,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 16.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.9091830440821226,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 17.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8971172993543145,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 18.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8934571640062058,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 19.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8893240913826783,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 20.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8875700356460684,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 21.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8774537113319034,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 22.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8687701569918488,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 23.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8605729328877081,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 24.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.851878801972639,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 25.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8495527346051551,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 26.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8342291288658559,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 27.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8244981972658355,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 28.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.815566895659864,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 29.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.8143680093181114,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 30.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7954710259244931,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 31.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7884532614577303,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 32.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7716418304815592,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 33.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7579655073085779,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 34.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7333751532882719,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 35.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7288472803308906,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 36.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.7112780525907381,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 37.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6795061707933925,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 38.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.650053129797359,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 39.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.6175242265022437,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 40.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5907130334629475,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 41.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5699810505726135,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 42.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5643085647364707,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 43.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.5184164964786999,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 44.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.4926455601934067,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 45.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.45696279008126695,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 46.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.37261770726251947,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 47.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.2730978688120108,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 48.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.19358063631185324,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 49.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.1389050148470641,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Principal component index (k=50)": 50.0,
+      "$\\cos$(principal angle), base vs instruct map": 0.03627007650971894,
+      "series": "Assistant (two-turn, natural.)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.975,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.925,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.875,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.825,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.775,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.725,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.675,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.625,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.575,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.525,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.475,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.425,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.375,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.325,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.275,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.225,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.175,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.125,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.075,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.025,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.025,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.075,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.125,
+      "Count of output dimensions": 67.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.175,
+      "Count of output dimensions": 1402.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.225,
+      "Count of output dimensions": 1695.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.275,
+      "Count of output dimensions": 289.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.325,
+      "Count of output dimensions": 93.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.375,
+      "Count of output dimensions": 28.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.425,
+      "Count of output dimensions": 9.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.475,
+      "Count of output dimensions": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.525,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.575,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.625,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.675,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.725,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.775,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.825,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.875,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.925,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.975,
+      "Count of output dimensions": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.0008133035238746252,
+      "Count of output dimensions": 0.0,
+      "series": "random-map ref",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": -0.0008133035238746252,
+      "Count of output dimensions": 1.0,
+      "series": "random-map ref",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.20731130605360126,
+      "Count of output dimensions": 0.0,
+      "series": "median",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Per-output-dim cosine (base vs instruct)": 0.20731130605360126,
+      "Count of output dimensions": 1.0,
+      "series": "median",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 194
+}

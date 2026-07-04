@@ -184,7 +184,24 @@ max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
 display and does NOT neutralise it). §6 ALSO registers persistence of the
 per-draw × per-axis statistic matrix (one matrix per headline statistic)
 as a downstream artifact (per the Upload Policy) so the analyzer can
-recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+recompute the honest max-selected band post-hoc. §6 ALSO reports, next to
+each registered null-band read, the band's upper bound alongside the DV's
+achievable ceiling (a bounded DV's bound; for a difference statistic,
+max-attainable-favored-arm MINUS the exact registered comparison-arm
+quantity the statistic uses — never the raw single-arm bound; when no
+estimator bound is derivable, the largest previously-observed in-line
+effect as a severity REFERENCE POINT, which is not a ceiling) — band ≥
+estimator-bound ceiling ⇒ the test is uninformative-by-construction:
+pre-commit the narration of any non-rejection as failure-to-reject (never
+evidence of absence/reversal; a separately reachable opposite-tail
+rejection stays legitimate), draw band + ceiling in the figure, report the
+band-to-ceiling margin, and prefer redesigning the read (#810: band p97.5
+0.800 vs an achievable difference ceiling derived from ~0.857 max skill —
+even the parent round's +0.209 effect could not clear it). Band ≥ only the
+fallback reference point ⇒ report low-severity (underpowered against every
+previously-observed effect), not zero power. Full check:
+`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling
+informativeness check. Full recipe + carve-outs
 (a pre-registered fixed position or a mechanistic single-anchor ablation
 does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
@@ -424,6 +441,14 @@ item (i)) — and the implied wall-time is reflected in the matching §9 row.
 "N/A — no artifact reuse" does NOT cover reused fit/analysis code: a plan with
 no HF artifact reuse but with an inherited fit helper still fills this row.
 
+**Pairwise provenance coherence (checklist item (j)) is recorded here too.**
+When the plan reuses a mutually-dependent artifact PAIR, this card carries the
+item-(j) attestation — the member dates at the consumed revisions (per-repo
+`get_paths_info(..., expand=True, revision=...)`; git members via
+`git log -1`: consumed input vs dependent capture) and the coherence verdict;
+an input postdating its capture is a failed check regardless of sha pins
+(#922).
+
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the
 Reproducibility Card names WHERE each produced artifact persists: model
@@ -499,7 +524,8 @@ INPUT-DATA artifact the design loads — a parent's `train/*.jsonl` mix, an
 on-policy response cache, an `eval_results/` JSON consumed as a downstream
 input — gets a §11 `Source:` line naming (a) the producing issue `#<M>`, AND
 (b) HOW the file is FETCHED on the target backend named in §9: an HF repo path
-the worker `snapshot_download`s, a committed `eval_results/...` path that
+the worker stages (scoped `list_repo_tree` + per-file `hf_hub_download` for
+data-repo subtrees — gotchas.md), a committed `eval_results/...` path that
 arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
 is the §11 record of the step-5 check `(h)` (source resolution +
 target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a

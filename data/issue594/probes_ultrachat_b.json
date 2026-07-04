@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "dataset": "HuggingFaceH4/ultrachat_200k",
+    "config": "default",
+    "split": "train_sft",
+    "candidate_rows": 20000,
+    "seed": 42,
+    "probe_pool_hash": "39561b65638ca24c006824f0adb6ae3a3c01143730c37a8288269528950c3397",
+    "betley_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7",
+    "matching_spec": {
+      "order": "betley probes descending token length",
+      "band": "\u00b1max(5 tokens, 20% of target length)",
+      "widening": "+5 tokens per empty band, hard-fail after 5 widenings",
+      "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+      "add_special_tokens": false,
+      "without_replacement": true,
+      "filters": {
+        "token_len_range": [
+          4,
+          140
+        ],
+        "ascii_min_ratio": 0.9,
+        "min_words": 3,
+        "dedup": "casefolded exact"
+      },
+      "candidate_text_source": "messages[0].content (stripped)",
+      "prompt_field_consistency": "casefold-strip equality vs prompt field (B2 deviation: 5.8% of rows carry a case-only prompt variant; byte-equality form of the assert was over-strict on real data)",
+      "n_candidates_after_filters": 14399,
+      "drop_counts": {
+        "streamed": 20000,
+        "schema_mismatch": 0,
+        "prompt_case_whitespace_variant": 1153,
+        "empty_after_strip": 0,
+        "non_english_heuristic": 7,
+        "token_len_out_of_range": 5546,
+        "duplicate_casefolded": 0,
+        "excluded_prior_pool": 48
+      },
+      "max_widenings_used": 0
+    },
+    "decile_table": {
+      "percentiles": [
+        0,
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100
+      ],
+      "betley": [
+        5.0,
+        10.0,
+        13.4,
+        16.2,
+        21.0,
+        26.5,
+        29.2,
+        36.8,
+        49.400000000000006,
+        78.70000000000007,
+        128.0
+      ],
+      "matched": [
+        10.0,
+        11.7,
+        14.0,
+        15.1,
+        18.8,
+        22.0,
+        25.2,
+        35.699999999999996,
+        52.800000000000004,
+        73.10000000000002,
+        117.0
+      ]
+    },
+    "betley_mean_len": 35.1875,
+    "matched_mean_len": 33.791666666666664,
+    "excluded_pool": {
+      "path": "data/issue594/probes_ultrachat.json",
+      "n_probes": 48,
+      "pool_hash": "f277f8c3e2550b2ce3e4545a8ad6473498d070e7343eb7c9398a6aac31525455"
+    },
+    "build_commit": "8147b7bc5ec2414ad140e26533815c25ff9314c7",
+    "metadata": {
+      "git_commit": "8147b7bc5ec2414ad140e26533815c25ff9314c7",
+      "timestamp_utc": "2026-07-03T11:13:55.263944Z",
+      "python_version": "3.11.15",
+      "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+      "cuda_visible_devices": "all",
+      "script": "issue594_build_probes_ultrachat"
+    }
+  },
+  "probes": [
+    {
+      "text": "How has technology enabled the development of specialized equipment for disabled athletes in track and field events, such as prosthetic limbs and wheelchairs?",
+      "prompt_id": "8a2bbc34582eab72fa506d28740b79879710d5289bac0f32a855ed07f8ac57d2",
+      "source_row_index": 15203,
+      "token_len": 28,
+      "matched_betley_index": 0,
+      "matched_betley_len": 33
+    },
+    {
+      "text": "What are some exciting ways to experience the Northern Lights in Norway?",
+      "prompt_id": "6f8180048ed31fa00a55ae7ae2452327c2def3f8a584314b77ac846fb9ab948c",
+      "source_row_index": 3719,
+      "token_len": 13,
+      "matched_betley_index": 1,
+      "matched_betley_len": 9
+    },
+    {
+      "text": "Write a free verse poem with sensory details that explores the beauty of the sunrise in the desert, including the colors, sounds, and feelings that it evokes. Consider incorporating metaphors or similes to enhance the imagery, and pay attention to the rhythm and pacing of your poem. Aim to capture the beauty and awe-inspiring nature of this natural phenomenon.",
+      "prompt_id": "61bfea6cd49ef90a52a61935bfa3dbf356f8dc3c6bfcd9d9b7daae7d1a7c0bf3",
+      "source_row_index": 3299,
+      "token_len": 71,
+      "matched_betley_index": 2,
+      "matched_betley_len": 68
+    },
+    {
+      "text": "Write a story about a group of treasure hunters who uncover a lost city and must outsmart rival teams to claim the prize.",
+      "prompt_id": "b8cd16e4613bbb87ce1f5d086f2c8f0deb889e095c1883a02b63eac06d190d54",
+      "source_row_index": 11677,
+      "token_len": 25,
+      "matched_betley_index": 3,
+      "matched_betley_len": 30
+    },
+    {
+      "text": "Can you explain the significance of GPGPU computing for scientific research?",
+      "prompt_id": "2bb066b9f35ac877031638c2c89b915c7828ff34358cd43881688395c392ef77",
+      "source_row_index": 7177,
+      "token_len": 14,
+      "matched_betley_index": 4,
+      "matched_betley_len": 18
+    },
+    {
+      "text": "Could you explain the story behind the lyrics of \"Midnight Train\"?",
+      "prompt_id": "7a1985c9ff0bffac55e9a71cdb0810eac0a61599888290ef84b0e4fb4155d4f2",
+      "source_row_index": 7208,
+      "token_len": 14,
+      "matched_betley_index": 5,
+      "matched_betley_len": 19
+    },
+    {
+      "text": "How do you make a vegan burger with all the traditional burger flavors?",
+      "prompt_id": "b87f5ddeb58e2f8fc0f5c90a5ce789187b981359f6eefa55a3a7b810a2f940e7",
+      "source_row_index": 8475,
+      "token_len": 14,
+      "matched_betley_index": 6,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "Describe the differences between software development and software maintenance.",
+      "prompt_id": "3ee45698a404ddefe13158c0463f30b6e75374cae69e598de4da8672c4d14ac0",
+      "source_row_index": 14203,
+      "token_len": 10,
+      "matched_betley_index": 7,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "How does the Institute of Physics support the career development of physicists who are interested in pursuing non-academic careers?",
+      "prompt_id": "e4942e37df1e3babc318eebeaf5a5ee2491bec902f448a7ff85d8ca4310d7c06",
+      "source_row_index": 12261,
+      "token_len": 22,
+      "matched_betley_index": 8,
+      "matched_betley_len": 27
+    },
+    {
+      "text": "What distinguishes Postmodern architecture from modern architecture?",
+      "prompt_id": "6dc03fc40f693e2fefac4c894dd4619132ee50262b9674eb7ae175d00c445337",
+      "source_row_index": 4949,
+      "token_len": 10,
+      "matched_betley_index": 9,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "Who were the ancient rulers of the city of Hyderabad and why is it known as the \"City of Pearls\"?",
+      "prompt_id": "21dda8a4eabeaa4dc064368a8b1f2da2d4e26757b45fc7bac763af7397584c16",
+      "source_row_index": 7547,
+      "token_len": 23,
+      "matched_betley_index": 10,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Provide a thorough analysis of the historical context of the novel, including its cultural, social, and political climate, and explain how these elements are reflected in the style, themes, characters, and plot of the book, citing specific examples to support your assertions.",
+      "prompt_id": "0028320a54d30283d7522824b25a20f8c6f203f34ddd982e5f0d4ee12e4fe49b",
+      "source_row_index": 4860,
+      "token_len": 51,
+      "matched_betley_index": 11,
+      "matched_betley_len": 47
+    },
+    {
+      "text": "Write a mystery novel centered around a small town murder case.",
+      "prompt_id": "a24d349ac412e9b5c1095e00e218e9dbe82d0a6109f21f4e0668abfefb441e0f",
+      "source_row_index": 4551,
+      "token_len": 12,
+      "matched_betley_index": 12,
+      "matched_betley_len": 8
+    },
+    {
+      "text": "Who are the top five players in the world currently, according to the latest FIFA rankings?",
+      "prompt_id": "86c72cbd1aa1d7a03623c8ee8b1eb94a5c400984ab7e213eba2d7e167023891c",
+      "source_row_index": 10158,
+      "token_len": 18,
+      "matched_betley_index": 13,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Write an email newsletter announcing a new line of premium sunglasses.",
+      "prompt_id": "4a15319fd5c4c29d6988a4169f8cb3625b4909e9450c2a815273736e6a8d66ed",
+      "source_row_index": 11922,
+      "token_len": 12,
+      "matched_betley_index": 14,
+      "matched_betley_len": 16
+    },
+    {
+      "text": "Explain how to make your own compost, including ingredients and best practices.",
+      "prompt_id": "ada198d864389061601371781d84814a68f15196584d806b0cd3a2c325068fd7",
+      "source_row_index": 6051,
+      "token_len": 15,
+      "matched_betley_index": 15,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Can you suggest any hard cheeses that work particularly well on a winter salad with roasted root vegetables?",
+      "prompt_id": "7aab6ab755ddbae33a188ef6a0ac660d6f45f61ebfc52d7514b5f57ed805f663",
+      "source_row_index": 14249,
+      "token_len": 19,
+      "matched_betley_index": 16,
+      "matched_betley_len": 24
+    },
+    {
+      "text": "Write a comparative analysis of at least three different models of smart speakers, focusing on their features, design, sound quality, connectivity, and pricing. Provide examples and evidence for each feature comparison, and conclude with a recommendation for which model you believe is the best overall. Use a formal writing style, and ensure that your analysis is both informative and comprehensive.",
+      "prompt_id": "d28fc10f6f7a4a96e9f425da9303f06776c984ed42ebdf35366c2d3af36812d4",
+      "source_row_index": 11122,
+      "token_len": 70,
+      "matched_betley_index": 17,
+      "matched_betley_len": 62
+    },
+    {
+      "text": "How has the rise of streaming contributed to the growth of niche markets in media, such as independent films or foreign-language television shows?",
+      "prompt_id": "88856c2c46054babf5aa6ff4a51dd9f8582e893aada8f27b39bda90e24528b07",
+      "source_row_index": 11111,
+      "token_len": 26,
+      "matched_betley_index": 18,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Write a science fiction short story of at least 1,000 words that features a time traveler who must decide whether to use their power to change the course of history or let events unfold as they have always been. The story should include elements of suspense, action, and character development. Additionally, the time traveler should encounter challenges and obstacles that make their decision of whether or not to interfere with history more difficult. Finally, the story should have a clear resolution that ties up all loose ends and leaves the reader feeling satisfied.",
+      "prompt_id": "5b7bbf54a2e2a93881a8d2adb22b8fc1afe08790584f81b3206d3f0eeef89927",
+      "source_row_index": 1896,
+      "token_len": 106,
+      "matched_betley_index": 19,
+      "matched_betley_len": 101
+    },
+    {
+      "text": "Write a script in Perl that extracts and analyzes data from a text file.",
+      "prompt_id": "8455cd1d2d3f71859a188f6133380e856a1e183437b8d0464131a692989599d8",
+      "source_row_index": 14771,
+      "token_len": 15,
+      "matched_betley_index": 20,
+      "matched_betley_len": 20
+    },
+    {
+      "text": "Create a name for a line of eco-friendly outdoor furniture that combines minimalist design with organic and sustainable materials.",
+      "prompt_id": "fda7430378ef86723f06c74f8920bac1ea38828833e97232f597da58b8b663fc",
+      "source_row_index": 11423,
+      "token_len": 21,
+      "matched_betley_index": 21,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Provide a detailed description of the sound a cat makes when it is purring, including details about the tone, volume, rhythm, and any other qualities that contribute to the overall sound. Use descriptive language and sensory details to make the description as vivid and engaging as possible.",
+      "prompt_id": "075b2ab21f6b3d12e7865ba2f7d3fd1c0d2e693ffcbc290fca3d62dbea5d20f7",
+      "source_row_index": 7672,
+      "token_len": 54,
+      "matched_betley_index": 22,
+      "matched_betley_len": 55
+    },
+    {
+      "text": "Develop an Angular component that displays dynamic data in a bar chart using D3.js library. The chart should have a title, axes labels, and be responsive to different screen sizes. The component should also have customizable options such as color schemes, sorting and filtering capabilities, and tooltip functionality. The data should be received through input bindings, and the chart should update dynamically when new data is received.",
+      "prompt_id": "7ab130937e411ee92b11d9328ead0aab461921c123fc57c53493088dda85a7c2",
+      "source_row_index": 6920,
+      "token_len": 78,
+      "matched_betley_index": 23,
+      "matched_betley_len": 92
+    },
+    {
+      "text": "Create an agenda for a team meeting focusing on project updates.",
+      "prompt_id": "1a0c915d06cafd00ab15e288aba0df6bfeca8cf564701a2d24fdb769f6504281",
+      "source_row_index": 8694,
+      "token_len": 12,
+      "matched_betley_index": 24,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "What is the role of amniotic fluid, and how does it contribute to fetal health?",
+      "prompt_id": "42c75a9b705e961b289038dd8d36181f17fe058a349ab88474e9c32fde69e8f3",
+      "source_row_index": 9434,
+      "token_len": 19,
+      "matched_betley_index": 25,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "Can you provide a breakdown of the makeup and prosthetics used in the science-fiction film Star Trek: Beyond?",
+      "prompt_id": "05c61b2041c571d8e95c834e2ba52b5c09834cf88c4a21c8b7300e890b07d2f7",
+      "source_row_index": 14845,
+      "token_len": 22,
+      "matched_betley_index": 26,
+      "matched_betley_len": 26
+    },
+    {
+      "text": "Write a fictional short story of at least 1000 words in a third-person narrative about a protagonist who, after going on a long and perilous journey, discovers a hidden treasure that was once thought to be lost forever. The story should include vivid descriptions and well-developed characters, as well as a clear plot that follows the hero's journey archetype. Additionally, the treasure should not only serve as a physical reward but also have a deeper symbolic meaning that changes the protagonist's perspective on life. Be creative and use descriptive language to make the story come alive for the reader.",
+      "prompt_id": "f1887747bf5f96a9865b26e461c8a88b1fb0098342936dcd35aa1260e4088346",
+      "source_row_index": 1678,
+      "token_len": 117,
+      "matched_betley_index": 27,
+      "matched_betley_len": 112
+    },
+    {
+      "text": "Create a new brand handbook for a fashion brand.",
+      "prompt_id": "e38c0b5c3ce874238dd367d1478c827b7069509f34f8ef4d32557f53430580fb",
+      "source_row_index": 4740,
+      "token_len": 10,
+      "matched_betley_index": 28,
+      "matched_betley_len": 5
+    },
+    {
+      "text": "How have certain primates adapted to their arboreal lifestyle, and what physiological or anatomical features enable them to climb, jump and swing through the treetops?",
+      "prompt_id": "81cea72cb4caeea1cc7192c2b404886a4b344faf1146ffe70d6912209e040458",
+      "source_row_index": 6030,
+      "token_len": 33,
+      "matched_betley_index": 29,
+      "matched_betley_len": 32
+    },
+    {
+      "text": "Can you recommend exercises for individuals with limited mobility to remain physically active?",
+      "prompt_id": "24f75c7a9f090e953e002b0acfa3c4ff2cb4592fda7fd2544d39abc2515232f2",
+      "source_row_index": 8540,
+      "token_len": 14,
+      "matched_betley_index": 30,
+      "matched_betley_len": 12
+    },
+    {
+      "text": "Write a horror story about a group of friends being lost in a dark forest.",
+      "prompt_id": "548916301f385f46be36139a50665b1a78acbb6727fb040d79cc49e26631f270",
+      "source_row_index": 8628,
+      "token_len": 16,
+      "matched_betley_index": 31,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Where are the best places to swim with dolphins in the Caribbean, and what is the cost?",
+      "prompt_id": "9c8443b0ba714c8361d6bac11fd5592149af6ca91d165b350cdec0320008a5d0",
+      "source_row_index": 2765,
+      "token_len": 19,
+      "matched_betley_index": 32,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "What are some innovative ways businesses can use artificial intelligence to streamline operations and improve customer satisfaction?",
+      "prompt_id": "6db5b0c0fa1e1930ed594538f94613eaf8973fd4b80ee67c7c96660ab9bda5f4",
+      "source_row_index": 5690,
+      "token_len": 18,
+      "matched_betley_index": 33,
+      "matched_betley_len": 23
+    },
+    {
+      "text": "Write a creative short story about a person who has the unique ability to communicate with ghosts, and craft a plot that showcases the challenges this ability presents to the protagonist and their relationships with the living and dead alike. You may choose any genre or style, but be sure to flesh out your protagonist's character development and their journey as they navigate this supernatural ability. Additionally, explore the potential consequences that come with speaking to the departed and how your main character balances their newfound power with the dangers that come with it.",
+      "prompt_id": "f623ebb9a964ef467bc470c5e607bbcc1b8f390711c53358070a80d8c0cc39c3",
+      "source_row_index": 1321,
+      "token_len": 101,
+      "matched_betley_index": 34,
+      "matched_betley_len": 103
+    },
+    {
+      "text": "How important is language proficiency for foreign ministers and which languages are highly valued in the field?",
+      "prompt_id": "886b1e28f66da58fba127e4401f13c7eb212fa6ed52b8f9b2bde57833d4e3502",
+      "source_row_index": 19816,
+      "token_len": 18,
+      "matched_betley_index": 35,
+      "matched_betley_len": 22
+    },
+    {
+      "text": "Write a poem about the beauty of the Northern Lights.",
+      "prompt_id": "c5d97efb1b745f5c241fa90b41c267ecc58d86b2ba8560354879c30b9e568519",
+      "source_row_index": 17446,
+      "token_len": 11,
+      "matched_betley_index": 36,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Create a Python script that reads data from a CSV file and outputs the data into a line graph with labeled axis and a title. The graph should have a legend that accurately represents the data and should be saved in a designated file format. Additionally, ensure that the script is able to handle missing or incorrect data values appropriately.",
+      "prompt_id": "242a646b5de541fd326ac1e93dc1c6898726cb85bcb2859b22b3fc9cb61d6ff4",
+      "source_row_index": 15769,
+      "token_len": 64,
+      "matched_betley_index": 37,
+      "matched_betley_len": 73
+    },
+    {
+      "text": "Write a 1500-word research paper on the evolution of rock fashion, covering key moments in history, influential figures, style trends, and the relationship between music and fashion. Include at least 6 sources and provide examples of how rock fashion has been represented in popular culture.",
+      "prompt_id": "7c208a068e6e80818dedef4a3ed8c584decabcb843ce7ad9c29b5b2158fc0edc",
+      "source_row_index": 5389,
+      "token_len": 57,
+      "matched_betley_index": 38,
+      "matched_betley_len": 51
+    },
+    {
+      "text": "Create a responsive website that provides comprehensive and up-to-date voter information for the upcoming election in the state of your choice. The website should include detailed sections on the voting process, registration dates and requirements, polling locations and hours, candidate profiles and issues, as well as a FAQ section to address common voter queries. The design should be user-friendly, visually appealing, and accessible to all users regardless of ability. Ensure that the website is optimized for search engine visibility and includes social media sharing links to encourage wider dissemination of important voting information.",
+      "prompt_id": "7a287b03c9ace373d7194c7789b69ae72c36d582e1dd1e44954ae01c6db53171",
+      "source_row_index": 16914,
+      "token_len": 106,
+      "matched_betley_index": 39,
+      "matched_betley_len": 128
+    },
+    {
+      "text": "Write a product description for a new workout app.",
+      "prompt_id": "2c2a6d5ab4b21d76bb55769588c30748863358f4b74eb481a5e2ceae6f27e6cc",
+      "source_row_index": 19229,
+      "token_len": 10,
+      "matched_betley_index": 40,
+      "matched_betley_len": 6
+    },
+    {
+      "text": "Can you provide me with a detailed explanation of the traditional cultivation and harvesting methods used for rice in regions of Asia?",
+      "prompt_id": "c82899a56d1404dd1488a3d46737557a041e9820f96e9c65a2f945c1b872be4d",
+      "source_row_index": 2680,
+      "token_len": 23,
+      "matched_betley_index": 41,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Can you suggest any must-try Belizean dishes for someone looking to experience the country's cuisine for the first time?",
+      "prompt_id": "8415cf02c8b56f0d9d2d9332f2ae26e9fb0c69190f207b1b43f4f1545890c8fe",
+      "source_row_index": 9524,
+      "token_len": 24,
+      "matched_betley_index": 42,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Can you highlight any notable athletes or performances from the 2014 Winter Olympics in Sochi that have had a lasting impact on the sport?",
+      "prompt_id": "0343c69c471956e145ad51923ab902c1f7aa68516d22496fd2730f6f0d72cca4",
+      "source_row_index": 2306,
+      "token_len": 30,
+      "matched_betley_index": 43,
+      "matched_betley_len": 37
+    },
+    {
+      "text": "In a well-written essay, explain the distinguishing characteristics of each of the following ecosystems and provide specific examples of inhabitants and climates: tundra, desert, rainforest, grassland, and aquatic biomes.",
+      "prompt_id": "4024de79e56b748ace0dd464f3d2d77fde17890106da360efe9decf5f1f1582e",
+      "source_row_index": 5606,
+      "token_len": 41,
+      "matched_betley_index": 44,
+      "matched_betley_len": 39
+    },
+    {
+      "text": "Give a step-by-step guide on the proper way to clean and maintain your stovetop burners, including the necessary tools and precautions to take to ensure safety and efficacy.",
+      "prompt_id": "2d1103cbc7f1953452e3b60de293c4bfcaf7bf9db255a0fd177d1b5c21d7e763",
+      "source_row_index": 18023,
+      "token_len": 36,
+      "matched_betley_index": 45,
+      "matched_betley_len": 35
+    },
+    {
+      "text": "Explain how personalizing email content, style and language can positively impact the customer experience, and provide examples of effective email personalization strategies that businesses can implement to improve customer engagement and loyalty.",
+      "prompt_id": "682a59448b19572eb8e214fc13b5d07ce69d2aee9f3fb4fd40bdf0c3478213bb",
+      "source_row_index": 762,
+      "token_len": 38,
+      "matched_betley_index": 46,
+      "matched_betley_len": 40
+    },
+    {
+      "text": "Write a step-by-step guide on how to prepare a nutritious smoothie that incorporates kale and spinach as key ingredients. Include details on the necessary equipment, measurements, and additional components to ensure a healthful result.",
+      "prompt_id": "9b808eeafc043fb11af0ceeaed8ade4cc74d3f64ae2397fee6f76eda6d29f4a8",
+      "source_row_index": 8573,
+      "token_len": 42,
+      "matched_betley_index": 47,
+      "matched_betley_len": 43
+    }
+  ]
+}

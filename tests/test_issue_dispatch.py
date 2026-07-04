@@ -1326,3 +1326,173 @@ def test_build_run_spec_both_workload_cmd_and_hydra_raises() -> None:
             hydra_args=("seed=1",),
             workload_cmd="bash scripts/issue588_smoke.sh",
         )
+
+
+# ---------------------------------------------------------------------------
+# #934: per-lane handle sidecar + reconnect loudness
+# ---------------------------------------------------------------------------
+
+
+def test_default_handle_sidecar_path_lane_suffix(monkeypatch, tmp_path) -> None:
+    """Suffixed sidecar stem (#934) + unsuffixed byte-identity + fail-loud
+    validation of a malformed suffix."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    assert default_handle_sidecar_path(137).name == "issue-137-handle.json"
+    assert default_handle_sidecar_path(137, lane_suffix=None).name == "issue-137-handle.json"
+    assert default_handle_sidecar_path(137, lane_suffix="cpu").name == "issue-137-cpu-handle.json"
+    # Same parent dir either way (the .claude/cache anchor is unchanged).
+    assert (
+        default_handle_sidecar_path(137, lane_suffix="cpu").parent
+        == default_handle_sidecar_path(137).parent
+    )
+    with pytest.raises(ValueError):
+        default_handle_sidecar_path(137, lane_suffix="Bad_Suffix")
+
+
+def test_dispatch_for_issue_writes_lane_suffixed_sidecar(
+    tmp_path, tmp_lease_store, monkeypatch
+) -> None:
+    """A spec whose extra carries lane_suffix lands the sidecar at the
+    SUFFIXED canonical path — two lanes keep independent handles (#934)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    spec = RunSpec(issue=201, intent="lora-7b", backend="nibi", extra={"lane_suffix": "cpu"})
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+    )
+    expected = tmp_path / ".claude" / "cache" / "issue-201-cpu-handle.json"
+    assert outcome.handle_sidecar_path == expected
+    assert expected.exists()
+    # The unsuffixed sidecar was NOT touched.
+    assert not (tmp_path / ".claude" / "cache" / "issue-201-handle.json").exists()
+
+
+class _ReconnectedExtraBackend(_MockBackend):
+    """launch() returns a handle marked extra['reconnected']=True — the
+    GCP-INTERNAL reconnect shape (route() thinks it launched fresh, the
+    reason is NOT 'reconnect'; only the handle extra carries the flag)."""
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from dataclasses import replace
+
+        h = super().launch(spec)
+        return replace(h, extra={**h.extra, "reconnected": True})
+
+
+def _dispatch_reconnect_cell(
+    *,
+    issue: int,
+    tmp_path,
+    tmp_lease_store,
+    reconnect_source: str,
+    workload: str | None,
+):
+    """Drive dispatch_for_issue through one (reconnect-branch x workload) cell."""
+    spec_kwargs: dict[str, Any] = {}
+    if workload == "workload_cmd":
+        spec_kwargs["workload_cmd"] = "bash scripts/x.sh"
+    elif workload == "hydra":
+        spec_kwargs["hydra_args"] = ("smoke=1",)
+    spec = RunSpec(issue=issue, intent="lora-7b", backend="nibi", **spec_kwargs)
+    dispatch_kwargs: dict[str, Any] = dict(
+        runpod_backend=_MockBackend(kind="runpod"),
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=tmp_path / f"issue-{issue}-handle.json",
+    )
+    if reconnect_source == "reason":
+        # Router-scan reconnect: reason == ROUTE_REASON_RECONNECT; the
+        # recovered handle carries NO extra['reconnected'] flag.
+        live = RunHandle(
+            backend="nibi",
+            cluster="nibi",
+            job_id="live-1",
+            pod_name=f"eps-issue-{issue}",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"issue": issue},
+        )
+        dispatch_kwargs["free_backends"] = {"nibi": _MockBackend(kind="nibi")}
+        dispatch_kwargs["reconnect_fn"] = lambda _b, k, _s: live if k == "nibi" else None
+    elif reconnect_source == "extra":
+        # Backend-internal reconnect: fresh-looking reason, only the
+        # handle extra carries reconnected=True (the GCP shape).
+        dispatch_kwargs["free_backends"] = {"nibi": _ReconnectedExtraBackend(kind="nibi")}
+    else:  # no reconnect at all
+        dispatch_kwargs["free_backends"] = {"nibi": _MockBackend(kind="nibi")}
+    return dispatch_for_issue(spec, **dispatch_kwargs)
+
+
+_RECONNECT_WARNING_SNIPPET = "dispatched NO workload"
+
+
+@pytest.mark.parametrize("workload", ["workload_cmd", "hydra"])
+@pytest.mark.parametrize("reconnect_source", ["reason", "extra"])
+def test_dispatch_for_issue_reconnect_with_workload_warns(
+    tmp_path, tmp_lease_store, caplog, reconnect_source: str, workload: str
+) -> None:
+    """Round-1 Must-Fix matrix: BOTH reconnect branches (router-scan
+    reason-only x GCP-internal extra-only) x BOTH workload surfaces
+    (workload_cmd x hydra_args) must emit the library-level warning — an
+    implementation checking only `reason` (or only workload_cmd) FAILs a
+    named cell (the exact #923 recurrence path)."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=202,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source=reconnect_source,
+            workload=workload,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+@pytest.mark.parametrize("reconnect_source", ["reason", "extra"])
+def test_dispatch_for_issue_reconnect_without_workload_no_warning(
+    tmp_path, tmp_lease_store, caplog, reconnect_source: str
+) -> None:
+    """A workload-less spec (est-start probes, bare reconnect ticks) never
+    warns — reconnect IS the desired outcome there."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=203,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source=reconnect_source,
+            workload=None,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+@pytest.mark.parametrize("workload", ["workload_cmd", "hydra"])
+def test_dispatch_for_issue_fresh_launch_with_workload_no_warning(
+    tmp_path, tmp_lease_store, caplog, workload: str
+) -> None:
+    """A genuinely fresh launch (no reconnect signal on either layer)
+    never warns."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=205,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source="none",
+            workload=workload,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages

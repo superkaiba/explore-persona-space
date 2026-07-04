@@ -267,6 +267,28 @@ Behaviours:
   so a typo strips a capability with no error); (3) a
   ``disallowedTools:``-only file (research-pm) skips the containment check
   but must not deny a body-mentioned tool.
+* ``--check-phase-done-reserved`` (also bundled into the no-flags default
+  run): walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+  invocation of a ``scripts/*.py|*.sh`` phase script that contains a genuine
+  ``[phase=done]`` emission site — the reserved-token contract of
+  ``.claude/rules/pod-side-reporting.md`` requirement 1 (the token in the
+  MAIN dispatcher log is reserved for the dispatcher's single terminal line;
+  a mid-pipeline child emission reads as a false ``status=done`` to
+  ``poll_pipeline.py`` — incidents #545, #920). Emission detection is
+  AST-based for ``.py`` (comments / docstrings / ``re.compile`` match sites
+  never flag) and quote-aware comment-stripped ``echo|printf|print(`` for
+  ``.sh``; every invocation on a logical line is checked (the line is split
+  into command segments at unquoted ``&&``/``||``/``;``/``|``/lone-``&``
+  separators), and a stdout-redirected invocation (the
+  ``> "$WORKER_LOG" 2>&1`` per-worker isolation pattern, scoped to the
+  invocation's OWN segment) is skipped, while ``2>&1 | tee`` stays
+  checked. Legacy edges are frozen in
+  :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` ((invoker, target) edge grain,
+  annotated); waive a mode-gated standalone-lane terminal with
+  ``# noqa: phase-done-reserved`` on the emission line or the preceding
+  non-blank line. Also enforced at commit time by the
+  ``workflow-lint-phase-done-reserved`` pre-commit hook on any
+  ``scripts/*.sh|py`` change (#930).
 
 Exit codes:
 
@@ -3774,6 +3796,503 @@ def check_judge_model_pins(
     return errors
 
 
+# --- `--check-phase-done-reserved` (#930): reserved `[phase=done]` token ----
+# The literal reserved token from .claude/rules/pod-side-reporting.md
+# requirement 1: `poll_pipeline.py` declares status="done" when the most
+# recent `[phase=...]` line in the MAIN dispatcher log is `[phase=done]`,
+# so the token is reserved for the dispatcher's single terminal line —
+# a phase script whose stdout flows into that log must never emit it
+# (incident #545, 2026-06-11: a per-cell echo produced a false status=done
+# while GPUs were at 85%; recurred #920 r1: six phase scripts).
+PHASE_DONE_TOKEN = "[phase=done]"
+# Python-target invocation edge on a logical shell line: `uv run python
+# scripts/x.py`, `nohup ... python -u scripts/x.py`, `CUDA_VISIBLE_DEVICES=0
+# uv run python3 scripts/x.py`. `$VAR`-prefixed paths / `python -m` launches
+# deliberately do NOT match (documented false-negative gaps, see the check
+# docstring).
+PHASE_DONE_PY_INVOKE_RE = re.compile(
+    r"""python3?(?:\.\d+)?\s+(?:-[A-Za-z]+\s+)*["']?(scripts/[A-Za-z0-9_./-]+\.py)\b"""
+)
+# Shell-target invocation edge: `bash scripts/x.sh` / `sh scripts/x.sh` /
+# `source scripts/x.sh` — the i488 run_all -> sub-dispatcher class.
+PHASE_DONE_SH_INVOKE_RE = re.compile(
+    r"""(?:\bbash|\bsh(?=\s)|\bsource)\s+["']?(scripts/[A-Za-z0-9_./-]+\.sh)\b"""
+)
+# Stdout-isolation exclusion: matches `> f`, `>> f`, `1> f`, `&> f` (stdout
+# redirected away from the main log — the per-worker isolation pattern,
+# e.g. scripts/issue658_8gpu_dispatch.sh). Does NOT match `2>&1` alone,
+# `2> err.log` (stderr-only; stdout still flows), or `... 2>&1 | tee -a log`
+# (tee duplicates to main stdout — the exact #545-family shape): those edges
+# stay checked. The `(?!\s*&)` lookahead keeps fd-dup forms (`>&2`) out.
+# Applied per COMMAND SEGMENT (the logical line split at unquoted
+# `&&`/`||`/`;`/`|`/lone-`&` separators via _split_sh_command_segments),
+# NOT line-globally — a redirect in a different segment neither suppresses
+# nor rescues an invocation elsewhere on the line (round-2
+# `phase-done-shell-edge-scoping` fix).
+PHASE_DONE_REDIRECT_RE = re.compile(r"(?:^|\s)(?:1?>>?|&>>?)(?!\s*&)")
+# Per-line waiver for a mode-gated standalone-lane terminal (a dual-mode
+# phase script whose emission is OFF the dispatcher path — the issue-920
+# nulls_figures shape). Same placement convention as JUDGE_PIN_WAIVER_RE:
+# the emission line or the immediately preceding non-blank line. Waiver
+# comments MUST name the intended mode/invoker (code-review enforced).
+PHASE_DONE_WAIVER_RE = re.compile(r"#\s*noqa:\s*phase-done-reserved\b")
+# A .sh line is an emission site iff (after quote-aware trailing-comment
+# strip) it carries the token AND one of these emitters — `print\s*\(`
+# covers python-heredoc blocks embedded in .sh (`uv run python - <<'PY'`).
+PHASE_DONE_SH_EMIT_RE = re.compile(r"\becho\b|\bprintf\b|\bprint\s*\(")
+# Logging-ish attribute names whose calls count as .py emission sites
+# (covers logger.info / log.warning / LOGGER.error / sys.stdout.write).
+# `re.compile` / `re.search` are deliberately absent so the poller's own
+# match/detection code never flags.
+PHASE_DONE_PY_EMIT_ATTRS = frozenset(
+    {"debug", "info", "warning", "error", "critical", "exception", "log", "write"}
+)
+# Grandfathered legacy (invoker .sh, target) EDGE pairs — repo-root-relative
+# POSIX paths, annotated per entry (mirrors JUDGE_PIN_LEGACY_ALLOWLIST's
+# style). Edge grain, NOT emitter-file grain: a future NEW dispatcher
+# invoking the same legacy emitter is still flagged. Fixing the legacy
+# emissions is prune-on-touch (NOT this task's scope); stale entries are
+# harmless (frozenset membership). Derivation: live-tree diff-and-adjudicate
+# 2026-07-03 against the task #930 plan §4.5 expected seed.
+PHASE_DONE_EDGE_LEGACY_ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
+    {
+        # #545 family (the original incident's own dispatcher): sweep.py's
+        # terminal print (line ~1516) tees into the main log 4x mid-pipeline:
+        ("scripts/issue545_dispatch.sh", "scripts/issue545_sweep.py"),
+        # #654: extract phase terminal logger.info (line ~387), tee'd to the
+        # main log:
+        ("scripts/issue654_dispatch.sh", "scripts/issue654_extract.py"),
+        # #810 CPU-lane runner: four phase scripts each emit a terminal done
+        # (lines ~530 / ~369 / ~433 / ~426) ahead of the runner's own
+        # terminal (:68). MIGRATE bucket (live-hazard): the #810 family is
+        # still actively churning — a follow-up round re-running this runner
+        # reproduces the false-done with the lint green; fix these emissions
+        # on next touch:
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_reconstruction.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_batch_rejudge_highm.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_readout.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_analyze.py"),
+        # i488 run-all invokes two sub-dispatchers (own terminals ~166/~257
+        # + ~121) non-redirected, ahead of run_all's own terminal (:131):
+        ("scripts/i488_run_all.sh", "scripts/i488_phase23_dispatch.sh"),
+        ("scripts/i488_run_all.sh", "scripts/i488_phase4_dispatch.sh"),
+        # #552 (round-1-critique triage, 2026-07-03 — the plan-v1 probe
+        # MISSED this edge; a legacy completed family, same tee-shape class
+        # as #654): prep script's terminal logger.info (line ~277) tees into
+        # the main log at run_issue552_sweep.sh:105 via `2>&1 | tee`:
+        ("scripts/run_issue552_sweep.sh", "scripts/issue_552_prep_good_corpus.py"),
+        # PRE-SEEDED for the in-flight issue-920 branch merge: nulls_figures'
+        # done (line ~781) is the standalone cpu-mid lane's dispatcher
+        # terminal, mode-gated OFF the --gpu-null-only dispatcher path
+        # (verified on the issue-920 branch 2026-07-03); the file is
+        # dual-mode by design:
+        ("scripts/issue920_dispatch.sh", "scripts/issue920_nulls_figures.py"),
+    }
+)
+
+
+def _phase_done_line_waived(lines: list[str], idx: int) -> bool:
+    """Return True iff a ``# noqa: phase-done-reserved`` waiver is on the
+    emission line (``idx``, 0-based) or the immediately preceding non-blank
+    line. For a multi-line ``.py`` call the anchor is the AST call-head
+    lineno — waive at the call head, not beside a continuation-line string
+    literal. Same convention as :func:`_judge_pin_line_waived`."""
+    if 0 <= idx < len(lines) and PHASE_DONE_WAIVER_RE.search(lines[idx]):
+        return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    return back >= 0 and bool(PHASE_DONE_WAIVER_RE.search(lines[back]))
+
+
+def _py_phase_done_emission_lines(target: Path) -> list[int]:
+    """AST-scan a phase ``.py`` for genuine ``[phase=done]`` EMISSION sites,
+    returning sorted 1-based call-head line numbers (waived sites dropped).
+
+    An emission site is an ``ast.Call`` whose func is ``print`` (a bare
+    ``Name``) or an ``Attribute`` in :data:`PHASE_DONE_PY_EMIT_ATTRS`
+    (``logger.info`` / ``sys.stdout.write`` / ...), AND any ``ast.Constant``
+    string reachable by ``ast.walk`` inside the call's positional args
+    carries the literal token (covers f-string ``JoinedStr`` parts and
+    %%-style format strings). Comments, docstrings, ``re.compile`` /
+    ``re.search`` match sites, and ``"[phase=done]" in line`` membership
+    tests are excluded by construction. A ``SyntaxError`` skips the file
+    (a non-parsing .py cannot run as a phase script)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    if PHASE_DONE_TOKEN not in text:
+        return []  # cheap pre-filter before parsing
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+    lines = text.splitlines()
+    sites: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Name):
+            if func.id != "print":
+                continue
+        elif isinstance(func, ast.Attribute):
+            if func.attr not in PHASE_DONE_PY_EMIT_ATTRS:
+                continue
+        else:
+            continue
+        has_token = any(
+            isinstance(sub, ast.Constant)
+            and isinstance(sub.value, str)
+            and PHASE_DONE_TOKEN in sub.value
+            for arg in node.args
+            for sub in ast.walk(arg)
+        )
+        if not has_token:
+            continue
+        if _phase_done_line_waived(lines, node.lineno - 1):
+            continue
+        sites.add(node.lineno)
+    return sorted(sites)
+
+
+# A `#` begins a shell comment only at the START of a word — i.e. at string
+# start or after whitespace / an operator character (the POSIX tokenizer
+# rule). Used by _strip_sh_trailing_comment's word-boundary test.
+_SH_COMMENT_BOUNDARY_CHARS = frozenset(" \t;&|(<>")
+
+
+def _strip_sh_trailing_comment(line: str) -> str:
+    """Cut an unquoted trailing ``#`` comment from a shell line via a small
+    quote- and backslash-escape-aware char scanner. Word-boundary-aware
+    (the round-3 ``phase-done-comment-strip-midword-fn`` fix): a ``#``
+    starts a comment ONLY when it BEGINS a shell word — at string start or
+    preceded by unescaped whitespace / an operator character
+    (:data:`_SH_COMMENT_BOUNDARY_CHARS`) — matching the shell tokenizer, so
+    a mid-word ``#`` (``tag=run#1``, ``$#``, ``${x#pat}``, ``${#ARR[@]}``,
+    ``2#101``) and a backslash-escaped ``\\#`` never cut. (Pre-fix the
+    unconditional cut truncated the scanned line at ANY unquoted ``#``,
+    hiding every invocation/emission after it — a silent false negative
+    once the strip became load-bearing for invocation scanning in round 2.)
+    A ``#`` inside single or double quotes is kept; outside single quotes a
+    backslash escapes the next char (an escaped operator like ``\\;`` is
+    NOT a word boundary; ``\\"`` does not close a double quote). Residual
+    over-cut (fail-toward-false-negative — the safe direction for a
+    pre-commit-gating lint): a word-initial ``#`` inside an unquoted
+    ``$(...)`` command substitution still cuts there (the scanner is not
+    ``$()``-aware)."""
+    out: list[str] = []
+    in_single = in_double = False
+    prev_escaped = False
+    i, n = 0, len(line)
+    while i < n:
+        ch = line[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            out.append(ch)
+            out.append(line[i + 1])
+            prev_escaped = True
+            i += 2
+            continue
+        if (
+            ch == "#"
+            and not in_single
+            and not in_double
+            and (not out or (not prev_escaped and out[-1] in _SH_COMMENT_BOUNDARY_CHARS))
+        ):
+            break
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        out.append(ch)
+        prev_escaped = False
+        i += 1
+    return "".join(out)
+
+
+def _split_sh_command_segments(logical: str) -> list[str]:
+    """Split a (comment-stripped) logical shell line into COMMAND SEGMENTS at
+    unquoted command separators — ``&&``, ``||``, ``;``, ``|``, and a lone
+    background ``&`` — so the stdout-redirect exclusion can be scoped to the
+    segment containing each invocation (round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern: a redirect in a DIFFERENT
+    segment of the same line must neither suppress nor be suppressed by an
+    invocation elsewhere on the line).
+
+    Quote-aware (same single/double-quote char scan as
+    :func:`_strip_sh_trailing_comment`) and backslash-escape-aware (an
+    escaped separator like ``find -exec ... \\;`` does not split). A pipe IS
+    a boundary — this PRESERVES the tee-still-checked semantics of plan
+    §4.3: for ``child.py 2>&1 | tee -a log`` the invocation's own segment
+    (``child.py 2>&1``) carries no stdout redirect, so the edge stays
+    checked, while a downstream ``> f`` applied to ``tee``'s output no
+    longer suppresses the child. A lone ``&`` splits only when it is neither
+    part of ``&&`` (handled first) nor an fd-dup/`&>` form (``2>&1`` /
+    ``>&2`` / ``&> f`` — guarded by the neighboring ``>``). Empty segments
+    (trailing ``&``, ``;;``) are harmless — they match no invocation."""
+    segments: list[str] = []
+    cur: list[str] = []
+    in_single = in_double = False
+    i, n = 0, len(logical)
+    while i < n:
+        ch = logical[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            cur.append(ch)
+            cur.append(logical[i + 1])
+            i += 2
+            continue
+        if in_single:
+            if ch == "'":
+                in_single = False
+            cur.append(ch)
+            i += 1
+            continue
+        if in_double:
+            if ch == '"':
+                in_double = False
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == "'":
+            in_single = True
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_double = True
+            cur.append(ch)
+            i += 1
+            continue
+        nxt = logical[i + 1] if i + 1 < n else ""
+        prev = logical[i - 1] if i > 0 else ""
+        if (ch == "&" and nxt == "&") or (ch == "|" and nxt == "|"):
+            segments.append("".join(cur))
+            cur = []
+            i += 2
+            continue
+        if ch == ";" or ch == "|" or (ch == "&" and nxt != ">" and prev != ">"):
+            segments.append("".join(cur))
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    segments.append("".join(cur))
+    return segments
+
+
+def _sh_phase_done_emission_lines(target: Path) -> list[int]:
+    """Line-scan a phase ``.sh`` for genuine ``[phase=done]`` emission sites,
+    returning sorted 1-based line numbers (waived sites dropped). A line is
+    an emission iff, after quote-aware trailing-comment strip, it carries the
+    literal token AND matches :data:`PHASE_DONE_SH_EMIT_RE` (``echo`` /
+    ``printf`` / a python-heredoc ``print(``)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    lines = text.splitlines()
+    sites: list[int] = []
+    for idx, raw in enumerate(lines):
+        stripped = _strip_sh_trailing_comment(raw)
+        if PHASE_DONE_TOKEN not in stripped:
+            continue
+        if not PHASE_DONE_SH_EMIT_RE.search(stripped):
+            continue
+        if _phase_done_line_waived(lines, idx):
+            continue
+        sites.append(idx + 1)
+    return sites
+
+
+def _phase_done_line_edges(logical: str) -> list[str]:
+    """Return the ordered, deduplicated target paths (``scripts/*.py|.sh``)
+    of every NON-REDIRECTED phase-script invocation on one logical shell
+    line — the round-2 ``phase-done-shell-edge-scoping`` core. The line is
+    trailing-comment-stripped (quote-aware) and split into command segments
+    (:func:`_split_sh_command_segments`); EVERY invocation match is
+    considered (not just the first), and a segment's invocations are kept
+    only when THAT segment carries no stdout redirect
+    (:data:`PHASE_DONE_REDIRECT_RE`). ``echo``-preview segments are
+    skipped."""
+    targets: list[str] = []
+    seen: set[str] = set()
+    for segment in _split_sh_command_segments(_strip_sh_trailing_comment(logical)):
+        if segment.strip().startswith("echo "):
+            continue  # dry-run preview segment (`... && echo "next: ..."`)
+        matches = sorted(
+            (
+                *PHASE_DONE_PY_INVOKE_RE.finditer(segment),
+                *PHASE_DONE_SH_INVOKE_RE.finditer(segment),
+            ),
+            key=lambda m: m.start(),
+        )
+        if not matches:
+            continue
+        if PHASE_DONE_REDIRECT_RE.search(segment):
+            continue  # per-worker-log stdout isolation, scoped to THIS segment
+        for m in matches:
+            target_rel = m.group(1)
+            if target_rel not in seen:
+                seen.add(target_rel)
+                targets.append(target_rel)
+    return targets
+
+
+def check_phase_done_reserved(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[tuple[str, str]] | None = None,
+) -> list[str]:
+    """Walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+    invocation of a ``scripts/*.py|*.sh`` phase script whose file contains a
+    genuine ``[phase=done]`` emission site — the reserved-token contract of
+    ``.claude/rules/pod-side-reporting.md`` requirement 1 (#545, #920).
+
+    THE CONTRACT: ``poll_pipeline.py`` declares ``status="done"`` when the
+    most recent ``[phase=...]`` line in the MAIN dispatcher log is
+    ``[phase=done]``, so the token there is reserved for the dispatcher's
+    single terminal line. A phase script launched with stdout flowing into
+    that log (non-redirected, or ``2>&1 | tee``-duplicated) that emits the
+    token mid-pipeline reads as a false ``status=done`` while the run is
+    live (incident #545: GPUs at 85%; recurred #920 r1: six phase scripts).
+
+    VIOLATION UNIT = a non-redirected invocation EDGE ``(invoking .sh,
+    target .py|.sh)`` where the target has ≥1 emission site. A dispatcher's
+    OWN emission sites are unrestricted in count (mode-gated multi-exit
+    dispatchers are ubiquitous and legitimate; static mutual-exclusivity is
+    undecidable), and the suffixed smoke terminal (``[phase=done] SMOKE
+    COMPLETE ...``) is a dispatcher-own-file line, allowed by construction.
+
+    EXCLUSIONS: each logical line is trailing-comment-stripped (quote-aware,
+    so comment text can neither match an invocation nor carry a suppressing
+    redirect) and split into COMMAND SEGMENTS at unquoted separators
+    (``&&`` / ``||`` / ``;`` / ``|`` / lone background ``&`` —
+    :func:`_split_sh_command_segments`; backslash-escaped separators do not
+    split). EVERY invocation on the line is checked (not just the first
+    regex match), and an invocation is skipped only when ITS OWN segment
+    redirects stdout away from the main log (:data:`PHASE_DONE_REDIRECT_RE`
+    — the per-worker isolation pattern); a redirect in a DIFFERENT segment
+    of the same line does not suppress, and ``2>&1 | tee`` stays checked
+    because the pipe is a segment boundary (the invocation's own segment
+    carries no stdout redirect) — the round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern (pre-fix, ``a.py && bad.py``
+    only inspected ``a.py``, and ``bad.py; echo ok > marker`` was wrongly
+    suppressed by the line-global redirect search). The trailing-comment
+    strip is word-boundary- and escape-aware (round 3,
+    ``phase-done-comment-strip-midword-fn``): a ``#`` cuts only where it
+    BEGINS a shell word, so an executable mid-word ``#`` (``tag=run#1; uv
+    run python scripts/x.py``) or an escaped ``\\#`` no longer truncates
+    the scanned line ahead of a real invocation
+    (:func:`_strip_sh_trailing_comment`). Comment lines and
+    ``echo``-preview SEGMENTS are skipped — the echo skip is segment grain
+    (round 3): an ``echo`` segment ahead of a real invocation on the same
+    logical line (``echo \\#; uv run python scripts/x.py``) no longer
+    hides it. ``.py`` emission detection
+    is AST-based (comments / docstrings / ``re.compile``-``re.search`` match
+    sites / membership tests never flag); ``.sh`` emission detection is
+    quote-aware comment-stripped ``echo|printf|print(``. A
+    ``# noqa: phase-done-reserved`` waiver on the emission line or the
+    immediately preceding non-blank line drops that site (the escape for
+    dual-mode files whose emission is mode-gated to a standalone-dispatcher
+    lane; the waiver comment must name the intended mode/invoker). Legacy
+    edges are frozen in :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` (edge
+    grain, annotated).
+
+    RESIDUAL FALSE-NEGATIVE GAPS (documented, all fail toward NOT flagging —
+    the correct direction for a pre-commit gate): (i) ``.py``-dispatcher
+    subprocess fan-out (``issue545_sweep.py -> issue545_eval_cell.py`` — the
+    original #545 emission path; the only live instance sits inside the
+    allowlisted #545 family whose .sh edge keeps it visible); (ii)
+    ``$VAR``-prefixed script paths (``python "$REPO/scripts/x.py"``);
+    (iii) ``python -m`` module launches; (iv) launcher scripts generated at
+    runtime by template-writers; (v) direct append-INTO-the-main-log
+    redirection (``>> "$MAIN_LOG" 2>&1`` — the redirect exclusion cannot
+    tell a per-worker log from the dispatcher's own main log; no live
+    instance — historical shapes use ``tee`` and ARE caught); (vi) a
+    dispatcher's OWN mid-pipeline emissions in a loop (own-file sites are
+    unrestricted by construction); (vii) a word-initial unquoted ``#``
+    inside a ``$(...)`` command substitution truncates the scanned line at
+    the comment-strip (the scanner is not ``$()``-aware), hiding any
+    invocation after it — a MID-WORD ``#`` (``${#ARR[@]}``, ``tag=run#1``,
+    ``$#``) and an escaped ``\\#`` no longer truncate as of the round-3
+    word-boundary fix (:func:`_strip_sh_trailing_comment`). TWO deliberate
+    fail-toward-FLAGGING exceptions (false positives, not false
+    negatives): (a) a stdout redirect applied to a whole
+    subshell/group (``( a.py; b.py ) > log`` / ``{ ...; } > log``) is not
+    attributed to the segments INSIDE the group, so an emitting invocation
+    there flags even though the group's stdout is isolated — no live
+    instance; (b) a pipe-DOWNSTREAM stdout redirect (``a.py 2>&1 | tee f
+    > /dev/null``) is attributed to the downstream segment only — the pipe
+    is a segment boundary and deliberately NON-isolating (the plan §4.3
+    tee-still-checked semantics), so an emitting invocation upstream of
+    the pipe still flags even when the pipeline's terminal stdout is
+    discarded. Both are waivable via ``# noqa: phase-done-reserved`` or
+    the per-worker pattern.
+
+    ``scripts_dir`` is an override hook for unit tests (production callers
+    pass None → the canonical ``<repo_root>/scripts`` tree); ``allowlist``
+    overrides :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` for tests /
+    re-derivation. Bundled into the no-flags default run AND enforced at
+    commit time by the ``workflow-lint-phase-done-reserved`` pre-commit hook
+    on any ``scripts/*.sh|py`` change.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    allow = allowlist if allowlist is not None else PHASE_DONE_EDGE_LEGACY_ALLOWLIST
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    emission_cache: dict[Path, list[int]] = {}
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comment lines are not launches. echo-preview skipping is
+            # SEGMENT grain inside _phase_done_line_edges (round 3): a
+            # line-level `echo `-prefix skip hid a real invocation in a
+            # later segment (`echo \#; uv run python scripts/x.py`).
+            if stripped.startswith("#"):
+                continue
+            # Round-2 (`phase-done-shell-edge-scoping`): EVERY non-redirected
+            # invocation on the line is an edge — comment-stripped,
+            # segment-split, redirect scoped per segment (see
+            # _phase_done_line_edges), one error per (logical line, target).
+            for target_rel in _phase_done_line_edges(logical):
+                target = root / target_rel.removeprefix("scripts/")
+                if not target.is_file() or target == sh:
+                    continue
+                if target not in emission_cache:
+                    emission_cache[target] = (
+                        _py_phase_done_emission_lines(target)
+                        if target.suffix == ".py"
+                        else _sh_phase_done_emission_lines(target)
+                    )
+                sites = emission_cache[target]
+                if not sites:
+                    continue
+                sh_rel = _judge_pin_rel(sh)  # repo-rel POSIX; abs posix for tmp fixtures
+                if (sh_rel, target_rel) in allow:
+                    continue
+                errors.append(
+                    f"{sh}:{first + 1}: invokes {target_rel} (stdout flows into this "
+                    f"dispatcher's main log) but {target_rel} emits the RESERVED "
+                    f"{PHASE_DONE_TOKEN} token at line(s) {sites}. The token in the "
+                    f"MAIN dispatcher log is reserved for the dispatcher's single "
+                    f"terminal line — a mid-pipeline emission reads as a false "
+                    f"status=done to poll_pipeline.py (incidents #545, #920). Fix: "
+                    f"word the child's completion line without the phase tag, OR "
+                    f"redirect the child's stdout to its own log (per-worker "
+                    f"pattern: scripts/issue658_8gpu_dispatch.sh), OR waive a "
+                    f"mode-gated standalone-lane terminal with "
+                    f"'# noqa: phase-done-reserved' on the emission line. See "
+                    f".claude/rules/pod-side-reporting.md."
+                )
+    return errors
+
+
 # A live ``Agent(... subagent_type="workflow-improver" ...)`` spawn instruction.
 # Tolerant of whitespace/newlines between the call open and the kwarg and of
 # either quote style. The frozen agent file (`.claude/agents/workflow-improver.md`)
@@ -4680,19 +5199,21 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
-    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
-    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
-    # all plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 84_500,
+    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
+    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
+    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "code-reviewer.md": 92_300,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
-    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
-    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
-    # + <=3 KB)
-    "codex-code-reviewer.md": 50_400,
-    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
-    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
-    "experiment-implementer.md": 58_500,
+    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
+    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 47,930 B post-#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "codex-code-reviewer.md": 51_600,
+    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
+    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
+    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
+    "experiment-implementer.md": 61_500,
     "experimenter.md": 65_500,  # measured 62,672 B
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B
@@ -5544,6 +6065,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "coverage row in the map. GAP: rows PASS but print as WARN. A separate lint "
         "from --check-lessons-index. Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-phase-done-reserved",
+        action="store_true",
+        help="Walk scripts/**/*.sh dispatchers and FAIL any non-redirected "
+        "invocation of a scripts/*.py|*.sh phase script that contains a "
+        "genuine [phase=done] emission site — the reserved-token contract of "
+        ".claude/rules/pod-side-reporting.md requirement 1 (a mid-pipeline "
+        "child emission reads as a false status=done to poll_pipeline.py; "
+        "incidents #545, #920). AST-based .py emission detection (comments / "
+        "docstrings / match sites never flag); stdout-redirected per-worker "
+        "invocations skipped; tee'd edges still checked. Legacy edges frozen "
+        "in PHASE_DONE_EDGE_LEGACY_ALLOWLIST; waive a mode-gated "
+        "standalone-lane terminal with '# noqa: phase-done-reserved'. "
+        "Bundled into the no-flags default run + the "
+        "workflow-lint-phase-done-reserved pre-commit hook (#930).",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -5593,6 +6130,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_agent_spec_size
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
+        or args.check_phase_done_reserved
     )
 
     errors: list[str] = []
@@ -5681,6 +6219,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_api_dispatch_routing())
     if args.check_lens_coverage or no_flags:
         errors.extend(check_lens_coverage())
+    if args.check_phase_done_reserved or no_flags:
+        errors.extend(check_phase_done_reserved())
 
     if errors:
         for err in errors:

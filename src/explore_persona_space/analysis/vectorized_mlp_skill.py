@@ -47,6 +47,7 @@ those for the ridge arm and only batches the gradient-descent MLP arm.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 import os
@@ -832,16 +833,14 @@ def zscore_columns(Xc: np.ndarray) -> np.ndarray:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PORTED VERBATIM from the unmerged `origin/issue-841` branch @ e2a73985417a
-# (src/explore_persona_space/analysis/vectorized_mlp_skill.py lines 721-999),
-# per .claude/rules/artifact-reuse.md § "Porting a recipe from an unmerged
-# sibling branch" (issue #922 port; drift report in the #922 implementation
-# report). No modifications — a future issue-841 merge should reconcile to
-# identical content.
+# Batched fixed-split multi-output MLP (issue #841 lineage). Ported to main from
+# origin/issue-841 @ a9c2e59849 (content snapshot @ e2a7398541; introduced at
+# 404046fefe) by
+# issue #926, WITH the #926 partition-invariant per-group seeding fix (per-group
+# init keyed to (seed, group.key), NOT batch position — supersedes the branch
+# copies' batch-order seeding). At the eventual issue-841 / issue-922 merges,
+# resolve conflicts in this region to MAIN's version.
 # ═══════════════════════════════════════════════════════════════════════════════
-
-
-# ── batched fixed-split multi-output MLP (issue #841 Stage-0 atlas) ────────────
 # The LOCO helpers above return held-out predictions only. The Δ-predictability
 # atlas (#841) needs (a) a SINGLE fixed train/eval split per fit-problem instead
 # of LOCO folds, (b) SmoothL1 (not MSE), (c) inner-validation early-stopping, and
@@ -851,6 +850,19 @@ def zscore_columns(Xc: np.ndarray) -> np.ndarray:
 # SAME (d_in→hidden→p) multi-output architecture, per-group train-only ddof=1
 # standardization, and bmm forward as fit_batched_loco_mlp_multihead, differing
 # only in the split shape + loss + the returned params.
+
+
+def split_group_init_seed(seed: int, key: tuple) -> int:
+    """Stable per-group init seed for ``fit_batched_split_mlp``: unsalted blake2b
+    of ``f"{seed}|{key!r}"`` reduced to [0, 2**63). Depends ONLY on (seed, key) —
+    never on batch position, chunking, ordering, process, or platform — so any
+    partition of a group list reproduces each group's init bit-exactly (#926).
+    Key elements must be Python primitives (str/int/float/bool/None, or tuples
+    thereof): ``repr(key)`` is the identity. Python's builtin ``hash()`` is
+    salted per process (PYTHONHASHSEED) and MUST NOT replace this.
+    """
+    payload = f"{int(seed)}|{key!r}".encode()
+    return int.from_bytes(hashlib.blake2b(payload, digest_size=8).digest(), "big") % (2**63)
 
 
 @dataclass
@@ -926,8 +938,18 @@ def fit_batched_split_mlp(
     ``chunk_size × n × d`` (the #841 tensors are large-d, unlike #722's tiny-d
     LOCO folds — chunk small).
 
-    SEEDING: ``torch.manual_seed(seed)`` then one ``_MLPMulti`` init per group in
-    group order; member g gets init g. Deterministic + reproducible across runs.
+    SEEDING: each group's init is drawn under
+    ``torch.manual_seed(split_group_init_seed(seed, group.key))`` — a stable
+    unsalted hash of ``(seed, repr(key))`` — NOT from the group's batch
+    position. Any partition or reordering of the same group list across calls
+    yields bit-identical per-group inits, and (on CPU, pinned by
+    ``assert_split_mlp_partition_invariant`` + tests) bit-identical trained
+    results at matched settings. Keys must be unique per call (asserted) and
+    built from Python primitives (repr is the identity). Supersedes the
+    pre-#926 batch-order seeding (member g got draw g), under which chunking a
+    group list changed every member's init (#841 fu-r1 v15: pred maxdiff 0.82
+    between a 5-group call and 2+3-group calls). Deterministic + reproducible
+    across runs and processes; sets the global torch CPU RNG as a side effect.
     Returns a ``SplitMLPResult`` (eval preds + trained params + best-val epoch).
     """
     from torch.func import stack_module_state
@@ -973,8 +995,18 @@ def fit_batched_split_mlp(
                 torch.nn.Linear(d_in, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, p)
             )
 
-    torch.manual_seed(seed)
-    block_members = [_MLPMulti().to(dev) for _ in range(n_groups)]
+    # Per-group init keyed to (seed, group.key) — partition/reorder-invariant (#926).
+    # Inits are drawn on the CPU RNG (modules constructed on CPU, then .to(dev)),
+    # so init bytes are device-independent; each group's stream is fully consumed
+    # before the next group's manual_seed, so neighbors cannot perturb it.
+    assert len({repr(g.key) for g in groups}) == n_groups, (
+        "duplicate (or repr-colliding) SplitMLPGroup.key in one call — keys must be "
+        "unique; results are keyed by them and inits are seeded from them"
+    )
+    block_members = []
+    for g in groups:
+        torch.manual_seed(split_group_init_seed(seed, g.key))
+        block_members.append(_MLPMulti().to(dev))
     bp, _bb = stack_module_state(block_members)
     bW1, bb1 = bp["net.0.weight"].detach(), bp["net.0.bias"].detach()
     bW2, bb2 = bp["net.2.weight"].detach(), bp["net.2.bias"].detach()
@@ -1008,6 +1040,7 @@ def fit_batched_split_mlp(
         best_val = torch.full((c,), float("inf"), device=dev)
         best_epoch = torch.full((c,), -1, dtype=torch.long, device=dev)
         best = {k: v.detach().clone() for k, v in (("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2))}
+        pred = per_member = None  # keep bound for the del below at max_epochs=0 (#926)
         for epoch in range(max_epochs):
             opt.zero_grad(set_to_none=True)
             pred = _split_mlp_eval(Xtr, W1, b1, W2, b2, mu, sd)  # (c, n_train, p)
@@ -1081,8 +1114,9 @@ def assert_split_mlp_matches_serial(
     res = fit_batched_split_mlp([grp], seed=658, max_epochs=40, device="cpu", chunk_size=1)
     batched_pred = res.preds_by_key[("g",)]
 
-    # Serial reference: one _MLPMulti with the same seed-0 init + AdamW + SmoothL1.
-    torch.manual_seed(658)
+    # Serial reference: one _MLPMulti drawing the SAME init as the batched fit's
+    # per-group seed for key ("g",) (#926 seeding contract) + AdamW + SmoothL1.
+    torch.manual_seed(split_group_init_seed(658, ("g",)))
 
     class _Ref(torch.nn.Module):
         def __init__(self):
@@ -1117,3 +1151,89 @@ def assert_split_mlp_matches_serial(
         "_MLP reference (batched bmm vs nn.Linear reduction order drifted)"
     )
     return {"max_abs_delta": max_abs, "tol": tol}
+
+
+def assert_split_mlp_partition_invariant(
+    seed: int = 0,
+    n_train: int = 48,
+    n_eval: int = 16,
+    d: int = 12,
+    p: int = 3,
+    n_groups: int = 5,
+    hidden: int = 32,
+    max_epochs: int = 15,
+) -> dict:
+    """Assert fit_batched_split_mlp is PARTITION- and REORDER-invariant (#926).
+
+    Builds ``n_groups`` synthetic groups with distinct keys/targets, then fits
+    (A) all in ONE call at chunk_size=2, (B) a 2+3 partition (chunk-membership-
+    ALIGNED with A: pure seeding-fix leg), (B') a 3+2 partition (boundary-
+    MISALIGNED: chunk memberships differ from A), (C) all in REVERSED order,
+    and (D) one full call at chunk_size=0 (no chunking — the cross-CHUNK-SIZE
+    leg mirroring ``assert_matches_reference`` check (b)). Also asserts
+    distinct keys derive distinct init seeds (anti-degeneracy). Asserts per-key
+    ``preds_by_key`` and every ``params_by_key`` array (W1,b1,W2,b2,mu,sd)
+    BIT-identical (``np.array_equal``) across all arms, each assert naming its
+    arm so a failure report says WHICH arm broke (an aligned-partition failure
+    = seeding bug; a reversed/nochunk-only failure = the anticipated kernel-
+    stability class, §6 fallback territory). CPU-only, num_threads pinned.
+    Returns the summary dict for the caller's log.
+    """
+    rng = np.random.default_rng(seed)
+    groups = []
+    for i in range(n_groups):
+        X = rng.standard_normal((n_train + n_eval, d)).astype(np.float32)
+        Y = (
+            X @ rng.standard_normal((d, p)) * 0.05
+            + 0.1 * rng.standard_normal((n_train + n_eval, p))
+        ).astype(np.float32)
+        groups.append(SplitMLPGroup((f"g{i}",), X[:n_train], Y[:n_train], X[n_train:]))
+    # Cross-key distinctness (reconciler mandatory-absorb, #926 critique r1): a
+    # key-ignoring helper would make every invariance assert below vacuously true.
+    seeds = {g.key: split_group_init_seed(658, g.key) for g in groups}
+    assert len(set(seeds.values())) == len(groups), (
+        "split_group_init_seed collapsed distinct keys to a shared seed"
+    )
+    kw = dict(
+        seed=658,
+        hidden=hidden,
+        max_epochs=max_epochs,
+        device="cpu",
+        chunk_size=2,
+        num_threads=8,  # thread count pinned: the asserted bit-identity contract
+        # is environment-pinned, not ambient (stats-critic rec)
+    )
+    full = fit_batched_split_mlp(groups, **kw)
+    part_a = fit_batched_split_mlp(groups[:2], **kw)  # 2+3: seeding-fix leg
+    part_b = fit_batched_split_mlp(groups[2:], **kw)
+    mis_a = fit_batched_split_mlp(groups[:3], **kw)  # 3+2: boundary-MISALIGNED
+    mis_b = fit_batched_split_mlp(groups[3:], **kw)  # chunk memberships differ
+    rev = fit_batched_split_mlp(list(reversed(groups)), **kw)
+    nochunk = fit_batched_split_mlp(groups, **{**kw, "chunk_size": 0})
+    # ^ cross-CHUNK-SIZE leg (width 5 vs 2) — the split-variant sibling of the
+    # LOCO gate's check (b) chunked-vs-nochunk comparison; certifies the
+    # "group_chunk is a memory knob" contract (stats-critic Must-Fix, #926 r1).
+    for g in groups:
+        k = g.key
+        split_res = part_a if k in part_a.preds_by_key else part_b
+        mis_res = mis_a if k in mis_a.preds_by_key else mis_b
+        for arm_name, arm in (
+            ("partition-2+3", split_res),
+            ("partition-3+2", mis_res),
+            ("reversed", rev),
+            ("nochunk", nochunk),
+        ):
+            assert np.array_equal(full.preds_by_key[k], arm.preds_by_key[k]), (arm_name, k)
+            for name in ("W1", "b1", "W2", "b2", "mu", "sd"):
+                assert np.array_equal(full.params_by_key[k][name], arm.params_by_key[k][name]), (
+                    arm_name,
+                    k,
+                    name,
+                )
+    return {
+        "n_groups": n_groups,
+        "partition_bit_identical": True,
+        "reorder_bit_identical": True,
+        "cross_chunk_bit_identical": True,
+        "distinct_key_seeds": True,
+    }

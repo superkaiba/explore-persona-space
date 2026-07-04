@@ -1,0 +1,146 @@
+{
+  "commit": "c5236717d5",
+  "created": "2026-07-03T06:26:54Z",
+  "figsize": [
+    9.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Held-out $R^2$": 0.6730940896676356,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Held-out $R^2$": 0.5876803039140281,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Held-out $R^2$": 0.07571368282874946,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Held-out $R^2$": -0.4605551809040864,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "Held-out $R^2$": -0.07842569894348572,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "Held-out $R^2$": -0.38966704296046184,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "Held-out $R^2$": -1.1212441058127531,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "Held-out $R^2$": -1.075702113328283,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "Held-out $R^2$": -1.2108970442009106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.81,
+      "Held-out $R^2$": -1.3162971846035858,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Held-out $R^2$": 0.6537062769535792,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Held-out $R^2$": 0.5869565588294549,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Held-out $R^2$": 0.557521142838248,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Held-out $R^2$": 0.4872805505529493,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "Held-out $R^2$": 0.5335214447890182,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "Held-out $R^2$": 0.4988109656813339,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "Held-out $R^2$": 0.22764912358058842,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "Held-out $R^2$": 0.2265000916463632,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "Held-out $R^2$": 0.18760725556817992,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.19,
+      "Held-out $R^2$": 0.21745205163349102,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Held-out $R^2$": 0.2,
+      "series": "Recoverability line from the follow-up plan (0.2)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Held-out $R^2$": 0.2,
+      "series": "Recoverability line from the follow-up plan (0.2)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 22
+}

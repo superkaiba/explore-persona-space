@@ -1,0 +1,216 @@
+{
+  "commit": "93f66562db",
+  "created": "2026-07-03T15:47:09Z",
+  "figsize": [
+    11.0,
+    7.6
+  ],
+  "points": [
+    {
+      "category": "Instruct\nchat",
+      "u2 length (tokens), mean \u00b1 sd": 41.11494252873563,
+      "error": 73.06028242542915,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "u2 length (tokens), mean \u00b1 sd": 35.02439024390244,
+      "error": 43.23514463170754,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "u2 length (tokens), mean \u00b1 sd": 39.30264672036824,
+      "error": 62.19669436366284,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Pretrained\nchat",
+      "u2 length (tokens), mean \u00b1 sd": 307.3791895947974,
+      "error": 219.0515050142148,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "u2 length (tokens), mean \u00b1 sd": -31.94533989669352,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "u2 length (tokens), mean \u00b1 sd": -8.210754387805103,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "u2 length (tokens), mean \u00b1 sd": -22.894047643294606,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "u2 length (tokens), mean \u00b1 sd": 88.32768458058263,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "u2 length (tokens), mean \u00b1 sd": 114.17522495416478,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "u2 length (tokens), mean \u00b1 sd": 78.25953487560997,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "u2 length (tokens), mean \u00b1 sd": 101.49934108403107,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "u2 length (tokens), mean \u00b1 sd": 526.4306946090122,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "u2 length (tokens), mean \u00b1 sd": 78.9635,
+      "series": "parent Haiku mean (79)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "u2 length (tokens), mean \u00b1 sd": 78.9635,
+      "series": "parent Haiku mean (79)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "category": "Instruct\nchat",
+      "rows with a 3-gram repeated \u22655\u00d7 (rate)": 0.0045,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "rows with a 3-gram repeated \u22655\u00d7 (rate)": 0.0035,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "rows with a 3-gram repeated \u22655\u00d7 (rate)": 0.0035,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Pretrained\nchat",
+      "rows with a 3-gram repeated \u22655\u00d7 (rate)": 0.0905,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Instruct\nchat",
+      "distinct 3-gram rate (kept rows)": 0.8297987731897067,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "distinct 3-gram rate (kept rows)": 0.8461577934573444,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "distinct 3-gram rate (kept rows)": 0.7992545011252813,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Pretrained\nchat",
+      "distinct 3-gram rate (kept rows)": 0.8056043346193132,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "distinct 3-gram rate (kept rows)": 0.5,
+      "series": "headline floor (0.5)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "distinct 3-gram rate (kept rows)": 0.5,
+      "series": "headline floor (0.5)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "distinct 3-gram rate (kept rows)": 0.7814049320713412,
+      "series": "parent Haiku (0.78)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "distinct 3-gram rate (kept rows)": 0.7814049320713412,
+      "series": "parent Haiku (0.78)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "category": "Instruct\nchat",
+      "row keep rate after filters": 0.957,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "row keep rate after filters": 0.861,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "row keep rate after filters": 0.869,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Pretrained\nchat",
+      "row keep rate after filters": 0.9995,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "row keep rate after filters": 0.8,
+      "series": "headline floor (0.80)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "row keep rate after filters": 0.8,
+      "series": "headline floor (0.80)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 32
+}

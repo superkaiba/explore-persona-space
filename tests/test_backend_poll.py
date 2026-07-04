@@ -1683,3 +1683,41 @@ def test_reconstructors_tolerate_legacy_handles_without_repo_branch():
     rp_spec = bp._runspec_from_runpod_handle(legacy, 689)
     assert rp_spec.extra.get("repo_branch") is None
     assert rp_spec.workload_cmd == "bash scripts/x.sh"
+
+
+# ---------------------------------------------------------------------------
+# #934: --lane-suffix sidecar resolution
+# ---------------------------------------------------------------------------
+
+
+def test_poll_lane_suffix_resolves_suffixed_sidecar(tmp_path, capsys, monkeypatch) -> None:
+    """`backend_poll --lane-suffix cpu` with no sidecar present emits the
+    missing-sidecar terminal JSON naming the SUFFIXED path — proving the
+    per-lane sidecar (not the unsuffixed lane's) was probed (#934)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    rc = backend_poll_main(["--issue", "9349", "--lane-suffix", "cpu"])
+    assert rc == 0
+    line = capsys.readouterr().out.strip()
+    assert line, "backend_poll must emit a JSON line, never empty stdout"
+    body = json.loads(line)
+    assert body["status"] == "dead"
+    assert body["reason"] == "missing_handle_sidecar"
+    assert "issue-9349-cpu-handle.json" in body["log_tail_excerpt"]
+
+
+def test_poll_malformed_lane_suffix_fails_loud_with_json(tmp_path, capsys, monkeypatch) -> None:
+    """A malformed --lane-suffix fails LOUD (the validator raises inside
+    the resolver) but still emits ONE terminal JSON line — never empty
+    stdout (the bg-Bash poll loop would spin forever)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    rc = backend_poll_main(["--issue", "9349", "--lane-suffix", "Not_Valid"])
+    assert rc == 0
+    line = capsys.readouterr().out.strip()
+    assert line, "backend_poll must emit a JSON line, never empty stdout"
+    body = json.loads(line)
+    assert body["status"] == "dead"
+    assert "lane_suffix" in body["log_tail_excerpt"]

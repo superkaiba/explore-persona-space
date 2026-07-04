@@ -21,11 +21,17 @@ import json
 import logging
 from pathlib import Path
 
-import matplotlib
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE numpy freezes the BLAS pools.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("issue841_retention_perunit")

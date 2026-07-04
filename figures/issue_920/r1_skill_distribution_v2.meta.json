@@ -1,0 +1,506 @@
+{
+  "commit": "09006be091",
+  "created": "2026-07-03T16:37:51Z",
+  "figsize": [
+    8.0,
+    5.0
+  ],
+  "points": [
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.988223,
+      "map cells": 97.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.964834,
+      "map cells": 90.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.941445,
+      "map cells": 103.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.918056,
+      "map cells": 98.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.894666,
+      "map cells": 99.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.871277,
+      "map cells": 116.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.847888,
+      "map cells": 132.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.824499,
+      "map cells": 114.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.801109,
+      "map cells": 123.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.77772,
+      "map cells": 111.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.754331,
+      "map cells": 117.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.730941,
+      "map cells": 112.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.707552,
+      "map cells": 137.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.684163,
+      "map cells": 123.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.660774,
+      "map cells": 133.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.637384,
+      "map cells": 140.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.613995,
+      "map cells": 150.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.590606,
+      "map cells": 136.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.567217,
+      "map cells": 156.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.543827,
+      "map cells": 137.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.520438,
+      "map cells": 153.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.497049,
+      "map cells": 139.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.47366,
+      "map cells": 116.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.45027,
+      "map cells": 137.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.426881,
+      "map cells": 150.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.403492,
+      "map cells": 141.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.380103,
+      "map cells": 139.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.356713,
+      "map cells": 174.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.333324,
+      "map cells": 177.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.309935,
+      "map cells": 164.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.286545,
+      "map cells": 193.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.263156,
+      "map cells": 193.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.239767,
+      "map cells": 221.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.216378,
+      "map cells": 231.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.192988,
+      "map cells": 245.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.169599,
+      "map cells": 213.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.14621,
+      "map cells": 281.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.122821,
+      "map cells": 270.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.099431,
+      "map cells": 296.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.076042,
+      "map cells": 289.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.052653,
+      "map cells": 306.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.029264,
+      "map cells": 289.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": -0.005874,
+      "map cells": 310.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.017515,
+      "map cells": 363.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.040904,
+      "map cells": 404.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.064293,
+      "map cells": 349.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.087683,
+      "map cells": 401.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.111072,
+      "map cells": 444.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.134461,
+      "map cells": 438.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.15785,
+      "map cells": 495.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.18124,
+      "map cells": 476.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.204629,
+      "map cells": 535.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.228018,
+      "map cells": 567.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.251408,
+      "map cells": 544.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.274797,
+      "map cells": 569.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.298186,
+      "map cells": 527.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.321575,
+      "map cells": 546.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.344965,
+      "map cells": 540.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.368354,
+      "map cells": 594.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.391743,
+      "map cells": 604.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.415132,
+      "map cells": 618.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.438522,
+      "map cells": 638.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.461911,
+      "map cells": 743.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.4853,
+      "map cells": 679.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.508689,
+      "map cells": 664.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.532079,
+      "map cells": 729.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.555468,
+      "map cells": 851.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.578857,
+      "map cells": 878.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.602246,
+      "map cells": 915.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.625636,
+      "map cells": 861.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.649025,
+      "map cells": 908.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.672414,
+      "map cells": 791.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.695804,
+      "map cells": 688.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.719193,
+      "map cells": 598.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.742582,
+      "map cells": 476.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.765971,
+      "map cells": 386.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.789361,
+      "map cells": 223.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.81275,
+      "map cells": 175.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.836139,
+      "map cells": 98.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.859528,
+      "map cells": 41.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.1704,
+      "map cells": 0.0,
+      "series": "chance band (max-inherited, 0.17)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "held-out map skill (R1), x-axis clipped at -1": 0.1704,
+      "map cells": 1.0,
+      "series": "chance band (max-inherited, 0.17)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 82
+}

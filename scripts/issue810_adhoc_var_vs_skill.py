@@ -26,18 +26,23 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
 os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ["OMP_NUM_THREADS"] = "4"
 
-import numpy as np
-import torch
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — its
+# setdefaults never clobber the explicit OMP_NUM_THREADS=4 write above.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 torch.set_num_threads(4)
-
-import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from issue810_common import (  # noqa: E402

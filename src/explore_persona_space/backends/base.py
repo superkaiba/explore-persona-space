@@ -30,10 +30,56 @@ backends (`RunPodBackend`, `SlurmBackend`) live in sibling modules.
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
+
+# ---------------------------------------------------------------------------
+# Per-lane instance-name suffix validation (#934)
+# ---------------------------------------------------------------------------
+
+# Lowercase alphanumeric with inner hyphens; length-1 suffixes are accepted
+# via the optional group. Anchored by fullmatch in validate_lane_suffix.
+_LANE_SUFFIX_RE = re.compile(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")
+
+#: Max lane-suffix length — the ATTEMPT-LABEL budget, not the instance-name
+#: budget (see validate_lane_suffix for the derivation). 63 - len("att-YYYYmmdd-HHMMSS-").
+LANE_SUFFIX_MAX_LEN = 43
+
+
+def validate_lane_suffix(suffix: str) -> str:
+    """Validate a per-lane instance-name suffix (#934); returns it unchanged.
+
+    GCE instance names are RFC1035 labels (lowercase ``[a-z0-9-]``,
+    <=63 chars, end alphanumeric); the suffix is appended as
+    ``eps-issue-<N>-<suffix>``, so it must be lowercase
+    alphanumeric-with-inner-hyphens. Raises ``ValueError`` on any
+    malformed value — fail loud, never strip/normalize (a silently
+    normalized suffix would desync the instance name from the handle
+    sidecar the caller composes from the SAME raw value).
+    """
+    if not _LANE_SUFFIX_RE.fullmatch(suffix):
+        raise ValueError(f"lane_suffix must match [a-z0-9]([a-z0-9-]*[a-z0-9])?, got {suffix!r}")
+    if len(suffix) > LANE_SUFFIX_MAX_LEN:
+        # Attempt-label budget (#934 round-1 critic Must-Fix): the attempt id
+        # `att-YYYYmmdd-HHMMSS-<suffix>` (20-char prefix) must fit the GCP
+        # LABEL value cap of 63 chars — _format_labels truncates
+        # `eps-attempt` via [:63] (gcp.py) while the VM receives the FULL id
+        # via `eps-attempt-id` metadata and writes sentinel/artifact dirs
+        # under it; reconnect canonicalizes the LABEL value, so an
+        # over-budget suffix silently desyncs reconnect/finalize from the
+        # VM's real paths. 43 = 63 - 20. This is TIGHTER than the 63-char
+        # instance-name budget (49 for a 3-digit issue), so it binds first;
+        # the instance-name length assert in gcp.instance_name_for stays as
+        # belt-and-suspenders.
+        raise ValueError(
+            f"lane_suffix must be <= {LANE_SUFFIX_MAX_LEN} chars (attempt-label budget: "
+            f"len('att-YYYYmmdd-HHMMSS-') + suffix <= 63), got {len(suffix)}"
+        )
+    return suffix
+
 
 # ---------------------------------------------------------------------------
 # Backend kind / cluster name typing

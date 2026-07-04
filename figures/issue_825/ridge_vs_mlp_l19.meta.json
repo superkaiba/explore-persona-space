@@ -1,0 +1,60 @@
+{
+  "commit": "745e62f4b6",
+  "created": "2026-07-02T23:35:30Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Held-out $R^2$ at layer 19": 0.6730940896676356,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Held-out $R^2$ at layer 19": 0.5876803039140281,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Held-out $R^2$ at layer 19": 0.07571368282874946,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "Held-out $R^2$ at layer 19": -0.4605551809040864,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Held-out $R^2$ at layer 19": 0.6537062769535792,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Held-out $R^2$ at layer 19": 0.5869565588294549,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Held-out $R^2$ at layer 19": 0.557521142838248,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "Held-out $R^2$ at layer 19": 0.4872805505529493,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}

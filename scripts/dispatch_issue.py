@@ -818,6 +818,14 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
     each new knob doesn't push the dispatcher over the complexity cap.
     """
     extra: dict[str, Any] = {}
+    if getattr(args, "lane_suffix", None):
+        # Per-lane instance-name suffix (#934): honored by the GCP lane's
+        # naming helpers (eps-issue-<N>-<suffix>) + the router's attempt-id
+        # mint + the handle-sidecar composer. Parse-time validated
+        # (_lane_suffix_arg); absent → key ABSENT (never None-valued — a
+        # None-valued key would flip canonicalize_spec output and every
+        # live unsuffixed lease spec-hash).
+        extra["lane_suffix"] = args.lane_suffix
     if getattr(args, "execute_workload", False):
         # RunPod-honored knob (#909): opts the launch into the RunPod
         # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
@@ -939,6 +947,62 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
     if getattr(args, "skip_default_git_paths", False):
         extra["skip_default_git_paths"] = True
     return extra
+
+
+def _annotate_launch_body_reconnect_and_lane(
+    body: dict[str, Any], *, args: argparse.Namespace, result: Any
+) -> None:
+    """Additive launch-JSON keys: reconnect loudness + lane-suffix visibility (#934/#923).
+
+    A reconnect-resolved launch dispatched NO workload this invocation,
+    but must stay ``ok: true`` (the exit-75 still-waiting contract
+    instructs re-running the SAME command and relying on reconnect —
+    flipping ``ok`` would break that rerun loop). The additive
+    ``reconnected`` / ``workload_dispatched`` keys make the non-dispatch
+    machine-detectable instead. BOTH reconnect layers trip it: the
+    router scan (``reason == "reconnect"``) and the GCP-internal
+    ``reconnect_or_none`` (which only marks
+    ``handle.extra["reconnected"]``). Mutates ``body`` in place.
+    """
+    from explore_persona_space.backends.router import ROUTE_REASON_RECONNECT
+
+    handle_extra = result.handle.extra or {}
+    workload_requested = bool((args.workload_cmd or "").strip()) or bool(args.hydra)
+    reconnected = bool(handle_extra.get("reconnected")) or result.reason == ROUTE_REASON_RECONNECT
+    if reconnected:
+        workload_dispatched = False
+    elif handle_extra.get("workload_executed") is False:
+        # #909 provision-only RunPod launch: the pod booted but nothing ran.
+        workload_dispatched = False
+    else:
+        workload_dispatched = workload_requested
+    body["reconnected"] = reconnected
+    body["workload_dispatched"] = workload_dispatched
+    lane_suffix = getattr(args, "lane_suffix", None)
+    if lane_suffix:
+        body["lane_suffix"] = lane_suffix
+    if reconnected and workload_requested:
+        body["reconnect_note"] = (
+            "route() RECONNECTED to an existing live instance — this invocation dispatched "
+            "NO workload (workload_dispatched=false). Benign iff an earlier run of the SAME "
+            "command created it (exit-75 rerun); a concurrent second lane must relaunch with "
+            "--lane-suffix (#934/#923)."
+        )
+        logging.getLogger("dispatch_issue").warning(
+            "%s pod_name=%s reason=%s",
+            body["reconnect_note"],
+            result.handle.pod_name,
+            result.reason,
+        )
+    if lane_suffix and result.chosen_kind != "gcp":
+        body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
+        logging.getLogger("dispatch_issue").warning(
+            "--lane-suffix=%s: instance/job-name isolation is GCP-only; chosen_kind=%s "
+            "keeps per-issue naming (SLURM eps-issue-<N>, RunPod pod-<N>) — concurrent "
+            "lanes are NOT isolated on this lane.",
+            lane_suffix,
+            result.chosen_kind,
+        )
 
 
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
@@ -1230,6 +1294,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         "workload_pid": handle_extra.get("workload_pid"),
         "log_path": result.handle.log_path,
     }
+    _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
         # failed — print the handle JSON anyway (it IS the recovery
@@ -1367,7 +1432,9 @@ def _cmd_finalize(
     # written by the pre-#612 cwd-relative composer — a finalize that
     # false-misses a live handle would SKIP teardown and leak a paid
     # VM / pod, so the probe is cheap insurance during the transition).
-    sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
+    sidecar, probed = resolve_handle_sidecar_path(
+        args.issue, args.handle_file, lane_suffix=getattr(args, "lane_suffix", None)
+    )
     if not Path(sidecar).exists():
         body = {
             "ok": False,
@@ -1567,6 +1634,21 @@ def _max_run_duration_arg(value: str) -> str:
     return v
 
 
+def _lane_suffix_arg(value: str) -> str:
+    """Validate ``--lane-suffix`` at the parser surface (#934).
+
+    Delegates to the shared ``base.validate_lane_suffix`` (lowercase
+    ``[a-z0-9-]``, <=43 chars — the attempt-label budget) so a malformed
+    suffix errors friendly at parse time, BEFORE any backend is built.
+    """
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    try:
+        return validate_lane_suffix(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
 def _build_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -1745,6 +1827,26 @@ def _build_argparser() -> argparse.ArgumentParser:
             "honored by every lane's declaration builder)."
         ),
     )
+    launch.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Per-lane instance-name suffix (#934): the GCP lane provisions "
+            "eps-issue-<N>-<suffix> and the handle sidecar becomes "
+            "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
+            "issue coexist. Lowercase [a-z0-9-], <=43 chars. Instance/job-name "
+            "isolation is GCP-lane only; SLURM job names and RunPod pod names "
+            "remain per-issue (concurrent lanes both failing over to RunPod "
+            "still contend on pod-<N>). In a multi-lane plan, suffix BOTH "
+            "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
+            "forgotten-suffix poll/finalize silently resolving lane 1's "
+            "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "
+            "second unsuffixed instance (no reconnect). Multi-lane "
+            "orchestrators should prefer passing --handle-file from the "
+            "launch JSON's handle_sidecar_path to poll/finalize."
+        ),
+    )
 
     finalize = sub.add_parser(
         "finalize",
@@ -1758,6 +1860,17 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Path to the per-issue handle sidecar JSON "
         "(default: <main-checkout>/.claude/cache/issue-<N>-handle.json, "
         "with a legacy <cwd>/.claude/cache/ fallback probe).",
+    )
+    finalize.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
+            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "the launch used — a forgotten suffix silently finalizes the "
+            "unsuffixed lane's handle instead."
+        ),
     )
     finalize.add_argument(
         "--skip-confirm-artifacts",
