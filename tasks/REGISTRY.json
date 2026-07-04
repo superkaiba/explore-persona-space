@@ -6437,7 +6437,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/958",
       "status": "interpreting",
-      "title": "How does the context\u2192answer mapping change as the context gets longer (multi-turn)"
+      "title": "The context\u2192answer activation mapping is near turn-stationary across turns 2 through 4, while the GCV-selected (\u03bb-mismatched) long-panel turn-1 map does not transfer to turns 5 through 8 (MODERATE confidence)"
     },
     "959": {
       "has_clean_result": false,

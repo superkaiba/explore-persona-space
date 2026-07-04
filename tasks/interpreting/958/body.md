@@ -1,5 +1,7 @@
 ---
-title: How does the context→answer mapping change as the context gets longer (multi-turn)
+title: The context→answer activation mapping is near turn-stationary across turns
+  2 through 4, while the GCV-selected (λ-mismatched) long-panel turn-1 map does not
+  transfer to turns 5 through 8 (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-04T04:06:00Z'
