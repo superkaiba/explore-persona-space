@@ -6673,8 +6673,8 @@
     "987": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/987",
-      "status": "reviewing",
+      "path": "tasks/completed/987",
+      "status": "completed",
       "title": "workflow-fix: dispatch lane infra from main on issue branches"
     },
     "988": {
