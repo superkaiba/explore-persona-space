@@ -91,12 +91,23 @@ per-phase / shard) is stale past the effective stall window
 processes stop appending; both observed false positives had fresh
 logs), and (c) the stale-log candidate persisted for 2 CONSECUTIVE
 observed ticks (``zombie_streak`` in the state sidecar — filters the
-#778 one-tick teardown transient). Session-CPU advancement is
+#778 one-tick teardown transient). Bare session-CPU *advancement* is
 deliberately NOT a veto term: the genuine #664 hang had CPU advancing
-(the EngineCore idle-burn is why this override exists at all), so a CPU
-veto would make the true positive unreachable. Fail-safe: nvidia-smi
-missing / erroring emits an empty list (never a false zombie); the
-override never touches a `done` / `gate` / `dead` verdict.
+(the EngineCore idle-burn is why this override exists at all), so an
+any-delta CPU veto would make the true positive unreachable. A MATERIAL
+sustained burn *rate* IS one (#951): a session that burned >=
+``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` cores (default 0.5) on BOTH of the
+last two persisted ticks is demonstrably computing — #664's hung
+EngineCore churned ~0.22 cores while #825's falsely-flagged live fit
+burned ~1.83-2.04 cores next to prior-run VRAM leftover — so the
+override is vetoed (streak reset, like the fresh-log veto). The rate is
+derived VM-side from the persisted ``session_cpu_secs`` /
+``session_cpu_sample_epoch`` sidecar pair; ANY degraded input (unknown
+sample, missing epoch, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``,
+negative delta) leaves the veto inert — exactly the pre-#951 behavior.
+Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
+false zombie); the override never touches a `done` / `gate` / `dead`
+verdict.
 
 Namespace-informativeness gate (#864): the #826 assumption "hung <=>
 stale logs" lapses when a HEALTHY workload legitimately silences its
@@ -578,6 +589,32 @@ ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
 # re-check is a one-literal follow-up; the probe counts + gate + tests land
 # either way.
 ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "0") != "0"
+
+# #951: material-compute liveness veto on the #664/#826 zombie-GPU override.
+# A workload session burning >= this many CPU cores (delta cumulative session
+# CPU / wall seconds between persisted ticks) on BOTH of the last two ticks is
+# demonstrably computing — veto the running->stalled override. Sits between
+# the two measured regimes: #664's hung EngineCore churned ~0.22 cores
+# (Python-overhead idle burn) while #825's falsely-flagged live fit burned
+# ~1.83-2.04 cores (+1102s/+989s per ~540s tick, 186% in top) — 2.27x above
+# churn, 3.66x below real compute. Sustained-rate, so poll-interval-invariant
+# (540s vs 1800s adaptive ticks). NOTE: session_cpu_secs is a session-TOTAL
+# (summed over every process in the launcher's setsid session) and both
+# calibration incidents were NARROW sessions — a wide hung session (TP>=2
+# NCCL spin ~1 core/rank, or a co-resident same-session burner) can sum past
+# this threshold and keep a true zombie vetoed (accepted exposure, same
+# class as the #826 fresh-log sibling; backstops: GPU-idle escalation, #873
+# ETA tripwires, watcher wedge arm). Raise EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN
+# when debugging a suppressed wide-pod hang.
+ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN", "0.5"))
+
+# #951: denominator floor for the per-tick CPU rate. Below this wall-clock
+# spacing between persisted CPU samples the rate is not computed (None ->
+# veto inert): `ps -o time` truncates to whole seconds per process, so a
+# short window inflates spurious rate from truncation noise (~1s x N
+# session processes). Production intervals are 540s/1800s so the floor
+# never binds there; it guards manual rapid re-polls and fast-smoke ticks.
+ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
 
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
@@ -3206,6 +3243,38 @@ def _roll_session_cpu_max(prev_max: str | None, current: str) -> str:
     return prev_max if prev_max else current
 
 
+def _session_cpu_rate_cores(
+    prev_sample: str | None,
+    prev_sample_epoch: str | None,
+    current: str,
+    now_epoch: int,
+) -> float | None:
+    """Per-tick session-CPU burn rate in cores, or None when not computable.
+
+    rate = (current - prev_sample) / (now_epoch - prev_sample_epoch), where
+    prev_sample + prev_sample_epoch are the SAME prior tick's persisted pair
+    (written together by _save_state). None (fail-safe -> the #951 veto does
+    NOT fire) when: either CPU sample is unknown/unparseable, the epoch is
+    missing/unparseable/<=0, or the wall gap is < ZOMBIE_CPU_RATE_MIN_DT_SEC
+    (truncation-noise floor) or non-positive (clock garbage). A NEGATIVE
+    rate (run restart resets the session counter; a multi-shard child exit
+    de-counts its cputime, #658) is returned as-is — it is below any
+    positive threshold, so the veto does not fire on it.
+    """
+    cur = _parse_session_cpu(current)
+    prev = _parse_session_cpu(prev_sample) if prev_sample is not None else None
+    epoch = _parse_session_cpu(prev_sample_epoch) if prev_sample_epoch else None
+    if cur is None or prev is None or epoch is None or epoch <= 0:
+        return None
+    dt = now_epoch - epoch
+    if dt < ZOMBIE_CPU_RATE_MIN_DT_SEC:
+        # Also covers dt <= 0 (the floor is positive) — LOAD-BEARING for the
+        # existing two-call replay tests, whose back-to-back poll_once calls
+        # persist the epoch on call 1 and re-poll milliseconds later (dt~0).
+        return None
+    return (cur - prev) / dt
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -3245,9 +3314,11 @@ def _apply_zombie_override(
     gpu_pids_total: int | None = None,
     gpu_pids_resolvable: int | None = None,
     uvm_live_holders: int | None = None,
+    session_cpu_rate_cores: float | None = None,
 ) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864 zombie-GPU-allocation override — returns the possibly
-    overridden ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    """The #664/#826/#864/#951 zombie-GPU-allocation override — returns the
+    possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -3273,14 +3344,49 @@ def _apply_zombie_override(
     ``_save_state`` neither advances nor resets it, the same exposure
     ``ssh_fail_count`` has; the sidecar is single-poller by design).
 
-    Session-CPU advancement is deliberately NOT a veto term: the genuine #664
-    hang had CPU advancing (in the stale-log + idle-GPU regime ``running`` is
-    only reachable via the CPU rescue), so a CPU veto would make the true
-    positive structurally unreachable. Never touches a ``done`` / ``gate`` /
-    ``dead`` verdict — those are correct terminal/park states (a dead
-    launcher is already ``dead``; its own orphaned allocation is then
-    expected). The ``stall_reason`` lets the orchestrator route this
-    distinctly from a generic log+GPU+CPU stall.
+    Bare session-CPU *advancement* is deliberately NOT a veto term: the
+    genuine #664 hang had CPU advancing (in the stale-log + idle-GPU regime
+    ``running`` is only reachable via the CPU rescue), so an any-delta
+    (> ``SESSION_CPU_ADVANCE_EPSILON_SECS``, the #518/#658 boolean) CPU veto
+    would make the true positive structurally unreachable. A MATERIAL
+    sustained burn *rate* IS a veto term (#951, next paragraph): the measured
+    #664 churn (~0.22 cores) cannot reach the rate threshold, so the true
+    positive stays reachable. Never touches a ``done`` / ``gate`` / ``dead``
+    verdict — those are correct terminal/park states (a dead launcher is
+    already ``dead``; its own orphaned allocation is then expected). The
+    ``stall_reason`` lets the orchestrator route this distinctly from a
+    generic log+GPU+CPU stall.
+
+    Material-compute liveness veto (#951, between the #826 fresh-log veto
+    and the streak defer/fire branches): when the per-tick session-CPU burn
+    rate was >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` (default 0.5 cores) on
+    BOTH the current tick (``session_cpu_rate_cores``, computed by
+    ``poll_once`` via ``_session_cpu_rate_cores``) AND the previous
+    persisted tick (the sidecar's ``session_cpu_rate_cores`` key), the
+    session is demonstrably computing — #825's falsely-flagged live fit
+    burned ~1.83-2.04 cores while 1816 MiB of prior-run VRAM leftover
+    carried the zombie signature — so the override is suppressed and the
+    streak RESETS to 0 (identical mechanics to the #826 fresh-log and #864
+    namespace vetoes; reset, not hold, so a later degraded CPU read after
+    material compute defers a full fresh 2-tick window instead of firing
+    immediately). Fail-safe on ANY degraded input (missing/unparseable CPU
+    sample, missing previous-tick baseline or rate, missing/garbage sample
+    timestamp, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``, negative
+    delta): the rate is None / below threshold, the veto stays inert, and
+    behavior is exactly the pre-#951 #826/#864 cascade. Residual exposure
+    (ACCEPTED): ``session_cpu_secs`` is a session-TOTAL, so a WIDE hung
+    session (TP>=2 NCCL spin at ~1 core/rank) or a co-resident same-session
+    CPU burner can sustain >= the threshold indefinitely and keep a true
+    zombie vetoed — the same exposure class as the #826 fresh-log sibling
+    (a sibling process appending to a log forever suppresses the override
+    the same way today), bounded by the GPU-idle advisory/escalation tiers,
+    the #873 phase-ETA tripwires, the watcher wedge arm, and the
+    ``EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN`` knob. Warmup: on a fresh or
+    pre-#951 sidecar the veto cannot engage until the 3rd tick — tick 1
+    persists the sample epoch with rate ``"unknown"``, tick 2 computes the
+    first rate but has no prev-tick rate — which is the fail-safe direction
+    (current behavior during warmup); a false stall in that window is the
+    warmup, not a fix failure.
 
     Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
     veto lapses when a HEALTHY workload legitimately silences its logs
@@ -3327,9 +3433,10 @@ def _apply_zombie_override(
     partial death keeps firing exactly as today. (c)
     ``ZOMBIE_NAMESPACE_VETO_ENABLED`` is read at module import — a live
     poller needs a restart for an ops flip to take effect. (d) On a tick
-    matching BOTH this gate and the #826 fresh-log veto, the namespace
-    WARNING fires first (outcome identical — ``running``, streak 0; only
-    the forensic log line differs).
+    matching BOTH this gate and the #826 fresh-log veto — or the #951
+    material-CPU veto — the namespace WARNING fires first (outcome
+    identical — ``running``, streak 0; only the forensic log line
+    differs).
     """
     stall_reason: str | None = None
     zombie_streak = 0
@@ -3369,6 +3476,10 @@ def _apply_zombie_override(
             prev_zombie_streak = int(prev_state.get("zombie_streak", "0") or 0)
         except (TypeError, ValueError):
             prev_zombie_streak = 0
+        # #951: the previous tick's persisted burn rate. _parse_session_cpu
+        # maps an absent key / "unknown" / garbage to None (fail-safe — the
+        # material-CPU veto below then cannot fire).
+        prev_cpu_rate = _parse_session_cpu(prev_state.get("session_cpu_rate_cores", "unknown"))
         if freshest_log_ago <= zombie_veto_sec:
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) but log evidence is fresh "
@@ -3379,6 +3490,28 @@ def _apply_zombie_override(
                 freshest_log_ago,
                 zombie_veto_sec,
             )
+        elif (
+            session_cpu_rate_cores is not None
+            and prev_cpu_rate is not None
+            and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            and prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+        ):
+            # #951: material compute — the session burned >= T cores on BOTH
+            # of the last two persisted ticks. #664's hung EngineCore churns
+            # ~0.22 cores; real work (the #825 fit at ~1.9 cores) cannot be a
+            # hang. Veto; streak resets (zombie_streak stays 0 — recomputed
+            # each tick).
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale BUT session "
+                "CPU burned %.2f / %.2f cores over the last two ticks (>= %.2f) — material "
+                "compute, liveness veto, not flagging (#951; #825: prior-run VRAM leftover "
+                "while the live workload computed)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                session_cpu_rate_cores,
+                prev_cpu_rate,
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+            )
         elif prev_zombie_streak < 1:
             zombie_streak = 1
             log.warning(
@@ -3388,14 +3521,22 @@ def _apply_zombie_override(
                 ",".join(zombie_gpu_pids),
             )
         else:
+            # #951 forensic evidence on the FIRE path: the two burn rates
+            # (or "unknown") are the durable record for tuning
+            # EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN after the next incident —
+            # the sidecar keeps only the last tick.
             log.error(
                 "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
                 "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
                 "2 consecutive ticks with all logs stale, overriding "
-                "status=running -> stalled (#664/#826)",
+                "status=running -> stalled (#664/#826); session-CPU rate now=%s prev=%s "
+                "cores (veto threshold %.2f)",
                 pod,
                 ",".join(zombie_gpu_pids),
                 ZOMBIE_GPU_MEM_MIN_MIB,
+                "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
+                "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
             )
             status = "stalled"
             stall_reason = "vllm_worker_dead_zombie_gpu"
@@ -3712,6 +3853,15 @@ def poll_once(
     # Roll the high-water mark forward for the next tick (#658). The max only
     # ever grows; a current sample below it (a child exit) does not lower it.
     max_session_cpu = _roll_session_cpu_max(prev_max_session_cpu, current_session_cpu)
+    # #951: per-tick burn rate vs the PREVIOUS tick's raw sample (not the max —
+    # the delta between consecutive samples is the current burn), for the
+    # material-compute veto on the zombie override.
+    session_cpu_rate = _session_cpu_rate_cores(
+        prev_state.get("session_cpu_secs"),
+        prev_state.get("session_cpu_sample_epoch"),
+        current_session_cpu,
+        now_epoch,
+    )
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -3763,6 +3913,7 @@ def poll_once(
         gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
         gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
         uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+        session_cpu_rate_cores=session_cpu_rate,
     )
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
@@ -3960,6 +4111,16 @@ def poll_once(
             # `_parse_session_cpu` treats it consistently with the live
             # probe value.
             "session_cpu_secs": current_session_cpu,
+            # #951: VM-clock timestamp OF the session_cpu_secs sample above —
+            # the pair is written atomically together, so this epoch is the
+            # denominator anchor for the NEXT tick's burn-rate delta.
+            "session_cpu_sample_epoch": str(now_epoch),
+            # #951: this tick's per-tick burn rate (cores) vs the prior
+            # persisted sample; "unknown" when not computable (fail-safe —
+            # the material-CPU veto reads it as no-signal next tick).
+            "session_cpu_rate_cores": (
+                "unknown" if session_cpu_rate is None else f"{session_cpu_rate:.4f}"
+            ),
             # Persist the running MAXIMUM cumulative CPU observed across all
             # ticks (#658). This is the baseline the NEXT tick's
             # advancing-decision compares against — a current sample below
