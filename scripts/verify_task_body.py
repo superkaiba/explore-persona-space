@@ -105,7 +105,9 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
    `main`/`master`/`HEAD`). `n/a` is accepted as an explicit
    non-applicable marker. Raw-host URLs are scanned on fence-stripped
    text (a moving-ref raw URL inside a ``` example is illustrative);
-   shape only — existence probing is check 8b's job.
+   URLs on blockquote lines are exempt too (the **Context:** verbatim
+   originating-prompt quote; #959); shape only — existence probing is
+   check 8b's job.
 8b. Reproducibility artifact URLs exist — same-repo artifact links in
     `## Reproducibility` (`raw.githubusercontent.com/<this-repo>/<sha>/
     <path>` raw URLs and `github.com/<this-repo>/(blob|tree)/<sha>/<path>`
@@ -117,7 +119,8 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     Definitive miss → FAIL; indeterminate probe → `unverified` note on
     the PASS line, never a FAIL (same semantics as check 4b). Extends
     the task #507 existence protection to the Reproducibility section,
-    which previously got shape verification only. HF Hub / WandB /
+    which previously got shape verification only. Blockquoted URLs are
+    not gathered (same #959 exemption). HF Hub / WandB /
     external-repo links stay shape-checked only (check 8): their
     existence is not decidable from the local object DB, and an
     unauthenticated 404 on an external private repo would false-FAIL.
@@ -2382,8 +2385,12 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     shape for TL;DR figure URLs). ALL scans run on fence-stripped text
     (same fence policy as check 8b: a URL inside a ``` example — e.g. a
     reproduce-command block — is illustrative, not a provenance link;
-    unified 2026-06-09, second #507 follow-up). Shape checks only —
-    existence probing for same-repo raw URLs is check 8b's job.
+    unified 2026-06-09, second #507 follow-up). Blockquote lines
+    (`>`-prefixed, incl. nested/indented quotes) are stripped too — the
+    `**Context:**` row's verbatim originating-prompt quote may cite bare
+    URLs that must be preserved verbatim (never paraphrased; #825/#959);
+    pinned-link requirements bind on the non-quoted rows. Shape checks
+    only — existence probing for same-repo raw URLs is check 8b's job.
     """
     repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
@@ -2391,10 +2398,11 @@ def check_repro_url_permanence(body: str) -> CheckResult:
             "Reproducibility URL permanence", False, "Reproducibility section missing"
         )
     bad: list[str] = []
-    # Every scan below runs on fence-stripped text: a URL inside a ```
-    # example is illustrative, never a provenance link (fence policy
-    # shared with check 8b).
-    scanned = _strip_fenced_blocks(repro)
+    # Every scan below runs on fence-stripped, then blockquote-stripped
+    # text: a URL inside a ``` example is illustrative, and a URL inside
+    # a `>` blockquote is verbatim-quoted provenance TEXT — neither is a
+    # provenance link (policy shared with check 8b; #959).
+    scanned = _strip_blockquote_lines(_strip_fenced_blocks(repro))
     # HF Hub URLs must include /tree/<ref>, /blob/<ref>, /raw/<ref>, or @<ref>.
     hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", scanned)
     for url in hf_urls:
@@ -3696,6 +3704,28 @@ def _strip_fenced_blocks(text: str) -> str:
     return "\n".join(out)
 
 
+# URL scans over the Reproducibility/footer region ALSO ignore markdown
+# blockquote lines (`>`-prefixed, incl. nested `> >` and indented `  > `
+# quotes). In that region a blockquote is the SPEC-mandated verbatim
+# originating-prompt quote (`**Context:**` row — never paraphrased),
+# whose text may cite bare URLs the author is not allowed to edit
+# (#825 → task #959). The quote is provenance TEXT, not a provenance
+# LINK; pinned artifact links live on the non-quoted footer rows, which
+# stay fully checked. Lazy continuation lines (quote text wrapped
+# without a leading `>`) stay scanned — the failure mode is the pre-fix
+# behavior (scanned), never a silently widened exemption. Apply AFTER
+# `_strip_fenced_blocks` (a quoted fence marker `> ``` ` must not
+# toggle fence state; it doesn't — the fence pass keys on lines that
+# START with the fence marker).
+def _strip_blockquote_lines(text: str) -> str:
+    """Drop lines whose first non-whitespace character is `>`.
+
+    Returns the remaining lines joined by newlines; used by checks 8 and
+    8b so a verbatim-quoted URL is never treated as a provenance link.
+    """
+    return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith(">"))
+
+
 # A "committed ... at commit `<sha>`" claim. The trigger word ``committed``
 # must appear somewhere before the literal phrase ``at commit `<sha>` `` on
 # the SAME line. The sha must be a 4-40 char hex literal wrapped in
@@ -4298,13 +4328,17 @@ def _gather_repro_artifact_urls(repro: str) -> list[str]:
     `raw.githubusercontent.com/<this-repo>/<sha>/<path>` raw links and
     `github.com/<this-repo>/(blob|tree)/<sha>/<path>` HTML links. Fenced
     code blocks are stripped first so a URL shown inside a ``` ... ```
-    example is illustrative, never probed. Other hosts (HF Hub, WandB)
+    example is illustrative, never probed. Blockquote lines
+    (`>`-prefixed) are stripped too — a same-repo URL quoted inside the
+    verbatim originating-prompt blockquote (`**Context:**` row) must not
+    be existence-probed: the quote cannot be edited if its cited path
+    later dies (#959). Other hosts (HF Hub, WandB)
     and other-repo GitHub links are out of scope: their existence is not
     decidable from the local object DB, and an unauthenticated 404 on an
     external private repo would false-FAIL. Order-preserving and
     deduplicated (at most one probe per unique URL)."""
     urls: list[str] = []
-    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(repro)):
+    for token in _REPRO_URL_TOKEN_RE.findall(_strip_blockquote_lines(_strip_fenced_blocks(repro))):
         url = token.rstrip(".,;:!?")
         for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
             m = pattern.match(url)
