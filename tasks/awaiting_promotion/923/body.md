@@ -3,7 +3,8 @@ title: Stitched context-only and query-only read-outs beat the full-prompt last-
   ridge read-out at recovering the mean answer activation on held-out families and
   queries (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-03T10:36:02Z'
 has_clean_result: true
 parent_id: 658
