@@ -964,6 +964,31 @@ _CAPACITY_RETRY_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry]"
 # dashboard-visible without per-tick marker spam.
 _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry-exhausted]"
 
+# Substring stamped into the stale-blocked flag marker (task #1021): a
+# `blocked` task whose events show an `epm:run-launched` NEWER than the
+# transition into `blocked` plus fresh POST-LAUNCH progress — the #742 class
+# (a crash-fix relaunch succeeded but the earlier failed round's `blocked`
+# was never flipped back; #742 ran healthy ~35h at status `blocked`).
+# FLAG-ONLY: the pass posts a deduped marker + sidecar row + Telegram digest
+# line and NEVER mutates status (the orchestrator's own-relaunch reconcile
+# rule in SKILL.md — or a human — flips it). Same staleness-filter contract
+# as every other watcher-posted sentinel.
+_STALE_BLOCKED_FLAG_NOTE_SENTINEL = "[autonomous_session_watch:stale-blocked-flag]"
+
+# Filename prefix for the per-issue stale-blocked dedup state file at
+# ``~/.eps-autonomous/stale-blocked-<N>.json`` (keyed on
+# ``flagged_run_launched_ts`` — one alert per launch episode; a NEWER launch
+# is a new episode and re-alerts). Mirrors the capacity-retry state-file
+# layout; reaped by the generalized GC at `completed`/`archived`.
+STALE_BLOCKED_STATE_PREFIX = "stale-blocked-"
+
+# Freshness window (seconds) for the POST-LAUNCH progress leg of
+# ``decide_stale_blocked_flag``. Matches the STALLED_MARKER_WINDOW_S_DEFAULT
+# scale (2h — the #845 marker-heartbeat window); env-tunable via
+# ``EPM_STALE_BLOCKED_PROGRESS_FRESH_S`` (seconds). A too-tight window
+# UNDER-flags (missed alert, status quo), never mis-flags.
+STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT = 2 * 3600
+
 # OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
 # verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
 # sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
@@ -1019,6 +1044,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
+        _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
         # Posted by spawn_session.py (not the watcher) when a duplicate --auto
         # dispatch was suppressed at registration (#843 M2) — same contract:
         # a suppression note is bookkeeping, never real progress.
@@ -12229,6 +12255,215 @@ def capacity_retry_pass(
         )
 
 
+# ─── stale-blocked flag pass (task #1021, the #742 incident class) ───────────
+#
+# A crash-fix relaunch that succeeds on a task an earlier failed round parked
+# at `blocked` leaves the status stale: the run is healthy (fresh
+# `epm:run-launched` + ongoing progress ticks) while the folder says `blocked`
+# (#742 ran healthy ~35h at status `blocked`, 2026-07-01→07-02). The
+# orchestrator-side fix is the SKILL.md "A successful relaunch also reconciles
+# a stale `blocked`" rule; this pass is the watcher-side BACKSTOP: FLAG-ONLY —
+# a deduped `epm:progress` marker + a sidecar row + one Telegram digest line
+# per launch episode. It NEVER mutates status (false alert cheap, false flip
+# dangerous — the same conservative posture as the pod-safety alerts).
+# Daemon-INDEPENDENT: it spawns nothing (marker posts go via the task.py
+# subprocess).
+
+
+def _stale_blocked_flag_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALE_BLOCKED_FLAG`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_capacity_retry_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALE_BLOCKED_FLAG", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stale_blocked_fresh_s() -> float:
+    """Post-launch progress freshness window in seconds (env
+    ``EPM_STALE_BLOCKED_PROGRESS_FRESH_S``; default
+    :data:`STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT`). A malformed or
+    non-positive env value falls back to the default — a typo must not
+    collapse (or explode) the window."""
+    raw = os.environ.get("EPM_STALE_BLOCKED_PROGRESS_FRESH_S")
+    if not raw:
+        return float(STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT)
+    try:
+        parsed = float(raw)
+    except ValueError:
+        return float(STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT)
+    if parsed <= 0:
+        return float(STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT)
+    return parsed
+
+
+def decide_stale_blocked_flag(
+    status: str | None,
+    run_launched_ts: float | None,
+    blocked_since_ts: float | None,
+    progress_ts: float | None,
+    now: float,
+    *,
+    fresh_window_s: float = STALE_BLOCKED_PROGRESS_FRESH_S_DEFAULT,
+) -> bool:
+    """True iff a ``blocked`` task shows a live healthy run: an
+    ``epm:run-launched`` NEWER than the transition into ``blocked``, plus
+    real (non-watcher, non-deliberate-stop) progress AT OR AFTER the launch
+    and within ``fresh_window_s``.
+
+    The ``progress_ts >= run_launched_ts`` conjunct makes the liveness leg
+    genuinely POST-LAUNCH: it excludes the block-transition
+    ``epm:status-changed`` marker (which is in :data:`_PROGRESS_KINDS`) by
+    construction (block < launch by the ordering conjunct), at the cost of
+    one poll-tick flag delay. The launch-newer-than-block ordering is what
+    keeps a deliberately-blocked task quiet: the normal order is fail ->
+    block (launch older than block -> skip); only a launch AFTER the block —
+    the exact #742 anomaly — flags. EVERY missing signal returns False
+    (fail toward silence)."""
+    return (
+        status == "blocked"
+        and run_launched_ts is not None
+        and blocked_since_ts is not None
+        and run_launched_ts > blocked_since_ts
+        and progress_ts is not None
+        and progress_ts >= run_launched_ts
+        and (now - progress_ts) <= fresh_window_s
+    )
+
+
+def _stale_blocked_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{STALE_BLOCKED_STATE_PREFIX}{issue}.json"
+
+
+def _load_stale_blocked_state(issue: int) -> dict:
+    """Read the per-issue stale-blocked dedup state
+    (``{flagged_run_launched_ts, alerted_ts}``); ``{}`` on absent/garbled.
+    Mirrors :func:`_load_capacity_retry_state`."""
+    path = _stale_blocked_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_stale_blocked_state(issue: int, state: dict, dry_run: bool) -> None:
+    """Persist the per-issue dedup state atomically (temp + rename). No-op
+    under dry_run. Mirrors :func:`_save_capacity_retry_state`."""
+    if dry_run:
+        return
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _stale_blocked_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(dest)
+
+
+def _append_stale_blocked_event(payload: dict, dry_run: bool) -> None:
+    """Durable trace for stale-blocked flags — one JSON line per flag in
+    ``~/.eps-autonomous/stale-blocked-events.jsonl`` (same shape + role as
+    the stale-registration events file; the ``.jsonl`` suffix keeps it out
+    of the GC's ``stale-blocked-*.json`` glob). The per-task marker is the
+    primary record; this file survives a task folder move. Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stale-blocked-events.jsonl"
+    line = json.dumps(payload)
+    if dry_run:
+        print(f"  [dry-run] would append stale-blocked event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending stale-blocked event failed: {e}", file=sys.stderr)
+
+
+def _process_stale_blocked(issue: int, now: float, dry_run: bool, *, fresh_window_s: float) -> None:
+    """Evaluate ONE `blocked` task (gather signals ->
+    :func:`decide_stale_blocked_flag` -> flag). Honours dry_run; NEVER
+    mutates status (flag-only by design). ``blocked_since_ts`` is the latest
+    ``epm:status-changed`` ts — valid as "the transition into blocked"
+    because the caller scanned ``_blocked_issue_ids()`` (the same argument
+    the ``_DONE_TRANSITION_KINDS`` docstring makes)."""
+    events = _task_events(issue)
+    run_ts = _latest_event_ts(events, frozenset({_RUN_LAUNCHED_KIND}))
+    blocked_ts = _latest_event_ts(events, frozenset({"epm:status-changed"}))
+    progress_ts = _latest_progress_ts(events)
+    if not decide_stale_blocked_flag(
+        "blocked", run_ts, blocked_ts, progress_ts, now, fresh_window_s=fresh_window_s
+    ):
+        return
+    state = _load_stale_blocked_state(issue)
+    if state.get("flagged_run_launched_ts") == run_ts:
+        return  # dedup: one alert per launch episode; a NEWER launch re-alerts
+    launch_iso = _triage_observer_iso_z(run_ts)  # shared events.jsonl ISO-Z shape
+    blocked_iso = _triage_observer_iso_z(blocked_ts)
+    progress_age_min = (now - progress_ts) / 60.0
+    print(
+        f"  STALE-BLOCKED FLAG issue #{issue}: launch {launch_iso} > block "
+        f"{blocked_iso}, post-launch progress {progress_age_min:.0f}m ago"
+    )
+    _append_stale_blocked_event(
+        {
+            "ts": _triage_observer_iso_z(now),
+            "issue": issue,
+            "run_launched_ts": run_ts,
+            "blocked_since_ts": blocked_ts,
+            "progress_age_s": now - progress_ts,
+            "action": "flagged",
+            "dry_run": dry_run,
+        },
+        dry_run,
+    )
+    _post_progress_marker(
+        issue,
+        f"{_STALE_BLOCKED_FLAG_NOTE_SENTINEL} status=blocked but a live healthy "
+        f"run is present: epm:run-launched {launch_iso} is NEWER than the blocked "
+        f"transition {blocked_iso}, and post-launch progress landed "
+        f"{progress_age_min:.0f} min ago. Likely a stale blocked from an earlier "
+        f"failed round (#742 class). If the relaunch is legitimate, reconcile "
+        f"with: uv run python scripts/task.py set-status {issue} running --note "
+        f"'relaunch succeeded; clearing stale blocked'. FLAG-ONLY: the watcher "
+        f"never flips status.",
+        dry_run,
+        label="stale-blocked-flag",
+    )
+    _telegram_push(
+        f"EPS #{issue}: status=blocked but run alive (launch {launch_iso} > "
+        f"block {blocked_iso}, progress {progress_age_min:.0f}m ago) — likely "
+        f"stale blocked; reconcile via task.py set-status {issue} running",
+        dry_run,
+    )
+    _save_stale_blocked_state(
+        issue, {"flagged_run_launched_ts": run_ts, "alerted_ts": now}, dry_run
+    )
+
+
+def stale_blocked_flag_pass(dry_run: bool, now: float | None = None) -> None:
+    """FLAG (never flip) `blocked` tasks whose events show a live healthy run
+    (task #1021, incident #742). Scans every `blocked` task; for each where an
+    ``epm:run-launched`` is NEWER than the transition into `blocked` AND fresh
+    POST-LAUNCH progress exists, posts one deduped-per-launch-episode flag
+    (marker + sidecar row + Telegram digest line). Deliberately flag-only —
+    the orchestrator's own-relaunch reconcile rule (SKILL.md "A successful
+    relaunch also reconciles a stale `blocked`") or a human flips the status
+    on this evidence. Daemon-INDEPENDENT (no spawns; marker posts go via the
+    task.py subprocess)."""
+    if not _stale_blocked_flag_enabled():
+        print("stale-blocked-flag: disabled via EPM_DISABLE_STALE_BLOCKED_FLAG; skipping")
+        return
+    now = now if now is not None else time.time()
+    fresh_window_s = _stale_blocked_fresh_s()
+    blocked = _blocked_issue_ids()
+    if not blocked:
+        print("stale-blocked-flag: no blocked tasks")
+        return
+    print(f"stale-blocked-flag: scanning {len(blocked)} blocked task(s)")
+    for issue in blocked:
+        _process_stale_blocked(issue, now, dry_run, fresh_window_s=fresh_window_s)
+
+
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
 
 # Task statuses for which per-issue registry / progress / stalled-state files
@@ -12258,6 +12493,13 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # reap a live retry episode's state — that would reset retries_today every
     # tick and the daily cap could never bind).
     (CAPACITY_RETRY_STATE_PREFIX, ""),
+    # Stale-blocked flag per-issue dedup state (== STALE_BLOCKED_STATE_PREFIX,
+    # task #1021). Same contract as capacity-retry above: TERMINAL_FOR_GC
+    # deliberately EXCLUDES `blocked`, so a live episode's dedup state is never
+    # reaped mid-episode (that would re-alert every tick); reaping fires only
+    # once the task reaches `completed`/`archived`. The sidecar
+    # `stale-blocked-events.jsonl` is outside the `*.json` glob by suffix.
+    (STALE_BLOCKED_STATE_PREFIX, ""),
     # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
     # campaign-pass section below; literal here because module-level tuples
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
@@ -17031,6 +17273,15 @@ def main(argv: list[str] | None = None) -> int:
         "real blocked-task set.",
     )
     parser.add_argument(
+        "--stale-blocked-only",
+        action="store_true",
+        help="run ONLY the stale-blocked flag pass (FLAG a blocked task whose "
+        "events show a live healthy run — fresh epm:run-launched + post-launch "
+        "progress; the #742 class, task #1021) and exit; skip every other "
+        "pass. Flag-only + daemon-independent; pair with --dry-run for a live "
+        "smoke against the real blocked-task set.",
+    )
+    parser.add_argument(
         "--program-orchestrator-only",
         action="store_true",
         help="run ONLY the program-orchestrator crash-recovery pass (relaunch "
@@ -17089,6 +17340,12 @@ def main(argv: list[str] | None = None) -> int:
     # under the lock (it probes the daemon itself) and exit.
     if args.capacity_retry_only:
         capacity_retry_pass(args.dry_run, daemon_reachable=_daemon_reachable())
+        return 0
+
+    # --stale-blocked-only mirrors --capacity-retry-only: run the single pass
+    # under the lock and exit. Daemon-INDEPENDENT (flag-only; no spawns).
+    if args.stale_blocked_only:
+        stale_blocked_flag_pass(args.dry_run)
         return 0
 
     # --program-orchestrator-only mirrors the other --*-only flags: the pass is
@@ -17303,6 +17560,17 @@ def main(argv: list[str] | None = None) -> int:
     # churn (no watcher-side precheck by design — see the pass's WHY block).
     # Daemon-gated like every spawning pass; runs after infra-drain.
     capacity_retry_pass(args.dry_run, daemon_reachable=daemon_reachable)
+
+    # Stale-blocked flag (task #1021, the #742 class): FLAG — never flip — a
+    # `blocked` task whose events show a live healthy run (an
+    # `epm:run-launched` NEWER than the transition into `blocked` + fresh
+    # post-launch progress). The watcher-side backstop of the SKILL.md
+    # "A successful relaunch also reconciles a stale `blocked`" orchestrator
+    # rule: one deduped-per-launch-episode marker + sidecar row + Telegram
+    # digest line; the status flip stays with the orchestrator/human.
+    # Thematically adjacent to capacity-retry (both scan blocked ids) but NOT
+    # daemon-gated — it spawns nothing (marker posts go via task.py).
+    stale_blocked_flag_pass(args.dry_run)
 
     # Session-reconcile: auto-stop (the default; EPM_SESSION_RECONCILE_AUTOSTOP=0
     # falls back to alert-only) live sessions that outlived their task's
