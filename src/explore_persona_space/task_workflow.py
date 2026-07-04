@@ -240,7 +240,10 @@ CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
 #       `tasks/`.
 #   (c) Branch-guards: `git -C <parent> symbolic-ref --short HEAD` must
 #       return `main`. Non-`main` and detached HEAD raise DISTINCT
-#       `RuntimeError`s naming the actual state.
+#       `RuntimeError`s naming the actual state; a detached HEAD with a LIVE
+#       primary-checkout rebase in progress first gets a bounded wait (#996,
+#       `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s, 0 disables) before
+#       the refusal fires.
 #   (d) Caches via `functools.lru_cache(maxsize=1)` keyed on
 #       `(os.getpid(), os.getcwd())` so each Python invocation pays one
 #       subprocess pair total; cache invalidates across forks and cwd
@@ -269,6 +272,47 @@ def _sanitized_git_env() -> dict[str, str]:
     for k in _GIT_ENV_POISONERS:
         env.pop(k, None)
     return env
+
+
+# Bounded wait for a LIVE primary-checkout rebase before the detached-HEAD
+# refusal (#996). A concurrent `git pull --rebase` on the shared repo root
+# detaches the primary HEAD for the rebase duration; refusing instantly cost
+# ≥7 sessions their task.py mutations on 2026-07-03.
+_REBASE_WAIT_ENV = "EPM_TASKPY_REBASE_WAIT_SECONDS"  # total bound; 0 disables (default 120)
+_REBASE_POLL_ENV = "EPM_TASKPY_REBASE_POLL_SECONDS"  # poll interval (default 2.0)
+
+
+def _rebase_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a live rebase before the
+    detached-HEAD refusal fires. ``0`` restores the pre-#996 immediate
+    refusal exactly. A non-float env value raises ``ValueError`` (fail
+    loud, project norm)."""
+    return float(os.environ.get(_REBASE_WAIT_ENV, "120"))
+
+
+def _rebase_poll_s() -> float:
+    """Poll interval (seconds) between branch-guard re-probes while waiting
+    out a live rebase. A non-float env value raises ``ValueError``."""
+    return float(os.environ.get(_REBASE_POLL_ENV, "2.0"))
+
+
+def _rebase_in_progress(common_dir: Path) -> bool:
+    """True iff the PRIMARY checkout has a live (or stale) rebase state dir.
+
+    For the primary worktree the per-worktree git dir IS the common dir, so a
+    primary-checkout rebase writes `<common-dir>/rebase-merge` (merge /
+    interactive backend — the `pull.rebase=merges` default pinned in this
+    repo) or `<common-dir>/rebase-apply` (am backend). A LINKED worktree's
+    rebase lives under `<common-dir>/worktrees/<name>/` and does NOT detach
+    the primary HEAD — correctly excluded by probing the common dir only.
+
+    Mirrors ``scripts/sync_repo_root.py::_rebase_in_progress`` but takes the
+    validated common dir directly and uses ``.is_dir()`` where the sibling
+    uses ``.exists()`` — deliberate (the state dir is always a directory),
+    noted here so a future unifier doesn't read the divergence as
+    intentional filtering.
+    """
+    return (common_dir / "rebase-merge").is_dir() or (common_dir / "rebase-apply").is_dir()
 
 
 def _resolve_primary_checkout(env: dict[str, str]) -> Path:
@@ -322,6 +366,10 @@ def _resolve_primary_checkout(env: dict[str, str]) -> Path:
     return parent
 
 
+# NOTE: functools.lru_cache caches only successful RETURNS — a raised
+# RuntimeError (plain detached refusal or rebase-wait timeout) is NOT cached,
+# so the next call in the same process re-probes; a post-wait success IS
+# cached (desired).
 @functools.lru_cache(maxsize=1)
 def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
     """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
@@ -331,51 +379,119 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
     env = _sanitized_git_env()
     # (a)+(b) Locate the common git dir + validate its parent.
     parent = _resolve_primary_checkout(env)
-    # (c) Branch guard.
-    sym = subprocess.run(
-        ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if sym.returncode == 0:
-        branch = sym.stdout.strip()
-        if branch != "main":
-            # The primary checkout is parked on a real feature branch. Rather
-            # than refuse (the historical behavior, which silently dropped
-            # markers in ~7 sessions), auto-route every task.py read+write
-            # through a dedicated managed worktree pinned to a DETACHED `main`
-            # tip. Commits made through that worktree advance the `main` ref
-            # (see `_advance_main_ref`), so the guard's INTENT — commits land
-            # on main, never strand on a feature branch — is preserved; only
-            # the hard refusal is replaced. The `--detach main` pin (not the
-            # `main` BRANCH) is deliberate: a worktree holding the `main`
-            # branch would block the primary from `git checkout main`
-            # ("fatal: 'main' is already checked out at <managed>"), so a
-            # leaked managed worktree would brick the user's ability to return
-            # to main. A detached pin holds no branch-checkout lock, so a leak
-            # is benign. Returns the managed worktree path; `_git_commit`
-            # detects routing via `_is_routed_root` and does the
-            # reset-to-main / advance-main dance.
-            return _ensure_managed_main_worktree(parent, branch, env)
-    else:
+    # The validated common dir (basename `.git` per _resolve_primary_checkout).
+    common_dir = parent / ".git"
+    wait_bound = _rebase_wait_bound_s()
+    deadline = time.monotonic() + wait_bound
+    # One extra re-probe for the marker-less boundary window: git's internal
+    # ordering of state-dir removal vs HEAD re-attach at rebase start/finish
+    # is not contractual, so a single 0.5s re-probe closes both the
+    # just-created and just-removed windows at a worst-case +0.5s on a
+    # genuine (non-rebase) detached refusal. Skipped entirely at knob=0.
+    grace_probes_left = 1 if wait_bound > 0 else 0
+    announced = False
+    polls = 0
+    while True:
+        # (c) Branch guard — re-entered in FULL each iteration, so a
+        # post-rebase HEAD attached to `main` returns the primary and a
+        # post-rebase HEAD on a non-main branch routes through the managed
+        # worktree (#844).
+        sym = subprocess.run(
+            ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if sym.returncode == 0:
+            branch = sym.stdout.strip()
+            if branch != "main":
+                # The primary checkout is parked on a real feature branch. Rather
+                # than refuse (the historical behavior, which silently dropped
+                # markers in ~7 sessions), auto-route every task.py read+write
+                # through a dedicated managed worktree pinned to a DETACHED `main`
+                # tip. Commits made through that worktree advance the `main` ref
+                # (see `_advance_main_ref`), so the guard's INTENT — commits land
+                # on main, never strand on a feature branch — is preserved; only
+                # the hard refusal is replaced. The `--detach main` pin (not the
+                # `main` BRANCH) is deliberate: a worktree holding the `main`
+                # branch would block the primary from `git checkout main`
+                # ("fatal: 'main' is already checked out at <managed>"), so a
+                # leaked managed worktree would brick the user's ability to return
+                # to main. A detached pin holds no branch-checkout lock, so a leak
+                # is benign. Returns the managed worktree path; `_git_commit`
+                # detects routing via `_is_routed_root` and does the
+                # reset-to-main / advance-main dance.
+                return _ensure_managed_main_worktree(parent, branch, env)
+            return parent
         # `git symbolic-ref --short HEAD` returns rc=1 with stderr
         # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
         # The substring check is the canonical detached-HEAD signal —
         # rc=128 can mean many other things (not a git repo, object
         # missing, …) and we don't want to misclassify those as detached.
         stderr = (sym.stderr or "").lower()
-        if "not a symbolic ref" in stderr:
+        if "not a symbolic ref" not in stderr:
+            raise RuntimeError(
+                f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
+                f"in {parent}:\n  stderr: {sym.stderr!r}"
+            )
+        # Detached HEAD. When a LIVE rebase of the primary checkout is in
+        # progress, bounded-wait and re-probe instead of refusing outright
+        # (#996). WAITING (not routing through the managed worktree) is
+        # deliberate: a mid-rebase managed-worktree commit would CAS-advance a
+        # `refs/heads/main` the finishing rebase is about to force-move to its
+        # replayed tip (the orphaned-commit family sync_repo_root.py's
+        # docstring warns about); the rebase replays the pre-existing commits
+        # onto main anyway. No deadlock while a caller waits here holding the
+        # task-workflow flock: sync_repo_root.py acquires that flock BEFORE
+        # its pull_rebase, and that acquisition is itself LOCK_NB-bounded —
+        # the observed rebase never needs the flock to finish.
+        if wait_bound <= 0:
+            # Knob=0 → EXACT pre-#996 behavior: no marker probe, no grace,
+            # immediate refusal with the byte-identical message.
             raise RuntimeError(
                 f"main worktree HEAD ({parent}) is detached; "
                 f"re-attach to 'main' before running task.py."
             )
-        raise RuntimeError(
-            f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
-            f"in {parent}:\n  stderr: {sym.stderr!r}"
-        )
-    return parent
+        rebasing = _rebase_in_progress(common_dir)
+        if not rebasing and grace_probes_left <= 0:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached; "
+                f"re-attach to 'main' before running task.py."
+            )
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached and a rebase state dir "
+                f"({common_dir / 'rebase-merge'} or rebase-apply) was still present after "
+                f"waiting {wait_bound:.0f}s ({_REBASE_WAIT_ENV}). A live `git pull --rebase` "
+                f"should finish in seconds; a state dir this old is likely a CRASHED rebase. "
+                f"Inspect with `git -C {parent} status`; `git -C {parent} rebase --abort` "
+                f"clears a stale rebase, then re-attach to 'main'."
+            )
+        if not rebasing:
+            grace_probes_left -= 1
+            time.sleep(0.5)  # just-created / just-removed marker window; single re-probe
+            continue
+        if not announced:
+            _log.warning(
+                "task.py: primary checkout HEAD (%s) is detached mid-rebase (%s present); "
+                "waiting up to %.0fs for the concurrent rebase to finish (poll %.1fs; "
+                "override via %s)...",
+                parent,
+                "rebase-merge/rebase-apply",
+                wait_bound,
+                _rebase_poll_s(),
+                _REBASE_WAIT_ENV,
+            )
+            announced = True
+        polls += 1
+        if polls % 10 == 0:  # heartbeat (cadence untested; entry line is the contract)
+            _log.warning(
+                "task.py: still waiting on the concurrent rebase (%.0fs of %.0fs elapsed)...",
+                wait_bound - max(deadline - time.monotonic(), 0.0),
+                wait_bound,
+            )
+        time.sleep(_rebase_poll_s())
 
 
 # ─── Off-main auto-routing (managed main-pinned worktree) ───────────────────
@@ -543,7 +659,10 @@ def repo_root() -> Path:
     Resolves via `git rev-parse --git-common-dir` from the directory of
     this module (NOT `os.getcwd()`). Branch-guards: raises a loud,
     distinct `RuntimeError` if the main worktree HEAD is on a non-`main`
-    branch or detached. Validates that the resolved path actually contains
+    branch or detached; a detached HEAD with a live primary-checkout rebase
+    in progress first gets a bounded wait (#996,
+    `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s) before the refusal.
+    Validates that the resolved path actually contains
     `tasks/` and is not a submodule / bare layout. NEVER falls back to a
     walk-up resolver — silent fallback is what produced the
     worktree-staleness bug class this resolver replaces.
