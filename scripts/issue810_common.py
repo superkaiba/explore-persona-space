@@ -560,6 +560,51 @@ def context_ids_from_manifest(manifest: dict) -> list[str]:
     return list(ids)
 
 
+def retry_hub_quota(fn, attempts: int = 6, sleep_s: float = 75.0):
+    """Retry ``fn()`` over Hub 429/5xx (the 2500-req/5-min org-quota window; #658/#833).
+
+    The paginated tree endpoint retries 429 ONLY on follow-up cursor pages — the
+    FIRST page (and single-path probes like ``file_exists``) raise immediately, so
+    a post-upload verify issued in the tail of a quota storm needs this outer
+    BOUNDED retry (never an unbounded loop; raises the last error at the cap).
+    """
+    import time
+
+    from huggingface_hub.errors import HfHubHTTPError
+
+    last: Exception | None = None
+    for _ in range(attempts):
+        try:
+            return fn()
+        except HfHubHTTPError as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status not in (429, 500, 502, 503, 504):
+                raise
+            last = e
+            time.sleep(sleep_s)
+    raise last  # type: ignore[misc]
+
+
+def scoped_remote_listing(prefix: str) -> set[str]:
+    """Fresh listing of ``prefix`` on the data repo, server-side SCOPED to the prefix.
+
+    A bare ``list_repo_files`` full listing of the ~1M-file data repo paginates the
+    ENTIRE tree (~1000 cursor pages) under the 2500-req/5-min org quota — a 429
+    retry wedge that idles the GPU for hours (gotchas.md #833; hit live on the
+    btdr round, 2026-07-04). ``path_in_repo`` rides in the tree URL so pagination
+    covers only the subtree — seconds for issue-scale prefixes.
+    """
+    from huggingface_hub import HfApi
+
+    def _list() -> set[str]:
+        tree = HfApi().list_repo_tree(
+            HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", revision="main", recursive=True
+        )
+        return {e.path for e in tree}
+
+    return retry_hub_quota(_list)
+
+
 def upload_out_dir(out_dir: Path | str, path_in_repo: str) -> str:
     """Bulk-commit an out-dir's ``*.json`` to the HF data repo, then fail-loud verify.
 
@@ -568,12 +613,12 @@ def upload_out_dir(out_dir: Path | str, path_in_repo: str) -> str:
     result JSONs must land on ``HF_DATA_REPO`` (``repo_type="dataset"``) before
     teardown. Mirrors ``issue810_extract_positions._upload_store`` — ONE
     ``upload_folder`` commit (never a per-file loop — the #664 504-storm), then
-    verifies EVERY produced JSON is present on a FRESH ``list_repo_files`` listing
+    verifies EVERY produced JSON is present on a FRESH prefix-scoped listing
     and raises ``RuntimeError`` on any miss (never a silent partial upload).
 
     Returns the ``path_in_repo`` the JSONs landed under.
     """
-    from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub import HfApi
 
     out_dir = Path(out_dir)
     local_jsons = sorted(p.name for p in out_dir.glob("*.json"))
@@ -588,7 +633,7 @@ def upload_out_dir(out_dir: Path | str, path_in_repo: str) -> str:
         allow_patterns=["*.json"],
         commit_message=f"issue #810: fit results ({len(local_jsons)} JSONs) -> {path_in_repo}",
     )
-    remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
+    remote = scoped_remote_listing(path_in_repo)
     expected = {f"{path_in_repo}/{name}" for name in local_jsons}
     missing = expected - remote
     if missing:

@@ -131,6 +131,8 @@ from issue810_common import (  # noqa: E402
     he_stored_position_names,
     load_json,
     reproducibility_metadata,
+    retry_hub_quota,
+    scoped_remote_listing,
     sha256_file,
     stored_position_names,
     tail_head_position_index,
@@ -1252,7 +1254,7 @@ def _upload_store(
     ``ablate`` to the `_he` subdir (plan v15 § Storage naming);
     ``truncate_frac`` to the per-k `_btdr` subdir (plan v18 § Storage naming).
     """
-    from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub import HfApi
 
     if truncate_frac is not None:
         base_subdir = ANSWER_POSITION_SWEEP_BTDR_SUBDIR_TMPL.format(pct=btdr_pct(truncate_frac))
@@ -1275,7 +1277,7 @@ def _upload_store(
         allow_patterns=["*.pt", "manifest.json"],
         commit_message=f"issue #810: answer position sweep store ({len(ctx_ids)} contexts)",
     )
-    remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
+    remote = scoped_remote_listing(path_in_repo)
     # Exact expected set: every per-context tensor + the manifest (readers
     # resolve <prefix>/manifest.json first — a store without it is unusable).
     expected = {f"{path_in_repo}/{c}.pt" for c in ctx_ids} | {f"{path_in_repo}/manifest.json"}
@@ -1303,7 +1305,7 @@ def _upload_uh_summaries(pack_path: Path, hf_file: str = UH_SUMMARIES_HF_FILE) -
     data repo BEFORE the GPU is released, verified on a FRESH listing.
     Single-file `upload_file` is correct here (ONE file, not a per-file loop).
     """
-    from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub import HfApi
 
     api = HfApi()
     api.upload_file(
@@ -1313,8 +1315,10 @@ def _upload_uh_summaries(pack_path: Path, hf_file: str = UH_SUMMARIES_HF_FILE) -
         repo_type="dataset",
         commit_message=f"issue #810: {hf_file} (CPU-chain input pack)",
     )
-    remote = set(list_repo_files(HF_DATA_REPO, repo_type="dataset", revision="main"))
-    if hf_file not in remote:
+    pack_on_hub = retry_hub_quota(
+        lambda: api.file_exists(HF_DATA_REPO, hf_file, repo_type="dataset", revision="main")
+    )
+    if not pack_on_hub:
         raise RuntimeError(
             f"summaries-pack upload verification FAILED: {hf_file} missing on a "
             "fresh Hub listing — refusing to treat a partial upload as success"
