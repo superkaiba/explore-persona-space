@@ -3,6 +3,7 @@ title: 'workflow-fix: retro-close predicate ignores queued-context label mention
 kind: infra
 tags:
 - wf-fix
+- wf-fix-fp:27b56e7fed52
 created_at: '2026-07-04T04:30:44Z'
 has_clean_result: false
 origin_prompt: 'workflow-fix candidate raised by /issue 825 orchestrator 2026-07-04:
