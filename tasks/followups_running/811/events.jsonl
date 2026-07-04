@@ -362,3 +362,4 @@
 {"ts": "2026-07-04T10:06:08Z", "kind": "epm:progress", "version": 110, "by": "unknown", "note": "tick heartbeat: fit battery at 6h01m (~950% CPU), ~20% past projection; still in the per-cell ridge/LOCO units (py-spy-verified path). Continuing."}
 {"ts": "2026-07-04T10:36:41Z", "kind": "epm:progress", "version": 111, "by": "unknown", "note": "tick heartbeat: fit battery at 6h32m (~955% CPU), healthy."}
 {"ts": "2026-07-04T11:07:24Z", "kind": "epm:progress", "version": 112, "by": "unknown", "note": "tick heartbeat: fit battery at 7h03m (~950% CPU), ~40% past the 5h projection; ~52K per-cell ridge-LOCO units total, checkpoints write only at the post-gate merge so mid-battery visibility is CPU+py-spy only. Healthy."}
+{"ts": "2026-07-04T11:38:08Z", "kind": "epm:progress", "version": 113, "by": "unknown", "note": "tick heartbeat: fit battery at 7h34m (~945% CPU, RSS 6.7GiB), healthy."}
