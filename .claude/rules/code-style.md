@@ -41,9 +41,14 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
   `PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs log> 2>&1 & echo $!')` — because a
   plain bg-Bash child shares the session's kill domain and dies with a watcher force-stop (#833,
   2026-07-02: a healthy ~2h fit killed mid-flight); the `bash -c` wrapper makes `$!` the workload
-  pid (a bare top-level `$!` after `setsid … &` is the vanished intermediate). Record
-  `pid=$PHASE_PID` + the log path in the stage-dispatch breadcrumb
-  (SKILL.md § Detached VM-side long compute phases).
+  pid (a bare top-level `$!` after `setsid … &` is the vanished intermediate). Immediately after
+  the pid verify, protect from earlyoom collateral kills:
+  `pgrep -s "$PHASE_PID" | xargs -rn1 sudo -n choom -n -600 -p` (session-wide; children inherit;
+  −600 not −1000 so a runaway fit still dies first; `choom=ok` only when the sweep pipeline
+  exited zero — on `sudo -n` / sweep failure proceed unprotected and record `choom=failed`).
+  Record `pid=$PHASE_PID` + the log path + `choom=ok|failed` in the stage-dispatch breadcrumb
+  (SKILL.md § Detached VM-side long compute phases — incl. the collateral-kill signature and the
+  relaunch-once-then-pod-pivot rule; #811).
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
