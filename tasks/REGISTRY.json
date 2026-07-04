@@ -6455,8 +6455,8 @@
     "970": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/970",
-      "status": "reviewing",
+      "path": "tasks/completed/970",
+      "status": "completed",
       "title": "workflow-fix: add SUCCESS|FAILURE to audit verdict_caps"
     },
     "971": {
