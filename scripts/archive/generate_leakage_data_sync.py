@@ -4,8 +4,22 @@
 Fallback for when the Batch API is unavailable. Uses asyncio with
 semaphore-limited concurrency for fast parallel generation.
 
-Usage:
-    uv run python scripts/generate_leakage_data_sync.py
+ARCHIVED — FORWARD-FRAGILE SEAM; READ BEFORE REVIVING.
+    ``call_api`` (below) forwards its ``messages`` argument VERBATIM to
+    ``client.messages.create(messages=...)``. The Anthropic Messages API has
+    NO "system" message role — a system-bearing messages list 400s every
+    request (see .claude/rules/gotchas.md, "The Anthropic Messages API has NO
+    system message ROLE"; incidents #906 r11 / #955). All 4 current call
+    sites (grep ``call_api(``) pass user-role-only lists and carry system
+    text via the separate ``system=`` parameter, so HISTORICAL RESULTS ARE
+    UNAFFECTED — the seam breaks only if revived with a new system-bearing
+    caller. If reviving: lift system entries to the top-level ``system=``
+    param (pattern: ``llm.models.Prompt.anthropic_format``,
+    src/explore_persona_space/llm/models.py) or route calls through
+    ``src/explore_persona_space/llm/api_dispatch.py`` instead of this helper.
+
+Usage (historical; archived):
+    uv run python scripts/archive/generate_leakage_data_sync.py
 """
 
 import asyncio
@@ -70,6 +84,9 @@ async def call_api(
     custom_id: str = "",
 ) -> tuple[str, str]:
     """Make one API call with semaphore-limited concurrency. Returns (custom_id, text)."""
+    # FORWARD-FRAGILE: `messages` is forwarded verbatim below; the Messages API
+    # has no "system" role, so a system-bearing list 400s. Pass system text via
+    # the `system=` kwarg only (see module docstring). Current callers: user-only.
     async with sem:
         kwargs = {"model": MODEL, "max_tokens": max_tokens, "messages": messages}
         if system:
@@ -77,6 +94,7 @@ async def call_api(
 
         for attempt in range(5):
             try:
+                # messages forwarded verbatim — no "system" role here (see module docstring)
                 resp = await client.messages.create(**kwargs)
                 text = resp.content[0].text
                 return custom_id, text
