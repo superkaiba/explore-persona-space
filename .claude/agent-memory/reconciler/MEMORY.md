@@ -68,7 +68,7 @@
 
 ## Clean-result-critic + interp-critic calibration
 
-- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 22 BLOCKING spec-text rules + 19 Codex over-fire DISCARD classes, verified against SPEC text.
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules (v4: >1 figure unit/result, Context prompt not blockquoted, Lens-11 aggregate-only secondary bars w/ cross-result "coverage") + 20 Codex over-fire DISCARDs (U: "(interval a to b)" prose intervals). #923 r1+r2.
 - [Clean-result bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — v4 split: bare #N in Methodology table Source col / Results caption (L2) + reuse bullet missing the permanent path (b) (L5) are grounded FAILs Claude PASSes; discard the L4/L6/L12/L15 Codex over-fire as SPEC misreads. #722 r1.
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ±, derived intervals in prose/captions before trusting a Claude PASS (Lens 11 in pre-renumbering verdicts). #378.
 - [Cross-loop CI conflict (interp vs clean-result)](feedback_cross_loop_ci_conflict.md) — interp-critic-required CIs / prior-gate house style / caption CIs survive Codex's Lens-7 FAIL; add "Do NOT remove" lines. #478, #509, #464.
