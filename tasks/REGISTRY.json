@@ -6624,8 +6624,8 @@
     "984": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/984",
-      "status": "planning",
+      "path": "tasks/approved/984",
+      "status": "approved",
       "title": "workflow-fix: VM-scope cross-ref on upload-policy env one-liner"
     },
     "985": {
