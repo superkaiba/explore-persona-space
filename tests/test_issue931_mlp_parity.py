@@ -131,6 +131,96 @@ def test_fit_batched_split_mlp_mse_matches_serial_mse_reference():
     assert np.max(np.abs(res_mse.preds_by_key[("g",)] - ref)) <= 5e-4
 
 
+def test_corpus_pins_bound(monkeypatch):
+    """external-corpus-pins-missing regression pin: the committed PDNC/WikiText
+    pins exist (40-hex), and build_pairs' --pdnc-sha DEFAULT is the pin — so
+    EVERY invocation path (dispatcher included) checks out the pin. Pre-fix the
+    default was None and a fresh production run floated on the PDNC default
+    branch / the HF dataset repo HEAD."""
+    import re
+
+    import issue931_build_pairs as bp
+    import issue931_common as common
+
+    assert re.fullmatch(r"[0-9a-f]{40}", common.PDNC_SHA)
+    assert re.fullmatch(r"[0-9a-f]{40}", common.WIKITEXT_REVISION)
+    monkeypatch.setattr(sys, "argv", ["issue931_build_pairs.py"])
+    args = bp.parse_args()
+    assert args.pdnc_sha == common.PDNC_SHA
+
+
+def test_patience_parity_bit_tracks_serial_fit_h_loop():
+    """mlp-parity-recipe-mismatch regression pin (bit-level): the two new
+    parity options (standardize_inputs=False + patience=20) make the batched
+    fitter track a LITERAL serial replica of fit_h.mlp_fit_predict's training
+    loop (post-step val eval, vloss < best_val - 1e-6 improvement, patience-20
+    freeze, best-state restore) with the SAME init draw — same best epoch,
+    preds equal to bmm-vs-Linear reduction order. Noisy targets so the
+    patience early stop genuinely FIRES (asserted). Pre-fix this test fails
+    with TypeError: the options did not exist."""
+    rng = np.random.default_rng(9)
+    n_tr, n_val, n_ev, d, p = 60, 12, 20, 16, 4
+    X = rng.standard_normal((n_tr + n_val + n_ev, d)).astype(np.float32)
+    Y = (
+        0.2 * X @ rng.standard_normal((d, p)) + 1.0 * rng.standard_normal((n_tr + n_val + n_ev, p))
+    ).astype(np.float32)
+    # Caller pre-standardizes on the full fold-train (train+val) — parent shape.
+    full = X[: n_tr + n_val]
+    mu, sd = full.mean(0), full.std(0) + 1e-6
+    Xn = (X - mu) / sd
+    grp = SplitMLPGroup(
+        ("g",),
+        Xn[:n_tr],
+        Y[:n_tr],
+        Xn[n_tr + n_val :],
+        Xn[n_tr : n_tr + n_val],
+        Y[n_tr : n_tr + n_val],
+    )
+    hidden, max_epochs = 16, 300
+    res = fit_batched_split_mlp(
+        [grp],
+        seed=658,
+        hidden=hidden,
+        max_epochs=max_epochs,
+        device="cpu",
+        chunk_size=1,
+        loss="mse",
+        standardize_inputs=False,
+        patience=20,
+    )
+
+    torch.manual_seed(split_group_init_seed(658, ("g",)))
+    net = torch.nn.Sequential(
+        torch.nn.Linear(d, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, p)
+    )
+    opt = torch.optim.AdamW(net.parameters(), lr=MLP_LR, weight_decay=MLP_WD)
+    Xt, Yt = torch.from_numpy(Xn[:n_tr]), torch.from_numpy(Y[:n_tr])
+    Xv, Yv = torch.from_numpy(Xn[n_tr : n_tr + n_val]), torch.from_numpy(Y[n_tr : n_tr + n_val])
+    Xe = torch.from_numpy(Xn[n_tr + n_val :])
+    best_val, best_state, best_ep, bad, last_ep = float("inf"), None, -1, 0, -1
+    for ep in range(max_epochs):
+        opt.zero_grad(set_to_none=True)
+        torch.nn.functional.mse_loss(net(Xt), Yt).backward()
+        opt.step()
+        with torch.no_grad():
+            vloss = float(torch.nn.functional.mse_loss(net(Xv), Yv).item())
+        last_ep = ep
+        if vloss < best_val - 1e-6:
+            best_val, best_ep, bad = vloss, ep, 0
+            best_state = {k: v.detach().clone() for k, v in net.state_dict().items()}
+        else:
+            bad += 1
+            if bad >= 20:
+                break
+    net.load_state_dict(best_state)
+    with torch.no_grad():
+        ref = net(Xe).numpy()
+
+    assert last_ep < max_epochs - 1, "patience early stop never fired — recalibrate the data"
+    assert res.best_val_epoch_by_key[("g",)] == best_ep
+    assert np.max(np.abs(res.preds_by_key[("g",)] - ref)) <= 5e-5
+
+
 def test_patience_requires_validation():
     """patience= without val splits fails loud (parent parity needs a val set)."""
     rng = np.random.default_rng(1)
