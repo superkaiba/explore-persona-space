@@ -6321,8 +6321,8 @@
     "955": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/955",
-      "status": "running",
+      "path": "tasks/reviewing/955",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas.md anthropic system-role lift + live-probe rule for dispatcher seams"
     },
     "956": {
