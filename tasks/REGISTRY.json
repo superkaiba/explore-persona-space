@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 969,
+  "highest_id": 970,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6437,6 +6437,13 @@
       "path": "tasks/archived/97",
       "status": "archived",
       "title": "Multi-seed confirmation of prompt-search EM replication (followup to #94)"
+    },
+    "970": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/970",
+      "status": "proposed",
+      "title": "workflow-fix: add SUCCESS|FAILURE to audit verdict_caps"
     },
     "98": {
       "has_clean_result": true,
