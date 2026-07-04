@@ -4,7 +4,7 @@ title: The own-answer advantage in predicting answer activations from context is
 kind: experiment
 tags: []
 created_at: '2026-07-03T23:33:32Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 823
 origin_prompt: "# Motivation\n- We found in a previous experiment that there is an\
   \ almost as good linear mapping from context to off-policy answers as there is from\
