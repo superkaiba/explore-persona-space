@@ -484,3 +484,97 @@ def test_launch_ok_regex_shapes():
     assert RP._LAUNCH_OK_RE.search("LAUNCH-OK pid=7 via=/workspace/logs/x.pid").group(1) == "7"
     assert RP._LAUNCH_OK_RE.search("LAUNCH-DEAD pid=none") is None
     assert re.search(r"SYNC-OK ([0-9a-f]+)", "SYNC-OK deadbeef").group(1) == "deadbeef"
+
+
+# ---------------------------------------------------------------------------
+# #954 — the PARTIAL handle on RunPodWorkloadStartError
+# ---------------------------------------------------------------------------
+
+#: The EXACT pre-#954 success-path ``extra`` key set for a NON-exec launch
+#: (``workload_info == {}``) — pinned EXPLICITLY (never a circular post-change
+#: fixture): the #954 refactor must add NO new keys on the success path.
+_PRE_954_SUCCESS_EXTRA_KEYS = frozenset(
+    {
+        "intent",
+        "issue",
+        "pid_file",
+        "runpod_attempt_id",
+        "workload_cmd",
+        "hydra_args",
+        "gpus",
+        "time_budget_hours",
+        "repo_branch",
+        "workload_executed",
+        EXPECTED_ARTIFACTS_HANDLE_KEY,
+    }
+)
+
+
+def test_launch_attaches_partial_handle_on_workload_start_error(monkeypatch):
+    """#954: with provision mocked OK and the execution leg raising, the typed
+    error carries a PARTIAL handle matching the success-path handle shape
+    except ``workload_executed is False`` + ``workload_start_error`` — and the
+    SUCCESS-path handle ``extra`` stays byte-identical (no new keys)."""
+    _wire_exec_leg(monkeypatch, [])
+
+    def _fake_exec(spec, **kwargs):
+        raise RP.RunPodWorkloadStartError("branch sync of pod-909 timed out (ssh TimeoutExpired)")
+
+    monkeypatch.setattr(RP, "_execute_workload_on_pod", _fake_exec)
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(
+            _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
+        )
+    partial = ei.value.handle
+    assert partial is not None
+    assert partial.backend == "runpod"
+    assert partial.pod_name == "pod-909"
+    assert partial.log_path == "/workspace/logs/issue-909.log"
+    # Truthful execution outcome + the truncated start-leg error.
+    assert partial.extra["workload_executed"] is False
+    assert "ssh TimeoutExpired" in partial.extra["workload_start_error"]
+    # The partial extra == the success shape PLUS ONLY the error key.
+    assert set(partial.extra.keys()) == _PRE_954_SUCCESS_EXTRA_KEYS | {"workload_start_error"}
+    # The declaration is fully built (attempt-namespaced sentinel path present),
+    # so poll/finalize/re-drive stay chained on the partial handle.
+    declared = partial.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]["sentinel_path"]
+    assert declared == RP.runpod_sentinel_path(909, partial.extra["runpod_attempt_id"])
+
+
+def test_launch_success_extra_keys_byte_identical_no_new_keys(monkeypatch):
+    """#954 regression guard (test 10 second half): the SUCCESS-path handle
+    ``extra`` key set is byte-identical to pre-#954 for BOTH the non-exec and
+    the exec-success shapes — ``workload_start_error`` appears ONLY on the
+    failure path."""
+    # Non-exec success: the exact pre-change key set, nothing added.
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec())
+    assert set(handle.extra.keys()) == set(_PRE_954_SUCCESS_EXTRA_KEYS)
+
+    # Exec success: the pre-change keys + the execution-leg workload_info keys;
+    # the failure-path-only key NEVER appears on success.
+    _wire_exec_leg(
+        monkeypatch,
+        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+    )
+    handle2 = RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    assert set(handle2.extra.keys()) >= _PRE_954_SUCCESS_EXTRA_KEYS
+    assert "workload_start_error" not in handle2.extra
+    assert handle2.extra["workload_executed"] is True
+
+
+def test_pre_provision_guard_keeps_handle_none(monkeypatch):
+    """#954 AC2 input shape: the ``execute_workload``+empty-``workload_cmd``
+    guard raises with ``handle is None`` and provision was never invoked —
+    nothing was provisioned, nothing bills, so the rung's NoCompute blanket
+    branch stays correct for it."""
+
+    def _explode(*a, **k):
+        raise AssertionError("provision must NOT run on the flag+empty-cmd cell")
+
+    monkeypatch.setattr(RP.subprocess, "run", _explode, raising=False)
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(
+            _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
+        )
+    assert ei.value.handle is None
