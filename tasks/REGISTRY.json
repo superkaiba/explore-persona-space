@@ -4973,8 +4973,8 @@
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/779",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/779",
+      "status": "awaiting_promotion",
       "title": "Trait-expressing training data makes the learned context->answer map worse, leaving the raw persona-vector projection the strongest transfer-trained pre-generation trait monitor (MODERATE confidence)"
     },
     "78": {
