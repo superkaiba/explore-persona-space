@@ -54,11 +54,11 @@ relates_to:
 ## Takeaways
 
 - The chat context→answer linear map does not transfer to fiction: chat-side matched transfer fractions peak at +0.05 of ceiling, an order of magnitude below the 0.5 same-map bar.
-- A character→dialogue map exists in raw fiction — held-out R² +0.17 over 28 novels (1,982 pairs), +0.16 over 743 model stories — clearing group-shuffle bands at 0.62× the matched-n chat reference on the draw-averaged denominator (stable across 5 seeded draws).
+- A character→dialogue map exists in raw fiction: held-out R² +0.17 (28 novels, 1,982 pairs), +0.16 (743 stories) — 0.62× the draw-averaged matched-n chat reference.
 - The pooled signal is mostly story/topic-level: per-novel R² is negative in 26 of 28 novels, and a character-agnostic whole-window baseline reaches 0.98× the character map.
 - Character identity is a small real component: swapping the predicted character costs R² 0.076 (novels) and 0.046 (stories), 91–93% surviving distance partialling; correct beats swap in 28 of 28 novels.
-- No weight- or prediction-level similarity read between the chat and fiction maps exceeds its strongest persona-free control reference (prediction CKA 0.227 vs 0.197 separator and 0.624 preceding-sentence) — the above-null similarity is generic.
-- One measurement fragility remains — the ridge estimator fails on both persona-free control cells (−3.2/−3.5 vs +0.35/+0.33 rotated); the matched-n chat denominator's dip is stable across 5 seeded draws (0.281 ± SD 0.021 at n = 1,982), a documented non-monotonicity rather than a fragility.
+- No chat↔fiction similarity read exceeds its strongest persona-free control (prediction CKA 0.227 vs 0.624 preceding-sentence reference) — the above-null similarity is generic.
+- One fragility remains: the ridge estimator fails on both control cells (−3.2/−3.5 vs +0.35/+0.33 rotated). The matched-n dip is stable across 5 draws (0.281 ± 0.021) — documented non-monotonicity.
 
 ## Goal
 
@@ -69,7 +69,15 @@ relates_to:
 
 **Design:** One model (Qwen2.5-7B-Instruct, bf16), one manipulated variable — the context regime — with the estimator, layer set, folds, and null machinery held identical across four fit families at all 28 layers: (1) real dialogue-rich novels fed as raw text with no chat template (28 novels, 1,982 character–dialogue pairs); (2) model-written multi-character stories generated on-policy under the chat template (1,035 pairs across 743 stories; a 562-pair subset over the 270 stories with ≥ 2 eligible characters supports the character-swap contrast); (3) a persona-free WikiText-103 control predicting the span after a sentence-final separator token from that token's activation (3,600 pairs), plus a preceding-sentence variant; (4) a reused chat reference of 5,000 single-turn conversations. Per pair, X is the mean activation over the character's introduction span (headline recipe) plus a single-position variant at the span's final token matching the chat map's single-position input recipe; Y is the mean activation over the character's attributed dialogue in the same window. Single extraction pass; fit seed 0. An on-pod canary (3 novels / 20 stories) validated pair yield and span alignment before production.
 
-Follow-up round 2 (matched-n-denominator-dip, 0 GPU-h on the VM): the matched-n chat denominator — a single seeded draw at n = 1,982 in the main run — was re-estimated with 5 independent seeded uniform row draws per n in {1,000, 1,500, 1,982} (the exact reduction of group-stratified sampling on the all-singleton chat store; scheme `issue931_pcms.seeded_uniform_row_draw.v1`), 15 cells under the identical estimator. The planned n in {2,500, 3,000} rungs were descoped by the run's wall-time ladder (projected 6.6 h against a 1.5 h budget).
+**Rounds:**
+
+| Round | Label | Change vs prior round | Cost |
+|---|---|---|---|
+| 1 | main run | full four-family design (canary + production) | ~8.4 GPU-h |
+| 2 | distance-covariate read (free-analysis) | ΔR²_char re-read with the C→T distance gap partialled out; no new data | 0 GPU-h |
+| 3 | matched-n-denominator-dip | matched-n chat denominator: single seeded draw → 5 seeded draws × n ∈ {1,000, 1,500, 1,982}, draw-averaged | 0 GPU-h |
+
+Follow-up round (matched-n-denominator-dip, 0 GPU-h on the VM): the matched-n chat denominator — a single seeded draw at n = 1,982 in the main run — was re-estimated with 5 independent seeded uniform row draws per n in {1,000, 1,500, 1,982} (the exact reduction of group-stratified sampling on the all-singleton chat store; scheme `issue931_pcms.seeded_uniform_row_draw.v1`), 15 cells under the identical estimator. The planned n in {2,500, 3,000} rungs were descoped by the run's wall-time ladder (projected 6.6 h against a 1.5 h budget).
 
 Data-quality outcomes: pair yield 1,982 vs the 800-pair floor, with 0 of 28 novels dropped at the ≤ 10% token-span-mismatch bar; the rig-replication check on the reused chat store reproduced the inherited layer curve exactly (layer-profile rank correlation 1.000, ΔR² 0.000 at layer 19 — a same-code-same-data identity check, not an independent replication); the batched MLP fitter matched the inherited implementation within 0.0004 on the chat reference; quote-attribution audit precision 0.914 vs the 0.90 floor.
 
