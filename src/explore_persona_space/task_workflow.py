@@ -2369,12 +2369,22 @@ def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
     corrupted line falls through to the existing ``JSONDecodeError`` skip
     path — completing the recovery story.
+
+    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
+    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
+    strings, and ``splitlines()`` treats those as line boundaries — shredding
+    a valid record into skip-malformed fragments = silent marker loss
+    (gotchas.md; #825 → #950).
     """
     if not path.exists():
         return []
     out: list[dict[str, Any]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
-    for lineno, line in enumerate(text.splitlines(), 1):
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False notes are Unicode line boundaries that would shred
+    # valid records into skip-malformed fragments = silent marker loss
+    # (gotchas.md; #825 → #950).
+    for lineno, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
         try:

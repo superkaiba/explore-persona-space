@@ -215,7 +215,11 @@ def _task_context(issue: int) -> TaskContext:
     last_ts: str | None = None
     try:
         events_path = repo_root() / snap["path"] / "events.jsonl"
-        for line in events_path.read_text(errors="ignore").splitlines():
+        # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+        # ensure_ascii=False notes are Unicode line boundaries that would
+        # shred valid records — a shredded epm:status-changed line silently
+        # loses the status timestamp (gotchas.md; #825 → #950).
+        for line in events_path.read_text(errors="ignore").split("\n"):
             line = line.strip()
             if not line:
                 continue
