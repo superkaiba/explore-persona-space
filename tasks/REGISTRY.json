@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 952,
+  "highest_id": 953,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6303,6 +6303,13 @@
       "path": "tasks/proposed/952",
       "status": "proposed",
       "title": "Token-position-resolved on/off-policy characterization of the context\u2192answer activation map + divergence-conditioned evaluation (Qwen vs Claude)"
+    },
+    "953": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/953",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 GCE manual-clone requires mirroring ALL [FAIL]-guarded metadata secrets"
     },
     "96": {
       "has_clean_result": true,
