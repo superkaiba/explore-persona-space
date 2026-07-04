@@ -6196,7 +6196,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/931",
       "status": "interpreting",
-      "title": "Story-character generalization of the context\u2192answer map (no chat template) + separator-token specificity control"
+      "title": "The chat context\u2192answer map does not carry over to fiction, which hosts only a weak, mostly story-level character\u2192dialogue map with a small character-identity component (MODERATE confidence)"
     },
     "932": {
       "has_clean_result": false,

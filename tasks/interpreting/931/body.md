@@ -1,6 +1,7 @@
 ---
-title: Story-character generalization of the context→answer map (no chat template)
-  + separator-token specificity control
+title: The chat context→answer map does not carry over to fiction, which hosts only
+  a weak, mostly story-level character→dialogue map with a small character-identity
+  component (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-03T12:10:25Z'
