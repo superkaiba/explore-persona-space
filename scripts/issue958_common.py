@@ -123,6 +123,14 @@ upload_dir_bulk = C922.upload_dir_bulk
 # ── corpus identity (the #958 r2 resume-collision fix) ───────────────────────
 
 
+def canonical_sha256(payload: dict) -> str:
+    """sha256 hex over canonical JSON (sorted keys, compact separators)."""
+    import hashlib
+
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()
+
+
 def compute_corpus_fingerprint(payload: dict) -> str:
     """sha256 hex over a canonical-JSON corpus identity payload.
 
@@ -135,10 +143,7 @@ def compute_corpus_fingerprint(payload: dict) -> str:
     a rebuilt corpus (code-review r1 Critical, bug-class: resume predicate
     missing the corpus-identity key, #722-r3 class).
     """
-    blob = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    import hashlib
-
-    return hashlib.sha256(blob).hexdigest()
+    return canonical_sha256(payload)
 
 
 def corpus_fingerprint(corpus_dir: Path) -> str:
@@ -382,6 +387,42 @@ def load_store_positions(
     return out
 
 
+def _file_sample_digest(path: Path, chunk_bytes: int = 1 << 20) -> str:
+    """sha256 over (size, first/middle/last ``chunk_bytes``) of a file's bytes.
+
+    Content-based and mtime-invariant: an HF restage of identical bytes keeps
+    the digest, while a recapture with different fp16 activation values
+    changes tensor bytes throughout the (ZIP_STORED, uncompressed) shard, so
+    the sampled regions differ. Never torch.loads the blob — raw bytes only.
+    """
+    import hashlib
+
+    size = path.stat().st_size
+    h = hashlib.sha256(f"{size}:".encode())
+    with open(path, "rb") as f:
+        for off in sorted({0, max(size // 2 - chunk_bytes // 2, 0), max(size - chunk_bytes, 0)}):
+            f.seek(off)
+            h.update(f.read(chunk_bytes))
+    return h.hexdigest()
+
+
+def store_content_digest(store_dir: Path, unit_sets: list[str]) -> str:
+    """Mtime-invariant CONTENT identity of the store shards a consumer reads.
+
+    Canonical-JSON sha256 over ``{set: [[shard name, size, sample digest]]}``
+    for the given unit sets — the fit-resume regime key closing
+    `fit-resume-dropout-regime-key-missing` (r3): a same-drop-set RECAPTURE
+    with different activation values invalidates fit resume; restaging
+    byte-identical shards from HF does not (mtime never enters the digest).
+    """
+    payload: dict[str, list] = {}
+    for s in unit_sets:
+        d = Path(store_dir) / s
+        shards = sorted(d.glob("shard_*.pt")) if d.is_dir() else []
+        payload[s] = [[p.name, p.stat().st_size, _file_sample_digest(p)] for p in shards]
+    return canonical_sha256(payload)
+
+
 # ── device resolution (post-#763/#812: CLI > EPM_FIT_DEVICE > auto) ──────────
 
 
@@ -410,6 +451,41 @@ def twin_halves(fit_idx: np.ndarray, seed: int = TWIN_SEED) -> tuple[np.ndarray,
 # ── CPU-stage HF input staging (plan §9: the routed two-provision flow) ──────
 
 
+def _is_transient_hf_error(exc: Exception) -> bool:
+    """Retry classification for HF staging: 5xx / 429 / connection faults ONLY.
+
+    Non-transient HTTP (4xx incl. storage-quota 403, auth 401, missing 404)
+    stays LOUD — retrying an auth/quota failure just delays the crash by the
+    full backoff budget (r3 minor: the prior retry-any-Exception loop hid
+    4xx for ~3 minutes per file before surfacing it).
+    """
+    import requests
+    from huggingface_hub.utils import HfHubHTTPError
+
+    if isinstance(exc, HfHubHTTPError):
+        code = exc.response.status_code if exc.response is not None else None
+        return code is None or code >= 500 or code == 429
+    return isinstance(
+        exc,
+        (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+            requests.exceptions.ChunkedEncodingError,
+        ),
+    )
+
+
+def _staged_ok(dst: Path, remote_size: int | None) -> bool:
+    """Verify-before-skip predicate for a locally staged file (r3 minor).
+
+    True iff ``dst`` is a regular file whose byte size equals the remote
+    listing's — a verified partial staging from a prior interrupted run is
+    KEPT; a size mismatch re-stages (with an explicit log, never a silent
+    overwrite); an unknown remote size never skips.
+    """
+    return remote_size is not None and dst.is_file() and dst.stat().st_size == remote_size
+
+
 def stage_inputs_from_hf(
     *, corpus_dir: Path, store_dir: Path, prefix: str | None = None, max_workers: int = 6
 ) -> dict:
@@ -419,8 +495,11 @@ def stage_inputs_from_hf(
     with SERVER-side-scoped ``list_repo_tree`` (NEVER full-tree
     ``snapshot_download`` on the ~1M-file data repo, #833) and download
     per-file via ``hf_hub_download`` in a ≤``max_workers`` pool with retry +
-    linear backoff, then move into place. Fails loud on an empty remote
-    prefix or any file that fails after 4 attempts.
+    linear backoff, then move into place. Already-staged files are size-
+    verified and SKIPPED (a mismatch re-stages with a log line); the retry
+    covers transient 5xx/429/connection faults only — 4xx (quota 403, auth)
+    raises immediately. Fails loud on an empty remote prefix or any file
+    that fails after 4 attempts.
     """
     import shutil
     import tempfile
@@ -446,6 +525,28 @@ def stage_inputs_from_hf(
         )
         local_root.mkdir(parents=True, exist_ok=True)
 
+        # verify-before-skip: keep size-verified files from a prior partial
+        # staging; anything else (absent OR size-mismatched) is (re-)fetched.
+        to_fetch = []
+        for e in entries:
+            dst = local_root / Path(e.path).relative_to(remote_prefix)
+            if _staged_ok(dst, e.size):
+                continue
+            if dst.exists():
+                logger.warning(
+                    "[stage] %s exists with size %d != remote %d — re-staging",
+                    dst,
+                    dst.stat().st_size,
+                    e.size,
+                )
+            to_fetch.append(e)
+        if len(to_fetch) < len(entries):
+            logger.info(
+                "[stage] %d/%d files already staged (size-verified) — skip",
+                len(entries) - len(to_fetch),
+                len(entries),
+            )
+
         def _fetch(path: str, staging_root: str) -> str:
             last: Exception | None = None
             for attempt in range(4):
@@ -456,7 +557,9 @@ def stage_inputs_from_hf(
                         repo_type="dataset",
                         local_dir=staging_root,
                     )
-                except Exception as exc:  # transient 5xx/429/conn — linear backoff
+                except Exception as exc:
+                    if not _is_transient_hf_error(exc):
+                        raise  # 4xx (quota 403 / auth 401 / 404) — loud, no retry
                     last = exc
                     logger.warning(
                         "[stage] %s failed (%s) attempt %d/4 — backoff",
@@ -469,14 +572,22 @@ def stage_inputs_from_hf(
 
         with tempfile.TemporaryDirectory(prefix="i958_hfstage_", dir=str(local_root)) as td:
             with ThreadPoolExecutor(max_workers=max_workers) as ex:
-                list(ex.map(lambda p: _fetch(p, td), [e.path for e in entries]))
-            for e in entries:
+                list(ex.map(lambda p: _fetch(p, td), [e.path for e in to_fetch]))
+            for e in to_fetch:
                 src = Path(td) / e.path
                 dst = local_root / Path(e.path).relative_to(remote_prefix)
                 dst.parent.mkdir(parents=True, exist_ok=True)
+                if dst.exists():
+                    dst.unlink()  # size-mismatched prior copy — replaced explicitly
                 shutil.move(str(src), str(dst))
         n_files += len(entries)
-        logger.info("[stage] %s -> %s (%d files)", remote_prefix, local_root, len(entries))
+        logger.info(
+            "[stage] %s -> %s (%d files, %d fetched)",
+            remote_prefix,
+            local_root,
+            len(entries),
+            len(to_fetch),
+        )
     return {"n_files": n_files, "prefix": pfx}
 
 

@@ -124,22 +124,51 @@ def _prompt_for(tokenizer, unit: dict, corpora: dict, main_rollouts: dict | None
     return text
 
 
-def _validate_shard(path: Path, expected_uids: set[str], regime: dict) -> bool:
-    """True iff an existing rollout shard matches the CURRENT uid set + regime.
+def _validate_shard(path: Path, expected_uids: set[str], regime: dict) -> dict | None:
+    """The parsed shard blob iff it matches the CURRENT uid set + regime, else None.
 
     The regime dict carries ``corpus_fingerprint``, so a shard generated under
     a different corpus build fails here and is regenerated. The expected uid
     set is the union of persisted rollouts and recorded dropped-empty units.
+    Returning the blob (truthy) lets the resume path count restored units
+    into the summary without a second read (r3 minor).
     """
     try:
         with open(path) as f:
             blob = json.load(f)
     except Exception:
-        return False
+        return None
     if blob.get("regime") != regime:
-        return False
+        return None
     covered = set(blob.get("rollouts", {})) | set(blob.get("dropped_empty", []))
-    return covered == expected_uids
+    return blob if covered == expected_uids else None
+
+
+def _count_restored_shard(
+    blob: dict, shard_units: list[dict], predropped: frozenset[str], stats: dict
+) -> None:
+    """Fold a resume-skipped shard's persisted record into the summary stats.
+
+    r3 minor: resumed runs previously counted NOTHING for skipped shards, so
+    ``rollouts_summary.json`` undercounted every stat. Restored counts derive
+    from the persisted record: truncation / retry flags off the persisted
+    rollouts (a dropped-after-retry unit loses its retry flag — the restored
+    ``retried_empty`` is a floor), dropped units partitioned into predropped
+    vs final-empty via the caller's CURRENT predropped set.
+    """
+    rollouts = blob.get("rollouts", {})
+    n_dropped = len(blob.get("dropped_empty", []))
+    n_pre = sum(1 for u in shard_units if u["uid"] in predropped)
+    stats["n_units"] = stats.get("n_units", 0) + len(rollouts)
+    stats["n_truncated"] = stats.get("n_truncated", 0) + sum(
+        1 for r in rollouts.values() if r.get("finish_reason") == "length"
+    )
+    stats["retried_empty"] = stats.get("retried_empty", 0) + sum(
+        1 for r in rollouts.values() if r.get("retried")
+    )
+    stats["n_dropped_final_empty"] = stats.get("n_dropped_final_empty", 0) + (n_dropped - n_pre)
+    stats["n_predropped"] = stats.get("n_predropped", 0) + n_pre
+    stats["n_shards_restored"] = stats.get("n_shards_restored", 0) + 1
 
 
 RETRY_SEED = C.ROLLOUT_SEED + 1  # seed-varied empty retry (recorded per unit)
@@ -173,9 +202,17 @@ def _run_set(
         path = C.rollout_shard_path(args.out, unit_set, s)
         shard_units = units[s * C.SHARD_UNITS : (s + 1) * C.SHARD_UNITS]
         uids = {u["uid"] for u in shard_units}
-        if path.exists() and _validate_shard(path, uids, regime):
-            logger.info("[%s shard %d/%d] exists + regime-valid — skip", unit_set, s + 1, n_shards)
-            continue
+        if path.exists():
+            blob = _validate_shard(path, uids, regime)
+            if blob is not None:
+                _count_restored_shard(blob, shard_units, predropped, stats)
+                logger.info(
+                    "[%s shard %d/%d] exists + regime-valid — skip (restored into summary)",
+                    unit_set,
+                    s + 1,
+                    n_shards,
+                )
+                continue
         gen_units = [u for u in shard_units if u["uid"] not in predropped]
         prompts = [_prompt_for(tokenizer, u, corpora, main_rollouts) for u in gen_units]
         gens = gen_fn(prompts)
