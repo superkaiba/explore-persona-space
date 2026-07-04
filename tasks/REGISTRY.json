@@ -6307,8 +6307,8 @@
     "953": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/953",
-      "status": "approved",
+      "path": "tasks/running/953",
+      "status": "running",
       "title": "workflow-fix: gotchas.md \u2014 GCE manual-clone requires mirroring ALL [FAIL]-guarded metadata secrets"
     },
     "96": {
