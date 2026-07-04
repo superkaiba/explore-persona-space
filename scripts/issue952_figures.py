@@ -711,6 +711,239 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
         plt.close(fig)
 
 
+def _parent_marker(ax, x: float, y: float, color) -> None:
+    """Open-circle marker distinguishing carried PARENT rows from follow-up reads."""
+    ax.plot([x], [y], marker="o", ms=6, mfc="white", mec=color, mew=1.4, ls="none")
+
+
+def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
+    """Cross-layer decision figure: per-layer H1 contrast + H2 ΔG with CIs,
+    margins shaded; carried L20/L17 rows plotted as open markers labeled PARENT
+    (plan §3 figures; analyzer guidance: parent rows never re-derived)."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.2), layout="constrained")
+    pal = paper_palette(4)
+    added = [int(la) for la in stats["added_layers"]]
+
+    # (a) H1 contrast (F16-vs-L16 own-plain gap contrast) per layer.
+    ax1.axhspan(-0.03, 0.03, color="#D9EAD3", alpha=0.6, lw=0)
+    xs, ys, ylo, yhi = [], [], [], []
+    for la in added:
+        rec = stats["h1_by_layer"][str(la)]["ext_plain"]
+        if rec.get("h1_contrast") is None:
+            continue
+        xs.append(la)
+        ys.append(rec["h1_contrast"])
+        ci = rec.get("ci95") or [np.nan, np.nan]
+        ylo.append(ci[0])
+        yhi.append(ci[1])
+    if xs:
+        yerr = np.vstack(
+            [
+                np.maximum(0.0, np.asarray(ys) - np.asarray(ylo)),
+                np.maximum(0.0, np.asarray(yhi) - np.asarray(ys)),
+            ]
+        )
+        ax1.errorbar(xs, ys, yerr=yerr, fmt="o", ms=4, capsize=3, color=pal[0], label="This round")
+    carried_h1 = (stats.get("carried_parent_rows") or {}).get("h1") or {}
+    l20 = (carried_h1.get("L20") or {}).get("ext_plain") if carried_h1.get("L20") else None
+    if l20 and l20.get("h1_contrast") is not None:
+        ci = l20.get("ci95") or [np.nan, np.nan]
+        ax1.errorbar(
+            [20],
+            [l20["h1_contrast"]],
+            yerr=[[max(0.0, l20["h1_contrast"] - ci[0])], [max(0.0, ci[1] - l20["h1_contrast"])]],
+            fmt="none",
+            capsize=3,
+            color=pal[1],
+        )
+        _parent_marker(ax1, 20, l20["h1_contrast"], pal[1])
+        ax1.plot([], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Parent (L20)")
+    ax1.axhline(0, color="#444444", lw=0.8)
+    ax1.set_xlabel("Read-out layer")
+    ax1.set_ylabel("H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)")
+    ax1.legend(frameon=False, fontsize=7)
+    set_title_subtitle(
+        ax1,
+        "Does the early-vs-late equivalence hold across layers?",
+        "Shaded band = registered ±0.03 equivalence margin; 95% bootstrap CIs",
+    )
+
+    # (b) H2 matched ΔG(0→16) per layer.
+    ax2.axhspan(0.0, 0.02, color="#F4CCCC", alpha=0.5, lw=0)
+    xs2, ys2, ylo2, yhi2 = [], [], [], []
+    for la in added:
+        rec = stats["h2_by_layer"].get(str(la)) or {}
+        r = rec.get("ext_plain")
+        if not r:
+            continue
+        xs2.append(la)
+        ys2.append(r["delta_G"])
+        ylo2.append(r["ci95"][0])
+        yhi2.append(r["ci95"][1])
+    if xs2:
+        yerr2 = np.vstack(
+            [
+                np.maximum(0.0, np.asarray(ys2) - np.asarray(ylo2)),
+                np.maximum(0.0, np.asarray(yhi2) - np.asarray(ys2)),
+            ]
+        )
+        ax2.errorbar(
+            xs2, ys2, yerr=yerr2, fmt="o", ms=4, capsize=3, color=pal[0], label="This round"
+        )
+    carried_h2 = (stats.get("carried_parent_rows") or {}).get("h2") or {}
+    for li, la in enumerate((20, 17)):
+        rec = (carried_h2.get(f"L{la}") or {}).get("ext_plain")
+        if not rec:
+            continue
+        ci = rec.get("ci95") or [np.nan, np.nan]
+        ax2.errorbar(
+            [la],
+            [rec["delta_G"]],
+            yerr=[[max(0.0, rec["delta_G"] - ci[0])], [max(0.0, ci[1] - rec["delta_G"])]],
+            fmt="none",
+            capsize=3,
+            color=pal[1],
+        )
+        _parent_marker(ax2, la, rec["delta_G"], pal[1])
+        if li == 0:
+            ax2.plot(
+                [], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Parent (L20, L17)"
+            )
+    ax2.axhline(0, color="#444444", lw=0.8)
+    ax2.axhline(0.02, color="#B45F5F", lw=0.8, ls=":")
+    ax2.set_xlabel("Read-out layer")
+    ax2.set_ylabel("Matched ΔG(0→16): own-advantage closed\nby absorbing 16 prefix tokens")
+    ax2.legend(frameon=False, fontsize=7)
+    set_title_subtitle(
+        ax2,
+        "Does the prefix closure replicate across layers?",
+        "Shaded band = below the registered 0.02 margin; matched survivors, identical target",
+    )
+    savefig_paper(fig, "crosslayer_decision_profile", dir=out_dir)
+    plt.close(fig)
+
+
+def crosslayer_h3_descriptive(stats: dict, out_dir: pathlib.Path) -> None:
+    """Descriptive per-layer H3 panel: pooled paired drop difference with
+    bootstrap CIs per layer; carried parent L20 row as an open marker."""
+    fig, ax = plt.subplots(figsize=(6.0, 3.8), layout="constrained")
+    pal = paper_palette(4)
+    added = [int(la) for la in stats["added_layers"]]
+    xs, ys, ylo, yhi = [], [], [], []
+    for la in added:
+        rec = stats["h3_by_layer_descriptive"].get(str(la)) or {}
+        head = rec.get("headline_mean_drop_diff")
+        if not head:
+            continue
+        xs.append(la)
+        ys.append(head["mean"])
+        ylo.append(head["mean_ci95"][0])
+        yhi.append(head["mean_ci95"][1])
+    if xs:
+        yerr = np.vstack(
+            [
+                np.maximum(0.0, np.asarray(ys) - np.asarray(ylo)),
+                np.maximum(0.0, np.asarray(yhi) - np.asarray(ys)),
+            ]
+        )
+        ax.errorbar(xs, ys, yerr=yerr, fmt="o", ms=4, capsize=3, color=pal[0], label="This round")
+    parent_h3 = (stats.get("carried_parent_rows") or {}).get("h3_L20_headline") or {}
+    head = parent_h3.get("headline_mean_drop_diff")
+    if head and head.get("mean") is not None:
+        ci = head.get("mean_ci95") or [np.nan, np.nan]
+        ax.errorbar(
+            [20],
+            [head["mean"]],
+            yerr=[[max(0.0, head["mean"] - ci[0])], [max(0.0, ci[1] - head["mean"])]],
+            fmt="none",
+            capsize=3,
+            color=pal[1],
+        )
+        _parent_marker(ax, 20, head["mean"], pal[1])
+        ax.plot([], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Parent (L20)")
+    ax.axhline(0, color="#444444", lw=0.8)
+    ax.set_xlabel("Read-out layer")
+    ax.set_ylabel("External - own paired drop difference\n(divergence bank, mean)")
+    ax.legend(frameon=False, fontsize=7)
+    set_title_subtitle(
+        ax,
+        "Divergence-bank drop difference by layer",
+        "Descriptive rider — no decision, no correction (plan §2)",
+    )
+    savefig_paper(fig, "crosslayer_h3_descriptive", dir=out_dir)
+    plt.close(fig)
+
+
+def crosslayer_prefix_gap_ecdf(
+    stats: dict, npz: dict[str, np.ndarray], out_dir: pathlib.Path
+) -> None:
+    """Per-context own-minus-plain R² gap ECDF per layer (t2 = 16 matched subset)
+    — the low-level per-unit companion behind the decision profile."""
+    layers = sorted(
+        {int(la) for la in stats["added_layers"]} | {int(stats["calibration_layer"]), 17}
+    )
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(11.0, 3.8), layout="constrained")
+    pal = paper_palette(max(2, len(layers)))
+    color_of = dict(zip(layers, pal, strict=False))
+
+    def _gap(leg: str, layer: int) -> np.ndarray | None:
+        try:
+            r2 = {}
+            for arm in ("own", "ext_plain"):
+                ssr = npz[f"M16_L{layer}_{leg}_{arm}_ssres"].astype(float)
+                sst = npz[f"M16_L{layer}_{leg}_{arm}_sstot"].astype(float)
+                r2[arm] = np.where(sst > 1e-12, 1.0 - ssr / sst, np.nan)
+        except KeyError:
+            return None
+        gap = r2["own"] - r2["ext_plain"]
+        gap = gap[np.isfinite(gap)]
+        return gap if len(gap) else None
+
+    plotted = False
+    for ax, leg, lab in ((ax0, "cleg", "no prefix absorbed (t = 0)"), (ax1, "zleg", "t = 16")):
+        for layer in layers:
+            gap = _gap(leg, layer)
+            if gap is None:
+                continue
+            xs = np.sort(gap)
+            ax.step(
+                xs,
+                np.arange(1, len(xs) + 1) / len(xs),
+                color=color_of[layer],
+                lw=1.3,
+                label=f"layer {layer}, n={len(gap)}",
+            )
+            plotted = True
+        ax.axvline(0, color="#444444", lw=0.8)
+        ax.set_xlabel(f"Per-context R² gap, own minus external plain ({lab})")
+        ax.set_ylabel("ECDF")
+        ax.legend(frameon=False, fontsize=7, loc="lower right")
+    set_title_subtitle(
+        ax0,
+        "Per-context gaps behind the cross-layer decision cells",
+        "Matched survivors, identical remainder target",
+    )
+    if plotted:
+        savefig_paper(fig, "crosslayer_prefix_gap_ecdf", dir=out_dir)
+    plt.close(fig)
+
+
+def cross_layer_figures(
+    stats: dict, npz_path: pathlib.Path | None, out_dir: pathlib.Path, smoke: bool
+) -> None:
+    """--cross-layer driver: decision profile + descriptive H3 + per-unit ECDFs."""
+    crosslayer_decision_profile(stats, out_dir)
+    crosslayer_h3_descriptive(stats, out_dir)
+    if npz_path is not None and npz_path.exists():
+        npz = dict(np.load(npz_path, allow_pickle=False))
+        crosslayer_prefix_gap_ecdf(stats, npz, out_dir)
+    elif smoke:
+        logger.warning("[figures] cross-layer npz absent (%s) — ECDF panel skipped", npz_path)
+    else:
+        raise FileNotFoundError(f"cross-layer npz required for the per-unit ECDF: {npz_path}")
+    logger.info("[figures] wrote cross-layer figures to %s", out_dir)
+
+
 def main() -> None:
     """Figure driver: heroes (required) + exploratory dump (input-gated)."""
     ap = argparse.ArgumentParser(description="Issue #952 figures (VM, CPU)")
@@ -719,6 +952,12 @@ def main() -> None:
     ap.add_argument("--out-dir", type=str, required=True)
     ap.add_argument("--tensors-dir", type=str, default=None)
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--cross-layer",
+        action="store_true",
+        help="follow-up mode: --stats points at stats_cross_layer.json; writes "
+        "crosslayer_*.png only (parent hero/exploratory figures untouched)",
+    )
     args = ap.parse_args()
 
     set_paper_style("neurips")
@@ -726,11 +965,19 @@ def main() -> None:
     out_dir = pathlib.Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     stats = json.loads(pathlib.Path(args.stats).read_text())
+    tensors_dir = pathlib.Path(args.tensors_dir) if args.tensors_dir else None
+
+    if args.cross_layer:
+        npz_path = (
+            tensors_dir / "per_context_stats_cross_layer.npz" if tensors_dir is not None else None
+        )
+        cross_layer_figures(stats, npz_path, out_dir, args.smoke)
+        return
+
     closure = _load_json(eval_dir / "prefix_closure_by_arm.json", optional=False, smoke=args.smoke)
     valmat = _load_json(
         eval_dir / "validation_selection_matrix.json", optional=True, smoke=args.smoke
     )
-    tensors_dir = pathlib.Path(args.tensors_dir) if args.tensors_dir else None
 
     hero1_position_r2(stats, out_dir)
     if closure is not None:

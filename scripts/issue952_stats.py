@@ -308,20 +308,30 @@ def register_lmsys_cells(npz: dict[str, np.ndarray], bank: CellBank) -> dict[str
     return fam
 
 
-def h1_reads(bank: CellBank, obs: np.ndarray, draws: np.ndarray) -> dict:
-    """H1: Δ(own - ext) over F16 minus over L16-content, per external arm (plan §3)."""
+def h1_reads(
+    bank: CellBank,
+    obs: np.ndarray,
+    draws: np.ndarray,
+    cell_prefix: str = "A",
+    with_pinned_p: bool = False,
+) -> dict:
+    """H1: Δ(own - ext) over F16 minus over L16-content, per external arm (plan §3).
+
+    ``cell_prefix`` selects the A-cell family (``A`` = the unsuffixed l_star
+    block; ``A_L{layer}`` = a cross-layer suffixed block). ``with_pinned_p``
+    adds the follow-up plan §2 pinned two-sided bootstrap p vs 0."""
     idx = {n: i for i, n in enumerate(bank.names)}
 
     def _gap_matrix(slots: tuple[str, ...], ext: str, mat: np.ndarray) -> np.ndarray:
-        cols_own = [idx.get(f"A|{s}|own") for s in slots]
-        cols_ext = [idx.get(f"A|{s}|{ext}") for s in slots]
+        cols_own = [idx.get(f"{cell_prefix}|{s}|own") for s in slots]
+        cols_ext = [idx.get(f"{cell_prefix}|{s}|{ext}") for s in slots]
         if any(c is None for c in cols_own + cols_ext):
             return np.full(mat.shape[:-1] or (1,), np.nan)
         own = mat[..., cols_own]
         exta = mat[..., cols_ext]
         return np.nanmean(own - exta, axis=-1)
 
-    out: dict[str, Any] = {"margin": H1_MARGIN}
+    out: dict[str, Any] = {"margin": H1_MARGIN, "cell_prefix": cell_prefix}
     for ext in ("ext_plain", "ext_style"):
         f16_obs = _gap_matrix(F16_SLOTS, ext, obs[None, :])[0]
         l16_obs = _gap_matrix(L16_CONTENT_SLOTS, ext, obs[None, :])[0]
@@ -337,6 +347,8 @@ def h1_reads(bank: CellBank, obs: np.ndarray, draws: np.ndarray) -> dict:
             "clears_margin": bool(stat_obs >= H1_MARGIN and lo > 0),
             "template_slots_excluded": list(L16_TEMPLATE_SLOTS),
         }
+        if with_pinned_p:
+            out[ext]["p_two_sided_raw"] = pinned_bootstrap_p(stat_obs, stat_draws, tail="two")
     return out
 
 
@@ -505,11 +517,15 @@ def _kept_pair_ids(verification: dict, judge_margin: float | None = None) -> set
 
 
 def _bank_per_context_r2(
-    npz: dict[str, np.ndarray], key: str, groups: list[str]
+    npz: dict[str, np.ndarray], key: str, groups: list[str], key_suffix: str = ""
 ) -> dict[str, dict[str, float]]:
-    """Per bank query: pooled-over-position-slots R² per arm (ratio of sums)."""
+    """Per bank query: pooled-over-position-slots R² per arm (ratio of sums).
+
+    ``key_suffix`` (e.g. ``_L14``) selects a cross-layer suffixed ss array pair;
+    the id arrays are layer-shared (asserted row-aligned by the driver)."""
     ids = npz[f"{key}_ids"].tolist()
-    ssr, sst = npz[f"{key}_ssres"].astype(np.float64), npz[f"{key}_sstot"].astype(np.float64)
+    ssr = npz[f"{key}_ssres{key_suffix}"].astype(np.float64)
+    sst = npz[f"{key}_sstot{key_suffix}"].astype(np.float64)
     cols_by_arm = {
         arm: [
             gi
@@ -536,6 +552,7 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
     n_draws: int,
     smoke: bool,
     judge_margin: float | None = None,
+    key_suffix: str = "",
 ) -> dict:
     """H3: paired (control - divergent) drops, ext vs own — headline + REQUIRED
     companions (plan §3): ss decomposition, median + 10%-trimmed, sign-flip null
@@ -544,12 +561,15 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
     ``judge_margin`` (follow-up): when set, the battery runs on the SUBSET of kept
     pairs whose divergent-control judge difference >= that margin (identical code
     path; the sign-flip / bootstrap draws re-batch over the smaller pair vector).
-    """
-    if "bank_div_ids" not in npz:
-        return {"status": "bank_arrays_absent"}
+
+    ``key_suffix`` (cross-layer follow-up): e.g. ``_L14`` reads the suffixed bank
+    ss arrays at that layer through the IDENTICAL battery (descriptive per-layer
+    H3 rider, plan §2)."""
+    if "bank_div_ids" not in npz or f"bank_div_ssres{key_suffix}" not in npz:
+        return {"status": "bank_arrays_absent", "key_suffix": key_suffix}
     groups = [g for g in npz["A_group_names"].tolist()]
-    r2_div = _bank_per_context_r2(npz, "bank_div", groups)
-    r2_ctl = _bank_per_context_r2(npz, "bank_ctl", groups)
+    r2_div = _bank_per_context_r2(npz, "bank_div", groups, key_suffix)
+    r2_ctl = _bank_per_context_r2(npz, "bank_ctl", groups, key_suffix)
 
     kept = _kept_pair_ids(verification, judge_margin)
     pair_rows = []
@@ -695,8 +715,8 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
                 "div": ("bank_div", ids_div[qd]),
                 "ctl": ("bank_ctl", ids_ctl[qc]),
             }.items():
-                s_r = npz[f"{mat_key}_ssres"][ri, cols].astype(np.float64)
-                s_t = npz[f"{mat_key}_sstot"][ri, cols].astype(np.float64)
+                s_r = npz[f"{mat_key}_ssres{key_suffix}"][ri, cols].astype(np.float64)
+                s_t = npz[f"{mat_key}_sstot{key_suffix}"][ri, cols].astype(np.float64)
                 fin = np.isfinite(s_r) & np.isfinite(s_t)
                 row[f"ssr_{tag}_{arm}"] = float(s_r[fin].sum())
                 row[f"sst_{tag}_{arm}"] = float(s_t[fin].sum())
@@ -737,6 +757,7 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
     return {
         "n_pairs": n_pairs,
         "margin": H3_MARGIN,
+        "key_suffix": key_suffix,
         "subset": {
             "mode": "original-margin" if judge_margin is not None else "full",
             "judge_margin": judge_margin,
@@ -754,6 +775,191 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
         "pair_rows": pair_rows,
         "smoke": smoke,
     }
+
+
+# ── cross-layer decision cells (follow-up round `cross-layer-decision-cells`) ───
+# Registered constructions (follow-up plan §2): the pinned bootstrap-p, Holm
+# across the ADDED layers per family, the three-way per-layer status enums, and
+# the TOTAL outcome lattice. Unit-tested in tests/test_issue952_cross_layer_stats.py.
+
+XLAYER_ADDED_DEFAULT = (14, 23, 26)
+XLAYER_ALPHA = 0.05
+
+
+def pinned_bootstrap_p(obs: float, stat_draws: np.ndarray, tail: str) -> float | None:
+    """The registered bootstrap p (follow-up plan §2): shift-to-null-center
+    (null = draws - observed) with add-one counting (1 + #extreme) / (1 + B).
+
+    ``tail="two"`` = H1 two-sided vs 0; ``tail="greater"`` = H2 one-sided
+    positive-tail vs 0 — matching the H3 sign-flip counting convention."""
+    if obs is None or not np.isfinite(obs):
+        return None
+    null = np.asarray(stat_draws, dtype=np.float64) - float(obs)
+    null = null[np.isfinite(null)]
+    b = int(null.size)
+    if b == 0:
+        return None
+    if tail == "two":
+        n_ext = int((np.abs(null) >= abs(obs)).sum())
+    elif tail == "greater":
+        n_ext = int((null >= obs).sum())
+    else:
+        raise ValueError(f"unknown tail: {tail}")
+    return float((1 + n_ext) / (1 + b))
+
+
+def holm_adjust(pvals: dict[Any, float]) -> dict[Any, float]:
+    """Holm step-down over a {key: raw_p} dict (same convention as the H3 block)."""
+    items = sorted(((k, p) for k, p in pvals.items() if p is not None), key=lambda kv: kv[1])
+    k_tests = len(items)
+    running = 0.0
+    out: dict[Any, float] = {}
+    for rank, (key, p) in enumerate(items):
+        adj = min(1.0, (k_tests - rank) * p)
+        running = max(running, adj)
+        out[key] = running
+    for key, p in pvals.items():
+        if p is None:
+            out[key] = None
+    return out
+
+
+def h1_status(contrast: float | None, lo: float, hi: float, holm_p: float | None) -> str:
+    """Follow-up plan §2 H1 three-way status. Equivalence containment is
+    NON-STRICT (lo >= -0.03 AND hi <= +0.03); affirmative non-replication =
+    (contrast >= +0.03 AND Holm p < 0.05) OR the CI entirely outside ±0.03."""
+    if contrast is None or not (np.isfinite(lo) and np.isfinite(hi)):
+        return "indeterminate"
+    if lo >= -H1_MARGIN and hi <= H1_MARGIN:
+        return "replicates"
+    detected = contrast >= H1_MARGIN and holm_p is not None and holm_p < XLAYER_ALPHA
+    if detected or lo > H1_MARGIN or hi < -H1_MARGIN:
+        return "affirmative_nonreplication"
+    return "indeterminate"
+
+
+def h2_status(delta_g: float | None, hi: float, holm_p: float | None) -> str:
+    """Follow-up plan §2 H2 three-way status: replicates = ΔG >= 0.02 AND Holm
+    one-sided p < 0.05; affirmative non-replication = CI upper < 0.02."""
+    if delta_g is None or not np.isfinite(hi):
+        return "indeterminate"
+    if delta_g >= H2_MARGIN and holm_p is not None and holm_p < XLAYER_ALPHA:
+        return "replicates"
+    if hi < H2_MARGIN:
+        return "affirmative_nonreplication"
+    return "indeterminate"
+
+
+def map_outcome_lattice(h1_statuses: dict[str, str], h2_statuses: dict[str, str]) -> dict:
+    """Follow-up plan §2 TOTAL outcome lattice (counts PER FAMILY over the added
+    layers; no joint-layer conjunction). ``L20_local`` fires ONLY on affirmative
+    evidence — >= 2/3 affirmative in either family; indeterminate reads NEVER
+    count toward it (mechanizable check enforced by the assert below)."""
+    assert h1_statuses and h2_statuses and set(h1_statuses) == set(h2_statuses), (
+        "lattice needs the SAME non-empty added-layer set in both families"
+    )
+    n = len(h1_statuses)
+    c1, c2 = Counter(h1_statuses.values()), Counter(h2_statuses.values())
+    aff1 = c1.get("affirmative_nonreplication", 0)
+    aff2 = c2.get("affirmative_nonreplication", 0)
+    if c1.get("replicates", 0) == n and c2.get("replicates", 0) == n:
+        verdict = "full_replication"
+    elif aff1 >= 2 or aff2 >= 2:
+        verdict = "L20_local"
+    elif c1.get("indeterminate", 0) == n and c2.get("indeterminate", 0) == n:
+        verdict = "inconclusive_layer_scope"
+    else:
+        verdict = "partial_band_map"
+    if verdict == "L20_local":
+        # Plan §2 mechanizable check: indeterminate reads never open this branch.
+        assert max(aff1, aff2) >= 2, "L20_local without >=2 affirmative reads — forbidden"
+    return {
+        "family_counts": {"h1": dict(c1), "h2": dict(c2), "n_added_layers": n},
+        "overall_verdict": verdict,
+    }
+
+
+def register_cross_layer_cells(
+    npz: dict[str, np.ndarray], bank: CellBank, layers: list[int]
+) -> dict[str, list[str]]:
+    """Register the layer-suffixed A blocks as ``A_L{layer}|{slot}|{arm}`` cells."""
+    fam: dict[str, list[str]] = {}
+    groups = [g for g in npz["A_group_names"].tolist()]
+    ids = npz["A_test_ctx_ids"]
+    for layer in layers:
+        key = f"A_test_ssres_L{layer}"
+        if key not in npz:
+            continue
+        names = []
+        for gi, g in enumerate(groups):
+            name = f"A_L{layer}|{g}"
+            bank.add(name, ids, npz[key][:, gi], npz[f"A_test_sstot_L{layer}"][:, gi])
+            names.append(name)
+        fam[f"A_L{layer}"] = names
+    logger.info(
+        "[cells] registered cross-layer A blocks: %s",
+        {k: len(v) for k, v in fam.items()},
+    )
+    return fam
+
+
+def assert_cross_layer_coverage(npz: dict[str, np.ndarray], layers: list[int]) -> dict:
+    """Per-layer suffixed-array row coverage vs the shared id arrays (plan §3)."""
+    rec: dict[str, Any] = {}
+    n_a = len(npz["A_test_ctx_ids"])
+    for layer in layers:
+        r: dict[str, Any] = {}
+        k = f"A_test_ssres_L{layer}"
+        assert k in npz, f"missing suffixed A arrays for layer {layer}"
+        assert len(npz[k]) == n_a, f"{k}: {len(npz[k])} rows != {n_a} test ids"
+        r["A_rows"] = n_a
+        for key in ("bank_div", "bank_ctl"):
+            if f"{key}_ids" not in npz:
+                continue
+            sk = f"{key}_ssres_L{layer}"
+            assert sk in npz, f"missing {sk} (bank arrays exist unsuffixed)"
+            assert len(npz[sk]) == len(npz[f"{key}_ids"]), (
+                f"{sk}: {len(npz[sk])} rows != {len(npz[f'{key}_ids'])} bank ids"
+            )
+            r[f"{key}_rows"] = len(npz[sk])
+        rec[str(layer)] = r
+    logger.info("[coverage] cross-layer suffixed arrays: %s", rec)
+    return rec
+
+
+def h2_layer_read(
+    bank: CellBank, obs: np.ndarray, draws: np.ndarray, layer: int, t2: int = 16
+) -> dict | None:
+    """The registered matched ΔG(0→t2) read at one layer, with the pinned
+    one-sided bootstrap p (plan §2 rule (i) inherited: common surviving subset,
+    identical remainder target, paired n — the M cells encode exactly that)."""
+    idx = {n: i for i, n in enumerate(bank.names)}
+    cols: dict[str, int] = {}
+    for leg in ("cleg", "zleg"):
+        for a in ("own", "ext_plain", "ext_style"):
+            c = idx.get(f"M|{t2}_L{layer}_{leg}_{a}")
+            if c is None:
+                return None
+            cols[f"{leg}_{a}"] = c
+    out: dict[str, Any] = {"t2": t2, "layer": layer, "margin": H2_MARGIN}
+    for ext in ("ext_plain", "ext_style"):
+        g0 = float(obs[cols["cleg_own"]] - obs[cols[f"cleg_{ext}"]])
+        gt = float(obs[cols["zleg_own"]] - obs[cols[f"zleg_{ext}"]])
+        dg_draws = (draws[:, cols["cleg_own"]] - draws[:, cols[f"cleg_{ext}"]]) - (
+            draws[:, cols["zleg_own"]] - draws[:, cols[f"zleg_{ext}"]]
+        )
+        lo, hi = _ci(dg_draws)
+        out[ext] = {
+            "G_matched_0": g0,
+            "G_matched_t": gt,
+            "delta_G": g0 - gt,
+            "ci95": [float(lo), float(hi)],
+            "p_one_sided_raw": pinned_bootstrap_p(g0 - gt, dg_draws, tail="greater"),
+        }
+    out["delta_G_style_minus_plain"] = {
+        "observed": out["ext_style"]["delta_G"] - out["ext_plain"]["delta_G"],
+    }
+    return out
 
 
 # ── TF-idf k-means OOD / near-dup diagnostic (plan §6 OOD mitigation (b)) ───────
@@ -900,6 +1106,197 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def cross_layer_main(args: argparse.Namespace) -> None:
+    """--cross-layer driver (follow-up plan §2/§3): registered per-layer H1/H2 +
+    descriptive H3 across the added decision layers, the pinned bootstrap p,
+    Holm per family, three-way statuses, and the TOTAL outcome lattice; parent
+    L20/L17 rows spliced as CARRIED comparison rows (never recomputed into the
+    headline). Writes ``<eval-dir>/stats_cross_layer.json``."""
+    t0 = time.time()
+    eval_dir = pathlib.Path(args.eval_dir)
+    npz_path = pathlib.Path(args.npz)
+    spans_dir = pathlib.Path(args.spans_dir) if args.spans_dir else npz_path.parent
+    out_path = pathlib.Path(args.out) if args.out else eval_dir / "stats_cross_layer.json"
+    npz = dict(np.load(npz_path, allow_pickle=False))
+
+    def _resolve(name: str) -> pathlib.Path:
+        # Follow-up inputs split across the follow-up out dir and the PARENT dir
+        # (split + bank verification live with the parent; battery outputs here).
+        for d in (eval_dir, eval_dir.parent):
+            if (d / name).exists():
+                return d / name
+        raise FileNotFoundError(f"{name} not found in {eval_dir} or {eval_dir.parent}")
+
+    split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+    split = json.loads(_resolve(split_name).read_text())
+    meta = json.loads((eval_dir / "battery_meta.json").read_text())
+    verification = json.loads(_resolve("divergence_bank_verification.json").read_text())
+
+    cal_layer = int(meta["l_star_pos"])
+    added = [int(x) for x in args.decision_layers.split(",") if x.strip()]
+    # A degenerate smoke can select l_star INSIDE the decision set; the
+    # calibration layer is then excluded from the registered families
+    # (production: cal_layer=20 is never in {14, 23, 26}).
+    family_layers = [la for la in added if la != cal_layer]
+    assert family_layers, f"no added layers left after excluding cal layer {cal_layer}"
+
+    # Row-coverage asserts BEFORE any statistic (plan §3, incl. per-layer H3).
+    spans = load_spans(spans_dir)
+    cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
+    cov_h3 = assert_h3_row_coverage(npz, verification)
+    cov_xlayer = assert_cross_layer_coverage(npz, sorted({*family_layers, cal_layer}))
+
+    # Shared-draw bootstrap over ALL cells (unsuffixed + suffixed + P + M).
+    bank = CellBank(split["test"])
+    fam = register_lmsys_cells(npz, bank)
+    xfam = register_cross_layer_cells(npz, bank, sorted({*family_layers, cal_layer}))
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    n_test = bank.n_test
+    w = rng.multinomial(n_test, np.full(n_test, 1.0 / n_test), size=args.n_draws).astype(np.float64)
+    obs = bank.observed()
+    draws = bank.draws(w)
+    parity = serial_oracle_parity(bank, w, draws)
+
+    # H1 per added layer (decision arm = ext_plain; ext_style companion).
+    h1_by_layer = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in family_layers
+    }
+    h1_calibration = h1_reads(bank, obs, draws, cell_prefix=f"A_L{cal_layer}", with_pinned_p=True)
+    h1_holm = holm_adjust(
+        {la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)}
+    )
+
+    # H2 per added layer (registered 0→16 matched contrast; ext_plain decision).
+    h2_by_layer = {str(la): h2_layer_read(bank, obs, draws, la) for la in family_layers}
+    h2_calibration = h2_layer_read(bank, obs, draws, cal_layer)
+    h2_holm = holm_adjust(
+        {
+            la: (h2_by_layer[la] or {}).get("ext_plain", {}).get("p_one_sided_raw")
+            for la in map(str, family_layers)
+        }
+    )
+
+    # Per-layer statuses (three-way enums, plan §2).
+    h1_statuses: dict[str, str] = {}
+    h2_statuses: dict[str, str] = {}
+    for la in map(str, family_layers):
+        r1 = h1_by_layer[la].get("ext_plain", {})
+        ci1 = r1.get("ci95") or [np.nan, np.nan]
+        h1_by_layer[la]["ext_plain"]["p_holm"] = h1_holm.get(la)
+        h1_statuses[la] = h1_status(r1.get("h1_contrast"), ci1[0], ci1[1], h1_holm.get(la))
+        h1_by_layer[la]["ext_plain"]["status"] = h1_statuses[la]
+        r2rec = h2_by_layer[la]
+        if r2rec is None:
+            h2_statuses[la] = "indeterminate"
+            h2_by_layer[la] = {"status": "indeterminate", "read_missing": True}
+        else:
+            ci2 = r2rec["ext_plain"]["ci95"]
+            r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
+            h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
+            r2rec["ext_plain"]["status"] = h2_statuses[la]
+
+    lattice = map_outcome_lattice(h1_statuses, h2_statuses)
+
+    # Descriptive per-layer H3 rider (no decision, no Holm entry, no status).
+    h3_by_layer = {
+        str(la): h3_reads(npz, verification, args.n_draws, args.smoke, key_suffix=f"_L{la}")
+        for la in family_layers
+    }
+    h3_calibration = h3_reads(
+        npz, verification, args.n_draws, args.smoke, key_suffix=f"_L{cal_layer}"
+    )
+
+    # Carried PARENT rows (plan §2: L20/L17 from committed stats_summary.json,
+    # never recomputed into the headline).
+    parent_stats_path = (
+        pathlib.Path(args.parent_stats)
+        if args.parent_stats
+        else eval_dir.parent / "stats_summary.json"
+    )
+    if parent_stats_path.exists():
+        parent = json.loads(parent_stats_path.read_text())
+        carried = {
+            "source": str(parent_stats_path),
+            "note": (
+                "PARENT rows carried verbatim from the parent stats_summary.json — "
+                "never re-derived follow-up evidence (plan §2)"
+            ),
+            "h1": {"L20": parent.get("h1")},
+            "h2": {
+                f"L{la}": parent.get("h2_matched", {}).get("contrasts", {}).get(f"t16_L{la}")
+                for la in (20, 17)
+            },
+            "h3_L20_headline": {
+                k: parent.get("h3", {}).get(k)
+                for k in ("n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+            },
+        }
+    elif args.smoke:
+        logger.warning(
+            "[xlayer] parent stats absent (%s) — carried rows omitted", parent_stats_path
+        )
+        carried = {"status": f"parent stats absent: {parent_stats_path}"}
+    else:
+        raise FileNotFoundError(f"parent stats_summary.json required: {parent_stats_path}")
+
+    summary = {
+        "issue": 952,
+        "mode": "cross_layer_decision_cells",
+        "added_layers": family_layers,
+        "calibration_layer": cal_layer,
+        "l_star": cal_layer,
+        "margins": {"h1": H1_MARGIN, "h2": H2_MARGIN, "alpha": XLAYER_ALPHA},
+        "p_construction": (
+            "shift-to-null-center (null = draws - observed), add-one counting "
+            "(1 + #extreme)/(1 + B); H1 two-sided vs 0, H2 one-sided positive-tail "
+            "vs 0; B = n_draws (plan §2 pinned)"
+        ),
+        "n_draws": args.n_draws,
+        "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+        "smoke": args.smoke,
+        "row_coverage": {"h2": cov_h2, "h3": cov_h3, "cross_layer": cov_xlayer},
+        "bootstrap_gemm_parity": parity,
+        "n_cells": len(bank.names),
+        "families": {**{k: len(v) for k, v in fam.items()}, **{k: len(v) for k, v in xfam.items()}},
+        "h1_by_layer": h1_by_layer,
+        "h1_calibration_L20_companion": h1_calibration,
+        "h1_holm": h1_holm,
+        "h1_status": h1_statuses,
+        "h2_by_layer": h2_by_layer,
+        "h2_calibration_L20_companion": h2_calibration,
+        "h2_holm": h2_holm,
+        "h2_status": h2_statuses,
+        "h3_by_layer_descriptive": h3_by_layer,
+        "h3_calibration_L20_companion": h3_calibration,
+        **lattice,
+        "carried_parent_rows": carried,
+        "battery_gates": {
+            k: meta.get(k)
+            for k in ("l20_reproduction_gate", "suffixed_l20_calibration_gate", "cross_layer")
+        },
+        "inputs": {"npz": str(npz_path), "eval_dir": str(eval_dir), "npz_keys": len(npz)},
+        "git_sha": _git_sha(),
+        "numpy_version": np.__version__,
+        "wall_seconds": time.time() - t0,
+        "ts": time.time(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, default=_json_np))
+    logger.info(
+        "[stats:xlayer] layers %s (cal %d): h1=%s h2=%s -> %s; %d cells, %d draws in %.1fs -> %s",
+        family_layers,
+        cal_layer,
+        h1_statuses,
+        h2_statuses,
+        lattice["overall_verdict"],
+        len(bank.names),
+        args.n_draws,
+        summary["wall_seconds"],
+        out_path,
+    )
+
+
 def main() -> None:
     """Phase-2 statistics driver (coverage asserts -> batched draw batteries -> JSON)."""
     ap = argparse.ArgumentParser(description="Issue #952 Phase 2 stats (VM, CPU)")
@@ -931,7 +1328,33 @@ def main() -> None:
         "for reference; writes <eval-dir>/stats_h3_original_margin.json (default --out) and "
         "leaves H1/H2/kmeans and stats_summary.json untouched",
     )
+    ap.add_argument(
+        "--cross-layer",
+        action="store_true",
+        help="follow-up `cross-layer-decision-cells` mode: registered per-layer H1/H2 "
+        "(pinned bootstrap p, Holm per family, three-way statuses, TOTAL outcome "
+        "lattice) + descriptive per-layer H3 over the suffixed npz arrays; writes "
+        "<eval-dir>/stats_cross_layer.json (default --out); H1/H2/H3 defaults and "
+        "stats_summary.json untouched",
+    )
+    ap.add_argument(
+        "--decision-layers",
+        type=str,
+        default=",".join(str(x) for x in XLAYER_ADDED_DEFAULT),
+        help="added decision layers for --cross-layer (default: 14,23,26)",
+    )
+    ap.add_argument(
+        "--parent-stats",
+        type=str,
+        default=None,
+        help="parent stats_summary.json for the carried L20/L17 rows "
+        "(default: <eval-dir>/../stats_summary.json)",
+    )
     args = ap.parse_args()
+
+    if args.cross_layer:
+        cross_layer_main(args)
+        return
 
     t0 = time.time()
     eval_dir = pathlib.Path(args.eval_dir)
