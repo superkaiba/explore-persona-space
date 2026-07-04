@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1019,
+  "highest_id": 1020,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -177,6 +177,13 @@
       "path": "tasks/completed/102",
       "status": "completed",
       "title": "Marker bridge: does sharing a marker with a misaligned persona transfer misalignment to assistant?"
+    },
+    "1020": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1020",
+      "status": "proposed",
+      "title": "daily-fix: codex_task result-fetch retry + job re-attach"
     },
     "104": {
       "has_clean_result": false,
