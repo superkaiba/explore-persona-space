@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 961,
+  "highest_id": 962,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6374,6 +6374,13 @@
       "path": "tasks/running/961",
       "status": "running",
       "title": "workflow-fix: retro-close predicate ignores queued-context label mentions"
+    },
+    "962": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/962",
+      "status": "proposed",
+      "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
     },
     "97": {
       "has_clean_result": false,
