@@ -6462,8 +6462,8 @@
     "971": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/971",
-      "status": "planning",
+      "path": "tasks/approved/971",
+      "status": "approved",
       "title": "workflow-fix: recover head-name-less rebase husk in root sync"
     },
     "972": {
