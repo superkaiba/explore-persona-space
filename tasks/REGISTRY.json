@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1018,
+  "highest_id": 1019,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -163,6 +163,13 @@
       "path": "tasks/proposed/1018",
       "status": "proposed",
       "title": "daily-fix: rubric-bearing JudgeCache._hash_key"
+    },
+    "1019": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1019",
+      "status": "proposed",
+      "title": "daily-fix: stuck-batch cancel+sync fallback in batch_judge"
     },
     "102": {
       "has_clean_result": false,
