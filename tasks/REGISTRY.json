@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1033,
+  "highest_id": 1034,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -275,6 +275,13 @@
       "path": "tasks/proposed/1033",
       "status": "proposed",
       "title": "daily-fix: poller CPU-phase stall predicate + per-instance idle counter"
+    },
+    "1034": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1034",
+      "status": "proposed",
+      "title": "daily-fix: HF quota-headroom preflight before multi-TB uploads"
     },
     "104": {
       "has_clean_result": false,
