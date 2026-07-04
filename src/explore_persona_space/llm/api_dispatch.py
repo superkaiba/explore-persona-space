@@ -250,6 +250,51 @@ BuildRequest = Callable[[DispatchItem], dict]
 ParseResponse = Callable[[str], Any]
 
 
+def _assert_no_system_role(params: dict, item_id: str) -> None:
+    """Fail fast on a system-role message in built Messages-API params.
+
+    The Anthropic Messages API has no "system" message ROLE — a system-bearing
+    ``messages`` list 400s EVERY request (invalid_request_error; the #906 r11
+    incident, .claude/rules/gotchas.md). System content must be lifted by the
+    BUILDER to the top-level ``system=`` param (see
+    ``llm.models.Prompt.anthropic_format`` for a leading-system splitter or
+    ``artifacts.datagen._gen_params_from_messages`` for an arbitrary-position
+    lift). Only the documented dict shape is inspected: non-dict params /
+    entries and a missing ``messages`` key pass through untouched (the API
+    itself owns those errors).
+    """
+    messages = params.get("messages") if isinstance(params, dict) else None
+    if not isinstance(messages, list):
+        return
+    for i, msg in enumerate(messages):
+        if isinstance(msg, dict) and msg.get("role") == "system":
+            raise ValueError(
+                f"build_request(item_id={item_id!r}) returned a messages list with "
+                f'role="system" at index {i}. The Anthropic Messages API has no '
+                "system message role — every such request 400s "
+                "(invalid_request_error). Lift system content to the top-level "
+                "system= param in your builder (see llm.models.Prompt."
+                "anthropic_format or artifacts.datagen._gen_params_from_messages)."
+            )
+
+
+def _guarded_build_request(build_request: BuildRequest) -> BuildRequest:
+    """Wrap ``build_request`` so every produced params dict is system-role-checked.
+
+    Applied ONCE at the dispatch_calls seam; covers all three consumers (sync
+    ``_do_one``, batch state-init, batch submit/resubmit) because they all
+    receive the same threaded callable. Raises ValueError at BUILD time —
+    before any wire call or paid batch create.
+    """
+
+    def _built(item: DispatchItem) -> dict:
+        params = build_request(item)
+        _assert_no_system_role(params, item.item_id)
+        return params
+
+    return _built
+
+
 # ── Per-org runtime state (AIMD + headroom) ──────────────────────────────────
 
 
@@ -861,12 +906,18 @@ async def _submit_one_sub_batch(
                 "dedicated to this run, or clear the cache for these items, then re-run. Refusing "
                 "to submit a partial sub-batch."
             )
-        sb["status"] = "submitting"
-        _atomic_write_json(state_path, state)  # intent BEFORE create
+        # Build requests BEFORE flipping status to "submitting" (#991): the build
+        # is pure, so a builder raise on RESUME (e.g. the system-role guard)
+        # leaves this sub-batch "pending" — cleanly resumable after the builder
+        # is fixed — instead of wedging at the crashed-mid-submit RuntimeError.
+        # The #663 preserve-before-propagate contract is untouched: the
+        # "submitting" intent is still persisted BEFORE batches.create.
         requests = [
             {"custom_id": cid, "params": build_request(items_by_cid[cid])}
             for cid in sb["custom_ids"]
         ]
+        sb["status"] = "submitting"
+        _atomic_write_json(state_path, state)  # intent BEFORE create
         # api_dispatch IS a sanctioned hardened batch client: reuses _chunk_requests (<=8k shards)
         # + bounded expires_at poll (deadline_from_expires_at/BatchDeadlineExceeded) + org-aware
         # resume by custom_id; routing through judge_completions_batch would lose multi-org fan-out.
@@ -1127,8 +1178,9 @@ async def dispatch_calls(
             NOTE: the Messages API has NO "system" message role — a builder
             forwarding caller message lists verbatim MUST lift system-role
             entries to the top-level ``system=`` param (see
-            ``llm.models.Prompt.anthropic_format``); a system-bearing list
-            400s every request (gotchas.md, #906 r11).
+            ``llm.models.Prompt.anthropic_format``). ENFORCED at runtime:
+            a system-bearing built params dict raises ValueError at build
+            time, before any wire call (gotchas.md, #906 r11; #991).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
@@ -1157,6 +1209,11 @@ async def dispatch_calls(
     """
     if not items:
         return {}
+
+    # Runtime enforcement of the system-role contract (docstring NOTE above):
+    # one wrap covers the sync build (_do_one), the batch state-init build,
+    # and the batch submit/resubmit build — they all thread this callable.
+    build_request = _guarded_build_request(build_request)
 
     async_clients, sync_clients, owned = _resolve_clients(async_clients, sync_clients, org_keys)
     try:

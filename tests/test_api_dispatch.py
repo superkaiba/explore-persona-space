@@ -1282,3 +1282,189 @@ def test_module_doc_describes_pending_routing():
     silently regress."""
     doc = api_dispatch.__doc__ or ""
     assert "len(pending)" in doc or "uncached remainder" in doc.lower()
+
+
+# ── #991: runtime system-role guard at the dispatch_calls seam ───────────────
+
+
+def build_request_with_system(item: DispatchItem) -> dict:
+    """System-bearing builder (the #906 r11 bug shape): leading system-role entry."""
+    return {
+        "model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 64,
+        "messages": [
+            {"role": "system", "content": "You are a judge."},
+            {"role": "user", "content": item.payload["q"]},
+        ],
+    }
+
+
+def build_request_with_mid_list_system(item: DispatchItem) -> dict:
+    """System entry AFTER a user turn (arbitrary position, not just leading)."""
+    return {
+        "model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 64,
+        "messages": [
+            {"role": "user", "content": item.payload["q"]},
+            {"role": "system", "content": "Mid-list system entry."},
+        ],
+    }
+
+
+def build_request_with_top_level_system(item: DispatchItem) -> dict:
+    """Compliant builder mirroring the real callers (judge_dispatch._build_params
+    shape): top-level ``system=`` param + user-only messages."""
+    return {
+        "model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 64,
+        "system": "You are a judge.",
+        "messages": [{"role": "user", "content": item.payload["q"]}],
+    }
+
+
+def test_system_role_raises_sync_before_wire():
+    """A system-bearing builder raises at build time on the sync path — the
+    offending item's request never reaches the fake wire (calls == 0)."""
+    items = make_items(1)
+    clients = {"a": FakeAsyncClient()}
+    with pytest.raises(ValueError, match='role="system" at index 0') as exc_info:
+        _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request_with_system,
+                parse_response=parse_response,
+                async_clients=clients,
+                sync_clients={"a": object()},
+                force_path="sync",
+            )
+        )
+    # AC2 pin: the message carries a fix pointer to the reference lift.
+    assert "anthropic_format" in str(exc_info.value)
+    assert clients["a"].calls == 0
+
+
+def test_system_role_raises_batch_before_state_write(tmp_path):
+    """On a fresh batch, the guard fires at the all-items state-init build —
+    BEFORE any state.json write and before any batches.create."""
+    items = make_items(3)
+    batch_clients = {"a": FakeBatchClient("a"), "b": FakeBatchClient("b")}
+    with pytest.raises(ValueError, match='role="system"'):
+        _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request_with_system,
+                parse_response=parse_response,
+                async_clients={"a": object(), "b": object()},
+                sync_clients=batch_clients,
+                checkpoint_dir=tmp_path / "ckpt",
+                force_path="batch",
+                poll_interval=0.0,
+            )
+        )
+    assert all(c.create_calls == 0 for c in batch_clients.values())
+    assert not (tmp_path / "ckpt" / "state.json").exists()
+
+
+def test_system_role_mid_list_raises_with_index():
+    """A mid-list system entry (index 1, after a user turn) raises with the
+    offending index AND the item_id in the message."""
+    items = make_items(1)
+    clients = {"a": FakeAsyncClient()}
+    with pytest.raises(ValueError, match='role="system" at index 1') as exc_info:
+        _run(
+            dispatch_calls(
+                items,
+                model="claude-sonnet-4-5-20250929",
+                build_request=build_request_with_mid_list_system,
+                parse_response=parse_response,
+                async_clients=clients,
+                sync_clients={"a": object()},
+                force_path="sync",
+            )
+        )
+    msg = str(exc_info.value)
+    assert "index 1" in msg
+    assert "item_000" in msg
+    assert clients["a"].calls == 0
+
+
+def test_top_level_system_param_passes():
+    """Positive control (zero-behavior-change evidence): a top-level ``system=``
+    param with user-only messages — the real callers' shape — passes untouched."""
+    items = make_items(4)
+    clients = {"a": FakeAsyncClient()}
+    res = _run(
+        dispatch_calls(
+            items,
+            model="claude-sonnet-4-5-20250929",
+            build_request=build_request_with_top_level_system,
+            parse_response=parse_response,
+            async_clients=clients,
+            sync_clients={"a": object()},
+            force_path="sync",
+        )
+    )
+    assert set(res) == {it.item_id for it in items}
+    assert all(not r.error for r in res.values())
+    assert all(r.result == {"label": "ok"} for r in res.values())
+    assert clients["a"].calls == 4
+
+
+def test_guard_ignores_non_dict_and_missing_messages():
+    """The guard checks only the documented dict shape: non-dict params/entries
+    and a missing ``messages`` key are no-ops (the API owns those errors)."""
+    api_dispatch._assert_no_system_role({}, "item_000")  # no messages key
+    api_dispatch._assert_no_system_role({"messages": "oops"}, "item_000")  # non-list
+    api_dispatch._assert_no_system_role(
+        {"messages": [("role", "system")]}, "item_000"
+    )  # non-dict entry
+
+
+def test_batch_resume_builder_raise_leaves_subbatch_pending(tmp_path):
+    """The §4f reorder's contract: a builder raise on batch RESUME (the guard's,
+    or any other) fires BEFORE the status flip, so the sub-batch stays
+    ``pending`` in memory AND on disk — resumable, not a crashed-mid-submit
+    wedge."""
+    items = make_items(2)
+    cid_for = {it.item_id: make_custom_id(it.item_id) for it in items}
+    items_by_cid = {cid_for[it.item_id]: it for it in items}
+    sb = {
+        "index": 0,
+        "org": "a",
+        "custom_ids": list(items_by_cid),
+        "n_requests": len(items),
+        "status": "pending",
+        "batch_id": None,
+        "deadline": None,
+    }
+    state = {
+        "version": 1,
+        "sub_batches": [sb],
+        "cid_to_item": {cid: it.item_id for cid, it in items_by_cid.items()},
+    }
+    state_path = tmp_path / "state.json"
+    # PREWRITE the fabricated pending state.json: after the reorder the builder
+    # raise occurs before any write, so the on-disk re-read below only holds
+    # against a pre-created baseline checkpoint.
+    api_dispatch._atomic_write_json(state_path, state)
+    fake = FakeBatchClient("a")
+
+    async def _drive():
+        await api_dispatch._submit_one_sub_batch(
+            sb,
+            state=state,
+            state_path=state_path,
+            items_by_cid=items_by_cid,
+            build_request=api_dispatch._guarded_build_request(build_request_with_system),
+            sync_clients={"a": fake},
+            sem=asyncio.Semaphore(1),
+        )
+
+    with pytest.raises(ValueError, match='role="system"'):
+        _run(_drive())
+    assert sb["status"] == "pending"  # in-memory: never flipped to "submitting"
+    on_disk = json.loads(state_path.read_text())
+    assert on_disk["sub_batches"][0]["status"] == "pending"  # on-disk: still resumable
+    assert fake.create_calls == 0  # nothing was submitted
