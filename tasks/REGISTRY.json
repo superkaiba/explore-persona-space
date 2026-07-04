@@ -6561,8 +6561,8 @@
     "979": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/979",
-      "status": "running",
+      "path": "tasks/reviewing/979",
+      "status": "reviewing",
       "title": "workflow-fix: watcher greps USER PAUSE note before respawn"
     },
     "98": {
