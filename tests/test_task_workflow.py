@@ -3205,6 +3205,37 @@ def test_readers_tolerate_partial_trailing_multibyte_utf8(fake_repo, caplog):
     )
 
 
+def test_note_with_raw_unicode_line_boundaries_round_trips(fake_repo):
+    """#950 regression (incident #825): the `ensure_ascii=False` writer leaves
+    raw U+2028/U+2029/NEL inside note strings, and the pre-fix
+    `splitlines()`-based `_iter_jsonl` treated those as line boundaries —
+    shredding the valid record into skip-malformed fragments = the marker was
+    SILENTLY LOST on every read. Under `split("\\n")` the note round-trips
+    byte-intact through post_event → list_events."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    # U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR, NEL U+0085 - all
+    # written RAW by json.dumps(..., ensure_ascii=False).
+    note = "para one\u2028para two\u2029para three\u0085end"
+    tw.post_event(nid, "epm:plan", by="planner", note=note)
+    plan_events = [e for e in tw.list_events(nid) if e["kind"] == "epm:plan"]
+    assert len(plan_events) == 1  # the record survives as exactly ONE row
+    assert plan_events[0]["note"] == note  # note byte-intact, boundaries raw
+
+
+def test_crlf_terminated_record_parses(fake_repo):
+    """#950: `split("\\n")` leaves a trailing `\\r` on a `\\r\\n`-terminated
+    record; `json.loads` tolerates it as JSON whitespace — pinned here as a
+    committed test, not a session probe."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    ev.write_bytes(b'{"ts":"2026-07-03T00:00:00Z","kind":"epm:test","version":1,"by":"t"}\r\n')
+    events = tw.list_events(nid)
+    assert len(events) == 1
+    assert events[0]["kind"] == "epm:test"
+
+
 # T-helper
 def test_append_jsonl_line_lands_full_line(fake_repo):
     """A normal-sized append lands a complete, parseable line + newline."""

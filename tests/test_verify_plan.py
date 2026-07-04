@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9; skips 4,6,7,10-16) ─
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18,19)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -153,10 +153,13 @@ def test_good_plan_passes_all():
         "c14_hypothesis_branch_coherence": "SKIP",
         "c15_failloud_test_coverage": "SKIP",
         "c16_reference_headline_distinction": "SKIP",
+        "c17_causal_branch_scope": "PASS",
+        "c18_paired_contrast_source_coverage": "SKIP",
+        "c19_ood_folds": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 17
+    assert len(results) == 20
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -660,7 +663,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/9" in r.detail
+    assert "4/10" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -674,7 +677,36 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/9" in r.detail
+    assert "4/10" in r.detail
+
+
+def test_c6_fitness_counts_item_j_in_widened_class():
+    # Pins the [a-j] regex widening (#941): exactly four counted letters, one of
+    # them (j) — a regression to [a-i] would count 3 and WARN instead of PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present; (j) pairwise provenance coherence — input last-commit predates the dependent capture.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/10" in r.detail
+
+
+def test_c6_fitness_letters_beyond_j_do_not_count():
+    # Upper-boundary fixture (#941): an unrelated (k) elsewhere in the body must
+    # NOT lift a 3-letter fitness attestation to a 4-letter PASS — an
+    # over-widening of the class to [a-k]/[a-z] would flip this to PASS.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
+        + "\nUnrelated enumeration elsewhere: (k) a non-fitness bullet.\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "WARN"
 
 
 def test_c6_fitness_with_few_letters_warns():
@@ -686,7 +718,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(i)" in r.detail or "nine" in r.detail
+    assert "(a)–(j)" in r.detail or "ten" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -1397,7 +1429,9 @@ H922_H2 = "- **H2 (depth profile).** The carried-context share rises with depth:
 # #841 v12 line 29 — crisp `≤` vs `>` count comparators, no tendency token.
 H841_H1 = "- **H1 (Stage-0 fit, matched information).** The source-only GRU's held-out r2_id on Δ_ℓ does NOT beat the affine ridge on the data-limited late-layer band (transitions 17–25) or on a majority of the 27 transitions. **Confirm (ridge stands):** source-only GRU r2_id ≤ ridge r2_id on ≥ 14/27 transitions (raw space), consistent with the prefix-GRU's 27/27 loss. **Falsify (GRU wins):** source-only GRU r2_id > ridge r2_id on a majority of transitions, especially the late-layer band. Directional prior: LOSS or TIE (removing prefix information from an already-losing GRU should not lift it above ridge)."
 # #810 v6 line 35 — band/threshold wording (Confirm-the-null vs clears-the-
-# band), no tendency token.
+# band), no tendency token. DUAL-USE fixture: pins c14 PASS (no comparator
+# pair / vague scope) AND c17 WARN (the falsify segment's "rewrites the
+# parent's read-out takeaway" with no exculpation — the #810 defect family).
 H810_H2G = "- **H2-g (read-out).** No summary rescues behavior read-out on generic-genre activations either. **Confirm-the-null:** the two-method conjunction statistic sits inside its max-selected band for each new combo. **Falsify:** a summary clears the band on g1 → the Betley corpus was suppressing read-out (rewrites the parent's read-out takeaway)."
 
 
@@ -1891,6 +1925,518 @@ def test_c16_fenced_trigger_does_not_fire():
     assert _status(plan, C16) == "SKIP"
 
 
+# ─── Check 17 — falsification-branch causal-claim scope ────────────────────
+
+# #810 plan v13 §0.0 — the incident offender (three reviewers required the
+# scope-down); the v14 line is the accepted fix (exculpation tokens:
+# "consistent with", "not uniquely diagnostic", OOD, "remains live").
+C17_V13_MIND = (
+    "- **What would change my mind:** If deleting the answer makes them clearly "
+    "harder to rebuild — dropping below the plain answer-average benchmark — with "
+    "a clean paired gap, then they really were carrying answer content, the echo "
+    "story dies, and the parked follow-up #943 gets its revival condition."
+)
+C17_V14_MIND = (
+    "- **What would change my mind:** If deleting the answer makes them clearly "
+    "harder to rebuild — dropping below the plain answer-average benchmark — with "
+    "a clean paired gap, then the header read is ANSWER-PRESENCE-DEPENDENT — "
+    "consistent with integration but not uniquely diagnostic (an off-distribution "
+    "empty turn degrading the states remains live); the truncation dose-response "
+    "follow-up disambiguates, and parked #943's revival condition becomes "
+    "conditional on it."
+)
+# H810_H2G (the c14 PASS fixture, #810 v6) carries "rewrites the parent's
+# read-out takeaway" in its falsify segment with no exculpation — c17
+# deliberately WARNs on it (the diff-sketch's own example pattern; same
+# defect family that recurred on #810 through v13).
+H810_H2G_EXCULPATED = (
+    H810_H2G + " Not uniquely diagnostic on its own: a genre confound remains live."
+)
+# GOOD_PLAN minus its (clean) mind bullet — the no-surface SKIP fixture.
+GOOD_PLAN_MIND_LINE = (
+    "- **What would change my mind:** A shift larger than the run-to-run spread "
+    "would mean benign data alone moves persona expression."
+)
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c17_kind_exempt_skips(kind):
+    plan = GOOD_PLAN + "\n" + C17_V13_MIND + "\n"
+    assert _status(plan, "c17_causal_branch_scope", kind=kind) == "SKIP"
+
+
+def test_c17_no_branch_surface_skips():
+    plan = GOOD_PLAN.replace(
+        GOOD_PLAN_MIND_LINE, "- **Spread note:** run-to-run spread is the yardstick."
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "SKIP"
+    assert "no registered falsification-branch surface" in r.detail
+
+
+def test_c17_810_v13_mind_bullet_warns():
+    ok, by_id = _run(GOOD_PLAN + "\n" + C17_V13_MIND + "\n")
+    r = by_id["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "really w" in r.detail  # 'really were'
+    assert "What would change my mind" in r.detail
+    assert ok is True  # WARN never flips exit 0
+
+
+def test_c17_810_v14_scoped_down_passes():
+    assert _status(GOOD_PLAN + "\n" + C17_V14_MIND + "\n", "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_hyp_falsify_rewrites_takeaway_warns():
+    r = _run(_hyp_plan(H810_H2G))[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "rewrites the parent" in r.detail
+    assert "falsify" in r.detail
+
+
+def test_c17_hyp_confirm_segment_offender_warns():
+    # Round-scope item R2: the confirm-branch scan path — an offender token
+    # inside an explicit **Confirm:** segment, no exculpation anywhere in
+    # the block → WARN naming the confirm segment.
+    plan = _hyp_plan(
+        "- **H1 (mechanism).** The probe reads answer information from the header states. "
+        "**Confirm:** a clean paired gap establishes that the states were integrated. "
+        "**Falsify:** no paired gap appears at any layer."
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "confirm" in r.detail
+    assert "establishes that" in r.detail
+
+
+def test_c17_hyp_exculpated_passes():
+    assert _status(_hyp_plan(H810_H2G_EXCULPATED), "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_must_have_been_offender_warns():
+    # Round-scope item R3 (documentation fixture): the retrospective
+    # "must have been" attribution is tier-1 offender vocabulary.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + (
+            "- **What would change my mind:** If the gap survives the swap, the "
+            "adapter must have been encoding the trait all along."
+        )
+        + "\n"
+    )
+    r = _run(plan)[1]["c17_causal_branch_scope"]
+    assert r.status == "WARN"
+    assert "must have been" in r.detail
+
+
+def test_c17_incidental_exculpation_silences_offender():
+    # Round-scope item R3 (documentation fixture): DOCUMENTED ACCEPTED
+    # FALSE NEGATIVE — exculpation scope is the whole bullet, so an
+    # INCIDENTAL hedge token ("caveat", here about judge sample size, not
+    # about the causal claim) silences a genuine offender ("story dies").
+    # Deliberate per the c14 prefer-false-negatives charter; do not
+    # "fix" by narrowing exculpation scope to the claim sentence (the v14
+    # fix wording itself puts the hedge in a trailing parenthetical).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + (
+            "- **What would change my mind:** If the paired gap is clean, the echo "
+            "story dies (one caveat: the judge sample is small)."
+        )
+        + "\n"
+    )
+    assert _status(plan, "c17_causal_branch_scope") == "PASS"
+
+
+def test_c17_kind_analysis_warns_not_skips():
+    plan = GOOD_PLAN + "\n" + C17_V13_MIND + "\n"
+    assert _status(plan, "c17_causal_branch_scope", kind="analysis") == "WARN"
+
+
+def test_c17_fenced_offender_does_not_trigger():
+    plan = GOOD_PLAN + "\n```\n" + C17_V13_MIND + "\n```\n"
+    # GOOD_PLAN's own clean mind bullet is still a surface → PASS, not WARN.
+    assert _status(plan, "c17_causal_branch_scope") == "PASS"
+
+
+# ─── Check 18 — paired-contrast per-arm source coverage ────────────────────
+
+# Verbatim corpus literals (embedded, never read from tasks/ paths — plans
+# move between status folders; this file's own convention). Sources: #810
+# plans/v13.md:33 (the founding FAIL registration — 9-row paired bootstrap
+# whose named full-side pack lacked im_end/turn_nl), #810 plans/v15.md:71
+# (the reviewer-converged PASS declaration — the D2 subset-assert shape),
+# task #608 plans/v2.md:164 (the replay-found incidental subset-CI
+# false-satisfier: "pair" substring-matches inside "paired"; word-bounding
+# must reject it). The REAL files are exercised by the §3.4 implementation
+# calibration replay, not by this suite.
+C18_V13_REGISTRATION = "- **H1-he (echo — the headline).** Empty-answer header/boundary rows reconstruct ≈ as well as their full-answer twins. **Registered per-row statistic:** paired per-context LOCO Δskill(full − empty) at each row's committed best layer, via the shared-index 2,000-draw bootstrap (7 pairs vs round-3 rows; `im_end`/`turn_nl` pair vs round-1). **Echo supported:** every header pool's Δ CI includes 0 or |Δ| < 0.02 (the round-3 D_uh margin), AND best empty-row LOFO ≥ 0.805. **Falsified (integration):** best header/boundary empty-row LOFO < 0.805 AND that row's paired Δ CI excludes 0 from above (\"clearly-positive\"). Expected: echo."
+C18_V15_DECLARATION = "4. **NEW `scripts/issue810_he_mechanism.py`** (thin driver, the only new analysis file — the `issue810_uh_crosslayer.py` precedent): loads `uh_summaries.pt` (full side for the 7 uh/bnd rows) + `he_summaries.pt` (empty) + — MUST-FIX addition — the round-3 HF store `issue658_theory_assumptions/answer_position_sweep_user_header/<ctx>.pt` (per-file `hf_hub_download`, ~430 MB total, cpu-mid-safe) as the FULL side for the `im_end`/`turn_nl` pairs (NOT in the uh pack — verified by three reviewers); their refit-parity assert targets the ROUND-1 committed skills in `eval_results/issue_810/reconstruction_skill_by_summary.json` (valid: both positions are causally upstream of the extension), ≤1e-6. ROW-COVERAGE SMOKE ASSERT (mechanizable): `set(registered_pair_rows) ⊆ union(keys(full_side_sources))` for every source named here, asserted at driver start; (a) cross-context-centers each (row, layer) across the 50 contexts and emits per-context cosine + pooled R² (1 − ‖full−empty‖²/‖full‖², centered); (b) refits the full-side per-context LOCO predictions from `uh_summaries.pt` (asserting skills match committed ≤1e-6 — the `a26da411bb` precedent) and runs the paired shared-index 2,000-draw bootstrap on Δskill(full−empty) per row at the committed best layers. All numpy/torch-CPU, batched."
+C18_608_CI_LINE = "Per-cell own-rate SE ≈ 0.01–0.02 binomial, ≈ 0.03–0.05 claim-clustered (effective N = 50 claims) — the +0.05 support threshold and ±0.02 equivalence band sit respectively above and below that noise floor. Formal tests — REGISTERED CONVENTIONS (v2): per-source claim-level paired bootstrap on g(s) (per-claim 10-rollout rates → paired claim differences → resample 50 claims with replacement → 10,000 draws → two-sided 95% percentile CI; base rates not resampled — base cancels in g); H1 falsification uses the CI-CONTAINMENT reading (CI ⊆ [−0.05, +0.05] for ≥5/6 sources, per §1); boundary-indeterminate outcomes are reported as indeterminate with continuous estimates, never as evidence against H1. 6-source sign test reported one-sided AND two-sided (two-sided: 6/6 p=0.031, 5/6 p=0.219; one-sided: 6/6 p=0.016, 5/6 p=0.109) as a descriptive pattern — the per-source CIs carry the inference. κ-calibration per §4 Phase G; the May-vs-June drift comparison is descriptive only (the single unified judge pass removes it from the inferential path)."
+
+
+def _c18_plan(*parts: str) -> str:
+    """GOOD_PLAN + a Hypothesis section carrying ``parts`` in order
+    (GOOD_PLAN contains zero `paired` mentions — pinned in the
+    not-triggered test below, so the base plan can never trigger c18)."""
+    return GOOD_PLAN + "\n## Hypothesis\n\n" + "\n\n".join(parts) + "\n"
+
+
+def test_c18_not_triggered_skips():
+    assert "paired" not in GOOD_PLAN.lower()  # fixture precondition
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "SKIP"
+    assert "no registered paired contrast" in r.detail
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c18_kind_exempt_skips(kind):
+    plan = _c18_plan(C18_V13_REGISTRATION)
+    assert _status(plan, "c18_paired_contrast_source_coverage", kind=kind) == "SKIP"
+
+
+def test_c18_810_v13_shape_fails():
+    ok, by_id = _run(_c18_plan(C18_V13_REGISTRATION))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "FAIL"
+    assert "Row-coverage" in r.detail  # copy-adaptable remedy option
+    assert "N/A — no paired contrast" in r.detail  # escape phrase quoted
+    assert "#810 v13 class" in r.detail  # paste fingerprint (guard a)
+    assert C18_V13_REGISTRATION[:90] in r.detail  # quoted trigger prefix
+    assert ok is False
+
+
+def test_c18_810_v15_subset_assert_passes():
+    # D2: subset expression + word-bounded row/pair vocab + coverage vocab
+    # on the real v15:71 declaration line.
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION, C18_V15_DECLARATION))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "row-coverage declaration found" in r.detail
+    assert "fact-checker" in r.detail  # a PASS is never "coverage verified"
+    # Guard (b) must not trip on the real literal (no cross-issue #NN token).
+    assert verify_plan._c18_candidate_ok(C18_V15_DECLARATION)
+
+
+def test_c18_incidental_subset_ci_line_does_not_satisfy():
+    # MF-A anchor: the #608 v2:164 CI-containment convention carries a subset
+    # expression + coverage vocab ("sources") but NO word-bounded row/pair
+    # token — "paired" must not substring-satisfy the pairs? vocabulary.
+    assert verify_plan._C18_SUBSET_RE.search(C18_608_CI_LINE)
+    assert not verify_plan._C18_ROWPAIR_RE.search(C18_608_CI_LINE)
+    plan = _c18_plan(C18_V13_REGISTRATION, C18_608_CI_LINE)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_quoted_sibling_assert_does_not_satisfy():
+    # Guard (b): quoting another issue's driver assert as a worked example is
+    # a citation, not a declaration of THIS plan's inputs.
+    quoted = (
+        "As in #810 v15: `set(registered_pair_rows) ⊆ union(keys(full_side_sources))` "
+        "asserted for all 9 rows at driver start."
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, quoted)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_deferral_row_coverage_line_does_not_satisfy():
+    # MF-B: the v1 bare `this run` by-construction alternative was removed —
+    # a deferral anti-declaration carries zero source evidence.
+    deferral = "Row-coverage: deferred to a later revision of this run's analysis."
+    plan = _c18_plan(C18_V13_REGISTRATION, deferral)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_one_arm_declaration_passes_by_design():
+    # Accepted residual (e), pinned as the DOCUMENTED disposition (not a
+    # bug): the #810 v15 exemplar declaration is itself full-side-only, so a
+    # structural both-arm requirement would reject the incident's own
+    # reviewer-converged fix. One-arm truthfulness stays with the
+    # fact-checker (the check's scope-discipline paragraph).
+    one_arm = "Row-coverage: full arm = uh_summaries.pt (all 9 rows)."
+    plan = _c18_plan(C18_V13_REGISTRATION, one_arm)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_row_coverage_line_with_artifacts_passes():
+    decl = (
+        "Row-coverage: full arm = uh_summaries.pt (7 uh/bnd rows) + round-3 store "
+        "(im_end, turn_nl); empty arm = he_summaries.pt (all 9 rows)."
+    )
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION, decl))
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "declaration surface" in r.detail
+
+
+def test_c18_row_coverage_forward_window_passes():
+    # The multi-line header + per-arm bullet shape: evidence within the
+    # 3-physical-line forward window.
+    decl = (
+        "Row-coverage (per arm):\n"
+        "- full arm: uh_summaries.pt (7 uh/bnd rows) + the round-3 store (im_end, turn_nl)\n"
+        "- empty arm: he_summaries.pt (all 9 rows)"
+    )
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_by_construction_declaration_passes():
+    decl = "Row-coverage: both arms computed by this plan's own fits over the shared probe grid."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_na_escape_passes():
+    plan = _c18_plan(C18_V13_REGISTRATION) + (
+        "\nN/A — no paired contrast (the paired statistic above recaps the sibling's "
+        "registration).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c18_quoted_na_phrase_does_not_escape():
+    plan = _c18_plan(
+        C18_V13_REGISTRATION,
+        "The remedy menu offers \"declare 'N/A — no paired contrast' on its own line\" "
+        "as one option.",
+    )
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_kind_analysis_warns_not_fails():
+    ok, by_id = _run(_c18_plan(C18_V13_REGISTRATION), kind="analysis")
+    r = by_id["c18_paired_contrast_source_coverage"]
+    assert r.status == "WARN"
+    assert "kind-degrade" in r.detail
+    assert ok is True  # WARN never flips exit 0
+
+
+def test_c18_fenced_registration_does_not_trigger():
+    plan = GOOD_PLAN + "\n## Hypothesis\n\n```\n" + C18_V13_REGISTRATION + "\n```\n"
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_registration_outside_registration_section_skips():
+    plan = GOOD_PLAN + "\n## Prior Work\n\n" + C18_V13_REGISTRATION + "\n"
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_h1_title_match_does_not_scope():
+    # H2+ restriction: a doc-spanning H1 *title* matching the section family
+    # (here the `nulls?` member, via "turn-null") must not scope the whole
+    # doc into the registration family.
+    plan = (
+        "# Plan — real-user-turn-null sweep\n\n"
+        + "filler word " * 200
+        + "\n\n## 1. Goal\n\nx\n\n## 2. Design\n\ny\n\n## Prior Work\n\n"
+        + C18_V13_REGISTRATION
+        + "\n"
+    )
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+def test_c18_paircount_form_triggers():
+    # The pair-count trigger route in ISOLATION: `paired` + an enumerated
+    # pair count, no `regist` substring anywhere on the line (precondition
+    # asserted — a deleted _C18_PAIRCOUNT_RE fails this test, never
+    # vacuously passes it).
+    line = (
+        "- The headline statistic is a paired bootstrap CI over the 9 pairs, "
+        "all pre-named; report all 9 jointly."
+    )
+    assert not verify_plan._C18_REGIST_RE.search(line)
+    assert verify_plan._C18_PAIRCOUNT_RE.search(line)
+    assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_pasted_fail_detail_does_not_self_satisfy():
+    # The project convention pastes bounce text verbatim into revised plans:
+    # the FAIL detail carries the fingerprint (guard a) and a cross-issue
+    # token (guard b), and its wording supplies no D1 evidence / D2 subset
+    # expression, so a pasted detail can never satisfy the check.
+    _, by_id = _run(_c18_plan(C18_V13_REGISTRATION))
+    detail = by_id["c18_paired_contrast_source_coverage"].detail
+    assert verify_plan._C18_PASTE_FINGERPRINT in detail
+    replan = _c18_plan(C18_V13_REGISTRATION, detail)
+    assert _status(replan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_bare_coverage_vocab_without_evidence_does_not_satisfy():
+    # v13:218's reporting-completeness shape: "covers" prose without the
+    # row-coverage token or a subset expression is not a declaration.
+    line = "- Every registered read emits its verdict; the paired table covers all 9 rows."
+    plan = _c18_plan(C18_V13_REGISTRATION, line)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_generic_covers_prose_not_a_declaration():
+    # No D1 match without the literal row-coverage token.
+    line = "Both packs cover every registered row and every source is verified upstream."
+    plan = _c18_plan(C18_V13_REGISTRATION, line)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_figures_enumeration_line_does_not_trigger():
+    # §3.4 calibration tuning: a figures-enumeration line mentions paired
+    # panels + "registered rows visually distinguished" without registering
+    # any statistic (the #537 v4-v6 / #931 v1-v4 spurious-trigger class) —
+    # the leading figures label excludes it from the trigger scan.
+    line = (
+        "**Figures (over-produce; analyzer picks heroes):** hero forest plot "
+        "(registered rows visually distinguished); EM contrastive vs "
+        "non-contrastive paired cells; per-row diagonal implant-strength bars."
+    )
+    assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+# ─── Check 19 — OOD generalization folds ───────────────────────────────────
+
+C19_TRIGGER = "We fit a ridge predictor on the context grid and report held-out R^2 per layer."
+
+
+def _predictive_plan() -> str:
+    return GOOD_PLAN + "\n" + C19_TRIGGER + "\n"
+
+
+def test_c19_kind_infra_skips():
+    # Re-fixtured on the WARN fixture (v3): GOOD_PLAN+infra was near-vacuous
+    # (it SKIPs at tier 2 under every kind) — the kind-exempt tier must fire
+    # BEFORE the trigger tiers on a plan that WOULD otherwise WARN.
+    _, by_id = _run(_predictive_plan(), kind="infra")
+    res = by_id["c19_ood_folds"]
+    assert res.status == "SKIP"
+    assert "kind-exempt" in res.detail
+
+
+def test_c19_not_triggered_skips():
+    # GOOD_PLAN contains "40 held-out prompts" TWICE — the incidental
+    # eval-split usage of "held-out" the conjunction trigger must NOT fire
+    # on (the false-positive class the trigger design exists to avoid).
+    assert _status(GOOD_PLAN, "c19_ood_folds") == "SKIP"
+
+
+def test_c19_heldout_predictor_without_folds_warns():
+    ok, by_id = _run(_predictive_plan())
+    res = by_id["c19_ood_folds"]
+    assert res.status == "WARN"
+    assert ok is True  # WARN-only pin: c19 can never flip the overall verdict
+    assert "group" in res.detail.lower()
+    assert "810" in res.detail
+
+
+def test_c19_solo_loco_vocabulary_triggers():
+    # A fold token alone triggers — no held-out/predictor-stat conjunction
+    # needed (any cross-validation mention makes the fold question right).
+    plan = GOOD_PLAN + "\nPointwise LOCO is the headline fold.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_bare_leave_one_out_is_not_group_evidence():
+    plan = GOOD_PLAN + "\nWe use leave-one-out cross-validation for the predictor.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_leave_one_pointwise_unit_does_not_pass():
+    # #810's own offender fold was leave-one-CONTEXT-out (contexts were the
+    # sample points) — a blocklisted unit must not count as group evidence.
+    plan = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-context-out.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_hyphenated_pointwise_unit_does_not_pass():
+    # Must-Fix pin (round 1): the hyphen-split SUFFIX segment is blocklisted,
+    # so `leave-one-data-point-out` (suffix `point`) cannot self-certify.
+    plan = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-data-point-out.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+    # Agglutinated variant: `datapoint` is blocklisted as an exact form.
+    plan2 = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-datapoint-out.\n"
+    assert _status(plan2, "c19_ood_folds") == "WARN"
+
+
+def test_c19_hyphenated_group_unit_passes():
+    # Must-Fix pin (round 1): hyphenated GROUP units keep passing — suffix
+    # `family` is not blocklisted.
+    plan = (
+        _predictive_plan() + "We register a leave-one-prompt-family-out fold; every headline is "
+        "labeled with its fold.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "PASS"
+
+
+def test_c19_non_iid_still_warns():
+    # A NEGATED iid mention concedes group structure — it must not satisfy
+    # the iid PASS tier (round-1 convergent critic concern).
+    plan = (
+        _predictive_plan() + "The context grid is not iid: prompt families induce group structure, "
+        "but we report pointwise LOO only.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "WARN"
+    plan2 = _predictive_plan() + "The sample is non-iid; we report pointwise LOO only.\n"
+    assert _status(plan2, "c19_ood_folds") == "WARN"
+
+
+def test_c19_lofo_passes():
+    plan = (
+        _predictive_plan()
+        + "Grouping axes: prompt family, persona panel. We additionally register "
+        "a leave-one-family-out (LOFO) fold; every headline is labeled with its fold.\n"
+    )
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "leave-one-family-out" in res.detail
+
+
+def test_c19_corpus_transfer_passes():
+    plan = (
+        _predictive_plan()
+        + "Fit on Betley, evaluate on UltraChat — the corpus-transfer arm is the "
+        "group-level fold.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "PASS"
+
+
+def test_c19_iid_argument_passes():
+    plan = (
+        _predictive_plan()
+        + "The sample is genuinely iid: each row is an independent draw from one "
+        "pool; no family/template structure.\n"
+    )
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "critic" in res.detail
+
+
+def test_c19_na_escape_passes():
+    plan = _predictive_plan() + "N/A — no held-out predictive DV.\n"
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "N/A" in res.detail
+
+
+def test_c19_kind_analysis_triggers():
+    # Scope pin: kind=analysis is IN scope (the #810/#761/#763 predictor
+    # line lives in analysis follow-ups), same WARN-only severity.
+    assert _status(_predictive_plan(), "c19_ood_folds", kind="analysis") == "WARN"
+
+
+def test_c19_fenced_vocabulary_does_not_trigger():
+    # strip_fences discipline: trigger vocabulary inside a code fence can
+    # neither trip nor satisfy the check (mirrors
+    # test_c10_fence_only_marker_vocab_does_not_trigger).
+    plan = GOOD_PLAN + "\n```\n" + C19_TRIGGER + "\n```\n"
+    assert _status(plan, "c19_ood_folds") == "SKIP"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -1940,12 +2486,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 10
+    assert payload["n_skip"] == 12
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 17
-    assert len({c["id"] for c in payload["checks"]}) == 17
+    assert len(payload["checks"]) == 20
+    assert len({c["id"] for c in payload["checks"]}) == 20
 
 
 def test_cli_exit_one_on_fail(tmp_path):

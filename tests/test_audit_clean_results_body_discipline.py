@@ -23,6 +23,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "audit_clean_results_body_discipline.py"
 
@@ -570,11 +572,13 @@ def test_pre_reg_innocuous_registered_usage_not_flagged():
     assert "pre_reg" not in findings, findings
 
 
-def test_pre_reg_as_registered_caught_on_v4_body_whole_body_scan():
-    """A v4-sentinel body bypasses the v3-only prose-section restriction
-    (`_restrict_pre_reg_to_prose_sections` gates on the v3 sentinel), so the
-    incident phrasing in `## Results` prose is caught by the whole-body scan
-    — the exact #763 path."""
+def test_pre_reg_as_registered_in_v4_results_prose_is_flagged():
+    """The #763 incident phrasing in `## Results` PROSE on a v4-sentinel body
+    trips `pre_reg` under the v4 branch of `_restrict_pre_reg_to_prose_sections`
+    (whole-body scan minus GFM table rows — Lens 7 bans the mention in all
+    four v4 H2s' prose). Assertion unchanged from the pre-branch era: the
+    prose hit fired then (v4 fell through to the whole-body scan) and must
+    keep firing now."""
     v4 = (
         "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
         "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
@@ -583,6 +587,344 @@ def test_pre_reg_as_registered_caught_on_v4_body_whole_body_scan():
     )
     findings = audit.audit_body(v4)
     assert "pre_reg" in findings, findings
+
+
+# ─── v4 pre_reg scope: whole-body-minus-GFM-table-rows (#969) ────────────
+#
+# Under the v4 spec (`<!-- clean-result-v4 -->`) Lens 7 bans pre-reg mentions
+# in ALL FOUR H2s' prose (Takeaways / Goal / Methodology / Results) and
+# permits threshold values ONLY in the Methodology Training hyperparameter
+# table. `_restrict_pre_reg_to_prose_sections` implements this as a
+# whole-body scan with every positively-detected GFM table row blanked —
+# deliberately wider than Lens 7's named-table letter (see
+# `test_pre_reg_in_v4_results_table_is_deliberately_exempt`).
+
+# A compact v4-shape body: H1 + v4 sentinel + top-of-body Methodology link
+# + the four H2s (a **Training:** GFM hparam table under `## Methodology`
+# with a benign Source column; a `### <result>` under `## Results`) + the
+# `**Repro:**` / `**Context:**` footer with an `- Originating prompt:`
+# blockquote. Deliberately clean of every audit category at baseline;
+# tests mutate it via targeted `.replace()` with a body != fixture guard.
+V4_BODY_CLEAN = """\
+---
+title: v4 body for the pre_reg scan-scope tests
+kind: experiment
+goal: Exercise the v4 pre_reg whole-body-minus-tables scope
+---
+# Some claim about a finding (MODERATE confidence)
+
+<!-- clean-result-v4 -->
+
+**Methodology:** [docs/methodology/issue_9999.md](docs/methodology/issue_9999.md)
+
+## Takeaways
+
+- Headline finding: the implant installs cleanly across three seeds.
+- Secondary finding: no measurable regression on the held-out probes.
+- Caveat that binds interpretation: single model family, three seeds.
+
+## Goal
+
+**This experiment in context:** tests whether the prior effect generalises
+to benchmark Z under the same training mix.
+
+**Broader narrative:** which context factors predict fine-tuning leakage.
+
+## Methodology
+
+**Design:** three seeds; baseline vs treatment; the single variable is the data mix.
+
+**Training:**
+
+| Hyperparameter | Value | Source |
+|---|---|---|
+| learning rate | 5e-6 | prior issue |
+| epochs | 1 | prior issue |
+
+**Evaluation:** judge-scored rate on the held-out probes.
+
+## Results
+
+### Main result
+
+The lift holds at every seed in the held-out evaluation.
+
+---
+
+**Repro:** 1x A100, 47 min; code at commit deadbeef.
+
+**Context:**
+
+- Created: 2026-07-04
+- Originating prompt:
+
+> Close the v4 gap in the pre-reg prose-scan scope.
+"""
+
+
+def test_pre_reg_v4_clean_body_passes():
+    """Fixture-validity guard: the baseline v4 body carries no `pre_reg`
+    hit, so every mutation test below isolates its own injected phrase."""
+    findings = audit.audit_body(V4_BODY_CLEAN)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_v4_methodology_prose_is_flagged():
+    """A `pre-registered` mention in `## Methodology` **Design:** PROSE on a
+    v4 body trips `pre_reg` — the case the original candidate's two-section
+    (`takeaways`,`results`) scope would have wrongly exempted; Lens 7 bans
+    the mention in all four v4 H2s' prose."""
+    body = V4_BODY_CLEAN.replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** three seeds; the pre-registered drop rule leaves n = 35.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_in_v4_goal_prose_is_flagged():
+    """A `pre-registered` mention in `## Goal` prose on a v4 body trips
+    `pre_reg` (same four-H2 prose ban)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Broader narrative:** which context factors predict fine-tuning leakage.",
+        "**Broader narrative:** the pre-registered leakage-prediction question.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_in_v4_takeaways_prose_is_flagged():
+    """A `pre-registered` mention in a `## Takeaways` bullet on a v4 body
+    trips `pre_reg` — redundant coverage (the v4 branch has no section
+    discrimination) kept as cheap symmetry with the v3 Takeaways pin."""
+    body = V4_BODY_CLEAN.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- Headline finding: the pre-registered drop leaves n = 35.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_threshold_in_v4_hparam_table_is_exempt():
+    """A pre-reg threshold phrase inside the Methodology **Training:** GFM
+    hyperparameter table on a v4 body does NOT trip `pre_reg` — the one
+    surface Lens 7 explicitly permits, and the demonstrated v4
+    false-positive class this fix exists for."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| epochs | 1 | prior issue |\n| stopping floor | 0.80 | pre-registered floor (#612) |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_v4_results_table_is_deliberately_exempt():
+    """A pre-reg phrase inside a `## Results` GFM table row on a v4 body
+    (no other pre-reg prose) does NOT fire — RECORDING THE DELIBERATE
+    ALL-TABLES WIDTH: `_blank_table_rows` blanks every positively-detected
+    GFM table row, wider than Lens 7's letter (which names only the
+    Methodology Training hyperparameter table as permitted); the LM
+    clean-result-critic remains the backstop for a pre-reg mention smuggled
+    into a non-Methodology table."""
+    body = V4_BODY_CLEAN.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The lift holds at every seed in the held-out evaluation.\n\n"
+        "| criterion | source |\n"
+        "|---|---|\n"
+        "| success floor | pre-registered floor (#612) |",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_table_exemption_does_not_hide_prose_hit_v4():
+    """A v4 body with BOTH a table threshold row AND a Methodology-prose
+    mention still fires, and the surviving sample is the PROSE match (the
+    distinct 'As registered' phrasing) — the table row is blanked, never
+    the prose."""
+    body = V4_BODY_CLEAN.replace(
+        "| epochs | 1 | prior issue |",
+        "| epochs | 1 | prior issue |\n| stopping floor | 0.80 | pre-registered floor (#612) |",
+    ).replace(
+        "**Design:** three seeds; baseline vs treatment; the single variable is the data mix.",
+        "**Design:** As registered, three seeds; baseline vs treatment.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+    assert any("as registered" in s.lower() for s in findings["pre_reg"]), findings
+    # The table row's 'pre-registered' was blanked — no sample comes from it.
+    assert not any("pre-registered" in s.lower() for s in findings["pre_reg"]), findings
+
+
+def test_pre_reg_in_v4_footer_origin_prompt_is_exempt():
+    """A `pre-registered` phrase inside the footer `**Context:**`
+    originating-prompt blockquote on a v4 body does NOT trip `pre_reg` —
+    pins that the sentinel-agnostic `strip_context_blockquotes` (#597/#651)
+    covers v4 footers end-to-end (the strip runs BEFORE the pre_reg scope
+    function sees the text)."""
+    body = V4_BODY_CLEAN.replace(
+        "> Close the v4 gap in the pre-reg prose-scan scope.",
+        "> Close the pre-registered v4 gap in the prose-scan scope.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" not in findings, findings
+
+
+def test_pre_reg_in_v4_footer_repro_row_is_flagged():
+    """A `pre-registered` mention in the `**Repro:**` footer row on a v4
+    body STILL fires — pins the deliberate decision to keep the non-prompt
+    footer SCANNED (no incident motivates exempting it; the conservative
+    direction is a hand-adjudicated flag, never a silent exemption)."""
+    body = V4_BODY_CLEAN.replace(
+        "**Repro:** 1x A100, 47 min; code at commit deadbeef.",
+        "**Repro:** 1x A100, 47 min; the pre-registered config at commit deadbeef.",
+    )
+    assert body != V4_BODY_CLEAN
+    findings = audit.audit_body(body)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_v4_sentinel_precedes_v3_gate():
+    """A malformed body carrying BOTH sentinels with a pre-reg mention under
+    `## Reproducibility` (a v3-EXEMPT section) still fires — pins the branch
+    order (v4 checked BEFORE v3): the v4 sentinel declares the governing
+    spec, and the v4 branch keeps every prose surface in scope."""
+    dual = (
+        "# Title (LOW confidence)\n"
+        "<!-- clean-result-v4 -->\n<!-- clean-result-v3 -->\n\n"
+        "## Takeaways\n\n- clean prose.\n\n"
+        "## Reproducibility\n\nThe drop rule was pre-registered.\n"
+    )
+    findings = audit.audit_body(dual)
+    assert "pre_reg" in findings, findings
+
+
+def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
+    """A `<!-- clean-result-v2 -->` body with a pre-reg mention INSIDE a GFM
+    table row still fires — pins that the v4 table exemption did NOT leak to
+    v2/legacy bodies (their whole-body scan is preserved verbatim,
+    table rows included)."""
+    v2 = (
+        "# Legacy v2 title\n<!-- clean-result-v2 -->\n\n"
+        "## Human TL;DR\n\nclean prose.\n\n## TL;DR\n\nclean.\n\n"
+        "## Reproducibility\n\n"
+        "| Parameter | Value |\n|---|---|\n| drop rule | pre-registered |\n"
+    )
+    findings = audit.audit_body(v2)
+    assert "pre_reg" in findings, findings
+
+
+# ─── verdict_caps: SUCCESS|FAILURE gate verdicts (incident #763; #970) ────
+#
+# #892 fixed the `pre_reg` half of the #763 incident ("As registered,
+# SUCCESS was not met"), but the caps gate-verdict itself escaped
+# `verdict_caps`: the live #763 body's "Under the pre-set decision rule,
+# SUCCESS was not met" carries no 'as registered' bigram and SUCCESS /
+# FAILURE were absent from the four-word alternation. #970 adds both bare
+# words, case-sensitive, no context guard (bigram anchoring is the exact
+# fragility that let #763 escape `pre_reg`).
+
+
+def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
+    """The live #763 line-263 clause ("Under the pre-set decision rule,
+    SUCCESS was not met ...") in a v4 body's `## Results` prose trips
+    `verdict_caps` — the exact incident path. It carries no 'as registered'
+    bigram, so `pre_reg` (correctly) stays silent."""
+    v4 = (
+        "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
+        "## Methodology\n\nclean.\n\n## Results\n\n"
+        "Under the pre-set decision rule, SUCCESS was not met — the estimator "
+        "in force read 0.00, the falsification branch (floor 0.15).\n"
+    )
+    findings = audit.audit_body(v4)
+    assert "verdict_caps" in findings, findings
+    assert "SUCCESS" in findings["verdict_caps"], findings
+    assert "pre_reg" not in findings, findings
+
+
+def test_verdict_caps_failure_verdict_in_takeaways_is_flagged():
+    """The symmetric verdict twin: a caps FAILURE declaration in scanned
+    Takeaways prose trips `verdict_caps`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- FAILURE was declared on the install arm at every seed.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+    assert "FAILURE" in findings["verdict_caps"], findings
+
+
+def test_verdict_caps_lowercase_titlecase_forms_not_flagged():
+    """Everyday forms must NOT trip: lowercase `success`/`failure` and
+    titlecase `Success` pin the case-sensitive scan (`flags=0`); the caps
+    derivatives `SUCCESSFUL`/`UNSUCCESSFUL` cannot be excluded by case
+    alone, so they genuinely pin the `\\b` word boundary (§12 assumption 8:
+    `\\bSUCCESS\\b` fails on a trailing word char)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The success criterion was not met; Success was partial; the run was "
+        "UNSUCCESSFUL and SUCCESSFUL retries followed; the failure mode was benign.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" not in findings, findings
+
+
+@pytest.mark.parametrize("word", ["REJECTED", "INDETERMINATE", "PASSED", "EXCEEDING"])
+def test_verdict_caps_existing_words_still_flagged(word):
+    """Regression pin for ALL FOUR pre-existing alternation words — the
+    first-ever `verdict_caps` tests land with #970, and the
+    awaiting_promotion corpus carries zero existing-word hits, so a regex
+    retype dropping a sibling word while adding SUCCESS|FAILURE would
+    otherwise pass every other test AND the corpus diff."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Secondary finding: no measurable regression on the held-out probes.",
+        f"- The gate read {word} on the secondary arm.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+    assert word in findings["verdict_caps"], findings
+
+
+def test_verdict_caps_install_failure_emphasis_is_flagged_by_design():
+    """DELIBERATE decision pin (#970 plan §4): caps-emphasis usage like the
+    #543 body's "defines an install FAILURE as hitting the 16-epoch cap"
+    IS flagged. Caps emphasis is off-register under the clean-result voice
+    discipline (Lens 6); the fix is a register-improving lowercase.
+    Completed bodies like #543 itself are grandfathered (never re-audited),
+    so this is a prospective-only exposure, accepted by design — do NOT
+    "fix" this as a false positive without revisiting that decision."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The follow-up plan defines an install FAILURE as hitting the 16-epoch cap.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+
+
+def test_verdict_caps_code_spans_not_flagged():
+    """Caps SUCCESS/FAILURE inside an inline-backtick span AND a fenced code
+    block must NOT trip — `verdict_caps` scans `cleaned` (strip_code applied),
+    which is the mitigation bounding the prospective false-positive surface
+    (verbatim sample/log text in code spans stays exempt)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The gate metric is `SUCCESS` in the results JSON.\n\n```\nverdict: FAILURE\n```",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" not in findings, findings
 
 
 # ─── bit/byte-identical AI-slop family (Lens 6; incident #642) ───────────

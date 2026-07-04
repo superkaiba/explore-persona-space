@@ -1,0 +1,1041 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:10Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5462739042108964,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5593866487454624,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 2.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5506200985087994,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 3.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5277814269198048,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 4.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5017515984032735,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 5.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48309767536819237,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 6.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4846468427545396,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 7.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4858375529515292,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 8.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.46643290043479235,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 9.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.45624428560011554,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 10.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.44003200766909967,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 11.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.43822842068264745,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 12.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.44000722866080977,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 13.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4411844925919378,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 14.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.44413387818261996,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 15.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.45083441929013723,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 16.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.45722638046907904,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 17.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4568162811063742,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 18.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4634695656143696,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 19.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4751914518602329,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 20.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4765222618795065,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 21.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4769047086901914,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 22.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4816527375605172,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 23.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48012992761237716,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 24.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4632439860987304,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 25.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4510946500337003,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 26.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.44284086919075094,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 27.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.43462861274806464,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 28.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4369041697084025,
+      "series": "context-only ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.13624539260528423,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.418776969938775,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 2.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4027455266022093,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 3.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.37062146082984404,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 4.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.34498629790919966,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 5.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.33263355923447113,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 6.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.33592313494450365,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 7.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.34443978294732835,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 8.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3416341486544776,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 9.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.32884588735511,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 10.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.33948310329520115,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 11.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3462102511850109,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 12.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.34357147414857825,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 13.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3434054963116996,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 14.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.34757694836763986,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 15.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3574859273432728,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 16.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.35761034372234124,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 17.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3518744645430546,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 18.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.35040748972510205,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 19.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.36693413141338005,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 20.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3684801691119438,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 21.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.36420626835821823,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 22.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.37098976431803865,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 23.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3573433891445954,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 24.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3315506271038363,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 25.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3107954393679132,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 26.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2931389666484898,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 27.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.27367118771583643,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 28.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.27734282251233067,
+      "series": "context-only MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.9999999999997893,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.8197652806780235,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 2.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.7859160980592322,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 3.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.736012728030462,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 4.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6928212227189683,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 5.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6676340515882471,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 6.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.658683983312689,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 7.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6540319022507084,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 8.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6465997955178242,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 9.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6234558747513526,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 10.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6149344385806678,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 11.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6122506890609649,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 12.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6042870678646256,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 13.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6002512911631604,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 14.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5956867820641676,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 15.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5983623895261074,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 16.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5950214733671568,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 17.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5871149213082909,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 18.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5832635093367595,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 19.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5940191559333956,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 20.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5864721694481239,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 21.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5846197314825838,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 22.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5843733184984246,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 23.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.567217215063172,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 24.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5466617280811015,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 25.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5222662010179389,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 26.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5019992261937395,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 27.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48453753683624157,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 28.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48359847380031584,
+      "series": "token-informed ridge (ceiling)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4276727918838602,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.6271999018291989,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 2.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5911130326745698,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 3.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5363324946056834,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 4.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.496906247842839,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 5.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4836791742575385,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 6.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4823964315111301,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 7.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48815258005737483,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 8.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.49995028884910053,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 9.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4783289060099907,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 10.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5005166875545122,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 11.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5068631192093002,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 12.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4948607892788559,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 13.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4896208393218068,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 14.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.48567889860030355,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 15.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4928627698372794,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 16.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4836047735846959,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 17.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4718939155428109,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 18.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.46068933841296267,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 19.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4765703625889002,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 20.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4695828862846866,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 21.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4624180374018836,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 22.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4645207133988797,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 23.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.43396932193949245,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 24.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.4058300163480386,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 25.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3716387869749983,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 26.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.34169311237098177,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 27.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.3149923424913965,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 28.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.320045723141941,
+      "series": "token-informed MLP",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.5484978457727228,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.365561217210447,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 2.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.33754914229909383,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 3.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.30194951763650246,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 4.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2753493899401952,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 5.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.26659011618345807,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 6.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.263291651433486,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 7.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2567579027164366,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 8.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2688514517185636,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 9.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2533908799827551,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 10.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.26204444213334444,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 11.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.26295419185727564,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 12.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.25253767950373107,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 13.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.24823708329130167,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 14.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2416355645734226,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 15.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.24617830862859025,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 16.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.23680566173712125,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 17.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.23197024569677727,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 18.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.22772749033380202,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 19.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.2411954096372373,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 20.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.24508421884830878,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 21.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.25103571822828863,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 22.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.25634188973603,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 23.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.25098635284739323,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 24.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.241194150211557,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 25.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.22248563043177805,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 26.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.20679757830864953,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 27.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.1857894275328893,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 28.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.18570368599763076,
+      "series": "embedding-only ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (emb, block 0..27)": 0.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "copy-previous (identity)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (emb, block 0..27)": 1.0,
+      "held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "copy-previous (identity)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 147
+}

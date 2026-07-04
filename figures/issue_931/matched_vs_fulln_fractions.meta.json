@@ -1,11 +1,77 @@
 {
-  "metadata": {
-    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
-    "timestamp": "2026-07-04T06:04:46Z",
-    "seed": 0,
-    "n": 0,
-    "script": "scripts/issue931_figures.py",
-    "issue": 931
-  },
-  "n_directions": 13
+  "commit": "d8cdbbe581",
+  "created": "2026-07-04T08:51:58Z",
+  "figsize": [
+    8.4,
+    6.6
+  ],
+  "points": [
+    {
+      "direction": "chat \u2192 real novels (single-position X)",
+      "matched": -97.47937351339276,
+      "full_n": -6.1764841288509835
+    },
+    {
+      "direction": "real novels \u2192 chat (single-position X)",
+      "matched": 0.0480375292113488,
+      "full_n": 0.022564436036636853
+    },
+    {
+      "direction": "chat \u2192 model stories (single-position X)",
+      "matched": -24.42813855494277,
+      "full_n": -4.9736630071801375
+    },
+    {
+      "direction": "model stories \u2192 chat (single-position X)",
+      "matched": 0.03888748827549972,
+      "full_n": 0.027831876851299113
+    },
+    {
+      "direction": "real novels \u2192 model stories (span-mean X)",
+      "matched": 0.14749825071504483,
+      "full_n": 0.2129959379191859
+    },
+    {
+      "direction": "model stories \u2192 real novels (span-mean X)",
+      "matched": -0.732867662039981,
+      "full_n": -0.6444308914770884
+    },
+    {
+      "direction": "separator control \u2192 real novels (single-position X)",
+      "matched": -95.41821121579983,
+      "full_n": -1.1983867821651362
+    },
+    {
+      "direction": "real novels \u2192 separator control (single-position X)",
+      "matched": null,
+      "full_n": null
+    },
+    {
+      "direction": "preceding-sentence control \u2192 real novels (span-mean X)",
+      "matched": -25.9770419676424,
+      "full_n": -0.21709034481046985
+    },
+    {
+      "direction": "chat \u2192 real novels (span-mean X)",
+      "matched": -29.71684401912247,
+      "full_n": -1.6876852948498724
+    },
+    {
+      "direction": "chat \u2192 model stories (span-mean X)",
+      "matched": -1.6668045050208837,
+      "full_n": 0.07549292262950845
+    },
+    {
+      "direction": "real novels \u2192 chat (span-mean X)",
+      "matched": 0.04432761802524621,
+      "full_n": 0.020821797415651353
+    },
+    {
+      "direction": "model stories \u2192 chat (span-mean X)",
+      "matched": -0.017123491570621336,
+      "full_n": -0.012255327607724421
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26
 }

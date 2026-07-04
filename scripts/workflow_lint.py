@@ -146,6 +146,33 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-jsonl-splitlines`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` AND
+  ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
+  reading JSONL content. ``json.dumps(..., ensure_ascii=False)`` leaves
+  raw U+2028/U+2029/NEL inside JSON strings and ``str.splitlines()``
+  splits on ALL Unicode line boundaries, so a valid ``\\n``-terminated
+  JSONL file shreds into unparseable fragments — a hard crash on strict
+  readers, SILENT record loss on tolerant skip-malformed readers, and
+  inflated row counts on ``len(...splitlines())`` asserts (incident #825
+  run-1d; eight live workflow-surface reader sites across seven files
+  fixed with #950). Four narrow
+  signals: (a) a ``read_text``-bearing receiver chain whose source
+  segment mentions ``jsonl``; (b) a bare receiver ``Name`` matching
+  ``jsonl``; (c) the call sits inside a ``jsonl``-named function; (d) a
+  ``read_text``-bearing receiver chain whose base ``Name`` is
+  ``ev_path``/``events_path``/``concerns_path`` or whose segment names
+  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``. Deliberate false negatives
+  (dataflow through other variable names, shell heredocs) are documented
+  in the check docstring — the gotchas.md entry carries those. Waive a
+  genuinely-safe flagged site with ``# JSONL_SPLITLINES_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line; frozen legacy per-issue
+  experiment scripts are grandfathered in
+  :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (experiment files ONLY — a
+  workflow-surface file is never allowlisted, it is fixed). Unparseable
+  files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
+  never silently.
 * ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
   any script that uses the BARE python-dotenv ``load_dotenv``
@@ -289,6 +316,18 @@ Behaviours:
   non-blank line. Also enforced at commit time by the
   ``workflow-lint-phase-done-reserved`` pre-commit hook on any
   ``scripts/*.sh|py`` change (#930).
+* ``--check-stale-label-disposition`` (also bundled into the no-flags default
+  run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
+  paragraph (bold anchor ``**Stale-label disposition rule``, which must be
+  UNIQUE — the check carries a negative assertion, so span identity is
+  load-bearing) loses any of its five #894/#763 semantic tokens — most
+  critically the fresh-label-execute clause ("the label EXECUTES as the
+  dispatched round") — or regains an unconditional skip-on-None coupling
+  ("On None ... skip", a targeted negative regex over the
+  whitespace-normalized paragraph span; a literal-coupling backstop only,
+  the positive tokens are the primary defense). Paragraph-scoped: the span
+  runs from the anchor to the first blank line, so a mid-paragraph split
+  FAILs loudly (#963).
 
 Exit codes:
 
@@ -897,6 +936,49 @@ UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
 UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
 UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-jsonl-splitlines` (#950): reading/counting JSONL via
+# `str.splitlines()` shreds records whose `ensure_ascii=False` strings carry
+# raw U+2028/U+2029/NEL (Unicode line boundaries; incident #825 run-1d).
+# Inline waiver for a genuinely-safe flagged site. Reason ≥ 10 chars, same
+# convention as UPLOAD_AS_FILE_EXEMPT.
+JSONL_SPLITLINES_WAIVER_RE = re.compile(r"#\s*JSONL_SPLITLINES_EXEMPT\s*:\s*(.+?)\s*$")
+JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS = 10
+# Signal regexes: (b)/(c) receiver-Name / enclosing-function-name token; (d)
+# events/concerns-path receiver base names (the project's uniform conventions
+# for `events.jsonl` / `concerns.jsonl` paths; `concerns_path` covers the
+# verify_task_body.py check-14 reader shape fixed in #950 round 2).
+JSONL_NAME_TOKEN_RE = re.compile(r"jsonl", re.IGNORECASE)
+JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^(ev(ents)?|concerns)_path$", re.IGNORECASE)
+# Grandfathered legacy `.splitlines()`-on-JSONL sites — repo-root-relative
+# POSIX FILE paths (file-level, not line-keyed — line keys rot; these are
+# frozen per-issue experiment scripts of terminal/near-terminal tasks reading
+# their own mostly-ASCII generated JSONL). HARD RULE: experiment files ONLY —
+# a workflow-surface file may NEVER be allowlisted, it must be FIXED (the
+# live-tree test asserts the experiment-file path shape mechanically).
+JSONL_SPLITLINES_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # #823 identity-baseline driver (terminal task, own generated JSONL):
+        "scripts/issue823_identity_baseline.py",
+        # #778 honest-null figures (terminal task):
+        "scripts/issue778_honest_null_figures.py",
+        # #488 phase2 smoke calibrator (terminal task):
+        "scripts/i488_phase2_smoke_calibrate.py",
+        # #778 summary comparison plots (terminal task):
+        "scripts/issue778_summary_comparison_plots.py",
+        # #667 extraction driver (terminal task):
+        "scripts/issue667_extract.py",
+        # #650 concept-direction driver (terminal task):
+        "scripts/issue650_concept_direction.py",
+        # #642 dispatch driver, 5 sites (terminal task):
+        "scripts/issue_642/i642_dispatch.py",
+        # #612 sycophancy claim audit `_load_jsonl` (experiment package under
+        # src/explore_persona_space/experiments/ — experiment code, not
+        # workflow surface):
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+    }
+)
 
 
 # `--check-batch-judge-client`: every inline Anthropic Message Batches API
@@ -3138,6 +3220,221 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _jsonl_splitlines_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# JSONL_SPLITLINES_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _chain_has_read_text(expr: ast.expr) -> bool:
+    """True iff the receiver expression chain contains a ``read_text`` call."""
+    for node in ast.walk(expr):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "read_text"
+        ):
+            return True
+    return False
+
+
+def _chain_base_name(expr: ast.expr) -> str | None:
+    """Leftmost ``ast.Name`` id of an attribute/call/subscript chain, or None."""
+    while True:
+        if isinstance(expr, ast.Call):
+            expr = expr.func
+        elif isinstance(expr, ast.Attribute | ast.Subscript):
+            expr = expr.value
+        elif isinstance(expr, ast.Name):
+            return expr.id
+        else:
+            return None
+
+
+def _jsonl_fn_scoped_splitlines_ids(tree: ast.AST) -> set[int]:
+    """Signal (c) pre-pass: ``id()``s of every ``.splitlines()`` call node
+    enclosed by a ``jsonl``-named function (the ``_iter_jsonl`` shape)."""
+    fn_scoped: set[int] = set()
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef | ast.AsyncFunctionDef) and JSONL_NAME_TOKEN_RE.search(
+            fn.name
+        ):
+            for sub in ast.walk(fn):
+                if (
+                    isinstance(sub, ast.Call)
+                    and isinstance(sub.func, ast.Attribute)
+                    and sub.func.attr == "splitlines"
+                ):
+                    fn_scoped.add(id(sub))
+    return fn_scoped
+
+
+def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> str | None:
+    """Classify one ``.splitlines()`` call against the four #950 signals.
+
+    Returns a human-readable signal label when the call reads JSONL content
+    (see :func:`check_jsonl_splitlines` for the signal definitions), else
+    None. A per-node ``ast.get_source_segment(...) is None`` only makes the
+    segment-dependent predicates (a)/(d-literal) non-matching for the node.
+    """
+    receiver = node.func.value  # type: ignore[attr-defined]
+    segment = ast.get_source_segment(text, receiver)
+    has_read = _chain_has_read_text(receiver)
+    base = _chain_base_name(receiver)
+    if has_read and segment is not None and JSONL_NAME_TOKEN_RE.search(segment):
+        return "jsonl-named read_text chain"
+    if isinstance(receiver, ast.Name) and JSONL_NAME_TOKEN_RE.search(receiver.id):
+        return f"jsonl-named receiver ('{receiver.id}')"
+    if id(node) in fn_scoped:
+        return "call inside a jsonl-named function"
+    if has_read and (
+        (base is not None and JSONL_EVENTS_PATH_NAME_RE.match(base))
+        or (
+            segment is not None
+            and any(lit in segment for lit in ("events.jsonl", "comments.jsonl", "concerns.jsonl"))
+        )
+    ):
+        return "events/comments/concerns-path read_text chain"
+    return None
+
+
+def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    and FAIL any ``.splitlines()`` call that reads JSONL content (#950).
+
+    Rationale: ``json.dumps(..., ensure_ascii=False)`` — the project's
+    events/comments writer and most JSONL emitters — leaves raw U+2028 LINE
+    SEPARATOR, U+2029 PARAGRAPH SEPARATOR, and NEL U+0085 inside JSON strings
+    (controls < 0x20 are still escaped), and ``str.splitlines()`` splits on
+    ALL Unicode line boundaries. A perfectly valid ``\\n``-terminated JSONL
+    file read via ``splitlines()`` therefore shreds any record whose text
+    carries one of those characters: a hard ``JSONDecodeError`` on strict
+    readers, SILENT record loss on tolerant skip-malformed readers, and an
+    inflated row count on ``len(read_text().splitlines())`` asserts.
+    Real-user corpora (lmsys-chat-1m, WildChat) contain them routinely and an
+    ASCII-fixture smoke can never catch it (incident #825 run-1d: 2000 valid
+    records → 2019 fragments, ~55 min of GPU extraction lost; eight live
+    workflow-surface reader sites across seven files fixed with #950). The
+    fix is ``split("\\n")`` or text-mode file iteration (universal newlines
+    only).
+
+    Detection — flag an ``ast.Call`` whose func is
+    ``ast.Attribute(attr="splitlines")`` when ANY of:
+
+    * **(a) chained-read signal:** the receiver chain contains a
+      ``read_text`` call AND the receiver's source segment mentions
+      ``jsonl`` case-insensitively (``jsonl_path.read_text().splitlines()``,
+      ``(d / "pool.jsonl").read_text().splitlines()``).
+    * **(b) receiver-name signal:** the receiver is a bare ``ast.Name``
+      matching ``/jsonl/i`` (``jsonl_text.splitlines()``).
+    * **(c) function-name signal:** the call sits inside a
+      ``FunctionDef``/``AsyncFunctionDef`` whose name matches ``/jsonl/i``
+      (the ``_iter_jsonl`` shape — receiver read on a separate line).
+    * **(d) events/concerns-path signal:** the receiver chain contains a
+      ``read_text`` call AND (its base ``ast.Name`` matches
+      ``/^(ev(ents)?|concerns)_path$/i`` OR the segment names the literal
+      ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``) — the exact
+      shapes of the #950 sibling workflow readers (the round-1
+      ``events.jsonl`` siblings + the round-2 ``verify_task_body.py``
+      check-14 ``concerns.jsonl`` reader), which evade (a)-(c).
+
+    Deliberate false negatives (accepted; the gotchas.md entry + code review
+    carry them): dataflow through a non-jsonl, non-events-named variable
+    (``out_path = ... / "x.jsonl"`` … ``out_path.read_text().splitlines()``)
+    and python-in-shell heredocs (``.sh`` files are not AST-scannable).
+
+    Unparseable files: a ``SyntaxError`` (does not parse) or
+    ``UnicodeDecodeError`` (non-UTF-8) file is SKIPPED without failing the
+    check — syntax validity is ruff/pytest's job — but a one-line notice is
+    printed to stderr so the skip is never silent (strengthens the silent
+    ``--check-upload-as-file`` precedent). A per-node
+    ``ast.get_source_segment(...) is None`` only makes the segment-dependent
+    predicates non-matching for that node; no file skip.
+
+    Waiver: ``# JSONL_SPLITLINES_EXEMPT: <reason>`` (reason ≥
+    :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) on the call's
+    first physical line or the immediately preceding non-blank line.
+    Grandfather: :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (file-level,
+    frozen experiment scripts only — NEVER a workflow-surface file).
+
+    ``scan_roots`` is a unit-test override hook; production callers pass None
+    and the function walks ``<repo_root>/scripts`` +
+    ``<repo_root>/src/explore_persona_space`` (NOT ``tests/`` /
+    ``external/`` / ``archive/``). Bundled into the no-flags default run.
+    """
+    roots = (
+        scan_roots
+        if scan_roots is not None
+        else (_REPO_ROOT / "scripts", _REPO_ROOT / "src" / "explore_persona_space")
+    )
+    errors: list[str] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            if rel in JSONL_SPLITLINES_LEGACY_ALLOWLIST:
+                continue
+            try:
+                text = py.read_text(encoding="utf-8")
+                tree = ast.parse(text, filename=str(py))
+            except (SyntaxError, UnicodeDecodeError) as exc:
+                # Skip-with-report: never silent, never fatal (syntax validity
+                # is ruff/pytest's enforcement job, not this lint's).
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-jsonl-splitlines skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            lines = text.split("\n")
+            fn_scoped = _jsonl_fn_scoped_splitlines_ids(tree)
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "splitlines"
+                ):
+                    continue
+                signal = _jsonl_splitlines_signal(node, text, fn_scoped)
+                if signal is None:
+                    continue
+                if _jsonl_splitlines_waiver_present(lines, node.lineno):
+                    continue
+                errors.append(
+                    f"{py}:{node.lineno}: jsonl-splitlines: .splitlines() on JSONL "
+                    f"content ({signal}). str.splitlines() splits on raw "
+                    f"U+2028/U+2029/NEL inside ensure_ascii=False JSON strings and "
+                    f"shreds valid records — silent drop on tolerant readers, "
+                    f"JSONDecodeError on strict ones, inflated row counts on "
+                    f"len() asserts (#825/#950; .claude/rules/gotchas.md). Read/"
+                    f'count JSONL via text-mode file iteration or split("\\n") + '
+                    f"an `if line.strip()` guard, or waive a genuinely-safe site "
+                    f"with '# JSONL_SPLITLINES_EXEMPT: <reason>' (reason ≥ "
+                    f"{JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS} chars)."
+                )
+    return errors
+
+
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
     """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
     :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
@@ -4798,6 +5095,99 @@ def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None)
     return errors
 
 
+def check_hollow_verification_gate_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the hollow-verification-gate lens (#779/#890) is absent from
+    any of its three surfaces, or the tag drops off a surface's
+    ``**Blocker tags:**`` verdict-template line.
+
+    Task #779: a green `--verify-vectorized` gated an UNUSED helper's
+    self-check while the dispatched ridge hot loop (~17k fits, 18-20h) ran
+    unverified; rounds 6/7 PASSed. #890 added the Step 0.68
+    hollow-verification-gate sub-check + blocker tag to both code-reviewer
+    agent files and deferred this parity lint. Three surfaces, per-file
+    tokens (the #881 shape):
+
+    (a) code-reviewer.md — the ``Hollow-verification-gate sub-check``
+        Step 0.68 heading phrase;
+    (b) codex-code-reviewer.md — the lowercase copy-contract phrase
+        ``hollow-verification-gate sub-check`` PLUS ``0.68`` on the
+        ``{{INLINED RUBRIC`` placeholder line (a copy-list-only token check
+        false-PASSes while the composed executable Codex prompt omits
+        Step 0.68 — the #606 twin-omission class);
+    (c) efficiency-critic.md — the v2 owner
+        (.claude/rules/lens-coverage-map.md), IMPLEMENTATION-MODE rubric
+        item ``Hollow-verification-gate``.
+
+    Every surface ADDITIONALLY requires the tag on a line starting with
+    ``**Blocker tags:**`` — the verdict template's tag-vocabulary line, the
+    orchestrator's Step 5c-bis parse target (#890's line-scoped verify:
+    a broad grep false-greens a prose-only partial implementation).
+    Tokens are case-sensitive substrings. ``repo_root`` is a unit-test
+    override hook; production callers pass None. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tag = "hollow-verification-gate"
+    blocker_prefix = "**Blocker tags:**"
+    prose_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": ("Hollow-verification-gate sub-check",),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "hollow-verification-gate sub-check",
+        ),
+        root / ".claude" / "agents" / "efficiency-critic.md": ("Hollow-verification-gate",),
+    }
+    errors: list[str] = []
+    for p, required in prose_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #890 hollow-verification-gate lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"efficiency-critic.md (the workflow-v2 owner)."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the hollow-verification-gate lens token "
+                    f"{token!r} (#779/#890). The Step 0.68 sub-check (a "
+                    f"verify/equivalence gate must assert on the function the "
+                    f"entrypoint actually dispatches) must stay on all three "
+                    f"reviewer surfaces so a green gate on an unused sibling "
+                    f"keeps FAILing review (incident #779: an unverified ~17k-"
+                    f"fit hot loop was laundered as verified)."
+                )
+        bt_lines = [ln for ln in text.splitlines() if ln.startswith(blocker_prefix)]
+        if not bt_lines:
+            errors.append(
+                f"{p}: no line starts with {blocker_prefix!r} (#890) — the "
+                f"verdict template's blocker-tag vocabulary line (the Step "
+                f"5c-bis parse target) is gone."
+            )
+        elif not any(tag in ln for ln in bt_lines):
+            errors.append(
+                f"{p}: no {blocker_prefix!r} line names {tag!r} (#890) — the "
+                f"tag dropped out of the verdict template's vocabulary; a "
+                f"reviewer could no longer declare the finding (the "
+                f"2-without-2b partial-implementation class a broad grep "
+                f"false-greens)."
+            )
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if codex.is_file():
+        rubric_lines = [
+            ln for ln in codex.read_text(encoding="utf-8").splitlines() if "{{INLINED RUBRIC" in ln
+        ]
+        if not any("0.68" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.68' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#890) — the composed Codex prompt would "
+                f"omit the Step 0.68 named-helper + hollow-gate lens (the "
+                f"#606 twin-omission class; same pin as #822's '0.55' and "
+                f"#881's '3.5, 3.6, 3.7')."
+            )
+    return errors
+
+
 def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the smoke-architecture marker presence gate (#822) is absent
     from ANY of its three surfaces.
@@ -4913,6 +5303,82 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
                 f"to distinguish a stale-worktree false absence (STRIP) from "
                 f"a genuine one (leave the FAIL in place)."
             )
+    return errors
+
+
+# The #963 stale-label disposition-clause tokens. The paragraph span runs from
+# the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
+# assertion, so span identity is load-bearing) to the first blank line, and is
+# whitespace-normalized before matching (two tokens span a hard line wrap in
+# the live file, and an innocent prose reflow must not FAIL the fleet).
+_STALE_LABEL_ANCHOR = "**Stale-label disposition rule"
+_STALE_LABEL_REQUIRED_TOKENS = (
+    "followup_retro_close_evidence",
+    "GHOST-label filter, NOT an execution gate",
+    "A None return means NO prior-run evidence exists",
+    "the label EXECUTES as the dispatched round",
+    "The skip-and-surface disposition applies ONLY when",
+)
+_STALE_LABEL_SKIP_ON_NONE_RE = re.compile(r"\bon\s+(?:a\s+)?none\b.{0,120}?\bskip", re.IGNORECASE)
+
+
+def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the /issue Step 0 stale-label disposition paragraph (#894/#763)
+    loses its fresh-label-execute semantics or regains an unconditional
+    skip-on-None branch (#963).
+
+    Scope notes (round-1 critique):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — phrasings
+        like "when None is returned, skip" are covered by the positive
+        tokens, not the regex; do not weaken a positive token "because the
+        regex covers it".
+    (b) The check is paragraph-scoped — a contradictory instruction written
+        OUTSIDE the anchored paragraph is invisible to it (inherent to the
+        token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all
+        downstream tokens at once — the span ends at the first blank line,
+        so a deliberate restructure requires a deliberate lint update.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
+    text = skill.read_text(encoding="utf-8")
+    n_anchors = text.count(_STALE_LABEL_ANCHOR)
+    if n_anchors == 0:
+        return [
+            f"{skill}: missing the bold anchor {_STALE_LABEL_ANCHOR!r} (#963) — the Step 0 "
+            f"stale-label disposition paragraph pins the #894/#763 fresh-label-execute "
+            f"semantics and must not be removed or renamed without updating this lint."
+        ]
+    if n_anchors > 1:
+        return [
+            f"{skill}: {n_anchors} bold anchors {_STALE_LABEL_ANCHOR!r} found — the stale-label "
+            f"disposition paragraph must be UNIQUE (a stale duplicate could satisfy the token "
+            f"scan while the operative Step 0 paragraph regresses; #963). Remove the duplicate."
+        ]
+    start = text.find(_STALE_LABEL_ANCHOR)
+    end = text.find("\n\n", start)
+    normalized = re.sub(r"\s+", " ", text[start : end if end != -1 else len(text)])
+    errors: list[str] = []
+    for token in _STALE_LABEL_REQUIRED_TOKENS:
+        if token not in normalized:
+            errors.append(
+                f"{skill}: stale-label disposition paragraph missing token {token!r} (#963) — "
+                f"note: the span ends at the first blank line, so a split paragraph FAILs all "
+                f"downstream tokens at once (a deliberate restructure needs a lint update)."
+            )
+    if _STALE_LABEL_SKIP_ON_NONE_RE.search(normalized):
+        errors.append(
+            f"{skill}: stale-label disposition paragraph couples a None return to a skip "
+            f"instruction ('On None ... skip') — a fresh never-run label must EXECUTE as the "
+            f"dispatched round (#963); the skip-and-surface disposition is reserved for "
+            f"suspected-stale ghost labels."
+        )
     return errors
 
 
@@ -5199,16 +5665,17 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
-    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
-    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
-    # all plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 84_500,
+    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
+    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
+    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "code-reviewer.md": 92_300,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
-    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
-    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
-    # + <=3 KB)
-    "codex-code-reviewer.md": 50_400,
+    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
+    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 47,930 B post-#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "codex-code-reviewer.md": 51_600,
     # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
     # calibration caveat in § Batched-rewrite equivalence — plan-mandated
     # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
@@ -5970,6 +6437,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-hollow-verification-gate-review-lens",
+        action="store_true",
+        help="FAIL if the #890 hollow-verification-gate lens (the Step 0.68 "
+        "sub-check prose in code-reviewer.md, the copy-contract clause + "
+        "'0.68' on the inlined-rubric placeholder in codex-code-reviewer.md, "
+        "the IMPLEMENTATION-MODE rubric item in efficiency-critic.md — the "
+        "workflow-v2 owner) is absent from any surface, or the tag drops "
+        "off any surface's '**Blocker tags:**' verdict-template line. Pins "
+        "that a verify/equivalence gate asserting on an unused sibling stays "
+        "a Major substantive blocker (incident #779: a green "
+        "--verify-vectorized laundered an unverified ~17k-fit hot loop). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -5981,6 +6462,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-stale-label-disposition",
+        action="store_true",
+        help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
+        "paragraph (bold anchor '**Stale-label disposition rule', which must "
+        "be UNIQUE) loses any of its five #894/#763 semantic tokens — most "
+        "critically the fresh-label-execute clause ('the label EXECUTES as "
+        "the dispatched round') — or regains an unconditional skip-on-None "
+        "coupling ('On None ... skip', a targeted negative regex over the "
+        "whitespace-normalized paragraph span). Paragraph-scoped: the span "
+        "runs from the anchor to the first blank line (#963). Bundled into "
+        "the no-flags default run.",
     )
     parser.add_argument(
         "--check-smoke-output-hygiene",
@@ -6080,6 +6574,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run + the "
         "workflow-lint-phase-done-reserved pre-commit hook (#930).",
     )
+    parser.add_argument(
+        "--check-jsonl-splitlines",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL any .splitlines() call reading JSONL content (4 signals: "
+        "jsonl-named read_text chain / jsonl-named receiver / jsonl-named "
+        "enclosing function / events-comments-path read_text chain). "
+        "splitlines() splits on raw U+2028/U+2029/NEL inside "
+        "ensure_ascii=False JSON strings and shreds valid records (#825/#950); "
+        "use split('\\n') or text-mode file iteration. Waive with "
+        "'# JSONL_SPLITLINES_EXEMPT: <reason>'; frozen legacy experiment "
+        "scripts live in JSONL_SPLITLINES_LEGACY_ALLOWLIST (experiment files "
+        "only — never a workflow-surface file). Bundled into the no-flags "
+        "default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -6121,7 +6630,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
+        or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
@@ -6130,6 +6641,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_api_dispatch_routing
         or args.check_lens_coverage
         or args.check_phase_done_reserved
+        or args.check_jsonl_splitlines
     )
 
     errors: list[str] = []
@@ -6204,8 +6716,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
         errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_hollow_verification_gate_review_lens or no_flags:
+        errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_stale_label_disposition or no_flags:
+        errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:
@@ -6220,6 +6736,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_lens_coverage())
     if args.check_phase_done_reserved or no_flags:
         errors.extend(check_phase_done_reserved())
+    if args.check_jsonl_splitlines or no_flags:
+        errors.extend(check_jsonl_splitlines())
 
     if errors:
         for err in errors:

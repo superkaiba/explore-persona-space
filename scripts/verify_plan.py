@@ -36,11 +36,17 @@ Check catalog (id — classification — kind scope)
       claim backed by test
   c16 re-extracted reference    WARN-only, conditional    experiment +
       vs committed headline                               analysis
+  c17 falsification-branch      WARN-only, conditional    experiment +
+      causal-claim scope                                  analysis
+  c18 paired-contrast per-arm   FAIL (experiment) / WARN  experiment +
+      source coverage           (analysis), conditional   analysis
+  c19 OOD generalization folds  WARN-only, conditional    experiment +
+                                                          analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16) also SKIP
-when their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
+also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -55,6 +61,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
   - ``N/A — no re-extracted reference arms`` (check 16)
+  - ``N/A — no paired contrast`` (check 18)
+  - ``N/A — no held-out predictive DV`` (check 19)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -746,10 +754,10 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(i) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(j) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the nine letters."""
+    forcing the section to exist and naming the ten letters."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -766,23 +774,24 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     if re.search(NA_RE + r"no (?:artifact )?reuse", text):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
     fitness = re.search(r"(?i)fitness", text)
-    letters = {m.group(1) for m in re.finditer(r"\(([a-i])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-j])\)", text)}
     if fitness and len(letters) >= 4:
-        return _pass(cid, name, f"fitness check present ({len(letters)}/9 lettered items spotted)")
+        return _pass(cid, name, f"fitness check present ({len(letters)}/10 lettered items spotted)")
     if fitness:
         return _warn(
             cid,
             name,
-            f"fitness vocabulary present but only {len(letters)} of the (a)–(i) items "  # noqa: RUF001
-            "detectable — verify all nine attestations (recipe/regime/cells/single-var/"
-            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput) "
+            f"fitness vocabulary present but only {len(letters)} of the (a)–(j) items "  # noqa: RUF001
+            "detectable — verify all ten attestations (recipe/regime/cells/single-var/"
+            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput/"
+            "pair-provenance) "
             "before approval",
         )
     return _warn(
         cid,
         name,
         "plan reuses HF artifacts but no fitness check found — CLAUDE.md reuse rule requires "
-        "attestations (a)–(i); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
+        "attestations (a)–(j); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
     )
 
 
@@ -1335,24 +1344,31 @@ def _c13_registered_gates(plan: str) -> list[dict]:
     return gates
 
 
-def _c13_na_escape_declared(plan: str) -> bool:
-    """True when the ``N/A — no empirical-null gate`` escape appears as a
-    deliberate STANDALONE declaration line (leading list/blockquote markers
-    stripped), never doc-global: the c13 FAIL detail quotes the escape phrase
-    as a remedy option, and this project's convention pastes verifier/bounce
-    text into revised plans verbatim — a substring match would let a bounced
-    plan self-escape re-verification (the #810 spurious-satisfaction
-    structure, one polarity over). NA_RE opens with an inline (?i), so it
-    must sit at pattern position 0 — per-line re.match satisfies that; never
-    prepend a prefix to NA_RE (py3.11+ rejects mid-pattern global flags)."""
+def _standalone_na_declared(plan: str, tail_re: str) -> bool:
+    """True when ``N/A — <tail_re>`` appears as a deliberate STANDALONE
+    declaration line (leading list/blockquote markers stripped), never
+    doc-global: a FAIL detail quotes its escape phrase as a remedy option,
+    and this project's convention pastes verifier/bounce text into revised
+    plans verbatim — a substring match would let a bounced plan self-escape
+    re-verification (the #810 spurious-satisfaction structure, one polarity
+    over). NA_RE opens with an inline (?i), so it must sit at pattern
+    position 0 — per-line re.match satisfies that; never prepend a prefix
+    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the c13
+    and c18 escapes (the Supersede rule: one copy of the job)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     for line, fenced in zip(lines, mask, strict=True):
         if fenced:
             continue
-        if re.match(NA_RE + r"no empirical[- ]null gate", line.lstrip(" \t>*-")):
+        if re.match(NA_RE + tail_re, line.lstrip(" \t>*-")):
             return True
     return False
+
+
+def _c13_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no empirical-null gate`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no empirical[- ]null gate")
 
 
 def _c13_evaluate(gates: list[dict], decls: list[tuple[str, int]]) -> dict:
@@ -1951,6 +1967,468 @@ def check_reference_headline_distinction(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 17 — falsification-branch causal-claim scope (WARN-only) ────────
+
+# Offender vocabulary: wording that asserts a causal mechanism as
+# DEMONSTRATED inside a registered branch. Tier-1 only (corpus-calibrated,
+# task #946 §6): retrospective attribution ("really was/were", "must have
+# been"), content-carrying claims, story-kill idioms, takeaway rewrites,
+# and explicit establish/prove/demonstrate-that. Deliberately EXCLUDED as
+# accepted false negatives (prefer false negatives — the c14 charter):
+# present-tense "really is/does" (5-6 of 8 corpus hits were legitimate),
+# "rules out" (#605 uses it as a CI equivalence bound), bare "must be"
+# (deontic), and bare mechanism-noun falsify labels ("**Falsified
+# (integration):**" — not regex-separable from "(dependence)" labels).
+_C17_OFFENDER_RE = re.compile(
+    r"(?i)"
+    r"\breally\s+(?:was|were)\b"
+    r"|\bmust\s+have\s+been\b"
+    r"|\bcarr(?:y|ies|ied|ying)\b[^.\n]{0,50}\bcontent\b"
+    r"|\b(?:story|account|hypothesis|explanation|interpretation)\s+(?:dies|is\s+dead)\b"
+    r"|\brewrit(?:es?|ing)\s+the\b[^.\n]{0,60}\b(?:interpretation|takeaway|headline)\b"
+    r"|\b(?:establish(?:es|ed)?|prov(?:es|ed)|demonstrat(?:es|ed))\s+that\b"
+)
+# Exculpation vocabulary: an alternative-naming / hedge token in the SAME
+# block (hyp surface) or SAME bullet (TL;DR surface) silences the offender.
+# Over-breadth here only creates false negatives, which the charter prefers.
+# Calibrated on the #810 v13→v14 fix wording plus corpus hits (#563 "scope
+# caveat", #611/#621 "artifact", #841 "gets real support").
+_C17_EXCULP_RE = re.compile(
+    r"(?i)"
+    r"\bconsistent\s+with\b|\bcompatible\s+with\b"
+    r"|\buniquely\s+diagnostic\b"
+    r"|\bcannot\s+(?:distinguish|rule\s+out)\b"
+    r"|\bdoes\s+not\s+distinguish\b|\bdoesn'?t\s+distinguish\b"
+    r"|\balternative\b|\bconfound\w*\b|\bartifact\w*\b|\bcaveats?\b"
+    r"|\bsimpler\s+explanations?\b|\bother\s+explanations?\b"
+    r"|\bOOD\b|\boff-?distribution\b|\bout-?of-?distribution\b"
+    r"|\bremains?\s+live\b|\bdegradation\b|\bendpoint\b"
+    r"|\bpending\b|\bdisambiguat\w*\b|\bunder-?determin\w*\b|\bambiguous\b"
+    r"|\bwould\s+not\s+(?:prove|establish|demonstrate)\b"
+    r"|\b(?:gets?|gains?|lends?|earns?)\s+(?:real\s+)?support\b"
+)
+# The §0.0 registered plain-English falsification branch ("**What would
+# change my mind:**" / "…mind.**" — both corpus punctuation shapes).
+_C17_MIND_RE = re.compile(r"(?i)\*\*\s*what would change my mind")
+
+
+def _c17_mind_segments(plan: str) -> list[str]:
+    """The fence-stripped `**What would change my mind**` bullet(s), each
+    with its continuation lines (up to the next top-level list item or
+    heading) — the §0.0 registered falsification branch surface."""
+    lines = strip_fences(plan).splitlines()
+    segs: list[str] = []
+    i = 0
+    while i < len(lines):
+        if _C17_MIND_RE.search(lines[i]):
+            seg = [lines[i]]
+            j = i + 1
+            while (
+                j < len(lines)
+                and not _C14_LIST_ITEM_RE.match(lines[j])
+                and not _HEADING_RE.match(lines[j].strip())
+            ):
+                seg.append(lines[j])
+                j += 1
+            segs.append("\n".join(seg))
+            i = j
+        else:
+            i += 1
+    return segs
+
+
+def check_causal_claim_scope(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a registered falsification (or confirm)
+    branch must not word its outcome as a DEMONSTRATED causal mechanism
+    when the same block never names the undistinguished alternative.
+    Surfaces scanned: (i) confirm/falsify segments of anchored hypothesis
+    blocks (c14's parsers, reused); (ii) the §0.0 `**What would change my
+    mind:**` bullet(s). An offender token is silenced by an exculpation
+    token in the same block/bullet. NEVER FAILs — a heuristic vocabulary
+    check must not hard-block a legitimately-worded plan; whether the
+    diagnostics actually distinguish the mechanism stays with the
+    Methodology/Statistics critics. The §6 corpus noise floor (2/195
+    newest-per-task) is IN-SAMPLE — the offender/exculpation vocabulary
+    was tuned on the same corpus it was measured on — so any future
+    FAIL-promotion needs held-out / prospective validation first.
+    Incident: #810 plan v13 ("they really were carrying answer content,
+    the echo story dies") — three reviewers independently required the
+    v14 scope-down ("consistent with integration but not uniquely
+    diagnostic; OOD ... remains live"); task #946."""
+    cid, name = "c17_causal_branch_scope", "falsification-branch causal-claim scope"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: registered falsification branches are an experiment|analysis plan shape",
+        )
+    anchored: list[tuple[str, tuple[str, str]]] = []
+    section = section_text_by_keywords(plan, ("hypothesis",))
+    if section is not None:
+        for block in _hypothesis_blocks(strip_fences(section)):
+            segments = _confirm_falsify_segments(block)
+            if segments is not None:
+                anchored.append((block, segments))
+    mind_segs = _c17_mind_segments(plan)
+    if not anchored and not mind_segs:
+        return _skip(
+            cid,
+            name,
+            "no registered falsification-branch surface (no **Confirm/**Falsify "
+            "hypothesis anchors, no **What would change my mind** bullet)",
+        )
+    offenders: list[str] = []
+    for block, (confirm_seg, falsify_seg) in anchored:
+        if _C17_EXCULP_RE.search(block):
+            continue
+        for branch, seg in (("falsify", falsify_seg), ("confirm", confirm_seg)):
+            m = _C17_OFFENDER_RE.search(seg)
+            if m:
+                offenders.append(
+                    f"hypothesis block {_c14_block_label(block)} ({branch} segment): "
+                    f"claim token '{m.group(0)}'"
+                )
+                break  # one offender per block is enough for the detail
+    for seg in mind_segs:
+        if _C17_EXCULP_RE.search(seg):
+            continue
+        m = _C17_OFFENDER_RE.search(seg)
+        if m:
+            offenders.append(f"'What would change my mind' bullet: claim token '{m.group(0)}'")
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(anchored)} hypothesis block(s) + {len(mind_segs)} TL;DR bullet(s) "
+            "scanned; no unqualified demonstrated-mechanism claim token",
+        )
+    extra = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    return _warn(
+        cid,
+        name,
+        "; ".join(offenders[:3])
+        + extra
+        + " — the branch asserts a causal account its diagnostics may not uniquely "
+        "distinguish (#810 v13 incident): name the undistinguished alternative in "
+        "the same block (e.g. 'consistent with <mechanism> but not uniquely "
+        "diagnostic; <alternative> remains live') or scope the wording to the "
+        "measured quantity; semantic verdict stays with the critics",
+    )
+
+
+# ─── Check 18 — paired-contrast per-arm source coverage ────────────────────
+
+# Registration-family sections (H2+ ONLY — a doc-spanning H1 title match
+# would make the section constraint vacuous; both #810 registrations sit
+# under H2 sections): c13's success/kill/evaluation families PLUS
+# hypothesis + nulls + statistic.
+_C18_SECTION_RE = re.compile(
+    r"(?i)hypothes|success criteri|acceptance criteri|decision rule|decision gate"
+    r"|kill[- ]criteri|abort criteri|stop criteri|\bevaluation\b|\bnulls?\b|statistic"
+)
+_C18_PAIRED_RE = re.compile(r"(?i)\bpaired\b")
+_C18_REGIST_RE = re.compile(r"(?i)\bregist")  # registered / registration / registers
+_C18_PAIRCOUNT_RE = re.compile(r"(?i)\b\d[\d,]*\s+(?:pre-named\s+)?pairs\b")
+# D1: a row-coverage declaration; evidence on the same line or within the
+# next _C18_DECL_WINDOW_LINES physical lines (fenced lines excluded).
+_C18_COVERAGE_RE = re.compile(r"(?i)\brow[- ]coverage\b")
+_C18_ARTIFACT_RE = re.compile(
+    r"(?i)\S+\.(?:pt|pth|json|jsonl|npz|npy|safetensors|csv|parquet|arrow)\b"
+    r"|\beval_results/\S+|\banalysis_tensors/\S+|\braw_completions/\S+"
+)
+# v2 (MF-B): the bare `this run` alternative is REMOVED — only the
+# arms-generated construction or an explicit `by construction` counts as
+# by-construction evidence ("Row-coverage: deferred to a later revision of
+# this run's analysis" must FAIL).
+_C18_BYCONSTRUCTION_RE = re.compile(
+    r"(?i)both arms .{0,60}\b(?:generated|produced|computed|fit(?:ted)?|emitted)\b"
+    r"|\bby construction\b"
+)
+# D2 (MF-A): a subset expression AND word-bounded row/pair vocabulary AND
+# coverage/source-key vocabulary must co-occur on the candidate line.
+# Word-bounding kills the 608 v2:164 false-satisfier ("pair" inside
+# "paired" no longer matches); the coverage-vocab conjunct excludes
+# incidental subset prose; the #810 v15 declaration carries standalone
+# row/pairs tokens + coverage/source/keys/assert (replay-verified).
+_C18_SUBSET_RE = re.compile(r"(?i)⊆|\bissubset\b|\bis a subset of\b")
+_C18_ROWPAIR_RE = re.compile(r"(?i)\b(?:pairs?|rows?)\b")
+_C18_COVERAGE_VOCAB_RE = re.compile(r"(?i)coverage|\bsources?\b|\bkeys?\b|\bassert")
+# Candidate-line rejection guards (BOTH satisfier families):
+# (a) paste fingerprint — the c18 FAIL detail carries this literal, so a
+#     verbatim-pasted bounce text can never self-satisfy;
+# (b) cross-issue citation token — a line QUOTING another issue's driver
+#     assert as a worked example is a citation, not a declaration (an
+#     honest declaration describes THIS plan's inputs; recovery for a
+#     legitimate collision: move the citation off the declaration line).
+_C18_PASTE_FINGERPRINT = "#810 v13 class"
+_C18_ISSUE_REF_RE = re.compile(r"#\d{2,}")
+_C18_DECL_WINDOW_LINES = 3
+# Trigger-side spurious-line guard (§3.4 calibration tuning): a FIGURES-
+# enumeration line ("**Figures (over-produce):** ... paired cells; ...
+# registered rows visually distinguished") lists plots, it registers no
+# statistic — the one spurious-trigger class the exhaustive FAIL audit
+# surfaced (7 corpus files: #537 v4-v6, #931 v1-v4). Scoped by LINE SHAPE
+# (a leading figures label), never by content elsewhere on the line; a
+# real registration line never opens with a figures label, so the guard
+# under-triggers safe (SKIP; critics review).
+_C18_FIGURES_LINE_RE = re.compile(r"(?i)^\W{0,8}figures?\b")
+
+# Known accepted mis-triggers (mirroring the c13 §4.5 precedent). Under-
+# triggers that fail SAFE (SKIP — the plan still reaches the fact-checker +
+# critic ensemble): (a) a paired registration line without `regist` / pair-
+# count vocabulary; (b) a registration under a heading outside the H2+
+# section family; (c) a hard-wrapped registration (`paired` and `regist` on
+# different lines). Over-trigger that fails LOUD (bounce, escapable): (d) a
+# Hypothesis-section line merely RECAPPING a sibling's registered paired
+# statistic — remedied by the standalone N/A line. Fail-UNSAFE residuals,
+# accepted and DISCLOSED: (e) a D1/D2-shaped declaration that doesn't
+# actually cover the registered rows — including a ONE-ARM declaration (the
+# #810 v15 exemplar itself is full-side-only; both-arm truth stays with the
+# fact-checker; disposition pinned by fixture); (f) a NON-verbatim
+# paraphrase of the bounce text that reconstructs a satisfying shape while
+# dropping the fingerprint — beyond mechanical defense, same residual class
+# as a dishonest c13 N/A line; (g) a wrapped/reformatted paste that
+# separates the fingerprint from the row-coverage phrase across lines — the
+# line-local guard misses it; the D1 evidence requirement (artifact token /
+# arms-generated phrase) still has to be met by the surviving fragment,
+# which the detail's wording deliberately fails to supply.
+
+
+def _c18_registered_paired_lines(plan: str) -> list[str]:
+    """Non-fenced lines inside a registration-family H2+ section carrying
+    ``paired`` plus registration vocabulary OR an enumerated pair count on
+    the SAME line (#810 v13:33 'Registered per-row statistic: paired ...
+    (7 pairs ...' and v13:103 'Nulls (registration) ... paired bootstrap CI
+    (... 9 pairs are pre-named' both match). Level-1 headings are EXCLUDED
+    from the section match (a title match spans the whole doc). Under-
+    trigger fails safe (SKIP; critics review)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    hits: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C18_PAIRED_RE.search(line):
+            continue
+        if not (_C18_REGIST_RE.search(line) or _C18_PAIRCOUNT_RE.search(line)):
+            continue
+        if _C18_FIGURES_LINE_RE.match(line.strip()):
+            continue
+        if not any(
+            h.line <= i < h.end and h.level >= 2 and _C18_SECTION_RE.search(h.text)
+            for h in headings
+        ):
+            continue
+        hits.append(line.strip())
+    return hits
+
+
+def _c18_candidate_ok(line: str) -> bool:
+    """Rejection guards shared by D1 and D2 candidate lines: the paste
+    fingerprint and cross-issue citation tokens disqualify a line from
+    satisfying the check (bounce-paste + quoted-sibling-example vectors)."""
+    return _C18_PASTE_FINGERPRINT not in line and not _C18_ISSUE_REF_RE.search(line)
+
+
+def _c18_coverage_declarations(plan: str) -> list[str]:
+    """Lines satisfying D1 (row-coverage vocab + source evidence — an
+    artifact token or an arms-generated phrase — on the same line or within
+    the next _C18_DECL_WINDOW_LINES physical lines, fenced lines excluded)
+    or D2 (subset expression + word-bounded row/pair vocab +
+    coverage/source-key vocab, same line). Candidate lines failing
+    ``_c18_candidate_ok`` are rejected."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _c18_candidate_ok(line):
+            continue
+        if (
+            _C18_SUBSET_RE.search(line)
+            and _C18_ROWPAIR_RE.search(line)
+            and _C18_COVERAGE_VOCAB_RE.search(line)
+        ):
+            out.append(line.strip())
+            continue
+        if _C18_COVERAGE_RE.search(line):
+            window = [line] + [
+                lines[j]
+                for j in range(i + 1, min(i + 1 + _C18_DECL_WINDOW_LINES, len(lines)))
+                if not mask[j]
+            ]
+            if any(_C18_ARTIFACT_RE.search(w) or _C18_BYCONSTRUCTION_RE.search(w) for w in window):
+                out.append(line.strip())
+    return out
+
+
+def _c18_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no paired contrast`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no paired contrast")
+
+
+def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
+    """A registered paired contrast (a hypothesis/evaluation/success-section
+    line registering a paired statistic over enumerable rows/pairs) must
+    DECLARE a per-context data source covering the registered rows on both
+    arms (D1 row-coverage line / D2 coverage-labeled subset-assert /
+    standalone N/A). Surface check only — pack contents stay with the
+    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise.
+    Incident: #810 v13 (9-row paired bootstrap; the named full-side pack
+    lacked im_end/turn_nl; 4 independent reviewer catches)."""
+    cid, name = "c18_paired_contrast_source_coverage", "paired-contrast per-arm source coverage"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: registered paired contrasts are an experiment|analysis plan shape",
+        )
+    triggers = _c18_registered_paired_lines(plan)
+    if not triggers:
+        return _skip(cid, name, "no registered paired contrast detected")
+    if _c18_na_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no paired contrast)")
+    decls = _c18_coverage_declarations(plan)
+    if decls:
+        return _pass(
+            cid,
+            name,
+            f'row-coverage declaration found ("{decls[0][:90]}") — declaration surface '
+            "only; whether the named sources truly contain every registered row on both "
+            "arms stays with the fact-checker",
+        )
+    detail = (
+        f'plan registers a paired contrast ("{triggers[0][:90]}") with no per-arm '
+        "row-coverage declaration — a registered pair row absent from a named side makes "
+        "the registered criterion unsatisfiable from the named inputs (the #810 v13 class: "
+        "2 of 9 rows missing from the named full side). Remedy: add ONE non-fenced prose "
+        "line (not inside a code fence) starting 'Row-coverage:' naming, for BOTH arms, "
+        "which per-context store/file supplies every registered row (or stating that the "
+        "plan's own fits produce every registered row on each arm), or state the driver "
+        "assert that set-checks the registered rows against the named sources' keys on a "
+        "non-fenced line, or declare 'N/A — no paired contrast' on its own line; keep the "
+        "declaration line free of cross-issue citations"
+    )
+    if kind == "analysis":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    return _fail(cid, name, detail)
+
+
+# ─── Check 19 — OOD generalization folds (WARN-only, conditional) ──────────
+
+# Trigger = a fold token SOLO (any cross-validation mention makes "is the
+# fold group-level?" the right question), OR the WEAK token "held-out"
+# conjoined with a predictor-statistic token. Bare "held-out" alone is an
+# eval-split adjective (GOOD_PLAN: "40 held-out prompts") and must not fire;
+# bare "predict(s)" is hypothesis prose and is deliberately excluded.
+_C19_SOLO_FOLD_RE = re.compile(
+    r"(?i)\bcross[- ]?validat\w*|\bLOO\b|\bLOCO\b|\bLOOCV\b"
+    r"|\bleave[- ]one[- ][\w-]*out\b|\bk[- ]fold\b"
+)
+_C19_HELDOUT_RE = re.compile(r"(?i)(?<!\bno )(?<!\bnot )\bheld[- ]out\b")
+_C19_PREDSTAT_RE = re.compile(
+    r"(?i)\bR\^?2\b|R²|\breconstruction\b|\bread[- ]?outs?\b"
+    r"|\bpredict(?:or|ive|ion)s?\b|\bregress\w*|\bridge\b"
+    r"|\b(?:probe|decod\w*)\s+accurac\w*"
+)
+# Group-level evidence: leave-one-<UNIT>-out where UNIT is not a pointwise
+# sample unit (#810's offender fold was leave-one-CONTEXT-out — pointwise).
+_C19_LOO_UNIT_RE = re.compile(r"(?i)\bleave[- ]one[- ]([\w-]+?)[- ]out\b")
+_C19_POINTWISE_UNITS = frozenset(
+    {
+        "context",
+        "point",
+        "sample",
+        "row",
+        "item",
+        "question",
+        "prompt",
+        "cell",
+        "completion",
+        "example",
+        "datapoint",
+        "datum",
+        "observation",
+        "pair",
+        "x",
+    }
+)
+
+
+def _c19_pointwise_unit(unit: str) -> bool:
+    """A captured leave-one-<unit>-out unit is pointwise when its EXACT form
+    OR its hyphen-split SUFFIX segment is blocklisted — hyphenated variants
+    (``data-point``) must not self-certify as group evidence (reconciler
+    Must-Fix, round 1). ``prompt-family`` stays a group unit (suffix
+    ``family`` is not blocklisted)."""
+    u = unit.lower()
+    return u in _C19_POINTWISE_UNITS or u.split("-")[-1] in _C19_POINTWISE_UNITS
+
+
+_C19_GROUPFOLD_RE = re.compile(
+    r"(?i)\bLOFO\b|group[- ]level (?:held[- ]out )?fold"
+    r"|held[- ]out (?:group|famil\w*|genre|persona|corpus)"
+    r"|(?:corpus|genre|domain|family)[- ]transfer\b|\btransfer arm\b"
+)
+# Negation-guarded: `non-iid` / `not iid` concedes group structure and must
+# NOT satisfy the iid PASS tier (round-1 convergent critic concern).
+_C19_IID_RE = re.compile(r"(?i)(?<!non[- ])(?<!\bnot )\b(?:iid\b|i\.i\.d\b)")
+
+
+def check_ood_folds(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a held-out predictive DV (reconstruction R²,
+    read-out rho, predictor accuracy) over group-structured samples must
+    register a GROUP-level fold (LOFO / corpus transfer), declare
+    ``N/A — no held-out predictive DV``, or argue a genuinely iid sample
+    (.claude/rules/ood-generalization-folds.md; planner §6 Required block).
+    NEVER FAILs — the trigger is a vocabulary heuristic; whether the named
+    fold is actually group-level for this sample stays with the Statistics
+    critic (lens item 13). Incident #810: the pointwise-LOCO headline
+    reordered under leave-one-FAMILY-out and the read-out collapsed
+    rho 0.909 → 0.285."""
+    cid, name = "c19_ood_folds", "OOD generalization folds (held-out predictive DV)"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: infra|batch|survey plans have no predictive DV")
+    if re.search(NA_RE + r"no held-?out predictive DV", plan):
+        return _pass(cid, name, "explicit N/A declared (no held-out predictive DV)")
+    text = strip_fences(plan)
+    solo = _C19_SOLO_FOLD_RE.search(text)
+    conj = _C19_HELDOUT_RE.search(text) and _C19_PREDSTAT_RE.search(text)
+    if not (solo or conj):
+        return _skip(
+            cid,
+            name,
+            "no held-out predictive-DV vocabulary (no fold token; no held-out + "
+            "predictor/R²/read-out co-occurrence)",
+        )
+    group_units = [
+        m.group(1) for m in _C19_LOO_UNIT_RE.finditer(text) if not _c19_pointwise_unit(m.group(1))
+    ]
+    if group_units or _C19_GROUPFOLD_RE.search(text):
+        return _pass(
+            cid,
+            name,
+            "group-level fold vocabulary present"
+            + (f" (leave-one-{group_units[0]}-out)" if group_units else "")
+            + " — fold validity + per-headline fold labeling stay critic-owned",
+        )
+    if _C19_IID_RE.search(text):
+        return _pass(
+            cid,
+            name,
+            "iid-sample argument present (the only pointwise-only exemption) — whether "
+            "the sample is genuinely iid stays critic-owned",
+        )
+    return _warn(
+        cid,
+        name,
+        "held-out predictive-DV vocabulary detected but no GROUP-level fold (LOFO / "
+        "leave-one-family-out / corpus transfer), no iid argument, and no "
+        "`N/A — no held-out predictive DV` escape — pointwise LOO can REORDER "
+        "cross-context claims (#810: read-out rho 0.909 → 0.285 under LOFO); "
+        ".claude/rules/ood-generalization-folds.md; Statistics critic must gate this",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -1970,6 +2448,9 @@ CHECKS = [
     check_hypothesis_branch_coherence,
     check_failloud_test_coverage,
     check_reference_headline_distinction,
+    check_causal_claim_scope,
+    check_paired_contrast_source_coverage,
+    check_ood_folds,
 ]
 
 

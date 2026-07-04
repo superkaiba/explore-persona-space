@@ -1,0 +1,278 @@
+{
+  "commit": "1abb2a37",
+  "created": "2026-07-04T07:42:16Z",
+  "figsize": [
+    9.5,
+    5.5
+  ],
+  "points": [
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.45024273737555176,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.6439873585167701,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.677633590072922,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.6983263302337307,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.40023203613207137,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.6498408983490627,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7123805082137595,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7607499877232924,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.4277045674922514,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7249526114358235,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8457297880641155,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8991134009662954,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7119639804148148,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.854954416783687,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9214636590254655,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9625729895792663,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7272725695192273,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8579011269879747,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.908798627317541,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9269051512275631,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.6769888973025618,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.845041241539646,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9165677977242754,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9522526479861845,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.6015086055135213,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8110251787969278,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8958694290386431,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.9346481117027627,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.638287681284035,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7967442875018058,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8561554748122053,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8888754962534298,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.5050377224909215,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 25.0,
+      "median centered cosine (full vs truncated), committed layer": 0.705685012536438,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 50.0,
+      "median centered cosine (full vs truncated), committed layer": 0.7745080583251588,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 75.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8116900467367668,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 0.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%) \u2014 k=0 point from round 4": 1.0,
+      "median centered cosine (full vs truncated), committed layer": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 38
+}

@@ -1307,6 +1307,8 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -1334,6 +1336,8 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
     # Patched so the unit test never RPCs the real daemon / scans real /proc /
     # spawns task.py subprocesses for whatever sessions are live on the VM.
@@ -2667,6 +2671,8 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_daemon_reachable_with_retry", lambda *a, **kw: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
 
     def _record_stalled(*a, **kw):
         captured_kwargs.update(kw)
@@ -5619,6 +5625,464 @@ def test_spend_approval_skip_sentinel_in_watcher_filter():
     )
 
     assert _SPEND_APPROVAL_SKIP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+# ─── prose USER-PAUSE hold exemption (incident #816, 2026-07-02) ──────────────
+# A session posted a prose-only `USER PAUSE ...` hold note (epm:progress) and
+# left the task at the ACTIVE status `running`; the orphan-respawn pass cannot
+# parse prose and respawned against the hold (attempt 1/2). The durable
+# affordance is `set-status on_hold` (#919); this exemption is defense-in-depth
+# for sessions that still post a prose hold. Test-fixture discipline: no
+# helper/test note below may begin with the bare `USER PAUSE` literal outside
+# the deliberate pause fixtures built by _make_user_pause_event.
+
+
+def _make_user_pause_event(
+    ts: str = "2026-07-03T06:44:44Z", note: str | None = None, kind: str = "epm:progress"
+) -> dict:
+    """Minimal prose USER-PAUSE hold row. Default note = the verbatim #816
+    incident prefix; callers pass ``note=`` for the other observed variants
+    (canonical SKILL.md durable-park format, the older #919 sketch). This
+    helper is the deliberate pause fixture — the only sanctioned source of
+    notes beginning with the bare literal."""
+    if note is None:
+        note = (
+            "USER PAUSE (2026-07-02, verbatim: 'pause 816'): session stopped at "
+            "user request. DO NOT resume, respawn, or auto-dispatch this task."
+        )
+    return {"ts": ts, "kind": kind, "version": 1, "by": "user", "note": note}
+
+
+def test_user_pause_hold_reason_fires_on_816_incident_shape():
+    # Incident-SHAPE replay of #816: the prose pause note, a NEWER
+    # watcher-sentinel respawn marker (sentinel-filtered out of
+    # _latest_progress_ts), and a NEWER parked epm:step-completed. Neither
+    # newer row disarms the hold — the exemption MUST fire. NOTE: the parked
+    # step-completed element is imported from the #653 spend-approval fixture
+    # shape — the raw #816 log has no post-pause step-completed; it is added
+    # here to pin that a parked re-post cannot disarm the hold either.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T08:33:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._ORPHAN_RESPAWN_NOTE_SENTINEL} active task auto-respawned (1/2)",
+        },
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-07-03T08:35:00Z"),
+    ]
+    reason = asw._user_pause_hold_reason(events)
+    assert reason is not None
+    assert "USER PAUSE" in reason
+    assert "#816" in reason
+
+
+def test_user_pause_hold_reason_fires_on_canonical_skill_format():
+    # The canonical SKILL.md § User pause affordance durable-park note rides
+    # the `set-status <N> on_hold` epm:status-changed row — the SECOND
+    # self-inclusion kind (epm:status-changed is in _PROGRESS_KINDS, so
+    # pause_ts == progress_ts and only the strict `>` keeps the hold armed).
+    # Arming here is harmless in production: on_hold is in the watcher PARK
+    # set, so a durably-parked task is never orphan-evaluated.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(
+            ts="2026-07-03T06:44:44Z",
+            note=(
+                "USER PAUSE (verbatim: 'pause 42'); paused_from=running; "
+                "resume: user-greenlight only."
+            ),
+            kind="epm:status-changed",
+        )
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_fires_on_919_older_variant():
+    # The older #919 sketch variant (no parenthetical, no 'verbatim' literal)
+    # — the anchor is variant-agnostic by construction.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(
+            note="USER PAUSE pause 42; resume: set-status 42 running + spawn-issue --auto."
+        )
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_ignores_mid_note_quote():
+    # The real quote carriers (the #979 clarify / #919 completion-audit /
+    # #920 triage-note shapes) carry the literal MID-note only — the anchored
+    # prefix must NOT match any of them.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "ts": "2026-07-03T10:00:00Z",
+            "kind": "epm:clarify",
+            "note": "Goal: grep the task's recent markers for a 'USER PAUSE'-shaped note.",
+        },
+        {
+            "ts": "2026-07-03T11:00:00Z",
+            "kind": "epm:completion-audit",
+            "note": "Ask 3: the watcher should recognize the USER PAUSE format — ADDRESSED.",
+        },
+        {
+            "ts": "2026-07-03T12:00:00Z",
+            "kind": "epm:progress",
+            "note": "external-markers-triaged: 1 applied (the USER PAUSE hold format note).",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_self_disarms_on_real_progress():
+    # A real _PROGRESS_KINDS marker STRICTLY newer than the pause note (the
+    # canonical resume path posts epm:status-changed) disarms the hold so
+    # respawn coverage resumes.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T09:00:00Z",
+            "kind": "epm:status-changed",
+            "note": "status running -> running (resumed by user)",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_inert_without_pause_note():
+    # No anchored pause note anywhere = not the prose-hold shape.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_step_completed_event(step="10", exit_kind="parked"),
+        {
+            "ts": "2026-07-03T09:00:00Z",
+            "kind": "epm:progress",
+            "note": "round 2 implementing",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_skip_already_noted_dedup():
+    # Self-contained events-log dedup: a skip marker at/after the gating pause
+    # note means this episode's alert already fired; an OLDER one (prior
+    # episode) does NOT count, so a fresh pause note re-arms the alert.
+    import autonomous_session_watch as asw
+
+    pause = _make_user_pause_event("2026-07-03T06:44:44Z")
+    newer_skip = {
+        "ts": "2026-07-03T06:50:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+    }
+    older_skip = {
+        "ts": "2026-07-03T00:00:00Z",
+        "kind": "epm:progress",
+        "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+    }
+    assert asw._user_pause_skip_already_noted([pause, newer_skip]) is True
+    assert asw._user_pause_skip_already_noted([pause, older_skip]) is False
+    assert asw._user_pause_skip_already_noted([newer_skip]) is False  # no pause note
+
+
+def test_check_orphan_followups_exemption_returns_user_pause_skip(monkeypatch):
+    # Orphan pass: a prose-paused task with no live registered session
+    # rewrites respawn -> "user-pause-hold-skip" WITHOUT consulting children
+    # (the pause probe is checked first and is events-only); any other action
+    # passes through unchanged.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be consulted on the user-pause path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    pause_events = [_make_user_pause_event("2026-07-03T06:44:44Z")]
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=pause_events,
+        action="respawn",
+    )
+    assert action == "user-pause-hold-skip"
+    assert reason is not None
+    assert "USER PAUSE" in reason
+
+    # Non-respawn actions pass through unchanged (the early return).
+    action2, reason2 = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=pause_events,
+        action="keep",
+    )
+    assert (action2, reason2) == ("keep", None)
+
+
+def test_user_pause_checked_before_spend_approval():
+    # Ordering pin: events carrying BOTH a prose pause note and a
+    # spend-approval park route to the pause action (checked FIRST — the most
+    # specific gate signal; its alert carries the actionable durable-fix
+    # recipe).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_spend_approval_event("2026-07-03T06:00:00Z"),
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+    ]
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=816,
+        status="followups_running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+    )
+    assert action == "user-pause-hold-skip"
+    assert reason is not None
+
+
+def test_handle_orphan_user_pause_skip_posts_once_and_skips_budget(isolated_registry, monkeypatch):
+    # The orphan handler MUST (a) post the one-time alert dedup'd via the
+    # events log, naming the durable-park recipe (stable substring `on_hold`);
+    # (b) persist state WITHOUT incrementing respawns_today.
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    pause_events = [_make_user_pause_event("2026-07-03T06:44:44Z")]
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=pause_events,
+        state={},
+        dry_run=False,
+    )
+    assert len(posted) == 1
+    assert posted[0][0] == 816
+    assert posted[0][2] == "user-pause-hold-skip"
+    assert "on_hold" in posted[0][1]  # the durable-park recipe (AC3)
+    assert "does NOT consume the daily respawn budget" in posted[0][1]
+    state = asw._load_orphan_state(816)
+    assert state["respawns_today"] == 0  # NOT incremented
+
+    # Second call within the same episode: a skip marker now exists at/after
+    # the pause note -> dedup'd, alert MUST NOT re-post.
+    posted.clear()
+    pause_events_with_skip = [
+        *pause_events,
+        {
+            "ts": "2026-07-03T06:50:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+        },
+    ]
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=3,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=pause_events_with_skip,
+        state=state,
+        dry_run=False,
+    )
+    assert posted == []
+    assert asw._load_orphan_state(816)["respawns_today"] == 0
+
+
+def test_apply_stalled_followups_exemption_rewrites_user_pause_respawn_to_keep(monkeypatch):
+    # The stalled-detector helper: an `action="respawn"` on a prose pause hold
+    # MUST become `action="keep"` with `new_missed=0` and the third element
+    # passed through unchanged (fixture passes followups_child_alerted=False
+    # IN, so the assert pins pass-through, not an unrelated flag), plus the
+    # one-time alert (events-log dedup).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        _make_step_completed_event(step="2c", exit_kind="parked", ts="2026-07-03T06:45:00Z"),
+    ]
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, False)
+    assert len(posted) == 1
+    assert posted[0][2] == "user-pause-hold-skip"
+    assert "on_hold" in posted[0][1]  # the durable-park recipe (AC3)
+
+    # Second call within the same episode: skip marker in events -> no re-post.
+    posted.clear()
+    events_with_skip = [
+        *events,
+        {
+            "ts": "2026-07-03T06:50:00Z",
+            "kind": "epm:progress",
+            "note": f"{asw._USER_PAUSE_SKIP_NOTE_SENTINEL} prose hold — respawn suppressed.",
+        },
+    ]
+    action2, new_missed2, _ = asw._apply_stalled_followups_exemption(
+        issue=816,
+        status="running",
+        has_pod=False,
+        events=events_with_skip,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action2, new_missed2) == ("keep", 0)
+    assert posted == []  # dedup'd via the events log
+
+
+def test_user_pause_skip_sentinel_in_watcher_filter():
+    # The skip alert marker must NEVER reset the staleness clock it is
+    # measured against — pin the sentinel into the shared exclusion set.
+    from autonomous_session_watch import (
+        _USER_PAUSE_SKIP_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _USER_PAUSE_SKIP_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_user_pause_skip_in_orphan_exemption_actions_and_dispatch(monkeypatch):
+    # Routing pin: the action string is a member of the exemption set, and
+    # the dispatch routes it to the new handler with the reason forwarded.
+    import autonomous_session_watch as asw
+
+    assert "user-pause-hold-skip" in asw._ORPHAN_EXEMPTION_ACTIONS
+
+    calls: list[dict] = []
+    monkeypatch.setattr(
+        asw,
+        "_handle_orphan_user_pause_skip",
+        lambda **kwargs: calls.append(kwargs),
+    )
+    asw._dispatch_orphan_exemption_action(
+        action="user-pause-hold-skip",
+        issue=816,
+        followups_reason="prose USER PAUSE hold",
+        events=[],
+        new_missed=1,
+        alerted=False,
+        day_key="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        state={},
+        dry_run=True,
+    )
+    assert len(calls) == 1
+    assert calls[0]["issue"] == 816
+    assert calls[0]["reason"] == "prose USER PAUSE hold"
+    assert calls[0]["respawns_today"] == 0
+
+
+def test_user_pause_hold_reason_is_case_sensitive():
+    # [Must-Fix, statistics reconciler] A note beginning LOWERCASE
+    # `user pause ...` (ordinary discussion prose) must NOT arm the probe —
+    # kills the case-insensitive mutant the rest of the battery cannot catch.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "ts": "2026-07-03T06:44:44Z",
+            "kind": "epm:progress",
+            "note": "user pause requested? no — continuing with the planned round.",
+        }
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_user_pause_hold_reason_tie_with_distinct_marker_suppresses():
+    # Tie-pin: a DISTINCT real progress marker (epm:results) at ts exactly ==
+    # pause_ts must NOT disarm (strict `>` only) — kills the
+    # `>=`-with-pause-filtered mutant that the self-inclusion tests (1-3)
+    # cannot catch.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event("2026-07-03T06:44:44Z"),
+        {
+            "ts": "2026-07-03T06:44:44Z",
+            "kind": "epm:results",
+            "note": "eval numbers for round 1 landed",
+        },
+    ]
+    assert asw._user_pause_hold_reason(events) is not None
+
+
+def test_user_pause_hold_reason_inert_on_malformed_ts():
+    # A pause note with an absent / garbage ts leaves the probe INERT (fail
+    # direction: respawn proceeds — the incident direction, documented in the
+    # probe docstring), rather than crashing or arming with a bogus anchor.
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_user_pause_event(ts=None),  # type: ignore[arg-type]
+        _make_user_pause_event(ts="not-a-timestamp"),
+    ]
+    assert asw._user_pause_hold_reason(events) is None
+
+
+def test_handle_orphan_user_pause_skip_dry_run_skips_state(isolated_registry, monkeypatch):
+    # dry_run=True: no _save_orphan_state write (state file absent), and the
+    # dry_run flag is forwarded to the alert post (_post_progress_marker owns
+    # the dry-run print semantics).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, bool, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, dry_run, label)),
+    )
+    asw._handle_orphan_user_pause_skip(
+        issue=816,
+        reason="prose USER PAUSE hold",
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-07-03",
+        respawns_today=0,
+        followups_child_alerted=False,
+        events=[_make_user_pause_event("2026-07-03T06:44:44Z")],
+        state={},
+        dry_run=True,
+    )
+    assert len(posted) == 1
+    assert posted[0][2] is True  # dry_run forwarded to the poster
+    assert asw._load_orphan_state(816) == {}  # no state write under dry_run
 
 
 def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
@@ -8951,6 +9415,7 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     for pass_name in (
         "vm_disk_pass",
+        "triage_observer_pass",
         "campaign_pass",
         "pod_safety_pass",
         "stalled_session_pass",
@@ -10701,6 +11166,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
     for name in (
         "vm_disk_pass",
         "program_orchestrator_pass",
+        "triage_observer_pass",
         "pod_safety_pass",
         "respawn_pass",
         "stalled_session_pass",
@@ -12745,6 +13211,7 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
         "vm_disk_pass",
         "data_disk_pass",
         "happy_patch_pass",
+        "triage_observer_pass",
         "program_orchestrator_pass",
         "campaign_pass",
         "pod_safety_pass",
@@ -12777,3 +13244,296 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
     assert names == ["gate_push", "stale_registration", "zombie", "idle"]
     consumers = [c for n, c in order if n in ("stale_registration", "zombie", "idle")]
     assert all(c is snapshot for c in consumers)
+
+
+# ─── triage-observer pass (#967) ──────────────────────────────────────────────
+#
+# NON-GATING post-hoc audit of the pre-dispatch external-marker triage duty
+# (origin incident #779). The pure predicate lives in task_workflow
+# (tests/test_pre_dispatch_triage.py); these tests pin the DRIVER: kill
+# switch, dry-run hygiene, the MF3 two-invocation fire-once round-trip
+# through the REAL _save/_load state singleton, the two-pronged non-gating
+# invariant, and the nudge-text trap strings.
+
+
+def _triage_observer_sandbox(tmp_path, monkeypatch, events, *, status="running", issue=321):
+    """Fully sandbox triage_observer_pass: tmp registry + task dir (fresh
+    events.jsonl mtime), tmp state/sidecar singletons, recorded pushes.
+    Returns (asw, state_path, sidecar_path, pushes)."""
+    import json as _json
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    reg_root = tmp_path / "repo"
+    task_rel = f"tasks/{status}/{issue}"
+    task_dir = reg_root / task_rel
+    task_dir.mkdir(parents=True)
+    (task_dir / "events.jsonl").write_text("")  # fresh mtime; list_events is patched
+    reg_path = reg_root / "tasks" / "REGISTRY.json"
+    reg_path.write_text(
+        _json.dumps(
+            {
+                "tasks": {
+                    str(issue): {
+                        "status": status,
+                        "path": task_rel,
+                        "kind": "experiment",
+                        "title": "synthetic",
+                        "has_clean_result": False,
+                    }
+                }
+            }
+        )
+    )
+    monkeypatch.setattr(task_workflow, "registry_path", lambda: reg_path)
+    monkeypatch.setattr(task_workflow, "list_events", lambda _issue: list(events))
+    state_path = tmp_path / "triage-observer.json"
+    sidecar_path = tmp_path / "triage-observer-events.jsonl"
+    monkeypatch.setattr(asw, "_triage_observer_state_path", lambda: state_path)
+    monkeypatch.setattr(asw, "_triage_observer_sidecar_path", lambda: sidecar_path)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry: pushes.append((msg, dry)))
+    return asw, state_path, sidecar_path, pushes
+
+
+def _matured_violating_events():
+    """One post-epoch, MATURED (2h-old — older than the 30-min adjacency
+    horizon), in-lookback launch marker with no triage line anywhere."""
+    from datetime import UTC, datetime, timedelta
+
+    ts = (datetime.now(tz=UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return [{"ts": ts, "kind": "epm:run-launched", "by": "poll_pipeline", "note": "launched"}]
+
+
+def test_triage_observer_kill_switch_skips_everything(tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    monkeypatch.setenv("EPM_DISABLE_TRIAGE_OBSERVER", "1")
+    state_path = tmp_path / "state.json"
+    sidecar_path = tmp_path / "sidecar.jsonl"
+    monkeypatch.setattr(asw, "_triage_observer_state_path", lambda: state_path)
+    monkeypatch.setattr(asw, "_triage_observer_sidecar_path", lambda: sidecar_path)
+
+    def _forbidden():
+        raise AssertionError("registry must not be read under the kill switch")
+
+    monkeypatch.setattr(task_workflow, "registry_path", _forbidden)
+    assert asw.triage_observer_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_decide_triage_observer_actions_routing():
+    import autonomous_session_watch as asw
+
+    w1 = {
+        "record_ts": "2026-07-10T10:00:00Z",
+        "violation": "launch-missing-line",
+        "severity": "warn",
+    }
+    w2 = {
+        "record_ts": "2026-07-10T11:00:00Z",
+        "violation": "breadcrumb-missing-line",
+        "severity": "warn",
+    }
+    i1 = {
+        "record_ts": "2026-07-10T09:00:00Z",
+        "violation": "none-with-candidates",
+        "severity": "info",
+    }
+    flagged = {"2026-07-10T10:00:00Z|launch-missing-line"}
+    actions = asw.decide_triage_observer_actions([i1, w1, w2], flagged, marker_budget=1)
+    # w1 deduped away; warn-before-info ordering; the budget=1 marker lands
+    # on the surviving warn; info rows get neither push nor marker.
+    assert [(a["violation"], a["push"], a["marker"]) for a in actions] == [
+        ("breadcrumb-missing-line", True, True),
+        ("none-with-candidates", False, False),
+    ]
+    assert all(a["sidecar"] for a in actions)
+    # The pure function never mutates the caller's flagged set.
+    assert flagged == {"2026-07-10T10:00:00Z|launch-missing-line"}
+    # Cap-overflow semantics: an over-budget warn keeps push=True and
+    # marker=False (permanently sidecar+push-only — the caller still flags
+    # it, so its marker is NEVER deferred to a later tick).
+    w3 = dict(w1, record_ts="2026-07-10T12:00:00Z")
+    actions = asw.decide_triage_observer_actions([w2, w3], set(), marker_budget=1)
+    assert [(a["severity"], a["push"], a["marker"]) for a in actions] == [
+        ("warn", True, True),
+        ("warn", True, False),
+    ]
+
+
+def test_triage_observer_dry_run_performs_zero_writes(tmp_path, monkeypatch):
+    # Backs the post-merge `--triage-observer-only --dry-run` smoke: a
+    # dry-run must create no sidecar, write no state, and spawn no
+    # subprocess (the #596/#607/#633 pattern).
+    asw, state_path, sidecar_path, _pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+    calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **kw: calls.append(a))
+    asw.triage_observer_pass(dry_run=True)
+    assert calls == []
+    assert not state_path.exists()
+    assert not sidecar_path.exists()
+
+
+def test_triage_observer_fire_once_two_invocations_real_writes(tmp_path, monkeypatch):
+    # MF3: tick 1 on a violating task emits exactly 1 sidecar row + 1
+    # post-marker subprocess + 1 push; tick 2 on UNCHANGED events emits
+    # nothing new. Exercises the REAL _save/_load state round-trip — a
+    # broken round-trip would ship green on single-invocation tests and
+    # produce the re-alert storm the kill criterion forbids.
+    import json as _json
+    import subprocess as _subprocess
+
+    asw, state_path, sidecar_path, pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+    argvs: list[list[str]] = []
+
+    def _fake_run(cmd, *a, **kw):
+        argvs.append([str(c) for c in cmd])
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+
+    assert asw.triage_observer_pass(dry_run=False) is True
+    rows = [_json.loads(line) for line in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 321
+    assert rows[0]["violation"] == "launch-missing-line"
+    assert rows[0]["severity"] == "warn"
+    marker_cmds = [c for c in argvs if "post-marker" in c]
+    assert len(marker_cmds) == 1
+    assert len(pushes) == 1
+    assert state_path.exists()
+
+    # Non-gating pin, prong (a): the recorded subprocess argv never mutates
+    # task state — no set-status, no session stop, only post-marker.
+    for cmd in argvs:
+        joined = " ".join(cmd)
+        assert "set-status" not in joined
+        assert "spawn_session" not in joined
+        assert any("task.py" in c for c in cmd) and "post-marker" in cmd
+
+    # Tick 2: unchanged events -> 0 new rows / markers / pushes (cursor +
+    # flagged-key dedup, reloaded from the REAL tmp state file).
+    assert asw.triage_observer_pass(dry_run=False) is False
+    assert len(sidecar_path.read_text().splitlines()) == 1
+    assert len([c for c in argvs if "post-marker" in c]) == 1
+    assert len(pushes) == 1
+
+
+def test_triage_observer_never_calls_in_process_mutators(tmp_path, monkeypatch):
+    # Non-gating pin, prong (b): the in-process mutator surfaces reachable
+    # via the lazy task_workflow import are NEVER touched — all task-state
+    # mutation from this pass goes through the post-marker subprocess only.
+    import subprocess as _subprocess
+
+    from explore_persona_space import task_workflow
+
+    asw, _state, sidecar_path, _pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("triage_observer_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, *a, **kw: _subprocess.CompletedProcess(cmd, 0, "", ""),
+    )
+    assert asw.triage_observer_pass(dry_run=False) is True
+    assert sidecar_path.exists()
+
+
+def test_triage_observer_nudge_trap_strings():
+    # The nudge must not itself become a window-closing boundary record
+    # (no triage-line prefix) nor a breadcrumb-shaped note (no lstripped
+    # `stage-dispatch ` prefix), and carries the anti-liveness watcher
+    # sentinel prefix.
+    import autonomous_session_watch as asw
+
+    from explore_persona_space.task_workflow import TRIAGE_LINE_PREFIX
+
+    base = {
+        "record_ts": "2026-07-10T10:00:00Z",
+        "candidate_count": 12,
+        "candidate_kinds": ["epm:progress", "epm:results"],
+        "signature_hits": ["# Audit"],
+    }
+    for v in (
+        {
+            **base,
+            "record_kind": "epm:run-launched",
+            "stage": None,
+            "violation": "launch-missing-line",
+        },
+        {
+            **base,
+            "record_kind": "epm:progress",
+            "stage": "followup-grid",
+            "violation": "breadcrumb-missing-line",
+        },
+        {
+            **base,
+            "record_kind": "epm:progress",
+            "stage": None,
+            "violation": "none-with-candidates",
+        },
+    ):
+        text = asw._triage_observer_nudge(v)
+        assert TRIAGE_LINE_PREFIX not in text
+        assert not text.lstrip().startswith("stage-dispatch ")
+        assert text.startswith("[autonomous_session_watch:triage-observer]")
+
+
+# ---------------------------------------------------------------------------
+# #966 emitter-side --by convention: every watcher/spawn-helper post-marker
+# subprocess site carries a distinctive --by identity (a trustworthy-positive
+# EXTERNAL signal for the /issue pre-dispatch triage read; never added to
+# TRIAGE_MACHINE_BY — see tests/test_pre_dispatch_triage.py).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fn_name",
+    [
+        "_post_progress_marker",
+        "_post_failure_marker",
+        "_post_followup_run_marker",
+        "_post_campaign_marker",
+    ],
+)
+def test_post_marker_helpers_carry_distinctive_by(fn_name):
+    """#966: each watcher post-marker argv sets ``--by autonomous_session_watch``
+    (source-inspection pin — robust to the helpers' fixture-heavy signatures)."""
+    import inspect
+    import re
+
+    import autonomous_session_watch as asw
+
+    src = inspect.getsource(getattr(asw, fn_name))
+    assert '"--by"' in src and '"autonomous_session_watch"' in src
+    # Adjacency: "--by" is immediately followed by the identity value in the
+    # argv list (not two unrelated occurrences elsewhere in the source).
+    assert re.search(r'"--by",\s*\n\s*"autonomous_session_watch",', src), src
+
+
+def test_spawn_session_duplicate_suppressed_marker_carries_distinctive_by():
+    """#966 sibling pin: the spawn-helper's duplicate-dispatch-suppression post
+    sets ``--by spawn_session`` (distinct from ``cmd_stop``'s
+    ``spawn_session-stop`` — a different pass)."""
+    import inspect
+    import re
+
+    src = inspect.getsource(spawn_session._post_duplicate_suppressed_marker)
+    assert '"--by"' in src and '"spawn_session"' in src
+    assert re.search(r'"--by",\s*\n\s*"spawn_session",', src), src

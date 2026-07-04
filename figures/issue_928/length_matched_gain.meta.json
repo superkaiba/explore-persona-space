@@ -1,0 +1,854 @@
+{
+  "commit": "328ab540ff",
+  "created": "2026-07-04T08:16:48Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "median CoT length (chars)": 1870.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.15717953560659237,
+      "error": 0.10379729961894707,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "median CoT length (chars)": 2918.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.1272530170808024,
+      "error": 0.08059562060096291,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3313.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03566036786710036,
+      "error": 0.06140131602543271,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "median CoT length (chars)": 3063.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06584773252913279,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3021.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.021160282664790198,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2649.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.00956305567014304,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3575.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.037023746039781535,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3046.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.09726749070106677,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3471.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06012120238122587,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3156.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.17132934312962045,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3198.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03856574815101255,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3200.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.12815818002578683,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3319.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.0914629754800853,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3056.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06882140142787518,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3524.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.11753162049061483,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2632.0,
+      "per-context \u0394 skill (G \u2212 D)": -0.09102754383639622,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2885.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.2062854127278877,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2247.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.11107220207368584,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 1502.5,
+      "per-context \u0394 skill (G \u2212 D)": -0.007117392164499137,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 1845.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.19035646674763818,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2019.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.6974332302900756,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 1638.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.10470663027868454,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2647.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.3502110754204355,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 1562.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.44989781448950494,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2061.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.35195164366906606,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2002.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.02734356901630286,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3073.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.0620068240998084,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3253.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.25503749872949244,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2299.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.09313077848284301,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3164.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.26481706653505255,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2982.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.083894222715999,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3051.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06523416036232876,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3349.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.15974465921706638,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3075.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.05914528300397548,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3301.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.09617897840493372,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3307.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03080509803237974,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2921.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.1438531455238502,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 3672.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.05676588813375738,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2918.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.011856122675914404,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median CoT length (chars)": 2181.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.14512762633581344,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1503.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.006253018795159715,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1555.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.045070591545508853,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 3533.0,
+      "per-context \u0394 skill (G \u2212 D)": -0.029317380774123714,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 2134.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.4287884462341971,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1797.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03400887186159973,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 3448.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.04900489394158547,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1594.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.04161214803484803,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 2021.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.5018007380351927,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1946.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.3591219275441654,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1928.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.32153057049846323,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 2100.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.949775133136798,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1870.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03591948132903544,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1963.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.2594995807630226,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median CoT length (chars)": 1870.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.4349840819496754,
+      "error": 0.13206862005377368,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "median CoT length (chars)": 2918.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.13211070746367204,
+      "error": 0.07882262891907027,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "median CoT length (chars)": 3313.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.07495486029593279,
+      "error": 0.04679687130134625,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "median CoT length (chars)": 3063.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.040042122971763905,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3021.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.05129705299463461,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2649.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.047317775274021145,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3575.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.04269019739550628,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3046.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.06598126417680372,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3471.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.029878972168195017,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3156.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.08355548020388581,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3198.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.04206821293091889,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3200.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06232836791735297,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3319.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.042099487157699844,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3056.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.047935750149376455,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3524.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.039118981240194306,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2632.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.08424640037741637,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2885.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06427056784968044,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2247.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.577149556583113,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 1502.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.5225301031492654,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 1845.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.5034555821127026,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2019.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.6411575408568362,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 1638.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.1362103268820789,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2647.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.086671515795126,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 1562.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.22634613186715746,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2061.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06963293843777274,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2002.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.19719906474552706,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3073.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.06280090475171174,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3253.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03570596513037427,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2299.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.07555662078088221,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3164.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.05595127709969039,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2982.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06380529633221954,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3051.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06262353455215197,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3349.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.06199272497074815,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3075.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03662483366764424,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3301.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.053226975102201535,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3307.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.028310082491974642,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2921.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.16014208001268548,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 3672.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.03550565353663404,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2918.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.05276072273477972,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median CoT length (chars)": 2181.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.44006330664214033,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1503.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.5747006187165061,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1555.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.726590534529946,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 3533.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.762353147103799,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 2134.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.71909214447584,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1797.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.4295163511093214,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 3448.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.5638056603301501,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1594.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.5428021397676438,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 2021.5,
+      "per-context \u0394 skill (G \u2212 D)": 0.6690804810291597,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1946.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.7581554149398756,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1928.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.584052634419792,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 2100.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.4942179967983019,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1870.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.6030635942386355,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median CoT length (chars)": 1963.0,
+      "per-context \u0394 skill (G \u2212 D)": 0.8153767896642561,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 106
+}

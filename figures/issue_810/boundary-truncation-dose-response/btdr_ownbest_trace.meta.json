@@ -1,0 +1,597 @@
+{
+  "commit": "1abb2a37",
+  "created": "2026-07-04T07:42:17Z",
+  "figsize": [
+    9.5,
+    6.0
+  ],
+  "points": [
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8107660492897124,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6278371314077076,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.6115788990094382,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.6067155792705691,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.6636262571629181,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.6458313719073034,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6278371257176184,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.6115788883374935,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.6067155540158999,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.6636262780363721,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8082742023617899,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6839675091516262,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7021123447630027,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7167697637529731,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7346502827210455,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.6585652407420913,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6839674878089025,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7021123695616012,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7167697397574042,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7346502208763563,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7324086633191723,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6889509135975926,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7355529900982039,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7343618708295683,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7313770606273193,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.658972745361678,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.6602531567494664,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7026052683743429,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.701703519878439,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7313770600218044,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7709974686350791,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7500805693130582,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7549988400040575,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.758018999798122,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7565870832933244,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7709974611854802,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7500805458151236,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7549988508676921,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7580190037467693,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.756587064854379,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8126071083353699,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7322953054235648,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7337388472576609,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7280185884079242,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7274436263361292,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7234731005539832,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7322952703092068,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.73373885886396,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7246122961587342,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7274436183666302,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7908586528885637,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7742090064997086,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7820057430524033,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7776577359950038,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.769513168285631,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7908586502901931,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7518201384107392,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7643677694105366,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7616808128014093,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7695131840022522,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7533200476914701,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7374313927351216,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7478043628190283,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7458996437228667,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7452752771943922,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7482325651812971,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7199929570349071,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7350005199615786,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7354383000376054,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7452752974559477,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8005648095156788,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.776659184066781,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7832258348514982,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7826517144074756,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7837152937660341,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.781108894305475,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7766591891386434,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7832258016185589,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7826517192909067,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7837152775755729,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7567120157062337,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.722561886375943,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7219150790734746,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.7248760914629566,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7182957286340902,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7192931859494183,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7195798784502943,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "held-out skill-over-mean R\u00b2": 0.7217584234121357,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "held-out skill-over-mean R\u00b2": 0.724876033826538,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "held-out skill-over-mean R\u00b2": 0.7182957582134017,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 90
+}

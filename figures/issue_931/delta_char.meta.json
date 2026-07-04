@@ -1,14 +1,20 @@
 {
-  "metadata": {
-    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
-    "timestamp": "2026-07-04T06:04:47Z",
-    "seed": 0,
-    "n": 0,
-    "script": "scripts/issue931_figures.py",
-    "issue": 931
-  },
-  "arms": [
-    "armA",
-    "armB"
+  "points": [
+    {
+      "arm": "Real novels",
+      "delta_r2_char": 0.07625432348595951,
+      "ci_lo": 0.0668181843607596,
+      "ci_hi": 0.0875651313763497,
+      "n_rows": 1694,
+      "n_groups": 28
+    },
+    {
+      "arm": "Model-written stories",
+      "delta_r2_char": 0.045664804857192265,
+      "ci_lo": 0.038664156958883644,
+      "ci_hi": 0.05290504476257291,
+      "n_rows": 562,
+      "n_groups": 270
+    }
   ]
 }

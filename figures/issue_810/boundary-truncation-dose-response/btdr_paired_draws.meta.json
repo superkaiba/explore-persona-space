@@ -1,0 +1,48 @@
+{
+  "commit": "1abb2a37",
+  "created": "2026-07-04T07:42:15Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.050682733067453856,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 1.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.03253785131475517,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 2.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.01788048111895213,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.07112390327233797,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.028771791647461464,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "\u0394 held-out skill (full \u2212 truncated)": 0.029673540143365318,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6
+}

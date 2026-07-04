@@ -17,7 +17,9 @@ returning. These tests pin:
 * the completion-sentinel chain (#909 r2,
   ``runpod-execute-missing-completion-sentinel``): the rendered launcher
   chains a success-gated sentinel write after the verbatim workload_cmd,
-  the outer script clears any stale sentinel before detach, and the
+  the outer script clears stale sentinels before detach (widened by #976
+  to the declared path + flat legacy + attempt-sibling wildcard — the
+  experimenter step-11.3 breadth), and the
   launcher-threaded path is the SAME attempt-namespaced path the handle's
   expected-artifacts declaration names (one mint, one path — so
   ``_check_sentinel`` / ``_cmd_finalize`` pass on a successful
@@ -362,19 +364,31 @@ def test_launcher_chains_sentinel_write_after_workload_success():
     verbatim workload_cmd, gated on workload success (rc 0 — the GCP/SLURM
     terminal-block convention), writes the exact JSON shape
     ``artifacts._check_sentinel`` validates (phase=done + matching issue),
-    and exits with the workload's own rc. The OUTER portion clears any
-    stale sentinel at the declared path BEFORE the detach line (the same
-    guard family as the pidfile rm)."""
+    and exits with the workload's own rc. The OUTER portion clears the
+    stale sentinels — declared path + flat legacy + attempt-sibling
+    wildcard (#976) — BEFORE the detach line (the same guard family as
+    the pidfile rm) and AFTER the ALREADY-RUNNING guard completes."""
     sentinel = RP.runpod_sentinel_path(909, ATTEMPT)
     script = _render_launch()
     lines = script.splitlines()
 
-    # Outer portion: stale-sentinel clear + dir pre-create BEFORE detach.
-    rm_idx = lines.index(f"rm -f {sentinel}")
+    # Outer portion: widened stale-sentinel clear (#976) + dir pre-create
+    # BEFORE detach.
+    issue_dir = sentinel.rsplit("/", 2)[0]
+    name = sentinel.rsplit("/", 1)[1]
+    rm_idx = lines.index(f"rm -f {sentinel} {issue_dir}/{name} {issue_dir}/*/{name}")
     detach_idx = next(i for i, line in enumerate(lines) if "setsid" in line)
     heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
     assert rm_idx < heredoc_start < detach_idx
     assert any(line == f"mkdir -p {sentinel.rsplit('/', 1)[0]}" for line in lines[:heredoc_start])
+
+    # Guard-completes-before-clear (#976 binding dependency, reconciler-
+    # upheld): the ALREADY-RUNNING guard's `exit 5` and its closing `fi`
+    # both precede the widened clear, so a live prior workload exits
+    # BEFORE any sentinel it depends on is removed.
+    exit5_idx = lines.index("  exit 5")
+    fi_idx = lines.index("fi", exit5_idx)
+    assert exit5_idx < fi_idx < rm_idx
 
     # Launcher (inside the heredoc): workload -> rc capture -> success-gated
     # sentinel write -> exit with the workload rc.
@@ -395,6 +409,97 @@ def test_launcher_chains_sentinel_write_after_workload_success():
     assert payload == {"phase": "done", "issue": 909, "attempt_id": ATTEMPT}
 
 
+def test_launcher_waits_on_fresh_detached_pid_files_before_sentinel():
+    """The rc==0 branch waits on fresh detached ``/workspace/logs/*.pid``
+    workloads BEFORE the sentinel write (#977, the GCP #601 parity —
+    ``test_render_startup_script_workload_cmd_waits_on_detached_pid_files``
+    precedent). Pins: the in-launcher ``WORKLOAD_START_EPOCH`` capture sits
+    AFTER the self-pidfile write and IMMEDIATELY before the workload line;
+    ``WORKLOAD_RC=$?`` is ADJACENT to the workload line (an intervening
+    line would corrupt ``$?``); the freshness predicate renders as ONE
+    line carrying both ``stat -c %Y`` and the INCLUSIVE
+    ``-ge "$WORKLOAD_START_EPOCH"`` (pins the adjacent-string
+    concatenation); and the full ordering chain — pidfile-write <
+    epoch-capture < workload < rc-capture < rc==0 gate < for-loop <
+    freshness < cat < PID-VALUE self-exclusion < kill-0 wait < sentinel
+    printf < exit — holds inside the heredoc. A misordered self-exclusion
+    AFTER the kill-0 wait would deadlock the launcher on its own pid, so
+    the chain includes the exclusion index, not just its presence."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    heredoc_end = lines.index("EPSEOF", heredoc_start + 1)
+
+    pid_idx = lines.index("echo $$ > /workspace/logs/issue-909.pid")
+    epoch_idx = lines.index("WORKLOAD_START_EPOCH=$(date +%s)")
+    workload_idx = lines.index(WORKLOAD)
+    rc_idx = lines.index("WORKLOAD_RC=$?")
+    gate_idx = next(i for i, line in enumerate(lines) if '"$WORKLOAD_RC" -eq 0' in line)
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    fresh_idx = next(
+        i
+        for i, line in enumerate(lines)
+        if "stat -c %Y" in line and '-ge "$WORKLOAD_START_EPOCH"' in line
+    )
+    cat_idx = lines.index('    wpid=$(cat "$pf" 2>/dev/null) || continue')
+    excl_idx = lines.index('    [ "$wpid" = "$$" ] && continue')
+    wait_idx = lines.index('    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done')
+    printf_idx = next(i for i, line in enumerate(lines) if line.strip().startswith("printf"))
+    exit_idx = lines.index('exit "$WORKLOAD_RC"')
+
+    # Epoch capture IMMEDIATELY before the workload; rc capture ADJACENT
+    # after it (any intervening line would corrupt $?).
+    assert epoch_idx == workload_idx - 1
+    assert rc_idx == workload_idx + 1
+
+    # Full ordering chain, all inside the heredoc (the wait sits strictly
+    # between the rc==0 gate and the sentinel write).
+    assert (
+        heredoc_start
+        < pid_idx
+        < epoch_idx
+        < workload_idx
+        < rc_idx
+        < gate_idx
+        < for_idx
+        < fresh_idx
+        < cat_idx
+        < excl_idx
+        < wait_idx
+        < printf_idx
+        < exit_idx
+        < heredoc_end
+    )
+
+
+def test_launcher_wait_loop_self_exclusion_is_by_pid_value_not_path():
+    """Self-exclusion in the #977 wait loop is by PID VALUE, never by
+    pidfile PATH (the deliberate plan §3.2 decision): the experimenter
+    ``launch_issue_<N>.sh`` convention has the detached driver OVERWRITE
+    the canonical ``/workspace/logs/issue-<N>.pid`` with its OWN pid, so
+    a path-based skip (``[ "$pf" = <canonical> ] && continue``) would
+    skip exactly the driver that must be waited on and reintroduce the
+    premature sentinel for the convention-following case — while ``$$``
+    cannot be reused as long as this launcher is alive, so the pid-value
+    compare is race-free at any mtime granularity. Pins the exclusion
+    line's presence AND that NO wait-loop line string-compares ``$pf``
+    against the canonical pidfile path, so a future "hardening" edit
+    cannot silently re-add the path skip."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    assert '    [ "$wpid" = "$$" ] && continue' in lines
+
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    done_idx = lines.index("  done", for_idx)
+    canonical_pid_file = "/workspace/logs/issue-909.pid"
+    for line in lines[for_idx : done_idx + 1]:
+        assert not ("$pf" in line and canonical_pid_file in line), (
+            f"wait-loop line path-compares $pf against the canonical pidfile: {line!r}"
+        )
+
+
 def test_launch_script_rejects_single_quote_in_sentinel_json():
     """The single-quoted JSON embed fails LOUD on a caller bug rather than
     rendering a broken launcher."""
@@ -407,6 +512,85 @@ def test_launch_script_rejects_single_quote_in_sentinel_json():
             sentinel_path="/workspace/eval_results/issue_909/x/.completion-sentinel.json",
             attempt_id="rp-bad'quote",
         )
+
+
+def test_stale_clear_covers_flat_legacy_and_wildcard_siblings():
+    """The widened stale clear (#976) carries all three operands — the
+    declared attempt path, the flat legacy path, and the attempt-sibling
+    wildcard — and the wildcard operand string-equals the glob
+    ``artifacts._default_glob_sentinels`` probes for the same declared
+    path: clear breadth == #685 fallback probe breadth, by construction.
+    ``SENTINEL_FILENAME`` is imported so a future rename of the sentinel
+    filename breaks THIS test rather than silently decoupling the clear
+    from the resolver's probe."""
+    from pathlib import Path
+
+    from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
+
+    sentinel = RP.runpod_sentinel_path(909, ATTEMPT)
+    script = _render_launch()
+    lines = script.splitlines()
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    rm_line = next(
+        line
+        for line in lines[:heredoc_start]
+        if line.startswith("rm -f ") and SENTINEL_FILENAME in line
+    )
+    operands = rm_line.split()[2:]
+    issue_dir = Path(sentinel).parent.parent
+    assert sentinel in operands  # exact declared attempt path (kept — pure addition)
+    assert str(issue_dir / SENTINEL_FILENAME) in operands  # flat legacy path
+    # The wildcard operand equals the resolver's probe shape verbatim
+    # (artifacts._default_glob_sentinels: grandparent-of-declared + */<name>).
+    assert str(issue_dir / f"*/{SENTINEL_FILENAME}") in operands
+
+
+def test_stale_clear_rm_line_execution_defeats_single_live_sibling_fallback(tmp_path):
+    """Functional proof (#976 acceptance criteria 2 + 3): executing the
+    rendered rm line under the outer script's ``set -eu`` removes a stale
+    flat legacy sentinel AND a stale prior-attempt sibling — leaving
+    ``artifacts._default_glob_sentinels`` nothing for the #685
+    single-live-sibling fallback to resolve — and exits 0 again when
+    NOTHING matches (fresh pod: the unmatched-glob-under-``set -eu``
+    assumption, test-backed)."""
+    from explore_persona_space.backends import artifacts as ART
+
+    issue_dir = tmp_path / "eval_results" / "issue_909"
+    declared = issue_dir / "rp-new" / ".completion-sentinel.json"
+    # Stale prior-attempt sibling + stale flat legacy sentinel.
+    (issue_dir / "rp-old").mkdir(parents=True)
+    (issue_dir / "rp-old" / ".completion-sentinel.json").write_text("{}")
+    (issue_dir / ".completion-sentinel.json").write_text("{}")
+
+    script = RP._render_launch_script(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path=str(declared),
+        attempt_id=ATTEMPT,
+    )
+    rm_line = next(
+        line
+        for line in script.splitlines()
+        if line.startswith("rm -f ") and ".completion-sentinel.json" in line
+    )
+
+    # (a) Stale files present -> removed, rc 0 under the outer script's set -eu.
+    proc = subprocess.run(
+        ["bash", "-c", f"set -eu\n{rm_line}"], capture_output=True, text=True, check=False
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert not (issue_dir / "rp-old" / ".completion-sentinel.json").exists()
+    assert not (issue_dir / ".completion-sentinel.json").exists()
+    # The #685 fallback now has nothing to resolve.
+    assert ART._default_glob_sentinels(str(declared), 909) == []
+
+    # (b) Nothing matches (fresh pod) -> unmatched glob still exits 0.
+    proc2 = subprocess.run(
+        ["bash", "-c", f"set -eu\n{rm_line}"], capture_output=True, text=True, check=False
+    )
+    assert proc2.returncode == 0, proc2.stderr
 
 
 # ---------------------------------------------------------------------------
@@ -484,3 +668,97 @@ def test_launch_ok_regex_shapes():
     assert RP._LAUNCH_OK_RE.search("LAUNCH-OK pid=7 via=/workspace/logs/x.pid").group(1) == "7"
     assert RP._LAUNCH_OK_RE.search("LAUNCH-DEAD pid=none") is None
     assert re.search(r"SYNC-OK ([0-9a-f]+)", "SYNC-OK deadbeef").group(1) == "deadbeef"
+
+
+# ---------------------------------------------------------------------------
+# #954 — the PARTIAL handle on RunPodWorkloadStartError
+# ---------------------------------------------------------------------------
+
+#: The EXACT pre-#954 success-path ``extra`` key set for a NON-exec launch
+#: (``workload_info == {}``) — pinned EXPLICITLY (never a circular post-change
+#: fixture): the #954 refactor must add NO new keys on the success path.
+_PRE_954_SUCCESS_EXTRA_KEYS = frozenset(
+    {
+        "intent",
+        "issue",
+        "pid_file",
+        "runpod_attempt_id",
+        "workload_cmd",
+        "hydra_args",
+        "gpus",
+        "time_budget_hours",
+        "repo_branch",
+        "workload_executed",
+        EXPECTED_ARTIFACTS_HANDLE_KEY,
+    }
+)
+
+
+def test_launch_attaches_partial_handle_on_workload_start_error(monkeypatch):
+    """#954: with provision mocked OK and the execution leg raising, the typed
+    error carries a PARTIAL handle matching the success-path handle shape
+    except ``workload_executed is False`` + ``workload_start_error`` — and the
+    SUCCESS-path handle ``extra`` stays byte-identical (no new keys)."""
+    _wire_exec_leg(monkeypatch, [])
+
+    def _fake_exec(spec, **kwargs):
+        raise RP.RunPodWorkloadStartError("branch sync of pod-909 timed out (ssh TimeoutExpired)")
+
+    monkeypatch.setattr(RP, "_execute_workload_on_pod", _fake_exec)
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(
+            _spec(extra={"execute_workload": True, "repo_branch": "issue-909"})
+        )
+    partial = ei.value.handle
+    assert partial is not None
+    assert partial.backend == "runpod"
+    assert partial.pod_name == "pod-909"
+    assert partial.log_path == "/workspace/logs/issue-909.log"
+    # Truthful execution outcome + the truncated start-leg error.
+    assert partial.extra["workload_executed"] is False
+    assert "ssh TimeoutExpired" in partial.extra["workload_start_error"]
+    # The partial extra == the success shape PLUS ONLY the error key.
+    assert set(partial.extra.keys()) == _PRE_954_SUCCESS_EXTRA_KEYS | {"workload_start_error"}
+    # The declaration is fully built (attempt-namespaced sentinel path present),
+    # so poll/finalize/re-drive stay chained on the partial handle.
+    declared = partial.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]["sentinel_path"]
+    assert declared == RP.runpod_sentinel_path(909, partial.extra["runpod_attempt_id"])
+
+
+def test_launch_success_extra_keys_byte_identical_no_new_keys(monkeypatch):
+    """#954 regression guard (test 10 second half): the SUCCESS-path handle
+    ``extra`` key set is byte-identical to pre-#954 for BOTH the non-exec and
+    the exec-success shapes — ``workload_start_error`` appears ONLY on the
+    failure path."""
+    # Non-exec success: the exact pre-change key set, nothing added.
+    _wire_exec_leg(monkeypatch, [])
+    handle = RP.RunPodBackend().launch(_spec())
+    assert set(handle.extra.keys()) == set(_PRE_954_SUCCESS_EXTRA_KEYS)
+
+    # Exec success: the pre-change keys + the execution-leg workload_info keys;
+    # the failure-path-only key NEVER appears on success.
+    _wire_exec_leg(
+        monkeypatch,
+        ["SYNC-OK abc123\n", "WRAPPER-STARTED 4242\n", "LAUNCH-OK pid=777\n"],
+    )
+    handle2 = RP.RunPodBackend().launch(_spec(extra={"execute_workload": True}))
+    assert set(handle2.extra.keys()) >= _PRE_954_SUCCESS_EXTRA_KEYS
+    assert "workload_start_error" not in handle2.extra
+    assert handle2.extra["workload_executed"] is True
+
+
+def test_pre_provision_guard_keeps_handle_none(monkeypatch):
+    """#954 AC2 input shape: the ``execute_workload``+empty-``workload_cmd``
+    guard raises with ``handle is None`` and provision was never invoked —
+    nothing was provisioned, nothing bills, so the rung's NoCompute blanket
+    branch stays correct for it."""
+
+    def _explode(*a, **k):
+        raise AssertionError("provision must NOT run on the flag+empty-cmd cell")
+
+    monkeypatch.setattr(RP.subprocess, "run", _explode, raising=False)
+    with pytest.raises(RP.RunPodWorkloadStartError) as ei:
+        RP.RunPodBackend().launch(
+            _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
+        )
+    assert ei.value.handle is None

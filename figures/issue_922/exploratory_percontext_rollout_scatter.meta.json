@@ -1,0 +1,2512 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:21Z",
+  "figsize": [
+    4.5,
+    4.5
+  ],
+  "points": [
+    {
+      "per-context skill at k=4": 0.47256040573120117,
+      "per-context skill at k=16": 0.4097025394439697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5522744655609131,
+      "per-context skill at k=16": 0.500748872756958,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4733998775482178,
+      "per-context skill at k=16": 0.533356785774231,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48645639419555664,
+      "per-context skill at k=16": 0.5583540797233582,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4510968327522278,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.4746169447898865,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4824599027633667,
+      "per-context skill at k=16": 0.4635522961616516,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5048985481262207,
+      "per-context skill at k=16": 0.46678370237350464,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4854651689529419,
+      "per-context skill at k=16": 0.4773162603378296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46651095151901245,
+      "per-context skill at k=16": 0.46826499700546265,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.5028598308563232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4585167169570923,
+      "per-context skill at k=16": 0.5036373734474182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46558529138565063,
+      "per-context skill at k=16": 0.4501667618751526,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.5011805295944214,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.523543655872345,
+      "per-context skill at k=16": 0.9465422630310059,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44952887296676636,
+      "per-context skill at k=16": 0.5149718523025513,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47271406650543213,
+      "per-context skill at k=16": 0.42428189516067505,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.47375935316085815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4781608581542969,
+      "per-context skill at k=16": 0.430133581161499,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48401933908462524,
+      "per-context skill at k=16": 0.4916495680809021,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45838290452957153,
+      "per-context skill at k=16": 0.46314483880996704,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4794415831565857,
+      "per-context skill at k=16": 0.47564154863357544,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.533356785774231,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4855506420135498,
+      "per-context skill at k=16": 0.4661868214607239,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.4348539710044861,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.4661105275154114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49332576990127563,
+      "per-context skill at k=16": 0.49742114543914795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47416168451309204,
+      "per-context skill at k=16": 0.46703433990478516,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45922935009002686,
+      "per-context skill at k=16": 0.48005837202072144,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4927719235420227,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4544859528541565,
+      "per-context skill at k=16": 0.4876193404197693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5325907468795776,
+      "per-context skill at k=16": 0.46149587631225586,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.49920928478240967,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.48221319913864136,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.496393084526062,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.4706363081932068,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": 0.4876193404197693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4429449439048767,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4687616229057312,
+      "per-context skill at k=16": 0.35413408279418945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.4677167534828186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5252068042755127,
+      "per-context skill at k=16": 0.4841686487197876,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.4732103943824768,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4968453049659729,
+      "per-context skill at k=16": 0.48551464080810547,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.494945228099823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.49192070960998535,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4711002707481384,
+      "per-context skill at k=16": 0.5418765544891357,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47734469175338745,
+      "per-context skill at k=16": 0.4709831476211548,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4666045904159546,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47247570753097534,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.4463435411453247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46732068061828613,
+      "per-context skill at k=16": 0.4843289852142334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48927587270736694,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44027209281921387,
+      "per-context skill at k=16": 0.46616774797439575,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4593018889427185,
+      "per-context skill at k=16": 0.4746638536453247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.476351797580719,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4995881915092468,
+      "per-context skill at k=16": 0.4348539710044861,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.35413408279418945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4601251482963562,
+      "per-context skill at k=16": 0.4909214377403259,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48252803087234497,
+      "per-context skill at k=16": 0.4700745940208435,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4521171450614929,
+      "per-context skill at k=16": 0.4753077030181885,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.41820693016052246,
+      "per-context skill at k=16": 0.4692210555076599,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.490458607673645,
+      "per-context skill at k=16": 0.46070194244384766,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.24103671312332153,
+      "per-context skill at k=16": 0.46572041511535645,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.41820693016052246,
+      "per-context skill at k=16": 0.5087432861328125,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4832053780555725,
+      "per-context skill at k=16": 0.1726166009902954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46857333183288574,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46899551153182983,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4489911198616028,
+      "per-context skill at k=16": 0.5087432861328125,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4659379720687866,
+      "per-context skill at k=16": 0.521702766418457,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4601794481277466,
+      "per-context skill at k=16": 0.47411197423934937,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48886311054229736,
+      "per-context skill at k=16": 0.4569213390350342,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4330655336380005,
+      "per-context skill at k=16": 0.48375070095062256,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46667981147766113,
+      "per-context skill at k=16": 0.5018526315689087,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.5028598308563232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.43570882081985474,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4395520091056824,
+      "per-context skill at k=16": 0.4636304974555969,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": -1.580949068069458,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4724746346473694,
+      "per-context skill at k=16": 0.47046560049057007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.31792593002319336,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4587520360946655,
+      "per-context skill at k=16": 0.5028598308563232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5183886289596558,
+      "per-context skill at k=16": 0.4858829975128174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4616634249687195,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4854651689529419,
+      "per-context skill at k=16": 0.5092955827713013,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4588507413864136,
+      "per-context skill at k=16": 0.4463435411453247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.4711248278617859,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5098046064376831,
+      "per-context skill at k=16": 0.47072434425354004,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.49119579792022705,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4500306248664856,
+      "per-context skill at k=16": 0.45655256509780884,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4854651689529419,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4832053780555725,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4757409691810608,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46773648262023926,
+      "per-context skill at k=16": 0.455988347530365,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4862337112426758,
+      "per-context skill at k=16": 0.46802419424057007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46588969230651855,
+      "per-context skill at k=16": 0.5008305907249451,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4927719235420227,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49877405166625977,
+      "per-context skill at k=16": 0.414823055267334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4914645552635193,
+      "per-context skill at k=16": 0.568117618560791,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4544704556465149,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.47308242321014404,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45514678955078125,
+      "per-context skill at k=16": 0.4627837538719177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.458940327167511,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48272013664245605,
+      "per-context skill at k=16": 0.5145827531814575,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46723318099975586,
+      "per-context skill at k=16": 0.4655535817146301,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4555760622024536,
+      "per-context skill at k=16": 0.4565759301185608,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4995881915092468,
+      "per-context skill at k=16": 0.4461180567741394,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47853320837020874,
+      "per-context skill at k=16": 0.45949238538742065,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5252068042755127,
+      "per-context skill at k=16": 0.4587165117263794,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47326040267944336,
+      "per-context skill at k=16": 0.45835399627685547,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.48114460706710815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.6457710266113281,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5259521007537842,
+      "per-context skill at k=16": 0.4061223268508911,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4899221658706665,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.1726166009902954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.34604281187057495,
+      "per-context skill at k=16": 0.46174317598342896,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4791511297225952,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": 0.4876193404197693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48546332120895386,
+      "per-context skill at k=16": 0.4507470726966858,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4872736930847168,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4787138104438782,
+      "per-context skill at k=16": 0.4348539710044861,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.46672695875167847,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.4926508069038391,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4792109727859497,
+      "per-context skill at k=16": 0.4898335933685303,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47575581073760986,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5032896995544434,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.4818931221961975,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6529686450958252,
+      "per-context skill at k=16": 0.45981305837631226,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47405755519866943,
+      "per-context skill at k=16": 0.46450191736221313,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.45065295696258545,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4898796081542969,
+      "per-context skill at k=16": 0.511839747428894,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47153812646865845,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4761853814125061,
+      "per-context skill at k=16": 0.48011553287506104,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48147112131118774,
+      "per-context skill at k=16": 0.45306968688964844,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49482977390289307,
+      "per-context skill at k=16": 0.46073102951049805,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48582923412323,
+      "per-context skill at k=16": 0.4217990040779114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48181629180908203,
+      "per-context skill at k=16": 0.46035343408584595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44027209281921387,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5532342195510864,
+      "per-context skill at k=16": 0.4812976121902466,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.4668898582458496,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45004159212112427,
+      "per-context skill at k=16": 0.49529021978378296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4601938724517822,
+      "per-context skill at k=16": 0.48267245292663574,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.441228985786438,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48953568935394287,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4808235764503479,
+      "per-context skill at k=16": 0.5583540797233582,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4641945958137512,
+      "per-context skill at k=16": 0.5152574181556702,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.5235238671302795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45896923542022705,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.45054012537002563,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.4832950830459595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.4616638422012329,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.40539073944091797,
+      "per-context skill at k=16": 0.45145875215530396,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4669192433357239,
+      "per-context skill at k=16": 0.5073873996734619,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5112529993057251,
+      "per-context skill at k=16": 0.4665396809577942,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.482435941696167,
+      "per-context skill at k=16": 0.4728236794471741,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46667981147766113,
+      "per-context skill at k=16": 0.5116238594055176,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4561375379562378,
+      "per-context skill at k=16": 0.47005218267440796,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.42901867628097534,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.452287495136261,
+      "per-context skill at k=16": 0.5194019675254822,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4762182831764221,
+      "per-context skill at k=16": 0.4668961763381958,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4657427668571472,
+      "per-context skill at k=16": 0.5221679210662842,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4840241074562073,
+      "per-context skill at k=16": 0.4546129107475281,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.4845680594444275,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.4689180254936218,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4792988896369934,
+      "per-context skill at k=16": 0.5464472770690918,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4500306248664856,
+      "per-context skill at k=16": 0.476812481880188,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.48183488845825195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5165400505065918,
+      "per-context skill at k=16": 0.4808335304260254,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48767542839050293,
+      "per-context skill at k=16": 0.47595876455307007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4927719235420227,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5410618782043457,
+      "per-context skill at k=16": 0.5006062388420105,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6367253661155701,
+      "per-context skill at k=16": 0.4646870493888855,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.4020404815673828,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4689435362815857,
+      "per-context skill at k=16": 0.495047390460968,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.37317728996276855,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49736732244491577,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.458152711391449,
+      "per-context skill at k=16": 0.4933757781982422,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4796063303947449,
+      "per-context skill at k=16": 0.48144102096557617,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4641945958137512,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4674708843231201,
+      "per-context skill at k=16": 0.5226913094520569,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5262571573257446,
+      "per-context skill at k=16": 0.46690046787261963,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.5325862765312195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48169028759002686,
+      "per-context skill at k=16": 0.4603087306022644,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4798264503479004,
+      "per-context skill at k=16": 0.45957058668136597,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.646397054195404,
+      "per-context skill at k=16": 0.6114323139190674,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.4906330108642578,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5089638233184814,
+      "per-context skill at k=16": 0.414823055267334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5046194195747375,
+      "per-context skill at k=16": 0.5077511072158813,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49882304668426514,
+      "per-context skill at k=16": 0.4377632737159729,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5042839050292969,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.5235238671302795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.28529584407806396,
+      "per-context skill at k=16": 0.4546054005622864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48608464002609253,
+      "per-context skill at k=16": 0.45068031549453735,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.4668203592300415,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4885093569755554,
+      "per-context skill at k=16": 0.45590710639953613,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.5235238671302795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47037309408187866,
+      "per-context skill at k=16": 0.48537158966064453,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4714832901954651,
+      "per-context skill at k=16": 0.4478711485862732,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4736021161079407,
+      "per-context skill at k=16": 0.4888375401496887,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46667981147766113,
+      "per-context skill at k=16": 0.49390649795532227,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.475094199180603,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46667981147766113,
+      "per-context skill at k=16": 0.533356785774231,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47368496656417847,
+      "per-context skill at k=16": 0.48086315393447876,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.448896586894989,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4547591209411621,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.4863317608833313,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.646397054195404,
+      "per-context skill at k=16": 0.6114323139190674,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4617273211479187,
+      "per-context skill at k=16": 0.37317728996276855,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.24103671312332153,
+      "per-context skill at k=16": 0.4778628945350647,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5014269351959229,
+      "per-context skill at k=16": 0.4946744441986084,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4669104218482971,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47405922412872314,
+      "per-context skill at k=16": 0.5235238671302795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4927719235420227,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": 0.4773162603378296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49736732244491577,
+      "per-context skill at k=16": 0.49039119482040405,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.36671608686447144,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.474856972694397,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.41820693016052246,
+      "per-context skill at k=16": 0.4933263063430786,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4888598918914795,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.451474130153656,
+      "per-context skill at k=16": 0.6184072494506836,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4571099281311035,
+      "per-context skill at k=16": 0.4326145648956299,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48349708318710327,
+      "per-context skill at k=16": 0.5269514322280884,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4790266156196594,
+      "per-context skill at k=16": 0.49039292335510254,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4599159359931946,
+      "per-context skill at k=16": 0.446733295917511,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.46506375074386597,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49882304668426514,
+      "per-context skill at k=16": 0.4580516219139099,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4725426435470581,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4464179277420044,
+      "per-context skill at k=16": 0.4565442204475403,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5183886289596558,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4731135368347168,
+      "per-context skill at k=16": 0.5028598308563232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4731728434562683,
+      "per-context skill at k=16": 0.4791286587715149,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.16886073350906372,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47781050205230713,
+      "per-context skill at k=16": 0.49529021978378296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.4607299566268921,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.4887385368347168,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4927719235420227,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45775163173675537,
+      "per-context skill at k=16": 0.4779529571533203,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.6457710266113281,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4467783570289612,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.450802206993103,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45444899797439575,
+      "per-context skill at k=16": 0.45255714654922485,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5259521007537842,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47746390104293823,
+      "per-context skill at k=16": 0.5063349008560181,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5648435950279236,
+      "per-context skill at k=16": 0.23407310247421265,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.4020404815673828,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4780551791191101,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": 0.5006290674209595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5905100703239441,
+      "per-context skill at k=16": 0.46058452129364014,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49217790365219116,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46856439113616943,
+      "per-context skill at k=16": 0.5673931837081909,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49242687225341797,
+      "per-context skill at k=16": 0.4720834493637085,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4750513434410095,
+      "per-context skill at k=16": 0.5014841556549072,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46486896276474,
+      "per-context skill at k=16": 0.5152574181556702,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.475957989692688,
+      "per-context skill at k=16": 0.47769397497177124,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.47830790281295776,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5061485767364502,
+      "per-context skill at k=16": 0.4706963300704956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.568117618560791,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4760643243789673,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5111556649208069,
+      "per-context skill at k=16": 0.47227174043655396,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.6358108520507812,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.5305514931678772,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.39433324337005615,
+      "per-context skill at k=16": 0.4841994643211365,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": -0.2298036813735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44027209281921387,
+      "per-context skill at k=16": 0.491474449634552,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48147112131118774,
+      "per-context skill at k=16": 0.5152574181556702,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.49058443307876587,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.41175150871276855,
+      "per-context skill at k=16": 0.466669499874115,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4995881915092468,
+      "per-context skill at k=16": 0.4819077253341675,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.43866240978240967,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4949665665626526,
+      "per-context skill at k=16": 0.6105047464370728,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49408912658691406,
+      "per-context skill at k=16": 0.4771363139152527,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5032896995544434,
+      "per-context skill at k=16": 0.4812976121902466,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4725426435470581,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49736732244491577,
+      "per-context skill at k=16": 0.48692625761032104,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4691879153251648,
+      "per-context skill at k=16": 0.45906519889831543,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.5418765544891357,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.508459210395813,
+      "per-context skill at k=16": 0.4750029444694519,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47209542989730835,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4865626096725464,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4476867914199829,
+      "per-context skill at k=16": 0.5078153014183044,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4609483480453491,
+      "per-context skill at k=16": 0.5013954043388367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.4638320803642273,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4672682285308838,
+      "per-context skill at k=16": 0.4580516219139099,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4544859528541565,
+      "per-context skill at k=16": 0.4367988705635071,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4616634249687195,
+      "per-context skill at k=16": 0.4758557677268982,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": 0.5269514322280884,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4745531678199768,
+      "per-context skill at k=16": -1.580949068069458,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43358373641967773,
+      "per-context skill at k=16": 0.4677858352661133,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4776442050933838,
+      "per-context skill at k=16": 0.4906984567642212,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4983837604522705,
+      "per-context skill at k=16": 0.5011447668075562,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47853320837020874,
+      "per-context skill at k=16": 0.6457710266113281,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4687616229057312,
+      "per-context skill at k=16": 0.35413408279418945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48536378145217896,
+      "per-context skill at k=16": 0.48114460706710815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4717923402786255,
+      "per-context skill at k=16": 0.6138864755630493,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46981507539749146,
+      "per-context skill at k=16": 0.5167425870895386,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.9437728524208069,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.5152574181556702,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4623626470565796,
+      "per-context skill at k=16": 0.5235238671302795,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.458127498626709,
+      "per-context skill at k=16": 0.4596991539001465,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45613306760787964,
+      "per-context skill at k=16": 0.43353742361068726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.470136821269989,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46899551153182983,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": 0.4604978561401367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4476507306098938,
+      "per-context skill at k=16": 0.46623265743255615,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47306931018829346,
+      "per-context skill at k=16": 0.4493964910507202,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49411797523498535,
+      "per-context skill at k=16": 0.48976272344589233,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4495393633842468,
+      "per-context skill at k=16": 0.46102166175842285,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.451474130153656,
+      "per-context skill at k=16": 0.4700981378555298,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47039860486984253,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46667981147766113,
+      "per-context skill at k=16": 0.4827200770378113,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4792109727859497,
+      "per-context skill at k=16": 0.5025902390480042,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.24103671312332153,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": -1.580949068069458,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46538084745407104,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.24103671312332153,
+      "per-context skill at k=16": 0.47380000352859497,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47002917528152466,
+      "per-context skill at k=16": 0.48899370431900024,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48996561765670776,
+      "per-context skill at k=16": 0.47656911611557007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4721522331237793,
+      "per-context skill at k=16": 0.4380064010620117,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.476671040058136,
+      "per-context skill at k=16": 0.6358108520507812,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4888598918914795,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48536378145217896,
+      "per-context skill at k=16": 0.414823055267334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4380064010620117,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49736732244491577,
+      "per-context skill at k=16": 0.48753488063812256,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46000349521636963,
+      "per-context skill at k=16": 0.6485727429389954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3886911869049072,
+      "per-context skill at k=16": 0.4936913847923279,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": 0.5215349197387695,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5136098861694336,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4211530089378357,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.493690550327301,
+      "per-context skill at k=16": -759512.0625,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4771714210510254,
+      "per-context skill at k=16": 0.4444722533226013,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4736688733100891,
+      "per-context skill at k=16": 0.5001966953277588,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45838290452957153,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4714732766151428,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6529686450958252,
+      "per-context skill at k=16": 0.4354664087295532,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.508762538433075,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5125744342803955,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44648098945617676,
+      "per-context skill at k=16": 0.5036373734474182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48536378145217896,
+      "per-context skill at k=16": 0.4844089150428772,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4826838970184326,
+      "per-context skill at k=16": 0.43353742361068726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4690098166465759,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4721522331237793,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4792988896369934,
+      "per-context skill at k=16": 0.5464472770690918,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.48264724016189575,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49201351404190063,
+      "per-context skill at k=16": 0.5006290674209595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.4097025394439697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45942169427871704,
+      "per-context skill at k=16": 0.48439544439315796,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4521394968032837,
+      "per-context skill at k=16": 0.5224406719207764,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3886911869049072,
+      "per-context skill at k=16": 0.5036373734474182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48645639419555664,
+      "per-context skill at k=16": 0.4890369772911072,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4591895341873169,
+      "per-context skill at k=16": 0.4463435411453247,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4627005457878113,
+      "per-context skill at k=16": 0.4711248278617859,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.444160521030426,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4546296000480652,
+      "per-context skill at k=16": 0.464150071144104,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4512890577316284,
+      "per-context skill at k=16": 0.4749639630317688,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46785664558410645,
+      "per-context skill at k=16": 0.45069366693496704,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4848024845123291,
+      "per-context skill at k=16": 0.4478711485862732,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.48114460706710815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4689435362815857,
+      "per-context skill at k=16": 0.46608299016952515,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4585167169570923,
+      "per-context skill at k=16": 0.4097025394439697,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.4811379313468933,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.5036373734474182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4575812816619873,
+      "per-context skill at k=16": 0.5055732131004333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.9437728524208069,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.4754384756088257,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4411327838897705,
+      "per-context skill at k=16": 0.4823644757270813,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48895788192749023,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47665560245513916,
+      "per-context skill at k=16": 0.4569213390350342,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.6005541086196899,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48480361700057983,
+      "per-context skill at k=16": 0.6485727429389954,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45172250270843506,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48551833629608154,
+      "per-context skill at k=16": 0.48003554344177246,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": null,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4910166263580322,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46481800079345703,
+      "per-context skill at k=16": 0.49190717935562134,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.452287495136261,
+      "per-context skill at k=16": 0.4802006483078003,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3771941065788269,
+      "per-context skill at k=16": 0.5109553337097168,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.31792593002319336,
+      "per-context skill at k=16": 0.4547470808029175,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44038987159729004,
+      "per-context skill at k=16": 0.46634024381637573,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49281591176986694,
+      "per-context skill at k=16": 0.48524707555770874,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46299076080322266,
+      "per-context skill at k=16": 0.459769606590271,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4749302864074707,
+      "per-context skill at k=16": 0.5249708890914917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4727821350097656,
+      "per-context skill at k=16": 0.6200661659240723,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4767439365386963,
+      "per-context skill at k=16": 0.533356785774231,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.47200721502304077,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4671090245246887,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.48205846548080444,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49890005588531494,
+      "per-context skill at k=16": 0.4392765164375305,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4669647812843323,
+      "per-context skill at k=16": 0.49717968702316284,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4849932789802551,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4730207324028015,
+      "per-context skill at k=16": 0.47503936290740967,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5248477458953857,
+      "per-context skill at k=16": 0.4898335933685303,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4800070524215698,
+      "per-context skill at k=16": 0.5270618200302124,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4898074269294739,
+      "per-context skill at k=16": 0.4580516219139099,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4936278462409973,
+      "per-context skill at k=16": 0.5067204236984253,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44027209281921387,
+      "per-context skill at k=16": 0.4736407399177551,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49542564153671265,
+      "per-context skill at k=16": 0.47455912828445435,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.4876193404197693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4696282148361206,
+      "per-context skill at k=16": 0.46804583072662354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4866393804550171,
+      "per-context skill at k=16": 0.4589284062385559,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45352107286453247,
+      "per-context skill at k=16": 0.4666045904159546,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4448051452636719,
+      "per-context skill at k=16": 0.4569213390350342,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5194132328033447,
+      "per-context skill at k=16": 0.4711248278617859,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5014423727989197,
+      "per-context skill at k=16": 0.4761539697647095,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.4533504247665405,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4861193895339966,
+      "per-context skill at k=16": 0.47860002517700195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46114814281463623,
+      "per-context skill at k=16": 0.4634297490119934,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.452287495136261,
+      "per-context skill at k=16": 0.4143739938735962,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45835769176483154,
+      "per-context skill at k=16": 0.49114787578582764,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5032896995544434,
+      "per-context skill at k=16": 0.414823055267334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47627121210098267,
+      "per-context skill at k=16": 0.5421234965324402,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49736732244491577,
+      "per-context skill at k=16": 0.4714732766151428,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.1879376769065857,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.6105047464370728,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45835769176483154,
+      "per-context skill at k=16": 0.48358869552612305,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5051523447036743,
+      "per-context skill at k=16": 0.4841994643211365,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.45835769176483154,
+      "per-context skill at k=16": 0.48358869552612305,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4469451904296875,
+      "per-context skill at k=16": 0.5078099966049194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47853320837020874,
+      "per-context skill at k=16": 0.48345518112182617,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4642133116722107,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5259521007537842,
+      "per-context skill at k=16": 0.4944837689399719,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4696282148361206,
+      "per-context skill at k=16": 0.4714732766151428,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": 0.4876193404197693,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4880802035331726,
+      "per-context skill at k=16": 0.4494704008102417,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47819221019744873,
+      "per-context skill at k=16": 0.5026934146881104,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47516459226608276,
+      "per-context skill at k=16": 0.49531304836273193,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4812520742416382,
+      "per-context skill at k=16": 0.523284375667572,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4698765277862549,
+      "per-context skill at k=16": 0.4607299566268921,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.44895559549331665,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5001589059829712,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49867695569992065,
+      "per-context skill at k=16": 0.48411625623703003,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.46689289808273315,
+      "per-context skill at k=16": 0.4761934280395508,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.4652193784713745,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48763275146484375,
+      "per-context skill at k=16": 0.4690592288970947,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4972708225250244,
+      "per-context skill at k=16": 0.47015851736068726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4791796803474426,
+      "per-context skill at k=16": 0.4608330726623535,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.9437728524208069,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.47492074966430664,
+      "per-context skill at k=16": 0.488999605178833,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.24103671312332153,
+      "per-context skill at k=16": 0.48934680223464966,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5540993213653564,
+      "per-context skill at k=16": 0.4700406789779663,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4757823944091797,
+      "per-context skill at k=16": 0.4787490963935852,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.3845306634902954,
+      "per-context skill at k=16": 0.5252785086631775,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4283948540687561,
+      "per-context skill at k=16": 0.4616638422012329,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5490482449531555,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43179839849472046,
+      "per-context skill at k=16": 0.527527391910553,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4920594096183777,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.49483513832092285,
+      "per-context skill at k=16": 0.514880895614624,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.43622761964797974,
+      "per-context skill at k=16": 0.5108832120895386,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4687616229057312,
+      "per-context skill at k=16": 0.35413408279418945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48834091424942017,
+      "per-context skill at k=16": 0.4217990040779114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5834338665008545,
+      "per-context skill at k=16": 0.5036373734474182,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.9437728524208069,
+      "per-context skill at k=16": null,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5032896995544434,
+      "per-context skill at k=16": 0.4925643801689148,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.48481518030166626,
+      "per-context skill at k=16": 0.5200461149215698,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4757409691810608,
+      "per-context skill at k=16": 0.4690098166465759,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.4947086572647095,
+      "per-context skill at k=16": 0.3741303086280823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context skill at k=4": 0.5427583456039429,
+      "per-context skill at k=16": 0.4779512286186218,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 500
+}

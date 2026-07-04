@@ -787,6 +787,21 @@ pattern as Step 0.67's work-conserving sub-check: the parent gate's N/A does
 not close it). Record the gate→dispatch trace (gated fn, dispatched fn,
 evidence `file.py:LINE`) or `hollow-gate sub-check: N/A — no verification
 gate in diff`.
+Sibling: Step 3.8 covers the BODY half of this family — a test that stubs the
+production function itself launders a never-executed body exactly as a hollow
+gate launders an unverified hot loop.
+
+**Hub-call-scoping sub-check (any diff type).** When the diff INTRODUCES or
+modifies a Hub verify / staging / existence-probe call against the ~1M-file
+data repo, confirm it is prefix-scoped (`list_repo_tree(path_in_repo=<prefix>)`
+for subtree listings, `file_exists` for single-path probes) with a bounded
+outer retry on a first-page 429/5xx — an unscoped full-tree `list_repo_files`
+/ `snapshot_download` there is a substantive Major (recipe:
+`.claude/rules/gotchas.md` #833). Plan-time twin for REUSED, diff-untouched
+helpers: `.claude/rules/artifact-reuse.md` check (i) leg (3) (#810: a reused
+verify crawl wedged a live A100 run in 429 storms). Record
+`Hub-call-scoping sub-check: N/A — no data-repo Hub calls in diff` when
+absent. Full listings of the SMALL model repo are fine — data repo only.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
@@ -1033,6 +1048,94 @@ PASS→FAIL on its own; the FAIL comes from a load-bearing sibling left in the
 tree. (Promotes the 7-step sibling-scan recipe from reconciler memory
 `.claude/agent-memory/reconciler/feedback_claude_misses_same_file_siblings.md`.)
 
+### Step 3.8: Seam-stubbed production-body verification (any diff type)
+
+**Trigger:** the diff ADDS a production function (a new `def` in non-test
+code, including in a new file) whose NAME appears in any test as a stub /
+monkeypatch / seam target — `monkeypatch.setattr(..., "<name>", ...)`,
+`unittest.mock.patch("...<name>")`, a seams/hooks dataclass field the tests
+override with a fake (e.g. `PilotSeams(<name>_fn=fake)`), or a fake injected
+through a resolver/dispatch table. Enumerate mechanically: list the round's
+added `def`s from the diff, then grep the test files (round-touched AND
+pre-existing seam tables) for each name. The trigger set then CLOSES
+TRANSITIVELY over the round's own code: any round-ADDED function called
+(directly or transitively) from a trigger-set function's body JOINS the
+trigger set unless a body-executing test (per item 3) covers it — the
+crash-class body must not escape verification by moving one call deeper
+(the natural decomposition of the #906 code: seam-stubbed `run_pilot` →
+round-added `_score_items()` holding the fabricated judge call). ALSO in
+scope: (a) an EXISTING seam-stubbed function whose body this round's diff
+modifies — verify the added/changed hunk lines only; (b) a production
+function that a test added or changed THIS round NEWLY stubs/monkeypatches,
+when no body-executing test covers it (closes the r1-body / r2-stubs
+round-split ordering). No hit → record `Step 3.8: N/A — no
+seam-stubbed production function added or modified this round` and proceed.
+
+**Why:** a stub/monkeypatch seam means the suite can be 100% green while the
+production BODY has never executed — the tests validate that the DISPATCHER
+calls the name, not that the body is correct. A dispatch/resolver test is NOT
+body coverage. (Incident #906, 2026-07-03: five consecutive ensemble rounds
+PASSed crash-class production bodies behind `PilotSeams` stubs while 43/43
+mocked tests stayed green — `behavior.trigger_context` dereferenced a
+nonexistent `Behavior` field at L541+L628, the judge was called with a
+fabricated signature vs the real `judge_graded(items, eval_prompt, *,
+n_draws, cache_dir, save_raw, ...)` at L575-580, and `score_completions`
+omitted required kw-only `cache_dir`/`save_raw` at L712; Codex FAILed all 5
+rounds, the reconciler upheld FAIL all 5, and the task blocked at cap-5.)
+
+**Check — for EVERY function in the trigger set, read the BODY and verify:**
+
+1. **External call signatures.** For each external call — to a function
+   defined outside the round's diff (repo helper, library fn) — verify the
+   call site against the callee's REAL signature — `uv run python -c "import
+   inspect, <mod>; print(inspect.signature(<mod>.<callee>))"` or READ the
+   callee's `def` line — checking positional arity, kwarg names, and required
+   keyword-only args. Quote the call site `file.py:LINE` + the real signature
+   as evidence. A call to a round-ADDED function is NOT exempt: that callee
+   joins the trigger set (transitive closure above) and its own external
+   calls + dereferences are verified the same way.
+2. **Attribute dereferences.** For each attribute access on a dataclass /
+   config / artifact object the body receives (`behavior.<field>`,
+   `cfg.<field>`), verify the field EXISTS on the real class — read the class
+   definition or enumerate `dataclasses.fields(<Class>)`. For a non-dataclass
+   DYNAMIC object (OmegaConf `DictConfig`, pydantic `extra="allow"`), verify
+   against the producing schema/YAML instead — absence of a
+   statically-enumerable field alone is not a Critical there.
+3. **Do not credit wiring tests as body coverage.** Body evidence is EITHER a
+   committed test that (a) executes the REAL body, (b) REACHES the changed
+   call sites / dereferences under review, and (c) fakes only the external
+   GPU/API boundary with fakes that are signature-conformant BY CONSTRUCTION
+   — `unittest.mock.create_autospec(real_callee)`, a real dataclass instance,
+   or a fake whose `def` mirrors the real signature; QUOTE the fake's
+   construction line as evidence — OR your own per-call verification per
+   items 1–2. A bare `Mock()`/`MagicMock()` boundary fake accepts ANY call
+   signature and is NOT body evidence for signature/field errors. A test that
+   monkeypatches the function and asserts the dispatcher called it verifies
+   wiring only.
+
+**Verdict routing:** a wrong-signature or nonexistent-field finding in a
+seam-stubbed body is **Critical** (the production path provably crashes),
+blocker tag `substantive` (never `marker-shape` / `smoke-run-missing` /
+`git-provenance`; never stripped by Step 5c-bis). Run the Step 3.7 sibling
+sweep on the class — the same fabricated API usually recurs (#906: the
+`trigger_context` dereference appeared at two sites). All verified → record
+the per-function ledger (function, callees checked, evidence lines) in the
+verdict body.
+
+**Cost bound:** the trigger set is the round's ADDED/MODIFIED functions ∩
+test-stub targets, plus that set's transitive round-added callees and any
+function newly stubbed by a round-added test — typically 0–6 functions,
+never a whole-codebase audit; per function you verify only the body's
+external calls + attribute dereferences (diff-hunk lines only, for the
+modified case).
+
+**Named accepted residue (deliberately out of scope):** callee-level
+patching — a test that patches the CALLEE (`mock.patch("driver.judge_graded")`,
+the most common mock idiom) executes the real body but never exercises the
+call site against the real signature and never fires this trigger. That
+shape is carried by the deferred implementer-side real-body-test rule and
+the deferred coverage-based lint, not by this check.
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.
@@ -1232,6 +1335,23 @@ Red flags:
 13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
 14. **Every finding is a bug CLASS, not a line.** For every Critical/Major finding you MUST run the Step 3.7 sibling sweep and enumerate ALL load-bearing sibling instances under a `### Bug-class sweep: <class>` heading; each load-bearing sibling is its own Critical, each secondary one a standing rec. A verdict that fixes/flags the cited instance but leaves a load-bearing sibling of the same class unenumerated is the whack-a-mole failure mode — FAIL only when a load-bearing sibling is left un-named; a finding with no siblings adds a one-line "no siblings" note (never balloon output on a trivial finding). See Step 3.7 for the sweep procedure.
 15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure. Exposure is necessary, not sufficient: Step 0.67's work-conserving schedule sub-check additionally reads the schedule loop whenever the diff schedules >1 independent cell on a multi-GPU pod/provision — a strict wave/stage barrier or degenerate serial schedule idling workers while independent cells wait is a Major `substantive` finding (#813: two sequential waves idled 4/8 H100s for 6.7h), acceptable only for a plan-stated cross-cell dependency or named resource/capacity constraint.
+16. **A test that stubs a production function is evidence of WIRING, not of
+    the body.** For every production function ADDED (or seam-stubbed and
+    body-MODIFIED) in the round that any test stubs/monkeypatches, verify the
+    body's external calls against the callees' REAL signatures
+    (`inspect.signature` / read the `def`) and its attribute dereferences
+    against the real dataclass fields before crediting coverage. The trigger
+    closes TRANSITIVELY over round-added callees, and a real-body test
+    counts only with signature-conformant (autospec-style) boundary fakes
+    that reach the changed call sites. A
+    dispatch/resolver test is NOT body coverage. A wrong-signature /
+    nonexistent-field finding is Critical with blocker tag `substantive`
+    (never stripped by Step 5c-bis). (Incident #906: five ensemble rounds
+    PASSed crash-class bodies behind PilotSeams stubs — nonexistent
+    `behavior.trigger_context` field, fabricated `judge_graded` signature,
+    missing required `cache_dir`/`save_raw` kwargs — while 43/43 mocked tests
+    stayed green; Codex FAILed and the reconciler upheld FAIL all 5 rounds.)
+    See Step 3.8 for the procedure.
 
 ---
 

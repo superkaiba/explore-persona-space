@@ -1,0 +1,1014 @@
+{
+  "commit": "289ce77531",
+  "created": "2026-07-04T06:32:14Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.07107781297032023,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": -1.3930894865303616,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": -1.1061435745766892,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": -18.48110333301575,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": -1.5592619403438919,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": -0.16907146432277353,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": -0.012916209998907302,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": -0.015492811729305833,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": -0.10829408961034614,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.15070287338149835,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.232533585754095,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.2848948874336752,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.19775052877101518,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.20264124965317254,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.10122071476499828,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.06536486744856573,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": -0.10072811990606279,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.03742578997766999,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.11800906352679696,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.15805596920077636,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.266445949657649,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.3560601667580122,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.4327056460775027,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.48788244323659935,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.5312823621546834,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.5474734421546865,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.4858616827197295,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.5914952858206106,
+      "series": "direct, mean-pool input",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.14181414425441474,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.12625284746772403,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.2225661101415275,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.21185071736485894,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.6252779197633385,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.7161369899490238,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.7816323467266157,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.774352991931305,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.754442917496039,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.7304611030321688,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.7316495499019839,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.7692364478077798,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.7127578148630442,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.6718255009230762,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.6192519044726305,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.6225200833585929,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.596338905299215,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.5756550293945674,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.5645815193431266,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.5332773885361668,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.5241525105590596,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.520680961066332,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.5294975517228457,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.5692862418335116,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.5956838771469695,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.5910576197060127,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.541699638584117,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.5672620669618423,
+      "series": "direct, parent's boundary-token input",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.6407131477149337,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.6671723869982303,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.651494855721344,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.643364980994157,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.7959772423419198,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.8344232931495867,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.8722249214623568,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.868514718233479,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.8562011318885634,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.837386127807796,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.8410088638775585,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.8662059071948378,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.836667310666906,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.8091583496284763,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.7789615959814934,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.7865862954711829,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.7731763664956317,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.767638661465094,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.7686553584274645,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.7763977088431235,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.7757223878257564,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.7541213795372852,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.7499157166381911,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.7714169091994539,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.7862841471732974,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.7867562418577627,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.7595838437284015,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.8084000959170985,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.1848947750324441,
+      "series": "permutation band (97.5th pct)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": -0.1848947750324441,
+      "series": "permutation band (97.5th pct)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "context (battery order)": 0.0,
+      "per-context held-out skill (direct, layer 27)": 0.8464937876778094,
+      "label": "f1_house_librarian",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 1.0,
+      "per-context held-out skill (direct, layer 27)": 0.9296104289056452,
+      "label": "f1_house_surgeon",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 2.0,
+      "per-context held-out skill (direct, layer 27)": 0.9330219872895757,
+      "label": "f1_house_programmer",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 3.0,
+      "per-context held-out skill (direct, layer 27)": 0.7236338905364483,
+      "label": "f1_house_medical_doctor",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 4.0,
+      "per-context held-out skill (direct, layer 27)": 0.7052983636417129,
+      "label": "f1_house_software_engineer",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 5.0,
+      "per-context held-out skill (direct, layer 27)": 0.7852404687637855,
+      "label": "f1_house_data_scientist",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 6.0,
+      "per-context held-out skill (direct, layer 27)": 0.4681060796396259,
+      "label": "f1_phub_01",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 7.0,
+      "per-context held-out skill (direct, layer 27)": 0.8375070776174054,
+      "label": "f1_phub_02",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 8.0,
+      "per-context held-out skill (direct, layer 27)": 0.6627171957882017,
+      "label": "f1_phub_03",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 9.0,
+      "per-context held-out skill (direct, layer 27)": 0.712671810917077,
+      "label": "f1_phub_04",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 10.0,
+      "per-context held-out skill (direct, layer 27)": 0.7789592441237259,
+      "label": "f1_phub_05",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 11.0,
+      "per-context held-out skill (direct, layer 27)": 0.6637612199661266,
+      "label": "f1_phub_06",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 12.0,
+      "per-context held-out skill (direct, layer 27)": 0.29695063200989535,
+      "label": "f1_phub_07",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 13.0,
+      "per-context held-out skill (direct, layer 27)": 0.29961907854591496,
+      "label": "f1_phub_08",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 14.0,
+      "per-context held-out skill (direct, layer 27)": 0.24454926361154328,
+      "label": "f2_wc_short_1",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 15.0,
+      "per-context held-out skill (direct, layer 27)": 0.7248664367314763,
+      "label": "f2_wc_short_2",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 17.0,
+      "per-context held-out skill (direct, layer 27)": 0.4824746254539044,
+      "label": "f2_wc_short_4",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 30.0,
+      "per-context held-out skill (direct, layer 27)": -0.05573486286317375,
+      "label": "f3_icl_json_k2",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 32.0,
+      "per-context held-out skill (direct, layer 27)": 0.7323722396987504,
+      "label": "f4_reph_imperative",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 33.0,
+      "per-context held-out skill (direct, layer 27)": 0.5196565923819843,
+      "label": "f4_reph_polite",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 34.0,
+      "per-context held-out skill (direct, layer 27)": 0.1476612083601312,
+      "label": "f4_reph_casual",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 35.0,
+      "per-context held-out skill (direct, layer 27)": -0.022249118726293204,
+      "label": "f4_reph_legalese",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 36.0,
+      "per-context held-out skill (direct, layer 27)": 0.7302193674928958,
+      "label": "f4_reph_enthusiastic",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 37.0,
+      "per-context held-out skill (direct, layer 27)": 0.8517888816101364,
+      "label": "f4_reph_archaic",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 38.0,
+      "per-context held-out skill (direct, layer 27)": 0.58766107223898,
+      "label": "f5_fmt_json",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 39.0,
+      "per-context held-out skill (direct, layer 27)": 0.5682213606764646,
+      "label": "f5_fmt_code_comment",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 40.0,
+      "per-context held-out skill (direct, layer 27)": 0.5610324827853402,
+      "label": "f5_fmt_markdown_table",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 41.0,
+      "per-context held-out skill (direct, layer 27)": 0.6941172170143897,
+      "label": "f5_fmt_xml",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 42.0,
+      "per-context held-out skill (direct, layer 27)": 0.8036471384136363,
+      "label": "f5_fmt_bullets",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 43.0,
+      "per-context held-out skill (direct, layer 27)": 0.4946359936573539,
+      "label": "f6_default_template",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 44.0,
+      "per-context held-out skill (direct, layer 27)": 0.8643204692156368,
+      "label": "f6_helpful_asst",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 45.0,
+      "per-context held-out skill (direct, layer 27)": 0.7598692793005015,
+      "label": "f8_behav_marker",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 46.0,
+      "per-context held-out skill (direct, layer 27)": 0.8869671949455946,
+      "label": "f8_behav_sycophant",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 47.0,
+      "per-context held-out skill (direct, layer 27)": 0.6307440193758002,
+      "label": "f8_behav_refusal",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 48.0,
+      "per-context held-out skill (direct, layer 27)": 0.7336936397506633,
+      "label": "f8_behav_fact",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 49.0,
+      "per-context held-out skill (direct, layer 27)": 0.9020423710579537,
+      "label": "f8_behav_harmful",
+      "series": "context (\u226580% parse coverage)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context (battery order)": 16.0,
+      "per-context held-out skill (direct, layer 27)": 0.09322031749137338,
+      "label": "f2_wc_short_3",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 18.0,
+      "per-context held-out skill (direct, layer 27)": 0.45341872547419804,
+      "label": "f2_wc_short_5",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 19.0,
+      "per-context held-out skill (direct, layer 27)": 0.7432434528554821,
+      "label": "f2_wc_long_1",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 20.0,
+      "per-context held-out skill (direct, layer 27)": 0.5483251964357312,
+      "label": "f2_wc_long_2",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 21.0,
+      "per-context held-out skill (direct, layer 27)": 0.2953166562995797,
+      "label": "f2_wc_long_3",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 22.0,
+      "per-context held-out skill (direct, layer 27)": 0.17173636193360065,
+      "label": "f2_wc_long_4",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 23.0,
+      "per-context held-out skill (direct, layer 27)": 0.7378881585827495,
+      "label": "f2_wc_long_5",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 24.0,
+      "per-context held-out skill (direct, layer 27)": 0.8339429876677061,
+      "label": "f3_icl_marker_k4",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 25.0,
+      "per-context held-out skill (direct, layer 27)": -0.13953212510580504,
+      "label": "f3_icl_french_k4",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 26.0,
+      "per-context held-out skill (direct, layer 27)": 0.4002592102912673,
+      "label": "f3_icl_json_k4",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 27.0,
+      "per-context held-out skill (direct, layer 27)": 0.1289673915555154,
+      "label": "f3_icl_pirate_k4",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 28.0,
+      "per-context held-out skill (direct, layer 27)": -0.42910839787460775,
+      "label": "f3_icl_marker_k2",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 29.0,
+      "per-context held-out skill (direct, layer 27)": 0.8613578546671402,
+      "label": "f3_icl_marker_k8",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context (battery order)": 31.0,
+      "per-context held-out skill (direct, layer 27)": 0.5230521320604511,
+      "label": "f3_icl_json_k8",
+      "series": "context flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 136
+}

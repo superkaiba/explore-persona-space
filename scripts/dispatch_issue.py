@@ -1005,6 +1005,31 @@ def _annotate_launch_body_reconnect_and_lane(
         )
 
 
+def _persist_partial_handle_sidecar(issue: int, spec: Any, partial: Any) -> tuple[bool, str]:
+    """Best-effort #954 sidecar write for a PARTIAL RunPod launch.
+
+    A ``RunPodWorkloadStartError`` carrying a handle means a pod was
+    provisioned (it BILLS, left RUNNING for diagnosis) before the
+    workload-start leg failed. Persist the handle sidecar so the pod is
+    visible to the handle machinery (poll / finalize / re-drive stay
+    chained) — the SAME path ``dispatch_for_issue`` would have written on
+    success. Returns ``(sidecar_written, note_suffix)``; an ``OSError`` is
+    recorded in the note suffix, NEVER raised (the typed failure the caller
+    is surfacing must not be masked).
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        default_handle_sidecar_path,
+        write_handle_sidecar,
+    )
+
+    sidecar_path = default_handle_sidecar_path(issue, lane_suffix=spec.extra.get("lane_suffix"))
+    try:
+        write_handle_sidecar(partial, sidecar_path)
+        return True, ""
+    except OSError as write_exc:
+        return False, f" [handle sidecar write FAILED: {type(write_exc).__name__}: {write_exc}]"
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -1169,13 +1194,30 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # dispatch_for_issue does not wrap route()), so this arm catches it
         # directly; were a future router change to wrap it in a RouteError,
         # the arm below already yields the same exit 2 + failure JSON.
+        #
+        # #954: when the error carries the PARTIAL handle (a pod was
+        # provisioned before the start leg failed — it BILLS, left RUNNING
+        # for diagnosis), persist the handle sidecar best-effort (never mask
+        # the typed failure) and name the pod in the failure JSON. NO lease
+        # on this path by design: a manual retry hits pod_lifecycle's
+        # provision-idempotency refuse (exit 1 on a live pod-N), fail-loud.
+        note = str(exc)
+        partial_fields: dict[str, Any] = {}
+        partial = getattr(exc, "handle", None)
+        if partial is not None:
+            sidecar_written, note_suffix = _persist_partial_handle_sidecar(
+                int(args.issue), spec, partial
+            )
+            note += note_suffix
+            partial_fields = {"pod_name": partial.pod_name, "sidecar_written": sidecar_written}
         body = {
             "ok": False,
             "issue": int(args.issue),
             "exception": type(exc).__name__,
             "failure_class": "infra",
             "reason": "runpod_workload_start_failed",
-            "note": str(exc),
+            "note": note,
+            **partial_fields,
         }
         print(json.dumps(body, sort_keys=True))
         return 2

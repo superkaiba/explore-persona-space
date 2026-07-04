@@ -1,12 +1,101 @@
 {
-  "metadata": {
-    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
-    "timestamp": "2026-07-04T06:04:44Z",
-    "seed": 0,
-    "n": 0,
-    "script": "scripts/issue931_figures.py",
-    "issue": 931
-  },
-  "headline_layer": 19,
-  "n_rows": 13
+  "commit": "6715381e9a",
+  "created": "2026-07-04T08:51:50Z",
+  "figsize": [
+    8.2,
+    8.1
+  ],
+  "points": [
+    {
+      "direction": "chat \u2192 real novels (single-position X)",
+      "fraction_of_ceiling": -97.47937351339276,
+      "transfer_r2": -11.106866395456388,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "real novels \u2192 chat (single-position X)",
+      "fraction_of_ceiling": 0.0480375292113488,
+      "transfer_r2": 0.015187988532943675,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "chat \u2192 model stories (single-position X)",
+      "fraction_of_ceiling": -24.42813855494277,
+      "transfer_r2": -1.947194974141167,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    },
+    {
+      "direction": "model stories \u2192 chat (single-position X)",
+      "fraction_of_ceiling": 0.03888748827549972,
+      "transfer_r2": 0.018733471812966918,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    },
+    {
+      "direction": "real novels \u2192 model stories (span-mean X)",
+      "fraction_of_ceiling": 0.14749825071504483,
+      "transfer_r2": 0.024071006057760802,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    },
+    {
+      "direction": "model stories \u2192 real novels (span-mean X)",
+      "fraction_of_ceiling": -0.732867662039981,
+      "transfer_r2": -0.11142184086240214,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    },
+    {
+      "direction": "separator control \u2192 real novels (single-position X)",
+      "fraction_of_ceiling": -95.41821121579983,
+      "transfer_r2": -10.87201615551746,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "real novels \u2192 separator control (single-position X)",
+      "fraction_of_ceiling": null,
+      "transfer_r2": 0.01885150352171172,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "preceding-sentence control \u2192 real novels (span-mean X)",
+      "fraction_of_ceiling": -25.9770419676424,
+      "transfer_r2": -4.491420064547757,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "chat \u2192 real novels (span-mean X)",
+      "fraction_of_ceiling": -29.71684401912247,
+      "transfer_r2": -5.138030328810224,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "chat \u2192 model stories (span-mean X)",
+      "fraction_of_ceiling": -1.6668045050208837,
+      "transfer_r2": -0.27201448927670757,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    },
+    {
+      "direction": "real novels \u2192 chat (span-mean X)",
+      "fraction_of_ceiling": 0.04432761802524621,
+      "transfer_r2": 0.014015028776731775,
+      "source_n": 1982,
+      "ceiling_n": 1982
+    },
+    {
+      "direction": "model stories \u2192 chat (span-mean X)",
+      "fraction_of_ceiling": -0.017123491570621336,
+      "transfer_r2": -0.008248988579699912,
+      "source_n": 1035,
+      "ceiling_n": 1035
+    }
+  ]
 }
