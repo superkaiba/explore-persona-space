@@ -29,6 +29,16 @@ Pins two permanent invariants of the #928 CoT-decomposition pipeline:
    metadata + row counts but different capture content, discarding stale
    fit units. Both fail pre-fix (the predicate omitted the generation
    identity; the digest hashed metadata + row counts only).
+5. The amended Gate-1 repetition conjunct (round 4, plan-v3 amendment): the
+   gate PASSes any offender count whose RATE is ≤ ``REPEAT_OFFENDER_MAX_FRAC``
+   (1-24 of 240) and FAILs above it (25 of 240) — the superseded v2
+   zero-tolerance conjunct fails pre-fix on ANY offender — and ``parse_rows``
+   reclassifies segmentation-well-formed offenders to
+   ``well_formed=False, reason="degenerate_repetition"`` (dropped from
+   summaries + counted in coverage via the same ``well_formed``/``reason``
+   fields every consumer filters on), with structural/truncation reasons
+   taking precedence and the gate offender count reading ``rep_frac`` over
+   ALL rows so precedence cannot mask offenders.
 """
 
 from __future__ import annotations
@@ -84,6 +94,91 @@ def test_char_span_to_token_span_overlap_and_zero_width():
     assert char_span_to_token_span(offsets, (4, 6)) == (1, 3)
     # zero-width / out-of-range span -> (0, 0) sentinel (caller drops the row).
     assert char_span_to_token_span(offsets, (12, 12)) == (0, 0)
+
+
+def test_gate1_offender_rate_threshold():
+    """Amended Gate 1 (plan v3 §7): offender-RATE conjunct replaces zero tolerance.
+
+    A 240-row gate slice with 1-24 offenders (rate <= 0.10) PASSes; 25 (> 0.10)
+    FAILs on the rate conjunct alone (the parse floor stays met). Fails
+    pre-fix: the v2 ``offenders == 0`` conjunct rejects ANY offender count.
+    """
+    from issue928_common import PARSE_RATE_FLOOR, REPEAT_OFFENDER_MAX_FRAC
+    from issue928_extract_thinking_store import gate1_check
+
+    def rows_with_offenders(n: int, k: int) -> list[dict]:
+        # Mimics parse_rows output post-reclassification: offenders carry
+        # well_formed=False + reason="degenerate_repetition" + rep_frac > 0.5.
+        return [
+            {
+                "well_formed": i >= k,
+                "reason": "degenerate_repetition" if i < k else "",
+                "n_gen_tokens": 100,
+                "rep_frac": 0.9 if i < k else 0.0,
+            }
+            for i in range(n)
+        ]
+
+    for k in (0, 1, 24):  # 24/240 = 0.10 exactly — the ≤ boundary PASSes
+        rep = gate1_check(rows_with_offenders(240, k), cap=8192)
+        assert rep["pass"], (k, rep)
+        assert rep["repetition_offenders"] == k
+        assert abs(rep["repetition_offender_rate"] - k / 240) < 1e-12
+        if k:
+            assert rep["malformed_reasons"]["degenerate_repetition"] == k
+
+    rep = gate1_check(rows_with_offenders(240, 25), cap=8192)
+    assert not rep["pass"], rep
+    assert rep["repetition_offender_rate"] > REPEAT_OFFENDER_MAX_FRAC
+    assert rep["parse_rate"] >= PARSE_RATE_FLOOR  # floor met — the RATE conjunct is what fails
+
+
+def test_parse_rows_degenerate_repetition_reclassification_and_precedence():
+    """v3 §4.4 delta 2: offenders drop-and-count; structural reasons win.
+
+    A well-formed repetitive row flips to ``degenerate_repetition`` (spans
+    left as computed — consumers filter on ``well_formed``); rows already
+    malformed by segmentation/truncation KEEP their structural reason; the
+    gate offender count reads ``rep_frac`` over ALL rows regardless.
+    """
+    from issue928_common import REPEAT_4GRAM_MAX_FRAC
+    from issue928_extract_thinking_store import gate1_check, parse_rows
+
+    class _StubTok:
+        def __call__(self, texts, add_special_tokens=False):
+            return {"input_ids": [[0] * max(1, len(t.split())) for t in texts]}
+
+    loop = " ".join(["repeat the same loop words"] * 20)  # ≥50 words, >50% repeated 4-grams
+    good = "<think>\nI think carefully about this request.\n</think>\n\nA fine answer here."
+    deg_wf = f"<think>\n{loop}\n</think>\n\nA fine answer here."
+    deg_structural = loop  # repetitive AND no think block at all
+    deg_trunc = f"<think>\n{loop}"  # repetitive AND cap-truncated (no close)
+    rows = parse_rows(
+        _StubTok(),
+        [(good, "stop"), (deg_wf, "stop"), (deg_structural, "stop"), (deg_trunc, "length")],
+        "greedy",
+    )
+
+    assert rows[0]["well_formed"] and rows[0]["reason"] == ""
+    # Well-formed offender -> reclassified, dropped-and-counted; spans kept.
+    assert not rows[1]["well_formed"]
+    assert rows[1]["reason"] == "degenerate_repetition"
+    assert rows[1]["rep_frac"] > REPEAT_4GRAM_MAX_FRAC
+    assert rows[1]["cot_char_span"][1] > rows[1]["cot_char_span"][0]  # spans as computed
+    # Structural / truncation reasons take precedence over the repetition class.
+    assert rows[2]["reason"] == "no_close" and rows[2]["rep_frac"] > REPEAT_4GRAM_MAX_FRAC
+    assert rows[3]["reason"] == "truncated_no_close"
+    assert rows[3]["rep_frac"] > REPEAT_4GRAM_MAX_FRAC
+
+    # Gate offender count = rep_frac over ALL rows (3 here), NOT the reason
+    # bookkeeping (1 degenerate_repetition) — precedence cannot mask offenders.
+    rep = gate1_check(rows, cap=8192)
+    assert rep["repetition_offenders"] == 3
+    assert rep["malformed_reasons"]["degenerate_repetition"] == 1
+    # Coverage semantics: exactly the well_formed=False rows are excluded from
+    # summaries and each carries a counted reason (the fields consumers read).
+    assert [r["well_formed"] for r in rows] == [True, False, False, False]
+    assert all(r["reason"] for r in rows if not r["well_formed"])
 
 
 def test_group_perm_matrix_preserves_group_blocks():

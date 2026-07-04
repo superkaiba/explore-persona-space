@@ -23,7 +23,15 @@ Design contracts encoded here (plan §4.4, §4.5, §10):
   non-empty answer after the close. Rung (iii) (prefill ``<think>\\n`` in the
   PROMPT): well-formed iff the completion contains exactly one ``</think>``
   (no ``<think>`` requirement). Malformed rows are DROPPED with per-context
-  coverage counts (graceful degradation, §4.8) — never repaired.
+  coverage counts (graceful degradation, §4.8) — never repaired. Malformed
+  reason taxonomy: the STRUCTURAL classes ``segment_completion`` assigns
+  (``no_close`` / ``multiple_close`` / ``no_think_open`` / ``multiple_think``
+  / ``think_not_at_start`` / ``empty_cot`` / ``empty_answer``), the
+  ``finish_reason == "length"`` override ``truncated_no_close``, and the v3
+  amendment class ``degenerate_repetition`` (a segmentation-well-formed row
+  whose repeated-4-gram fraction exceeds ``REPEAT_4GRAM_MAX_FRAC``, assigned
+  in the extractor's ``parse_rows`` — dropped + coverage-counted exactly like
+  ``truncated_no_close`` / ``no_close``; structural/truncation reasons win).
 - **Char offsets, not token re-search** (§4.4): token spans derive from
   ``return_offsets_mapping`` at the Phase-B re-tokenization — robust to BPE
   merges (measured: ``\\n</think>\\n\\n`` = [198, 522, 26865, 1339]; the ``>``
@@ -106,10 +114,18 @@ TRUNCATION_REGEN_FRAC = 0.10  # >10% cap-truncated rows → one 16,384 re-run (�
 FALLBACK_RUNGS = ("greedy", "sample", "prefill")
 PREFILL_TEXT = "<think>\n"  # rung (iii): appended after the assistant header
 
-# Gate 1 (plan §7): parse-rate floor + degeneration checks on the gate slice.
+# Gate 1 (plan §7, amended v3): parse-rate floor + degeneration checks on the
+# gate slice. Two confusably-named repetition constants — do NOT conflate:
+# REPEAT_4GRAM_MAX_FRAC is the PER-ROW offender DEFINITION (fraction of ONE
+# completion's word 4-grams that are repeats; > 0.50 ⇒ that row is an
+# offender), while REPEAT_OFFENDER_MAX_FRAC is the GATE-level offender RATE
+# over rows (offenders / all gate rows; > 0.10 ⇒ Gate 1 degeneration conjunct
+# FAILs). Offenders are reclassified malformed (``degenerate_repetition``) in
+# ``parse_rows`` and drop-and-count like any other malformed class (§4.4).
 PARSE_RATE_FLOOR = 0.80
-REPEAT_4GRAM_MAX_FRAC = 0.50
+REPEAT_4GRAM_MAX_FRAC = 0.50  # per-row offender definition (unchanged from v2)
 REPEAT_CHECK_MIN_WORDS = 50  # degeneration loops are long; short replies exempt
+REPEAT_OFFENDER_MAX_FRAC = 0.10  # v3 gate offender-RATE threshold (§7/§11; ~TRUNCATION_REGEN_FRAC)
 GATE_P95_MUST_BE_BELOW_CAP = True
 
 # ── HF destinations (plan §10 output artifacts) ───────────────────────────────
@@ -200,6 +216,11 @@ def segment_completion(text: str, rung: str) -> tuple[bool, str, tuple[int, int]
 
     A whitespace-only CoT or answer segment is malformed (``empty_cot`` /
     ``empty_answer``) — every fit row needs all three parts.
+
+    Segmentation stays purely STRUCTURAL: the ``degenerate_repetition``
+    malformed class (v3 amendment, plan §4.4) is assigned downstream in the
+    extractor's ``parse_rows`` (a well-formed row whose repeated-4-gram
+    fraction exceeds ``REPEAT_4GRAM_MAX_FRAC``), never here.
     """
     assert rung in FALLBACK_RUNGS, rung
     n_open = text.count(THINK_OPEN)
@@ -238,8 +259,13 @@ def repeated_4gram_fraction(text: str) -> float:
     """Fraction of word-level 4-grams that are repeats (degeneration signature).
 
     0.0 for texts under ``REPEAT_CHECK_MIN_WORDS`` words (short replies are
-    trivially non-degenerate; the gate targets long repetition loops). Gate 1
-    flags any completion with fraction > ``REPEAT_4GRAM_MAX_FRAC`` (plan §7).
+    trivially non-degenerate; the check targets long repetition loops). A
+    completion with fraction > ``REPEAT_4GRAM_MAX_FRAC`` is a repetition
+    OFFENDER (per-row definition, unchanged from v2): ``parse_rows``
+    reclassifies a segmentation-well-formed offender to
+    ``degenerate_repetition`` (dropped + coverage-counted, plan §4.4), and
+    Gate 1 fails only when the offender RATE over all gate rows exceeds
+    ``REPEAT_OFFENDER_MAX_FRAC`` (plan §7, v3 amendment).
     """
     words = _WORD_RE.findall(text)
     if len(words) < REPEAT_CHECK_MIN_WORDS:

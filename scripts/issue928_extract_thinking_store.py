@@ -118,6 +118,7 @@ from issue928_common import (  # noqa: E402
     PREFILL_TEXT,
     RAW_COMPLETIONS_PREFIX,
     REPEAT_4GRAM_MAX_FRAC,
+    REPEAT_OFFENDER_MAX_FRAC,
     STORE_PREFIX,
     SUMMARY_NAMES,
     THINK_CLOSE,
@@ -252,9 +253,13 @@ def synthetic_completions(prompts: list[str], rung: str, n_probes: int) -> list[
     parse, gate, capture, store, fit) runs the identical production code path
     on these strings. Mix: mostly well-formed ``<think>…</think>`` blocks (per
     the rung's criterion), one malformed row per ~12 (exercises the drop/
-    coverage path) and one cap-truncated row per ~24 (exercises truncation
-    accounting) — the mix keeps the well-formed rate ≥ 0.83 at any slice size,
-    so Gate 1 passes. NEVER used in production (no ``--synthetic-completions``).
+    coverage path), one cap-truncated row per ~24 (exercises truncation
+    accounting), and one well-formed-but-DEGENERATE row per ~48 (repeated-
+    4-gram fraction > 0.5 — exercises the v3 ``degenerate_repetition``
+    reclassification + the gate's offender-RATE conjunct with offenders > 0)
+    — the mix keeps the usable rate ≥ ~0.83 and the offender rate ≤ ~0.05 at
+    any slice size, so the amended Gate 1 passes. NEVER used in production
+    (no ``--synthetic-completions``).
     """
     out: list[tuple[str, str]] = []
     for i in range(len(prompts)):
@@ -268,6 +273,11 @@ def synthetic_completions(prompts: list[str], rung: str, n_probes: int) -> list[
             out.append((f"{open_tag}{body} and then it keeps going", "length"))  # truncated
         elif i % 12 == 3:
             out.append((f"{body} {answer}", "stop"))  # malformed: no think block
+        elif i % 48 == 19:
+            # Degenerate repetition loop: >= 50 words, > 50% repeated 4-grams,
+            # structurally well-formed — reclassified in parse_rows (v3 §4.4).
+            loop = " ".join(["repeat the same loop words"] * 20)
+            out.append((f"{open_tag}{loop}\n{THINK_CLOSE}\n\n{answer}", "stop"))
         else:
             out.append((f"{open_tag}{body}\n{THINK_CLOSE}\n\n{answer}", "stop"))
     _ = n_probes
@@ -278,11 +288,16 @@ def synthetic_completions(prompts: list[str], rung: str, n_probes: int) -> list[
 
 
 def gate1_check(rows: list[dict], cap: int) -> dict:
-    """Gate 1 (plan §7): parse-rate floor + degeneration checks on the gate slice.
+    """Gate 1 (plan §7, amended v3): usable-parse floor + degeneration checks.
 
-    ``rows`` carry {well_formed, reason, n_gen_tokens, rep_frac}. PASS iff
-    well-formed rate ≥ 0.80 AND p95 gen-token count < cap AND no completion
-    with repeated-4-gram fraction > 0.5.
+    ``rows`` carry {well_formed, reason, n_gen_tokens, rep_frac}. PASS iff the
+    USABLE-row rate ≥ 0.80 (``well_formed`` — which, after ``parse_rows``'s v3
+    ``degenerate_repetition`` reclassification, is well-formed segmentation ∧
+    not a repetition offender) AND p95 gen-token count < cap AND the
+    repetition-offender RATE ≤ ``REPEAT_OFFENDER_MAX_FRAC``. The offender
+    count is computed from ``rep_frac`` over ALL rows — independent of the
+    ``reason`` bookkeeping, so structural/truncation reason precedence can
+    never mask an offender (plan §4.4 delta 3).
     """
     import numpy as np
 
@@ -290,7 +305,8 @@ def gate1_check(rows: list[dict], cap: int) -> dict:
     rate = sum(1 for r in rows if r["well_formed"]) / max(1, n)
     p95 = float(np.percentile([r["n_gen_tokens"] for r in rows], 95)) if rows else 0.0
     offenders = sum(1 for r in rows if r["rep_frac"] > REPEAT_4GRAM_MAX_FRAC)
-    ok = rate >= PARSE_RATE_FLOOR and offenders == 0
+    offender_rate = offenders / max(1, n)
+    ok = rate >= PARSE_RATE_FLOOR and offender_rate <= REPEAT_OFFENDER_MAX_FRAC
     if GATE_P95_MUST_BE_BELOW_CAP:
         ok = ok and p95 < cap
     reasons: dict[str, int] = {}
@@ -304,6 +320,7 @@ def gate1_check(rows: list[dict], cap: int) -> dict:
         "cap": cap,
         "n_rows": n,
         "repetition_offenders": offenders,
+        "repetition_offender_rate": offender_rate,
         "malformed_reasons": reasons,
     }
 
@@ -313,7 +330,15 @@ def parse_rows(tokenizer, completions: list[tuple[str, str]], rung: str) -> list
 
     Token counts come from a tokenize-only pass (used for the p95/cap checks +
     truncation accounting); a ``finish_reason == "length"`` row with no
-    ``</think>`` is counted ``truncated_no_close`` (plan §4.4).
+    ``</think>`` is counted ``truncated_no_close`` (plan §4.4). A
+    segmentation-WELL-FORMED row whose repeated-4-gram fraction exceeds
+    ``REPEAT_4GRAM_MAX_FRAC`` is reclassified ``well_formed=False,
+    reason="degenerate_repetition"`` (v3 amendment, §4.4) — dropped +
+    coverage-counted like ``truncated_no_close`` / ``no_close``. Precedence:
+    structural / truncation reasons win (the reclassification applies ONLY to
+    well-formed rows); the gate's offender count reads ``rep_frac`` over ALL
+    rows, so precedence cannot mask offenders. Char spans stay as computed —
+    consumers filter on ``well_formed``.
     """
     out: list[dict] = []
     texts = [t for t, _fr in completions]
@@ -322,6 +347,10 @@ def parse_rows(tokenizer, completions: list[tuple[str, str]], rung: str) -> list
         wf, reason, cot_span, ans_span = segment_completion(text, rung)
         if not wf and fr == "length" and THINK_CLOSE not in text:
             reason = "truncated_no_close"
+        rep = repeated_4gram_fraction(text)
+        if wf and rep > REPEAT_4GRAM_MAX_FRAC:
+            wf = False
+            reason = "degenerate_repetition"
         out.append(
             {
                 "well_formed": wf,
@@ -330,7 +359,7 @@ def parse_rows(tokenizer, completions: list[tuple[str, str]], rung: str) -> list
                 "ans_char_span": list(ans_span),
                 "n_gen_tokens": len(ids),
                 "finish_reason": fr,
-                "rep_frac": repeated_4gram_fraction(text),
+                "rep_frac": rep,
             }
         )
     return out
@@ -689,12 +718,13 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
         report = gate1_check(rows, args.max_new_tokens)
         gate_reports[rung] = report
         logger.info(
-            "[gate] rung=%s pass=%s parse_rate=%.3f p95=%.0f offenders=%d",
+            "[gate] rung=%s pass=%s parse_rate=%.3f p95=%.0f offenders=%d offender_rate=%.4f",
             rung,
             report["pass"],
             report["parse_rate"],
             report["p95_gen_tokens"],
             report["repetition_offenders"],
+            report["repetition_offender_rate"],
         )
         if report["pass"]:
             chosen_rung = rung
