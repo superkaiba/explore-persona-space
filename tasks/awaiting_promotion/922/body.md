@@ -2,7 +2,8 @@
 title: Answer-time activation trajectories are forecastable from the prompt alone
   through 32 tokens with a rolled per-layer affine map (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-03T10:21:41Z'
 has_clean_result: true
 parent_id: 841
