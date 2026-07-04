@@ -17,7 +17,9 @@ returning. These tests pin:
 * the completion-sentinel chain (#909 r2,
   ``runpod-execute-missing-completion-sentinel``): the rendered launcher
   chains a success-gated sentinel write after the verbatim workload_cmd,
-  the outer script clears any stale sentinel before detach, and the
+  the outer script clears stale sentinels before detach (widened by #976
+  to the declared path + flat legacy + attempt-sibling wildcard — the
+  experimenter step-11.3 breadth), and the
   launcher-threaded path is the SAME attempt-namespaced path the handle's
   expected-artifacts declaration names (one mint, one path — so
   ``_check_sentinel`` / ``_cmd_finalize`` pass on a successful
@@ -362,19 +364,31 @@ def test_launcher_chains_sentinel_write_after_workload_success():
     verbatim workload_cmd, gated on workload success (rc 0 — the GCP/SLURM
     terminal-block convention), writes the exact JSON shape
     ``artifacts._check_sentinel`` validates (phase=done + matching issue),
-    and exits with the workload's own rc. The OUTER portion clears any
-    stale sentinel at the declared path BEFORE the detach line (the same
-    guard family as the pidfile rm)."""
+    and exits with the workload's own rc. The OUTER portion clears the
+    stale sentinels — declared path + flat legacy + attempt-sibling
+    wildcard (#976) — BEFORE the detach line (the same guard family as
+    the pidfile rm) and AFTER the ALREADY-RUNNING guard completes."""
     sentinel = RP.runpod_sentinel_path(909, ATTEMPT)
     script = _render_launch()
     lines = script.splitlines()
 
-    # Outer portion: stale-sentinel clear + dir pre-create BEFORE detach.
-    rm_idx = lines.index(f"rm -f {sentinel}")
+    # Outer portion: widened stale-sentinel clear (#976) + dir pre-create
+    # BEFORE detach.
+    issue_dir = sentinel.rsplit("/", 2)[0]
+    name = sentinel.rsplit("/", 1)[1]
+    rm_idx = lines.index(f"rm -f {sentinel} {issue_dir}/{name} {issue_dir}/*/{name}")
     detach_idx = next(i for i, line in enumerate(lines) if "setsid" in line)
     heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
     assert rm_idx < heredoc_start < detach_idx
     assert any(line == f"mkdir -p {sentinel.rsplit('/', 1)[0]}" for line in lines[:heredoc_start])
+
+    # Guard-completes-before-clear (#976 binding dependency, reconciler-
+    # upheld): the ALREADY-RUNNING guard's `exit 5` and its closing `fi`
+    # both precede the widened clear, so a live prior workload exits
+    # BEFORE any sentinel it depends on is removed.
+    exit5_idx = lines.index("  exit 5")
+    fi_idx = lines.index("fi", exit5_idx)
+    assert exit5_idx < fi_idx < rm_idx
 
     # Launcher (inside the heredoc): workload -> rc capture -> success-gated
     # sentinel write -> exit with the workload rc.
@@ -407,6 +421,85 @@ def test_launch_script_rejects_single_quote_in_sentinel_json():
             sentinel_path="/workspace/eval_results/issue_909/x/.completion-sentinel.json",
             attempt_id="rp-bad'quote",
         )
+
+
+def test_stale_clear_covers_flat_legacy_and_wildcard_siblings():
+    """The widened stale clear (#976) carries all three operands — the
+    declared attempt path, the flat legacy path, and the attempt-sibling
+    wildcard — and the wildcard operand string-equals the glob
+    ``artifacts._default_glob_sentinels`` probes for the same declared
+    path: clear breadth == #685 fallback probe breadth, by construction.
+    ``SENTINEL_FILENAME`` is imported so a future rename of the sentinel
+    filename breaks THIS test rather than silently decoupling the clear
+    from the resolver's probe."""
+    from pathlib import Path
+
+    from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
+
+    sentinel = RP.runpod_sentinel_path(909, ATTEMPT)
+    script = _render_launch()
+    lines = script.splitlines()
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    rm_line = next(
+        line
+        for line in lines[:heredoc_start]
+        if line.startswith("rm -f ") and SENTINEL_FILENAME in line
+    )
+    operands = rm_line.split()[2:]
+    issue_dir = Path(sentinel).parent.parent
+    assert sentinel in operands  # exact declared attempt path (kept — pure addition)
+    assert str(issue_dir / SENTINEL_FILENAME) in operands  # flat legacy path
+    # The wildcard operand equals the resolver's probe shape verbatim
+    # (artifacts._default_glob_sentinels: grandparent-of-declared + */<name>).
+    assert str(issue_dir / f"*/{SENTINEL_FILENAME}") in operands
+
+
+def test_stale_clear_rm_line_execution_defeats_single_live_sibling_fallback(tmp_path):
+    """Functional proof (#976 acceptance criteria 2 + 3): executing the
+    rendered rm line under the outer script's ``set -eu`` removes a stale
+    flat legacy sentinel AND a stale prior-attempt sibling — leaving
+    ``artifacts._default_glob_sentinels`` nothing for the #685
+    single-live-sibling fallback to resolve — and exits 0 again when
+    NOTHING matches (fresh pod: the unmatched-glob-under-``set -eu``
+    assumption, test-backed)."""
+    from explore_persona_space.backends import artifacts as ART
+
+    issue_dir = tmp_path / "eval_results" / "issue_909"
+    declared = issue_dir / "rp-new" / ".completion-sentinel.json"
+    # Stale prior-attempt sibling + stale flat legacy sentinel.
+    (issue_dir / "rp-old").mkdir(parents=True)
+    (issue_dir / "rp-old" / ".completion-sentinel.json").write_text("{}")
+    (issue_dir / ".completion-sentinel.json").write_text("{}")
+
+    script = RP._render_launch_script(
+        issue=909,
+        workload_cmd=WORKLOAD,
+        log_path="/workspace/logs/issue-909.log",
+        pid_file="/workspace/logs/issue-909.pid",
+        sentinel_path=str(declared),
+        attempt_id=ATTEMPT,
+    )
+    rm_line = next(
+        line
+        for line in script.splitlines()
+        if line.startswith("rm -f ") and ".completion-sentinel.json" in line
+    )
+
+    # (a) Stale files present -> removed, rc 0 under the outer script's set -eu.
+    proc = subprocess.run(
+        ["bash", "-c", f"set -eu\n{rm_line}"], capture_output=True, text=True, check=False
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert not (issue_dir / "rp-old" / ".completion-sentinel.json").exists()
+    assert not (issue_dir / ".completion-sentinel.json").exists()
+    # The #685 fallback now has nothing to resolve.
+    assert ART._default_glob_sentinels(str(declared), 909) == []
+
+    # (b) Nothing matches (fresh pod) -> unmatched glob still exits 0.
+    proc2 = subprocess.run(
+        ["bash", "-c", f"set -eu\n{rm_line}"], capture_output=True, text=True, check=False
+    )
+    assert proc2.returncode == 0, proc2.stderr
 
 
 # ---------------------------------------------------------------------------
