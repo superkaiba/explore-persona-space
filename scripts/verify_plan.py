@@ -40,10 +40,12 @@ Check catalog (id — classification — kind scope)
       causal-claim scope                                  analysis
   c18 paired-contrast per-arm   FAIL (experiment) / WARN  experiment +
       source coverage           (analysis), conditional   analysis
+  c19 OOD generalization folds  WARN-only, conditional    experiment +
+                                                          analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18)
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
 also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
@@ -60,6 +62,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     ``N/A — fail-loud claim not test-backable`` (check 15)
   - ``N/A — no re-extracted reference arms`` (check 16)
   - ``N/A — no paired contrast`` (check 18)
+  - ``N/A — no held-out predictive DV`` (check 19)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -2310,6 +2313,122 @@ def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
     return _fail(cid, name, detail)
 
 
+# ─── Check 19 — OOD generalization folds (WARN-only, conditional) ──────────
+
+# Trigger = a fold token SOLO (any cross-validation mention makes "is the
+# fold group-level?" the right question), OR the WEAK token "held-out"
+# conjoined with a predictor-statistic token. Bare "held-out" alone is an
+# eval-split adjective (GOOD_PLAN: "40 held-out prompts") and must not fire;
+# bare "predict(s)" is hypothesis prose and is deliberately excluded.
+_C19_SOLO_FOLD_RE = re.compile(
+    r"(?i)\bcross[- ]?validat\w*|\bLOO\b|\bLOCO\b|\bLOOCV\b"
+    r"|\bleave[- ]one[- ][\w-]*out\b|\bk[- ]fold\b"
+)
+_C19_HELDOUT_RE = re.compile(r"(?i)(?<!\bno )(?<!\bnot )\bheld[- ]out\b")
+_C19_PREDSTAT_RE = re.compile(
+    r"(?i)\bR\^?2\b|R²|\breconstruction\b|\bread[- ]?outs?\b"
+    r"|\bpredict(?:or|ive|ion)s?\b|\bregress\w*|\bridge\b"
+    r"|\b(?:probe|decod\w*)\s+accurac\w*"
+)
+# Group-level evidence: leave-one-<UNIT>-out where UNIT is not a pointwise
+# sample unit (#810's offender fold was leave-one-CONTEXT-out — pointwise).
+_C19_LOO_UNIT_RE = re.compile(r"(?i)\bleave[- ]one[- ]([\w-]+?)[- ]out\b")
+_C19_POINTWISE_UNITS = frozenset(
+    {
+        "context",
+        "point",
+        "sample",
+        "row",
+        "item",
+        "question",
+        "prompt",
+        "cell",
+        "completion",
+        "example",
+        "datapoint",
+        "datum",
+        "observation",
+        "pair",
+        "x",
+    }
+)
+
+
+def _c19_pointwise_unit(unit: str) -> bool:
+    """A captured leave-one-<unit>-out unit is pointwise when its EXACT form
+    OR its hyphen-split SUFFIX segment is blocklisted — hyphenated variants
+    (``data-point``) must not self-certify as group evidence (reconciler
+    Must-Fix, round 1). ``prompt-family`` stays a group unit (suffix
+    ``family`` is not blocklisted)."""
+    u = unit.lower()
+    return u in _C19_POINTWISE_UNITS or u.split("-")[-1] in _C19_POINTWISE_UNITS
+
+
+_C19_GROUPFOLD_RE = re.compile(
+    r"(?i)\bLOFO\b|group[- ]level (?:held[- ]out )?fold"
+    r"|held[- ]out (?:group|famil\w*|genre|persona|corpus)"
+    r"|(?:corpus|genre|domain|family)[- ]transfer\b|\btransfer arm\b"
+)
+# Negation-guarded: `non-iid` / `not iid` concedes group structure and must
+# NOT satisfy the iid PASS tier (round-1 convergent critic concern).
+_C19_IID_RE = re.compile(r"(?i)(?<!non[- ])(?<!\bnot )\b(?:iid\b|i\.i\.d\b)")
+
+
+def check_ood_folds(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a held-out predictive DV (reconstruction R²,
+    read-out rho, predictor accuracy) over group-structured samples must
+    register a GROUP-level fold (LOFO / corpus transfer), declare
+    ``N/A — no held-out predictive DV``, or argue a genuinely iid sample
+    (.claude/rules/ood-generalization-folds.md; planner §6 Required block).
+    NEVER FAILs — the trigger is a vocabulary heuristic; whether the named
+    fold is actually group-level for this sample stays with the Statistics
+    critic (lens item 13). Incident #810: the pointwise-LOCO headline
+    reordered under leave-one-FAMILY-out and the read-out collapsed
+    rho 0.909 → 0.285."""
+    cid, name = "c19_ood_folds", "OOD generalization folds (held-out predictive DV)"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: infra|batch|survey plans have no predictive DV")
+    if re.search(NA_RE + r"no held-?out predictive DV", plan):
+        return _pass(cid, name, "explicit N/A declared (no held-out predictive DV)")
+    text = strip_fences(plan)
+    solo = _C19_SOLO_FOLD_RE.search(text)
+    conj = _C19_HELDOUT_RE.search(text) and _C19_PREDSTAT_RE.search(text)
+    if not (solo or conj):
+        return _skip(
+            cid,
+            name,
+            "no held-out predictive-DV vocabulary (no fold token; no held-out + "
+            "predictor/R²/read-out co-occurrence)",
+        )
+    group_units = [
+        m.group(1) for m in _C19_LOO_UNIT_RE.finditer(text) if not _c19_pointwise_unit(m.group(1))
+    ]
+    if group_units or _C19_GROUPFOLD_RE.search(text):
+        return _pass(
+            cid,
+            name,
+            "group-level fold vocabulary present"
+            + (f" (leave-one-{group_units[0]}-out)" if group_units else "")
+            + " — fold validity + per-headline fold labeling stay critic-owned",
+        )
+    if _C19_IID_RE.search(text):
+        return _pass(
+            cid,
+            name,
+            "iid-sample argument present (the only pointwise-only exemption) — whether "
+            "the sample is genuinely iid stays critic-owned",
+        )
+    return _warn(
+        cid,
+        name,
+        "held-out predictive-DV vocabulary detected but no GROUP-level fold (LOFO / "
+        "leave-one-family-out / corpus transfer), no iid argument, and no "
+        "`N/A — no held-out predictive DV` escape — pointwise LOO can REORDER "
+        "cross-context claims (#810: read-out rho 0.909 → 0.285 under LOFO); "
+        ".claude/rules/ood-generalization-folds.md; Statistics critic must gate this",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -2331,6 +2450,7 @@ CHECKS = [
     check_reference_headline_distinction,
     check_causal_claim_scope,
     check_paired_contrast_source_coverage,
+    check_ood_folds,
 ]
 
 

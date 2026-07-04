@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18,19)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -155,10 +155,11 @@ def test_good_plan_passes_all():
         "c16_reference_headline_distinction": "SKIP",
         "c17_causal_branch_scope": "PASS",
         "c18_paired_contrast_source_coverage": "SKIP",
+        "c19_ood_folds": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 19
+    assert len(results) == 20
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2295,6 +2296,147 @@ def test_c18_figures_enumeration_line_does_not_trigger():
     assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "SKIP"
 
 
+# ─── Check 19 — OOD generalization folds ───────────────────────────────────
+
+C19_TRIGGER = "We fit a ridge predictor on the context grid and report held-out R^2 per layer."
+
+
+def _predictive_plan() -> str:
+    return GOOD_PLAN + "\n" + C19_TRIGGER + "\n"
+
+
+def test_c19_kind_infra_skips():
+    # Re-fixtured on the WARN fixture (v3): GOOD_PLAN+infra was near-vacuous
+    # (it SKIPs at tier 2 under every kind) — the kind-exempt tier must fire
+    # BEFORE the trigger tiers on a plan that WOULD otherwise WARN.
+    _, by_id = _run(_predictive_plan(), kind="infra")
+    res = by_id["c19_ood_folds"]
+    assert res.status == "SKIP"
+    assert "kind-exempt" in res.detail
+
+
+def test_c19_not_triggered_skips():
+    # GOOD_PLAN contains "40 held-out prompts" TWICE — the incidental
+    # eval-split usage of "held-out" the conjunction trigger must NOT fire
+    # on (the false-positive class the trigger design exists to avoid).
+    assert _status(GOOD_PLAN, "c19_ood_folds") == "SKIP"
+
+
+def test_c19_heldout_predictor_without_folds_warns():
+    ok, by_id = _run(_predictive_plan())
+    res = by_id["c19_ood_folds"]
+    assert res.status == "WARN"
+    assert ok is True  # WARN-only pin: c19 can never flip the overall verdict
+    assert "group" in res.detail.lower()
+    assert "810" in res.detail
+
+
+def test_c19_solo_loco_vocabulary_triggers():
+    # A fold token alone triggers — no held-out/predictor-stat conjunction
+    # needed (any cross-validation mention makes the fold question right).
+    plan = GOOD_PLAN + "\nPointwise LOCO is the headline fold.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_bare_leave_one_out_is_not_group_evidence():
+    plan = GOOD_PLAN + "\nWe use leave-one-out cross-validation for the predictor.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_leave_one_pointwise_unit_does_not_pass():
+    # #810's own offender fold was leave-one-CONTEXT-out (contexts were the
+    # sample points) — a blocklisted unit must not count as group evidence.
+    plan = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-context-out.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+
+
+def test_c19_hyphenated_pointwise_unit_does_not_pass():
+    # Must-Fix pin (round 1): the hyphen-split SUFFIX segment is blocklisted,
+    # so `leave-one-data-point-out` (suffix `point`) cannot self-certify.
+    plan = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-data-point-out.\n"
+    assert _status(plan, "c19_ood_folds") == "WARN"
+    # Agglutinated variant: `datapoint` is blocklisted as an exact form.
+    plan2 = GOOD_PLAN + "\nPredictor R^2 is held-out via leave-one-datapoint-out.\n"
+    assert _status(plan2, "c19_ood_folds") == "WARN"
+
+
+def test_c19_hyphenated_group_unit_passes():
+    # Must-Fix pin (round 1): hyphenated GROUP units keep passing — suffix
+    # `family` is not blocklisted.
+    plan = (
+        _predictive_plan() + "We register a leave-one-prompt-family-out fold; every headline is "
+        "labeled with its fold.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "PASS"
+
+
+def test_c19_non_iid_still_warns():
+    # A NEGATED iid mention concedes group structure — it must not satisfy
+    # the iid PASS tier (round-1 convergent critic concern).
+    plan = (
+        _predictive_plan() + "The context grid is not iid: prompt families induce group structure, "
+        "but we report pointwise LOO only.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "WARN"
+    plan2 = _predictive_plan() + "The sample is non-iid; we report pointwise LOO only.\n"
+    assert _status(plan2, "c19_ood_folds") == "WARN"
+
+
+def test_c19_lofo_passes():
+    plan = (
+        _predictive_plan()
+        + "Grouping axes: prompt family, persona panel. We additionally register "
+        "a leave-one-family-out (LOFO) fold; every headline is labeled with its fold.\n"
+    )
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "leave-one-family-out" in res.detail
+
+
+def test_c19_corpus_transfer_passes():
+    plan = (
+        _predictive_plan()
+        + "Fit on Betley, evaluate on UltraChat — the corpus-transfer arm is the "
+        "group-level fold.\n"
+    )
+    assert _status(plan, "c19_ood_folds") == "PASS"
+
+
+def test_c19_iid_argument_passes():
+    plan = (
+        _predictive_plan()
+        + "The sample is genuinely iid: each row is an independent draw from one "
+        "pool; no family/template structure.\n"
+    )
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "critic" in res.detail
+
+
+def test_c19_na_escape_passes():
+    plan = _predictive_plan() + "N/A — no held-out predictive DV.\n"
+    _, by_id = _run(plan)
+    res = by_id["c19_ood_folds"]
+    assert res.status == "PASS"
+    assert "N/A" in res.detail
+
+
+def test_c19_kind_analysis_triggers():
+    # Scope pin: kind=analysis is IN scope (the #810/#761/#763 predictor
+    # line lives in analysis follow-ups), same WARN-only severity.
+    assert _status(_predictive_plan(), "c19_ood_folds", kind="analysis") == "WARN"
+
+
+def test_c19_fenced_vocabulary_does_not_trigger():
+    # strip_fences discipline: trigger vocabulary inside a code fence can
+    # neither trip nor satisfy the check (mirrors
+    # test_c10_fence_only_marker_vocab_does_not_trigger).
+    plan = GOOD_PLAN + "\n```\n" + C19_TRIGGER + "\n```\n"
+    assert _status(plan, "c19_ood_folds") == "SKIP"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -2344,12 +2486,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 11
+    assert payload["n_skip"] == 12
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 19
-    assert len({c["id"] for c in payload["checks"]}) == 19
+    assert len(payload["checks"]) == 20
+    assert len({c["id"] for c in payload["checks"]}) == 20
 
 
 def test_cli_exit_one_on_fail(tmp_path):
