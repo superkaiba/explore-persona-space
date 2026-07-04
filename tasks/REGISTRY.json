@@ -6757,8 +6757,8 @@
     "995": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/995",
-      "status": "approved",
+      "path": "tasks/running/995",
+      "status": "running",
       "title": "daily-fix: batch_judge retry read-after-write 404 post-create"
     },
     "996": {
