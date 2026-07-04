@@ -1039,7 +1039,11 @@ executing a dispatched label, run
 exact-label mechanical evidence predicate (a 9a-quater `extends=<label>`
 record; an `epm:free-analysis-followup-run` whose `followup_ref` EXACTLY
 equals the label; or a status/step note carrying the exact parenthesized
-`(<label>)` round token plus a round-completion word). On a NON-None
+`(<label>)` round token plus a round-completion word in the same
+;/.-delimited clause as the token — a clause naming the label as queued /
+unrun / scoped / armed / dispatched NEVER closes (park notes routinely
+announce one round's completion while enumerating the queued next label
+on the same line; #961)). On a NON-None
 return, post the retroactive `epm:same-issue-followup-run v1`
 (`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
 and move to the NEXT unrun label instead of re-running a completed round
