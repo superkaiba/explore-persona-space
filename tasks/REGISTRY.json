@@ -6673,8 +6673,8 @@
     "989": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/989",
-      "status": "proposed",
+      "path": "tasks/planning/989",
+      "status": "planning",
       "title": "daily-fix: 4xx short-circuit in hub _is_transient_upload_error"
     },
     "99": {
