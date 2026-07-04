@@ -317,10 +317,29 @@ def main() -> int:  # noqa: C901 — the filter sequence IS the plan §4.1 spec
     C.write_json_atomic(args.out / "graftq_spec.json", graft)
     C.write_json_atomic(args.out / "onpol_spec.json", onpol)
 
+    # Corpus identity fingerprint (r2 resume-collision fix): realized counts +
+    # seeds + per-conversation dedup hashes — ANY rebuild changes it; threaded
+    # into rollout-shard regimes + store shards so stale artifacts fail loud.
+    fingerprint = C.compute_corpus_fingerprint(
+        {
+            "n_main": len(main_convs),
+            "n_long": len(long_convs),
+            "stream_shuffle_seed": C.CORPUS_SHUFFLE_SEED,
+            "token_cap": args.token_cap,
+            "main_hashes": [c["dedup_hash"] for c in main_convs],
+            "long_hashes": [c["dedup_hash"] for c in long_convs],
+            "graft": {"seed": C.GRAFT_SEED, "n_items": len(graft["items"])},
+            "onpol_n": len(onpol["conv_indices"]),
+        }
+    )
+
     manifest = {
         "counts": counts,
         "n_main": len(main_convs),
         "n_long": len(long_convs),
+        "requested_n_main": args.n_main,
+        "requested_n_long": args.n_long,
+        "corpus_fingerprint": fingerprint,
         "token_cap": args.token_cap,
         "stream_shuffle_seed": C.CORPUS_SHUFFLE_SEED,
         "dedup_key": "sha256(first-4 user messages) global; per-conv dedup_hash uses panel K",

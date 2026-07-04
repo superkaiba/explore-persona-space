@@ -233,36 +233,61 @@ def cache_path(cache_dir: Path, unit_set: str, k: int, pos: str) -> Path:
     return cache_dir / f"{unit_set}_k{k}_{pos}.pt"
 
 
-def build_fit_cache(store_dir: Path, corpus_dir: Path, cache_dir: Path) -> dict:
+def _load_capture_dropped(store_dir: Path) -> dict[str, set[str]]:
+    """Per-set dropped uids recorded by capture (empty-generation dropout, r2)."""
+    p = store_dir / "capture_summary.json"
+    assert p.exists(), f"store at {store_dir} has no capture_summary.json — capture incomplete"
+    blob = json.loads(p.read_text())
+    return {s: set(v) for s, v in (blob.get("dropped_uids") or {}).items()}
+
+
+def build_fit_cache(store_dir: Path, corpus_dir: Path, cache_dir: Path, fingerprint: str) -> dict:
     """One shard pass per unit set → per-(set, k, pos) (N, R, H) fp16 tensors.
 
     ALSO the row-coverage set-assert (plan §6): every enumerated unit id must
-    be present in the store shard keys — fail loud BEFORE any skill.
+    be present in the store shard keys UNLESS recorded as an empty-generation
+    dropout (then the CONVERSATION is excluded from the paired design via the
+    per-set ``invalid_ci`` list — dropped units are never silently read as
+    zero rows). Store shards must carry the consumed corpus's fingerprint
+    (fail loud on a stale store, r2). graft/onpol are consumed uid-keyed via
+    ``load_store_positions`` — no dense cache (the r1 dead-cache fix).
     Returns the coverage/meta dict (token counts per (set, k) ride along).
     """
     units_all = C.enumerate_units(corpus_dir)
+    dropped_by_set = _load_capture_dropped(store_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    meta: dict = {"sets": {}}
+    meta: dict = {"sets": {}, "corpus_fingerprint": fingerprint}
     for unit_set, units in units_all.items():
-        idx = C.load_store_index(store_dir, unit_set)
+        idx = C.load_store_index(store_dir, unit_set, expect_fingerprint=fingerprint)
+        dropped = dropped_by_set.get(unit_set, set())
         missing = [u["uid"] for u in units if u["uid"] not in idx]
-        assert not missing, (
-            f"ROW-COVERAGE FAIL: {unit_set} store missing {len(missing)} registered "
-            f"units, e.g. {missing[:3]}"
+        bad = [m for m in missing if m not in dropped]
+        assert not bad, (
+            f"ROW-COVERAGE FAIL: {unit_set} store missing {len(bad)} registered units "
+            f"NOT recorded as dropped, e.g. {bad[:3]}"
         )
-        if unit_set == "graft":  # sparse — consumed uid-keyed, no dense cache
-            meta["sets"][unit_set] = {"n_units": len(units)}
+        if unit_set in ("graft", "onpol"):  # sparse — consumed uid-keyed, no dense cache
+            meta["sets"][unit_set] = {
+                "n_units": len(units) - len(missing),
+                "n_dropped": len(missing),
+            }
             continue
         by_k: dict[int, list[dict]] = {}
         for u in units:
             by_k.setdefault(u["k"], []).append(u)
         n_conv = max(u["ci"] for u in units) + 1
+        # a conversation with ANY dropped turn leaves the paired design entirely
+        invalid_ci = sorted({u["ci"] for u in units if u["uid"] not in idx})
         R = H = None
         buf: dict[tuple[int, str], torch.Tensor] = {}
         toks: dict[int, dict[str, np.ndarray]] = {}
         done = False
         for p in sorted((store_dir / unit_set).glob("shard_*.pt")):
             blob = torch.load(p, weights_only=False, map_location="cpu")
+            assert blob.get("corpus_fingerprint") == fingerprint, (
+                f"STORE FINGERPRINT MISMATCH at {p}: "
+                f"{str(blob.get('corpus_fingerprint'))[:12]} vs {fingerprint[:12]}"
+            )
             for uid, rec in blob["units"].items():
                 parts = uid.split(":")
                 ci, k = int(parts[1][1:]), int(parts[2][1:])
@@ -289,9 +314,21 @@ def build_fit_cache(store_dir: Path, corpus_dir: Path, cache_dir: Path) -> dict:
                 {"x": t, "toks": {f: v for f, v in toks[k].items()}},
                 cache_path(cache_dir, unit_set, k, pos),
             )
-        meta["sets"][unit_set] = {"n_conv": n_conv, "R": R, "H": H, "ks": sorted(by_k)}
+        meta["sets"][unit_set] = {
+            "n_conv": n_conv,
+            "R": R,
+            "H": H,
+            "ks": sorted(by_k),
+            "invalid_ci": invalid_ci,
+            "n_dropped_units": len(missing),
+        }
         logger.info(
-            "[cache] %s: %d convs x %d turns -> %d tensors", unit_set, n_conv, len(by_k), len(buf)
+            "[cache] %s: %d convs x %d turns -> %d tensors (%d invalid convs)",
+            unit_set,
+            n_conv,
+            len(by_k),
+            len(buf),
+            len(invalid_ci),
         )
     C.write_json_atomic(cache_dir / "cache_meta.json", meta)
     return meta
@@ -324,17 +361,36 @@ class Cache:
 # ── design enumeration (fit cells + eval cells; plan §4.6 / §5) ───────────────
 
 
-def build_design(n_main: int, n_long: int) -> dict:
-    """Deterministic splits, twin halves, fit-cell + eval-cell registries."""
+def _filter_invalid(idx, invalid: frozenset[int]) -> np.ndarray:
+    """Sorted fold indices with dropout-invalid conversations removed (r2)."""
+    a = np.sort(np.asarray(idx, dtype=np.int64))
+    if not invalid:
+        return a
+    return a[~np.isin(a, np.fromiter(invalid, dtype=np.int64))]
+
+
+def build_design(
+    n_main: int,
+    n_long: int,
+    invalid_main: frozenset[int] = frozenset(),
+    invalid_long: frozenset[int] = frozenset(),
+) -> dict:
+    """Deterministic splits, twin halves, fit-cell + eval-cell registries.
+
+    ``invalid_*`` conversations (any empty-generation-dropped turn, r2) are
+    filtered OUT of every fold AFTER the deterministic split, so the split
+    stays reproducible from (N, seed) and every paired arm reads the identical
+    filtered conversation set.
+    """
     split_m = C.make_split(n_main, n_fit=C.N_FIT, n_val=C.N_VAL, n_test=C.N_TEST, seed=C.SPLIT_SEED)
     split_l = C.make_split(
         n_long, n_fit=C.LONG_FIT, n_val=C.LONG_VAL, n_test=C.LONG_TEST, seed=C.SPLIT_SEED
     )
-    half_a, half_b = C.twin_halves(np.sort(split_m["fit"]))
-    fit_m = np.sort(split_m["fit"])
-    test_m = np.sort(split_m["test"])
-    fit_l = np.sort(split_l["fit"])
-    test_l = np.sort(split_l["test"])
+    fit_m = _filter_invalid(split_m["fit"], invalid_main)
+    test_m = _filter_invalid(split_m["test"], invalid_main)
+    fit_l = _filter_invalid(split_l["fit"], invalid_long)
+    test_l = _filter_invalid(split_l["test"], invalid_long)
+    half_a, half_b = C.twin_halves(fit_m)
     fits: dict[str, dict] = {}
     for k in range(1, C.K_MAIN + 1):
         fits[f"ctx_k{k}_A"] = dict(set="main", x_k=k, x_pos="ctx", y_k=k, idx=half_a)
@@ -556,15 +612,70 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
         return 0
 
     t0 = time.time()
-    meta = build_fit_cache(args.store, args.corpus, args.cache)  # + row-coverage assert
+    corpus_fp = C.corpus_fingerprint(args.corpus)
+    meta = build_fit_cache(args.store, args.corpus, args.cache, corpus_fp)  # + row-coverage assert
     n_main = meta["sets"]["main"]["n_conv"]
     n_long = meta["sets"]["long"]["n_conv"]
     R, H = meta["sets"]["main"]["R"], meta["sets"]["main"]["H"]
-    design = build_design(n_main, n_long)
+    design = build_design(
+        n_main,
+        n_long,
+        invalid_main=frozenset(meta["sets"]["main"].get("invalid_ci", [])),
+        invalid_long=frozenset(meta["sets"]["long"].get("invalid_ci", [])),
+    )
     cache = Cache(args.cache)
     rb = _load_rb(args.rb_dir, (R - 1, H) if args.stub_rb else None)
     _trait_cols, dirs = _directions(rb, H)
     trait_rows = {t: C.block_to_row(min(C.PRIMARY_LSTAR[t], R - 2)) for t in C.TRAITS}
+
+    # ── fit-resume manifest (r2: the ~3h loop restarts from completed cells) ──
+    # keyed on EVERY output-affecting regime key (#722-r3 rule): corpus
+    # fingerprint, λ grid, policy, read-out rows, split spec, stub_rb, dims.
+    fit_regime = {
+        "corpus_fingerprint": corpus_fp,
+        "lambdas": [float(x) for x in RIDGE_LAMBDAS_922],
+        "policy": C.TRANSFER_STANDARDIZATION_POLICY,
+        "readout_blocks": list(C.READOUT_BLOCKS),
+        "R": R,
+        "H": H,
+        "n_main": n_main,
+        "n_long": n_long,
+        "stub_rb": bool(args.stub_rb),
+        "split": {
+            "seed": C.SPLIT_SEED,
+            "sizes": [C.N_FIT, C.N_VAL, C.N_TEST, C.LONG_FIT, C.LONG_VAL, C.LONG_TEST],
+            "twin_seed": C.TWIN_SEED,
+        },
+    }
+    args.maps.mkdir(parents=True, exist_ok=True)
+    manifest_path = args.maps / "fit_manifest.json"
+    manifest: dict = {"regime": fit_regime, "cells": {}}
+    if manifest_path.exists():
+        try:
+            prior = json.loads(manifest_path.read_text())
+        except Exception:
+            prior = None
+        if prior and prior.get("regime") == fit_regime:
+            manifest = prior
+        else:
+            logger.warning("[resume] fit_manifest regime differs — refitting all cells")
+
+    def _mark_done(cell_key: str) -> None:
+        manifest["cells"][cell_key] = {"done": True, "ts": time.time()}
+        C.write_json_atomic(manifest_path, manifest)
+
+    support_sidecar = args.maps / "support_overlap_turn1A.json"
+
+    def _cell_complete(fid: str, eval_ids: list[str]) -> bool:
+        """Resume predicate: manifest-done under the CURRENT regime + artifacts."""
+        if not manifest["cells"].get(fid, {}).get("done"):
+            return False
+        if not (args.maps / f"{fid}.pt").exists():
+            return False
+        for eid in eval_ids:
+            if not (args.out / "percell" / f"{eid}.npz").exists():
+                return False
+        return fid != "ctx_k1_A" or support_sidecar.exists()
 
     # real-cell equivalence gate on the FIRST fit cell (registered ≤1e-6 check)
     fits_reg = design["fits"]
@@ -575,7 +686,6 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     gate_real = equivalence_gate_fits(Xg, Yg, Xtg, lambdas=RIDGE_LAMBDAS_922, device=device)
     del Xg, Yg, Xtg
 
-    args.maps.mkdir(parents=True, exist_ok=True)
     (args.out / "percell").mkdir(parents=True, exist_ok=True)
 
     # group eval cells by source map so each fit is built ONCE then applied
@@ -587,21 +697,40 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     cell_results: dict[str, dict] = {}
     support_overlap: dict[str, dict] = {}
 
+    # onpol units captured in the store (empty-generation dropouts excluded
+    # with a recorded count — validated ⊆ dropped in build_fit_cache)
+    onpol_spec = json.loads((args.corpus / "onpol_spec.json").read_text())
+    onpol_idx_store = C.load_store_index(args.store, "onpol", expect_fingerprint=corpus_fp)
+    onpol_cis = [
+        ci for ci in onpol_spec["conv_indices"] if C.unit_id("onpol", ci, 2) in onpol_idx_store
+    ]
+    onpol_uids = [C.unit_id("onpol", ci, 2) for ci in onpol_cis]
+    if len(onpol_cis) < len(onpol_spec["conv_indices"]):
+        logger.warning(
+            "[onpol] %d/%d spec units dropped (empty generations) — evaluating on the rest",
+            len(onpol_spec["conv_indices"]) - len(onpol_cis),
+            len(onpol_spec["conv_indices"]),
+        )
+
     def _target_X(e: dict) -> tuple[torch.Tensor, np.ndarray]:
         if e["set"] == "onpol":
-            spec = json.loads((args.corpus / "onpol_spec.json").read_text())
-            uids = [C.unit_id("onpol", ci, 2) for ci in spec["conv_indices"]]
-            x = C.load_store_positions(args.store, "onpol", uids, [CACHE_POS[e["pos"]]])
-            return x[:, 0].transpose(0, 1), np.array(spec["conv_indices"])
+            x = C.load_store_positions(
+                args.store,
+                "onpol",
+                onpol_uids,
+                [CACHE_POS[e["pos"]]],
+                expect_fingerprint=corpus_fp,
+            )
+            return x[:, 0].transpose(0, 1), np.array(onpol_cis)
         idx = e["idx"]
         x_k = e.get("x_k", e["k"])
         return cache.x(e["set"], x_k, e["pos"], idx).transpose(0, 1), idx
 
     def _target_Y(e: dict) -> torch.Tensor:
         if e["set"] == "onpol":
-            spec = json.loads((args.corpus / "onpol_spec.json").read_text())
-            uids = [C.unit_id("onpol", ci, 2) for ci in spec["conv_indices"]]
-            y = C.load_store_positions(args.store, "onpol", uids, [C.POS_ANS_MEAN])
+            y = C.load_store_positions(
+                args.store, "onpol", onpol_uids, [C.POS_ANS_MEAN], expect_fingerprint=corpus_fp
+            )
             return y[:, 0].transpose(0, 1)
         return cache.x(e["set"], e["k"], "ans", e["idx"]).transpose(0, 1)
 
@@ -619,13 +748,39 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     drift_cells = {f"xfer_1to{k}_A" for k in range(2, C.K_MAIN + 1)} | {
         f"xfer_{k}to{k}_A" for k in range(1, C.K_MAIN + 1)
     }
+
+    def _restore_cell(fid: str, eval_ids: list[str]) -> None:
+        """Rebuild the in-memory readouts for a resume-skipped cell from disk."""
+        blob = torch.load(args.maps / f"{fid}.pt", weights_only=False, map_location="cpu")
+        maps_meta[fid] = blob["meta"]
+        del blob
+        for eid in eval_ids:
+            z = np.load(args.out / "percell" / f"{eid}.npz")
+            e = design["evals"][eid]
+            cell_results[eid] = {
+                "skill_readout_mean": _readout_mean(torch.from_numpy(z["skill"])),
+                "map": e["map"],
+                "target": {"set": e["set"], "k": e["k"], "pos": e["pos"]},
+                **(
+                    {"recal_skill_readout_mean": _readout_mean(torch.from_numpy(z["recal_skill"]))}
+                    if "recal_skill" in z
+                    else {}
+                ),
+            }
+        if fid == "ctx_k1_A":
+            support_overlap.update(json.loads(support_sidecar.read_text()))
+
     all_fit_ids = list(fits_reg)
     for fid in all_fit_ids:
         f = fits_reg[fid]
+        eval_ids = evals_by_map.get(fid, [])
+        if _cell_complete(fid, eval_ids):
+            _restore_cell(fid, eval_ids)
+            logger.info("[fit %s] complete under current regime — skip (resume)", fid)
+            continue
         X_all = cache.x(f["set"], f["x_k"], f["x_pos"], f["idx"])  # (n, R, H)
         Y_all = cache.x(f["set"], f["y_k"], "ans", f["idx"])
         n_fit = X_all.shape[0]
-        eval_ids = evals_by_map.get(fid, [])
         maps_meta[fid] = {
             "n_fit": int(n_fit),
             "x_pos": f["x_pos"],
@@ -733,20 +888,23 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
                             "mahalanobis_p95": float(lev.quantile(0.95)),
                         }
             del fit
-        # persist per-cell map weights (7 rows, fp16) + meta
+        # persist per-cell map weights (7 rows, fp16) + the FULL meta (the
+        # resume predicate restores maps_meta from this blob on skip, r2)
+        maps_meta[fid]["best_lam"] = {C.row_to_block_key(r): float(lam_all[r]) for r in range(R)}
         torch.save(
             {
                 "cell": fid,
                 "rows": {r: w for r, w in w_out.items()},
                 "row_convention": "store rows: 0=emb, b+1=block b",
                 "policy": C.TRANSFER_STANDARDIZATION_POLICY,
+                "corpus_fingerprint": corpus_fp,
+                "meta": maps_meta[fid],
                 "metadata": C.reproducibility_metadata(
                     {"script": "issue958_fit_maps", "cell": fid}
                 ),
             },
             args.maps / f"{fid}.pt",
         )
-        maps_meta[fid]["best_lam"] = {C.row_to_block_key(r): float(lam_all[r]) for r in range(R)}
         for eid in eval_ids:
             a = acc[eid]
             e = design["evals"][eid]
@@ -776,6 +934,9 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             }
             del acc[eid]
         del targets
+        if fid == "ctx_k1_A":  # persist so a resume-skip can restore it (r2)
+            C.write_json_atomic(support_sidecar, support_overlap)
+        _mark_done(fid)
         logger.info("[fit %s] done (%.1fs elapsed; %d evals)", fid, time.time() - t0, len(eval_ids))
 
     # copy-previous-answer null (no map; plan §5)
@@ -846,14 +1007,31 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     np.savez(args.out / "unit_tokens.npz", **tok_arrays)
 
     # grafted-query marginal eval (plan §4.5/§6 — decomposition-only companion)
+    pm_path = args.out / "prefix_marginal.json"
+    if manifest["cells"].get("_prefix_marginal", {}).get("done") and pm_path.exists():
+        logger.info("[marginal] complete under current regime — skip (resume)")
+        marginal = None  # file already on disk; nothing downstream reads it in-memory
+    else:
+        marginal = {}
     graft_spec = json.loads((args.corpus / "graftq_spec.json").read_text())
-    graft_uids_all = {(row["ci"], row["k"]): [] for row in graft_spec["items"]}
+    graft_idx_store = C.load_store_index(args.store, "graft", expect_fingerprint=corpus_fp)
+    valid_test_main = set(np.asarray(design["test_main"]).tolist())  # post-dropout filter
+    graft_uids_all: dict[tuple[int, int], list[str]] = {}
+    n_graft_dropped = 0
     for row in graft_spec["items"]:
-        graft_uids_all[(row["ci"], row["k"])].append(
-            C.unit_id("graft", row["ci"], row["k"], row["q"])
+        uid = C.unit_id("graft", row["ci"], row["k"], row["q"])
+        # realized Q: empty-generation-dropped grafts are excluded here so the
+        # Q-floor logic below operates on ACTUAL missing units (r2); hosts
+        # whose own main chain dropped leave the read entirely
+        if uid not in graft_idx_store or row["ci"] not in valid_test_main:
+            n_graft_dropped += 1
+            continue
+        graft_uids_all.setdefault((row["ci"], row["k"]), []).append(uid)
+    if n_graft_dropped:
+        logger.warning(
+            "[marginal] %d graft units dropped/invalid-host — realized Q shrinks", n_graft_dropped
         )
-    marginal: dict[str, dict] = {}
-    for k in C.GRAFT_TURNS:
+    for k in C.GRAFT_TURNS if marginal is not None else ():
         if f"pre_k{k}_full" not in fits_reg:
             continue
         hosts = sorted({ci for (ci, kk) in graft_uids_all if kk == k})
@@ -864,7 +1042,9 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             us = graft_uids_all[(ci, k)]
             per_host.append(len(us))
             uids_flat.extend(us)
-        Yg = C.load_store_positions(args.store, "graft", uids_flat, [C.POS_ANS_MEAN])[:, 0]
+        Yg = C.load_store_positions(
+            args.store, "graft", uids_flat, [C.POS_ANS_MEAN], expect_fingerprint=corpus_fp
+        )[:, 0]
         Yreal = cache.x("main", k, "ans", np.array(hosts))  # (n_h, R, H)
         # ȳ(prefix) = mean over {realized + grafts}; Q-floor drops below-floor hosts
         ybar, keep, qvar = [], [], []
@@ -924,15 +1104,19 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
                 st["sse_unit"][_clamp_rows(READOUT_ROWS, R)].mean().item()
             ),
         }
-    C.write_json_atomic(
-        args.out / "prefix_marginal.json",
-        {
-            "marginal": marginal,
-            "note": "decomposition-only companion (grafts sample q~p(q at turn k), "
-            "not p(q|prefix))",
-            "metadata": C.reproducibility_metadata({"script": "issue958_fit_maps"}),
-        },
-    )
+    if marginal is not None:
+        C.write_json_atomic(
+            pm_path,
+            {
+                "marginal": marginal,
+                "corpus_fingerprint": corpus_fp,
+                "n_graft_dropped": n_graft_dropped,
+                "note": "decomposition-only companion (grafts sample q~p(q at turn k), "
+                "not p(q|prefix))",
+                "metadata": C.reproducibility_metadata({"script": "issue958_fit_maps"}),
+            },
+        )
+        _mark_done("_prefix_marginal")
 
     # assemble headline JSONs (point estimates; CIs added by issue958_eval.py)
     grid = {
@@ -953,6 +1137,7 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
         args.out / "transfer_matrix.json",
         {
             "transfer_standardization_policy": C.TRANSFER_STANDARDIZATION_POLICY,
+            "corpus_fingerprint": corpus_fp,
             "readout_blocks": C.READOUT_BLOCKS,
             "grid_skill_readout_mean_foldA": grid,
             "own_B": {
@@ -1001,6 +1186,7 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
         args.out / "maps_meta.json",
         {
             "cells": maps_meta,
+            "corpus_fingerprint": corpus_fp,
             "equivalence_gate_real_cell": gate_real,
             "lambdas": RIDGE_LAMBDAS_922,
             "persist_rows": PERSIST_ROWS,

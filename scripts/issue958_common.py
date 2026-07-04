@@ -120,6 +120,38 @@ write_json_atomic = C922.write_json_atomic
 upload_dir_bulk = C922.upload_dir_bulk
 
 
+# ── corpus identity (the #958 r2 resume-collision fix) ───────────────────────
+
+
+def compute_corpus_fingerprint(payload: dict) -> str:
+    """sha256 hex over a canonical-JSON corpus identity payload.
+
+    The payload carries realized counts + seeds + per-conversation dedup
+    hashes, so ANY corpus rebuild (different scale, different stream slice)
+    changes the fingerprint. Threaded through: corpus ``manifest.json`` →
+    rollout shard ``regime`` → store shard blobs / sidecar index → the fit
+    cache + fit-resume manifest. A shard/split/store from a different corpus
+    fingerprint fails loud instead of silently pairing stale generations with
+    a rebuilt corpus (code-review r1 Critical, bug-class: resume predicate
+    missing the corpus-identity key, #722-r3 class).
+    """
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    import hashlib
+
+    return hashlib.sha256(blob).hexdigest()
+
+
+def corpus_fingerprint(corpus_dir: Path) -> str:
+    """The built corpus's fingerprint from ``manifest.json`` (fail-loud)."""
+    manifest = json.loads((Path(corpus_dir) / "manifest.json").read_text())
+    fp = manifest.get("corpus_fingerprint")
+    assert fp, (
+        f"corpus at {corpus_dir} has no corpus_fingerprint in manifest.json "
+        "(pre-fingerprint build) — rebuild the corpus"
+    )
+    return str(fp)
+
+
 # ── unit-id helpers ───────────────────────────────────────────────────────────
 
 
@@ -243,6 +275,21 @@ def load_rollouts(roll_dir: Path, unit_set: str) -> dict[str, dict]:
     return out
 
 
+def load_dropped(roll_dir: Path, unit_set: str) -> set[str]:
+    """Union of per-shard ``dropped_empty`` uid lists (final-empty generations).
+
+    A unit in this set was enumerated but produced no usable generation after
+    the seed-varied retry — downstream consumers SKIP it with a recorded
+    count; a store/rollout gap NOT in this set stays fail-loud.
+    """
+    out: set[str] = set()
+    for p in sorted(roll_dir.glob(f"rollouts_{unit_set}_*.json")):
+        with open(p) as f:
+            blob = json.load(f)
+        out.update(blob.get("dropped_empty", []))
+    return out
+
+
 # ── store IO ──────────────────────────────────────────────────────────────────
 
 
@@ -251,11 +298,46 @@ def store_shard_path(store_dir: Path, unit_set: str, shard: int) -> Path:
     return store_dir / unit_set / f"shard_{shard:03d}.pt"
 
 
-def load_store_index(store_dir: Path, unit_set: str) -> dict[str, tuple[int, str]]:
-    """{uid: (shard index, path)} over all shards of one unit set (metadata only)."""
-    idx: dict[str, tuple[int, str]] = {}
+def store_index_path(store_dir: Path, unit_set: str) -> Path:
+    """Sidecar JSON index (uids per shard + corpus fingerprint) for one set."""
+    return store_dir / unit_set / "index.json"
+
+
+def _assert_shard_fingerprint(blob: dict, expect: str | None, where) -> None:
+    """Fail loud when a store shard/index was captured under ANOTHER corpus."""
+    if expect is None:
+        return
+    got = blob.get("corpus_fingerprint")
+    assert got == expect, (
+        f"STORE FINGERPRINT MISMATCH at {where}: shard/index built under corpus "
+        f"{str(got)[:12]}… but the consumed corpus is {expect[:12]}… — stale artifacts "
+        "from a different corpus build; recapture (or point at the matching dirs)."
+    )
+
+
+def load_store_index(
+    store_dir: Path, unit_set: str, *, expect_fingerprint: str | None = None
+) -> dict[str, tuple[int, str]]:
+    """{uid: (shard index, path)} for one unit set — sidecar-first, metadata only.
+
+    Prefers the capture-written ``index.json`` sidecar (no tensor loads — the
+    r1-review "metadata only" fix); falls back to scanning shard blobs. When
+    ``expect_fingerprint`` is given, the index/shards must carry it (fail loud).
+    """
+    sidecar = store_index_path(store_dir, unit_set)
+    if sidecar.exists():
+        blob = json.loads(sidecar.read_text())
+        _assert_shard_fingerprint(blob, expect_fingerprint, sidecar)
+        idx: dict[str, tuple[int, str]] = {}
+        for s_str, uids in blob["shards"].items():
+            p = store_shard_path(store_dir, unit_set, int(s_str))
+            for uid in uids:
+                idx[uid] = (int(s_str), str(p))
+        return idx
+    idx = {}
     for p in sorted((store_dir / unit_set).glob("shard_*.pt")):
         blob = torch.load(p, weights_only=False, map_location="cpu")
+        _assert_shard_fingerprint(blob, expect_fingerprint, p)
         k = int(p.stem.split("_")[1])
         for uid in blob["units"]:
             idx[uid] = (k, str(p))
@@ -264,19 +346,29 @@ def load_store_index(store_dir: Path, unit_set: str) -> dict[str, tuple[int, str
 
 
 def load_store_positions(
-    store_dir: Path, unit_set: str, uids: list[str], positions: list[int]
+    store_dir: Path,
+    unit_set: str,
+    uids: list[str],
+    positions: list[int],
+    *,
+    expect_fingerprint: str | None = None,
 ) -> torch.Tensor:
     """Gather ``(n_uids, len(positions), R, H)`` fp16 from the shard files.
 
-    Loads each shard once (two-pass metadata is unnecessary at the (5, R, H)
-    per-unit grain — one shard ≈ 500 × 5 × 29 × 3584 × 2 B ≈ 0.5 GB resident
-    at a time). Fails loud on any missing uid (row-coverage assert upstream).
+    Loads only the shards holding requested uids (one ≈0.5 GB blob resident
+    at a time). Fails loud on any missing uid (row-coverage assert upstream)
+    and on a corpus-fingerprint mismatch when ``expect_fingerprint`` is given.
     """
     want = set(uids)
+    idx = load_store_index(store_dir, unit_set, expect_fingerprint=expect_fingerprint)
+    missing = [u for u in uids if u not in idx]
+    assert not missing, f"store missing {len(missing)} uids, e.g. {missing[:3]}"
+    shard_paths = sorted({idx[u][1] for u in want})
     got: dict[str, torch.Tensor] = {}
     R = H = None
-    for p in sorted((store_dir / unit_set).glob("shard_*.pt")):
-        blob = torch.load(p, weights_only=False, map_location="cpu")
+    for sp in shard_paths:
+        blob = torch.load(sp, weights_only=False, map_location="cpu")
+        _assert_shard_fingerprint(blob, expect_fingerprint, sp)
         for uid, rec in blob["units"].items():
             if uid in want:
                 h = rec["h"]
@@ -284,8 +376,6 @@ def load_store_positions(
                 R, H = int(h.shape[1]), int(h.shape[2])
                 got[uid] = h[positions]  # (len(positions), R, H)
         del blob
-    missing = [u for u in uids if u not in got]
-    assert not missing, f"store missing {len(missing)} uids, e.g. {missing[:3]}"
     out = torch.empty((len(uids), len(positions), R, H), dtype=torch.float16)
     for i, uid in enumerate(uids):
         out[i] = got[uid]
@@ -315,6 +405,146 @@ def twin_halves(fit_idx: np.ndarray, seed: int = TWIN_SEED) -> tuple[np.ndarray,
     perm = rng.permutation(len(fit_idx))
     half = len(fit_idx) // 2
     return fit_idx[perm[:half]], fit_idx[perm[half : 2 * half]]
+
+
+# ── CPU-stage HF input staging (plan §9: the routed two-provision flow) ──────
+
+
+def stage_inputs_from_hf(
+    *, corpus_dir: Path, store_dir: Path, prefix: str | None = None, max_workers: int = 6
+) -> dict:
+    """Stage ``{prefix}/corpus`` + ``{prefix}/analysis_tensors/store`` locally.
+
+    The fresh ``cpu-mid`` provision has no ``data/`` (gitignored) — enumerate
+    with SERVER-side-scoped ``list_repo_tree`` (NEVER full-tree
+    ``snapshot_download`` on the ~1M-file data repo, #833) and download
+    per-file via ``hf_hub_download`` in a ≤``max_workers`` pool with retry +
+    linear backoff, then move into place. Fails loud on an empty remote
+    prefix or any file that fails after 4 attempts.
+    """
+    import shutil
+    import tempfile
+    from concurrent.futures import ThreadPoolExecutor
+
+    from huggingface_hub import HfApi, hf_hub_download
+
+    pfx = prefix or HF_OUT_PREFIX
+    api = HfApi()
+    targets = {f"{pfx}/corpus": Path(corpus_dir), f"{pfx}/analysis_tensors/store": Path(store_dir)}
+    n_files = 0
+    for remote_prefix, local_root in targets.items():
+        entries = [
+            e
+            for e in api.list_repo_tree(
+                HF_DATA_REPO, path_in_repo=remote_prefix, repo_type="dataset", recursive=True
+            )
+            if getattr(e, "size", None) is not None  # files only (skip RepoFolder)
+        ]
+        assert entries, (
+            f"HF staging: nothing under {HF_DATA_REPO}/{remote_prefix} — "
+            "did the GPU stage upload complete?"
+        )
+        local_root.mkdir(parents=True, exist_ok=True)
+
+        def _fetch(path: str, staging_root: str) -> str:
+            last: Exception | None = None
+            for attempt in range(4):
+                try:
+                    return hf_hub_download(
+                        repo_id=HF_DATA_REPO,
+                        filename=path,
+                        repo_type="dataset",
+                        local_dir=staging_root,
+                    )
+                except Exception as exc:  # transient 5xx/429/conn — linear backoff
+                    last = exc
+                    logger.warning(
+                        "[stage] %s failed (%s) attempt %d/4 — backoff",
+                        path,
+                        type(exc).__name__,
+                        attempt + 1,
+                    )
+                    time.sleep(20 * (attempt + 1))
+            raise RuntimeError(f"HF staging failed after 4 attempts: {path}") from last
+
+        with tempfile.TemporaryDirectory(prefix="i958_hfstage_", dir=str(local_root)) as td:
+            with ThreadPoolExecutor(max_workers=max_workers) as ex:
+                list(ex.map(lambda p: _fetch(p, td), [e.path for e in entries]))
+            for e in entries:
+                src = Path(td) / e.path
+                dst = local_root / Path(e.path).relative_to(remote_prefix)
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(dst))
+        n_files += len(entries)
+        logger.info("[stage] %s -> %s (%d files)", remote_prefix, local_root, len(entries))
+    return {"n_files": n_files, "prefix": pfx}
+
+
+# ── uploads with the §7 timing gate (probe retried on transient 5xx) ─────────
+
+
+def upload_with_timing_gate(local_dir: Path, suffix: str, msg: str) -> dict:
+    """Timing-probe the LARGEST file, gate the projected wall, then bulk-upload.
+
+    The in-run one-item serialization+upload timing gate (plan §7
+    storage-overrun kill, timing branch): a tiny probe is per-commit-overhead
+    dominated (#813) and would false-kill, so the kill arms only when the
+    probe is ≥20 MB. The probe ``upload_file`` is retried up to 4× on
+    transient 5xx / connection faults (#664 gotcha — single ``upload_file``
+    against the ~1M-file repo 504s intermittently); 4xx (incl. quota 403)
+    stays loud — ``upload_dir_bulk`` owns overflow routing.
+    """
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import HfHubHTTPError
+
+    local_dir = Path(local_dir)
+    files = sorted(p for p in local_dir.rglob("*") if p.is_file())
+    assert files, f"nothing to upload under {local_dir}"
+    api = HfApi()
+    probe = max(files, key=lambda p: p.stat().st_size)
+    probe_wall = None
+    for attempt in range(4):
+        t0 = time.time()
+        try:
+            api.upload_file(
+                path_or_fileobj=str(probe),
+                path_in_repo=f"{HF_OUT_PREFIX}/{suffix}/{probe.relative_to(local_dir)}",
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                commit_message=f"{msg} (timing probe)",
+            )
+            probe_wall = time.time() - t0
+            break
+        except HfHubHTTPError as e:
+            code = e.response.status_code if e.response is not None else None
+            if code is not None and code < 500:
+                raise  # 4xx incl. storage-quota 403 — loud; bulk path owns overflow
+            if attempt == 3:
+                raise RuntimeError("timing-probe upload failed after 4 transient retries") from e
+            logger.warning("[upload-gate] probe transient %s — retry %d/4", code, attempt + 2)
+            time.sleep(15 * (attempt + 1))
+    assert probe_wall is not None
+    probe_bytes = probe.stat().st_size
+    total = sum(p.stat().st_size for p in files)
+    if probe_bytes >= 20 * (1 << 20):  # throughput measurable, not overhead-dominated
+        projected_h = (probe_wall / probe_bytes) * total / 3600
+        logger.info(
+            "[upload-gate] probe %.0f MB in %.1fs -> projected %.2fh for %.1f GB",
+            probe_bytes / 1e6,
+            probe_wall,
+            projected_h,
+            total / 1e9,
+        )
+        if projected_h > 4 * 0.5:
+            raise RuntimeError(
+                f"STORAGE-OVERRUN KILL (plan §7): projected upload {projected_h:.1f}h > "
+                f"4x0.5h budget ({total / 1e9:.1f} GB). Artifacts kept local pod-side."
+            )
+    else:
+        logger.info(
+            "[upload-gate] probe %.0f KB (overhead-dominated) — gate N/A", probe_bytes / 1e3
+        )
+    return upload_dir_bulk(local_dir, f"{HF_OUT_PREFIX}/{suffix}", commit_message=msg)
 
 
 # ── pod-side results sentinel (poll_pipeline contract) ────────────────────────

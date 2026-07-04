@@ -241,12 +241,22 @@ def equivalence_gate(model, tokenizer, items: list[dict]) -> dict:
 # ── shard validation (resume; mirrors #922 validate_shard) ────────────────────
 
 
-def validate_shard(path: Path, expected_uids: set[str], n_rows: int, hidden: int):
-    """(blob, 'ok') when an existing shard matches the CURRENT regime, else (None, why)."""
+def validate_shard(path: Path, expected_uids: set[str], n_rows: int, hidden: int, fingerprint: str):
+    """(blob, 'ok') when an existing shard matches the CURRENT regime, else (None, why).
+
+    The regime includes the CORPUS FINGERPRINT (r2 fix): a shard captured
+    under a different corpus build fails validation and is recaptured —
+    never silently consumed against a rebuilt corpus.
+    """
     try:
         blob = torch.load(path, weights_only=False, map_location="cpu")
     except Exception as e:
         return None, f"unloadable ({type(e).__name__})"
+    if blob.get("corpus_fingerprint") != fingerprint:
+        return None, (
+            f"corpus fingerprint mismatch ({str(blob.get('corpus_fingerprint'))[:12]} "
+            f"vs {fingerprint[:12]})"
+        )
     units = blob.get("units") or {}
     if set(units) != expected_uids:
         return None, f"uid set mismatch ({len(units)} vs {len(expected_uids)})"
@@ -314,38 +324,54 @@ def main() -> int:
     n_rows = len(model.model.layers) + 1
     hidden = model.config.hidden_size
 
+    corpus_fp = C.corpus_fingerprint(args.corpus)
     corpora = {
         "main": C.load_corpus(args.corpus, "main"),
         "long": C.load_corpus(args.corpus, "long"),
     }
     units_all = C.enumerate_units(args.corpus)
     rollouts_by_set = {s: C.load_rollouts(args.rollouts, s) for s in units_all}
+    dropped_by_set = {s: C.load_dropped(args.rollouts, s) for s in units_all}
     # onpol prefix needs the main k1 rollouts too
     rollouts_flat: dict[str, dict] = {}
     for d in rollouts_by_set.values():
         rollouts_flat.update(d)
 
-    # equivalence gate on 3 real corpus items (first main units)
+    # equivalence gate on 3 real corpus items (first main units WITH rollouts)
+    gate_units = [u for u in units_all["main"] if u["uid"] in rollouts_flat][:3]
     gate_items = [
-        tokenize_unit(tokenizer, u, corpora, rollouts_flat, args.token_cap)
-        for u in units_all["main"][:3]
+        tokenize_unit(tokenizer, u, corpora, rollouts_flat, args.token_cap) for u in gate_units
     ]
     gate = equivalence_gate(model, tokenizer, gate_items)
 
     t0 = time.time()
-    summary_sets = {}
+    summary_sets: dict[str, dict] = {}
+    dropped_uids: dict[str, list[str]] = {}
     for unit_set in [s for s in args.unit_sets.split(",") if s]:
-        units = units_all[unit_set]
-        missing_rollouts = [u["uid"] for u in units if u["uid"] not in rollouts_flat]
-        assert not missing_rollouts, f"{unit_set}: rollouts missing {missing_rollouts[:3]}"
+        # dropped-with-record units are SKIPPED (never crash capture); a gap
+        # NOT recorded dropped stays fail-loud (row-coverage coherence, r2)
+        units, missing_not_dropped, dropped_here = [], [], []
+        for u in units_all[unit_set]:
+            if u["uid"] in rollouts_flat:
+                units.append(u)
+            elif u["uid"] in dropped_by_set[unit_set]:
+                dropped_here.append(u["uid"])
+            else:
+                missing_not_dropped.append(u["uid"])
+        assert not missing_not_dropped, (
+            f"{unit_set}: rollouts missing (NOT recorded dropped) {missing_not_dropped[:3]}"
+        )
+        dropped_uids[unit_set] = sorted(dropped_here)
         (args.out / unit_set).mkdir(parents=True, exist_ok=True)
         n_shards = (len(units) + C.SHARD_UNITS - 1) // C.SHARD_UNITS
+        shard_uid_index: dict[str, list[str]] = {}
         for s in range(n_shards):
             path = C.store_shard_path(args.out, unit_set, s)
             shard_units = units[s * C.SHARD_UNITS : (s + 1) * C.SHARD_UNITS]
             uids = {u["uid"] for u in shard_units}
+            shard_uid_index[str(s)] = sorted(uids)
             if path.exists():
-                blob, why = validate_shard(path, uids, n_rows, hidden)
+                blob, why = validate_shard(path, uids, n_rows, hidden, corpus_fp)
                 if blob is not None:
                     logger.info("[%s shard %d/%d] valid — skip", unit_set, s + 1, n_shards)
                     del blob
@@ -361,6 +387,7 @@ def main() -> int:
                 {
                     "unit_set": unit_set,
                     "positions": C.POS_NAMES,
+                    "corpus_fingerprint": corpus_fp,
                     "units": units_blob,
                     "metadata": C.reproducibility_metadata(
                         {"script": "issue958_capture_turns", "set": unit_set, "shard": s}
@@ -368,7 +395,7 @@ def main() -> int:
                 },
                 path,
             )
-            blob2, why2 = validate_shard(path, uids, n_rows, hidden)
+            blob2, why2 = validate_shard(path, uids, n_rows, hidden, corpus_fp)
             if blob2 is None:
                 raise RuntimeError(f"freshly-written shard {path} fails validation: {why2}")
             del blob2
@@ -380,11 +407,26 @@ def main() -> int:
                 len(units_blob),
                 time.time() - t0,
             )
-        summary_sets[unit_set] = len(units)
+        # sidecar index: uid → shard lookup without loading tensor blobs
+        C.write_json_atomic(
+            C.store_index_path(args.out, unit_set),
+            {
+                "unit_set": unit_set,
+                "corpus_fingerprint": corpus_fp,
+                "n_rows": n_rows,
+                "hidden": hidden,
+                "shards": shard_uid_index,
+            },
+        )
+        summary_sets[unit_set] = {"n_units": len(units), "n_dropped": len(dropped_here)}
 
     # capture/rollout-yield kill (plan §7): the k=1..4 main chain must be intact
     # for >= 90% of main conversations (a captured unit == present in a shard).
-    idx = C.load_store_index(args.out, "main") if "main" in summary_sets else {}
+    idx = (
+        C.load_store_index(args.out, "main", expect_fingerprint=corpus_fp)
+        if "main" in summary_sets
+        else {}
+    )
     n_main = len(corpora["main"])
     intact = sum(
         1
@@ -400,6 +442,8 @@ def main() -> int:
     )
     summary = {
         "unit_sets": summary_sets,
+        "corpus_fingerprint": corpus_fp,
+        "dropped_uids": dropped_uids,
         "n_rows": n_rows,
         "hidden": hidden,
         "equivalence_gate": gate,
