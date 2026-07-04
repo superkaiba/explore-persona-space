@@ -272,8 +272,8 @@ SENTINEL_KIND="epm:progress"
 if [ "$SMOKE" = "0" ] && { [ "$STAGE" = "cpu" ] || [ "$STAGE" = "all" ]; }; then
   SENTINEL_KIND="epm:results"
 fi
-EPM958_SENTINEL_KIND="$SENTINEL_KIND" EPM958_OUT_DIR="$OUT" EPM958_SMOKE="$SMOKE" \
-  EPM958_STAGE="$STAGE" uv run python - <<'PY'
+EPM958_SENTINEL_KIND="$SENTINEL_KIND" EPM958_OUT_DIR="$OUT" EPM958_FIGS_DIR="$FIGS" \
+  EPM958_SMOKE="$SMOKE" EPM958_STAGE="$STAGE" uv run python - <<'PY'
 import json
 import os
 import sys
@@ -287,7 +287,7 @@ note = {
     "smoke": os.environ.get("EPM958_SMOKE") == "1",
     "stage": os.environ.get("EPM958_STAGE"),
     "deliverables": sorted(str(p) for p in out.glob("*.json")),
-    "figures_dir": "figures/issue_958",
+    "figures_dir": os.environ["EPM958_FIGS_DIR"],  # the ACTIVE namespace (r3: smoke != prod)
     "hf_prefix": C.HF_OUT_PREFIX,
     "transfer_standardization_policy": C.TRANSFER_STANDARDIZATION_POLICY,
     "note": "issue #958 multi-turn context->answer mapping run: per-turn maps, "

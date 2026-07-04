@@ -581,6 +581,88 @@ def _directions(rb: dict[str, np.ndarray], hidden: int) -> tuple[dict[str, int],
     return col_of, torch.from_numpy(np.stack(cols)).to(torch.float64)
 
 
+# ── fit-resume identity (r2 manifest; r3 dropout/store-content keys) ─────────
+
+
+def build_fit_regime(
+    *,
+    corpus_fp: str,
+    R: int,
+    H: int,
+    n_main: int,
+    n_long: int,
+    stub_rb: bool,
+    invalid_by_set: dict[str, list[int]],
+    dropped_by_set: dict[str, set[str]],
+    store_content_sha: str,
+) -> dict:
+    """EVERY output-affecting fit-resume regime key (#722-r3 rule).
+
+    r2 keys: corpus fingerprint, λ grid, policy, read-out rows, split spec,
+    stub_rb, dims. r3 adds the identity closing the persisted CONCERN
+    `fit-resume-dropout-regime-key-missing`: per-set invalid conversations +
+    the capture-recorded dropped-uid set (a changed dropout set changes the
+    paired design), and a CONTENT digest of the consumed store shards (a
+    same-drop-set recapture with different activation values invalidates
+    resume; an HF restage of identical bytes does not).
+    """
+    return {
+        "corpus_fingerprint": corpus_fp,
+        "lambdas": [float(x) for x in RIDGE_LAMBDAS_922],
+        "policy": C.TRANSFER_STANDARDIZATION_POLICY,
+        "readout_blocks": list(C.READOUT_BLOCKS),
+        "R": R,
+        "H": H,
+        "n_main": n_main,
+        "n_long": n_long,
+        "stub_rb": bool(stub_rb),
+        "split": {
+            "seed": C.SPLIT_SEED,
+            "sizes": [C.N_FIT, C.N_VAL, C.N_TEST, C.LONG_FIT, C.LONG_VAL, C.LONG_TEST],
+            "twin_seed": C.TWIN_SEED,
+        },
+        "invalid_ci": {s: [int(x) for x in v] for s, v in sorted(invalid_by_set.items())},
+        "dropped_uids_sha": C.canonical_sha256({s: sorted(v) for s, v in dropped_by_set.items()}),
+        "store_content_sha": store_content_sha,
+    }
+
+
+def load_fit_manifest(manifest_path: Path, fit_regime: dict) -> dict:
+    """Fresh manifest, or the prior one iff its regime EXACTLY matches.
+
+    The regime compare is the resume gate: any key drift — rebuilt corpus,
+    changed dropout set, recaptured store content, different λ grid / split /
+    dims — refits every cell instead of restoring stale artifacts. A
+    missing/unparseable prior manifest also starts fresh.
+    """
+    manifest: dict = {"regime": fit_regime, "cells": {}}
+    if manifest_path.exists():
+        try:
+            prior = json.loads(manifest_path.read_text())
+        except Exception:
+            prior = None
+        if prior and prior.get("regime") == fit_regime:
+            return prior
+        logger.warning("[resume] fit_manifest regime differs — refitting all cells")
+    return manifest
+
+
+def _npz_test_idx_matches(npz_path: Path, expected_idx) -> bool:
+    """True iff a persisted per-cell npz carries EXACTLY the expected test_idx.
+
+    Defense in depth under the regime key (r3, the reconciler's
+    test_idx-vs-current-design assert): a missing/corrupt npz or a stale fold
+    reads False → the cell REFITS (fail-safe — never restore an artifact
+    whose eval fold cannot be proven current against the live design).
+    """
+    try:
+        with np.load(npz_path, allow_pickle=False) as z:
+            got = np.asarray(z["test_idx"], dtype=np.int64)
+    except Exception:
+        return False
+    return np.array_equal(got, np.asarray(expected_idx, dtype=np.int64))
+
+
 # ── main driver ───────────────────────────────────────────────────────────────
 
 
@@ -628,37 +710,25 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     _trait_cols, dirs = _directions(rb, H)
     trait_rows = {t: C.block_to_row(min(C.PRIMARY_LSTAR[t], R - 2)) for t in C.TRAITS}
 
-    # ── fit-resume manifest (r2: the ~3h loop restarts from completed cells) ──
-    # keyed on EVERY output-affecting regime key (#722-r3 rule): corpus
-    # fingerprint, λ grid, policy, read-out rows, split spec, stub_rb, dims.
-    fit_regime = {
-        "corpus_fingerprint": corpus_fp,
-        "lambdas": [float(x) for x in RIDGE_LAMBDAS_922],
-        "policy": C.TRANSFER_STANDARDIZATION_POLICY,
-        "readout_blocks": list(C.READOUT_BLOCKS),
-        "R": R,
-        "H": H,
-        "n_main": n_main,
-        "n_long": n_long,
-        "stub_rb": bool(args.stub_rb),
-        "split": {
-            "seed": C.SPLIT_SEED,
-            "sizes": [C.N_FIT, C.N_VAL, C.N_TEST, C.LONG_FIT, C.LONG_VAL, C.LONG_TEST],
-            "twin_seed": C.TWIN_SEED,
+    # ── fit-resume manifest (r2: the ~3h loop restarts from completed cells;
+    # r3: dropout-set + store-content identity in the regime key) ──
+    fit_regime = build_fit_regime(
+        corpus_fp=corpus_fp,
+        R=R,
+        H=H,
+        n_main=n_main,
+        n_long=n_long,
+        stub_rb=bool(args.stub_rb),
+        invalid_by_set={
+            s: sorted(int(x) for x in meta["sets"][s].get("invalid_ci", []))
+            for s in ("main", "long")
         },
-    }
+        dropped_by_set=_load_capture_dropped(args.store),
+        store_content_sha=C.store_content_digest(args.store, ["main", "long", "onpol"]),
+    )
     args.maps.mkdir(parents=True, exist_ok=True)
     manifest_path = args.maps / "fit_manifest.json"
-    manifest: dict = {"regime": fit_regime, "cells": {}}
-    if manifest_path.exists():
-        try:
-            prior = json.loads(manifest_path.read_text())
-        except Exception:
-            prior = None
-        if prior and prior.get("regime") == fit_regime:
-            manifest = prior
-        else:
-            logger.warning("[resume] fit_manifest regime differs — refitting all cells")
+    manifest = load_fit_manifest(manifest_path, fit_regime)
 
     def _mark_done(cell_key: str) -> None:
         manifest["cells"][cell_key] = {"done": True, "ts": time.time()}
@@ -666,14 +736,38 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
 
     support_sidecar = args.maps / "support_overlap_turn1A.json"
 
+    def _expected_test_idx(eid: str) -> np.ndarray:
+        """The CURRENT design's target index set for an eval cell.
+
+        ``onpol_cis`` is bound in main() before the fit loop runs (closure
+        names resolve at CALL time, and ``_cell_complete`` is only called
+        inside the fit loop).
+        """
+        e = design["evals"][eid]
+        return np.asarray(onpol_cis if e["set"] == "onpol" else e["idx"], dtype=np.int64)
+
     def _cell_complete(fid: str, eval_ids: list[str]) -> bool:
-        """Resume predicate: manifest-done under the CURRENT regime + artifacts."""
+        """Resume predicate: manifest-done under the CURRENT regime + artifacts.
+
+        r3: each restored eval cell's persisted ``test_idx`` must equal the
+        CURRENT design's target index set (the reconciler's defense-in-depth
+        assert under the regime key — hand-copied / stale percell artifacts
+        REFIT, never restore).
+        """
         if not manifest["cells"].get(fid, {}).get("done"):
             return False
         if not (args.maps / f"{fid}.pt").exists():
             return False
         for eid in eval_ids:
-            if not (args.out / "percell" / f"{eid}.npz").exists():
+            p = args.out / "percell" / f"{eid}.npz"
+            if not p.exists():
+                return False
+            if not _npz_test_idx_matches(p, _expected_test_idx(eid)):
+                logger.warning(
+                    "[resume] %s test_idx differs from the current design — refitting %s",
+                    eid,
+                    fid,
+                )
                 return False
         return fid != "ctx_k1_A" or support_sidecar.exists()
 
