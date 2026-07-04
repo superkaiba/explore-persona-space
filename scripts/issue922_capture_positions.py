@@ -218,7 +218,14 @@ def capture_windows_batched(model, tokenizer, items: list[dict], batch_size: int
                 "window_start": it["window_start"],
                 **{
                     k: it[k]
-                    for k in ("trait", "cond_id", "mode", "qi", "question_provenance")
+                    for k in (
+                        "trait",
+                        "cond_id",
+                        "mode",
+                        "qi",
+                        "question_provenance",
+                        "response_provenance",
+                    )
                     if k in it
                 },
             }
@@ -386,6 +393,33 @@ def parity_probe(rows_by_ci: dict, items: list[dict], mode: str, tol_cos: float)
     return summary
 
 
+# ── repair items (--corpus eval_repaired; the paired-provenance follow-up) ────
+
+
+def load_repair_items(path: Path) -> list[dict]:
+    """Items for ``--corpus eval_repaired``: the repair gen phase's completions.
+
+    Each row carries the SAME message construction as
+    ``build_eval_subset_items`` (persisted verbatim at gen time by
+    ``issue922_repair_provenance.py --phase gen``) with ``response`` = the
+    FRESH on-policy completion to the CURRENT question (the
+    ``eval-questions-regenerated-parity-rescope`` repair). The item set is
+    enumerated FROM the gen artifact — the smoke subset threads through with
+    no re-truncation here. Fail-loud schema checks; ``ci`` must be dense
+    0..n−1 (the shard resume predicate keys on the exact ci set).
+    """
+    with open(path) as f:
+        blob = json.load(f)
+    items = blob["items"]
+    assert items, f"no items in {path}"
+    for i, it in enumerate(items):
+        assert int(it["ci"]) == i, ("ci not dense", it["ci"], i)
+        for k in ("trait", "cond_id", "mode", "qi", "question_provenance", "messages", "response"):
+            assert k in it, (k, sorted(it))
+        assert it.get("response_provenance") == "fresh_onpolicy", it.get("response_provenance")
+    return items
+
+
 # ── shard-resume validation (the r1 Codex MAJOR / plan §4.2 binding fix) ─────
 
 
@@ -449,7 +483,13 @@ def validate_shard(
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #922 per-position window capture.")
-    ap.add_argument("--corpus", choices=("lmsys", "eval_subset"), required=True)
+    ap.add_argument("--corpus", choices=("lmsys", "eval_subset", "eval_repaired"), required=True)
+    ap.add_argument(
+        "--completions",
+        type=Path,
+        default=None,
+        help="eval_repaired: the repair gen phase's fresh-completions JSON (required)",
+    )
     ap.add_argument("--out", type=Path, default=Path("/workspace/issue922_store"))
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--wp", type=int, default=C.W_P)
@@ -491,6 +531,9 @@ def main() -> int:
     if args.corpus == "lmsys":
         n_ctx = 20 if args.smoke else (args.n_contexts or C.N_LMSYS)
         items = C.load_lmsys_items(n_contexts=n_ctx)
+    elif args.corpus == "eval_repaired":
+        assert args.completions is not None, "--corpus eval_repaired requires --completions"
+        items = load_repair_items(args.completions)
     else:
         items = C.build_eval_subset_items(
             n_per_cell=args.n_per_cell,
@@ -598,7 +641,9 @@ def main() -> int:
         else None,
         "realized_store_bytes": realized_bytes,
         "per_ctx_upper_bound_bytes": per_ctx_bound,
-        "projected_full_gb": per_ctx_bound * (C.N_LMSYS if args.corpus == "lmsys" else 432) / 1e9,
+        "projected_full_gb": per_ctx_bound
+        * (C.N_LMSYS if args.corpus == "lmsys" else len(items))
+        / 1e9,
         "wall_seconds": time.time() - t0,
         "smoke": args.smoke,
     }
