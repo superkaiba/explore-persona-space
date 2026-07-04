@@ -455,6 +455,31 @@ def test_spawn_session_stop_by_field_does_not_refresh():
         ), stop_note
 
 
+def test_deliberate_stop_note_prefix_alone_does_not_refresh():
+    # The note-prefix leg ALONE (by is an ordinary poster, not
+    # "spawn_session-stop") must exclude — isolates the first half of the OR
+    # predicate so a regression dropping the prefix leg while keeping the
+    # by-field leg fails this test (Codex code-review r1, Minor).
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev(
+            "2026-07-01T10:14:00Z",
+            "epm:progress",
+            "deliberate-stop pid=n/a target=happy-session:abc123 reason=operator-replace",
+        ),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+        )
+        is None
+    )
+
+
 def test_watcher_telemetry_notes_do_not_refresh_window():
     # Third-party bracketed telemetry (watcher + spawn-session bookkeeping)
     # is not stage liveness; the watcher's own progress clock excludes the
