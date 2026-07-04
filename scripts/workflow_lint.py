@@ -5083,6 +5083,99 @@ def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None)
     return errors
 
 
+def check_hollow_verification_gate_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the hollow-verification-gate lens (#779/#890) is absent from
+    any of its three surfaces, or the tag drops off a surface's
+    ``**Blocker tags:**`` verdict-template line.
+
+    Task #779: a green `--verify-vectorized` gated an UNUSED helper's
+    self-check while the dispatched ridge hot loop (~17k fits, 18-20h) ran
+    unverified; rounds 6/7 PASSed. #890 added the Step 0.68
+    hollow-verification-gate sub-check + blocker tag to both code-reviewer
+    agent files and deferred this parity lint. Three surfaces, per-file
+    tokens (the #881 shape):
+
+    (a) code-reviewer.md — the ``Hollow-verification-gate sub-check``
+        Step 0.68 heading phrase;
+    (b) codex-code-reviewer.md — the lowercase copy-contract phrase
+        ``hollow-verification-gate sub-check`` PLUS ``0.68`` on the
+        ``{{INLINED RUBRIC`` placeholder line (a copy-list-only token check
+        false-PASSes while the composed executable Codex prompt omits
+        Step 0.68 — the #606 twin-omission class);
+    (c) efficiency-critic.md — the v2 owner
+        (.claude/rules/lens-coverage-map.md), IMPLEMENTATION-MODE rubric
+        item ``Hollow-verification-gate``.
+
+    Every surface ADDITIONALLY requires the tag on a line starting with
+    ``**Blocker tags:**`` — the verdict template's tag-vocabulary line, the
+    orchestrator's Step 5c-bis parse target (#890's line-scoped verify:
+    a broad grep false-greens a prose-only partial implementation).
+    Tokens are case-sensitive substrings. ``repo_root`` is a unit-test
+    override hook; production callers pass None. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tag = "hollow-verification-gate"
+    blocker_prefix = "**Blocker tags:**"
+    prose_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": ("Hollow-verification-gate sub-check",),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "hollow-verification-gate sub-check",
+        ),
+        root / ".claude" / "agents" / "efficiency-critic.md": ("Hollow-verification-gate",),
+    }
+    errors: list[str] = []
+    for p, required in prose_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #890 hollow-verification-gate lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"efficiency-critic.md (the workflow-v2 owner)."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the hollow-verification-gate lens token "
+                    f"{token!r} (#779/#890). The Step 0.68 sub-check (a "
+                    f"verify/equivalence gate must assert on the function the "
+                    f"entrypoint actually dispatches) must stay on all three "
+                    f"reviewer surfaces so a green gate on an unused sibling "
+                    f"keeps FAILing review (incident #779: an unverified ~17k-"
+                    f"fit hot loop was laundered as verified)."
+                )
+        bt_lines = [ln for ln in text.splitlines() if ln.startswith(blocker_prefix)]
+        if not bt_lines:
+            errors.append(
+                f"{p}: no line starts with {blocker_prefix!r} (#890) — the "
+                f"verdict template's blocker-tag vocabulary line (the Step "
+                f"5c-bis parse target) is gone."
+            )
+        elif not any(tag in ln for ln in bt_lines):
+            errors.append(
+                f"{p}: no {blocker_prefix!r} line names {tag!r} (#890) — the "
+                f"tag dropped out of the verdict template's vocabulary; a "
+                f"reviewer could no longer declare the finding (the "
+                f"2-without-2b partial-implementation class a broad grep "
+                f"false-greens)."
+            )
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if codex.is_file():
+        rubric_lines = [
+            ln for ln in codex.read_text(encoding="utf-8").splitlines() if "{{INLINED RUBRIC" in ln
+        ]
+        if not any("0.68" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.68' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#890) — the composed Codex prompt would "
+                f"omit the Step 0.68 named-helper + hollow-gate lens (the "
+                f"#606 twin-omission class; same pin as #822's '0.55' and "
+                f"#881's '3.5, 3.6, 3.7')."
+            )
+    return errors
+
+
 def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the smoke-architecture marker presence gate (#822) is absent
     from ANY of its three surfaces.
@@ -6256,6 +6349,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-hollow-verification-gate-review-lens",
+        action="store_true",
+        help="FAIL if the #890 hollow-verification-gate lens (the Step 0.68 "
+        "sub-check prose in code-reviewer.md, the copy-contract clause + "
+        "'0.68' on the inlined-rubric placeholder in codex-code-reviewer.md, "
+        "the IMPLEMENTATION-MODE rubric item in efficiency-critic.md — the "
+        "workflow-v2 owner) is absent from any surface, or the tag drops "
+        "off any surface's '**Blocker tags:**' verdict-template line. Pins "
+        "that a verify/equivalence gate asserting on an unused sibling stays "
+        "a Major substantive blocker (incident #779: a green "
+        "--verify-vectorized laundered an unverified ~17k-fit hot loop). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -6422,6 +6529,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
+        or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
@@ -6506,6 +6614,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
         errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_hollow_verification_gate_review_lens or no_flags:
+        errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
     if args.check_smoke_output_hygiene or no_flags:
