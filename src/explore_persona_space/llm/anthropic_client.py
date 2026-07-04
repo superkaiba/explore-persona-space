@@ -9,6 +9,7 @@ import copy
 import datetime as _dt
 import json
 import logging
+import os
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -58,15 +59,37 @@ class BatchDeadlineExceeded(RuntimeError):
     after one final harvest attempt fails to find the batch ended. Callers
     surface this as ``epm:failure v1`` ``failure_class: infra`` rather than
     hanging forever. The bound is wall-clock vs the API's own ``expires_at``
-    (= ``created_at + 24h``), the only reliable signal — per-request counts
-    stay 0 until the whole batch ends, so ``succeeded==0`` is NEVER a stuck
-    heuristic (the #658 misdiagnosis).
+    (= ``created_at + 24h``). Counts-based inference alone is not PROOF of a
+    wedge, but ``succeeded==0`` past ``EPS_BATCH_STUCK_HOURS`` (default 4h)
+    now triggers the bounded stuck-cancel escape in the judge poll loops
+    (#1019; incident #810: a 0/2001 batch wedged 16h — cancel + sync fallback
+    cleared 39,512 calls in 18 min). The deadline remains the hard outer bound.
     """
 
     def __init__(self, batch_id: str, deadline):
         super().__init__(f"batch {batch_id} not ended by deadline {deadline}")
         self.batch_id = batch_id
         self.deadline = deadline
+
+
+DEFAULT_BATCH_STUCK_HOURS = 4.0  # #1019 plan §11 row 1 (Source: #810 wedge + #658 G1 comment)
+
+
+def batch_stuck_threshold_hours() -> float | None:
+    """Resolve the stuck-batch cancel threshold from ``EPS_BATCH_STUCK_HOURS``.
+
+    Semantics (#1019 plan D5): unset or empty string -> ``DEFAULT_BATCH_STUCK_HOURS``
+    (4.0); a parseable float <= 0 -> ``None`` (stuck check DISABLED, restoring the
+    pure deadline-bounded behavior); a parseable float > 0 -> that threshold in
+    hours. A malformed value raises ``ValueError`` immediately (fail loud, never a
+    silent default). Read per poll step (never frozen at import) so long-lived
+    processes and tests see the live environment.
+    """
+    raw = os.environ.get("EPS_BATCH_STUCK_HOURS", "").strip()
+    if not raw:
+        return DEFAULT_BATCH_STUCK_HOURS
+    val = float(raw)  # ValueError propagates (fail loud, never a silent default)
+    return val if val > 0 else None
 
 
 def deadline_from_expires_at(expires_at, grace_min: int = 30) -> "_dt.datetime":

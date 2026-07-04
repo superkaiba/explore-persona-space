@@ -300,7 +300,7 @@ def test_chunk_at_byte_limit():
     assert sum(len(c) for c in chunks) == 3
 
 
-# ── #663 Test 7: _collect_batch_results 4-tuple two-level split ──────────────
+# ── #663 Test 7: _collect_batch_results 5-tuple two-level split ──────────────
 
 
 def _collect_client(outcomes: dict[str, str], *, error_types: dict[str, str] | None = None):
@@ -338,13 +338,14 @@ def _collect_client(outcomes: dict[str, str], *, error_types: dict[str, str] | N
     return SimpleNamespace(messages=SimpleNamespace(batches=SimpleNamespace(results=_results)))
 
 
-def test_collect_batch_results_four_tuple_split():
-    """_collect_batch_results returns (scores, retriable, expired, quarantined).
+def test_collect_batch_results_five_tuple_split():
+    """_collect_batch_results returns (scores, retriable, expired, quarantined, canceled).
 
-    (#663 §6 Test 7 regression — the 3-tuple -> 4-tuple shape change.) The
-    invalid_request_error is quarantined (NOT retriable); a server error is
-    retriable; expired is its own list; canceled surfaces as an error dict with
-    no retry membership.
+    (#663 §6 Test 7 regression — the 3-tuple -> 4-tuple -> 5-tuple (#1019) shape
+    change.) The invalid_request_error is quarantined (NOT retriable); a server
+    error is retriable; expired is its own list; canceled surfaces as an error
+    dict, lands in the new ``canceled`` list, and (out-of-band) never joins a
+    retry list — the stuck-cancel retry gate lives in ``_load_collected_into``.
     """
     from explore_persona_space.eval.judge_dispatch import _default_error_dict
 
@@ -357,12 +358,13 @@ def test_collect_batch_results_four_tuple_split():
     }
     error_types = {"bad_request": "invalid_request_error", "server_err": "api_error"}
     client = _collect_client(outcomes, error_types=error_types)
-    scores, retriable, expired, quarantined = _collect_batch_results(
+    scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, "msgbatch_x", _default_error_dict
     )
     assert quarantined == ["bad_request"]
     assert retriable == ["server_err"]
     assert expired == ["exp"]
+    assert canceled == ["cxl"]
     assert scores["ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
     # All terminal states present in scores (overwritten if a retry succeeds).
     assert set(scores) == {"ok", "bad_request", "server_err", "exp", "cxl"}
