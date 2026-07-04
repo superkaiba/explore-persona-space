@@ -6278,8 +6278,8 @@
     "949": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/949",
-      "status": "reviewing",
+      "path": "tasks/completed/949",
+      "status": "completed",
       "title": "workflow-fix: exclude deliberate-stop notes from stage-skip liveness"
     },
     "950": {
