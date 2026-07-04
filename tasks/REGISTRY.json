@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 991,
+  "highest_id": 992,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6605,6 +6605,13 @@
       "path": "tasks/proposed/991",
       "status": "proposed",
       "title": "daily-fix: system-role guard at api_dispatch dispatch_calls"
+    },
+    "992": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/992",
+      "status": "proposed",
+      "title": "workflow-fix: LESSONS.md byte-cap headroom restructure"
     }
   }
 }
