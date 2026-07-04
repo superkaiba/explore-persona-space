@@ -71,6 +71,7 @@ from typing import Any
 
 from explore_persona_space.task_workflow import (
     CODE_KINDS,
+    _iter_jsonl,
     find_task_path,
     get_task,
     list_events,
@@ -296,10 +297,13 @@ def collect_stage_spans() -> list[dict[str, Any]]:
             if not ev_path.is_file():
                 continue
             try:
-                events = [
-                    json.loads(line) for line in ev_path.read_text().splitlines() if line.strip()
-                ]
-            except (OSError, json.JSONDecodeError):
+                # canonical tolerant reader: no splitlines() Unicode-boundary
+                # shred, and per-line skip — one bad line no longer drops the
+                # whole task (#950). OSError guard retained for the
+                # is_file()-to-read race (_iter_jsonl pre-checks exists() but
+                # does not catch a read-time OSError).
+                events = _iter_jsonl(ev_path)
+            except OSError:
                 continue
             kind = reg_kinds.get(d.name) or _frontmatter_kind(d)
             bucket = _kind_bucket(kind)
