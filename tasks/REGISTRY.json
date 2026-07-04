@@ -6434,8 +6434,8 @@
     "969": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/969",
-      "status": "proposed",
+      "path": "tasks/planning/969",
+      "status": "planning",
       "title": "workflow-fix: v4-scope pre_reg prose restriction in body audit"
     },
     "97": {
