@@ -715,6 +715,7 @@ kill of live work — `kill`/`kill -9`/`pkill` of a workload process, or
 machine-readable breadcrumb on the OWNING task, BEFORE the kill:
 
     uv run python scripts/task.py post-marker <N> epm:progress \
+      --by pm-chat \
       --note 'deliberate-stop pid=<PID> target=<process/session desc> reason=<one line>'
 
 `spawn_session.py stop` auto-posts this for issue-mapped sessions (you
@@ -727,6 +728,17 @@ greps for. Structured `epm:progress` note, NOT a new marker kind. If
 no owning task is identifiable, post on the most-related active task
 (or the task whose worktree/pod hosts the process) — and either way
 the checklist treats a MISSING breadcrumb as non-exculpatory.
+
+**Cross-session posts carry `--by pm-chat`.** Any marker this session
+posts on another session's task (advisory notes, directives,
+`epm:followup-scope`, deliberate-stop breadcrumbs) sets `--by pm-chat` —
+a `by` value on the #966 emitter-convention list (`pm-chat`,
+`autonomous_session_watch`, `spawn_session`, `spawn_session-stop`) is a
+trustworthy-positive EXTERNAL signal for the `/issue` pre-dispatch
+triage read (conventional, not authenticated — see the
+`TRIAGE_MACHINE_BY` note in `task_workflow.py`; #966). Absence still
+fails toward triage, so forgetting the flag costs nothing but
+legibility.
 
 ---
 

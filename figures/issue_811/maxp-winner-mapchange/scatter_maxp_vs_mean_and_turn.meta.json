@@ -1,0 +1,156 @@
+{
+  "commit": "baa9e12ebc",
+  "created": "2026-07-03T14:08:11Z",
+  "figsize": [
+    10.8,
+    5.2
+  ],
+  "points": [
+    {
+      "map change under answer mean (median, activation units)": 0.011165015180395966,
+      "map change under max-pool (median, activation units)": 0.011920251232317599,
+      "label": "harmful-compliance L7",
+      "series": "harmful-compliance L7 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.03668828667616905,
+      "map change under max-pool (median, activation units)": 0.0489820637281582,
+      "label": "harmful-compliance L14",
+      "series": "harmful-compliance L14 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.08238935864885705,
+      "map change under max-pool (median, activation units)": 0.11479685584691324,
+      "label": "harmful-compliance L21",
+      "series": "harmful-compliance L21 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.015752120228144536,
+      "map change under max-pool (median, activation units)": 0.012555027696266343,
+      "label": "sycophancy L7",
+      "series": "sycophancy L7 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.025806522455781546,
+      "map change under max-pool (median, activation units)": 0.010272067267849728,
+      "label": "sycophancy L14",
+      "series": "sycophancy L14 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.038211898681410755,
+      "map change under max-pool (median, activation units)": 0.08427175215853853,
+      "label": "sycophancy L21",
+      "series": "sycophancy L21 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.11712598131664062,
+      "map change under max-pool (median, activation units)": 0.0681248002121966,
+      "label": "taught fact L7",
+      "series": "taught fact L7 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.28890262883654483,
+      "map change under max-pool (median, activation units)": 0.2712315009357061,
+      "label": "taught fact L14",
+      "series": "taught fact L14 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "map change under answer mean (median, activation units)": 0.13755338684338902,
+      "map change under max-pool (median, activation units)": 0.055836952036490625,
+      "label": "taught fact L21",
+      "series": "taught fact L21 \u00b7 vs answer mean",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.11814198875755773,
+      "y": 0.011920251232317599,
+      "label": "harmful-compliance L7",
+      "series": "harmful-compliance L7 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.23516529241092787,
+      "y": 0.0489820637281582,
+      "label": "harmful-compliance L14",
+      "series": "harmful-compliance L14 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.5059062399871073,
+      "y": 0.11479685584691324,
+      "label": "harmful-compliance L21",
+      "series": "harmful-compliance L21 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.05109562357131832,
+      "y": 0.012555027696266343,
+      "label": "sycophancy L7",
+      "series": "sycophancy L7 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.054182517788053976,
+      "y": 0.010272067267849728,
+      "label": "sycophancy L14",
+      "series": "sycophancy L14 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.10768752542522547,
+      "y": 0.08427175215853853,
+      "label": "sycophancy L21",
+      "series": "sycophancy L21 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.1281622824328496,
+      "y": 0.0681248002121966,
+      "label": "taught fact L7",
+      "series": "taught fact L7 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.020040547740684957,
+      "y": 0.2712315009357061,
+      "label": "taught fact L14",
+      "series": "taught fact L14 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "map change under turn boundary (median, activation units)": 0.11762075902447647,
+      "y": 0.055836952036490625,
+      "label": "taught fact L21",
+      "series": "taught fact L21 \u00b7 vs turn boundary",
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18
+}

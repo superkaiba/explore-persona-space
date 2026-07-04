@@ -58,12 +58,16 @@ _META_KEYS = ("behavior", "source_cid", "target_cid", "layer")
 
 # #811: answer-side summary → the (v0, v_plus) .npz keys carrying it. "mean" is the
 # #667/#722 store's mean-over-response (v0/v_plus); "turn_nl" is #811's
-# turn-boundary single-position read (v0_turn_nl/v_plus_turn_nl). The CONTEXT keys
+# turn-boundary single-position read (v0_turn_nl/v_plus_turn_nl); "maxp" is #810's
+# crowned per-dimension content-token max (v0_maxp/v_plus_maxp — the #811
+# maxp-winner round, present only in its re-extracted store). The CONTEXT keys
 # (c_C/c_C_postft) are summary-INDEPENDENT (answer-side change only), so the loader
-# reads the SAME c_C/c_C_postft for both — the manipulated variable is answer-side.
+# reads the SAME c_C/c_C_postft for every summary — the manipulated variable is
+# answer-side.
 _SUMMARY_ANSWER_KEYS = {
     "mean": ("v0", "v_plus"),
     "turn_nl": ("v0_turn_nl", "v_plus_turn_nl"),
+    "maxp": ("v0_maxp", "v_plus_maxp"),
 }
 
 

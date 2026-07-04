@@ -109,8 +109,16 @@ def _function_change_row(cell: dict) -> dict:
     }
 
 
-def assemble(cells_dir: Path, out_dir: Path) -> dict:
-    """Read every per-cell JSON, split by summary, write the side-by-side deliverables."""
+def assemble(
+    cells_dir: Path, out_dir: Path, summary_filename: str = "mean_vs_turn_nl_summary.json"
+) -> dict:
+    """Read every per-cell JSON, split by summary, write the side-by-side deliverables.
+
+    Summary-agnostic: the per-summary deliverables + the pair table are derived
+    from whatever ``summary`` values the cell JSONs carry (the #811 maxp round adds
+    a third ``maxp`` column with NO code change here); only the top-level
+    summary-doc filename is round-specific (``summary_filename``).
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     cell_files = sorted(cells_dir.glob("*_L*_*.json"))
     if not cell_files:
@@ -186,10 +194,8 @@ def assemble(cells_dir: Path, out_dir: Path) -> dict:
         "pair_table": pair_table,
         "kill1_base_leg_validity": kill1,
     }
-    (out_dir / "mean_vs_turn_nl_summary.json").write_text(
-        json.dumps(summary_doc, indent=2, default=float)
-    )
-    logger.info("[phase=analyze] wrote mean_vs_turn_nl_summary.json (%d cells)", len(pair_table))
+    (out_dir / summary_filename).write_text(json.dumps(summary_doc, indent=2, default=float))
+    logger.info("[phase=analyze] wrote %s (%d cells)", summary_filename, len(pair_table))
     return summary_doc
 
 
@@ -198,8 +204,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #811 assemble mean-vs-turn_nl deliverables")
     ap.add_argument("--cells-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_811/cells")
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_811")
+    ap.add_argument(
+        "--summary-filename",
+        default="mean_vs_turn_nl_summary.json",
+        help="top-level side-by-side table filename (maxp round: "
+        "summary_three_summaries.json; default preserves the v1 name)",
+    )
     args = ap.parse_args()
-    assemble(args.cells_dir, args.out_dir)
+    assemble(args.cells_dir, args.out_dir, summary_filename=args.summary_filename)
     logger.info("[phase=analyze] done")
     return 0
 

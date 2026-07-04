@@ -84,6 +84,7 @@ def _run_dispatch(
     precreate_phase0: bool = True,
     stage_prefix: str | None = None,
     stage_creates_store: bool = False,
+    variant: str | None = None,
 ) -> tuple[int, str]:
     """Run the real dispatcher in a sandbox with a fake `uv`. Returns (rc, invocation_log).
 
@@ -98,8 +99,10 @@ def _run_dispatch(
     sandbox = tmp_path / "workload"
     (sandbox / "scripts").mkdir(parents=True, exist_ok=True)
     if precreate_phase0:
-        # One dummy file is enough for `-d` to be true.
-        phase0 = sandbox / "eval_results" / "issue_811" / "phase0_base_leg"
+        # One dummy file is enough for `-d` to be true. The maxp arm uses the
+        # round's OWN dirs (SUMMARY_VARIANT case in the dispatcher).
+        round_dir = ("issue_811", "maxp-winner-mapchange") if variant == "maxp" else ("issue_811",)
+        phase0 = sandbox.joinpath("eval_results", *round_dir, "phase0_base_leg")
         phase0.mkdir(parents=True, exist_ok=True)
         (phase0 / "marker.txt").write_text("x")
     invocation_log = tmp_path / "invocations.log"
@@ -115,6 +118,10 @@ def _run_dispatch(
         env["EPM_PHASE0_STAGE_PREFIX"] = stage_prefix
     else:
         env.pop("EPM_PHASE0_STAGE_PREFIX", None)
+    if variant is not None:
+        env["SUMMARY_VARIANT"] = variant
+    else:
+        env.pop("SUMMARY_VARIANT", None)
     proc = subprocess.run(
         ["bash", str(DISPATCH), "--sources", "default,sp_swe", *extra_args],
         env=env,
@@ -247,3 +254,48 @@ def test_dispatcher_skip_extract_allows_hf_fallback_when_no_local_store(tmp_path
     assert "--local-root" not in gate_lines[0], (
         f"--skip-extract HF fallback wrongly passed --local-root\ngate line:\n{gate_lines[0]}"
     )
+
+
+def test_dispatcher_maxp_arm_wires_summary_flags(tmp_path):
+    """SUMMARY_VARIANT=maxp env/flag wiring pin (r10 Minor): the maxp arm points the
+    gate at --test-summary maxp + the round's OWN phase0 dir, adds --maxp to every
+    Phase-1 extract, runs three-summary fits, and runs the maxp-only phases (3b
+    committed-mean parity, 4b F1 offset decomposition)."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=[], variant="maxp")
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (maxp arm PASS-through)\nlog:\n{log}"
+    gate_lines = [ln for ln in log.splitlines() if "issue811_fit.py --phase0-gate" in ln]
+    assert gate_lines, f"no phase0-gate invocation logged\nlog:\n{log}"
+    assert "--test-summary maxp" in gate_lines[0], (
+        f"maxp arm gate not re-pointed at --test-summary maxp\ngate line:\n{gate_lines[0]}"
+    )
+    assert (
+        "--local-root eval_results/issue_811/maxp-winner-mapchange/phase0_base_leg" in gate_lines[0]
+    ), f"maxp gate not reading the round's OWN phase0 store\ngate line:\n{gate_lines[0]}"
+    ext_lines = [ln for ln in log.splitlines() if "issue667_extract.py" in ln]
+    assert ext_lines and all("--turn-nl --maxp" in ln for ln in ext_lines), (
+        f"Phase-1 extract missing '--turn-nl --maxp'\nextract lines:\n{ext_lines}\nlog:\n{log}"
+    )
+    fit_lines = [
+        ln for ln in log.splitlines() if "issue811_fit.py" in ln and "--phase0-gate" not in ln
+    ]
+    assert fit_lines and "--summaries mean turn_nl maxp" in fit_lines[0], (
+        f"Phase-3 fits not three-summary\nfit lines:\n{fit_lines}"
+    )
+    assert "--compare-committed" in log, f"maxp-only Phase 3b parity read never ran\nlog:\n{log}"
+    assert "issue811_offset_decomposition.py" in log, (
+        f"maxp-only Phase 4b F1 offset decomposition never ran\nlog:\n{log}"
+    )
+
+
+def test_dispatcher_maxp_arm_refuses_stage_prefix(tmp_path):
+    """SUMMARY_VARIANT=maxp + EPM_PHASE0_STAGE_PREFIX -> exit 2 BEFORE any phase runs
+    (no prior phase-0 store carries v0_maxp; plan §4 item 5 fail-fast guard)."""
+    rc, log = _run_dispatch(
+        tmp_path,
+        gate_rc=0,
+        extra_args=[],
+        variant="maxp",
+        stage_prefix="issue811_partial/att-20260701-233116/eval_results_issue_811/phase0_base_leg",
+    )
+    assert rc == 2, f"dispatcher rc={rc}, expected 2 (maxp stage-prefix refusal)\nlog:\n{log}"
+    assert log.strip() == "", f"phases ran despite the maxp stage-prefix refusal\nlog:\n{log}"

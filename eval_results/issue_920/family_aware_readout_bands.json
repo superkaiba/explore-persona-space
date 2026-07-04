@@ -1,0 +1,1412 @@
+{
+  "definition": {
+    "statistic": "max over side cells of |pooled held-out Spearman rho(pred, E0)|; every null draw inherits the SAME max-over-cells selection (two-sided |rho|)",
+    "wf_full": "PRIMARY: within-family permutation of E0 (family identity of every value preserved); tests within-family association above family structure on the SAME observed statistic as the shipped free-permutation headline",
+    "wf_centered": "same within-family null on the family-mean-centered Spearman (the analyzer's centering re-read, now banded); centering commutes with within-family permutation so draws batch on precomputed ranks",
+    "family_means": "Spearman over the G=7 family means, exact 7! = 5,040 permutation group (family-level exchangeability / between-family association); n=7 rho lattice spacing 0.0357",
+    "n_draws_wf": 1000,
+    "seed": 921,
+    "excluded_cells_zeroed": 0,
+    "family_order": [
+      "behavior",
+      "default",
+      "format",
+      "icl",
+      "persona",
+      "rephrase",
+      "wildchat"
+    ],
+    "recipe": "recompute: uv run python scripts/issue920_family_null.py --n-draws 1000 --seed 921 (deterministic; per-draw max vectors in family_aware_readout_perdraw.json)"
+  },
+  "headline": {
+    "n_tests": 28,
+    "free_band_clears": 27,
+    "wf_full_clears": 7,
+    "wf_centered_clears": 19,
+    "family_means_clears": 0,
+    "family_means_bands_at_ceiling": 28
+  },
+  "tests": {
+    "in_probe_ctx_sycophancy": {
+      "free_band_p97_5": 0.5167683073229291,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.557935,
+        "band_p97_5": 0.594487,
+        "clears": false,
+        "p_value": 0.126873,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.594487,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.594142,
+        "band_p97_5": 0.539323,
+        "clears": true,
+        "p_value": 0.003996,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.539323,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 1.0,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.130159,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_sycophancy": {
+      "free_band_p97_5": 0.5355726290516206,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.592893,
+        "band_p97_5": 0.661188,
+        "clears": false,
+        "p_value": 0.241758,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.661188,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.643025,
+        "band_p97_5": 0.558418,
+        "clears": true,
+        "p_value": 0.003996,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.558418,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 1.0,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.157143,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_refusal": {
+      "free_band_p97_5": 0.49769267707082826,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.570996,
+        "band_p97_5": 0.632857,
+        "clears": false,
+        "p_value": 0.378621,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.632857,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.61527,
+        "band_p97_5": 0.528857,
+        "clears": true,
+        "p_value": 0.001998,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.528857,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.678571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.965079,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_refusal": {
+      "free_band_p97_5": 0.5038943577430972,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.6291,
+        "band_p97_5": 0.669294,
+        "clears": false,
+        "p_value": 0.302697,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.669294,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.430588,
+        "band_p97_5": 0.55492,
+        "clears": false,
+        "p_value": 0.406593,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.55492,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.821429,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.832143,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_harmful_compliance": {
+      "free_band_p97_5": 0.5047106842737094,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.713421,
+        "band_p97_5": 0.746862,
+        "clears": false,
+        "p_value": 0.12987,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.746862,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.611236,
+        "band_p97_5": 0.549349,
+        "clears": true,
+        "p_value": 0.005994,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.549349,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.528968,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_harmful_compliance": {
+      "free_band_p97_5": 0.520424969987995,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.720624,
+        "band_p97_5": 0.737529,
+        "clears": false,
+        "p_value": 0.06993,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.737529,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.577527,
+        "band_p97_5": 0.586663,
+        "clears": false,
+        "p_value": 0.034965,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.586663,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.494841,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_fact_expression": {
+      "free_band_p97_5": 0.4949133217385346,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.857376,
+        "band_p97_5": 0.80811,
+        "clears": true,
+        "p_value": 0.001998,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.80811,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.578295,
+        "band_p97_5": 0.55036,
+        "clears": true,
+        "p_value": 0.011988,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.55036,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.251984,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_fact_expression": {
+      "free_band_p97_5": 0.49037048654313137,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.694103,
+        "band_p97_5": 0.751923,
+        "clears": false,
+        "p_value": 0.220779,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.751923,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.696038,
+        "band_p97_5": 0.554581,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.554581,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.153175,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_format_style": {
+      "free_band_p97_5": 0.4913925570228091,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.707659,
+        "band_p97_5": 0.721798,
+        "clears": false,
+        "p_value": 0.045954,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.721798,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.699304,
+        "band_p97_5": 0.521642,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.521642,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.857143,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.591667,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_format_style": {
+      "free_band_p97_5": 0.5238679471788715,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.788908,
+        "band_p97_5": 0.756161,
+        "clears": true,
+        "p_value": 0.003996,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.756161,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.706603,
+        "band_p97_5": 0.557313,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.557313,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.44127,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_self_report": {
+      "free_band_p97_5": 0.5263505402160864,
+      "free_clears": false,
+      "wf_full": {
+        "observed_max_abs_rho": 0.522593,
+        "band_p97_5": 0.636439,
+        "clears": false,
+        "p_value": 0.606394,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.636439,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.614118,
+        "band_p97_5": 0.509253,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.509253,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.75,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.978968,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_self_report": {
+      "free_band_p97_5": 0.5287442977190877,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.770468,
+        "band_p97_5": 0.759234,
+        "clears": true,
+        "p_value": 0.013986,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.759234,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.56994,
+        "band_p97_5": 0.504197,
+        "clears": true,
+        "p_value": 0.002997,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.504197,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.892857,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.640873,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ctx_persona_drift": {
+      "free_band_p97_5": 0.4857166866746699,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.57551,
+        "band_p97_5": 0.632848,
+        "clears": false,
+        "p_value": 0.284715,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.632848,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.444802,
+        "band_p97_5": 0.52982,
+        "clears": false,
+        "p_value": 0.17982,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.52982,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.714286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.86746,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "in_probe_ans_persona_drift": {
+      "free_band_p97_5": 0.5111740696278512,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.651188,
+        "band_p97_5": 0.69739,
+        "clears": false,
+        "p_value": 0.447552,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.69739,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.487923,
+        "band_p97_5": 0.499265,
+        "clears": false,
+        "p_value": 0.036963,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.499265,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.714286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.953968,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_sycophancy": {
+      "free_band_p97_5": 0.5252412965186074,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.540456,
+        "band_p97_5": 0.609417,
+        "clears": false,
+        "p_value": 0.242757,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.609417,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.593277,
+        "band_p97_5": 0.542994,
+        "clears": true,
+        "p_value": 0.008991,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.542994,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 1.0,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.15,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_sycophancy": {
+      "free_band_p97_5": 0.5301848739495799,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.617671,
+        "band_p97_5": 0.692994,
+        "clears": false,
+        "p_value": 0.395604,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.692994,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.588091,
+        "band_p97_5": 0.546727,
+        "clears": true,
+        "p_value": 0.012987,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.546727,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 1.0,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.15873,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_refusal": {
+      "free_band_p97_5": 0.49456662665066026,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.662521,
+        "band_p97_5": 0.65927,
+        "clears": true,
+        "p_value": 0.022977,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.65927,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.617959,
+        "band_p97_5": 0.530879,
+        "clears": true,
+        "p_value": 0.002997,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.530879,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.440873,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_refusal": {
+      "free_band_p97_5": 0.5207827130852342,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.613253,
+        "band_p97_5": 0.678466,
+        "clears": false,
+        "p_value": 0.437562,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.678466,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.553806,
+        "band_p97_5": 0.555071,
+        "clears": false,
+        "p_value": 0.027972,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.555071,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.821429,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.909921,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_harmful_compliance": {
+      "free_band_p97_5": 0.5084777911164466,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.705162,
+        "band_p97_5": 0.772893,
+        "clears": false,
+        "p_value": 0.412587,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.772893,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.598463,
+        "band_p97_5": 0.556327,
+        "clears": true,
+        "p_value": 0.010989,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.556327,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.892857,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.799206,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_harmful_compliance": {
+      "free_band_p97_5": 0.5417118847539014,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.671549,
+        "band_p97_5": 0.698199,
+        "clears": false,
+        "p_value": 0.110889,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.698199,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.508571,
+        "band_p97_5": 0.589534,
+        "clears": false,
+        "p_value": 0.217782,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.589534,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.44246,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_fact_expression": {
+      "free_band_p97_5": 0.5038249141422021,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.855263,
+        "band_p97_5": 0.811093,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.811093,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.557935,
+        "band_p97_5": 0.552941,
+        "clears": true,
+        "p_value": 0.01998,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.552941,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.372222,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_fact_expression": {
+      "free_band_p97_5": 0.5015306863254961,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.678256,
+        "band_p97_5": 0.722314,
+        "clears": false,
+        "p_value": 0.144855,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.722314,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.626122,
+        "band_p97_5": 0.573897,
+        "clears": true,
+        "p_value": 0.005994,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.573897,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.892857,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.625,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_format_style": {
+      "free_band_p97_5": 0.5011716686674669,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.752317,
+        "band_p97_5": 0.724101,
+        "clears": true,
+        "p_value": 0.005994,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.724101,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.713421,
+        "band_p97_5": 0.523282,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.523282,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.273016,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_format_style": {
+      "free_band_p97_5": 0.524921968787515,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.830012,
+        "band_p97_5": 0.804101,
+        "clears": true,
+        "p_value": 0.000999,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.804101,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.659352,
+        "band_p97_5": 0.560346,
+        "clears": true,
+        "p_value": 0.001998,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.560346,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.358333,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_self_report": {
+      "free_band_p97_5": 0.5206842737094838,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.603457,
+        "band_p97_5": 0.710449,
+        "clears": false,
+        "p_value": 0.772228,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.710449,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.593469,
+        "band_p97_5": 0.518663,
+        "clears": true,
+        "p_value": 0.003996,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.518663,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.638889,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_self_report": {
+      "free_band_p97_5": 0.5374789915966387,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.711789,
+        "band_p97_5": 0.780094,
+        "clears": false,
+        "p_value": 0.531469,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.780094,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.512317,
+        "band_p97_5": 0.519256,
+        "clears": false,
+        "p_value": 0.031968,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.519256,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.964286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.354365,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ctx_persona_drift": {
+      "free_band_p97_5": 0.48484993997599024,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.793709,
+        "band_p97_5": 0.823006,
+        "clears": false,
+        "p_value": 0.288711,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.823006,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.421753,
+        "band_p97_5": 0.533071,
+        "clears": false,
+        "p_value": 0.295704,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.533071,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.714286,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.959127,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    },
+    "input_ood_ans_persona_drift": {
+      "free_band_p97_5": 0.504266506602641,
+      "free_clears": true,
+      "wf_full": {
+        "observed_max_abs_rho": 0.786699,
+        "band_p97_5": 0.837028,
+        "clears": false,
+        "p_value": 0.48951,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.837028,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "wf_centered": {
+        "observed_max_abs_rho": 0.417143,
+        "band_p97_5": 0.509268,
+        "clears": false,
+        "p_value": 0.305694,
+        "n_draws": 1000,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 0.509268,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": false
+        }
+      },
+      "family_means": {
+        "observed_max_abs_rho": 0.928571,
+        "band_p97_5": 1.0,
+        "clears": false,
+        "p_value": 0.372619,
+        "n_draws": 5040,
+        "band_upper_vs_ceiling": {
+          "band_p97_5": 1.0,
+          "ceiling_abs_rho": 1.0,
+          "band_at_or_above_ceiling": true
+        },
+        "granularity_floor_note": "n=7 Spearman lattice spacing 0.0357; with max over hundreds of cells the exact band saturates the lattice"
+      }
+    }
+  },
+  "best_cells": {
+    "in_probe_ctx_sycophancy": {
+      "cell": "ctx_lastk_7@L0",
+      "rho_full_at_cell": -0.5579,
+      "rho_centered_at_cell": -0.2598,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_sycophancy": {
+      "cell": "pos_tail_10@L2",
+      "rho_full_at_cell": -0.5929,
+      "rho_centered_at_cell": -0.2,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_refusal": {
+      "cell": "ctx_blk_max@L26",
+      "rho_full_at_cell": 0.571,
+      "rho_centered_at_cell": 0.4651,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_refusal": {
+      "cell": "ans_wtn_max@L1",
+      "rho_full_at_cell": 0.6291,
+      "rho_centered_at_cell": 0.3154,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_harmful_compliance": {
+      "cell": "ctx_co_mean@L22",
+      "rho_full_at_cell": -0.7134,
+      "rho_centered_at_cell": -0.4784,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_harmful_compliance": {
+      "cell": "ans_uhdr_max@L0",
+      "rho_full_at_cell": 0.7206,
+      "rho_centered_at_cell": 0.1525,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_fact_expression": {
+      "cell": "ctx_lastk_1@L17",
+      "rho_full_at_cell": 0.8574,
+      "rho_centered_at_cell": 0.5599,
+      "abs_centered_clears_wf_centered_band": true
+    },
+    "in_probe_ans_fact_expression": {
+      "cell": "ans_uh_nl@L19",
+      "rho_full_at_cell": 0.6941,
+      "rho_centered_at_cell": 0.2396,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_format_style": {
+      "cell": "ctx_wt_max@L12",
+      "rho_full_at_cell": -0.7077,
+      "rho_centered_at_cell": -0.042,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_format_style": {
+      "cell": "pos_head_0@L18",
+      "rho_full_at_cell": 0.7889,
+      "rho_centered_at_cell": 0.4728,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_self_report": {
+      "cell": "ctx_lastk_5@L9",
+      "rho_full_at_cell": -0.5226,
+      "rho_centered_at_cell": -0.1721,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_self_report": {
+      "cell": "pos_tail_2@L5",
+      "rho_full_at_cell": -0.7705,
+      "rho_centered_at_cell": -0.3781,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_persona_drift": {
+      "cell": "ctx_lastk_2@L27",
+      "rho_full_at_cell": -0.5755,
+      "rho_centered_at_cell": 0.051,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ans_persona_drift": {
+      "cell": "pos_tail_10@L20",
+      "rho_full_at_cell": -0.6512,
+      "rho_centered_at_cell": -0.1456,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_sycophancy": {
+      "cell": "ctx_tt_im_start@L15",
+      "rho_full_at_cell": 0.5405,
+      "rho_centered_at_cell": 0.391,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_sycophancy": {
+      "cell": "pos_tail_9@L3",
+      "rho_full_at_cell": -0.6177,
+      "rho_centered_at_cell": -0.2438,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_refusal": {
+      "cell": "ctx_lastk_7@L0",
+      "rho_full_at_cell": -0.6625,
+      "rho_centered_at_cell": -0.3482,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_refusal": {
+      "cell": "ans_wtf_mean@L8",
+      "rho_full_at_cell": 0.6133,
+      "rho_centered_at_cell": 0.3806,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_harmful_compliance": {
+      "cell": "ctx_co_mean@L23",
+      "rho_full_at_cell": -0.7052,
+      "rho_centered_at_cell": -0.4373,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_harmful_compliance": {
+      "cell": "pos_head_0@L9",
+      "rho_full_at_cell": 0.6715,
+      "rho_centered_at_cell": 0.1249,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_fact_expression": {
+      "cell": "ctx_lastk_1@L17",
+      "rho_full_at_cell": 0.8553,
+      "rho_centered_at_cell": 0.5579,
+      "abs_centered_clears_wf_centered_band": true
+    },
+    "input_ood_ans_fact_expression": {
+      "cell": "ans_uh_nl@L9",
+      "rho_full_at_cell": 0.6783,
+      "rho_centered_at_cell": 0.4166,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_format_style": {
+      "cell": "ctx_wt_max@L12",
+      "rho_full_at_cell": -0.7523,
+      "rho_centered_at_cell": -0.2694,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_format_style": {
+      "cell": "pos_head_0@L18",
+      "rho_full_at_cell": 0.83,
+      "rho_centered_at_cell": 0.4875,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_self_report": {
+      "cell": "ctx_lastk_7@L10",
+      "rho_full_at_cell": -0.6035,
+      "rho_centered_at_cell": 0.0366,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_self_report": {
+      "cell": "pos_tail_4@L8",
+      "rho_full_at_cell": -0.7118,
+      "rho_centered_at_cell": -0.2838,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_persona_drift": {
+      "cell": "ctx_lastk_4@L26",
+      "rho_full_at_cell": -0.7937,
+      "rho_centered_at_cell": 0.0017,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_persona_drift": {
+      "cell": "pos_head_4@L4",
+      "rho_full_at_cell": -0.7867,
+      "rho_centered_at_cell": -0.2769,
+      "abs_centered_clears_wf_centered_band": false
+    }
+  },
+  "named_residual_cells": {
+    "in_probe_ctx_fact_expression": {
+      "cell": "ctx_lastk_1@L17",
+      "rho_full_at_cell": 0.8574,
+      "rho_centered_at_cell": 0.5599,
+      "abs_centered_clears_wf_centered_band": true
+    },
+    "input_ood_ctx_fact_expression": {
+      "cell": "ctx_lastk_1@L17",
+      "rho_full_at_cell": 0.8553,
+      "rho_centered_at_cell": 0.5579,
+      "abs_centered_clears_wf_centered_band": true
+    },
+    "in_probe_ans_format_style": {
+      "cell": "pos_head_0@L18",
+      "rho_full_at_cell": 0.7889,
+      "rho_centered_at_cell": 0.4728,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ans_format_style": {
+      "cell": "pos_head_0@L18",
+      "rho_full_at_cell": 0.83,
+      "rho_centered_at_cell": 0.4875,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_refusal": {
+      "cell": "ctx_blk_max@L26",
+      "rho_full_at_cell": 0.571,
+      "rho_centered_at_cell": 0.4651,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_refusal": {
+      "cell": "ctx_lastk_7@L0",
+      "rho_full_at_cell": -0.6625,
+      "rho_centered_at_cell": -0.3482,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "in_probe_ctx_harmful_compliance": {
+      "cell": "ctx_co_mean@L22",
+      "rho_full_at_cell": -0.7134,
+      "rho_centered_at_cell": -0.4784,
+      "abs_centered_clears_wf_centered_band": false
+    },
+    "input_ood_ctx_harmful_compliance": {
+      "cell": "ctx_co_mean@L23",
+      "rho_full_at_cell": -0.7052,
+      "rho_centered_at_cell": -0.4373,
+      "abs_centered_clears_wf_centered_band": false
+    }
+  },
+  "consistency_checks": {
+    "max_abs_diff_identity_rho_vs_readout_json": 5e-07,
+    "observed_max_matches_dv2_observed_vs_band": true
+  },
+  "reproducibility": {
+    "git_commit": "cd8f646d504105a2abfce73b38ce01444272a086",
+    "timestamp_utc": "2026-07-03T17:43:07.318294+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

@@ -223,15 +223,27 @@ def summaries_fit_cell(ctx: AH.Ctx, capture_dir: Path, trait: str, li: int) -> d
 
 
 def baseline_entry(trait: str, mode: str) -> dict:
-    """Pull the mean-summary (v_x) baseline numbers from arm_headline.json."""
-    if not BASELINE_JSON.exists():
-        return {"note": "arm_headline.json not found"}
-    with open(BASELINE_JSON) as f:
-        base = json.load(f)
-    e = base.get("arm_headline", {}).get(trait, {}).get(mode)
+    """Pull the mean-summary (v_x) baseline numbers from arm_headline*.json.
+
+    The committed baseline is SPLIT across two files (same params, disjoint
+    trait coverage): ``arm_headline.json`` carries evil (the VM free-analysis
+    run) and ``arm_headline_pod.json`` carries sycophancy + hallucination (the
+    sibling pod rerun). Try the primary file first, then the pod file.
+    """
+    e = None
+    src = None
+    for path in (BASELINE_JSON, BASELINE_JSON.with_name("arm_headline_pod.json")):
+        if not path.exists():
+            continue
+        with open(path) as f:
+            base = json.load(f)
+        e = base.get("arm_headline", {}).get(trait, {}).get(mode)
+        if e is not None:
+            src = path.name
+            break
     if e is None:
         return {"note": "baseline entry missing"}
-    out: dict = {"monitors": {}, "recon_r2_mean": {}}
+    out: dict = {"monitors": {}, "recon_r2_mean": {}, "source": src}
     for arm in ARMS:
         for kind in ("dot", "cos"):
             mm = e["monitors"].get(f"h_{arm}_{kind}")
@@ -429,6 +441,14 @@ def main() -> int:
                     for s in SUMMARIES
                 },
             )
+
+    # Refresh baseline_mean_summary on EXISTING (resumed) entries too — the
+    # fits above are skipped on resume, but a baseline that was missing when
+    # the entry was checkpointed (e.g. the pod-file split) heals here.
+    for trait in C.TRAITS:
+        for mode in AH.MODES:
+            if mode in sec.get(trait, {}):
+                sec[trait][mode]["baseline_mean_summary"] = baseline_entry(trait, mode)
 
     res.setdefault("figures", {})["arm_headline_summaries"] = make_figure(res, args.fig_dir)
     C.write_json_atomic(args.out_json, res)

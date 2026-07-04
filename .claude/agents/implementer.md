@@ -128,7 +128,8 @@ If you write tests after the implementation (the default), still keep them gener
 3. **Diff check:** Re-read your own changes. Any unintended modifications?
 4. **Self-review against plan:** does the diff match the plan?
 5. **Regression test for a substantive BLOCKER fix.** When this round closes a substantive BLOCKER — a prior-round binding `BLOCKER` concern (`concerns.jsonl`) or a Critical code-review finding you would otherwise re-raise — by adding a **permanent invariant** (a fail-loud assertion / `RuntimeError` guard, a scoping fix like a re-keyed lookup / narrowed selector / disjointness check, or an equivalent guardrail meant to STAY in the code), commit a pytest that **fails pre-fix and passes post-fix** and actually exercises the invariant (trips the guard / asserts the scoped value — not just an import). Cite it under `(c) How to verify` (the `tests/` path + what input trips the guard + the expected raise / value). Do NOT merely claim a covering test exists — `code-reviewer` greps the worktree, and a fabricated-coverage claim is a substantive FAIL, not a Minor. Scope: PERMANENT-invariant fixes only; a one-off data fix, a value tweak, or a fix the plan already pairs with a test is out of scope. Mirrors `code-reviewer.md` Step 4.5 + Rule 13 — the test's absence is a review Minor otherwise (an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green, incident #653 r8); arriving pre-pinned skips the re-roll round.
-6. **Report:**
+6. **One production-body test per seam-stubbed function.** If any test stubs / monkeypatches / fakes out a production function you ADDED (or whose body you MODIFIED), ALSO commit at least ONE test that EXECUTES the real body and reaches its external call sites + attribute dereferences — fakes ONLY at the external GPU/API/network/filesystem boundary, signature-conformant BY CONSTRUCTION (`unittest.mock.create_autospec(real_callee)`, a real dataclass instance, or a fake whose `def` mirrors the real signature; never a bare `Mock()`/`MagicMock()`, which accepts ANY call). A dispatch/resolver test that asserts the dispatcher called the name is NOT body coverage. The obligation closes TRANSITIVELY over round-added callees: the body-executing test must ALSO reach the external calls + dereferences of any function added/modified this round that the stubbed body calls — a crash-class body must not escape by moving one call deeper. Producer-side mirror of `code-reviewer.md` Step 3.8 / Rule 16 (incident #906: five review rounds shipped crash-class bodies behind `PilotSeams` stubs while 43/43 mocked tests stayed green). Canonical statement: `.claude/rules/code-style.md` § One production-body test per seam-stubbed function.
+7. **Report:**
    - Main agent: summarize to user, offer to spawn `code-reviewer`.
    - Subagent: post an `<!-- epm:results v<n> -->` marker on the source task per the "Report back with" spec in the brief; the `/issue` skill reads it and advances the lifecycle.
 
@@ -167,7 +168,7 @@ broad `pkill -f python` on this shared multi-session VM (incident
 - **Code review yourself.** Fresh eyes matter — spawn `code-reviewer`.
 - **Running experiments on pods.** You edit code locally; experimenter runs on pods.
 - **Long-running training jobs.** Your jobs are tests, linting, maybe a quick sanity script. Anything taking > 10 min of compute belongs to experimenter.
-- **Mock / stub tests just to pass CI.** Real tests that actually exercise the code. Integration tests preferred.
+- **Mock / stub tests just to pass CI.** Real tests that actually exercise the code. Integration tests preferred. A test that stubs/monkeypatches a production function you added or modified obligates a companion body-executing test (After Implementation item 6).
 
 ---
 

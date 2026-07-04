@@ -46,13 +46,17 @@ program-orchestrator recovery), all before the GC pass:
    ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
-     already DONE (``completed`` / ``awaiting_promotion`` / ``archived`` /
-     ``cancelled``). The experiment is provably finished, so a still-RUNNING
-     pod is an escaped pod (Step-8 terminate failed, or it was never run
+     already DONE (``completed`` / ``awaiting_promotion`` / ``archived``) or
+     user-paused (``on_hold`` — the #919 pause affordance stops the pod
+     BEFORE parking, so ``on_hold`` + RUNNING means the teardown leg failed
+     inside the pause window; #980). The experiment is provably finished (or
+     deliberately paused), so a still-RUNNING pod is an escaped pod (Step-8
+     terminate failed, the pause teardown failed, or it was never run
      through Step 8). Stopping it is unambiguously correct.
    - **ALERT** (loud log + one-time dashboard-visible marker, NO stop) a
      RUNNING pod whose task is in a pod-active status (``approved`` /
-     ``running`` / ``uploading`` / ``verifying``) but has shown no real marker
+     ``running`` / ``verifying`` / ``followups_running``) but has shown no
+     real marker
      progress for > ``ALERT_STALE_HOURS``. This is the likely-abandoned
      mid-run case. We do NOT stop it: a false alert is a cheap nudge; a false
      stop would kill a healthy run.
@@ -441,9 +445,11 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
     spawn_output_suppressed,
+    takeover_sentinel_fresh,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
@@ -614,7 +620,24 @@ def decide(
 # the runtime enum on 2026-06-10 — it now lives in POD_ACTIVE below). The
 # disjoint+subset invariant is pinned by
 # `test_status_classes_subset_of_authoritative_enum`.
+# `on_hold` is handled by AUTO_STOP_PAUSED below (pod-safety layer only, #980).
 AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
+
+# Statuses where a RUNNING pod is an escaped pod for the POD-SAFETY pass ONLY
+# (#980). `on_hold` = a user pause: the #919 pause affordance stops the pod
+# BEFORE parking (teardown first, park last), so on_hold + RUNNING means the
+# teardown leg crashed/failed inside the pause window — silent billing.
+# DELIBERATELY NOT folded into AUTO_STOP_DONE: SESSION_RECONCILE_DONE (below)
+# aliases that set, and the session-reconcile pass must NOT reap a paused
+# task's session (the user may be live-parked in it — same conservatism as
+# `blocked`). Subset-of-enum invariant pinned alongside AUTO_STOP_DONE by
+# test_status_classes_subset_of_authoritative_enum.
+AUTO_STOP_PAUSED = {"on_hold"}
+
+# The pod-safety auto-stop trigger set: DONE statuses plus the paused status.
+# NOTE: a NEW set object (union) — never mutate AUTO_STOP_DONE in place, or
+# the SESSION_RECONCILE_DONE alias would silently widen with it.
+POD_SAFETY_AUTO_STOP = AUTO_STOP_DONE | AUTO_STOP_PAUSED
 
 # Task statuses during which a pod is legitimately in use mid-experiment.
 # A RUNNING pod here is NOT auto-stopped (status alone can't tell a healthy
@@ -825,6 +848,22 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 # and exiting.
 _SPEND_APPROVAL_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:spend-approval-skip]"
 
+# Substring stamped into the one-time alert the stalled / orphan-respawn passes
+# post when they would have respawned a task whose latest word is a PROSE
+# "USER PAUSE" hold note — a non-watcher note beginning with the literal
+# ``USER PAUSE`` (any marker kind) with no real progress marker strictly newer.
+# A prose-only hold is the documented anti-pattern (the durable affordance is
+# ``task.py set-status <N> on_hold`` per SKILL.md § User pause affordance); this
+# exemption is defense-in-depth for sessions that still post one. Deduped
+# self-containedly in the events log: suppressed when a marker carrying this
+# sentinel already exists at/after the latest pause note (a fresh pause note
+# re-arms the alert). Same staleness-filter contract as the others. Incident:
+# task #816, 2026-07-02 — a session posted a prose ``USER PAUSE ...`` hold
+# (epm:progress, 06:44Z) and left the task at the ACTIVE status ``running``;
+# the orphan-respawn pass cannot parse prose and respawned against the hold
+# (attempt 1/2, 08:33Z).
+_USER_PAUSE_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:user-pause-hold-skip]"
+
 # Substring stamped into the one-time alert the session-reconcile pass posts
 # (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
 # live session has outlived its parked/terminal (awaiting_promotion/
@@ -961,6 +1000,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
         _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL,
         _SPEND_APPROVAL_SKIP_NOTE_SENTINEL,
+        _USER_PAUSE_SKIP_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
@@ -1550,7 +1590,10 @@ def decide_pod_safety(
     ----------
     status_class
         ``"auto-stop-done"`` — task in :data:`AUTO_STOP_DONE` (provably
-        finished); ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
+        finished), or ``on_hold`` (:data:`AUTO_STOP_PAUSED`, the #919
+        pause-window escaped pod — the pause affordance stops pods BEFORE
+        parking, so on_hold + RUNNING means the teardown leg failed; #980);
+        ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
         real marker progress for > :data:`ALERT_STALE_HOURS`;
         ``"pod-active-fresh"`` — task in :data:`POD_ACTIVE` with recent
         progress; ``"other"`` — anything else (e.g. ``blocked``, an unknown
@@ -1591,7 +1634,8 @@ def decide_pod_safety(
         watcher stopped a healthy follow-up pod 3 times before the user
         manually added the ``keep-running`` tag.
 
-    Cases:
+    Cases (``"auto-stop-done"`` = task in :data:`POD_SAFETY_AUTO_STOP` —
+    DONE, or user-paused ``on_hold``):
 
     - ``status_class == "auto-stop-done"`` AND ``keep_running`` ->
       ``("keep-running-skip", 0)``. The stop is SKIPPED and the miss counter
@@ -3270,11 +3314,375 @@ def cpu_guard_pass(dry_run: bool) -> bool:
     return wrote
 
 
+# ── post-hoc external-marker triage observer (#967) ─────────────────────────
+#
+# NON-GATING observer of the /issue Step 9 pre-dispatch external-marker
+# triage duty (SKILL.md § Pre-dispatch external-marker triage; origin
+# incident #779: 10 unread external audit markers, an 18-20h serial grid
+# launched anyway). Re-runs the #889 enumerator's window semantics at recent
+# HISTORICAL dispatch records (task_workflow.audit_dispatch_triage) and
+# flags a missing / 'none' triage line against a non-empty candidate set.
+# Observe/alert only — sidecar rows + deduped fail-soft digest pushes +
+# capped epm:progress review nudges; NEVER mutates task status, stops a
+# session, or blocks a dispatch (pinned by tests at BOTH the subprocess-argv
+# and the in-process-mutator levels).
+
+# Sweep scope: ACTIVE plus awaiting_promotion (9a-ter/9b follow-up dispatches
+# happen on parked parents) plus blocked (a crash right after an untriaged
+# launch parks there). Terminal / pre-plan statuses have no fresh dispatch to
+# audit or no consumer for the flag.
+_TRIAGE_OBSERVER_STATUSES = ACTIVE | {"awaiting_promotion", "blocked"}
+# Lookback bounding first-run scans; the per-task cursor makes larger values
+# pointless after tick 1 (the #911 48h recency precedent).
+TRIAGE_OBSERVER_LOOKBACK_H = _env_float("EPM_TRIAGE_OBSERVER_LOOKBACK_H", 48.0, lo=1.0, hi=720.0)
+# Adjacency window binding a machine-posted launch marker to its adjacent
+# epm:progress triage note (pod provision+bootstrap runs ~10-20 min; 30 min
+# covers with margin while still binding the note to ONE dispatch). DOUBLES
+# as the MF2 maturity horizon by construction — it is exactly the window in
+# which a compliant adjacent-next note may still land, so deferring
+# evaluation by the same amount makes an early irreversible flag impossible.
+TRIAGE_OBSERVER_ADJACENCY_S = _env_float(
+    "EPM_TRIAGE_OBSERVER_ADJACENCY_S", 1800.0, lo=1.0, hi=86400.0
+)
+# The SKILL.md accepted-residual clause ("a marker posted in the SECONDS
+# between the final enumerator run and the breadcrumb post"); 120 s is a
+# generous superset of "seconds".
+TRIAGE_OBSERVER_GRACE_S = _env_float("EPM_TRIAGE_OBSERVER_GRACE_S", 120.0, lo=0.0, hi=3600.0)
+# Spam valve on the git-committing marker-post subprocess; the sidecar keeps
+# full fidelity regardless. Overflow is PERMANENT sidecar+push-only (no
+# deferred-marker queue — deferral adds state complexity exactly in the
+# storm case where per-task markers would spam most).
+TRIAGE_OBSERVER_MARKER_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_MARKER_CAP", 5, lo=0, hi=100))
+_TRIAGE_OBSERVER_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
+
+
+def _triage_observer_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_TRIAGE_OBSERVER`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_TRIAGE_OBSERVER", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _triage_observer_sidecar_path() -> Path:
+    """DEDICATED triage-observer event stream (own stream for clean grep —
+    the cpu-guard sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "triage-observer-events.jsonl"
+
+
+def _triage_observer_state_path() -> Path:
+    """Singleton (deliberately NOT a per-issue GC target):
+    ``{"<issue>": {"cursor_ts": str, "flagged": ["<record_ts>|<class>", ...]}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "triage-observer.json"
+
+
+def _load_triage_observer_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards at the call sites (mirrors
+    :func:`_load_cpu_guard_state`)."""
+    path = _triage_observer_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_triage_observer_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the triage-observer state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save triage-observer state ({len(state)} issue entries)")
+        return
+    dest = _triage_observer_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  triage-observer: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_triage_observer_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the triage-observer sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append triage-observer sidecar row: {line[:160]}")
+        return
+    dest = _triage_observer_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  triage-observer: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _triage_observer_iso_z(epoch: float) -> str:
+    """Format an epoch as the events.jsonl ISO-8601 ``Z`` shape (second
+    grain), so string thresholds compare cleanly against event ``ts``."""
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _triage_observer_nudge(v: dict) -> str:
+    """Trap-safe review-nudge note text for one violation.
+
+    MUST NOT contain the literal triage-line prefix (the note would become a
+    window-closing boundary record for the enumerator) and MUST NOT
+    lstrip-start with the breadcrumb prefix (pinned by test). The bracketed
+    watcher sentinel makes it anti-liveness (STAGE_ANTILIVENESS_NOTE_
+    SUBSTRINGS prefix match), so it never refreshes staleness clocks; its
+    ``by="unknown"`` deliberately makes it a triage CANDIDATE at the task's
+    next compute dispatch — the flag is itself the advisory."""
+    desc = v.get("record_kind") or "record"
+    if v.get("stage"):
+        desc += f" stage={v['stage']}"
+    problem = (
+        "recorded a 'none' triage disposition"
+        if v.get("violation") == "none-with-candidates"
+        else "carries no pre-dispatch triage line"
+    )
+    kinds = ", ".join(v.get("candidate_kinds") or []) or "n/a"
+    return (
+        f"[autonomous_session_watch:triage-observer] post-hoc triage-duty review: the "
+        f"compute dispatch record at {v.get('record_ts', '?')} ({desc}) {problem} while "
+        f"{v.get('candidate_count', 0)} advisory candidate(s) were pending in its window "
+        f"(kinds: {kinds}; {len(v.get('signature_hits') or [])} matching external-advisory "
+        f"signatures). The enumerator over-approximates — this may be fine if every "
+        f"candidate was self-posted. Observe-only, nothing was blocked. Please review "
+        f"those markers and record their dispositions in the next dispatch note "
+        f"(SKILL.md Step 9 entry guard). Deduped: posted once per violation."
+    )
+
+
+def decide_triage_observer_actions(
+    violations: list[dict], flagged: set[str], marker_budget: int
+) -> list[dict]:
+    """PURE routing for triage-observer flags (unit-testable without IO).
+
+    Drops already-flagged keys (key = ``f"{record_ts}|{violation}"``), orders
+    warn-before-info (ties by record_ts), and attaches action fields: sidecar
+    always; push only for ``warn``; marker only for ``warn`` while the
+    per-tick budget lasts. An over-budget warn keeps ``push=True,
+    marker=False`` and is STILL emitted (the caller marks it flagged) —
+    permanently sidecar+push-only, its marker is NEVER deferred to a later
+    tick (cap-overflow semantics, #967 plan §3 Q4). Never mutates
+    ``flagged``."""
+    fresh = [
+        v for v in violations if f"{v.get('record_ts', '')}|{v.get('violation', '')}" not in flagged
+    ]
+    fresh.sort(key=lambda v: (0 if v.get("severity") == "warn" else 1, v.get("record_ts", "")))
+    actions: list[dict] = []
+    budget = marker_budget
+    for v in fresh:
+        warn = v.get("severity") == "warn"
+        marker = warn and budget > 0
+        if marker:
+            budget -= 1
+        actions.append(
+            {
+                **v,
+                "key": f"{v.get('record_ts', '')}|{v.get('violation', '')}",
+                "sidecar": True,
+                "push": warn,
+                "marker": marker,
+            }
+        )
+    return actions
+
+
+def _triage_observer_sweep_issue(
+    id_str: str, meta: object, reg_root: Path, now: float, lookback_s: float
+) -> int | None:
+    """The issue id when a registry row is in the sweep status set with a
+    fresh ``events.jsonl`` mtime (cost gate 1); ``None`` otherwise. The task
+    path comes from the REGISTRY snapshot resolved against the registry's
+    OWN root — never hand-built from cwd. Every gate fails soft (skip)."""
+    if not isinstance(meta, dict) or meta.get("status") not in _TRIAGE_OBSERVER_STATUSES:
+        return None
+    try:
+        issue = int(id_str)
+    except (TypeError, ValueError):
+        return None
+    rel = meta.get("path")
+    if not isinstance(rel, str) or not rel:
+        return None
+    try:
+        mtime = (reg_root / rel / "events.jsonl").stat().st_mtime
+    except OSError:
+        return None
+    if now - mtime > lookback_s:
+        return None
+    return issue
+
+
+def _triage_observer_task_entry(state: dict, issue: int) -> tuple[str | None, set[str]]:
+    """Type-guarded ``(cursor_ts, flagged-keys)`` read-back from the state
+    singleton; a hand-edited / schema-drifted entry degrades to defaults."""
+    raw_entry = state.get(str(issue))
+    entry = raw_entry if isinstance(raw_entry, dict) else {}
+    raw_cursor = entry.get("cursor_ts")
+    cursor = raw_cursor if isinstance(raw_cursor, str) and raw_cursor else None
+    raw_flagged = entry.get("flagged")
+    flagged = {
+        k for k in (raw_flagged if isinstance(raw_flagged, list) else []) if isinstance(k, str)
+    }
+    return cursor, flagged
+
+
+def _triage_observer_emit(
+    issue: int, actions: list[dict], flagged: set[str], dry_run: bool
+) -> tuple[bool, int]:
+    """Emit one action's channels (sidecar always; push + capped marker for
+    warn) and mark it flagged. Returns ``(wrote_any, markers_posted)``.
+    Mutates ``flagged`` — every emitted action is flagged, INCLUDING an
+    over-budget warn (permanently sidecar+push-only, never deferred)."""
+    wrote = False
+    markers_posted = 0
+    for a in actions:
+        print(
+            f"  triage-observer: #{issue} {a['violation']} ({a['severity']}) at "
+            f"{a.get('record_ts', '?')} — candidates {a.get('candidate_count', 0)}, "
+            f"signatures {len(a.get('signature_hits') or [])}"
+        )
+        _append_triage_observer_sidecar(
+            {
+                "issue": issue,
+                **{
+                    k: a.get(k)
+                    for k in (
+                        "record_ts",
+                        "record_kind",
+                        "stage",
+                        "violation",
+                        "severity",
+                        "candidate_count",
+                        "candidate_kinds",
+                        "signature_hits",
+                        "note_head",
+                    )
+                },
+            },
+            dry_run,
+        )
+        wrote = True
+        if a["push"]:
+            _telegram_push(
+                f"triage-observer: #{issue} {a['violation']} at {a.get('record_ts', '?')} "
+                f"({a.get('candidate_count', 0)} window candidates, "
+                f"{len(a.get('signature_hits') or [])} external signatures) — observe-only; "
+                "see .claude/cache/triage-observer-events.jsonl",
+                dry_run,
+            )
+        if a["marker"]:
+            markers_posted += 1
+            _post_progress_marker(
+                issue, _triage_observer_nudge(a), dry_run, label="triage-observer"
+            )
+        flagged.add(a["key"])
+    return wrote, markers_posted
+
+
+def triage_observer_pass(dry_run: bool) -> bool:
+    """NON-GATING post-hoc audit of the pre-dispatch external-marker triage
+    duty (#967; origin incident #779). Observe/alert only: appends rows to
+    the dedicated sidecar, sends deduped fail-soft digest pushes, and posts
+    capped ``epm:progress`` review nudges — NEVER mutates task status, stops
+    a session, or blocks a dispatch. A warn beyond the per-tick marker cap
+    stays sidecar+push-only forever (no deferred-marker queue). Fire-once:
+    the dedup key ``(issue, record_ts, violation-class)`` persists in the
+    state singleton, and the per-task cursor advances only past MATURED
+    records (MF2) — so each dispatch record is evaluated exactly once, on
+    the first tick after its compliance window closes. Daemon-independent;
+    fail-soft throughout. Returns True when any sidecar row was written."""
+    if not _triage_observer_enabled():
+        print("  triage-observer: disabled via EPM_DISABLE_TRIAGE_OBSERVER; skipping")
+        return False
+    # Lazy in-process import (watcher convention): resolves THIS checkout's
+    # helpers via the tests' sys.path shim / the editable install.
+    from explore_persona_space.task_workflow import (
+        audit_dispatch_triage,
+        list_events,
+        registry_path,
+    )
+
+    try:
+        reg = json.loads(registry_path().read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  triage-observer: registry read failed: {exc}", file=sys.stderr)
+        return False
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        print("  triage-observer: registry has no tasks map; skipping", file=sys.stderr)
+        return False
+
+    now = time.time()
+    lookback_s = TRIAGE_OBSERVER_LOOKBACK_H * 3600.0
+    floor_ts = _triage_observer_iso_z(now - lookback_s)
+    mature_before = _triage_observer_iso_z(now - TRIAGE_OBSERVER_ADJACENCY_S)
+    # Resolve task paths against the registry's OWN root (never hand-built
+    # from cwd; the REGISTRY snapshot carries `tasks/<status>/<id>` paths).
+    reg_root = registry_path().parent.parent
+    state = _load_triage_observer_state()
+    wrote = False
+    marker_budget = TRIAGE_OBSERVER_MARKER_CAP
+
+    for id_str, meta in sorted(tasks.items()):
+        issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+        if issue is None:
+            continue
+        cursor, flagged = _triage_observer_task_entry(state, issue)
+        # Cost gate 2: the per-task cursor (records at/before it were
+        # already evaluated); the lookback floor bounds first-run scans.
+        min_ts = max(cursor, floor_ts) if cursor else floor_ts
+        try:
+            events = list_events(issue)
+        except Exception as exc:
+            print(f"  triage-observer: events read failed for #{issue}: {exc}", file=sys.stderr)
+            continue
+        result = audit_dispatch_triage(
+            events,
+            adjacency_s=TRIAGE_OBSERVER_ADJACENCY_S,
+            grace_s=TRIAGE_OBSERVER_GRACE_S,
+            min_ts=min_ts,
+            mature_before_ts=mature_before,
+        )
+        actions = decide_triage_observer_actions(result["violations"], flagged, marker_budget)
+        task_wrote, markers_posted = _triage_observer_emit(issue, actions, flagged, dry_run)
+        wrote = wrote or task_wrote
+        marker_budget -= markers_posted
+        cursor_new = result.get("cursor_ts")
+        if isinstance(cursor_new, str) and cursor_new:
+            cursor = max(cursor, cursor_new) if cursor else cursor_new
+        if cursor or flagged:
+            state[str(issue)] = {
+                "cursor_ts": cursor,
+                # Keep the NEWEST keys under the cap (keys sort by record_ts).
+                "flagged": sorted(flagged)[-_TRIAGE_OBSERVER_FLAGGED_KEY_CAP:],
+            }
+
+    # Self-prune entries once the issue leaves the sweep set for good.
+    for key in list(state):
+        meta = tasks.get(key)
+        status = meta.get("status") if isinstance(meta, dict) else None
+        if meta is None or status in {"completed", "archived"}:
+            state.pop(key, None)
+    _save_triage_observer_state(state, dry_run)
+    return wrote
+
+
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
     Returns ``"auto-stop-done"`` / ``"pod-active-stale"`` / ``"pod-active-fresh"``
-    / ``"other"``. ``status`` of ``None`` (task unreadable) is ``"other"`` —
+    / ``"other"``. ``"auto-stop-done"`` covers :data:`POD_SAFETY_AUTO_STOP` —
+    the DONE statuses plus user-paused ``on_hold`` (the #919 pause-window
+    escaped pod, #980). ``status`` of ``None`` (task unreadable) is ``"other"`` —
     never auto-stopped. A pod-active task is ``stale`` when its newest real
     progress marker is older than :data:`ALERT_STALE_HOURS`, OR when there is no
     real progress marker at all (``latest_progress_ts is None``) — a pod-active
@@ -3282,7 +3690,7 @@ def _status_class(status: str | None, latest_progress_ts: float | None, now: flo
     """
     if status is None:
         return "other"
-    if status in AUTO_STOP_DONE:
+    if status in POD_SAFETY_AUTO_STOP:
         return "auto-stop-done"
     if status in POD_ACTIVE:
         if latest_progress_ts is None:
@@ -3575,8 +3983,9 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     its latest done-transition marker (``epm:promoted`` /
     ``epm:status-changed``).
 
-    Predicate for the pod-safety auto-stop exemption: a DONE-status task
-    with a fresh follow-up signal carries an in-flight, user-approved
+    Predicate for the pod-safety auto-stop exemption: a task at a
+    pod-safety auto-stop status (DONE or ``on_hold``, #980) with a fresh
+    follow-up signal carries an in-flight, user-approved
     inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
     the pod is legitimately in use. ``epm:followup-scope`` covers the
     USER-CHAT inline case where the scope is posted before the run launches
@@ -3595,8 +4004,10 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
 
     A missing follow-up signal returns False (no exemption).
     A missing done-transition is impossible in practice — the caller
-    already verified the task's current status is DONE, so at least one
-    ``epm:status-changed`` must have fired to put it there. If the read
+    already verified the task's current status is in the pod-safety
+    auto-stop set (DONE or ``on_hold``; every entry into it — including a
+    ``set-status <N> on_hold`` pause — posts ``epm:status-changed``), so at
+    least one ``epm:status-changed`` must have fired to put it there. If the read
     nonetheless returns no done-transition (defensive), we conservatively
     return False (no exemption) rather than skip the auto-stop on a
     potentially-stale read.
@@ -4379,6 +4790,8 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
                 "post-marker",
                 str(issue),
                 "epm:progress",
+                "--by",
+                "autonomous_session_watch",
                 "--note",
                 note,
             ],
@@ -4425,6 +4838,8 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
                 "post-marker",
                 str(issue),
                 "epm:failure",
+                "--by",
+                "autonomous_session_watch",
                 "--note",
                 note,
             ],
@@ -5332,14 +5747,17 @@ def _maybe_handle_runpod_wedge(
     """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
     live ``info`` and route it.
 
-    Returns ``True`` iff this arm fully HANDLED the pod (a NON-DONE-status wedged
-    pod, processed by :func:`_process_wedged_pod`), so the caller
+    Returns ``True`` iff this arm fully HANDLED the pod (a wedged pod whose
+    status is NOT in :data:`POD_SAFETY_AUTO_STOP`, processed by
+    :func:`_process_wedged_pod`), so the caller
     (:func:`_process_pod`) should return without running the status-class
     branches. Returns ``False`` in every other case — a non-wedged pod (where it
-    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-status pod (MF6:
-    it falls through to the status-class DONE auto-stop, the canonical
+    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-or-paused-status
+    pod (MF6: it falls through to the status-class auto-stop, the canonical
     escaped-pod handler — routing it through the wedge arm's ALERT-default +
-    inputs-gate would only WEAKEN that existing auto-stop).
+    inputs-gate would only WEAKEN that existing auto-stop; for user-paused
+    ``on_hold`` (#980) the wedge arm's confirmed-safe path would additionally
+    terminate + RELAUNCH a workload the user deliberately paused).
 
     Detect the raw condition via the SAME
     ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
@@ -5347,10 +5765,11 @@ def _maybe_handle_runpod_wedge(
     from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
 
     if _pod_is_runpod_runtime_wedged(info):
-        if status not in AUTO_STOP_DONE:
+        if status not in POD_SAFETY_AUTO_STOP:
             _process_wedged_pod(issue, info, now, dry_run, threshold)
             return True
-        # MF6: DONE-status wedged pod -> fall through to the status-class DONE arm.
+        # MF6: DONE-or-paused-status wedged pod -> fall through to the
+        # status-class auto-stop arm (#980: never terminate+relaunch a pause).
         return False
     # MF1/MF4: not currently wedged -> clear any stale wedge clock so a one-tick
     # blip never accumulates, and the next true onset re-stamps.
@@ -5814,7 +6233,9 @@ def _process_pod(
     """Reconcile one RUNNING managed pod against its task status.
 
     Reads the task's status + latest real-progress timestamp, classifies it,
-    and applies :func:`decide_pod_safety`: AUTO-STOP a done task's escaped pod
+    and applies :func:`decide_pod_safety`: AUTO-STOP a done-or-paused task's
+    escaped pod (:data:`POD_SAFETY_AUTO_STOP` — DONE, plus user-paused
+    ``on_hold``, #980)
     (after the 2-miss guard, unless the task carries the ``keep-running`` tag
     OR the task's events.jsonl shows a `epm:run-launched` newer than the
     latest done-transition — i.e. a live inline follow-up — then the stop is
@@ -5825,13 +6246,16 @@ def _process_pod(
 
     #692 wedge-arm ordering (MF6): the #664 RunPod no-port wedge arm runs
     BEFORE the status-class branches, EXCEPT that a wedged pod whose task is at
-    a DONE status (:data:`AUTO_STOP_DONE` — completed / awaiting_promotion /
-    archived, the established escaped-pod auto-stop case) FALLS THROUGH to the
-    status-class DONE arm, which already auto-stops it. A DONE-task pod has no
-    live work to strand, so the canonical escaped-pod auto-stop wins; routing it
+    a pod-safety auto-stop status (:data:`POD_SAFETY_AUTO_STOP` — completed /
+    awaiting_promotion / archived, the established escaped-pod auto-stop case,
+    plus user-paused ``on_hold``, #980) FALLS THROUGH to the
+    status-class auto-stop arm, which already auto-stops it. A DONE-task pod has
+    no live work to strand (and a paused task's workload must NOT be relaunched
+    by the wedge arm's terminate+failover), so the canonical escaped-pod
+    auto-stop wins; routing it
     through the wedge arm's ALERT-default + inputs-gate would only WEAKEN the
     existing auto-stop into a conditional one. The wedge arm therefore handles
-    only NON-DONE-status wedged pods (the live-work statuses where the watcher
+    only wedged pods OUTSIDE that set (the live-work statuses where the watcher
     must be conservative). A non-wedged pod reaches the status-class branches
     unchanged, exactly as before #692."""
     status = _task_status(issue)
@@ -6022,7 +6446,8 @@ def _apply_pod_safety_action(
                 issue,
                 f"{_AUTOSTOP_NOTE_SENTINEL} auto-stopped by autonomous_session_watch "
                 f"pod-safety pass — RUNNING pod for a task whose status is "
-                f"'{status}' (already DONE), so the pod is an escaped / "
+                f"'{status}' (DONE or user-paused — no live run should hold a pod "
+                f"at this status), so the pod is an escaped / "
                 f"Step-8-terminate-failed pod (pod_id={pod_id}); reversible pause, "
                 f"volume preserved (pod.py resume). Confirmed for >= {threshold} checks.",
                 dry_run,
@@ -6755,6 +7180,131 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
+# Anchored, case-SENSITIVE prefix of a prose user-pause hold note (incident
+# #816). All four observed hold variants (the canonical SKILL.md durable-park
+# note, the #816 incident note, the older #919 sketch, the #920 chat note)
+# begin with this literal; every observed quote-class marker carries it
+# mid-note only, so the anchor separates real holds from quotes. Lowercase
+# "user pause ..." occurs in ordinary discussion prose and must NOT arm the
+# probe — the match is deliberately case-sensitive.
+_USER_PAUSE_NOTE_PREFIX = "USER PAUSE"
+
+
+def _latest_user_pause_ts(events: list[dict]) -> float | None:
+    """Newest epoch ts among non-watcher events whose note BEGINS with
+    ``USER PAUSE`` (anchored prefix, case-sensitive, ANY marker kind) — the
+    prose-hold shape of incident #816. Watcher-sentinel notes are excluded
+    (defense against future alert-text drift; today's alert text begins with
+    the ``[autonomous_session_watch:...]`` sentinel so it cannot match the
+    anchor anyway). An event with an unparseable/absent ``ts`` is skipped —
+    fail direction: a ts-less pause note leaves the probe inert and the
+    respawn proceeds (the incident direction, alert-free)."""
+    best: float | None = None
+    for ev in events:
+        note = ev.get("note") or ""
+        if not note.lstrip().startswith(_USER_PAUSE_NOTE_PREFIX):
+            continue
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _user_pause_hold_reason(events: list[dict]) -> str | None:
+    """Human-readable exemption reason when the latest word on the task is a
+    prose ``USER PAUSE`` hold (incident #816 defense-in-depth) — the newest
+    USER-PAUSE-prefixed non-watcher note is not superseded by any STRICTLY
+    newer real progress marker. Returns ``None`` when the exemption does not
+    apply. Pure over the already-loaded ``events`` — no subprocess.
+
+    Strict ``>`` is load-bearing: the pause note itself usually rides a
+    :data:`_PROGRESS_KINDS` kind (``epm:progress`` in the #816 incident,
+    ``epm:status-changed`` for the canonical durable-park note), so it
+    SELF-INCLUDES in :func:`_latest_progress_ts` — ``progress_ts == pause_ts``
+    means "the pause IS the latest word" and must keep suppressing.
+
+    Fail directions, both deliberate: (a) a pause note with an unparseable
+    ``ts`` leaves the probe inert (respawn proceeds — the incident direction);
+    (b) outside the canonical resume paths (the SKILL.md ``set-status``
+    resume posts ``epm:status-changed``; a resumed live session posts real
+    progress markers; a REGISTERED session bypasses the orphan probe
+    entirely), suppression persists until ANY real progress marker,
+    set-status, fresh pause note, or registered spawn lands — the one-time
+    alert is the only signal in that window.
+
+    Note the CANONICAL durable-park note (SKILL.md § User pause affordance)
+    also begins ``USER PAUSE`` (on the ``set-status <N> on_hold``
+    ``epm:status-changed`` row) and arms this probe HARMLESSLY: ``on_hold``
+    is in the watcher PARK set, so a durably-parked task is never
+    orphan-evaluated in the first place."""
+    pause_ts = _latest_user_pause_ts(events)
+    if pause_ts is None:
+        return None
+    progress_ts = _latest_progress_ts(events)
+    if progress_ts is not None and progress_ts > pause_ts:
+        # A real (non-watcher) progress marker STRICTLY newer than the pause
+        # note — the hold was resumed / superseded; do not suppress.
+        return None
+    return (
+        "prose USER PAUSE hold (a non-watcher note beginning 'USER PAUSE' is "
+        "the latest word — no real progress marker postdates it): a "
+        "deliberate user hold the watcher must not respawn against "
+        "(incident #816); the durable fix is the SKILL.md pause procedure "
+        "(pod stop first, then task.py set-status <N> on_hold)"
+    )
+
+
+def _user_pause_skip_already_noted(events: list[dict]) -> bool:
+    """True iff a marker carrying :data:`_USER_PAUSE_SKIP_NOTE_SENTINEL`
+    already exists with ts >= the latest USER-PAUSE note — the self-contained
+    once-per-episode dedup (no extra state field); a FRESH pause note (a later
+    ts) re-arms the alert. Mirror of
+    :func:`_spend_approval_skip_already_noted` (the ``>=`` here vs its ``>``
+    is deliberate: a skip alert posted the same second as the pause note
+    still dedups)."""
+    pause_ts = _latest_user_pause_ts(events)
+    if pause_ts is None:
+        return False
+    for ev in events:
+        note = ev.get("note") or ""
+        if _USER_PAUSE_SKIP_NOTE_SENTINEL not in note:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and ts >= pause_ts:
+            return True
+    return False
+
+
+def _maybe_post_user_pause_skip(issue: int, reason: str, events: list[dict], dry_run: bool) -> None:
+    """Post the one-time user-pause-hold-skip alert (events-log dedup via
+    :func:`_user_pause_skip_already_noted`). Shared by the orphan handler and
+    the stalled-pass branch so both arms stay under the C901 cap and share
+    one episode-dedup. The resume-recipe example deliberately does NOT begin
+    with the bare ``USER PAUSE`` literal — a resume note that did would
+    re-arm the very probe it resumes."""
+    if _user_pause_skip_already_noted(events):
+        return
+    _post_progress_marker(
+        issue,
+        f"{_USER_PAUSE_SKIP_NOTE_SENTINEL} {reason}. "
+        f"Respawn suppressed (does NOT consume the daily respawn budget). "
+        f"A prose-only hold is NOT durable — make it durable per "
+        f".claude/skills/issue/SKILL.md § User pause affordance: "
+        f"CRON-TEARDOWN + stop any RUNNING pod FIRST "
+        f"(`pod.py stop --issue {issue}`), THEN "
+        f'`task.py set-status {issue} on_hold --note "USER PAUSE '
+        f"(verbatim: '...'); paused_from=<status>; resume: ...\"` as the "
+        f"commit point. To resume instead: post a real progress note that "
+        f"does NOT begin with 'USER PAUSE' "
+        f"(`task.py post-marker {issue} epm:progress --note '<resume note>'`) "
+        f"or `spawn_session.py spawn-issue --issue {issue} --auto`.",
+        dry_run,
+        label="user-pause-hold-skip",
+    )
+
+
 def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> bool:
     """Post the ``epm:same-issue-followup-run v1`` completion marker for the
     round the watcher just re-parked, closing the round's
@@ -6812,6 +7362,8 @@ def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> 
                 "post-marker",
                 str(issue),
                 "epm:same-issue-followup-run",
+                "--by",
+                "autonomous_session_watch",
                 "--note",
                 note,
             ],
@@ -6996,6 +7548,12 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "stop",
         "--session-id", session_id,
+        # #902: thread `--stop-source watcher` — watcher-sourced stops post
+        # NO deliberate-stop breadcrumb (the watcher keeps its own
+        # registry/sidecar evidence trail; an operator-attributed auto-post
+        # here would manufacture false attributions + unsentineled notes
+        # that reset staleness clocks).
+        "--stop-source", "watcher",
     ]  # fmt: skip
     if dry_run:
         print(f"  [dry-run] would stop session: {' '.join(cmd)}")
@@ -7636,7 +8194,8 @@ def _apply_stalled_followups_exemption(
     dry_run: bool,
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
-    (the over-cap spend-approval park, the round-complete re-park, and the
+    (the prose USER-PAUSE hold, the over-cap spend-approval park, the
+    round-complete re-park, and the
     followups_running-parent-waiting-on-open-child suppression); rewrite
     ``(action, new_missed, followups_child_alerted)`` accordingly.
 
@@ -7653,6 +8212,23 @@ def _apply_stalled_followups_exemption(
     """
     if action == "keep" and new_missed == 0:
         return action, new_missed, followups_child_alerted
+    # Prose USER-PAUSE hold (incident #816, 2026-07-02): the latest word on
+    # the task is a non-watcher note beginning 'USER PAUSE' — a deliberate
+    # user hold left at an ACTIVE status (the prose-only anti-pattern; the
+    # durable affordance is set-status on_hold). Checked FIRST — an explicit
+    # user directive is the most specific gate signal; both this and the
+    # spend-approval arm are alert-only, so ordering only selects the more
+    # actionable alert text. Dedup'd in the events log via
+    # _user_pause_skip_already_noted, so no per-pass state flag is threaded.
+    pause_reason = _user_pause_hold_reason(events)
+    if pause_reason is not None:
+        print(
+            f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {pause_reason}; "
+            f"treating session as parked this tick (would have been "
+            f"action={action})."
+        )
+        _maybe_post_user_pause_skip(issue, pause_reason, events, dry_run)
+        return "keep", 0, followups_child_alerted
     # Over-cap spend-approval park (incident #653, 2026-06-18): the latest
     # non-watcher event is `epm:awaiting-spend-approval` (a 132 GPU-h plan over
     # the 100h auto-approve cap), and the status-hold variant (SKILL.md Step 9b)
@@ -8918,10 +9494,11 @@ def _check_orphan_followups_exemption(
     events: list[dict],
     action: str,
 ) -> tuple[str, str | None]:
-    """Probe the followups_running-parent-waiting-on-open-child exemption
-    for the orphan-sweep pass. Returns the (possibly rewritten) ``action``
-    plus the human-readable reason string (for the alert prose) or
-    ``None`` when the exemption does not apply.
+    """Probe the orphan-sweep exemptions (the prose USER-PAUSE hold, the
+    over-cap spend-approval park, the round-complete re-park, and the
+    followups_running-parent-waiting-on-open-child suppression). Returns the
+    (possibly rewritten) ``action`` plus the human-readable reason string
+    (for the alert prose) or ``None`` when no exemption applies.
 
     No-op unless ``action == "respawn"`` (the only orphan action whose
     fallout is wasteful in this regime) so a healthy task / a manual-only
@@ -8931,6 +9508,22 @@ def _check_orphan_followups_exemption(
     """
     if action != "respawn":
         return action, None
+    # Prose USER-PAUSE hold (incident #816, 2026-07-02): the incident arm —
+    # #816's respawn was an orphan-respawn against a prose 'USER PAUSE' note
+    # left at the ACTIVE status `running`. Mirror of the same exemption in
+    # :func:`_apply_stalled_followups_exemption`; checked FIRST (an explicit
+    # user directive is the most specific gate signal — both arms are
+    # alert-only, so ordering only picks which alert text posts). Diverted to
+    # a one-time alert that does NOT consume the daily respawn budget. Pure
+    # (events-only, never consults _task_children); the dispatch posts the
+    # marker.
+    pause_reason = _user_pause_hold_reason(events)
+    if pause_reason is not None:
+        print(
+            f"  issue #{issue}: ORPHAN-RESPAWN exemption — {pause_reason}; "
+            f"diverting to alert-only (does NOT consume respawn budget)."
+        )
+        return "user-pause-hold-skip", pause_reason
     # Over-cap spend-approval park (incident #653, 2026-06-18): mirror of the
     # same exemption in :func:`_apply_stalled_followups_exemption`. The
     # status-hold variant keeps the task at the ACTIVE status
@@ -9100,12 +9693,53 @@ def _handle_orphan_spend_approval_skip(
         )
 
 
+def _handle_orphan_user_pause_skip(
+    *,
+    issue: int,
+    reason: str,
+    new_missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    followups_child_alerted: bool,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Orphan-sweep handler for the prose USER-PAUSE hold exemption (incident
+    #816): post the one-time alert (events-log dedup via
+    :func:`_maybe_post_user_pause_skip`) and persist state WITHOUT
+    incrementing ``respawns_today`` — the exemption deliberately does NOT
+    consume the daily respawn budget. Dedup is self-contained in the events
+    log (a marker carrying :data:`_USER_PAUSE_SKIP_NOTE_SENTINEL` at/after
+    the latest pause note), so no per-pass state flag is threaded; a fresh
+    pause note re-arms the alert. Mirror of
+    :func:`_handle_orphan_spend_approval_skip`. Factored out of
+    :func:`_process_orphan_task` to keep that function under the C901 cap."""
+    _maybe_post_user_pause_skip(issue, reason, events, dry_run)
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=alerted,
+            respawn_day=respawn_day,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            prev=state,
+        )
+
+
 # The orphan-sweep exemption actions: each diverts a would-be respawn to a
 # park-aware handler that does NOT consume the daily respawn budget. Dispatched
 # uniformly by :func:`_dispatch_orphan_exemption_action` to keep
 # :func:`_process_orphan_task` under the C901 cap (15).
 _ORPHAN_EXEMPTION_ACTIONS = frozenset(
-    {"spend-approval-skip", "followup-round-repark", "followups-awaiting-child"}
+    {
+        "user-pause-hold-skip",
+        "spend-approval-skip",
+        "followup-round-repark",
+        "followups-awaiting-child",
+    }
 )
 
 
@@ -9129,6 +9763,19 @@ def _dispatch_orphan_exemption_action(
     C901 cyclomatic-complexity cap (15)."""
     if action == "spend-approval-skip":
         _handle_orphan_spend_approval_skip(
+            issue=issue,
+            reason=followups_reason or "",
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            events=events,
+            state=state,
+            dry_run=dry_run,
+        )
+    elif action == "user-pause-hold-skip":
+        _handle_orphan_user_pause_skip(
             issue=issue,
             reason=followups_reason or "",
             new_missed=new_missed,
@@ -9167,6 +9814,21 @@ def _dispatch_orphan_exemption_action(
         )
 
 
+def _parse_orphan_state_counters(state: dict, day_key: str) -> tuple[int, int]:
+    """Type-guarded ``(missed, respawns_today)`` from a loaded orphan-state
+    dict; ``respawns_today`` resets to 0 when the recorded ``respawn_day`` is
+    not today's ``day_key``. Factored out of :func:`_process_orphan_task` to
+    keep it under the C901 cap after the #903 takeover-sentinel skip landed
+    there (behavior-preserving extraction)."""
+    missed = state.get("missed", 0)
+    if not isinstance(missed, int):
+        missed = 0
+    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
+    if not isinstance(respawns_today, int):
+        respawns_today = 0
+    return missed, respawns_today
+
+
 def _process_orphan_task(
     issue: int,
     status: str,
@@ -9184,17 +9846,27 @@ def _process_orphan_task(
     """Apply one active-status task's orphan decision (gather signals ->
     :func:`decide_orphan` -> act). ``rec`` is the task's registration record
     from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
-    #472 class). Honours dry_run (logs but never mutates / spawns)."""
+    #472 class). Honours dry_run (logs but never mutates / spawns).
+
+    #866/#903: a FRESH ``paused-takeover`` sentinel (a deliberate session
+    takeover renamed the registration away) skips the issue ENTIRELY before
+    any state read/write — the frozen ``missed`` count resumes exactly where
+    it left off when the sentinel goes stale (FAIL OPEN). No marker is posted
+    (a per-tick marker would spam events.jsonl; this stdout log is the
+    record)."""
+    sentinel = takeover_sentinel_fresh(issue, now=now, registry_dir=AUTONOMOUS_REGISTRY_DIR)
+    if sentinel is not None:
+        print(
+            f"  issue #{issue}: status={status} SKIP — deliberate takeover sentinel "
+            f"{sentinel.name} is FRESH (< EPS_TAKEOVER_TTL_H); orphan sweep deferred "
+            f"(stale sentinel resumes normal respawn — fail open)"
+        )
+        return
     mapped_alive = bool(rec and rec["sids"] & live_ids)
     manual_only = bool(rec and rec["has_manual"] and not rec["has_auto"])
     entry_age_s = (now - rec["newest_write"]) if rec and rec["newest_write"] > 0 else None
     state = _load_orphan_state(issue)
-    missed = state.get("missed", 0)
-    if not isinstance(missed, int):
-        missed = 0
-    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
-    if not isinstance(respawns_today, int):
-        respawns_today = 0
+    missed, respawns_today = _parse_orphan_state_counters(state, day_key)
     alerted = bool(state.get("alerted"))
     followups_child_alerted = bool(state.get("followups_child_alerted"))
 
@@ -11687,12 +12359,48 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
     return counts
 
 
+# Floor age before a `paused-takeover` sentinel is GC'd. A stale sentinel is
+# INERT after the (default 6h) TTL — this reap is clutter-control only, and
+# 7 days deliberately preserves the human-readable takeover record for
+# post-hoc forensics well past the takeover itself (#903).
+TAKEOVER_SENTINEL_GC_AGE_S = 7 * 24 * 3600
+
+
+def _gc_stale_takeover_sentinels(now: float, dry_run: bool) -> int:
+    """Unlink ``*.json.paused-takeover-*`` sentinels older than
+    ``max(7 days, the configured takeover TTL)`` — the ``*.json`` GC globs
+    can never match them, so without this they would linger forever (#903).
+
+    The ``max()`` is load-bearing (#903 round-1 critique Must-Fix): with
+    ``EPS_TAKEOVER_TTL_H`` set above 168h a fixed 7-day reap would delete a
+    sentinel that is STILL protecting a live takeover. Returns the reap
+    count for the :func:`gc_pass` summary line."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return 0
+    gc_age = max(TAKEOVER_SENTINEL_GC_AGE_S, _takeover_ttl_s())
+    reaped = 0
+    for p in sorted(AUTONOMOUS_REGISTRY_DIR.glob("*.json.paused-takeover-*")):
+        try:
+            if now - p.stat().st_mtime < gc_age:
+                continue
+        except OSError:
+            continue
+        print(f"gc: {'would reap' if dry_run else 'reaping'} stale takeover sentinel {p.name}")
+        if not dry_run:
+            p.unlink(missing_ok=True)
+        reaped += 1
+    return reaped
+
+
 def gc_pass(dry_run: bool, now: float | None = None) -> None:
-    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` for
-    consistency with the other ``*_pass`` entry points + the ``--gc-only``
-    debug flag."""
+    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` (+
+    the #903 stale-takeover-sentinel reap) for consistency with the other
+    ``*_pass`` entry points + the ``--gc-only`` debug flag."""
     now = now if now is not None else time.time()
     counts = _gc_orphaned_eps_autonomous_files(now, dry_run)
+    reaped_sentinels = _gc_stale_takeover_sentinels(now, dry_run)
+    if reaped_sentinels:
+        counts["paused-takeover"] = counts.get("paused-takeover", 0) + reaped_sentinels
     if not counts:
         print("gc: no stale per-issue state files to reap")
         return
@@ -11720,9 +12428,10 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 # sessions validated the exact predicate below):
 #
 #   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE`
-#     (awaiting_promotion / completed / archived — the pod-safety auto-stop
-#     set; ``followups_running`` and ``blocked`` are excluded because the
-#     session may be legitimately live there);
+#     (awaiting_promotion / completed / archived — the pod-safety DONE set
+#     AUTO_STOP_DONE, NOT the wider POD_SAFETY_AUTO_STOP (#980);
+#     ``followups_running``, ``blocked``, and ``on_hold`` are excluded
+#     because the session may be legitimately live there);
 #   * requires > :func:`_session_idle_s` (default 2h) of inactivity on EVERY
 #     available activity signal (newest non-watcher marker of ANY kind + the
 #     per-issue self-report file);
@@ -11742,7 +12451,8 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 #     decision function.
 
 # Parked/terminal statuses whose live sessions the pass reconciles. Shares
-# the pod-safety auto-stop set (NOT the GC's narrower terminal set):
+# the pod-safety DONE set AUTO_STOP_DONE (NOT the GC's narrower terminal set,
+# and NOT the wider pod-safety trigger set POD_SAFETY_AUTO_STOP):
 # `awaiting_promotion` was added 2026-06-10 on the user request "Can we stop
 # the happy sessions once they reach awaiting promotion?" — the promotion
 # park is a human gate with no session-side work left, and idle sessions
@@ -11750,6 +12460,9 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 # is deliberately NOT here: that status means a same-issue follow-up round
 # is executing and the session is its driver. `blocked` is NOT here either
 # (under investigation; the user may be live-parked in the session).
+# `on_hold` is deliberately NOT here — the pod-safety pass stops a paused
+# task's escaped pod via AUTO_STOP_PAUSED (#980), but its session is kept
+# (the user may be live-parked; same conservatism as `blocked`).
 SESSION_RECONCILE_DONE = AUTO_STOP_DONE
 
 # Default inactivity grace window before a parked/terminal task's live
@@ -14974,7 +15687,9 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     """Reconcile RUNNING managed pods against their task STATUS.
 
     - AUTO-STOP (reversible, never terminate) a RUNNING pod whose task is DONE
-      (:data:`AUTO_STOP_DONE`), after the 2-miss guard — an escaped pod.
+      or user-paused (:data:`POD_SAFETY_AUTO_STOP` — #980: ``on_hold`` + RUNNING
+      means the #919 pause teardown leg failed), after the 2-miss guard — an
+      escaped pod.
     - ALERT (loud log + one-time marker, no stop) a RUNNING pod-active pod with
       no real progress for > :data:`ALERT_STALE_HOURS` — a likely-abandoned
       mid-run session.
@@ -16225,6 +16940,43 @@ def program_orchestrator_pass(
         print(f"program-orchestrator: relaunch errored: {e}")
 
 
+def _vm_ledger_reap_disabled(env: dict | None = None) -> bool:
+    """Kill switch: True when ``EPM_DISABLE_VM_LEDGER_REAP`` is set truthy."""
+    env = os.environ if env is None else env
+    return env.get("EPM_DISABLE_VM_LEDGER_REAP", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def vm_ledger_reap_pass(dry_run: bool) -> None:
+    """Reap expired-TTL / dead-PID rows from the advisory VM resource ledger (plan §5).
+
+    The ledger (``scripts/resource_ledger.py``, ``~/.task-workflow/vm-ledger.json``)
+    routes CPU/RAM-heavy phases off the shared VM; a crashed session's claim is
+    TTL- + PID-reaped here so a dead claim can never wedge routing. Piggybacks
+    the 10-min tick. Daemon-INDEPENDENT (a local file only), so it runs on a
+    daemon outage too. Fail-soft: any error (incl. a psutil-less-host import
+    failure) is logged and swallowed — a ledger hiccup never crashes the
+    watcher. ``--dry-run`` reports without mutating. Kill switch:
+    ``EPM_DISABLE_VM_LEDGER_REAP=1``.
+    """
+    if _vm_ledger_reap_disabled():
+        print("  vm-ledger-reap: disabled via EPM_DISABLE_VM_LEDGER_REAP; skipping")
+        return
+    try:
+        import resource_ledger  # lazy: a psutil-less host must not crash the watcher
+
+        reaped = resource_ledger.reap_ledger_file(apply=not dry_run)
+        if reaped:
+            phases = ", ".join(
+                f"#{r.get('issue')}:{r.get('phase')} (claim {r.get('claim_id')})" for r in reaped
+            )
+            verb = "WOULD reap" if dry_run else "reaped"
+            print(f"  vm-ledger-reap: {verb} {len(reaped)} stale claim(s): {phases}")
+        else:
+            print("  vm-ledger-reap: no stale claims")
+    except Exception as exc:
+        print(f"  vm-ledger-reap: error (skipping): {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -16288,6 +17040,13 @@ def main(argv: list[str] | None = None) -> int:
         "skip every other pass. Daemon-independent; pair with --dry-run for "
         "a live smoke.",
     )
+    parser.add_argument(
+        "--triage-observer-only",
+        action="store_true",
+        help="run ONLY the post-hoc external-marker triage observer pass "
+        "(#967, non-gating) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -16338,6 +17097,13 @@ def main(argv: list[str] | None = None) -> int:
         cpu_guard_pass(args.dry_run)
         return 0
 
+    # --triage-observer-only mirrors the other --*-only flags: the pass is
+    # daemon-independent (reads the registry + events.jsonl only), so run
+    # it alone.
+    if args.triage_observer_only:
+        triage_observer_pass(args.dry_run)
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
@@ -16369,6 +17135,21 @@ def main(argv: list[str] | None = None) -> int:
     # daemon-independent (reads /proc + the earlyoom journal only), so it
     # runs on a daemon outage too.
     cpu_guard_pass(args.dry_run)
+
+    # Post-hoc external-marker triage observer (#967): NON-GATING audit of
+    # the /issue Step 9 pre-dispatch triage duty (origin incident #779) —
+    # flags a missing / 'none' triage line against a re-enumerated non-empty
+    # candidate window. Observe/alert only (sidecar + deduped push + capped
+    # epm:progress nudges); daemon-independent (registry + events.jsonl
+    # reads only), so it runs on a daemon outage too.
+    triage_observer_pass(args.dry_run)
+
+    # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
+    # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim
+    # can never wedge the CPU/RAM off-VM routing decision. Daemon-INDEPENDENT (a
+    # local file only) + fail-soft, so it sits in this block next to the other
+    # daemon-independent escalate/reap passes and runs on a daemon outage too.
+    vm_ledger_reap_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy

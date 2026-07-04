@@ -1,0 +1,1098 @@
+{
+  "commit": "c9e759b318",
+  "created": "2026-07-03T06:22:25Z",
+  "figsize": [
+    10.6,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5845818410435927,
+      "error": 0.023275785262596438,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5559560884817063,
+      "error": 0.014746572040433725,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5911089915529909,
+      "error": 0.020952750032126044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6860919357028872,
+      "error": 0.00639793159429991,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6710030579824913,
+      "error": 0.011815061230277979,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.688481755695041,
+      "error": 0.005630631854885437,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5297798629067433,
+      "error": 0.014372292683525467,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5252405827591807,
+      "error": 0.020612493990018743,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5476505279169459,
+      "error": 0.01588654063522832,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "Pooled 5-fold out-of-fold $R^2$": -0.005946519388492488,
+      "error": 0.003617743063465765,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009835052573933422,
+      "error": 0.0026599184567359453,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "Pooled 5-fold out-of-fold $R^2$": -0.002175301798054452,
+      "error": 0.0047610645676510995,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.28500000000000003,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5613060557809962,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7149999999999999,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5412095164412726,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7149999999999999,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5701562415208649,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.28500000000000003,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6078576263061891,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7149999999999999,
+      "Pooled 5-fold out-of-fold $R^2$": 0.57070266052214,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.7149999999999999,
+      "Pooled 5-fold out-of-fold $R^2$": 0.612061741585117,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6796940041085873,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6591879967522133,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6828511238401556,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6924898672971871,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6828181192127692,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.905,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6941123875499264,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5154075702232178,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.504628088769162,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5317639872817176,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5441521555902687,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5458530767491995,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5635370685521742,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.28500000000000003,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009564262451958253,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.2850000000000001,
+      "Pooled 5-fold out-of-fold $R^2$": -0.012494971030669367,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "Pooled 5-fold out-of-fold $R^2$": -0.006936366365705552,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.28500000000000003,
+      "Pooled 5-fold out-of-fold $R^2$": -0.002328776325026723,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.2850000000000001,
+      "Pooled 5-fold out-of-fold $R^2$": -0.007175134117197476,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.285,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0025857627695966474,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5797255651326839,
+      "error": 0.003070823347973914,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5995070366445358,
+      "error": 0.0021452039901153803,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6381149553276252,
+      "error": 0.0012862453364738532,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6636174313328163,
+      "error": 0.0019500190272060073,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6860919357028872,
+      "error": 0.003617743063465765,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6922464852130465,
+      "error": 0.002606415334817534,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.688481755695041,
+      "error": 0.0047610645676510995,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7115023468259207,
+      "error": 0.0015012276118992513,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6808403524509405,
+      "error": 0.0022451796529760386,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6710030579824913,
+      "error": 0.0026599184567359453,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7043774495405323,
+      "error": 0.00222226960102,
+      "series": "own-answer profile \u2192 plain external",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.3942315680455945,
+      "error": 0.003070823347973914,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.47856460488409763,
+      "error": 0.0021452039901153803,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5213191957097253,
+      "error": 0.0012862453364738532,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.550593377227251,
+      "error": 0.0019500190272060073,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5845818410435927,
+      "error": 0.003617743063465765,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6064334113609039,
+      "error": 0.002606415334817534,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5911089915529909,
+      "error": 0.0047610645676510995,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6539160282807787,
+      "error": 0.0015012276118992513,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5860299294277521,
+      "error": 0.0022451796529760386,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5559560884817063,
+      "error": 0.0026599184567359453,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5940074270942154,
+      "error": 0.00222226960102,
+      "series": "context \u2192 plain external (refit)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.020063695452987453,
+      "error": 0.003070823347973914,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.020529028372962933,
+      "error": 0.0021452039901153803,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.016380221631812342,
+      "error": 0.0012862453364738532,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.011799886508474699,
+      "error": 0.0019500190272060073,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.005946519388492488,
+      "error": 0.003617743063465765,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.0007112653904675526,
+      "error": 0.002606415334817534,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.002175301798054452,
+      "error": 0.0047610645676510995,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0016704131094024354,
+      "error": 0.0015012276118992513,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.007243474999762034,
+      "error": 0.0022451796529760386,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009835052573933422,
+      "error": 0.0026599184567359453,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.013683279760394296,
+      "error": 0.00222226960102,
+      "series": "own-answer profile \u2192 mismatched (shuffled)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5797255651326839,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5995070366445358,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6381149553276252,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6636174313328163,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6860919357028872,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6922464852130465,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.688481755695041,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7115023468259207,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6808403524509405,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6710030579824913,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7043774495405323,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5651809620659087,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5921142900985064,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6321512407903451,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6567267932304015,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6796940041085873,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6869874581899815,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6828511238401556,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.705230569814458,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6717151239191889,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6591879967522133,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6927488689313701,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5942701681994591,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6068997831905651,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6440786698649053,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.670508069435231,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6924898672971871,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6975055122361116,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6941123875499264,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7177741238373835,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6899655809826922,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6828181192127692,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.7160060301496944,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.3942315680455945,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.47856460488409763,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5213191957097253,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.550593377227251,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5845818410435927,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6064334113609039,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5911089915529909,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6539160282807787,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5860299294277521,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5559560884817063,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5940074270942154,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.3825389717260123,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.47302319004624876,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5161321141778612,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5428679116718609,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5613060557809962,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5831317845681682,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5701562415208649,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6457190640500816,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5741290665677834,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5412095164412726,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5799238441012045,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.4059241643651767,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.4841060197219465,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5265062772415894,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5583188427826411,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6078576263061891,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6297350381536396,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.612061741585117,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6621129925114757,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.5979307922877208,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.57070266052214,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.6080910100872263,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.020063695452987453,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.020529028372962933,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.016380221631812342,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.011799886508474699,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.005946519388492488,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.0007112653904675526,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.002175301798054452,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0016704131094024354,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.007243474999762034,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009835052573933422,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.013683279760394296,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.023134518800961366,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.022674232363078313,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.017666466968286196,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.013749905535680706,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009564262451958253,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.0033176807252850863,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.006936366365705552,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.00016918549750318413,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009488654652738073,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.012494971030669367,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.015905549361414296,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Layer": 0.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.01699287210501354,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 4.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.018383824382847552,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 8.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.01509397629533849,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 12.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.009849867481268692,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 14.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.002328776325026723,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 16.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0018951499443499813,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 17.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0025857627695966474,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 20.0,
+      "Pooled 5-fold out-of-fold $R^2$": 0.0031716407213016867,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 24.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.004998295346785996,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 26.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.007175134117197476,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Layer": 27.0,
+      "Pooled 5-fold out-of-fold $R^2$": -0.011461010159374296,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 168
+}

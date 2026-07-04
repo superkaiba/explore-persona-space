@@ -807,18 +807,48 @@ def _issue_worktree_git_root(issue: int) -> str | None:
 
 
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    """Build ``spec.extra`` from the launch CLI's GCP-only knobs.
+    """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
     Returns the dict :func:`backends.issue_dispatch.build_run_spec`
-    threads through to the lane renderers; every key here is inert on
-    SLURM / RunPod lanes. Extracted from :func:`_cmd_launch` so each
-    new knob doesn't push the dispatcher over the complexity cap.
+    threads through to the lane renderers. Most keys are GCP-only and
+    inert on SLURM / RunPod lanes, but NOT all: ``execute_workload``
+    (#909) is RunPod-honored (the RunPod execution leg), and
+    ``repo_branch`` is honored by GCP (GCE clone) AND RunPod (the #909
+    execution leg's branch sync). Extracted from :func:`_cmd_launch` so
+    each new knob doesn't push the dispatcher over the complexity cap.
     """
     extra: dict[str, Any] = {}
+    if getattr(args, "lane_suffix", None):
+        # Per-lane instance-name suffix (#934): honored by the GCP lane's
+        # naming helpers (eps-issue-<N>-<suffix>) + the router's attempt-id
+        # mint + the handle-sidecar composer. Parse-time validated
+        # (_lane_suffix_arg); absent → key ABSENT (never None-valued — a
+        # None-valued key would flip canonicalize_spec output and every
+        # live unsuffixed lease spec-hash).
+        extra["lane_suffix"] = args.lane_suffix
+    if getattr(args, "execute_workload", False):
+        # RunPod-honored knob (#909): opts the launch into the RunPod
+        # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
+        # the clone to repo_branch, and starts workload_cmd detached).
+        # Without it an explicit-runpod --workload-cmd launch is
+        # provision-only (the experimenter is the executor there).
+        # main()'s parse-time guard rejects the flag without a non-empty
+        # --workload-cmd, so this key never rides a hydra launch.
+        extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
-        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
-        # inert on SLURM / RunPod lanes.
+        # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
+        # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
+        # threading in RunPodBackend.launch + the feasibility gate in
+        # router._runpod_terminal_rung. Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "min_ram_gb", None):
+        # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
+        # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
+        # so an unsatisfiable requirement refuses the fallback typed
+        # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
+        # an undersized pod. GCP machine selection is unchanged (by intent);
+        # inert on SLURM lanes.
+        extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -851,10 +881,19 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # no-op back-compat shim. Inert on SLURM / RunPod lanes.
         extra["spot_tolerant"] = True
     if getattr(args, "repo_branch", None):
-        # GCP-only knob: the GCE startup script clones from origin, so a
-        # feature-branch workload must name its branch (issue 535 r6).
+        # The GCE startup script clones from origin, so a feature-branch
+        # workload must name its branch (issue 535 r6); the RunPod #909
+        # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"}:
+    elif (args.backend or "auto") in {"auto", "gcp"} or (
+        # #909 (AC6): the auto-default ALSO fires for an explicit
+        # `--backend runpod --execute-workload` launch — the execution
+        # leg's branch sync would otherwise target `main`, where per-issue
+        # dispatch scripts do not exist (the #763-shaped manual command).
+        # Explicit --repo-branch (above) always wins.
+        (args.backend or "").strip().lower() == "runpod"
+        and getattr(args, "execute_workload", False)
+    ):
         # fix19's production mirror (round-2 Claude Major, task #535):
         # without this, the GCE clone defaults to "main" even when the
         # invoking checkout — the /issue worktree on an issue-<N> branch
@@ -877,7 +916,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto lane — "
+                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -893,7 +932,8 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto lane — invoking checkout "
+                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
                     worktree_root,
@@ -919,6 +959,87 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return extra
 
 
+def _annotate_launch_body_reconnect_and_lane(
+    body: dict[str, Any], *, args: argparse.Namespace, result: Any
+) -> None:
+    """Additive launch-JSON keys: reconnect loudness + lane-suffix visibility (#934/#923).
+
+    A reconnect-resolved launch dispatched NO workload this invocation,
+    but must stay ``ok: true`` (the exit-75 still-waiting contract
+    instructs re-running the SAME command and relying on reconnect —
+    flipping ``ok`` would break that rerun loop). The additive
+    ``reconnected`` / ``workload_dispatched`` keys make the non-dispatch
+    machine-detectable instead. BOTH reconnect layers trip it: the
+    router scan (``reason == "reconnect"``) and the GCP-internal
+    ``reconnect_or_none`` (which only marks
+    ``handle.extra["reconnected"]``). Mutates ``body`` in place.
+    """
+    from explore_persona_space.backends.router import ROUTE_REASON_RECONNECT
+
+    handle_extra = result.handle.extra or {}
+    workload_requested = bool((args.workload_cmd or "").strip()) or bool(args.hydra)
+    reconnected = bool(handle_extra.get("reconnected")) or result.reason == ROUTE_REASON_RECONNECT
+    if reconnected:
+        workload_dispatched = False
+    elif handle_extra.get("workload_executed") is False:
+        # #909 provision-only RunPod launch: the pod booted but nothing ran.
+        workload_dispatched = False
+    else:
+        workload_dispatched = workload_requested
+    body["reconnected"] = reconnected
+    body["workload_dispatched"] = workload_dispatched
+    lane_suffix = getattr(args, "lane_suffix", None)
+    if lane_suffix:
+        body["lane_suffix"] = lane_suffix
+    if reconnected and workload_requested:
+        body["reconnect_note"] = (
+            "route() RECONNECTED to an existing live instance — this invocation dispatched "
+            "NO workload (workload_dispatched=false). Benign iff an earlier run of the SAME "
+            "command created it (exit-75 rerun); a concurrent second lane must relaunch with "
+            "--lane-suffix (#934/#923)."
+        )
+        logging.getLogger("dispatch_issue").warning(
+            "%s pod_name=%s reason=%s",
+            body["reconnect_note"],
+            result.handle.pod_name,
+            result.reason,
+        )
+    if lane_suffix and result.chosen_kind != "gcp":
+        body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
+        logging.getLogger("dispatch_issue").warning(
+            "--lane-suffix=%s: instance/job-name isolation is GCP-only; chosen_kind=%s "
+            "keeps per-issue naming (SLURM eps-issue-<N>, RunPod pod-<N>) — concurrent "
+            "lanes are NOT isolated on this lane.",
+            lane_suffix,
+            result.chosen_kind,
+        )
+
+
+def _persist_partial_handle_sidecar(issue: int, spec: Any, partial: Any) -> tuple[bool, str]:
+    """Best-effort #954 sidecar write for a PARTIAL RunPod launch.
+
+    A ``RunPodWorkloadStartError`` carrying a handle means a pod was
+    provisioned (it BILLS, left RUNNING for diagnosis) before the
+    workload-start leg failed. Persist the handle sidecar so the pod is
+    visible to the handle machinery (poll / finalize / re-drive stay
+    chained) — the SAME path ``dispatch_for_issue`` would have written on
+    success. Returns ``(sidecar_written, note_suffix)``; an ``OSError`` is
+    recorded in the note suffix, NEVER raised (the typed failure the caller
+    is surfacing must not be masked).
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        default_handle_sidecar_path,
+        write_handle_sidecar,
+    )
+
+    sidecar_path = default_handle_sidecar_path(issue, lane_suffix=spec.extra.get("lane_suffix"))
+    try:
+        write_handle_sidecar(partial, sidecar_path)
+        return True, ""
+    except OSError as write_exc:
+        return False, f" [handle sidecar write FAILED: {type(write_exc).__name__}: {write_exc}]"
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -939,6 +1060,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         dispatch_for_issue,
     )
     from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     extra = _launch_extra_from_args(args)
     spec = build_run_spec(
@@ -1074,6 +1196,41 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
             started_evidence_probe=deps.get("started_evidence_probe"),
             reconnect_fn=deps["reconnect_fn"],
         )
+    except RunPodWorkloadStartError as exc:
+        # #909 AC3: a requested --execute-workload execution that did not
+        # start NEVER returns ok. RunPodBackend.launch raises the typed
+        # error UNWRAPPED through route()'s explicit-runpod override
+        # (_prepare_and_launch only wraps prepare() failures, and
+        # dispatch_for_issue does not wrap route()), so this arm catches it
+        # directly; were a future router change to wrap it in a RouteError,
+        # the arm below already yields the same exit 2 + failure JSON.
+        #
+        # #954: when the error carries the PARTIAL handle (a pod was
+        # provisioned before the start leg failed — it BILLS, left RUNNING
+        # for diagnosis), persist the handle sidecar best-effort (never mask
+        # the typed failure) and name the pod in the failure JSON. NO lease
+        # on this path by design: a manual retry hits pod_lifecycle's
+        # provision-idempotency refuse (exit 1 on a live pod-N), fail-loud.
+        note = str(exc)
+        partial_fields: dict[str, Any] = {}
+        partial = getattr(exc, "handle", None)
+        if partial is not None:
+            sidecar_written, note_suffix = _persist_partial_handle_sidecar(
+                int(args.issue), spec, partial
+            )
+            note += note_suffix
+            partial_fields = {"pod_name": partial.pod_name, "sidecar_written": sidecar_written}
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "exception": type(exc).__name__,
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": note,
+            **partial_fields,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     except RouteError as exc:
         translation = classify_terminal_exception(exc)
         body = {
@@ -1151,6 +1308,24 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         return EXIT_STILL_WAITING
 
     result = outcome.result
+    handle_extra = result.handle.extra or {}
+    # #909 belt-and-suspenders fail-fast: a handle that CLAIMS the workload
+    # executed but carries no workload_pid is a backend regression returning
+    # ok on a provision-only result — never print ok:true on it.
+    if handle_extra.get("workload_executed") and not handle_extra.get("workload_pid"):
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": (
+                "handle claims workload_executed=true but carries no workload_pid — "
+                "backend regression; treating the requested execution as NOT started "
+                f"(#909). pod_name={result.handle.pod_name} log_path={result.handle.log_path}"
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     body = {
         "ok": True,
         "issue": int(args.issue),
@@ -1163,7 +1338,15 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         ),
         "pod_name": result.handle.pod_name,
         "job_id": result.handle.job_id,
+        # #909: the execution-leg outcome (RunPod lane; None / absent-key
+        # semantics on lanes that never set them) + the log path the caller
+        # tails. workload_executed False on a provision-only RunPod launch
+        # is the loud "the experimenter must launch this" signal.
+        "workload_executed": handle_extra.get("workload_executed"),
+        "workload_pid": handle_extra.get("workload_pid"),
+        "log_path": result.handle.log_path,
     }
+    _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
         # failed — print the handle JSON anyway (it IS the recovery
@@ -1301,7 +1484,9 @@ def _cmd_finalize(
     # written by the pre-#612 cwd-relative composer — a finalize that
     # false-misses a live handle would SKIP teardown and leak a paid
     # VM / pod, so the probe is cheap insurance during the transition).
-    sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
+    sidecar, probed = resolve_handle_sidecar_path(
+        args.issue, args.handle_file, lane_suffix=getattr(args, "lane_suffix", None)
+    )
     if not Path(sidecar).exists():
         body = {
             "ok": False,
@@ -1501,6 +1686,21 @@ def _max_run_duration_arg(value: str) -> str:
     return v
 
 
+def _lane_suffix_arg(value: str) -> str:
+    """Validate ``--lane-suffix`` at the parser surface (#934).
+
+    Delegates to the shared ``base.validate_lane_suffix`` (lowercase
+    ``[a-z0-9-]``, <=43 chars — the attempt-label budget) so a malformed
+    suffix errors friendly at parse time, BEFORE any backend is built.
+    """
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    try:
+        return validate_lane_suffix(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
 def _build_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -1595,11 +1795,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "GCP boot-disk size override in GB (GCP lane only; threads to "
-            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
-            "Default 300 GB is too tight for full-FT checkpoint grids "
-            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
-            "+ model + cache). Inert on non-GCP lanes."
+            "Boot/data disk size the plan's stage requires, in GB. GCP lane: "
+            "boot-disk size override (threads to spec.extra['boot_disk_gb'], "
+            "honored by backends/gcp.py; default 300 GB is too tight for "
+            "full-FT checkpoint grids — issue 606 needed 500: 13 consolidated "
+            "ZeRO-3 ckpts ~= 195 GB + model + cache). RunPod CPU fallback "
+            "(#1010): threaded into the pod's containerDiskInGb "
+            "(max(50, value)) and checked by the feasibility gate — an "
+            "unsatisfiable disk requirement refuses the fallback typed "
+            "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
+            "undersized pod. Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-ram-gb",
+        type=int,
+        default=None,
+        help=(
+            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
+            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
+            "instances have FIXED RAM, so an unsatisfiable requirement "
+            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
+            "instead of provisioning an undersized pod. GCP machine selection "
+            "is unchanged (by intent). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(
@@ -1647,6 +1865,23 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--execute-workload",
+        action="store_true",
+        help=(
+            "RunPod lane only (#909): after provisioning, SSH the fresh pod, sync "
+            "its clone to --repo-branch (auto-defaulted for this shape), and start "
+            "--workload-cmd detached (setsid launcher + pidfile + log), verifying "
+            "liveness before returning — a requested execution that did not start "
+            "exits 2 with reason=runpod_workload_start_failed, never ok:true. "
+            "REQUIRES a non-empty --workload-cmd (rejected at parse time with "
+            "--hydra: the execution leg cannot execute a hydra run). Without this "
+            "flag an explicit-runpod --workload-cmd launch is provision-only — "
+            "EXPECTED when the experimenter (SKILL.md Step 6d.1) launches it on "
+            "the pod. The automated GCP→RunPod failover paths opt in "
+            "automatically (they have no experimenter). Inert on non-RunPod lanes."
+        ),
+    )
+    launch.add_argument(
         "--skip-default-git-paths",
         action="store_true",
         help=(
@@ -1662,6 +1897,26 @@ def _build_argparser() -> argparse.ArgumentParser:
             "honored by every lane's declaration builder)."
         ),
     )
+    launch.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Per-lane instance-name suffix (#934): the GCP lane provisions "
+            "eps-issue-<N>-<suffix> and the handle sidecar becomes "
+            "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
+            "issue coexist. Lowercase [a-z0-9-], <=43 chars. Instance/job-name "
+            "isolation is GCP-lane only; SLURM job names and RunPod pod names "
+            "remain per-issue (concurrent lanes both failing over to RunPod "
+            "still contend on pod-<N>). In a multi-lane plan, suffix BOTH "
+            "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
+            "forgotten-suffix poll/finalize silently resolving lane 1's "
+            "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "
+            "second unsuffixed instance (no reconnect). Multi-lane "
+            "orchestrators should prefer passing --handle-file from the "
+            "launch JSON's handle_sidecar_path to poll/finalize."
+        ),
+    )
 
     finalize = sub.add_parser(
         "finalize",
@@ -1675,6 +1930,17 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Path to the per-issue handle sidecar JSON "
         "(default: <main-checkout>/.claude/cache/issue-<N>-handle.json, "
         "with a legacy <cwd>/.claude/cache/ fallback probe).",
+    )
+    finalize.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
+            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "the launch used — a forgotten suffix silently finalizes the "
+            "unsuffixed lane's handle instead."
+        ),
     )
     finalize.add_argument(
         "--skip-confirm-artifacts",
@@ -1732,6 +1998,18 @@ def main(
                 "launch requires exactly one of --workload-cmd / --hydra "
                 f"(got {'both' if has_hydra else 'neither'}; an empty --workload-cmd '' "
                 "counts as not provided)"
+            )
+        # #909 AC3a (upheld Must-Fix): --execute-workload with nothing to
+        # execute (a --hydra run, or an empty/absent --workload-cmd) would
+        # recreate the #763 silent false-green through the fix's own flag
+        # surface — the execution leg would no-op, no WARNING would fire,
+        # and ok:true would print on a paid provision-only pod. Reject at
+        # parse time, BEFORE backends_factory is built or any provision
+        # attempted (mirrors the exactly-one-of guard above).
+        if getattr(args, "execute_workload", False) and not has_workload_cmd:
+            parser.error(
+                "--execute-workload requires a non-empty --workload-cmd "
+                "(it cannot execute a --hydra run)"
             )
     logging.basicConfig(
         stream=sys.stderr,

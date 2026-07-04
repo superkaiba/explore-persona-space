@@ -146,6 +146,33 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-jsonl-splitlines`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` AND
+  ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
+  reading JSONL content. ``json.dumps(..., ensure_ascii=False)`` leaves
+  raw U+2028/U+2029/NEL inside JSON strings and ``str.splitlines()``
+  splits on ALL Unicode line boundaries, so a valid ``\\n``-terminated
+  JSONL file shreds into unparseable fragments — a hard crash on strict
+  readers, SILENT record loss on tolerant skip-malformed readers, and
+  inflated row counts on ``len(...splitlines())`` asserts (incident #825
+  run-1d; eight live workflow-surface reader sites across seven files
+  fixed with #950). Four narrow
+  signals: (a) a ``read_text``-bearing receiver chain whose source
+  segment mentions ``jsonl``; (b) a bare receiver ``Name`` matching
+  ``jsonl``; (c) the call sits inside a ``jsonl``-named function; (d) a
+  ``read_text``-bearing receiver chain whose base ``Name`` is
+  ``ev_path``/``events_path``/``concerns_path`` or whose segment names
+  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``. Deliberate false negatives
+  (dataflow through other variable names, shell heredocs) are documented
+  in the check docstring — the gotchas.md entry carries those. Waive a
+  genuinely-safe flagged site with ``# JSONL_SPLITLINES_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line; frozen legacy per-issue
+  experiment scripts are grandfathered in
+  :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (experiment files ONLY — a
+  workflow-surface file is never allowlisted, it is fixed). Unparseable
+  files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
+  never silently.
 * ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
   any script that uses the BARE python-dotenv ``load_dotenv``
@@ -230,6 +257,21 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
+  default run): FAIL on a literal ``v1`` posting instruction for a
+  round-versioned marker kind (``epm:experiment-implementation`` /
+  ``epm:results`` / ``epm:proposed-tests``) in checked-in workflow prose
+  (CLAUDE.md, workflow.yaml, agents/rules ``.md``, every ``SKILL.md``, the
+  /issue ``markers.md`` + ``templates/``). Those kinds accrue rows across
+  follow-up rounds / TDD resumes / crash-recovery re-posts, and an explicit
+  ``--version`` beats the CLI's omitted-version max+1 default, so checked-in
+  "post at v1" prose seeds briefs that collide with existing rows (incident
+  #825: a follow-up-round brief instructed a literal v1 on a task already at
+  v6 — the #389 class). Whole-file scan (a line-wrapped kind/version pair
+  still trips); ``v1`` is word-bounded (``v12`` never matches); prose
+  evasions like "pass ``--version 1``" are a DELIBERATE boundary covered by
+  the brief-contract prose layers, not this lint. Historical archives
+  (``.claude/plans/``, ``.claude/agent-memory/``) are out of scan scope (#917).
 * ``--check-agent-tools`` (also bundled into the no-flags default run):
   every ``.claude/agents/*.md`` must declare an explicit tool surface — a
   ``tools:`` allowlist or a ``disallowedTools:`` denylist — in its YAML
@@ -252,6 +294,40 @@ Behaviours:
   so a typo strips a capability with no error); (3) a
   ``disallowedTools:``-only file (research-pm) skips the containment check
   but must not deny a body-mentioned tool.
+* ``--check-phase-done-reserved`` (also bundled into the no-flags default
+  run): walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+  invocation of a ``scripts/*.py|*.sh`` phase script that contains a genuine
+  ``[phase=done]`` emission site — the reserved-token contract of
+  ``.claude/rules/pod-side-reporting.md`` requirement 1 (the token in the
+  MAIN dispatcher log is reserved for the dispatcher's single terminal line;
+  a mid-pipeline child emission reads as a false ``status=done`` to
+  ``poll_pipeline.py`` — incidents #545, #920). Emission detection is
+  AST-based for ``.py`` (comments / docstrings / ``re.compile`` match sites
+  never flag) and quote-aware comment-stripped ``echo|printf|print(`` for
+  ``.sh``; every invocation on a logical line is checked (the line is split
+  into command segments at unquoted ``&&``/``||``/``;``/``|``/lone-``&``
+  separators), and a stdout-redirected invocation (the
+  ``> "$WORKER_LOG" 2>&1`` per-worker isolation pattern, scoped to the
+  invocation's OWN segment) is skipped, while ``2>&1 | tee`` stays
+  checked. Legacy edges are frozen in
+  :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` ((invoker, target) edge grain,
+  annotated); waive a mode-gated standalone-lane terminal with
+  ``# noqa: phase-done-reserved`` on the emission line or the preceding
+  non-blank line. Also enforced at commit time by the
+  ``workflow-lint-phase-done-reserved`` pre-commit hook on any
+  ``scripts/*.sh|py`` change (#930).
+* ``--check-stale-label-disposition`` (also bundled into the no-flags default
+  run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
+  paragraph (bold anchor ``**Stale-label disposition rule``, which must be
+  UNIQUE — the check carries a negative assertion, so span identity is
+  load-bearing) loses any of its five #894/#763 semantic tokens — most
+  critically the fresh-label-execute clause ("the label EXECUTES as the
+  dispatched round") — or regains an unconditional skip-on-None coupling
+  ("On None ... skip", a targeted negative regex over the
+  whitespace-normalized paragraph span; a literal-coupling backstop only,
+  the positive tokens are the primary defense). Paragraph-scoped: the span
+  runs from the anchor to the first blank line, so a mid-paragraph split
+  FAILs loudly (#963).
 
 Exit codes:
 
@@ -860,6 +936,49 @@ UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
 UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
 UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-jsonl-splitlines` (#950): reading/counting JSONL via
+# `str.splitlines()` shreds records whose `ensure_ascii=False` strings carry
+# raw U+2028/U+2029/NEL (Unicode line boundaries; incident #825 run-1d).
+# Inline waiver for a genuinely-safe flagged site. Reason ≥ 10 chars, same
+# convention as UPLOAD_AS_FILE_EXEMPT.
+JSONL_SPLITLINES_WAIVER_RE = re.compile(r"#\s*JSONL_SPLITLINES_EXEMPT\s*:\s*(.+?)\s*$")
+JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS = 10
+# Signal regexes: (b)/(c) receiver-Name / enclosing-function-name token; (d)
+# events/concerns-path receiver base names (the project's uniform conventions
+# for `events.jsonl` / `concerns.jsonl` paths; `concerns_path` covers the
+# verify_task_body.py check-14 reader shape fixed in #950 round 2).
+JSONL_NAME_TOKEN_RE = re.compile(r"jsonl", re.IGNORECASE)
+JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^(ev(ents)?|concerns)_path$", re.IGNORECASE)
+# Grandfathered legacy `.splitlines()`-on-JSONL sites — repo-root-relative
+# POSIX FILE paths (file-level, not line-keyed — line keys rot; these are
+# frozen per-issue experiment scripts of terminal/near-terminal tasks reading
+# their own mostly-ASCII generated JSONL). HARD RULE: experiment files ONLY —
+# a workflow-surface file may NEVER be allowlisted, it must be FIXED (the
+# live-tree test asserts the experiment-file path shape mechanically).
+JSONL_SPLITLINES_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # #823 identity-baseline driver (terminal task, own generated JSONL):
+        "scripts/issue823_identity_baseline.py",
+        # #778 honest-null figures (terminal task):
+        "scripts/issue778_honest_null_figures.py",
+        # #488 phase2 smoke calibrator (terminal task):
+        "scripts/i488_phase2_smoke_calibrate.py",
+        # #778 summary comparison plots (terminal task):
+        "scripts/issue778_summary_comparison_plots.py",
+        # #667 extraction driver (terminal task):
+        "scripts/issue667_extract.py",
+        # #650 concept-direction driver (terminal task):
+        "scripts/issue650_concept_direction.py",
+        # #642 dispatch driver, 5 sites (terminal task):
+        "scripts/issue_642/i642_dispatch.py",
+        # #612 sycophancy claim audit `_load_jsonl` (experiment package under
+        # src/explore_persona_space/experiments/ — experiment code, not
+        # workflow surface):
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+    }
+)
 
 
 # `--check-batch-judge-client`: every inline Anthropic Message Batches API
@@ -3101,6 +3220,221 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _jsonl_splitlines_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# JSONL_SPLITLINES_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _chain_has_read_text(expr: ast.expr) -> bool:
+    """True iff the receiver expression chain contains a ``read_text`` call."""
+    for node in ast.walk(expr):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "read_text"
+        ):
+            return True
+    return False
+
+
+def _chain_base_name(expr: ast.expr) -> str | None:
+    """Leftmost ``ast.Name`` id of an attribute/call/subscript chain, or None."""
+    while True:
+        if isinstance(expr, ast.Call):
+            expr = expr.func
+        elif isinstance(expr, ast.Attribute | ast.Subscript):
+            expr = expr.value
+        elif isinstance(expr, ast.Name):
+            return expr.id
+        else:
+            return None
+
+
+def _jsonl_fn_scoped_splitlines_ids(tree: ast.AST) -> set[int]:
+    """Signal (c) pre-pass: ``id()``s of every ``.splitlines()`` call node
+    enclosed by a ``jsonl``-named function (the ``_iter_jsonl`` shape)."""
+    fn_scoped: set[int] = set()
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef | ast.AsyncFunctionDef) and JSONL_NAME_TOKEN_RE.search(
+            fn.name
+        ):
+            for sub in ast.walk(fn):
+                if (
+                    isinstance(sub, ast.Call)
+                    and isinstance(sub.func, ast.Attribute)
+                    and sub.func.attr == "splitlines"
+                ):
+                    fn_scoped.add(id(sub))
+    return fn_scoped
+
+
+def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> str | None:
+    """Classify one ``.splitlines()`` call against the four #950 signals.
+
+    Returns a human-readable signal label when the call reads JSONL content
+    (see :func:`check_jsonl_splitlines` for the signal definitions), else
+    None. A per-node ``ast.get_source_segment(...) is None`` only makes the
+    segment-dependent predicates (a)/(d-literal) non-matching for the node.
+    """
+    receiver = node.func.value  # type: ignore[attr-defined]
+    segment = ast.get_source_segment(text, receiver)
+    has_read = _chain_has_read_text(receiver)
+    base = _chain_base_name(receiver)
+    if has_read and segment is not None and JSONL_NAME_TOKEN_RE.search(segment):
+        return "jsonl-named read_text chain"
+    if isinstance(receiver, ast.Name) and JSONL_NAME_TOKEN_RE.search(receiver.id):
+        return f"jsonl-named receiver ('{receiver.id}')"
+    if id(node) in fn_scoped:
+        return "call inside a jsonl-named function"
+    if has_read and (
+        (base is not None and JSONL_EVENTS_PATH_NAME_RE.match(base))
+        or (
+            segment is not None
+            and any(lit in segment for lit in ("events.jsonl", "comments.jsonl", "concerns.jsonl"))
+        )
+    ):
+        return "events/comments/concerns-path read_text chain"
+    return None
+
+
+def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    and FAIL any ``.splitlines()`` call that reads JSONL content (#950).
+
+    Rationale: ``json.dumps(..., ensure_ascii=False)`` — the project's
+    events/comments writer and most JSONL emitters — leaves raw U+2028 LINE
+    SEPARATOR, U+2029 PARAGRAPH SEPARATOR, and NEL U+0085 inside JSON strings
+    (controls < 0x20 are still escaped), and ``str.splitlines()`` splits on
+    ALL Unicode line boundaries. A perfectly valid ``\\n``-terminated JSONL
+    file read via ``splitlines()`` therefore shreds any record whose text
+    carries one of those characters: a hard ``JSONDecodeError`` on strict
+    readers, SILENT record loss on tolerant skip-malformed readers, and an
+    inflated row count on ``len(read_text().splitlines())`` asserts.
+    Real-user corpora (lmsys-chat-1m, WildChat) contain them routinely and an
+    ASCII-fixture smoke can never catch it (incident #825 run-1d: 2000 valid
+    records → 2019 fragments, ~55 min of GPU extraction lost; eight live
+    workflow-surface reader sites across seven files fixed with #950). The
+    fix is ``split("\\n")`` or text-mode file iteration (universal newlines
+    only).
+
+    Detection — flag an ``ast.Call`` whose func is
+    ``ast.Attribute(attr="splitlines")`` when ANY of:
+
+    * **(a) chained-read signal:** the receiver chain contains a
+      ``read_text`` call AND the receiver's source segment mentions
+      ``jsonl`` case-insensitively (``jsonl_path.read_text().splitlines()``,
+      ``(d / "pool.jsonl").read_text().splitlines()``).
+    * **(b) receiver-name signal:** the receiver is a bare ``ast.Name``
+      matching ``/jsonl/i`` (``jsonl_text.splitlines()``).
+    * **(c) function-name signal:** the call sits inside a
+      ``FunctionDef``/``AsyncFunctionDef`` whose name matches ``/jsonl/i``
+      (the ``_iter_jsonl`` shape — receiver read on a separate line).
+    * **(d) events/concerns-path signal:** the receiver chain contains a
+      ``read_text`` call AND (its base ``ast.Name`` matches
+      ``/^(ev(ents)?|concerns)_path$/i`` OR the segment names the literal
+      ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``) — the exact
+      shapes of the #950 sibling workflow readers (the round-1
+      ``events.jsonl`` siblings + the round-2 ``verify_task_body.py``
+      check-14 ``concerns.jsonl`` reader), which evade (a)-(c).
+
+    Deliberate false negatives (accepted; the gotchas.md entry + code review
+    carry them): dataflow through a non-jsonl, non-events-named variable
+    (``out_path = ... / "x.jsonl"`` … ``out_path.read_text().splitlines()``)
+    and python-in-shell heredocs (``.sh`` files are not AST-scannable).
+
+    Unparseable files: a ``SyntaxError`` (does not parse) or
+    ``UnicodeDecodeError`` (non-UTF-8) file is SKIPPED without failing the
+    check — syntax validity is ruff/pytest's job — but a one-line notice is
+    printed to stderr so the skip is never silent (strengthens the silent
+    ``--check-upload-as-file`` precedent). A per-node
+    ``ast.get_source_segment(...) is None`` only makes the segment-dependent
+    predicates non-matching for that node; no file skip.
+
+    Waiver: ``# JSONL_SPLITLINES_EXEMPT: <reason>`` (reason ≥
+    :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) on the call's
+    first physical line or the immediately preceding non-blank line.
+    Grandfather: :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (file-level,
+    frozen experiment scripts only — NEVER a workflow-surface file).
+
+    ``scan_roots`` is a unit-test override hook; production callers pass None
+    and the function walks ``<repo_root>/scripts`` +
+    ``<repo_root>/src/explore_persona_space`` (NOT ``tests/`` /
+    ``external/`` / ``archive/``). Bundled into the no-flags default run.
+    """
+    roots = (
+        scan_roots
+        if scan_roots is not None
+        else (_REPO_ROOT / "scripts", _REPO_ROOT / "src" / "explore_persona_space")
+    )
+    errors: list[str] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            if rel in JSONL_SPLITLINES_LEGACY_ALLOWLIST:
+                continue
+            try:
+                text = py.read_text(encoding="utf-8")
+                tree = ast.parse(text, filename=str(py))
+            except (SyntaxError, UnicodeDecodeError) as exc:
+                # Skip-with-report: never silent, never fatal (syntax validity
+                # is ruff/pytest's enforcement job, not this lint's).
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-jsonl-splitlines skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            lines = text.split("\n")
+            fn_scoped = _jsonl_fn_scoped_splitlines_ids(tree)
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "splitlines"
+                ):
+                    continue
+                signal = _jsonl_splitlines_signal(node, text, fn_scoped)
+                if signal is None:
+                    continue
+                if _jsonl_splitlines_waiver_present(lines, node.lineno):
+                    continue
+                errors.append(
+                    f"{py}:{node.lineno}: jsonl-splitlines: .splitlines() on JSONL "
+                    f"content ({signal}). str.splitlines() splits on raw "
+                    f"U+2028/U+2029/NEL inside ensure_ascii=False JSON strings and "
+                    f"shreds valid records — silent drop on tolerant readers, "
+                    f"JSONDecodeError on strict ones, inflated row counts on "
+                    f"len() asserts (#825/#950; .claude/rules/gotchas.md). Read/"
+                    f'count JSONL via text-mode file iteration or split("\\n") + '
+                    f"an `if line.strip()` guard, or waive a genuinely-safe site "
+                    f"with '# JSONL_SPLITLINES_EXEMPT: <reason>' (reason ≥ "
+                    f"{JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS} chars)."
+                )
+    return errors
+
+
 def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
     """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
     :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
@@ -3759,6 +4093,503 @@ def check_judge_model_pins(
     return errors
 
 
+# --- `--check-phase-done-reserved` (#930): reserved `[phase=done]` token ----
+# The literal reserved token from .claude/rules/pod-side-reporting.md
+# requirement 1: `poll_pipeline.py` declares status="done" when the most
+# recent `[phase=...]` line in the MAIN dispatcher log is `[phase=done]`,
+# so the token is reserved for the dispatcher's single terminal line —
+# a phase script whose stdout flows into that log must never emit it
+# (incident #545, 2026-06-11: a per-cell echo produced a false status=done
+# while GPUs were at 85%; recurred #920 r1: six phase scripts).
+PHASE_DONE_TOKEN = "[phase=done]"
+# Python-target invocation edge on a logical shell line: `uv run python
+# scripts/x.py`, `nohup ... python -u scripts/x.py`, `CUDA_VISIBLE_DEVICES=0
+# uv run python3 scripts/x.py`. `$VAR`-prefixed paths / `python -m` launches
+# deliberately do NOT match (documented false-negative gaps, see the check
+# docstring).
+PHASE_DONE_PY_INVOKE_RE = re.compile(
+    r"""python3?(?:\.\d+)?\s+(?:-[A-Za-z]+\s+)*["']?(scripts/[A-Za-z0-9_./-]+\.py)\b"""
+)
+# Shell-target invocation edge: `bash scripts/x.sh` / `sh scripts/x.sh` /
+# `source scripts/x.sh` — the i488 run_all -> sub-dispatcher class.
+PHASE_DONE_SH_INVOKE_RE = re.compile(
+    r"""(?:\bbash|\bsh(?=\s)|\bsource)\s+["']?(scripts/[A-Za-z0-9_./-]+\.sh)\b"""
+)
+# Stdout-isolation exclusion: matches `> f`, `>> f`, `1> f`, `&> f` (stdout
+# redirected away from the main log — the per-worker isolation pattern,
+# e.g. scripts/issue658_8gpu_dispatch.sh). Does NOT match `2>&1` alone,
+# `2> err.log` (stderr-only; stdout still flows), or `... 2>&1 | tee -a log`
+# (tee duplicates to main stdout — the exact #545-family shape): those edges
+# stay checked. The `(?!\s*&)` lookahead keeps fd-dup forms (`>&2`) out.
+# Applied per COMMAND SEGMENT (the logical line split at unquoted
+# `&&`/`||`/`;`/`|`/lone-`&` separators via _split_sh_command_segments),
+# NOT line-globally — a redirect in a different segment neither suppresses
+# nor rescues an invocation elsewhere on the line (round-2
+# `phase-done-shell-edge-scoping` fix).
+PHASE_DONE_REDIRECT_RE = re.compile(r"(?:^|\s)(?:1?>>?|&>>?)(?!\s*&)")
+# Per-line waiver for a mode-gated standalone-lane terminal (a dual-mode
+# phase script whose emission is OFF the dispatcher path — the issue-920
+# nulls_figures shape). Same placement convention as JUDGE_PIN_WAIVER_RE:
+# the emission line or the immediately preceding non-blank line. Waiver
+# comments MUST name the intended mode/invoker (code-review enforced).
+PHASE_DONE_WAIVER_RE = re.compile(r"#\s*noqa:\s*phase-done-reserved\b")
+# A .sh line is an emission site iff (after quote-aware trailing-comment
+# strip) it carries the token AND one of these emitters — `print\s*\(`
+# covers python-heredoc blocks embedded in .sh (`uv run python - <<'PY'`).
+PHASE_DONE_SH_EMIT_RE = re.compile(r"\becho\b|\bprintf\b|\bprint\s*\(")
+# Logging-ish attribute names whose calls count as .py emission sites
+# (covers logger.info / log.warning / LOGGER.error / sys.stdout.write).
+# `re.compile` / `re.search` are deliberately absent so the poller's own
+# match/detection code never flags.
+PHASE_DONE_PY_EMIT_ATTRS = frozenset(
+    {"debug", "info", "warning", "error", "critical", "exception", "log", "write"}
+)
+# Grandfathered legacy (invoker .sh, target) EDGE pairs — repo-root-relative
+# POSIX paths, annotated per entry (mirrors JUDGE_PIN_LEGACY_ALLOWLIST's
+# style). Edge grain, NOT emitter-file grain: a future NEW dispatcher
+# invoking the same legacy emitter is still flagged. Fixing the legacy
+# emissions is prune-on-touch (NOT this task's scope); stale entries are
+# harmless (frozenset membership). Derivation: live-tree diff-and-adjudicate
+# 2026-07-03 against the task #930 plan §4.5 expected seed.
+PHASE_DONE_EDGE_LEGACY_ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
+    {
+        # #545 family (the original incident's own dispatcher): sweep.py's
+        # terminal print (line ~1516) tees into the main log 4x mid-pipeline:
+        ("scripts/issue545_dispatch.sh", "scripts/issue545_sweep.py"),
+        # #654: extract phase terminal logger.info (line ~387), tee'd to the
+        # main log:
+        ("scripts/issue654_dispatch.sh", "scripts/issue654_extract.py"),
+        # #810 CPU-lane runner: four phase scripts each emit a terminal done
+        # (lines ~530 / ~369 / ~433 / ~426) ahead of the runner's own
+        # terminal (:68). MIGRATE bucket (live-hazard): the #810 family is
+        # still actively churning — a follow-up round re-running this runner
+        # reproduces the false-done with the lint green; fix these emissions
+        # on next touch:
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_reconstruction.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_batch_rejudge_highm.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_readout.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_analyze.py"),
+        # i488 run-all invokes two sub-dispatchers (own terminals ~166/~257
+        # + ~121) non-redirected, ahead of run_all's own terminal (:131):
+        ("scripts/i488_run_all.sh", "scripts/i488_phase23_dispatch.sh"),
+        ("scripts/i488_run_all.sh", "scripts/i488_phase4_dispatch.sh"),
+        # #552 (round-1-critique triage, 2026-07-03 — the plan-v1 probe
+        # MISSED this edge; a legacy completed family, same tee-shape class
+        # as #654): prep script's terminal logger.info (line ~277) tees into
+        # the main log at run_issue552_sweep.sh:105 via `2>&1 | tee`:
+        ("scripts/run_issue552_sweep.sh", "scripts/issue_552_prep_good_corpus.py"),
+        # PRE-SEEDED for the in-flight issue-920 branch merge: nulls_figures'
+        # done (line ~781) is the standalone cpu-mid lane's dispatcher
+        # terminal, mode-gated OFF the --gpu-null-only dispatcher path
+        # (verified on the issue-920 branch 2026-07-03); the file is
+        # dual-mode by design:
+        ("scripts/issue920_dispatch.sh", "scripts/issue920_nulls_figures.py"),
+    }
+)
+
+
+def _phase_done_line_waived(lines: list[str], idx: int) -> bool:
+    """Return True iff a ``# noqa: phase-done-reserved`` waiver is on the
+    emission line (``idx``, 0-based) or the immediately preceding non-blank
+    line. For a multi-line ``.py`` call the anchor is the AST call-head
+    lineno — waive at the call head, not beside a continuation-line string
+    literal. Same convention as :func:`_judge_pin_line_waived`."""
+    if 0 <= idx < len(lines) and PHASE_DONE_WAIVER_RE.search(lines[idx]):
+        return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    return back >= 0 and bool(PHASE_DONE_WAIVER_RE.search(lines[back]))
+
+
+def _py_phase_done_emission_lines(target: Path) -> list[int]:
+    """AST-scan a phase ``.py`` for genuine ``[phase=done]`` EMISSION sites,
+    returning sorted 1-based call-head line numbers (waived sites dropped).
+
+    An emission site is an ``ast.Call`` whose func is ``print`` (a bare
+    ``Name``) or an ``Attribute`` in :data:`PHASE_DONE_PY_EMIT_ATTRS`
+    (``logger.info`` / ``sys.stdout.write`` / ...), AND any ``ast.Constant``
+    string reachable by ``ast.walk`` inside the call's positional args
+    carries the literal token (covers f-string ``JoinedStr`` parts and
+    %%-style format strings). Comments, docstrings, ``re.compile`` /
+    ``re.search`` match sites, and ``"[phase=done]" in line`` membership
+    tests are excluded by construction. A ``SyntaxError`` skips the file
+    (a non-parsing .py cannot run as a phase script)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    if PHASE_DONE_TOKEN not in text:
+        return []  # cheap pre-filter before parsing
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+    lines = text.splitlines()
+    sites: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Name):
+            if func.id != "print":
+                continue
+        elif isinstance(func, ast.Attribute):
+            if func.attr not in PHASE_DONE_PY_EMIT_ATTRS:
+                continue
+        else:
+            continue
+        has_token = any(
+            isinstance(sub, ast.Constant)
+            and isinstance(sub.value, str)
+            and PHASE_DONE_TOKEN in sub.value
+            for arg in node.args
+            for sub in ast.walk(arg)
+        )
+        if not has_token:
+            continue
+        if _phase_done_line_waived(lines, node.lineno - 1):
+            continue
+        sites.add(node.lineno)
+    return sorted(sites)
+
+
+# A `#` begins a shell comment only at the START of a word — i.e. at string
+# start or after whitespace / an operator character (the POSIX tokenizer
+# rule). Used by _strip_sh_trailing_comment's word-boundary test.
+_SH_COMMENT_BOUNDARY_CHARS = frozenset(" \t;&|(<>")
+
+
+def _strip_sh_trailing_comment(line: str) -> str:
+    """Cut an unquoted trailing ``#`` comment from a shell line via a small
+    quote- and backslash-escape-aware char scanner. Word-boundary-aware
+    (the round-3 ``phase-done-comment-strip-midword-fn`` fix): a ``#``
+    starts a comment ONLY when it BEGINS a shell word — at string start or
+    preceded by unescaped whitespace / an operator character
+    (:data:`_SH_COMMENT_BOUNDARY_CHARS`) — matching the shell tokenizer, so
+    a mid-word ``#`` (``tag=run#1``, ``$#``, ``${x#pat}``, ``${#ARR[@]}``,
+    ``2#101``) and a backslash-escaped ``\\#`` never cut. (Pre-fix the
+    unconditional cut truncated the scanned line at ANY unquoted ``#``,
+    hiding every invocation/emission after it — a silent false negative
+    once the strip became load-bearing for invocation scanning in round 2.)
+    A ``#`` inside single or double quotes is kept; outside single quotes a
+    backslash escapes the next char (an escaped operator like ``\\;`` is
+    NOT a word boundary; ``\\"`` does not close a double quote). Residual
+    over-cut (fail-toward-false-negative — the safe direction for a
+    pre-commit-gating lint): a word-initial ``#`` inside an unquoted
+    ``$(...)`` command substitution still cuts there (the scanner is not
+    ``$()``-aware)."""
+    out: list[str] = []
+    in_single = in_double = False
+    prev_escaped = False
+    i, n = 0, len(line)
+    while i < n:
+        ch = line[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            out.append(ch)
+            out.append(line[i + 1])
+            prev_escaped = True
+            i += 2
+            continue
+        if (
+            ch == "#"
+            and not in_single
+            and not in_double
+            and (not out or (not prev_escaped and out[-1] in _SH_COMMENT_BOUNDARY_CHARS))
+        ):
+            break
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        out.append(ch)
+        prev_escaped = False
+        i += 1
+    return "".join(out)
+
+
+def _split_sh_command_segments(logical: str) -> list[str]:
+    """Split a (comment-stripped) logical shell line into COMMAND SEGMENTS at
+    unquoted command separators — ``&&``, ``||``, ``;``, ``|``, and a lone
+    background ``&`` — so the stdout-redirect exclusion can be scoped to the
+    segment containing each invocation (round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern: a redirect in a DIFFERENT
+    segment of the same line must neither suppress nor be suppressed by an
+    invocation elsewhere on the line).
+
+    Quote-aware (same single/double-quote char scan as
+    :func:`_strip_sh_trailing_comment`) and backslash-escape-aware (an
+    escaped separator like ``find -exec ... \\;`` does not split). A pipe IS
+    a boundary — this PRESERVES the tee-still-checked semantics of plan
+    §4.3: for ``child.py 2>&1 | tee -a log`` the invocation's own segment
+    (``child.py 2>&1``) carries no stdout redirect, so the edge stays
+    checked, while a downstream ``> f`` applied to ``tee``'s output no
+    longer suppresses the child. A lone ``&`` splits only when it is neither
+    part of ``&&`` (handled first) nor an fd-dup/`&>` form (``2>&1`` /
+    ``>&2`` / ``&> f`` — guarded by the neighboring ``>``). Empty segments
+    (trailing ``&``, ``;;``) are harmless — they match no invocation."""
+    segments: list[str] = []
+    cur: list[str] = []
+    in_single = in_double = False
+    i, n = 0, len(logical)
+    while i < n:
+        ch = logical[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            cur.append(ch)
+            cur.append(logical[i + 1])
+            i += 2
+            continue
+        if in_single:
+            if ch == "'":
+                in_single = False
+            cur.append(ch)
+            i += 1
+            continue
+        if in_double:
+            if ch == '"':
+                in_double = False
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == "'":
+            in_single = True
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_double = True
+            cur.append(ch)
+            i += 1
+            continue
+        nxt = logical[i + 1] if i + 1 < n else ""
+        prev = logical[i - 1] if i > 0 else ""
+        if (ch == "&" and nxt == "&") or (ch == "|" and nxt == "|"):
+            segments.append("".join(cur))
+            cur = []
+            i += 2
+            continue
+        if ch == ";" or ch == "|" or (ch == "&" and nxt != ">" and prev != ">"):
+            segments.append("".join(cur))
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    segments.append("".join(cur))
+    return segments
+
+
+def _sh_phase_done_emission_lines(target: Path) -> list[int]:
+    """Line-scan a phase ``.sh`` for genuine ``[phase=done]`` emission sites,
+    returning sorted 1-based line numbers (waived sites dropped). A line is
+    an emission iff, after quote-aware trailing-comment strip, it carries the
+    literal token AND matches :data:`PHASE_DONE_SH_EMIT_RE` (``echo`` /
+    ``printf`` / a python-heredoc ``print(``)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    lines = text.splitlines()
+    sites: list[int] = []
+    for idx, raw in enumerate(lines):
+        stripped = _strip_sh_trailing_comment(raw)
+        if PHASE_DONE_TOKEN not in stripped:
+            continue
+        if not PHASE_DONE_SH_EMIT_RE.search(stripped):
+            continue
+        if _phase_done_line_waived(lines, idx):
+            continue
+        sites.append(idx + 1)
+    return sites
+
+
+def _phase_done_line_edges(logical: str) -> list[str]:
+    """Return the ordered, deduplicated target paths (``scripts/*.py|.sh``)
+    of every NON-REDIRECTED phase-script invocation on one logical shell
+    line — the round-2 ``phase-done-shell-edge-scoping`` core. The line is
+    trailing-comment-stripped (quote-aware) and split into command segments
+    (:func:`_split_sh_command_segments`); EVERY invocation match is
+    considered (not just the first), and a segment's invocations are kept
+    only when THAT segment carries no stdout redirect
+    (:data:`PHASE_DONE_REDIRECT_RE`). ``echo``-preview segments are
+    skipped."""
+    targets: list[str] = []
+    seen: set[str] = set()
+    for segment in _split_sh_command_segments(_strip_sh_trailing_comment(logical)):
+        if segment.strip().startswith("echo "):
+            continue  # dry-run preview segment (`... && echo "next: ..."`)
+        matches = sorted(
+            (
+                *PHASE_DONE_PY_INVOKE_RE.finditer(segment),
+                *PHASE_DONE_SH_INVOKE_RE.finditer(segment),
+            ),
+            key=lambda m: m.start(),
+        )
+        if not matches:
+            continue
+        if PHASE_DONE_REDIRECT_RE.search(segment):
+            continue  # per-worker-log stdout isolation, scoped to THIS segment
+        for m in matches:
+            target_rel = m.group(1)
+            if target_rel not in seen:
+                seen.add(target_rel)
+                targets.append(target_rel)
+    return targets
+
+
+def check_phase_done_reserved(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[tuple[str, str]] | None = None,
+) -> list[str]:
+    """Walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+    invocation of a ``scripts/*.py|*.sh`` phase script whose file contains a
+    genuine ``[phase=done]`` emission site — the reserved-token contract of
+    ``.claude/rules/pod-side-reporting.md`` requirement 1 (#545, #920).
+
+    THE CONTRACT: ``poll_pipeline.py`` declares ``status="done"`` when the
+    most recent ``[phase=...]`` line in the MAIN dispatcher log is
+    ``[phase=done]``, so the token there is reserved for the dispatcher's
+    single terminal line. A phase script launched with stdout flowing into
+    that log (non-redirected, or ``2>&1 | tee``-duplicated) that emits the
+    token mid-pipeline reads as a false ``status=done`` while the run is
+    live (incident #545: GPUs at 85%; recurred #920 r1: six phase scripts).
+
+    VIOLATION UNIT = a non-redirected invocation EDGE ``(invoking .sh,
+    target .py|.sh)`` where the target has ≥1 emission site. A dispatcher's
+    OWN emission sites are unrestricted in count (mode-gated multi-exit
+    dispatchers are ubiquitous and legitimate; static mutual-exclusivity is
+    undecidable), and the suffixed smoke terminal (``[phase=done] SMOKE
+    COMPLETE ...``) is a dispatcher-own-file line, allowed by construction.
+
+    EXCLUSIONS: each logical line is trailing-comment-stripped (quote-aware,
+    so comment text can neither match an invocation nor carry a suppressing
+    redirect) and split into COMMAND SEGMENTS at unquoted separators
+    (``&&`` / ``||`` / ``;`` / ``|`` / lone background ``&`` —
+    :func:`_split_sh_command_segments`; backslash-escaped separators do not
+    split). EVERY invocation on the line is checked (not just the first
+    regex match), and an invocation is skipped only when ITS OWN segment
+    redirects stdout away from the main log (:data:`PHASE_DONE_REDIRECT_RE`
+    — the per-worker isolation pattern); a redirect in a DIFFERENT segment
+    of the same line does not suppress, and ``2>&1 | tee`` stays checked
+    because the pipe is a segment boundary (the invocation's own segment
+    carries no stdout redirect) — the round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern (pre-fix, ``a.py && bad.py``
+    only inspected ``a.py``, and ``bad.py; echo ok > marker`` was wrongly
+    suppressed by the line-global redirect search). The trailing-comment
+    strip is word-boundary- and escape-aware (round 3,
+    ``phase-done-comment-strip-midword-fn``): a ``#`` cuts only where it
+    BEGINS a shell word, so an executable mid-word ``#`` (``tag=run#1; uv
+    run python scripts/x.py``) or an escaped ``\\#`` no longer truncates
+    the scanned line ahead of a real invocation
+    (:func:`_strip_sh_trailing_comment`). Comment lines and
+    ``echo``-preview SEGMENTS are skipped — the echo skip is segment grain
+    (round 3): an ``echo`` segment ahead of a real invocation on the same
+    logical line (``echo \\#; uv run python scripts/x.py``) no longer
+    hides it. ``.py`` emission detection
+    is AST-based (comments / docstrings / ``re.compile``-``re.search`` match
+    sites / membership tests never flag); ``.sh`` emission detection is
+    quote-aware comment-stripped ``echo|printf|print(``. A
+    ``# noqa: phase-done-reserved`` waiver on the emission line or the
+    immediately preceding non-blank line drops that site (the escape for
+    dual-mode files whose emission is mode-gated to a standalone-dispatcher
+    lane; the waiver comment must name the intended mode/invoker). Legacy
+    edges are frozen in :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` (edge
+    grain, annotated).
+
+    RESIDUAL FALSE-NEGATIVE GAPS (documented, all fail toward NOT flagging —
+    the correct direction for a pre-commit gate): (i) ``.py``-dispatcher
+    subprocess fan-out (``issue545_sweep.py -> issue545_eval_cell.py`` — the
+    original #545 emission path; the only live instance sits inside the
+    allowlisted #545 family whose .sh edge keeps it visible); (ii)
+    ``$VAR``-prefixed script paths (``python "$REPO/scripts/x.py"``);
+    (iii) ``python -m`` module launches; (iv) launcher scripts generated at
+    runtime by template-writers; (v) direct append-INTO-the-main-log
+    redirection (``>> "$MAIN_LOG" 2>&1`` — the redirect exclusion cannot
+    tell a per-worker log from the dispatcher's own main log; no live
+    instance — historical shapes use ``tee`` and ARE caught); (vi) a
+    dispatcher's OWN mid-pipeline emissions in a loop (own-file sites are
+    unrestricted by construction); (vii) a word-initial unquoted ``#``
+    inside a ``$(...)`` command substitution truncates the scanned line at
+    the comment-strip (the scanner is not ``$()``-aware), hiding any
+    invocation after it — a MID-WORD ``#`` (``${#ARR[@]}``, ``tag=run#1``,
+    ``$#``) and an escaped ``\\#`` no longer truncate as of the round-3
+    word-boundary fix (:func:`_strip_sh_trailing_comment`). TWO deliberate
+    fail-toward-FLAGGING exceptions (false positives, not false
+    negatives): (a) a stdout redirect applied to a whole
+    subshell/group (``( a.py; b.py ) > log`` / ``{ ...; } > log``) is not
+    attributed to the segments INSIDE the group, so an emitting invocation
+    there flags even though the group's stdout is isolated — no live
+    instance; (b) a pipe-DOWNSTREAM stdout redirect (``a.py 2>&1 | tee f
+    > /dev/null``) is attributed to the downstream segment only — the pipe
+    is a segment boundary and deliberately NON-isolating (the plan §4.3
+    tee-still-checked semantics), so an emitting invocation upstream of
+    the pipe still flags even when the pipeline's terminal stdout is
+    discarded. Both are waivable via ``# noqa: phase-done-reserved`` or
+    the per-worker pattern.
+
+    ``scripts_dir`` is an override hook for unit tests (production callers
+    pass None → the canonical ``<repo_root>/scripts`` tree); ``allowlist``
+    overrides :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` for tests /
+    re-derivation. Bundled into the no-flags default run AND enforced at
+    commit time by the ``workflow-lint-phase-done-reserved`` pre-commit hook
+    on any ``scripts/*.sh|py`` change.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    allow = allowlist if allowlist is not None else PHASE_DONE_EDGE_LEGACY_ALLOWLIST
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    emission_cache: dict[Path, list[int]] = {}
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comment lines are not launches. echo-preview skipping is
+            # SEGMENT grain inside _phase_done_line_edges (round 3): a
+            # line-level `echo `-prefix skip hid a real invocation in a
+            # later segment (`echo \#; uv run python scripts/x.py`).
+            if stripped.startswith("#"):
+                continue
+            # Round-2 (`phase-done-shell-edge-scoping`): EVERY non-redirected
+            # invocation on the line is an edge — comment-stripped,
+            # segment-split, redirect scoped per segment (see
+            # _phase_done_line_edges), one error per (logical line, target).
+            for target_rel in _phase_done_line_edges(logical):
+                target = root / target_rel.removeprefix("scripts/")
+                if not target.is_file() or target == sh:
+                    continue
+                if target not in emission_cache:
+                    emission_cache[target] = (
+                        _py_phase_done_emission_lines(target)
+                        if target.suffix == ".py"
+                        else _sh_phase_done_emission_lines(target)
+                    )
+                sites = emission_cache[target]
+                if not sites:
+                    continue
+                sh_rel = _judge_pin_rel(sh)  # repo-rel POSIX; abs posix for tmp fixtures
+                if (sh_rel, target_rel) in allow:
+                    continue
+                errors.append(
+                    f"{sh}:{first + 1}: invokes {target_rel} (stdout flows into this "
+                    f"dispatcher's main log) but {target_rel} emits the RESERVED "
+                    f"{PHASE_DONE_TOKEN} token at line(s) {sites}. The token in the "
+                    f"MAIN dispatcher log is reserved for the dispatcher's single "
+                    f"terminal line — a mid-pipeline emission reads as a false "
+                    f"status=done to poll_pipeline.py (incidents #545, #920). Fix: "
+                    f"word the child's completion line without the phase tag, OR "
+                    f"redirect the child's stdout to its own log (per-worker "
+                    f"pattern: scripts/issue658_8gpu_dispatch.sh), OR waive a "
+                    f"mode-gated standalone-lane terminal with "
+                    f"'# noqa: phase-done-reserved' on the emission line. See "
+                    f".claude/rules/pod-side-reporting.md."
+                )
+    return errors
+
+
 # A live ``Agent(... subagent_type="workflow-improver" ...)`` spawn instruction.
 # Tolerant of whitespace/newlines between the call open and the kwarg and of
 # either quote style. The frozen agent file (`.claude/agents/workflow-improver.md`)
@@ -3840,6 +4671,93 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# `--check-no-literal-round-marker-versions` (#917): the round-versioned marker
+# kinds must never be instructed at a literal ` v1` in checked-in workflow
+# prose. `\s+` (not a single space) so a line-wrapped kind/version pair still
+# trips under the whole-file scan; `v1\b` does NOT match `v12` (the legitimate
+# round-12 example in the /issue SKILL.md).
+_LITERAL_ROUND_MARKER_V1_RE = re.compile(
+    r"epm:(?:experiment-implementation|results|proposed-tests)\s+v1\b"
+)
+
+
+def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a literal ``v1`` posting instruction for a round-versioned marker kind.
+
+    The round-versioned kinds — ``epm:experiment-implementation``,
+    ``epm:results``, ``epm:proposed-tests`` — accrue rows across follow-up
+    rounds / TDD resumes / crash-recovery re-posts, and ``task.py post-marker``
+    derives ``max(existing)+1`` only when ``--version`` is OMITTED (an explicit
+    ``--version`` always wins, #480). Checked-in prose instructing "post
+    ``epm:<kind>`` at ``v1``" teaches orchestrators to compose briefs that pin
+    an explicit version 1, which collides with existing rows and silently
+    breaks highest-version-wins review-round detection (incident #825: a
+    follow-up-round brief instructed a literal v1 on a task already at v6 —
+    the #389 collision class). Prose defers to ``v<n>`` / max+1 instead.
+
+    Scan mode: whole-file ``re.finditer`` per file (NOT line-based), so a
+    line-wrapped kind/version pair (the kind at end-of-line, ``v1`` on the
+    next) still trips via ``\\s+``; ``v1\\b`` does not match ``v12``.
+
+    DELIBERATE boundary: prose evasions like "pass ``--version 1``" are OUT of
+    the pattern by design — that layer is covered by the brief-contract prose
+    (the /issue SKILL.md Step 4b marker-version-discipline bullet, the Step 9b
+    step-3 bullet, and the implementer agents' § Posting review-round markers
+    rule), and linting every ``--version 1`` mention would false-positive on
+    legitimate incident documentation. A future tightener should know this
+    boundary was chosen, not missed.
+
+    Scanned (positive enumeration): ``CLAUDE.md``, ``.claude/workflow.yaml``,
+    ``.claude/agents/*.md``, ``.claude/rules/*.md``,
+    ``.claude/skills/**/SKILL.md``, ``.claude/skills/issue/markers.md``, and
+    ``.claude/skills/issue/templates/*.md``. Everything else — notably
+    ``.claude/plans/`` and ``.claude/agent-memory/`` (historical quotes may
+    legitimately contain the incident text), skill support/iteration logs,
+    and ``scripts/`` / ``src/`` code paths (a separate follow-up covers the
+    poller's synthesized-envelope pin) — is excluded by NOT being enumerated.
+    ``repo_root`` is a unit-test override hook; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    targets: list[Path] = []
+    claude_md = root / "CLAUDE.md"
+    if claude_md.is_file():
+        targets.append(claude_md)
+    wf_yaml = root / ".claude" / "workflow.yaml"
+    if wf_yaml.is_file():
+        targets.append(wf_yaml)
+    for md_dir in (root / ".claude" / "agents", root / ".claude" / "rules"):
+        if md_dir.is_dir():
+            targets.extend(p for p in sorted(md_dir.glob("*.md")) if p.is_file())
+    skills_dir = root / ".claude" / "skills"
+    if skills_dir.is_dir():
+        targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+    markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
+    if markers_md.is_file():
+        targets.append(markers_md)
+    templates_dir = root / ".claude" / "skills" / "issue" / "templates"
+    if templates_dir.is_dir():
+        targets.extend(p for p in sorted(templates_dir.glob("*.md")) if p.is_file())
+
+    errors: list[str] = []
+    for p in targets:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for m in _LITERAL_ROUND_MARKER_V1_RE.finditer(text):
+            lineno = text.count("\n", 0, m.start()) + 1
+            matched = " ".join(m.group(0).split())
+            errors.append(
+                f"{p}:{lineno}: literal round-marker version instruction `{matched}` — "
+                f"this kind accrues rows across rounds and an explicit --version beats "
+                f"the CLI's max+1 default (incident #825; the #389 collision class). "
+                f"Rephrase to `v<n>` / max+1 (omit --version and the CLI derives it); "
+                f"see the implementer agents' § Posting review-round markers."
+            )
+    return errors
+
+
 # A destructive `git reset --hard` invocation. Whitespace-tolerant, broadened
 # (FI1) to catch flag-ordering variants:
 #   - `git reset --hard`, `git reset -q --hard`      (flags before --hard)
@@ -3863,6 +4781,78 @@ _GIT_RESET_HARD_RE = re.compile(
 # can require it appear BEFORE the offending reset on the same line (FI3).
 _GIT_DASH_C_RE = re.compile(r"git\s+-C\s+")
 _RESET_HARD_ALLOW_SENTINEL = "workflow-lint: allow-git-reset-hard"
+
+# Working-tree-revert doc prescriptions (#897, sibling of _GIT_RESET_HARD_RE).
+# Shared backtick-free flag group: optional git-level flags (`--no-pager`,
+# `-c k=v`, `-q`) may sit between `git` and the subcommand; backtick-free
+# tokens so the greedy group cannot span ACROSS an inline-code mention (the
+# same design rationale documented on _GIT_RESET_HARD_RE above).
+_GIT_FLAGS_GRP = r"(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*"
+_WT_REVERT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # Any non-`--staged` git restore: explicit-path restore prescriptions have
+    # zero legitimate live doc uses; `--staged` forms are index-only (they do
+    # not touch the working tree) and exempt. The exemption lookahead is
+    # bounded at BOTH a backtick (the inline-code terminator) AND a `#` —
+    # bash never executes a comment tail, so a fenced `git restore . #
+    # --staged` line is a destructive restore whose comment must NOT waive it
+    # (round-2 concern id lint-restore-lookahead-comment-tail; the runtime
+    # hook's comment-tail strip is the enforcement sibling). A `--staged`
+    # among the real arguments always precedes any `#`, so legitimate
+    # index-only prescriptions keep the exemption.
+    ("git restore", re.compile(rf"git\s+{_GIT_FLAGS_GRP}restore\b(?![^`#]*--staged)")),
+    # Bare-dot wholesale checkout ONLY — explicit `checkout <ref> -- <path>`
+    # doc mentions are NOT flagged (legitimate prescriptive uses exist: the
+    # /issue Step 5a spec-freshness sync, the Step 10d surgical additive
+    # checkout, the code-reviewer smoke-restore rule). At RUNTIME the hook
+    # (scripts/guard_repo_root_branch.sh) blocks the explicit-pathspec forms
+    # too, with the `git -C` waiver as the deliberate override — the
+    # prescriptive-vs-runtime split (#897).
+    (
+        "git checkout .",
+        re.compile(rf"git\s+{_GIT_FLAGS_GRP}checkout\b(?:\s+[^\s`]+)*?\s+\.(?=[\s`/]|$)"),
+    ),
+    (
+        "git clean -f/--force",
+        re.compile(
+            rf"git\s+{_GIT_FLAGS_GRP}clean\b(?:\s+[^\s`]+)*?\s+(?:-[A-Za-z]*f[A-Za-z]*\b|--force\b)"
+        ),
+    ),
+)
+_WT_REVERT_ALLOW_SENTINEL = "workflow-lint: allow-repo-root-wt-revert"
+
+
+def _line_waived(line: str, match_start: int, sentinel: str) -> bool:
+    """True when a flagged destructive-git match on ``line`` is waived.
+
+    Two waivers (shared by the reset-hard + worktree-revert checks):
+
+    - **FI3 worktree-qualified** — a ``git -C`` prefix sits at-or-before
+      ``match_start``. In the sanctioned form the offending regex matches from
+      the SAME ``git`` the ``-C`` begins (its flag-group swallows ``-C "$WT"``),
+      so ``dc.start() == match_start`` there — hence ``<=``, not ``<``. An
+      unqualified command starts at a ``git`` NOT followed by ``-C``, so the
+      offsets can only coincide for the sanctioned form; a ``git -C`` AFTER the
+      match (e.g. ``git reset --hard && git -C "$WT" status``) has a HIGHER
+      offset and does NOT waive.
+    - **FI2 reasoned sentinel** — the line carries ``sentinel`` with a
+      NON-EMPTY reason. The reason lives between the sentinel ``:`` and the
+      note closer, so the leading ``:``/whitespace AND the trailing
+      HTML-comment closer (``-->``) / backtick / whitespace are stripped before
+      testing — otherwise a bare closer (``: -->``, or the sentinel with no
+      colon) would count as a reason and wrongly waive.
+    """
+    dc = _GIT_DASH_C_RE.search(line)
+    if dc is not None and dc.start() <= match_start:
+        return True
+    if sentinel in line:
+        _, _, tail = line.partition(sentinel)
+        reason = tail.lstrip(": ")
+        if reason.rstrip().endswith("-->"):
+            reason = reason.rstrip()[: -len("-->")]
+        reason = reason.strip().strip("`").strip()
+        if reason:
+            return True
+    return False
 
 
 def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[str]:
@@ -3905,34 +4895,11 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
             m = _GIT_RESET_HARD_RE.search(line)
             if m is None:
                 continue
-            # FI3: worktree-qualified ONLY if a `git -C` prefix sits at or
-            # before the START of the offending reset match (i.e. `git -C "$WT"
-            # reset --hard` — the `-C` qualifies THIS command). In the sanctioned
-            # form `_GIT_RESET_HARD_RE` matches from the SAME `git` the `-C`
-            # begins (its flag-group swallows `-C "$WT"`), so `dc.start()` equals
-            # `m.start()` there — hence `<=`, not `<`. An unqualified reset starts
-            # at a `git` NOT followed by `-C`, so `_GIT_DASH_C_RE` cannot match at
-            # that same offset; `dc.start() == m.start()` therefore occurs ONLY
-            # for the sanctioned form. A `git -C` that appears AFTER the reset
-            # (e.g. `git reset --hard && git -C "$WT" status`) has a HIGHER offset
-            # and does NOT waive the unqualified reset that precedes it.
-            dc = _GIT_DASH_C_RE.search(line)
-            if dc is not None and dc.start() <= m.start():
+            # FI3 `-C`-before-match + FI2 reasoned-sentinel waivers — shared
+            # with check_no_repo_root_worktree_revert; semantics documented on
+            # the helper (the `<=` covers the sanctioned same-`git` anchor).
+            if _line_waived(line, m.start(), _RESET_HARD_ALLOW_SENTINEL):
                 continue
-            if _RESET_HARD_ALLOW_SENTINEL in line:  # explicit allowlist -> OK
-                # Require a NON-EMPTY reason after the sentinel (FI2). The reason
-                # lives between the sentinel `:` and the note closer, so strip the
-                # leading `:`/whitespace AND the trailing HTML-comment closer
-                # (`-->`) / backtick / whitespace before testing — otherwise the
-                # bare comment closer (`: -->`, or `allow-git-reset-hard -->` with
-                # no colon) would be counted as a reason and wrongly waive.
-                _, _, tail = line.partition(_RESET_HARD_ALLOW_SENTINEL)
-                reason = tail.lstrip(": ")
-                if reason.rstrip().endswith("-->"):
-                    reason = reason.rstrip()[: -len("-->")]
-                reason = reason.strip().strip("`").strip()
-                if reason:
-                    continue
             errors.append(
                 f"{p}:{lineno}: unqualified `git reset --hard` on the shared "
                 f"repo root is forbidden (clobbers concurrent siblings' task "
@@ -3941,6 +4908,60 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
                 f"`{_RESET_HARD_ALLOW_SENTINEL}: <reason>` sentinel if this is a "
                 f"legitimate prose mention / pod-side ssh_execute command."
             )
+    return errors
+
+
+def check_no_repo_root_worktree_revert(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any agent spec / skill playbook prescribes an UNQUALIFIED
+    working-tree revert on the shared repo root: a non-``--staged``
+    ``git restore``, a bare-dot wholesale ``git checkout .``, or a
+    force-flagged ``git clean``. Only per-worktree ``git -C "$WT" ...`` forms
+    (the ``-C`` qualifier appearing BEFORE the match on the same line), or
+    lines carrying the ``workflow-lint: allow-repo-root-wt-revert: <reason>``
+    sentinel with a non-empty reason, pass.
+
+    Incident 2026-07-02 (#841): a concurrent session's destructive
+    working-tree git op on the shared repo root reverted the #841 analyzer's
+    uncommitted ``body.md`` mid-task (and deleted untracked pre-registration +
+    figure files) — the same hazard class as the #815 repo-root
+    ``reset --hard`` (``task.py`` holds a per-registry flock, not per-file).
+    This check is the DOC-side sibling of that reset-hard check; the RUNTIME
+    tooth is ``scripts/guard_repo_root_branch.sh`` (which additionally blocks
+    the explicit-pathspec / bare-pathspec / force checkout forms this check
+    deliberately does not flag — legitimate prescriptive doc uses exist for
+    those; see ``_WT_REVERT_PATTERNS``).
+
+    Scope: ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` only
+    (reuses ``_iter_ask_target_files``, worktree-sibling-safe). ``.claude/
+    plans/``, ``.claude/agent-memory/``, ``.claude/rules/``, ``CLAUDE.md``,
+    and ``scripts/**`` are NEVER scanned. Pure-Python; bundled into the
+    no-flags default run. ``repo_root`` is a unit-test override hook;
+    production callers pass None (canonical repo root).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for p in _iter_ask_target_files(root):  # already worktree-safe + scoped
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for label, pattern in _WT_REVERT_PATTERNS:
+                m = pattern.search(line)
+                if m is None:
+                    continue
+                if _line_waived(line, m.start(), _WT_REVERT_ALLOW_SENTINEL):
+                    continue
+                errors.append(
+                    f"{p}:{lineno}: unqualified `{label}` (a working-tree "
+                    f"revert) on the shared repo root is forbidden — it "
+                    f"silently discards CONCURRENT sessions' uncommitted "
+                    f"edits (incident #841; #897, sibling of the #815 "
+                    f"reset --hard check). Use a per-worktree "
+                    f'`git -C "$WT" ...` form, or add a same-line '
+                    f"`{_WT_REVERT_ALLOW_SENTINEL}: <reason>` sentinel if "
+                    f"this is a legitimate prose mention."
+                )
     return errors
 
 
@@ -4074,6 +5095,99 @@ def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None)
     return errors
 
 
+def check_hollow_verification_gate_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the hollow-verification-gate lens (#779/#890) is absent from
+    any of its three surfaces, or the tag drops off a surface's
+    ``**Blocker tags:**`` verdict-template line.
+
+    Task #779: a green `--verify-vectorized` gated an UNUSED helper's
+    self-check while the dispatched ridge hot loop (~17k fits, 18-20h) ran
+    unverified; rounds 6/7 PASSed. #890 added the Step 0.68
+    hollow-verification-gate sub-check + blocker tag to both code-reviewer
+    agent files and deferred this parity lint. Three surfaces, per-file
+    tokens (the #881 shape):
+
+    (a) code-reviewer.md — the ``Hollow-verification-gate sub-check``
+        Step 0.68 heading phrase;
+    (b) codex-code-reviewer.md — the lowercase copy-contract phrase
+        ``hollow-verification-gate sub-check`` PLUS ``0.68`` on the
+        ``{{INLINED RUBRIC`` placeholder line (a copy-list-only token check
+        false-PASSes while the composed executable Codex prompt omits
+        Step 0.68 — the #606 twin-omission class);
+    (c) efficiency-critic.md — the v2 owner
+        (.claude/rules/lens-coverage-map.md), IMPLEMENTATION-MODE rubric
+        item ``Hollow-verification-gate``.
+
+    Every surface ADDITIONALLY requires the tag on a line starting with
+    ``**Blocker tags:**`` — the verdict template's tag-vocabulary line, the
+    orchestrator's Step 5c-bis parse target (#890's line-scoped verify:
+    a broad grep false-greens a prose-only partial implementation).
+    Tokens are case-sensitive substrings. ``repo_root`` is a unit-test
+    override hook; production callers pass None. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tag = "hollow-verification-gate"
+    blocker_prefix = "**Blocker tags:**"
+    prose_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": ("Hollow-verification-gate sub-check",),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "hollow-verification-gate sub-check",
+        ),
+        root / ".claude" / "agents" / "efficiency-critic.md": ("Hollow-verification-gate",),
+    }
+    errors: list[str] = []
+    for p, required in prose_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #890 hollow-verification-gate lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"efficiency-critic.md (the workflow-v2 owner)."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the hollow-verification-gate lens token "
+                    f"{token!r} (#779/#890). The Step 0.68 sub-check (a "
+                    f"verify/equivalence gate must assert on the function the "
+                    f"entrypoint actually dispatches) must stay on all three "
+                    f"reviewer surfaces so a green gate on an unused sibling "
+                    f"keeps FAILing review (incident #779: an unverified ~17k-"
+                    f"fit hot loop was laundered as verified)."
+                )
+        bt_lines = [ln for ln in text.splitlines() if ln.startswith(blocker_prefix)]
+        if not bt_lines:
+            errors.append(
+                f"{p}: no line starts with {blocker_prefix!r} (#890) — the "
+                f"verdict template's blocker-tag vocabulary line (the Step "
+                f"5c-bis parse target) is gone."
+            )
+        elif not any(tag in ln for ln in bt_lines):
+            errors.append(
+                f"{p}: no {blocker_prefix!r} line names {tag!r} (#890) — the "
+                f"tag dropped out of the verdict template's vocabulary; a "
+                f"reviewer could no longer declare the finding (the "
+                f"2-without-2b partial-implementation class a broad grep "
+                f"false-greens)."
+            )
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if codex.is_file():
+        rubric_lines = [
+            ln for ln in codex.read_text(encoding="utf-8").splitlines() if "{{INLINED RUBRIC" in ln
+        ]
+        if not any("0.68" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.68' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#890) — the composed Codex prompt would "
+                f"omit the Step 0.68 named-helper + hollow-gate lens (the "
+                f"#606 twin-omission class; same pin as #822's '0.55' and "
+                f"#881's '3.5, 3.6, 3.7')."
+            )
+    return errors
+
+
 def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the smoke-architecture marker presence gate (#822) is absent
     from ANY of its three surfaces.
@@ -4189,6 +5303,82 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
                 f"to distinguish a stale-worktree false absence (STRIP) from "
                 f"a genuine one (leave the FAIL in place)."
             )
+    return errors
+
+
+# The #963 stale-label disposition-clause tokens. The paragraph span runs from
+# the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
+# assertion, so span identity is load-bearing) to the first blank line, and is
+# whitespace-normalized before matching (two tokens span a hard line wrap in
+# the live file, and an innocent prose reflow must not FAIL the fleet).
+_STALE_LABEL_ANCHOR = "**Stale-label disposition rule"
+_STALE_LABEL_REQUIRED_TOKENS = (
+    "followup_retro_close_evidence",
+    "GHOST-label filter, NOT an execution gate",
+    "A None return means NO prior-run evidence exists",
+    "the label EXECUTES as the dispatched round",
+    "The skip-and-surface disposition applies ONLY when",
+)
+_STALE_LABEL_SKIP_ON_NONE_RE = re.compile(r"\bon\s+(?:a\s+)?none\b.{0,120}?\bskip", re.IGNORECASE)
+
+
+def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the /issue Step 0 stale-label disposition paragraph (#894/#763)
+    loses its fresh-label-execute semantics or regains an unconditional
+    skip-on-None branch (#963).
+
+    Scope notes (round-1 critique):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — phrasings
+        like "when None is returned, skip" are covered by the positive
+        tokens, not the regex; do not weaken a positive token "because the
+        regex covers it".
+    (b) The check is paragraph-scoped — a contradictory instruction written
+        OUTSIDE the anchored paragraph is invisible to it (inherent to the
+        token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all
+        downstream tokens at once — the span ends at the first blank line,
+        so a deliberate restructure requires a deliberate lint update.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
+    text = skill.read_text(encoding="utf-8")
+    n_anchors = text.count(_STALE_LABEL_ANCHOR)
+    if n_anchors == 0:
+        return [
+            f"{skill}: missing the bold anchor {_STALE_LABEL_ANCHOR!r} (#963) — the Step 0 "
+            f"stale-label disposition paragraph pins the #894/#763 fresh-label-execute "
+            f"semantics and must not be removed or renamed without updating this lint."
+        ]
+    if n_anchors > 1:
+        return [
+            f"{skill}: {n_anchors} bold anchors {_STALE_LABEL_ANCHOR!r} found — the stale-label "
+            f"disposition paragraph must be UNIQUE (a stale duplicate could satisfy the token "
+            f"scan while the operative Step 0 paragraph regresses; #963). Remove the duplicate."
+        ]
+    start = text.find(_STALE_LABEL_ANCHOR)
+    end = text.find("\n\n", start)
+    normalized = re.sub(r"\s+", " ", text[start : end if end != -1 else len(text)])
+    errors: list[str] = []
+    for token in _STALE_LABEL_REQUIRED_TOKENS:
+        if token not in normalized:
+            errors.append(
+                f"{skill}: stale-label disposition paragraph missing token {token!r} (#963) — "
+                f"note: the span ends at the first blank line, so a split paragraph FAILs all "
+                f"downstream tokens at once (a deliberate restructure needs a lint update)."
+            )
+    if _STALE_LABEL_SKIP_ON_NONE_RE.search(normalized):
+        errors.append(
+            f"{skill}: stale-label disposition paragraph couples a None return to a skip "
+            f"instruction ('On None ... skip') — a fresh never-run label must EXECUTE as the "
+            f"dispatched round (#963); the skip-and-surface disposition is reserved for "
+            f"suspected-stale ghost labels."
+        )
     return errors
 
 
@@ -4461,8 +5651,19 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
 AGENT_SPEC_WARN_BYTES = 28_000
 AGENT_SPEC_FAIL_BYTES = 40_000
 
+# A grandfather cap must hug the measured size: cap - size <= this bound
+# (the documented "measured + <=3 KB margin" convention, mechanized by #986).
+# STRICTLY-GREATER like the other thresholds (headroom exactly 3_000 passes).
+# A larger headroom means a loose cap-raise (defeats the regrowth ratchet) or
+# a stale cap after a trim (ratchet DOWN when trimmed) — both FAIL. Scope:
+# this bounds BANKED SLACK only — a reviewed growth+cap-raise in one commit
+# still passes; the check forces growth into a visible dict edit, it does not
+# approve it.
+AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES; post-#829 for the first two
 # entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
 # grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
 # once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
@@ -4475,19 +5676,21 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
-    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
-    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
-    # all plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 84_500,
+    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
+    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
+    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "code-reviewer.md": 92_300,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
-    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
-    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
-    # + <=3 KB)
-    "codex-code-reviewer.md": 50_400,
-    # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
-    # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
-    "experiment-implementer.md": 58_500,
+    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
+    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 47,930 B post-#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "codex-code-reviewer.md": 51_600,
+    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
+    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
+    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
+    "experiment-implementer.md": 61_500,
     "experimenter.md": 65_500,  # measured 62,672 B
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B
@@ -4495,7 +5698,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
 }
 
 
-def check_agent_spec_size(
+def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
     *, repo_root: Path | None = None, warn_sink: list[str] | None = None
 ) -> list[str]:
     """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
@@ -4505,9 +5708,12 @@ def check_agent_spec_size(
     size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
     ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
     and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
-    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing), an entry
     whose file dropped to <= the FAIL threshold (remove the entry — ratchet
-    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    down), and an entry whose cap sits more than
+    ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose cap / stale cap — lower it), and a config self-check FAILs any cap
+    <= the FAIL threshold. WARNs
     go to ``warn_sink`` when provided (unit-test hook), else stderr with a
     ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
     is a unit-test override; production callers pass None. Bundled into the
@@ -4576,8 +5782,10 @@ def check_agent_spec_size(
             )
 
     # Grandfather-entry hygiene: entries must point at existing files that
-    # still NEED grandfathering (size > FAIL threshold).
-    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+    # still NEED grandfathering (size > FAIL threshold) AND whose cap hugs the
+    # measured size (headroom <= AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES —
+    # the regrowth ratchet is meaningless under a loose cap; #986).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
         gf_path = agents_dir / gf_name
         if not gf_path.is_file():
             errors.append(
@@ -4585,12 +5793,24 @@ def check_agent_spec_size(
                 f"entry — .claude/agents/{gf_name} does not exist; remove the "
                 f"entry."
             )
-        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            continue
+        gf_size = gf_path.stat().st_size
+        if gf_size <= AGENT_SPEC_FAIL_BYTES:
             errors.append(
                 f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
-                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f".claude/agents/{gf_name} is {gf_size} bytes "
                 f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
                 f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/agents/{gf_name} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -4719,6 +5939,251 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
                     f"date. Run `uv run python scripts/workflow_lint.py "
                     f"--emit-tables` to regenerate."
                 )
+    return errors
+
+
+# ── --check-api-dispatch-routing (workflow v2, plan §5) ──────────────────────
+# All Anthropic API calls (judges + generation) should route through the
+# multi-org dispatcher src/explore_persona_space/llm/api_dispatch.py so
+# cross-session headroom routing + AIMD back-off + batch-vs-sync apply. A NEW
+# direct call site is a bypass. The routing / sanctioned-client layer is exempt;
+# scripts/archive/** is frozen dead code and excluded wholesale; the current
+# tree's existing direct callers are grandfathered below (enumerated when the
+# check landed via the SAME AST predicate the check uses). A NEW file that
+# constructs anthropic.Anthropic(...) / .AsyncAnthropic(...) or calls
+# <client>.messages[...].create(...) and is not exempt/grandfathered FAILs.
+# Waive a genuinely-correct non-dispatcher caller with a file-level
+# '# API_DISPATCH_ROUTING_EXEMPT: <reason>' comment. Adding to the grandfather
+# set requires an inline reason (a new direct caller should almost always be a
+# dispatcher route instead). Mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style.
+API_DISPATCH_ROUTING_LAYER: frozenset[str] = frozenset(
+    {"api_dispatch.py", "judge_dispatch.py", "batch_judge.py", "anthropic_client.py"}
+)
+API_DISPATCH_ROUTING_WAIVER = "API_DISPATCH_ROUTING_EXEMPT"
+API_DISPATCH_ROUTING_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "scripts/analyze_axis_tails.py",
+        "scripts/build_canonical_persona_pool.py",
+        "scripts/build_i181_data.py",
+        "scripts/eval_language_inversion.py",
+        "scripts/eval_source_persona_issue112.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/generate_a3_data.py",
+        "scripts/generate_issue356_data.py",
+        "scripts/generate_issue376_marker_install.py",
+        "scripts/generate_issue404_json_neg.py",
+        "scripts/generate_leakage_data.py",
+        "scripts/generate_sdf_neutral_ai.py",
+        "scripts/generate_sdf_variants.py",
+        "scripts/generate_trait_transfer_data_v2.py",
+        "scripts/i504_probe_bank_geometry.py",
+        "scripts/i528_phase0_preflight.py",
+        "scripts/i528_phase1_generate_RNeg.py",
+        "scripts/i528_phase1_generate_RPos.py",
+        "scripts/i528_phase2_smoke_judge.py",
+        "scripts/i528_phase4_judge.py",
+        "scripts/issue404_outcome_eval.py",
+        "scripts/issue404_predictor_incontext.py",
+        "scripts/issue404_predictor_kldiv.py",
+        "scripts/issue502_generate_probes.py",
+        "scripts/issue545_judge_refusal_diag.py",
+        "scripts/issue559_cross_behavior_self_scoring.py",
+        "scripts/issue594_build_battery.py",
+        "scripts/issue623_extract_sycophancy_vector.py",
+        "scripts/issue658_judge_e0.py",
+        "scripts/issue661_freeze_instructions.py",
+        "scripts/issue779_common.py",
+        "scripts/issue_188_evolutionary_trigger.py",
+        "scripts/issue_331_phase1_evolutionary.py",
+        "scripts/issue_642/i642_common.py",
+        "scripts/issue_653/i653_dispatch.py",
+        "scripts/judge_with_claude.py",
+        "scripts/poll_lmsys_taxonomy.py",
+        "scripts/reanalyze_issue444_5way.py",
+        "scripts/regenerate_issue404_medical.py",
+        "scripts/rejudge_issue_389_c_strict.py",
+        "scripts/run_a3_leakage.py",
+        "scripts/run_a3b_experiment.py",
+        "scripts/run_em_multiseed.py",
+        "scripts/run_experiment_389.py",
+        "scripts/run_experiment_444.py",
+        "scripts/run_issue_156.py",
+        "scripts/run_issue_203.py",
+        "scripts/run_issue_213_part_b.py",
+        "scripts/run_parallel_jobs.py",
+        "scripts/run_proximity_transfer.py",
+        "scripts/translate_to_italian.py",
+        "scripts/translate_ultrachat.py",
+        "scripts/validate_italian_translation.py",
+        "scripts/validate_translation.py",
+        "src/explore_persona_space/eval/alignment.py",
+        "src/explore_persona_space/eval/belief.py",
+        "src/explore_persona_space/eval/refusal.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/judges_545.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_472/persona_bank.py",
+        "src/explore_persona_space/experiments/issue503/advbench_judge.py",
+        "src/explore_persona_space/experiments/issue503/broad_syco_dataset.py",
+        "src/explore_persona_space/experiments/issue503/topic_strip.py",
+        "src/explore_persona_space/experiments/issue559/judge_rubrics.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/judge.py",
+        "src/explore_persona_space/orchestrate/fleet.py",
+    }
+)
+
+
+def _attr_chain_contains(node: ast.AST, name: str) -> bool:
+    """True iff ``name`` appears as an attr / base Name in an attribute chain."""
+    while isinstance(node, ast.Attribute):
+        if node.attr == name:
+            return True
+        node = node.value
+    return isinstance(node, ast.Name) and node.id == name
+
+
+def _file_calls_anthropic_directly(tree: ast.AST) -> bool:
+    """True iff the module AST contains a direct Anthropic client construction
+    (``anthropic.Anthropic(`` / ``.AsyncAnthropic(``) OR a
+    ``<client>.messages[...].create(`` call.
+
+    AST-based (not a line/regex scan) so a comment / docstring describing the
+    pattern — this lint's own prose, a post-mortem note — never false-positives.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute):
+            if f.attr in ("Anthropic", "AsyncAnthropic"):
+                return True
+            if f.attr == "create" and _attr_chain_contains(f.value, "messages"):
+                return True
+    return False
+
+
+def check_api_dispatch_routing(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a NEW direct-Anthropic call site outside the dispatcher route.
+
+    Walks ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``. A file
+    that constructs the Anthropic client or calls ``.messages...create(...)``
+    directly FAILs UNLESS it is (a) a routing/sanctioned-client layer file
+    (:data:`API_DISPATCH_ROUTING_LAYER`), (b) under ``**/archive/`` (frozen),
+    (c) in :data:`API_DISPATCH_ROUTING_ALLOWLIST` (grandfathered), or (d)
+    carrying a ``# API_DISPATCH_ROUTING_EXEMPT: <reason>`` waiver. New Anthropic
+    calls route through ``src/explore_persona_space/llm/api_dispatch.py`` (the
+    multi-org headroom-routing + AIMD + batch-vs-sync dispatcher). ``repo_root``
+    is a unit-test override; production callers pass None. Bundled into the
+    no-flags default run (workflow v2, plan §5).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for base in ("scripts", "src/explore_persona_space"):
+        base_dir = root / base
+        if not base_dir.is_dir():
+            continue
+        for path in sorted(base_dir.rglob("*.py")):
+            if path.name in API_DISPATCH_ROUTING_LAYER:
+                continue
+            rel = path.relative_to(root).as_posix()
+            if "/archive/" in rel:
+                continue
+            if rel in API_DISPATCH_ROUTING_ALLOWLIST:
+                continue
+            try:
+                text = path.read_text()
+            except (OSError, UnicodeDecodeError):
+                continue
+            if API_DISPATCH_ROUTING_WAIVER in text:
+                continue
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                continue
+            if _file_calls_anthropic_directly(tree):
+                errors.append(
+                    f"{rel}: constructs/calls the Anthropic client directly "
+                    f"(anthropic.Anthropic(...) / .messages...create(...)) outside the routing "
+                    f"layer. Route new Anthropic calls through "
+                    f"src/explore_persona_space/llm/api_dispatch.py (multi-org headroom routing "
+                    f"+ AIMD + batch-vs-sync), or waive a genuinely-correct non-dispatcher "
+                    f"caller with a '# {API_DISPATCH_ROUTING_WAIVER}: <reason>' comment."
+                )
+    return errors
+
+
+# ── --check-lens-coverage (workflow v2, plan §3) ─────────────────────────────
+# The four EXACT State-column prefixes a lens-coverage-map.md row may declare.
+_LENS_STATE_PREFIXES: tuple[str, ...] = ("v2-owner:", "v1-only", "retired:", "GAP:")
+_LENS_MAP_REL = ".claude/rules/lens-coverage-map.md"
+
+
+def check_lens_coverage(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """Validate the workflow-v2 lens-coverage ledger (plan §3).
+
+    Two FAIL modes: (a) a table DATA row in ``.claude/rules/lens-coverage-map.md``
+    whose State (last) column does not start with one of the four exact prefixes
+    :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
+    ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
+    ``.claude/rules/LESSONS.md`` (the ``- **<name>**`` bullets) with NO row in
+    the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
+    provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
+    enter the returned FAIL list. ``repo_root`` is a unit-test override; a
+    separate lint from ``--check-lessons-index``. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    lens_map = root / ".claude" / "rules" / "lens-coverage-map.md"
+    if not lens_map.is_file():
+        errors.append(f"{_LENS_MAP_REL}: missing — the workflow-v2 lens-coverage ledger.")
+        return errors
+
+    covered_items: set[str] = set()
+    for raw in lens_map.read_text().splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        # Skip the markdown separator row (every cell is dashes/colons).
+        if all(c and set(c) <= set("-: ") for c in cells):
+            continue
+        # Skip the table header row.
+        if cells[0] == "Item" and cells[-1] == "State":
+            continue
+        item, state = cells[0], cells[-1]
+        covered_items.add(item)
+        if not state.startswith(_LENS_STATE_PREFIXES):
+            errors.append(
+                f"{_LENS_MAP_REL}: row '{item}' has State '{state}' — the State column MUST "
+                f"start with one of {list(_LENS_STATE_PREFIXES)}."
+            )
+        elif state.startswith("GAP:"):
+            _warn(f"{_LENS_MAP_REL}: row '{item}' is a GAP (no v2 owner yet): {state}")
+
+    lessons = root / ".claude" / "rules" / "LESSONS.md"
+    if not lessons.is_file():
+        errors.append(".claude/rules/LESSONS.md: missing — cannot cross-check lens coverage.")
+        return errors
+    rule_names = {m.group("name") for m in _LESSONS_ROW_RE.finditer(lessons.read_text())}
+    for rule in sorted(rule_names - covered_items):
+        errors.append(
+            f"{_LENS_MAP_REL}: LESSONS.md rule '{rule}' has no coverage row in the map — add a "
+            f"'| {rule} | LESSONS.md | <state> |' row so no lesson is silently uncovered."
+        )
     return errors
 
 
@@ -4944,6 +6409,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-worktree-revert",
+        action="store_true",
+        help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
+        "prescribes an unqualified working-tree revert on the shared repo "
+        "root: a `git restore` without `--staged`, a bare-dot `git checkout .`, or "
+        'a force-flagged `git clean`. Only per-worktree `git -C "$WT" ...` '
+        "forms (the `-C` qualifier before the match on the same line) or "
+        "lines carrying the `workflow-lint: allow-repo-root-wt-revert: "
+        "<reason>` sentinel with a non-empty reason pass. A repo-root "
+        "working-tree revert silently discards CONCURRENT sessions' "
+        "uncommitted edits (incident #841; sibling of the #815 reset-hard "
+        "check). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -4986,6 +6465,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-hollow-verification-gate-review-lens",
+        action="store_true",
+        help="FAIL if the #890 hollow-verification-gate lens (the Step 0.68 "
+        "sub-check prose in code-reviewer.md, the copy-contract clause + "
+        "'0.68' on the inlined-rubric placeholder in codex-code-reviewer.md, "
+        "the IMPLEMENTATION-MODE rubric item in efficiency-critic.md — the "
+        "workflow-v2 owner) is absent from any surface, or the tag drops "
+        "off any surface's '**Blocker tags:**' verdict-template line. Pins "
+        "that a verify/equivalence gate asserting on an unused sibling stays "
+        "a Major substantive blocker (incident #779: a green "
+        "--verify-vectorized laundered an unverified ~17k-fit hot loop). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -4997,6 +6490,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-stale-label-disposition",
+        action="store_true",
+        help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
+        "paragraph (bold anchor '**Stale-label disposition rule', which must "
+        "be UNIQUE) loses any of its five #894/#763 semantic tokens — most "
+        "critically the fresh-label-execute clause ('the label EXECUTES as "
+        "the dispatched round') — or regains an unconditional skip-on-None "
+        "coupling ('On None ... skip', a targeted negative regex over the "
+        "whitespace-normalized paragraph span). Paragraph-scoped: the span "
+        "runs from the anchor to the first blank line (#963). Bundled into "
+        "the no-flags default run.",
     )
     parser.add_argument(
         "--check-smoke-output-hygiene",
@@ -5041,9 +6547,75 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run (#765).",
     )
     parser.add_argument(
+        "--check-no-literal-round-marker-versions",
+        action="store_true",
+        help="FAIL on a literal 'v1' posting instruction for a round-versioned "
+        "marker kind (epm:experiment-implementation / epm:results / "
+        "epm:proposed-tests) in checked-in workflow prose (CLAUDE.md, "
+        "workflow.yaml, agents/rules .md, every SKILL.md, the /issue "
+        "markers.md + templates/). Those kinds accrue rows across follow-up "
+        "rounds, and an explicit --version beats the CLI's max+1 default, so "
+        "'post at v1' prose seeds briefs that collide with existing rows "
+        "(incident #825; the #389 class). Rephrase to v<n> / max+1. Bundled "
+        "into the no-flags default run (#917).",
+    )
+    parser.add_argument(
         "--check-agent-spec-size",
         action="store_true",
         help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
+    )
+    parser.add_argument(
+        "--check-api-dispatch-routing",
+        action="store_true",
+        help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
+        ".AsyncAnthropic(...) / <client>.messages...create(...)) under scripts/ or "
+        "src/explore_persona_space/ outside the routing layer (api_dispatch.py / "
+        "judge_dispatch.py / batch_judge.py / anthropic_client.py). New Anthropic "
+        "calls route through the multi-org dispatcher api_dispatch.py (headroom "
+        "routing + AIMD + batch-vs-sync). scripts/archive/** + the current tree's "
+        "existing callers (API_DISPATCH_ROUTING_ALLOWLIST) are grandfathered; waive "
+        "a new non-dispatcher caller with '# API_DISPATCH_ROUTING_EXEMPT: <reason>'. "
+        "Bundled into the no-flags default run (workflow v2, plan §5).",
+    )
+    parser.add_argument(
+        "--check-lens-coverage",
+        action="store_true",
+        help="Validate .claude/rules/lens-coverage-map.md (workflow v2, plan §3): "
+        "FAIL a table row whose State column does not start with one of v2-owner: / "
+        "v1-only / retired: / GAP:, and FAIL a .claude/rules/LESSONS.md rule with no "
+        "coverage row in the map. GAP: rows PASS but print as WARN. A separate lint "
+        "from --check-lessons-index. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-phase-done-reserved",
+        action="store_true",
+        help="Walk scripts/**/*.sh dispatchers and FAIL any non-redirected "
+        "invocation of a scripts/*.py|*.sh phase script that contains a "
+        "genuine [phase=done] emission site — the reserved-token contract of "
+        ".claude/rules/pod-side-reporting.md requirement 1 (a mid-pipeline "
+        "child emission reads as a false status=done to poll_pipeline.py; "
+        "incidents #545, #920). AST-based .py emission detection (comments / "
+        "docstrings / match sites never flag); stdout-redirected per-worker "
+        "invocations skipped; tee'd edges still checked. Legacy edges frozen "
+        "in PHASE_DONE_EDGE_LEGACY_ALLOWLIST; waive a mode-gated "
+        "standalone-lane terminal with '# noqa: phase-done-reserved'. "
+        "Bundled into the no-flags default run + the "
+        "workflow-lint-phase-done-reserved pre-commit hook (#930).",
+    )
+    parser.add_argument(
+        "--check-jsonl-splitlines",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL any .splitlines() call reading JSONL content (4 signals: "
+        "jsonl-named read_text chain / jsonl-named receiver / jsonl-named "
+        "enclosing function / events-comments-path read_text chain). "
+        "splitlines() splits on raw U+2028/U+2029/NEL inside "
+        "ensure_ascii=False JSON strings and shreds valid records (#825/#950); "
+        "use split('\\n') or text-mode file iteration. Waive with "
+        "'# JSONL_SPLITLINES_EXEMPT: <reason>'; frozen legacy experiment "
+        "scripts live in JSONL_SPLITLINES_LEGACY_ALLOWLIST (experiment files "
+        "only — never a workflow-surface file). Bundled into the no-flags "
+        "default run.",
     )
     args = parser.parse_args(argv)
 
@@ -5081,15 +6653,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
+        or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
+        or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
+        or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
+        or args.check_api_dispatch_routing
+        or args.check_lens_coverage
+        or args.check_phase_done_reserved
+        or args.check_jsonl_splitlines
     )
 
     errors: list[str] = []
@@ -5152,6 +6732,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_workflow_improver_spawn())
     if args.check_no_repo_root_git_reset_hard or no_flags:
         errors.extend(check_no_repo_root_git_reset_hard())
+    if args.check_no_repo_root_worktree_revert or no_flags:
+        errors.extend(check_no_repo_root_worktree_revert())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
@@ -5162,14 +6744,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
         errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_hollow_verification_gate_review_lens or no_flags:
+        errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_stale_label_disposition or no_flags:
+        errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:
         errors.extend(check_vm_thread_cap_guidance())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
+    if args.check_no_literal_round_marker_versions or no_flags:
+        errors.extend(check_no_literal_round_marker_versions())
+    if args.check_api_dispatch_routing or no_flags:
+        errors.extend(check_api_dispatch_routing())
+    if args.check_lens_coverage or no_flags:
+        errors.extend(check_lens_coverage())
+    if args.check_phase_done_reserved or no_flags:
+        errors.extend(check_phase_done_reserved())
+    if args.check_jsonl_splitlines or no_flags:
+        errors.extend(check_jsonl_splitlines())
 
     if errors:
         for err in errors:

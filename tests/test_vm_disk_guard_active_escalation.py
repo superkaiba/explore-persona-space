@@ -59,6 +59,9 @@ def repo(tmp_path, monkeypatch):
     sentinels all resolve under it) and an active task's data dir there."""
     monkeypatch.setattr(vdg, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(ced, "repo_root", lambda: tmp_path)
+    # Determinism pin (#924): force the on-main resolution path so a
+    # hypothetical fresh-clone-on-a-branch test runner cannot flip the probe.
+    monkeypatch.setattr(ced, "_off_main_checkout_root", lambda: None)
     return tmp_path
 
 

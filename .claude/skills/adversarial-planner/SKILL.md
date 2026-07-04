@@ -116,10 +116,12 @@ Run the structural verifier against the plan version just persisted:
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
   mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
-  (check 12), `N/A — no empirical-null gate` (check 13), and
+  (check 12), `N/A — no empirical-null gate` (check 13),
   `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
-  the target is a doc/prose file no pytest can exercise).
+  the target is a doc/prose file no pytest can exercise),
+  `N/A — no re-extracted reference arms` (check 16), `N/A — no paired contrast`
+  (check 18), and `N/A — no held-out predictive DV` (check 19).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

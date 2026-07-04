@@ -315,10 +315,14 @@ User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
 pause is a DURABLE park, never a prose-only marker. The session driving <N>
 (or the PM/chat session receiving the directive) executes IN THIS ORDER —
 the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
-LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
-the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
-`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
-whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+LAST. Since #980 the watcher's pod-safety pass auto-stops an
+`on_hold`+RUNNING RunPod pod (`on_hold` is in the watcher's
+`POD_SAFETY_AUTO_STOP` set) after the 2-consecutive-miss guard (~20-30 min
+at the 10-min cron), so a crash inside the pause window bills for minutes,
+not forever — but the teardown-first ORDER stays load-bearing: the backstop
+is slow and covers RunPod MANAGED pods only (a GCP instance still relies on
+its `--max-run-duration` fence / `dispatch_issue.py finalize`), whereas a
+crash BEFORE the park leaves the task at its prior ACTIVE status,
 where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
 (`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
 alert fires too:
@@ -1039,7 +1043,11 @@ executing a dispatched label, run
 exact-label mechanical evidence predicate (a 9a-quater `extends=<label>`
 record; an `epm:free-analysis-followup-run` whose `followup_ref` EXACTLY
 equals the label; or a status/step note carrying the exact parenthesized
-`(<label>)` round token plus a round-completion word). On a NON-None
+`(<label>)` round token plus a round-completion word in the same
+;/.-delimited clause as the token — a clause naming the label as queued /
+unrun / scoped / armed / dispatched NEVER closes (park notes routinely
+announce one round's completion while enumerating the queued next label
+on the same line; #961)). On a NON-None
 return, post the retroactive `epm:same-issue-followup-run v1`
 (`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
 and move to the NEXT unrun label instead of re-running a completed round
@@ -5117,8 +5125,12 @@ still surfaces at the next compute dispatch — and an untriaged compute
 breadcrumb (pre-fix / concurrent session) doesn't either
 (fail-toward-triage). READ each candidate's full note (`task.py view <N>
 --json` + jq by `ts`); classify EXTERNAL = not posted by this session — the
-`by` field does NOT discriminate (measured on #779: self and PM-chat posts
-both carry `by: unknown`); use session context plus the in-the-wild
+`by` field is unreliable on LEGACY markers and non-compliant emitters
+(measured on #779: self and PM-chat posts both carried `by: unknown`), but a
+value on the #966 emitter-convention list (`pm-chat`,
+`autonomous_session_watch`, `spawn_session`, `spawn_session-stop`) is a
+trustworthy-positive EXTERNAL signal (conventional, not authenticated);
+absence proves nothing, so still use session context plus the in-the-wild
 signatures ("PM-chat", "user-raised", "user directive", "# Audit",
 "AMENDMENT", "SCOPE RESTORE"); a successor/recovery session that cannot
 attribute a candidate treats it as external (fail-toward-triage). Then
@@ -5146,7 +5158,9 @@ breadcrumb post lands before the new boundary and is not re-enumerated;
 markers posted after a task's LAST compute dispatch are never enumerated
 (they can no longer avert a launch); a legacy launch marker
 (`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
-still closes the window.
+still closes the window. A watcher-side NON-GATING observer audits this
+duty post-hoc (flags missing/'none' lines against a re-run of the
+enumerator's window; observe/alert only, never blocks — #967).
 
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
@@ -5156,6 +5170,8 @@ aggregation / permutation battery) MUST be launched fully detached:
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
+    bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
+      || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
 The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
 shell runs with job control ON, where `setsid` forks and a bare `$!` is the
@@ -5168,13 +5184,47 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry two additional fields:
-`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry three additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
 genuinely new field), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
+The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
+badness to every python process), so a long detached fit is the designated
+victim whenever ANY neighbor spikes memory: #811's ~5h fits phase (RSS 6.8 GiB)
+was SIGTERM-killed at ~2h (rc=143, 0 checkpoints) by a NEIGHBOR's spike — its
+logged badness 1002 decomposes exactly as (1000 + 53‰ RSS)×2/3 + 300
+prefer-bonus. The `choom -n -600` sweep runs over the phase's whole SESSION
+(`pgrep -s` — `setsid` made `$PHASE_PID` the session id, so the sweep catches
+the leader AND any already-forked child; children forked later inherit
+`oom_score_adj` across fork), subtracting ~400 display points: decisively below
+every default-adj neighbor while staying killable — NOT `-1000`, which earlyoom
+and the kernel OOM killer skip entirely, so a genuinely runaway fit must still
+die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
+on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
+`choom=failed` breadcrumb token — never block a launch on choom, and never read
+the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
+it does not exempt the phase). Record `choom=ok` ONLY when the sweep pipeline
+itself exited zero; anything else records `choom=failed`. The −600 derivation
+assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
+re-derive from the decomposition above if that config changes.
+**Collateral-kill signature + second-kill pod pivot.** Phase dead rc=143
+(SIGTERM; rc=137 when earlyoom escalated to SIGKILL) + an earlyoom journal line
+at the death timestamp naming the phase pid, with the memory SPIKER a NEIGHBOR
+(phase RSS well under the pressure; attribute via the kill-source checklist,
+`failure_patterns.md` § exit-137/143, + the watcher's `earlyoom-kill` sidecar
+rows) = a collateral kill: `failure_class: infra`, NOT a code bug — do not
+dispatch a crash-fix round against the phase. Recovery ladder: relaunch ONCE
+with protection verified (`choom=ok`); if a PROTECTED phase is earlyoom-killed
+AGAIN, the VM is structurally memory-contended for this phase (or the phase
+itself is now the top consumer) — route it to the cheap CPU pod lane
+(`cpu-mid` / `cpu-bigmem` by footprint, CLAUDE.md § CPU-only phases) instead of
+a third VM relaunch. The phase-is-the-spiker variant + the stream-reduce rule
+stay in `.claude/rules/gotchas.md` (earlyoom entry).
 
 **The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
 shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
@@ -5239,7 +5289,10 @@ re-invocation).**
    window** — effective age is measured from the LATEST of the
    breadcrumb and any subsequent liveness marker (`epm:codex-task-*`,
    `epm:smoke-architecture-check`, `epm:proposed-tests`, or a
-   non-breadcrumb `epm:progress`): a healthy long-running round keeps
+   non-breadcrumb `epm:progress` — excluding anti-liveness notes: a
+   `deliberate-stop` stop record and `[autonomous_session_watch:...]` /
+   `[spawn-session:...]` telemetry never refresh the window, #810/#949):
+   a healthy long-running round keeps
    refreshing its window; a dead one goes silent and re-dispatches once
    the window expires. The mechanical form of this rule is
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
@@ -5582,7 +5635,8 @@ cells × folds × draws × epochs and the projected wall-time it implies;
 (2) the NAMED batched helper implementing the inner loop (e.g.
 `analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
 `analysis/null_battery.py`), or why the work is genuinely not batchable;
-(3) for reused parent code, that its inner loop + device routing were
+(3) for reused parent code, that its inner loop, device routing, + data-repo
+Hub-call scoping were
 INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
@@ -5591,7 +5645,8 @@ did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
-or the wider explicit value + one-line reason) per the Step 9 entry-guard
+or the wider explicit value + one-line reason) + the earlyoom protection state
+(`choom=ok|failed`) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 

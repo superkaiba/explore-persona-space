@@ -1,0 +1,94 @@
+{
+  "purpose": "harmful_compliance E0 cross-rubric judge-cache contamination audit",
+  "mechanism": "eval/batch_judge.py::JudgeCache._hash_key = sha256(question+completion) (no rubric in key) + one shared --cache-dir across behaviors in issue810_batch_rejudge_highm.py; refusal judged first => harmful_compliance cache hits return refusal-rubric judgments on shared (question, completion) pairs",
+  "classifier": {
+    "refusal_mention_regex": "refus|declin",
+    "negation_regex": "\\b(not|no|never|without|n't|rather than|instead of|opposite of|lack of|fails? to)\\b[^.]*$",
+    "negation_window_chars": 30,
+    "high_score_threshold": 80,
+    "low_score_threshold": 20,
+    "note": "heuristic-dependent rates vary a few points with the negation window; the exact-share (reasoning, score) pair-overlap evidence is the decisive, heuristic-independent check"
+  },
+  "per_behavior": {
+    "sycophancy": {
+      "n_total_judge_calls": 24000,
+      "n_cached": 0,
+      "n_parseable": 19339,
+      "n_high_ge80": 707,
+      "n_high_flagged_affirmative_refusal": 0,
+      "frac_high_flagged": 0.0,
+      "n_low_le20": 18333,
+      "frac_low_flagged": 0.0003272786777941417,
+      "frac_flagged_high_pairs_verbatim_in_refusal_file": null,
+      "frac_nonflagged_high_pairs_verbatim_in_refusal_file": 0.0,
+      "n_distinct_pairs": 18637,
+      "n_distinct_pairs_overlapping_refusal": 0,
+      "draw_collapse": {
+        "n_completions_multi_draw": 2744,
+        "frac_single_distinct_score": 0.9136297376093294
+      }
+    },
+    "refusal": {
+      "n_total_judge_calls": 100000,
+      "n_cached": 0,
+      "n_parseable": 71143,
+      "n_high_ge80": 12636,
+      "n_high_flagged_affirmative_refusal": 11373,
+      "frac_high_flagged": 0.9000474833808167,
+      "n_low_le20": 57041,
+      "frac_low_flagged": 0.13721708946196595,
+      "frac_flagged_high_pairs_verbatim_in_refusal_file": 1.0,
+      "frac_nonflagged_high_pairs_verbatim_in_refusal_file": 1.0,
+      "n_distinct_pairs": 70277,
+      "n_distinct_pairs_overlapping_refusal": null,
+      "draw_collapse": {
+        "n_completions_multi_draw": 10263,
+        "frac_single_distinct_score": 0.7186982363831238
+      }
+    },
+    "harmful_compliance": {
+      "n_total_judge_calls": 60000,
+      "n_cached": 0,
+      "n_parseable": 27605,
+      "n_high_ge80": 3518,
+      "n_high_flagged_affirmative_refusal": 57,
+      "frac_high_flagged": 0.016202387720295624,
+      "n_low_le20": 22191,
+      "frac_low_flagged": 0.6517507097471948,
+      "frac_flagged_high_pairs_verbatim_in_refusal_file": 0.0,
+      "frac_nonflagged_high_pairs_verbatim_in_refusal_file": 0.0,
+      "n_distinct_pairs": 27004,
+      "n_distinct_pairs_overlapping_refusal": 0,
+      "draw_collapse": {
+        "n_completions_multi_draw": 4469,
+        "frac_single_distinct_score": 0.7346162452450212
+      }
+    }
+  },
+  "graded_drop_rates": {
+    "sycophancy": {
+      "n_dropped_nan": 4661,
+      "n_total": 24000,
+      "drop_rate": 0.19420833333333334
+    },
+    "refusal": {
+      "n_dropped_nan": 28857,
+      "n_total": 100000,
+      "drop_rate": 0.28857
+    },
+    "harmful_compliance": {
+      "n_dropped_nan": 32395,
+      "n_total": 60000,
+      "drop_rate": 0.5399166666666667
+    }
+  },
+  "reproducibility": {
+    "git_commit": "22ad298c88b171289a966f5490f2ab9eabe762a5",
+    "timestamp_utc": "2026-07-03T06:31:46.453612+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

@@ -204,6 +204,31 @@ Three distinct GCP-failure paths, ALL ending at the same
   DISTINCT from a workload crash (a queue that never advanced is not a
   crash) and from a capacity MISS at create time (this create succeeded).
 
+**Intent translation at the terminal rung (#940).** The RunPod launch
+paths (the terminal rung — all four fallback/failover paths above funnel
+through it — AND the explicit `backend: runpod` override) translate a
+GCP-only GPU intent to its nearest same-or-narrower RunPod-provisionable
+intent via the router-owned `RUNPOD_INTENT_FOR_GCP_INTENT` map
+(`capture-7b` → `eval`, `lora` / `lora-7b-h100` → `lora-7b`; identity
+rows for shared intents, no marker record) BEFORE building the RunPod
+spec — pre-#940 the rung passed the intent verbatim and
+`gpu_heuristics.resolve_intent` KeyError'd, voiding the sanctioned last
+rung (#841: `provision --issue 841 --intent capture-7b` exit 1 →
+`NoComputeAvailableError` despite live RunPod 1-GPU capacity). A real
+translation rides the `epm:backend-selected` marker `extra` as
+`runpod_intent_translation: {"from": ..., "to": ...}`. A GCP GPU intent
+with NO row — `eval-h100`, listed in
+`RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS` (2× H100: no same-width
+RunPod intent exists, and narrowing 2→1 would silently break a
+2-GPU-sharded workload mid-run) — fails loud PRE-launch naming the
+missing map row, inside the existing `no_compute_available` terminal on
+the rung (raw `ValueError` on the override — a config error). A
+completeness test (`test_translation_map_total_over_gcp_gpu_intents`)
+pins map ∪ gaps == the `gpu_count > 0` keys of `gcp.INTENT_TO_MACHINE`,
+so a future GCP intent added without deciding its RunPod fate fails CI
+at the adding PR. CPU intents are untouched — the #677/#747
+`RUNPOD_CPU_INSTANCE_FOR_INTENT` guard runs BEFORE translation.
+
 **Bound — no infinite RunPod cascade.** A genuinely-broken job runs on
 RunPod AT MOST ONCE more. If it crashes again, the poller surfaces
 `failure_class: code` → `status:blocked`. The autonomous-session watcher's
@@ -490,6 +515,26 @@ for the cheap intents and SUPERSEDES that terminal for them ONLY:
   terminal, NOT a RunPod fallback (the watcher's capacity-retry pass keys on
   `no_compute_available`, so the distinct reason means a structurally-unservable
   `cpu-bigmem` RunPod launch is never auto-retried).
+- **Footprint feasibility gate + disk threading (#1010, incident #958).** A
+  plan-STATED footprint (`spec.extra["boot_disk_gb"]` / `["min_ram_gb"]`, from
+  `dispatch_issue.py --boot-disk-gb` / `--min-ram-gb`) is checked at
+  `_runpod_terminal_rung` against `router.RUNPOD_CPU_INSTANCE_CAPS`
+  (probe-verified effective `containerDiskInGb` caps — cpu3g-2-8 → 20,
+  cpu3c-8-16 → 50 honored floor — plus fixed RAM); an unsatisfiable footprint
+  refuses BEFORE any RunPod API call with the typed
+  `CpuFallbackInfeasibleError` / `reason: cpu_fallback_infeasible_for_plan`
+  (a `CpuExhaustedNoRunpodLaneError` subclass; NOT in
+  `TRANSIENT_CAPACITY_REASONS` — the instance can never grow to fit the
+  plan). A feasible `boot_disk_gb` is THREADED into the provision argv
+  (`--container-disk-gb max(50, boot_disk_gb)`, `RunPodBackend.launch`), and
+  `pod_lifecycle`'s CPU branch clamps a default-band over-cap effective
+  payload to the instance cap (the untouched default effective 50 exceeds the
+  cpu3g cap — pre-#1010 every default cpu-small RunPod provision failed
+  validation) while an explicit above-band request refuses pre-API.
+  ADOPTION: launch composers pass `--boot-disk-gb` whenever a CPU stage sizes
+  disk > 50 GB and `--min-ram-gb` whenever it sizes RAM > 16 GB — flag-less
+  launches keep today's behavior (experimenter pre-launch gate as the sole
+  defense).
 
 Tests of record: `tests/test_router.py` (`test_router_cpu_small_capacity_miss_falls_over_to_runpod`,
 `test_router_cpu_intent_capacity_miss_no_runpod_fallback` — the cpu-bigmem

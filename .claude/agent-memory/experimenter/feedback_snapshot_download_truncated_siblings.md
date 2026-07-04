@@ -14,3 +14,15 @@ metadata:
 2. Reliable pattern: `list_repo_tree(repo, path_in_repo=sub, recursive=True)` + `hf_hub_download` per file. `hf_hub_download(filename=<exact_path>)` does not consult siblings.
 3. Launch-side recovery without a code bounce (#558): if the script exposes a local-path flag (`--adapter-path`), pre-stage each artifact via list_repo_tree + hf_hub_download (verify `adapter_config.json` per dir), relaunch with the local path, record the deviation + code-debt in the `epm:run-launched` note. No local-path flag → `epm:failure v1 failure_class: code`.
 4. Preflight diagnostic: `len(repo_info(repo).siblings)` vs `len(list_repo_files(repo))` — divergence means snapshot_download with allow_patterns is unsafe on that repo.
+
+**Repo-scale caveat (#833, 2026-07-03):** everything above is MODEL-repo
+scale (~14k files) — steps 1/2/4 still work there. On the ~1M-file DATA
+repo (`superkaiba1/explore-persona-space-data`) the `list_repo_files` legs
+themselves time out (>90 s) and `snapshot_download` wedges 40+ min in
+full-tree enumeration before `allow_patterns` applies. There, use SCOPED
+`list_repo_tree(path_in_repo=<prefix>, recursive=True)` + a ≤6-worker
+`hf_hub_download` pool, ONE process (recipe:
+`scripts/issue833_gcp_phase_d.sh`, readable via
+`git show 22388e4b3d:scripts/issue833_gcp_phase_d.sh` until #833's merge
+lands it on main; twin memory:
+`../experiment-implementer/feedback_hf_snapshot_download_full_tree_enumeration.md`).

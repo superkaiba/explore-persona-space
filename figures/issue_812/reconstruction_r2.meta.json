@@ -1,0 +1,796 @@
+{
+  "commit": "6d0bc450bf",
+  "created": "2026-07-03T04:17:33Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.05430922378877079,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.1961499271057724,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.36022418171921755,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.44740533769151347,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5089536608574448,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.4939113896003199,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6187764413774943,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6237777453518127,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6812715331465764,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6417893903772106,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6627324688318003,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6903251386029132,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7088132408393157,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7153560171058342,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7323393137419745,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7748054880211397,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7681055570660282,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7634112805598193,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7839000979635942,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7593756360796493,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7541276897758293,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7117636773939355,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6672599948331273,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6178796825794137,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5766773160941154,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5244128525745946,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5041064970745928,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.4356580839594175,
+      "series": "mean pool",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -1.210877721265875,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.8491242534443444,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.5496556523445402,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.33078172762400726,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.3466574627162653,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.40848244015962276,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.4077774468750526,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.298989880341457,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.24959314436929603,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.19720937514801729,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.2362276257476228,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.22980476516000392,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.18970188798279586,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.1850073493568265,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.22987531414679618,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.21900762409223407,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.2516942789692984,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.2603150982221041,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.24012923840650147,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.2826613941482019,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.2797111115678106,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.38322619172499794,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.5165503183483979,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.6563043894613476,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.6042319808543666,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.6726780864341229,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.7475848861932661,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -1.1936306932931342,
+      "series": "max pool",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.11619113135505987,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.1788006015010155,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.3145636691650957,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.34513909384666597,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.47228027380198223,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.455965206995836,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5852558035525318,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.5697985128188341,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6568123981722898,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.644036100853377,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6175303734757573,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6386859746318696,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6740856239337012,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6931891792718441,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6918536134957003,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7544340319116789,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7373940125046519,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7448726809618147,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7837560568584079,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.7586127289842568,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.702812504533779,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.6680036118660846,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.4829773624974184,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.10841285010582968,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.010382010975473088,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.10795731983794976,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.47835331163407346,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.1171251885002218,
+      "series": "random attention pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.9032275999045387,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.5827083186843975,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.3473994148032242,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.281542422341748,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.1339289483707906,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.18356780345053947,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.08318318925195078,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.06702866146838282,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.023231266756913338,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.06854699166033074,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.08498485285228896,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.09697009782194566,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.13181642509831293,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.18485924101541995,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.1935113834358394,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.2532952027614874,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.24388639199206308,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.23324878022071838,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.26914661256001404,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.2851873998234453,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.2696558008894574,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.19716579887124908,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.10144300222244607,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.0549366960829023,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": 0.02619332577793232,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.008497324496333336,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.030292028028582108,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out reconstruction R\u00b2 (skill over mean)": -0.058300608972835954,
+      "series": "unpooled (34 positions)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112
+}

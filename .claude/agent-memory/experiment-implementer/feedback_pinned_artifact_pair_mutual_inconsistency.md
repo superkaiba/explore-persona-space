@@ -35,3 +35,7 @@ indexes (frozen R).
 - Make the CPU smoke do the REAL lookups (every persona x question the
   production worker will read), not synthesized payloads — synthesized
   fixture fields are exactly how this class escapes review.
+
+Post-hoc REGENERATION ordering (an input regenerated AFTER its dependent
+capture) is the sibling failure class — now checklist item (j) in
+`.claude/rules/artifact-reuse.md` (#922).

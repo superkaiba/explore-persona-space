@@ -1,0 +1,26 @@
+{
+  "commit": "a5c565db97",
+  "created": "2026-07-03T11:27:42Z",
+  "figsize": [
+    8.6,
+    7.2
+  ],
+  "points": [
+    {
+      "|Pearson r| at the pre-registered paper steering layer": 0.8787162466029436,
+      "y": 14.12,
+      "series": "primary honest-null 97.5th pct",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "|Pearson r| at the pre-registered paper steering layer": 0.8672275666744406,
+      "y": 13.88,
+      "series": "neutral-corpus null 97.5th pct",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2
+}

@@ -28,6 +28,19 @@ log staleness. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED``
 (``EPM_ZOMBIE_NAMESPACE_VETO``; ships default-OFF per the #864 live-pod
 gate disposition).
 
+Since #951 the override additionally carries a material-compute liveness
+veto: when the per-tick session-CPU burn rate (delta of the persisted
+``session_cpu_secs`` / ``session_cpu_sample_epoch`` sidecar pair over the
+measured tick spacing) was >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` (default
+0.5 cores) on BOTH the current and the previous persisted tick, the
+session is demonstrably computing — the #825 false stall burned ~1.83-2.04
+cores next to 1816 MiB of prior-run VRAM leftover — and the override is
+vetoed (streak reset, like the other vetoes). #664's hung-EngineCore churn
+(~0.22 cores) stays below the threshold, so the true positive keeps
+firing; every degraded input (unknown sample, missing epoch/rate, tick
+spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``, negative delta) leaves the
+veto inert (pre-#951 behavior).
+
 These tests pin:
 
 * the probe-output parser (``_parse_probe_stdout``) lifting the new
@@ -53,7 +66,19 @@ These tests pin:
   ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch; the producer-side probe
   emission / key-parity / exact end-anchored ``/dev/nvidia-uvm`` matcher
   pin (a heredoc typo must not leave the gate silently inert); and
-  ``_parse_probe_count`` unit behavior.
+  ``_parse_probe_count`` unit behavior;
+* the #951 material-compute veto: ``_session_cpu_rate_cores`` unit
+  behavior (happy path, fail-safe inputs, dt floor, negative delta); the
+  #825 replay vetoing (seeded with ``max_cpu_secs`` DISTINCT from the raw
+  sample so wrong-prev-key rate wiring flips the outcome); the #664
+  low-churn replay still firing; BOTH both-ticks conjuncts (single-tick
+  material AND prev-material/now-low each still fire); the
+  exact-threshold ``>=`` boundary; missing prev-rate / missing
+  sample-epoch / negative-delta fall-backs to current behavior; the veto
+  RESETTING (not holding) the streak; the direct-call default
+  (``session_cpu_rate_cores=None``) preserving pre-#951 outputs; and
+  ``_save_state`` persisting the ``session_cpu_sample_epoch`` /
+  ``session_cpu_rate_cores`` pair.
 """
 
 from __future__ import annotations
@@ -212,23 +237,38 @@ def _patch_pod(
     monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
 
 
-def _stale_state(now: int, *, prev_cpu: str, zombie_streak: str = "0") -> str:
+def _stale_state(
+    now: int,
+    *,
+    prev_cpu: str,
+    zombie_streak: str = "0",
+    max_cpu: str | None = None,
+    session_cpu_sample_epoch: str | None = None,
+    session_cpu_rate_cores: str | None = None,
+) -> str:
     """A prior-tick state file: phase already seen (so no transition), GPUs
     idle, with a prior session-CPU sample BELOW the current one so the
     #518/#658 override sees CPU advancing. ``zombie_streak`` pre-seeds the
     #826 persistence counter (``"1"`` makes a single ``poll_once`` call
-    represent tick 2 of a persisted stale-log zombie candidate)."""
-    return json.dumps(
-        {
-            "9664": {
-                "phase": "training",
-                "last_phase_change_epoch": str(now - 7200),
-                "session_cpu_secs": prev_cpu,
-                "max_cpu_secs": prev_cpu,
-                "zombie_streak": zombie_streak,
-            }
-        }
-    )
+    represent tick 2 of a persisted stale-log zombie candidate).
+
+    The #951 kwargs are only added to the dict when non-None, so pre-#951
+    callers produce a byte-identical seed (key-absence = the #951 veto is
+    inert on them). ``max_cpu`` (default: ``prev_cpu``) lets the #825 replay
+    seed a rolling max DISTINCT from the raw ``session_cpu_secs`` sample so
+    wrong-prev-key rate wiring is test-visible."""
+    state = {
+        "phase": "training",
+        "last_phase_change_epoch": str(now - 7200),
+        "session_cpu_secs": prev_cpu,
+        "max_cpu_secs": max_cpu if max_cpu is not None else prev_cpu,
+        "zombie_streak": zombie_streak,
+    }
+    if session_cpu_sample_epoch is not None:
+        state["session_cpu_sample_epoch"] = session_cpu_sample_epoch
+    if session_cpu_rate_cores is not None:
+        state["session_cpu_rate_cores"] = session_cpu_rate_cores
+    return json.dumps({"9664": state})
 
 
 def _saved_zombie_streak(state_file: Path) -> str:
@@ -959,3 +999,453 @@ def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -
     # count /dev/nvidia-uvm-tools holders and suppress the #664 TP.
     assert 'grep -q " -> /dev/nvidia-uvm$"' in remote
     assert "/dev/nvidia-uvm-tools" not in remote
+
+
+# ── #951 material-compute liveness veto ───────────────────────────────────────
+#
+# Integration-test seeding rule: every ``poll_once`` replay below seeds
+# ``max_cpu_secs`` (via ``_stale_state``'s default-or-``max_cpu``) so the
+# probe's ``session_cpu`` differs from it by > 0.5 s — ``cpu_advancing`` is
+# then True and the #518/#658 CPU rescue holds ``status == "running"`` INTO
+# the zombie block (else the test silently exercises the plain-stall path).
+# Template: ``test_zombie_gpu_overrides_cpu_advancing_running_to_stalled``.
+
+
+def _poll_once_9664(state_file: Path):
+    """One ``poll_once`` tick against the standard issue-9664 fixture paths."""
+    return pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+
+
+def test_session_cpu_rate_happy_path() -> None:
+    """The #825 shape: prev sample 4000.0 s taken 540 s ago, current 5102.0 s
+    -> (5102 - 4000) / 540 ~= 2.0407 cores."""
+    now = int(time.time())
+    rate = pp._session_cpu_rate_cores("4000.0", str(now - 540), "5102.0", now)
+    assert rate == pytest.approx(1102.0 / 540.0)
+
+
+@pytest.mark.parametrize(
+    ("prev_sample", "prev_epoch", "current"),
+    [
+        ("4000.0", "OK", "unknown"),  # current sample unknown
+        (None, "OK", "5102.0"),  # prev sample missing (fresh sidecar)
+        ("unknown", "OK", "5102.0"),  # prev sample unknown
+        ("4000.0", None, "5102.0"),  # epoch key absent (pre-#951 sidecar)
+        ("4000.0", "", "5102.0"),  # epoch empty
+        ("4000.0", "unknown", "5102.0"),  # epoch unknown
+        ("4000.0", "0", "5102.0"),  # epoch zero (<= 0 guard)
+        ("4000.0", "garbage", "5102.0"),  # epoch unparseable
+    ],
+)
+def test_session_cpu_rate_fail_safe_inputs(
+    prev_sample: str | None, prev_epoch: str | None, current: str
+) -> None:
+    """Every degraded input -> None (the #951 veto stays inert)."""
+    now = int(time.time())
+    epoch = str(now - 540) if prev_epoch == "OK" else prev_epoch
+    assert pp._session_cpu_rate_cores(prev_sample, epoch, current, now) is None
+
+
+def test_session_cpu_rate_dt_floor() -> None:
+    """Tick spacing below ``ZOMBIE_CPU_RATE_MIN_DT_SEC`` -> None (truncation-
+    noise floor; also covers the back-to-back dt~0 replay case); spacing AT
+    the floor computes."""
+    now = int(time.time())
+    assert pp._session_cpu_rate_cores("4000.0", str(now - 30), "5102.0", now) is None
+    floor = pp.ZOMBIE_CPU_RATE_MIN_DT_SEC
+    at_floor = pp._session_cpu_rate_cores("4000.0", str(now - floor), "4120.0", now)
+    assert at_floor == pytest.approx(120.0 / floor)
+
+
+def test_session_cpu_rate_negative_delta_returned() -> None:
+    """A run-restart / child-exit de-count (current < prev) returns the
+    negative rate as-is — not clamped, not None; it sits below any positive
+    threshold so the veto never fires on it."""
+    now = int(time.time())
+    rate = pp._session_cpu_rate_cores("4000.0", str(now - 540), "3000.0", now)
+    assert rate == pytest.approx(-1000.0 / 540.0)
+    assert rate is not None and rate < 0
+
+
+def test_zombie_material_cpu_both_ticks_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #825 replay: stale logs + idle GPUs + zombie candidate at streak
+    "1" (would fire under pure #826), but the session burned ~2.04 cores this
+    tick (probe 5102.0 vs raw sample 4000.0 over ~540 s) and 1.83 cores the
+    prior tick -> material compute, vetoed: running, no reason, streak reset.
+
+    ``max_cpu_secs`` is seeded DELIBERATELY HIGHER (5000.0) than the raw
+    ``session_cpu_secs`` sample (4000.0; realistic — a #658 child-exit
+    de-count lowers the raw sample below the rolling max): correct wiring
+    reads the RAW sample (delta +1102 s -> 2.04 cores >= T -> veto); wrong
+    wiring reading ``max_cpu_secs`` gets +102 s -> 0.19 cores < T -> no veto
+    -> this test FAILS on ``status == "stalled"``."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-02 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",  # > max_cpu_secs + 0.5 -> cpu_advancing=True
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            max_cpu="5000.0",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="1.83",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+
+def test_zombie_low_cpu_churn_still_fires(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """The #664 replay (constraint-1 regression pin): identical regime but
+    the session churns only ~0.22 cores on both ticks (probe 4119.0 vs
+    4000.0 over ~540 s; prior rate "0.22") — below the 0.5-core threshold,
+    so the veto stays inert and the override fires."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="4119.0",  # +119 s over ~540 s ~= 0.22 cores
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="0.22",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_material_cpu_single_tick_does_not_veto(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """BOTH-ticks pin, current-material direction: this tick burns ~2.04
+    cores but the PRIOR tick's persisted rate was 0.10 — a single material
+    tick (a ``ps`` truncation / transient-sibling artifact shape) must NOT
+    veto; the override fires."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="0.10",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_cpu_veto_missing_prev_rate_falls_back(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Degraded input: the sidecar has the sample + epoch but NO
+    ``session_cpu_rate_cores`` key (interrupted warmup shape) — prev rate is
+    no-signal, the veto cannot fire, the override fires (current behavior)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",  # material THIS tick — still not enough alone
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_cpu_veto_missing_sample_epoch_falls_back(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Degraded input: NO ``session_cpu_sample_epoch`` key — exactly the
+    pre-#951 / fresh-sidecar-restart shape — so the current rate is not
+    computable and the override fires even though a (stale) prev rate is
+    present. Doubles as proof the existing seeded-state test semantics are
+    preserved by key-absence."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_rate_cores="1.83",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_cpu_veto_negative_delta_falls_back(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Degraded input: the current sample DROPPED below the prior one (a
+    run-restart / child-exit de-count) — the negative rate sits below the
+    threshold, the veto cannot fire, the override fires. The sub-max drop
+    arm of the #518/#658 rescue (|delta| > 0.5 s) still holds ``running``
+    into the zombie block."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="3000.0",  # < prev 4000.0 -> negative rate
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="1.9",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_cpu_veto_then_streak_restarts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Reset-not-hold pin: tick A is material on both ticks -> veto (running,
+    streak "0"); tick B re-polls immediately (dt~0 -> rate None, a degraded
+    CPU read) with the candidate still stale+present -> the run gets a FULL
+    fresh 2-tick persistence window: it DEFERS (running, streak "1") instead
+    of firing off a held streak."""
+    now = int(time.time())
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="1.83",
+        )
+    )
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5102.0",  # ~2.04 cores vs the seeded epoch
+        zombie_pids="1262130",
+    )
+    tick_a = _poll_once_9664(state_file)
+    assert tick_a.status == "running"
+    assert tick_a.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="6000.0",  # advancing (rescue holds running); rate None (dt~0)
+        zombie_pids="1262130",
+    )
+    tick_b = _poll_once_9664(state_file)
+    assert tick_b.status == "running"
+    assert tick_b.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "1"
+
+
+def test_zombie_direct_call_rate_none_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Direct ``_apply_zombie_override`` call WITHOUT the new kwarg (mirrors
+    the pre-#951 call style): the ``session_cpu_rate_cores=None`` default
+    keeps outputs identical to today — the override fires on a persisted
+    stale-log candidate even though the sidecar carries a material prev
+    rate."""
+    out = pp._apply_zombie_override(
+        status="running",
+        zombie_gpu_pids=["1262130"],
+        stall_sec=900,
+        last_mtime_ago=2000.0,
+        phase_log_mtime_ago=10**9,
+        shard_log_mtime_ago=10**9,
+        prev_state={"zombie_streak": "1", "session_cpu_rate_cores": "1.83"},
+        pod="pod-9664",
+        cpu_override_active=True,
+    )
+    assert out == ("stalled", "vllm_worker_dead_zombie_gpu", False, 2)
+
+
+def test_save_state_persists_cpu_sample_epoch_and_rate(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``_save_state`` persists the #951 pair. Fresh sidecar (tick 1): the
+    sample epoch lands ~now and the rate is ``"unknown"`` (no prior sample —
+    the warmup, fail-safe). To observe a FORMATTED rate the state is
+    re-seeded with a BACKDATED epoch (dt past the floor) + a prev sample and
+    ONE further ``poll_once`` asserts the persisted rate parses to the
+    expected float (a naive back-to-back second call persists ``"unknown"``
+    again — dt~0 < floor, the helper-level pin in the dt-floor unit test)."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 5,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="95",
+        session_cpu="4000.0",
+        zombie_pids="",
+    )
+    state_file = tmp_path / "poll-state.json"
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    saved = json.loads(state_file.read_text())["9664"]
+    assert abs(int(saved["session_cpu_sample_epoch"]) - now) < 120
+    assert saved["session_cpu_rate_cores"] == "unknown"
+
+    # Backdated re-seed (revision item 8): dt ~540 s >= the floor.
+    state_file.write_text(
+        _stale_state(now, prev_cpu="4000.0", session_cpu_sample_epoch=str(now - 540))
+    )
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 5,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="95",
+        session_cpu="5102.0",
+        zombie_pids="",
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    saved = json.loads(state_file.read_text())["9664"]
+    assert float(saved["session_cpu_rate_cores"]) == pytest.approx(1102.0 / 540.0, rel=0.05)
+
+
+def test_zombie_prev_material_now_low_still_fires(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """BOTH-ticks pin, prev-material direction (the dropped-conjunct guard):
+    the PRIOR tick burned 1.83 cores but THIS tick churns only ~0.22 — a
+    "computed last tick, churning this tick" run must NOT be vetoed on the
+    stale prev rate alone; the override fires. An accidentally-dropped
+    current-rate conjunct would veto here and fail this test."""
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="4119.0",  # +119 s over ~540 s ~= 0.22 cores now
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="1.83",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_cpu_rate_exact_threshold_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Boundary pin: rate exactly ``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` (0.5000)
+    on BOTH ticks -> the veto fires (``>=``, not ``>`` — a future ``>`` typo
+    fails this test). ``poll_once``'s clock is frozen at ``now`` so the
+    engineered +270 s / 540 s delta lands EXACTLY on the threshold."""
+    from datetime import UTC as _utc
+    from datetime import datetime as _dt
+
+    now = int(time.time())
+
+    class _FrozenDatetime:
+        """Freeze ``pp.datetime.now`` so dt is exactly 540 s (no wall jitter)."""
+
+        @staticmethod
+        def now(tz: Any = None) -> Any:
+            return _dt.fromtimestamp(now, tz=_utc)
+
+    monkeypatch.setattr(pp, "datetime", _FrozenDatetime)
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="4270.0",  # +270 s / 540 s = exactly 0.5 cores
+        zombie_pids="1262130",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(
+        _stale_state(
+            now,
+            prev_cpu="4000.0",
+            zombie_streak="1",
+            session_cpu_sample_epoch=str(now - 540),
+            session_cpu_rate_cores="0.5000",
+        )
+    )
+    result = _poll_once_9664(state_file)
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"

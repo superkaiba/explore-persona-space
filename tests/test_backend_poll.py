@@ -1596,3 +1596,459 @@ def test_poller_cuda_ima_failover_exhausted_emits_code(tmp_path, monkeypatch, ca
         [{"kind": "epm:failure v1", "note": marker_note, "ts": "2026-06-30T00:00:00Z"}]
     )
     assert retriable is False
+
+
+# ---------------------------------------------------------------------------
+# #909 — repo_branch threading through BOTH lanes' handles + reconstructors
+# (AC5): the failover re-execution must sync the ISSUE branch, not `main`.
+# ---------------------------------------------------------------------------
+
+
+def test_production_runpod_handle_repo_branch_roundtrips_reconstructor(monkeypatch):
+    """The PRODUCTION-shaped RunPod handle (via the REAL launch, provision
+    no-op'd) carries ``repo_branch``, and ``_runspec_from_runpod_handle``
+    round-trips it into ``spec.extra`` after the sidecar serialize/deserialize."""
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+    from scripts import backend_poll as bp
+
+    _real_run = RP.subprocess.run
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            return None
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    handle = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=909,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue909_dispatch.sh",
+            extra={"repo_branch": "issue-909"},
+        )
+    )
+    assert handle.extra["repo_branch"] == "issue-909"
+    roundtripped = deserialize_handle(serialize_handle(handle))
+    spec = bp._runspec_from_runpod_handle(roundtripped, 909)
+    assert spec.extra.get("repo_branch") == "issue-909"
+    assert spec.workload_cmd == "bash scripts/issue909_dispatch.sh"
+
+
+def test_gcp_reconstructor_threads_repo_branch():
+    from scripts import backend_poll as bp
+
+    handle = _gcp_handle({**_GCP_EXTRA_659, "repo_branch": "issue-909"})
+    spec = bp._runspec_from_gcp_handle(handle, 659)
+    assert spec.extra.get("repo_branch") == "issue-909"
+
+
+def test_reconstructors_tolerate_legacy_handles_without_repo_branch():
+    """A pre-#909 handle (no ``repo_branch`` key) still reconstructs — and an
+    empty-string value (the post-#909 unset default) does NOT thread a
+    falsy branch into the spec."""
+    from explore_persona_space.backends.base import RunHandle
+    from scripts import backend_poll as bp
+
+    # GCP legacy: _GCP_EXTRA_659 has no repo_branch key.
+    gcp_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
+    assert gcp_spec.extra.get("repo_branch") is None
+    # GCP post-#909 unset default: "" stays out of the spec extra.
+    gcp_spec_empty = bp._runspec_from_gcp_handle(
+        _gcp_handle({**_GCP_EXTRA_659, "repo_branch": ""}), 659
+    )
+    assert "repo_branch" not in gcp_spec_empty.extra
+    # RunPod legacy: hand-built pre-#909 handle without the key.
+    legacy = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-689",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-689.log",
+        extra={
+            "issue": 689,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/x.sh",
+            "hydra_args": [],
+            "gpus": None,
+            "time_budget_hours": None,
+        },
+    )
+    rp_spec = bp._runspec_from_runpod_handle(legacy, 689)
+    assert rp_spec.extra.get("repo_branch") is None
+    assert rp_spec.workload_cmd == "bash scripts/x.sh"
+
+
+# ---------------------------------------------------------------------------
+# #934: --lane-suffix sidecar resolution
+# ---------------------------------------------------------------------------
+
+
+def test_poll_lane_suffix_resolves_suffixed_sidecar(tmp_path, capsys, monkeypatch) -> None:
+    """`backend_poll --lane-suffix cpu` with no sidecar present emits the
+    missing-sidecar terminal JSON naming the SUFFIXED path — proving the
+    per-lane sidecar (not the unsuffixed lane's) was probed (#934)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    rc = backend_poll_main(["--issue", "9349", "--lane-suffix", "cpu"])
+    assert rc == 0
+    line = capsys.readouterr().out.strip()
+    assert line, "backend_poll must emit a JSON line, never empty stdout"
+    body = json.loads(line)
+    assert body["status"] == "dead"
+    assert body["reason"] == "missing_handle_sidecar"
+    assert "issue-9349-cpu-handle.json" in body["log_tail_excerpt"]
+
+
+def test_poll_malformed_lane_suffix_fails_loud_with_json(tmp_path, capsys, monkeypatch) -> None:
+    """A malformed --lane-suffix fails LOUD (the validator raises inside
+    the resolver) but still emits ONE terminal JSON line — never empty
+    stdout (the bg-Bash poll loop would spin forever)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    rc = backend_poll_main(["--issue", "9349", "--lane-suffix", "Not_Valid"])
+    assert rc == 0
+    line = capsys.readouterr().out.strip()
+    assert line, "backend_poll must emit a JSON line, never empty stdout"
+    body = json.loads(line)
+    assert body["status"] == "dead"
+    assert "lane_suffix" in body["log_tail_excerpt"]
+
+
+# ---------------------------------------------------------------------------
+# #954 — PARTIAL RunPod failover failure: pod PROVISIONED, workload start
+# FAILED. The failover legs must catch the typed RunPodWorkloadStartError,
+# authoritatively re-point the sidecar at the PARTIAL handle (write+readback),
+# and emit a DISTINCT terminal (runpod_workload_start_failed — NOT
+# no_compute_available, whose mislabel invites the watcher's capacity-retry
+# re-drive while the pod bills invisibly; the #931 incident).
+# ---------------------------------------------------------------------------
+
+
+class _WorkloadStartFailedRunpodBackend:
+    """RunPodBackend stand-in modeling the #954 PARTIAL failure: ``launch``
+    provisions (records the spec) then raises the typed error CARRYING the
+    partial handle — the shape ``RunPodBackend.launch`` produces when the #909
+    execution leg fails after the pod exists."""
+
+    def __init__(self) -> None:
+        self.launches: list = []
+
+    def launch(self, spec):
+        from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+        self.launches.append(spec)
+        partial = RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={
+                "issue": spec.issue,
+                "intent": "lora-7b",
+                "workload_cmd": "bash run.sh",
+                "hydra_args": [],
+                "workload_executed": False,
+                "workload_start_error": "branch sync timed out (ssh TimeoutExpired)",
+            },
+        )
+        raise RunPodWorkloadStartError("branch sync timed out (ssh TimeoutExpired)", handle=partial)
+
+
+def test_failover_workload_start_failure_mints_runpod_sidecar_and_emits_distinct_terminal(
+    tmp_path, monkeypatch, capsys
+):
+    """#954 AC3 (end-to-end): a dead GCP workload whose RunPod failover
+    PROVISIONS a pod but fails the workload-start leg emits a TERMINAL infra
+    JSON with the DISTINCT reason, re-points the sidecar at the PARTIAL RunPod
+    handle (readback-proven), and carries the recovery hints (round-1 critique
+    MF1 mechanized): the live-workload/pidfile check-before-re-drive AND the
+    billing-until-human-stop/terminate wording."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    rp = _WorkloadStartFailedRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_workload_start_failed"
+    # Recovery hints (MF1): pidfile-check-before-re-drive + billing exposure.
+    tail = out["log_tail_excerpt"]
+    assert "pidfile" in tail
+    assert "BILLS until a human" in tail
+    assert "stop/terminate" in tail
+    # Sidecar AUTHORITATIVELY re-pointed at the PARTIAL RunPod handle.
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    assert recovered.extra["workload_executed"] is False
+    assert recovered.extra["workload_start_error"]
+    assert len(rp.launches) == 1
+
+
+def test_failover_workload_start_failure_second_poll_no_second_launch(
+    tmp_path, monkeypatch, capsys
+):
+    """#954 AC4-i: after the partial failover, (i) a second poll tick launches
+    ZERO additional pods (the sidecar now reads runpod, so the GCP failover
+    predicate cannot re-fire), and (ii) a FORCED still-GCP sidecar
+    short-circuits on the DURABLE LEASE specifically (the
+    sidecar_persistence_failed shape naming the lease record — the sentinel was
+    cleared at the end of the first tick, so only the lease can dedup)."""
+    # Deterministic scripts-dir bootstrap: backend_poll's own lazy
+    # ``from runpod_api import ...`` relies on scripts/ being on sys.path;
+    # mirror it here so the test is test-ordering-independent.
+    import sys
+
+    import scripts.backend_poll as bp
+
+    scripts_dir = str(Path(bp.__file__).resolve().parent)
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import runpod_api
+
+    sidecar = tmp_path / "issue-659-handle.json"
+    gcp_handle = _gcp_handle()
+    write_handle_sidecar(gcp_handle, sidecar)
+
+    rp = _WorkloadStartFailedRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    # The partial pod does not exist on the live API (hermetic: the RunPod
+    # wedge escalation probes get_pod_by_name on any runpod-handle tick).
+    monkeypatch.setattr(runpod_api, "get_pod_by_name", lambda name: None, raising=False)
+
+    # Tick 1: partial failover -> terminal + sidecar re-pointed at RunPod.
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert _last_json_line(capsys)["reason"] == "runpod_workload_start_failed"
+    assert len(rp.launches) == 1
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+    # Tick 2 (the sidecar now reads runpod): the GCP failover predicate keys on
+    # backend=="gcp", so it cannot re-fire — ZERO additional launches.
+    rc2 = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    _last_json_line(capsys)  # drain stdout; the dead runpod poll is ordinary
+    assert len(rp.launches) == 1
+
+    # Tick 3 (FORCED still-GCP sidecar — a rollback/copy): the predicate
+    # re-fires but the DURABLE LEASE short-circuit binds (the rung stamped
+    # gcp_failover_of in-flock on tick 1; the sentinel was cleared) — the
+    # fail-loud sidecar_persistence_failed shape, still NO launch.
+    write_handle_sidecar(gcp_handle, sidecar)
+    rc3 = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc3 == 0
+    out3 = _last_json_line(capsys)
+    assert len(rp.launches) == 1  # the exactly-once bound held
+    assert out3["reason"] == "sidecar_persistence_failed"
+    assert "durable lease record" in out3["log_tail_excerpt"]
+
+
+def test_failover_workload_start_failure_not_transient_capacity_block(
+    tmp_path, monkeypatch, capsys
+):
+    """#954 AC5: the emitted terminal's fields parse via the watcher's REAL
+    ``_is_transient_capacity_block`` to NOT-retriable (mirrors the #775 M1
+    pattern) — the capacity-retry pass never auto re-drives a run whose pod
+    exists and bills."""
+    import scripts.autonomous_session_watch as asw
+
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    rp = _WorkloadStartFailedRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # The note shape the orchestrator/watcher posts from this JSON (the
+    # whitespace-token shape _parse_failure_fields reads).
+    note = (
+        f"failure_class: {out['failure_class']} reason: {out['reason']} — {out['log_tail_excerpt']}"
+    )
+    synthetic_marker = {"kind": "epm:failure v1", "note": note, "ts": None}
+    retriable, parsed_reason, _block_ts = asw._is_transient_capacity_block([synthetic_marker])
+    assert retriable is False
+    assert parsed_reason == "runpod_workload_start_failed"
+    assert "runpod_workload_start_failed" not in asw.TRANSIENT_CAPACITY_REASONS
+
+
+def test_queue_timeout_failover_workload_start_failure_same_contract(tmp_path, monkeypatch, capsys):
+    """#954 AC3 via the #783 caller (shared-core coverage): a queued-past-floor
+    GCP instance whose RunPod failover partial-fails gets the SAME contract —
+    teardown-first ran BEFORE the launch (by CALL ORDER, round-1 critique
+    rider 3), distinct terminal, sidecar re-pointed at the partial handle."""
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    calls: list[str] = []
+
+    class _TeardownRecorder:
+        def poll(self, handle):
+            return _pending_poll()
+
+        def teardown(self, handle):
+            calls.append("teardown")
+
+    class _WSFRunpodOrdered:
+        def launch(self, spec):
+            calls.append("launch")
+            partial = RunHandle(
+                backend="runpod",
+                cluster=None,
+                job_id="",
+                pod_name=f"pod-{spec.issue}",
+                scratch_dir="/workspace",
+                log_path=f"/workspace/logs/issue-{spec.issue}.log",
+                extra={
+                    "issue": spec.issue,
+                    "workload_executed": False,
+                    "workload_start_error": "ssh TimeoutExpired",
+                },
+            )
+            raise RunPodWorkloadStartError("ssh TimeoutExpired", handle=partial)
+
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar)
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: _TeardownRecorder())
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _WSFRunpodOrdered)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_workload_start_failed"
+    # Teardown-first by CALL ORDER: the queued instance was released BEFORE
+    # the RunPod launch was attempted.
+    assert calls == ["teardown", "launch"]
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    assert recovered.extra["workload_executed"] is False
+
+
+def test_wedge_relaunch_workload_start_failure_stamps_and_repoints_sidecar(
+    tmp_path, monkeypatch, capsys
+):
+    """#954 AC6: ``_relaunch_fresh_runpod`` (the #692/#770 wedge + #775
+    CUDA-IMA shared relaunch) on the typed-with-handle error: stamp_fn called
+    with the WEDGED handle (bounds a re-fired tick), sidecar re-pointed at the
+    fresh partial pod, distinct terminal; PLUS the sidecar-write-OSError
+    sub-case (terminal still emitted, note carries the write failure —
+    fail-loud, never swallowed)."""
+    import scripts.backend_poll as bp
+
+    rp = _WorkloadStartFailedRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    wedged = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-775",
+        pod_name="pod-775",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-775.log",
+        extra={
+            "issue": 775,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/issue664_dispatch.sh --foo",
+            "hydra_args": [],
+        },
+    )
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(wedged, sidecar)
+    stamps: list = []
+
+    out = bp._relaunch_fresh_runpod(
+        issue=775,
+        handle=wedged,
+        result=_poll("dead", "terminal_runpod_no_port_wedged"),
+        sidecar=sidecar,
+        stamp_fn=lambda issue, handle: stamps.append((issue, handle)),
+    )
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "runpod_workload_start_failed"
+    tail = out["log_tail_excerpt"]
+    assert "pidfile" in tail
+    assert "BILLS until a human" in tail
+    # stamp_fn fired with the WEDGED handle (bounds a re-fired tick).
+    assert stamps == [(775, wedged)]
+    # Sidecar re-pointed at the FRESH partial pod (visible to the machinery).
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    assert recovered.extra["workload_executed"] is False
+    assert len(rp.launches) == 1
+
+    # Sub-case: the sidecar write ALSO fails (OSError) — the terminal is still
+    # emitted with the write failure recorded, the stamp still bounds.
+    stamps2: list = []
+    write_handle_sidecar(wedged, sidecar)  # reset to the wedged handle
+
+    def _raising_write(handle, path):
+        raise OSError("Disk quota exceeded (EDQUOT) writing the sidecar")
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+    out2 = bp._relaunch_fresh_runpod(
+        issue=775,
+        handle=wedged,
+        result=_poll("dead", "terminal_runpod_no_port_wedged"),
+        sidecar=sidecar,
+        stamp_fn=lambda issue, handle: stamps2.append((issue, handle)),
+    )
+    assert out2["status"] == "dead"
+    assert out2["reason"] == "runpod_workload_start_failed"
+    assert "sidecar write ALSO failed" in out2["log_tail_excerpt"]
+    assert stamps2 == [(775, wedged)]
+
+
+def test_runspec_from_gcp_handle_preserves_footprint_extra():
+    """#1010: the GCP-handle reconstructor forwards the footprint fields
+    (boot_disk_gb / min_ram_gb) into the rebuilt spec.extra so the RunPod
+    CPU-fallback feasibility gate + container-disk threading cover the ASYNC
+    failover paths (#659 crash / #783 queue timeout) — pre-#1010 only
+    repo_branch survived, so the gate failed OPEN there (the #958 shape).
+    A legacy handle WITHOUT the keys reconstructs byte-identically."""
+    from scripts import backend_poll as bp
+
+    handle = _gcp_handle({**_GCP_EXTRA_659, "boot_disk_gb": 80, "min_ram_gb": 32})
+    spec = bp._runspec_from_gcp_handle(handle, 659)
+    assert spec.extra.get("boot_disk_gb") == 80
+    assert spec.extra.get("min_ram_gb") == 32
+
+    # Legacy handle (no footprint keys, no repo_branch): pre-#1010 shape == {}.
+    legacy_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
+    assert legacy_spec.extra == {}
+
+    # Legacy handle with only repo_branch: pre-#1010 shape preserved verbatim.
+    branch_spec = bp._runspec_from_gcp_handle(
+        _gcp_handle({**_GCP_EXTRA_659, "repo_branch": "issue-909"}), 659
+    )
+    assert branch_spec.extra == {"repo_branch": "issue-909"}

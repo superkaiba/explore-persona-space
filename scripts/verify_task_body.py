@@ -105,7 +105,9 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
    `main`/`master`/`HEAD`). `n/a` is accepted as an explicit
    non-applicable marker. Raw-host URLs are scanned on fence-stripped
    text (a moving-ref raw URL inside a ``` example is illustrative);
-   shape only — existence probing is check 8b's job.
+   URLs on blockquote lines are exempt too (the **Context:** verbatim
+   originating-prompt quote; #959); shape only — existence probing is
+   check 8b's job.
 8b. Reproducibility artifact URLs exist — same-repo artifact links in
     `## Reproducibility` (`raw.githubusercontent.com/<this-repo>/<sha>/
     <path>` raw URLs and `github.com/<this-repo>/(blob|tree)/<sha>/<path>`
@@ -117,7 +119,8 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     Definitive miss → FAIL; indeterminate probe → `unverified` note on
     the PASS line, never a FAIL (same semantics as check 4b). Extends
     the task #507 existence protection to the Reproducibility section,
-    which previously got shape verification only. HF Hub / WandB /
+    which previously got shape verification only. Blockquoted URLs are
+    not gathered (same #959 exemption). HF Hub / WandB /
     external-repo links stay shape-checked only (check 8): their
     existence is not decidable from the local object DB, and an
     unauthenticated 404 on an external private repo would false-FAIL.
@@ -334,6 +337,12 @@ New v3-only checks (PASS vacuously on v2/legacy):
   per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
+  (v4 twin `check_v4_word_caps`: same caps over Takeaways + Goal +
+  Results, `## Methodology` excluded; its round count reads
+  `epm:same-issue-followup-run` markers and/or the footer round clauses,
+  max-reconciled — the Rounds-table read binds v3 only. It needs the
+  `issue` number for the events leg, so it is dispatched separately in
+  `verify_text`, outside CHECKS; #921.)
 - **check 21** (`check_body_params_subset_of_doc`): the body's
   load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
   methodology doc §2 complete table. Binds when the doc path is supplied
@@ -412,17 +421,24 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 
 - **check 25** (`check_audit_availability_claims_match_hf`): a prose claim
   that a data artifact "was not uploaded" / "cannot be audited" /
-  "unavailable for audit" must NOT be contradicted by that artifact
+  "unavailable for audit" — or, since #942, a LIVE quota-hold denial
+  ("remain(s) on the pod", "quota-held", "under/pending/behind/blocked on
+  the ... quota hold", "upload 403"; present-tense/stative only, resolved
+  narratives never fire) — must NOT be contradicted by that artifact
   actually existing on the HF data repo. Scans the fence-stripped body for
   a line carrying BOTH an availability-denial phrase AND a known
   data-artifact class spelled in PROSE (raw-completions / install-probe /
-  training-mix / on-policy pool / analysis-tensor — hyphen/space/singular
-  variants mapped to the canonical underscore-plural HF-path token
+  training-mix / on-policy pool / analysis-tensor / unreduced-activation-
+  store / reduced-store-or-summary / fitted-map — hyphen/space/singular
+  variants mapped to the canonical HF-path token
   `raw_completions` / `install_probes` / `mixes` / `onpolicy_pools` /
-  `analysis_tensors`); for each, lists the body's HF Hub revision-pinned
+  `analysis_tensors` / `unreduced` / `reduced` / `maps`); for each, lists
+  the body's HF Hub revision-pinned
   URLs (the check-23 set) ONCE per (repo, sha) and asks whether ≥1 file
-  UNDER the URL's path-prefix carries the canonical token as a path
-  component at ANY depth (a denial usually links the repo TREE ROOT while
+  UNDER the URL's path-prefix carries the canonical token as an
+  ALPHANUMERIC-BOUNDARY path component at ANY depth (`/` and `_` count as
+  boundaries; never a bare substring, so `reduced` cannot match
+  `unreduced/`; a denial usually links the repo TREE ROOT while
   the file lives several levels down at `<root>/…/<token>/…`, the #653
   shape). If ANY HF URL yields such a file via a BOUNDED direct
   tree-endpoint GET (`_hf_tree_get`, self-paginated under a page/time cap;
@@ -432,13 +448,25 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   any network / auth / HTTP error surface as an `unverified` note on the
   PASS line, never a FAIL; only a SUCCESSFUL listing returning ≥1 matching
   file is the FAIL. Vacuous PASS when there is no denial-near-artifact line
-  or no HF Hub revision-pinned URL to reconcile against. Body-wide +
+  or no HF Hub revision-pinned URL to reconcile against — so the check
+  protects ONLY bodies that themselves pin a covering HF URL: a false
+  denial in a body with no covering revision-pinned URL still PASSes
+  vacuously (pre-existing check-25 architecture shared by every denial
+  family and artifact class; NOT closed by the #942 vocabulary extension —
+  the incident-time #813 v1 body had no covering URL and would still
+  PASS). Body-wide +
   fence-stripped scan (the denial prose lives in `## Methodology` /
-  `## Results` / the Reproducibility footer). Incident: task #653 round 6
+  `## Results` / the Reproducibility footer). Incidents: task #653 round 6
   asserted the per-cell install-probe firing/non-firing completions "were
   not separately uploaded ... cannot be audited at the record level" while
   those files DID exist on HF under the body's own linked data-repo tree —
-  caught by hand at round-6 interp-critique, mechanizable into this check.
+  caught by hand at round-6 interp-critique, mechanizable into this check;
+  task #813 v1 asserted the unreduced store / reduced summaries / fitted
+  maps "remain on the pod under an HF public-storage quota hold (upload
+  403)" while all 24,206 files were on HF at the body-pinned revision —
+  the quota-hold denial family + `unreduced`/`reduced`/`maps` classes +
+  the module-level line pre-filter (`_AUDIT_LINE_PREFILTER_RE`) + the
+  boundary-match fix were added for it (#942).
 
 - **check 26** (`check_figure_panel_prose_vs_sidecar`): a figure's
   what-is-plotted prose (scoped to its enclosing `### <result>` H3 + the
@@ -460,6 +488,53 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   offline / `--body-stdin`, with no inline figures, or no panel/series prose
   claim. Incident: task #683 round-1 interp-critique false-FAILed off a
   wrong-sidecar fallback the verifier could not mechanically detect.
+
+- **check 28** (`check_figure_label_codes`, WARN): rendered figure text read
+  from each inline same-repo sha-pinned figure's sibling `.meta.json` (parsed
+  via `_read_figure_meta_json`, check 26's reader) must not carry opaque
+  config-code tokens — `@L<digits>` layer pins (`ctx_blk_max@L12`) or
+  regime-code slugs (snake tokens >=3 segments or digit-bearing:
+  `ans_uhdr_max`, `sw_eng_C1`, `cond_4`; 2-segment all-alpha metric names
+  like `log_prob` stay allowed). Plain-English condition names are the
+  project rule end to end; config slugs belong in the Repro config row /
+  provenance keys. Scans string VALUES only (provenance-keyed subtrees
+  pruned via `_META_PROVENANCE_KEYS`) plus dict keys containing internal
+  whitespace (axis-label-keyed data rows) — identifier keys (`_kind`,
+  `cell_slugs`, translation-map slug keys) are never visited; PATH-SHAPED
+  strings / words (a file path or URL) are exempt, but a slash-separated
+  rendered label (`ctx_blk_max / ans_uhdr_max`) carries whitespace and IS
+  scanned. Coverage = sidecar-CARRIED strings only — known residuals: a
+  slug-bearing figure TITLE with no ad-hoc sidecar echo is invisible (the
+  canonical `savefig_paper` writer never serializes titles; PNG-pixel text
+  stays the multimodal critics' substantive read), a bare slug used as a
+  whitespace-free column KEY is unscanned, and a slug inside a path-shaped
+  word is exempt. WARN, never FAIL; FAIL-SOFT on a missing / unparsable
+  sidecar (check-24 convention, NOT check 26's loud missing-sidecar FAIL);
+  NO-OP PASS offline / `--body-stdin`, with no inline figures, or no
+  scannable same-repo sidecar. Incident: task #920's
+  `winning_cell_scatter.png` reached the 9a-bis gate titled
+  `ctx_blk_max@L12 x ans_uhdr_max@L12` after three review passes each
+  deferred it as a cosmetic nit, costing a REVISE round.
+
+- **check 29** (`check_figure_tracked_at_head`, WARN): every body-linked
+  same-repo `figures/issue_<N>/...` figure path must still be tracked on a
+  LIVE local ref — HEAD of the (main-pinned) repo root or the issue's local
+  branch family `issue-<N>` / `issue-<N>-*` (one `for-each-ref` + one
+  `ls-tree -r --name-only <ref> -- figures/issue_<N>/` per ref per unique
+  issue dir; never per-URL — <=5 subprocesses for a typical body). Three
+  states per path: tracked at HEAD → clean PASS; BRANCH-ONLY (on >=1 family
+  ref, absent from HEAD) → PASS with an explicit disclosure note (expected
+  pre-merge; names the `git restore --source=<pinned-sha>` recovery for the
+  post-merge case); missing from every successfully-probed ref → the
+  incident-class WARN, never FAIL (a pinned raw URL is immutable and keeps
+  rendering after tracking loss — drift hygiene, not a broken body).
+  Conservative: any failed probe for an issue dir degrades it to a skip
+  note (a narrowed ref set must never manufacture a WARN); vacuous PASS
+  with no same-repo `figures/issue_<N>/` URLs or an unresolved repo root.
+  The issue number comes from the path itself, so cross-issue figure links
+  check against their own branch family. Incident: task #841 — three
+  `figures/issue_841/` stems tracked at the pinned sha `4824a567aa` but
+  untracked at branch HEAD; the loss was invisible to every check (#964).
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -1818,6 +1893,9 @@ _RAW_GITHUB_FIGURE_RE = re.compile(
 )
 _THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
 
+# Repo-relative figure path carrying its own issue number — scope of check 29.
+_ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
+
 
 def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
     """HTTP HEAD ``url``; return the response status code (HTTPError codes
@@ -1952,6 +2030,126 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
             unverified
         )
     return CheckResult("Figure URL resolvable", True, detail)
+
+
+def _issue_figure_paths_by_issue(body: str) -> dict[str, set[str]]:
+    """Same-repo `figures/issue_<N>/...` figure paths inline under the
+    result-narrative section, grouped by the issue number carried in the
+    path itself (check 29's scope). Other hosts / other repos /
+    non-issue-dir paths are out of scope and skipped."""
+    paths_by_issue: dict[str, set[str]] = {}
+    for url in _gather_figure_image_urls(body):
+        url = url.strip()
+        # Strip optional title — `(url "title")` — keep only the URL token
+        # (check-4b idiom).
+        url = url.split(None, 1)[0] if url else url
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue
+        pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
+        if not pm:
+            continue
+        paths_by_issue.setdefault(pm.group("issue"), set()).add(m.group("path"))
+    return paths_by_issue
+
+
+def check_figure_tracked_at_head(body: str) -> CheckResult:
+    """Check 29 (WARN): body-linked same-repo `figures/issue_<N>/...` figure
+    paths must still be tracked on a LIVE local ref — HEAD of the resolved
+    (main-pinned) repo root, or the issue's local branch family
+    `issue-<N>` / `issue-<N>-*`.
+
+    Check 4b verifies existence at the PINNED sha only, and a pinned raw URL
+    is immutable — it keeps rendering after the file falls out of tracking
+    on every live ref, so a merge/rebase can silently drop the canonical
+    figure files with zero verifier signal (incident #841: three
+    `figures/issue_841/` stems tracked at the pinned sha but untracked at
+    branch HEAD). Three-state read, per path:
+
+    - tracked at HEAD -> clean PASS;
+    - BRANCH-ONLY (absent from HEAD, present on >=1 family ref) -> PASS with
+      an explicit disclosure note, never a WARN: this is the EXPECTED state
+      of every pre-merge verification round (the verifier's HEAD is
+      main-pinned while figures live on the issue branch), so WARNing would
+      spam every figure-adding round; the disclosure keeps the post-merge
+      stale-branch-masks-main-loss state visible and names the recovery;
+    - missing from EVERY successfully-probed ref -> the incident-class WARN
+      (`is_warn=True`, `passed=True` -- this check can never FAIL: the
+      pinned URL still renders, so this is drift hygiene, and grandfathered
+      bodies must not regress).
+
+    Conservative on probe failure: if ANY git probe for an issue dir fails,
+    that issue degrades to a `probe failure` skip note and can never WARN --
+    the path might live at the failed ref, so a narrowed ref set must not
+    manufacture a WARN. Per-issue continue (other issue dirs still
+    evaluated); fail-soft everywhere; no network. The issue number comes
+    from the `figures/issue_<N>/` path itself (not `--issue`), so
+    cross-issue figure links are checked against their OWN branch family.
+    (#964)
+    """
+    name = "figure tracked at live refs"
+    paths_by_issue = _issue_figure_paths_by_issue(body)
+    if not paths_by_issue:
+        return CheckResult(name, True, "no same-repo `figures/issue_<N>/` figure URLs to check")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+
+    missing: list[str] = []
+    branch_only: list[str] = []
+    skipped: list[str] = []
+    n_at_head = 0
+    for issue_n, paths in sorted(paths_by_issue.items()):
+        prefix = f"figures/issue_{issue_n}/"
+        family = _git_issue_branch_family(repo, issue_n)
+        probes: dict[str, set[str] | None] = {"HEAD": _git_tracked_under(repo, "HEAD", prefix)}
+        for br in family or []:
+            probes[br] = _git_tracked_under(repo, br, prefix)
+        failed = sorted(label for label, tracked in probes.items() if tracked is None)
+        if family is None:
+            failed.append("branch listing (for-each-ref)")
+        if failed:
+            # CONSERVATIVE: any failed probe for this issue -> no WARN
+            # possible (the path might live at the failed ref); skip note,
+            # continue to the next issue dir.
+            skipped.append(f"`{prefix}` — probe failure ({', '.join(failed)}); drift not assessed")
+            continue
+        head_set = probes["HEAD"]
+        assert head_set is not None  # failed-probe branch above already continued
+        ok_labels = ", ".join(f"`{label}`" for label in sorted(probes))
+        for p in sorted(paths):
+            if p in head_set:
+                n_at_head += 1
+                continue
+            holders = sorted(
+                label
+                for label, tracked in probes.items()
+                if label != "HEAD" and tracked is not None and p in tracked
+            )
+            if holders:
+                branch_only.append(f"`{p}` (on {', '.join(holders)}, not at HEAD)")
+            else:
+                missing.append(
+                    f"body-linked figure `{p}` is tracked at its pinned-SHA URL but MISSING "
+                    f"from every live local ref ({ok_labels}) — the immutable pinned URL "
+                    "still renders, so this tracking loss is otherwise silent (incident "
+                    "#841); restore with `git restore --source=<pinned-sha> -- <path>` and "
+                    "commit on the intended live branch"
+                )
+    suffix = ""
+    if branch_only:
+        suffix += (
+            "; BRANCH-ONLY (not at HEAD/main — expected pre-merge): "
+            + ", ".join(branch_only)
+            + ". If this task is already merged/completed, the canonical copy is missing "
+            "from main — restore with `git restore --source=<pinned-sha> -- <path>` and "
+            "commit on main."
+        )
+    if skipped:
+        suffix += "; skipped: " + "; ".join(skipped)
+    if missing:
+        return CheckResult(name, True, "; ".join(missing) + suffix, is_warn=True)
+    return CheckResult(name, True, f"{n_at_head} figure path(s) tracked at HEAD" + suffix)
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -2330,8 +2528,12 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     shape for TL;DR figure URLs). ALL scans run on fence-stripped text
     (same fence policy as check 8b: a URL inside a ``` example — e.g. a
     reproduce-command block — is illustrative, not a provenance link;
-    unified 2026-06-09, second #507 follow-up). Shape checks only —
-    existence probing for same-repo raw URLs is check 8b's job.
+    unified 2026-06-09, second #507 follow-up). Blockquote lines
+    (`>`-prefixed, incl. nested/indented quotes) are stripped too — the
+    `**Context:**` row's verbatim originating-prompt quote may cite bare
+    URLs that must be preserved verbatim (never paraphrased; #825/#959);
+    pinned-link requirements bind on the non-quoted rows. Shape checks
+    only — existence probing for same-repo raw URLs is check 8b's job.
     """
     repro = _repro_section_text(body)  # v4 footer or `## Reproducibility` H2
     if repro is None:
@@ -2339,10 +2541,11 @@ def check_repro_url_permanence(body: str) -> CheckResult:
             "Reproducibility URL permanence", False, "Reproducibility section missing"
         )
     bad: list[str] = []
-    # Every scan below runs on fence-stripped text: a URL inside a ```
-    # example is illustrative, never a provenance link (fence policy
-    # shared with check 8b).
-    scanned = _strip_fenced_blocks(repro)
+    # Every scan below runs on fence-stripped, then blockquote-stripped
+    # text: a URL inside a ``` example is illustrative, and a URL inside
+    # a `>` blockquote is verbatim-quoted provenance TEXT — neither is a
+    # provenance link (policy shared with check 8b; #959).
+    scanned = _strip_blockquote_lines(_strip_fenced_blocks(repro))
     # HF Hub URLs must include /tree/<ref>, /blob/<ref>, /raw/<ref>, or @<ref>.
     hf_urls = re.findall(r"https?://huggingface\.co/[^\s\)<>]+", scanned)
     for url in hf_urls:
@@ -3644,6 +3847,28 @@ def _strip_fenced_blocks(text: str) -> str:
     return "\n".join(out)
 
 
+# URL scans over the Reproducibility/footer region ALSO ignore markdown
+# blockquote lines (`>`-prefixed, incl. nested `> >` and indented `  > `
+# quotes). In that region a blockquote is the SPEC-mandated verbatim
+# originating-prompt quote (`**Context:**` row — never paraphrased),
+# whose text may cite bare URLs the author is not allowed to edit
+# (#825 → task #959). The quote is provenance TEXT, not a provenance
+# LINK; pinned artifact links live on the non-quoted footer rows, which
+# stay fully checked. Lazy continuation lines (quote text wrapped
+# without a leading `>`) stay scanned — the failure mode is the pre-fix
+# behavior (scanned), never a silently widened exemption. Apply AFTER
+# `_strip_fenced_blocks` (a quoted fence marker `> ``` ` must not
+# toggle fence state; it doesn't — the fence pass keys on lines that
+# START with the fence marker).
+def _strip_blockquote_lines(text: str) -> str:
+    """Drop lines whose first non-whitespace character is `>`.
+
+    Returns the remaining lines joined by newlines; used by checks 8 and
+    8b so a verbatim-quoted URL is never treated as a provenance link.
+    """
+    return "\n".join(line for line in text.splitlines() if not line.lstrip().startswith(">"))
+
+
 # A "committed ... at commit `<sha>`" claim. The trigger word ``committed``
 # must appear somewhere before the literal phrase ``at commit `<sha>` `` on
 # the SAME line. The sha must be a 4-40 char hex literal wrapped in
@@ -4090,6 +4315,57 @@ def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
     return "fail", f"`{path}` is NOT present in the tree at commit `{sha}`"
 
 
+def _git_issue_branch_family(repo: Path, issue_n: str) -> list[str] | None:
+    """Local branch family for an issue: `refs/heads/issue-<N>` plus every
+    `refs/heads/issue-<N>-*` follow-up branch, via ONE
+    `git for-each-ref --format='%(refname:short)'` call (check 29).
+
+    Returns short names (e.g. `['issue-841', 'issue-841-fu2']`); `[]` when
+    no family branch exists; None on any git error (fail-soft — the caller
+    degrades the issue dir to a skip note, never a WARN)."""
+    try:
+        r = subprocess.run(
+            [
+                "git",
+                "for-each-ref",
+                "--format=%(refname:short)",
+                f"refs/heads/issue-{issue_n}",
+                f"refs/heads/issue-{issue_n}-*",
+            ],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()]
+
+
+def _git_tracked_under(repo: Path, ref: str, prefix: str) -> set[str] | None:
+    """Set of paths tracked under `prefix` in the tree at `ref` — ONE
+    `git -c core.quotePath=off ls-tree -r --name-only <ref> -- <prefix>`
+    per call (check 29). Reads the tree object, NOT the working tree, so
+    sparse checkouts are fine; `quotePath=off` keeps non-ASCII paths raw so
+    set membership works. None on any git error (fail-soft: the caller
+    degrades that REF to unprobed — never a WARN from a failed probe)."""
+    try:
+        r = subprocess.run(
+            ["git", "-c", "core.quotePath=off", "ls-tree", "-r", "--name-only", ref, "--", prefix],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return {line.strip() for line in r.stdout.splitlines() if line.strip()}
+
+
 def check_repro_committed_claims_exist(body: str) -> CheckResult:
     """Reproducibility "committed at commit `<sha>`" claims must resolve.
 
@@ -4246,13 +4522,17 @@ def _gather_repro_artifact_urls(repro: str) -> list[str]:
     `raw.githubusercontent.com/<this-repo>/<sha>/<path>` raw links and
     `github.com/<this-repo>/(blob|tree)/<sha>/<path>` HTML links. Fenced
     code blocks are stripped first so a URL shown inside a ``` ... ```
-    example is illustrative, never probed. Other hosts (HF Hub, WandB)
+    example is illustrative, never probed. Blockquote lines
+    (`>`-prefixed) are stripped too — a same-repo URL quoted inside the
+    verbatim originating-prompt blockquote (`**Context:**` row) must not
+    be existence-probed: the quote cannot be edited if its cited path
+    later dies (#959). Other hosts (HF Hub, WandB)
     and other-repo GitHub links are out of scope: their existence is not
     decidable from the local object DB, and an unauthenticated 404 on an
     external private repo would false-FAIL. Order-preserving and
     deduplicated (at most one probe per unique URL)."""
     urls: list[str] = []
-    for token in _REPRO_URL_TOKEN_RE.findall(_strip_fenced_blocks(repro)):
+    for token in _REPRO_URL_TOKEN_RE.findall(_strip_blockquote_lines(_strip_fenced_blocks(repro))):
         url = token.rstrip(".,;:!?")
         for pattern in (_RAW_GITHUB_FIGURE_RE, _GITHUB_BLOB_TREE_URL_RE):
             m = pattern.match(url)
@@ -5409,6 +5689,186 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
     )
 
 
+# ─── Check 28: opaque config-code tokens in figure text ────────────────────
+#
+# Sibling of checks 24/26 (same figure iteration + `_read_figure_meta_json`
+# sidecar read), but the flagged property is INTRINSIC to the sidecar's own
+# strings — no body comparison: rendered figure text must use plain-English
+# condition names, never internal config shorthand (`ctx_blk_max@L12`).
+
+# (a) `@L<digits>` layer pins, with any attached snake stem captured whole
+#     (`ctx_blk_max@L12`); bare `@L12` also matches (no leading \b — `@` is a
+#     non-word char, so a \b there would fail on a space-preceded bare pin).
+_LAYER_PIN_RE = re.compile(r"\w*@L\d+\b")
+
+# (b) snake_case token, >=2 segments, starting with a letter. The classifier
+#     below flags only >=3-segment or digit-bearing matches (2-segment
+#     all-alpha metric / persona names like `log_prob` are legitimate labels).
+_SNAKE_TOKEN_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+\b")
+
+# Path/URI-SHAPED string: no internal whitespace and at least one path
+# separator — a file path or URL, which is provenance, not rendered text.
+# Deliberately NOT a whole-string any-slash skip: a slash-separated rendered
+# label like `ctx_blk_max / ans_uhdr_max` contains whitespace, so it IS
+# scanned (a whole-string any-slash form would false-clean slash-separated
+# labels inside the incident class).
+_PATH_SHAPED_RE = re.compile(r"^\S*[/\\]\S*$")
+
+
+def _opaque_code_tokens(text: str) -> list[str]:
+    """Return the opaque config-code tokens in ONE sidecar string: `@L<d>`
+    layer pins, and snake_case tokens that are >=3 segments OR carry any
+    digit (`ctx_blk_max`, `sw_eng_C1`, `BS_E0`, `cond_4`); 2-segment
+    all-alpha tokens (`log_prob`, `judge_rate`, `helpful_assistant`) are
+    allowed. PATH-SHAPED strings (whitespace-free with a path separator —
+    file paths, URLs) are exempt from BOTH token scans (pins AND snakes);
+    strings that merely CONTAIN a slash (e.g. a slash-separated rendered
+    label) are still scanned, with individual path-shaped whitespace-split
+    words skipped for both token classes. De-duped case-insensitively,
+    order kept.
+    """
+    hits: list[str] = []
+    if not _PATH_SHAPED_RE.match(text.strip()):
+        words = text.split()
+
+        def _only_in_path_words(tok: str) -> bool:
+            """True iff every whitespace-split word containing `tok` is
+            path-shaped ("see figures/x_1/y.png") — provenance, not
+            rendered text, so the token is skipped."""
+            ws_words = [w for w in words if tok in w]
+            return bool(ws_words) and all(_PATH_SHAPED_RE.match(w) for w in ws_words)
+
+        for m in _LAYER_PIN_RE.finditer(text):
+            tok = m.group(0)
+            # Same containing-word path skip snake tokens get (round-2
+            # concern layer-pin-path-exemption): a pin inside a path word
+            # ("figures/issue_920/ctx_blk_max@L12.png") is provenance.
+            if _only_in_path_words(tok):
+                continue
+            hits.append(tok)
+        for m in _SNAKE_TOKEN_RE.finditer(text):
+            tok = m.group(0)
+            if _only_in_path_words(tok):
+                continue
+            if tok.count("_") >= 2 or any(ch.isdigit() for ch in tok):
+                hits.append(tok)
+    seen: set[str] = set()
+    out: list[str] = []
+    for t in hits:
+        key = t.casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(t)
+    return out
+
+
+def _iter_meta_label_values(obj: object) -> list[str]:
+    """Collect the rendered-text-bearing strings of a parsed sidecar for
+    check 28: string VALUES (provenance-keyed subtrees pruned via
+    ``_META_PROVENANCE_KEYS``) plus dict KEYS containing internal whitespace
+    (axis-label-keyed data rows, e.g. ``{"1/30 chance accuracy": 0.41}``).
+    Identifier-shaped keys (``_kind``, ``cell_slugs``, translation-map slug
+    keys) are structural provenance and are NOT collected — the deliberate
+    divergence from check 24's ``_flatten_meta_strings``, which collects all
+    non-provenance keys.
+    """
+    out: list[str] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.casefold() in _META_PROVENANCE_KEYS:
+                continue
+            if isinstance(k, str) and " " in k.strip():
+                out.append(k)
+            out.extend(_iter_meta_label_values(v))
+    elif isinstance(obj, list):
+        for item in obj:
+            out.extend(_iter_meta_label_values(item))
+    elif isinstance(obj, str) and obj.strip():
+        out.append(obj)
+    return out
+
+
+def check_figure_label_codes(body: str) -> CheckResult:
+    """Check 28 (WARN): rendered figure text (sidecar ``.meta.json`` values)
+    must not carry opaque config-code tokens — ``@L<digits>`` layer pins or
+    regime-code slugs (``ctx_blk_max``, ``sw_eng_C1``). Plain-English
+    condition names are the rule end to end (memory
+    feedback_no_opaque_condition_codes, SPEC statistical-framing bullet);
+    config slugs belong in the Repro config row / provenance keys. Incident
+    #920: ``winning_cell_scatter.png`` reached the 9a-bis gate titled
+    ``ctx_blk_max@L12 x ans_uhdr_max@L12`` after three review passes each
+    deferred it as a cosmetic nit.
+
+    Coverage = sidecar-CARRIED strings only: string values (provenance
+    subtrees pruned) plus whitespace-bearing dict keys. Known residuals,
+    accepted by design: (i) a slug-bearing figure TITLE with no ad-hoc
+    sidecar echo is invisible — the canonical ``savefig_paper`` writer never
+    serializes titles (PNG-pixel text stays the multimodal critics'
+    substantive read); (ii) a bare slug used as a whitespace-free column KEY
+    is unscanned; (iii) a slug or ``@L`` pin inside a path-shaped word (or a
+    whole path-shaped string) is exempt — the path exemption covers BOTH
+    token classes. WARN,
+    never FAIL; fail-soft on missing / unparsable sidecars (the check-24
+    convention, NOT check 26's loud missing-sidecar FAIL); NO-OP PASS
+    offline / no figures / no scannable same-repo sidecar.
+    """
+    label = "figure text opaque config codes (slug / @L-pin tokens)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    meta_cache: dict[str, dict | None] = {}
+    warns: list[str] = []
+    scanned = 0
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        if url not in meta_cache:
+            meta_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+        meta = meta_cache[url]
+        if meta is None:
+            continue  # no sidecar / unparsable — fail-soft skip (check-24 convention)
+        scanned += 1
+        toks: list[str] = []
+        for s in _iter_meta_label_values(meta):
+            toks.extend(_opaque_code_tokens(s))
+        toks = list(dict.fromkeys(toks))
+        if toks:
+            basename = m.group("path").rsplit("/", 1)[-1]
+            preview = ", ".join(f"`{t}`" for t in toks[:4]) + (" …" if len(toks) > 4 else "")
+            warns.append(
+                f"`{basename}` figure text carries opaque config-code token(s) {preview} — "
+                "use plain-English condition names in rendered figure text (slugs belong in "
+                "the Repro config row / provenance keys); regenerate, or acknowledge in body"
+            )
+    if warns:
+        head = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} figure(s) with opaque code tokens of {scanned} scanned: {head}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        return CheckResult(
+            label, True, "no same-repo figure sidecar with scannable text — nothing to scan"
+        )
+    return CheckResult(label, True, f"{scanned} figure sidecar(s) free of opaque config codes")
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -5416,14 +5876,40 @@ def check_figure_panel_prose_vs_sidecar(body: str) -> CheckResult:
 # ("themselves were not separately uploaded"). Case-insensitive; the
 # apostrophe in "wasn't" / "can't" matches both the ASCII `'` and the curly
 # right-single-quote (real clean-result bodies use either) via `_APOS`.
+#
+# The #813 quota-hold family (the last four alternations) covers a LIVE
+# pod-residency / storage-quota claim of non-availability ("remain on the
+# pod", "quota-held", "under/pending/behind/blocked on the ... quota hold",
+# "upload 403") \u2014 present-tense/stative shapes only, so a resolved narrative
+# never fires (see the inline comment in the regex).
 _APOS = "['\u2019]"  # ASCII apostrophe or curly right-single-quote (U+2019)
 _AUDIT_DENIAL_RE = re.compile(
     r"(?:not\s+(?:separately\s+)?uploaded"
     r"|was\s+not\s+uploaded|wasn" + _APOS + r"t\s+uploaded"
     r"|cannot\s+be\s+audited|cannot\s+audit|can" + _APOS + r"t\s+be\s+audited"
-    r"|(?:un|not\s+)available\s+for\s+audit)",
+    r"|(?:un|not\s+)available\s+for\s+audit"
+    # The #813 family — a LIVE quota-hold / pod-residency claim of
+    # non-availability. Present-tense / stative shapes ONLY (deliberately NOT
+    # `remained ... on the pod` and NOT a bare `quota hold` without a stative
+    # preposition): a resolved narrative ("after the quota hold cleared, all
+    # files were uploaded") is not a denial and must not fire.
+    r"|\bremain(?:s)?\s+on\s+the\s+pod\b"
+    r"|\bquota[ _-]held\b"
+    r"|(?:under|pending|behind|blocked\s+(?:on|by))\s+(?:the\s+|an?\s+)?"
+    r"(?:[\w-]+\s+){0,4}?quota\s+hold"
+    r"|\bupload\s+403\b)",
     re.IGNORECASE,
 )
+# Cheap per-line pre-filter: every _AUDIT_DENIAL_RE alternation family
+# contains >=1 of these substrings ("upload" covers uploaded / upload 403 /
+# unuploaded; "quota" the hold/held family; "pod" the remain-on-the-pod
+# family). Pinned in sync with the denial regex by
+# test_prefilter_covers_every_denial_family. Before #942 the pre-filter was an
+# inline `"uploaded" not in line and "audit" not in line` — which skipped the
+# #813 line-51 phrasing ("... ride the unreduced activation store (quota-held
+# on the pod at write time)", neither token present) before the denial regex
+# ever ran, so extending the regex alone would have been dead code there.
+_AUDIT_LINE_PREFILTER_RE = re.compile(r"upload|audit|quota|\bpod\b", re.IGNORECASE)
 # Artifact classes whose HF upload-path convention is known. A denial claim
 # co-located (same line) with one of these names a concrete, mechanically
 # probe-able artifact class — the only case this check fires on (a bare
@@ -5447,6 +5933,27 @@ _AUDIT_ARTIFACT_CLASSES: dict[str, re.Pattern[str]] = {
         r"on[ _-]?policy[ _-](?:pools?|completions?)|onpolicy[ _-]pools?", re.IGNORECASE
     ),
     "analysis_tensors": re.compile(r"analysis[ _-]tensors?", re.IGNORECASE),
+    # #813 (issue813_mapchange_substrate) layout: unreduced/ (per-question
+    # activation stores), reduced/ (per-question stores + summaries), maps/
+    # (fitted maps). Prose spellings from the #813 v1 body verbatim. The
+    # leading \b on "reduced" cannot fire inside "unreduced" (no word
+    # boundary there); bare `\bstores?\b` and bare singular `map\b` are
+    # deliberately EXCLUDED (common noun/verb in analysis prose).
+    "unreduced": re.compile(
+        r"\bunreduced\s+(?:activation\s+|per[ -]question\s+)?stores?\b"
+        r"|\bactivation\s+stores?\b",
+        re.IGNORECASE,
+    ),
+    "reduced": re.compile(
+        r"\breduced\s+(?:per[ -]question\s+)?stores?\b|\breduced\s+summar(?:y|ies)\b",
+        re.IGNORECASE,
+    ),
+    "maps": re.compile(
+        r"\bfitted[ _-]maps?\b"
+        r"|\b(?:behavior|linear|averaged|per[ -]example|factored)[ _-]maps?\b"
+        r"|\bmaps\b",
+        re.IGNORECASE,
+    ),
 }
 
 
@@ -5491,14 +5998,28 @@ def _audit_denied_artifact_classes_in(line: str) -> list[str]:
     return out
 
 
+def _audit_keyword_path_re(keyword: str) -> re.Pattern[str]:
+    """Alphanumeric-boundary matcher for a canonical HF-path ``keyword``
+    (check 25): the keyword must appear as a path-component-like token, NOT a
+    bare substring — so ``reduced`` never matches ``unreduced/``. ``/``, ``_``,
+    ``.`` and ``-`` all count as boundaries (the legacy tokens keep matching
+    their real path shapes: ``.../raw_completions/...``, ``..._mixes.jsonl``);
+    an adjacent letter or digit does not. Callers search ``path.lower()``; the
+    keyword is lowercased here, so the match is case-insensitive.
+    """
+    return re.compile(r"(?<![a-z0-9])" + re.escape(keyword.lower()) + r"(?![a-z0-9])")
+
+
 def _hf_probe_keyword(
     repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
 ) -> tuple[str, str]:
     """Bounded direct-GET depth-agnostic keyword probe (check 25).
 
     Lists the URL's OWN sub-tree (`recursive=True` scoped to ``path_prefix``,
-    NOT the whole repo) and substring-matches ``keyword`` in any FILE path
-    under the prefix. The keyword can be nested at ANY depth (#653: the denial
+    NOT the whole repo) and matches ``keyword`` as an ALPHANUMERIC-BOUNDARY
+    path component (``_audit_keyword_path_re`` — never a bare substring, so
+    ``reduced`` cannot match ``unreduced/``; #942) in any FILE path under the
+    prefix. The keyword can be nested at ANY depth (#653: the denial
     linked the tree ROOT while the file lives several levels down), so the
     scoped recursive listing is followed across Link-header pages OURSELVES
     under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
@@ -5508,7 +6029,7 @@ def _hf_probe_keyword(
     check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
     denial against a revision that does not exist).
     """
-    kw = keyword.lower()
+    kw_re = _audit_keyword_path_re(keyword)
     needle = path_prefix.strip("/")
     url = _hf_tree_url(repo_id, repo_type, sha, needle)
     params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
@@ -5524,7 +6045,11 @@ def _hf_probe_keyword(
             return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
         for e in res.entries:
             path = e.get("path", "")
-            if e.get("type") == "file" and kw in path.lower() and _hf_under_prefix(path, needle):
+            if (
+                e.get("type") == "file"
+                and kw_re.search(path.lower())
+                and _hf_under_prefix(path, needle)
+            ):
                 return "pass", path  # denial is FALSE → body-level FAIL
         pages += 1
         if (
@@ -5556,12 +6081,15 @@ def _hf_keyword_present_under_prefix(
     Lists the URL's OWN sub-tree at the cited revision (a BOUNDED direct
     tree-endpoint GET with self-paginated recursion under a page/time cap —
     ``_hf_probe_keyword`` → ``_hf_tree_get``, NOT the unbounded whole-repo
-    ``list_repo_files``, #733) and substring-matches the keyword anywhere in
-    the path, restricted to files under ``path_prefix``. A keyword nested at
-    ANY depth below the prefix counts — the #653 denial linked the repo TREE
+    ``list_repo_files``, #733) and matches the keyword as an
+    alphanumeric-boundary path component anywhere in the path
+    (``_audit_keyword_path_re`` — `/` and `_` count as boundaries; NOT a bare
+    substring, so ``reduced`` cannot match ``unreduced/``; #942), restricted
+    to files under ``path_prefix``. A keyword nested at ANY depth below the
+    prefix counts — the #653 denial linked the repo TREE
     ROOT (`…/issue653_install-validated-reladder`) while the file lives several
     levels down at `…/raw_completions/armB/install_probes/cell0/…`, so a fixed
-    `<prefix>/<keyword>` candidate path would miss it; substring-on-the-listing
+    `<prefix>/<keyword>` candidate path would miss it; matching on the listing
     is depth-agnostic.
 
     Returns ``(verdict, matched_path)`` with verdict one of:
@@ -5614,6 +6142,25 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
     hand; this check mechanizes it so a future analyzer's honest-but-wrong
     non-availability claim FAILs before promotion.
 
+    The #813 pattern (the quota-hold family, added by #942): the v1 body
+    asserted the unreduced store / reduced summaries / fitted maps "remain
+    on the pod under an HF public-storage quota hold (upload 403)" while
+    `epm:upload-verification` + an independent listing proved all 24,206
+    artifacts WERE on HF at the body-pinned revision. Two vocabularies were
+    missing (the quota-hold denial family in `_AUDIT_DENIAL_RE`; the
+    `unreduced` / `reduced` / `maps` classes in `_AUDIT_ARTIFACT_CLASSES`),
+    and the old inline pre-filter (`"uploaded" not in line and "audit" not
+    in line`) skipped quota-hold phrasings before the regex ever ran — the
+    pre-filter is now the module-level `_AUDIT_LINE_PREFILTER_RE`, kept in
+    sync with every denial-alternation family by
+    `test_prefilter_covers_every_denial_family`. NOTE the scoping: this
+    check probes ONLY revision-pinned HF URLs the body itself carries, so it
+    protects a body that pins a covering HF URL; the #813 v1 incident-time
+    body carried the denial with NO covering pinned URL and would still PASS
+    vacuously — the no-URL escape is pre-existing check-25 architecture,
+    shared by every denial family and artifact class, and is NOT closed by
+    the #942 vocabulary extension.
+
     Mechanism (standalone — no `events.jsonl` / marker read, keeping the
     verifier self-contained): scan the fence-stripped body line by line for
     a line carrying BOTH (a) an availability-denial phrase
@@ -5654,8 +6201,10 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
     # HF-path tokens.
     suspect_keywords: list[str] = []
     for line in stripped.splitlines():
-        if "uploaded" not in line.lower() and "audit" not in line.lower():
-            continue  # cheap pre-filter before the proximity scan
+        if not _AUDIT_LINE_PREFILTER_RE.search(line):
+            continue  # cheap pre-filter before the proximity scan (kept in
+            # sync with every _AUDIT_DENIAL_RE alternation family — see the
+            # constant's comment + test_prefilter_covers_every_denial_family)
         for canonical in _audit_denied_artifact_classes_in(line):
             if canonical not in suspect_keywords:
                 suspect_keywords.append(canonical)
@@ -5748,7 +6297,12 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
     # importing the module (verifier may run from a non-main worktree
     # where the branch-guard refuses to resolve).
     events: list[dict] = []
-    for line in concerns_path.read_text().splitlines():
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False concern evidence/notes are Unicode line boundaries
+    # that would shred a VALID row into fragments the per-line skip silently
+    # drops — a raised BLOCKER then vanishes and check 14 falsely PASSes
+    # (gotchas.md; #825 → #950).
+    for line in concerns_path.read_text().split("\n"):
         if not line.strip():
             continue
         try:
@@ -6186,6 +6740,109 @@ def _count_extra_followup_rounds(body: str) -> int:
     return max(0, data_rows - 1)
 
 
+# One clause per FOLDED same-issue follow-up round in the v4 footer
+# (SPEC.md § `**Context:**` row: rounds name each round's `followup_label`;
+# corpus forms: "same-issue follow-up round `<label>`" (#763/#811/#667) and
+# the sentence-initial numbered variant "Same-issue follow-up round 2
+# (label: `<label>`, ...)" (#685 footer) — hence IGNORECASE + the optional
+# `<n> (label: ` infix. The `(?!s)` lookahead keeps generic plural prose
+# ("follow-up rounds also name...") out of the count; an unlabeled singular
+# clause still counts 1.
+_V4_FOOTER_ROUND_CLAUSE_RE = re.compile(
+    r"same-issue follow-up round(?!s)"
+    r"(?:\s+(?:\d+\s*\(label:\s*)?`(?P<label>[^`\s]+)`)?",
+    re.IGNORECASE,
+)
+
+
+def _followup_run_marker_rounds(issue: int) -> int:
+    """Count REAL folded same-issue follow-up rounds off the task's
+    events.jsonl `epm:same-issue-followup-run` markers: distinct
+    `followup_label`s (one run marker closes a label's round) plus one per
+    unlabeled run marker, EXCLUDING markers whose `outcome` begins
+    `retroactive-close` — bookkeeping closes of ghost labels that folded
+    no new prose (they are likewise excluded from the /issue round caps,
+    SKILL.md). Returns 0 when the task id does not resolve (a plain
+    FileNotFoundError — e.g. a fixture body under a numeric tmp dir); a
+    `StaleTaskPathError` (registry corruption, a FileNotFoundError
+    SUBCLASS) still propagates — that is real corruption the gate should
+    surface, unlike an unknown id."""
+    from explore_persona_space.task_workflow import (  # local import — matches _load_text_for_issue
+        FOLLOWUP_RUN_KIND,
+        StaleTaskPathError,
+        list_events,
+        parse_followup_note_field,
+    )
+
+    try:
+        events = list_events(issue)
+    except StaleTaskPathError:
+        raise
+    except FileNotFoundError:
+        return 0
+    labels: set[str] = set()
+    unlabeled = 0
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        note = ev.get("note") or ""
+        # `parse_followup_note_field` matches only LINE-LEADING fields, but
+        # the corpus run-marker notes are SINGLE-LINE (all fields space-
+        # separated; #763's `outcome:` is mid-line and parses to None).
+        # Mid-line regex fallback so a single-line retro-close marker
+        # cannot evade the exclusion.
+        outcome = parse_followup_note_field(note, "outcome") or ""
+        if not outcome:
+            m = re.search(r"(?:^|\s)outcome:\s*(\S+)", note)
+            outcome = m.group(1) if m else ""
+        if outcome.startswith("retroactive-close"):
+            continue
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            labels.add(label)
+        else:
+            unlabeled += 1
+    return len(labels) + unlabeled
+
+
+def _count_extra_followup_rounds_v4(body: str, issue: int | None = None) -> tuple[int, str]:
+    """v4 twin of `_count_extra_followup_rounds` (whose `## What I ran`
+    Rounds-table read only binds v3 — v4 bodies always scored rounds=0,
+    incident #763/#921). Two signals, max-reconciled — the budget is
+    WARN-only and monotone-up, and each signal under-counts in a known
+    case (footer: a body omitting the SPEC round clause, e.g. #685;
+    events: a legacy pre-marker round whose prose IS folded, e.g. #811):
+
+    - footer: `same-issue follow-up round [`label`]` clauses inside the
+      `**Repro:**`/`**Context:**` footer (distinct backticked labels +
+      one per unlabeled singular clause);
+    - events (when `issue` is known): non-retroactive-close
+      `epm:same-issue-followup-run` markers via
+      `_followup_run_marker_rounds`.
+
+    Returns `(count, source)`; `source` is one of `none` / `footer` /
+    `events` / `footer+events` and names the winning signal for the WARN
+    message. Bare-file residual: in `--body-stdin` / bare `--file` mode
+    (no issue id) the events leg is unavailable, so a footer-less
+    multi-round body scores 0 and keeps the base budget."""
+    footer = _v4_footer_text(body) or ""
+    labels: set[str] = set()
+    unlabeled = 0
+    for m in _V4_FOOTER_ROUND_CLAUSE_RE.finditer(footer):
+        if m.group("label"):
+            labels.add(m.group("label"))
+        else:
+            unlabeled += 1
+    footer_n = len(labels) + unlabeled
+    events_n = _followup_run_marker_rounds(issue) if issue is not None else 0
+    count = max(footer_n, events_n)
+    if count == 0:
+        return 0, "none"
+    if footer_n == events_n:
+        return count, "footer+events"
+    return count, "footer" if footer_n > events_n else "events"
+
+
 def _count_overlong_takeaways_bullets(takeaways: str) -> int:
     """Count top-level Takeaways bullets over the per-bullet word cap
     (fence-aware). Helper for check 20."""
@@ -6413,7 +7070,7 @@ def check_v4_methodology_shape(body: str) -> CheckResult:
     )
 
 
-def check_v4_word_caps(body: str) -> CheckResult:
+def check_v4_word_caps(body: str, *, issue: int | None = None) -> CheckResult:
     """Check 20 (v4 only): the v4 conciseness caps (same constants as v3).
 
     - Per-Takeaways-bullet ≤30 words (WARN).
@@ -6424,9 +7081,12 @@ def check_v4_word_caps(body: str) -> CheckResult:
       EXCLUDED — it carries the absorbed methodology-doc content) ≤800 +
       250 per live follow-up round beyond the first (WARN-only).
 
-    The Takeaways 3-6 bullet COUNT is owned by `check_v4_structure`. A FAIL
-    here fires ONLY on the per-result ≥180-word hard cap. PASSes vacuously
-    on v3 / v2 / legacy bodies.
+    The per-extra-round scaling counts folded rounds from the task's
+    non-retroactive `epm:same-issue-followup-run` markers (via ``issue``,
+    when known) and/or the footer's round clauses (max), NOT the v3
+    Rounds table (#921). The Takeaways 3-6 bullet COUNT is owned by
+    `check_v4_structure`. A FAIL here fires ONLY on the per-result
+    ≥180-word hard cap. PASSes vacuously on v3 / v2 / legacy bodies.
     """
     label = "v4 conciseness caps"
     if not is_v4(body):
@@ -6462,7 +7122,7 @@ def check_v4_word_caps(body: str) -> CheckResult:
     # Total content prose (WARN-only): Takeaways + Goal + Results. The
     # `## Methodology` section is EXCLUDED — it absorbed the entire former
     # standalone methodology doc and is reference, not skim prose.
-    extra_rounds = _count_extra_followup_rounds(body)
+    extra_rounds, rounds_src = _count_extra_followup_rounds_v4(body, issue)
     total_budget = V3_TOTAL_PROSE_BASE_WORDS + extra_rounds * V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS
     total_prose = (
         _prose_words(takeaways)
@@ -6473,8 +7133,8 @@ def check_v4_word_caps(body: str) -> CheckResult:
         warns.append(
             f"total content prose is {total_prose} words (budget {total_budget}: "
             f"{V3_TOTAL_PROSE_BASE_WORDS} + {extra_rounds} x "
-            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round; "
-            "Methodology excluded)"
+            f"{V3_TOTAL_PROSE_PER_EXTRA_ROUND_WORDS} per extra round "
+            f"[{rounds_src}]; Methodology excluded)"
         )
 
     if fails:
@@ -6588,6 +7248,198 @@ def check_v4_results_beat(body: str) -> CheckResult:
         )
     return CheckResult(
         label, True, f"all {len(result_h3s)} `### <result>`(s) framed (figure-bearing ones)"
+    )
+
+
+# ─── v4 bare-issue-ref check (27) ─────────────────────────────────────────────
+
+# Bare issue reference: `#779`, `(#537)`, `#658's`. Bounded to 1-4 digits so an
+# all-digit 6-hex color (`#000000`) cannot match (fail-open on hypothetical
+# 5-digit issue ids beats fail-closed on hex colors — the LM lens is the
+# backstop). Lookbehind: not preceded by a word char (`file#123`), `&` (HTML
+# entities `&#8212;`), `/` (URL fragments `path/#123`), or `#`. Right guard
+# `(?!\w)`: the digit run must not abut a word char, so `#123abc` and the
+# digit prefix of a mixed hex color (`#4b5563` → `#4`) never match; a
+# possessive `#658's` still does (an apostrophe is not a word char).
+_BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\w)")
+_V4_STANDALONE_SECTIONS = ("takeaways", "methodology", "results")
+
+
+def _mask_html_comment_spans(line: str, in_comment: bool) -> tuple[str, bool]:
+    """Replace every HTML-comment span in `line` with spaces, threading the
+    multiline open/closed state across calls (one call per line, in order).
+
+    Character-grain, not line-grain: a line that OPENS a comment keeps its
+    prefix prose scannable (only `<!--`..end-of-line is masked); a line
+    that CLOSES one keeps its suffix scannable (only up to and including
+    `-->` is masked); any number of `<!-- ... -->` segments per line are
+    each masked with the prose between them kept, and a close-then-reopen
+    line (`<!-- a --> mid <!-- b`) returns the state OPEN so following
+    interior lines stay masked. Spans are substituted with same-length
+    runs of spaces — never deleted — so no token join can fabricate a
+    `#N` the raw line never carried.
+
+    Returns (masked_line, out_state); len(masked_line) == len(line).
+    """
+    out: list[str] = []
+    pos = 0
+    n = len(line)
+    while pos < n:
+        if in_comment:
+            close = line.find("-->", pos)
+            if close == -1:
+                out.append(" " * (n - pos))
+                pos = n
+            else:
+                end = close + 3
+                out.append(" " * (end - pos))
+                pos = end
+                in_comment = False
+        else:
+            opener = line.find("<!--", pos)
+            if opener == -1:
+                out.append(line[pos:])
+                pos = n
+            else:
+                out.append(line[pos:opener])
+                pos = opener
+                in_comment = True
+    masked = "".join(out)
+    assert len(masked) == len(line), (len(masked), len(line))
+    return masked, in_comment
+
+
+def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
+    """Return (section_name, matched_token, line_text) for every bare
+    `#<digits>` issue reference in the v4 standalone sections
+    (## Takeaways / ## Methodology / ## Results), excluding every
+    sanctioned form. `body` is the post-frontmatter text (as handed to
+    CHECKS entries by verify_text), so frontmatter bare refs never reach
+    the scan.
+
+    Sanctioned forms excluded: fenced code blocks, `<details>` blocks,
+    HTML comments (char-span mask with cross-line open/closed state —
+    `_mask_html_comment_spans`); GFM table rows; the
+    `**Repro:**`/`**Context:**` footer (line-index cut); markdown links
+    (label + target) and inline code spans (in-line neutralization,
+    substituting a single SPACE — never the empty string, which could
+    JOIN adjacent characters into a fabricated `#N` token, e.g.
+    ``#`x`123`` → `#123`).
+
+    HTML-comment handling is character-grain, not line-grain: on a line
+    that OPENS a multiline comment only the `<!--`..end-of-line span is
+    masked (prefix prose IS scanned — `Uses #779 corpus <!-- note`
+    hits); on a line that CLOSES one only the span up to and including
+    `-->` is masked (suffix prose IS scanned — `--> still follows #781`
+    hits); multiple `<!-- ... -->` segments per line are each masked
+    with the prose between them scanned, and a close-then-reopen line
+    (`<!-- a --> mid <!-- b`) leaves the state OPEN so following
+    interior lines stay masked (no false hit on a `#K` inside the still
+    open comment). The `<details>` counter reads the comment-MASKED
+    text, so a commented-out `<details>` tag cannot open the details
+    mask.
+
+    Documented residual edges (the clean-result-critic Lens 2 LM read is
+    the backstop; direction noted per item):
+
+    - The `<details>` open/close counter runs PRE-neutralization (before
+      link/inline-code masking), so a backticked ``<details>`` prose
+      mention opens the mask and excludes the remainder of the body
+      (fail-open — missed refs, never false FAILs).
+    - An unclosed `<details>` likewise excludes everything after it;
+      nesting is handled by the depth counter (fail-open).
+    - The comment char-span pass also runs PRE-neutralization, so a
+      backticked ``<!--`` prose mention opens the comment mask
+      (fail-open, same family as the backticked ``<details>``).
+    - 4-space indented code blocks and multi-line `[#K](\\nurl)` links
+      are NOT excluded (both survey-clean across all on-disk v4 bodies
+      as of 2026-07-03) — a `#K` inside either would false-FAIL; the
+      inline-code escape hatch covers the code-block case.
+    - In a slash-run `#658/#742` only the first token matches (the `/`
+      lookbehind protects URL fragments) — the line still FAILs, which
+      is sufficient.
+    """
+    lines = body.splitlines()
+    footer = _v4_footer_start_line(body)  # None -> no footer cut
+    table_idx = _table_row_line_indices(lines)
+    # Structural exclusion mask: line-grain for fenced code + <details>
+    # blocks, char-grain for HTML comments (comment_masked[i] = line i
+    # with every comment span space-substituted; mixed prose on comment
+    # opening/closing lines stays scannable). Single pass, whole-body
+    # (fences/details/comments may open in one section and close in
+    # another).
+    excluded: set[int] = set()
+    comment_masked: dict[int, str] = {}
+    in_fence = False
+    details_depth = 0
+    in_comment = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            excluded.add(i)
+            continue
+        if in_fence:
+            excluded.add(i)
+            continue
+        masked, in_comment = _mask_html_comment_spans(line, in_comment)
+        comment_masked[i] = masked
+        opens = len(re.findall(r"<details\b", masked, re.IGNORECASE))
+        closes = len(re.findall(r"</details>", masked, re.IGNORECASE))
+        if details_depth > 0 or opens:
+            excluded.add(i)
+        details_depth = max(0, details_depth + opens - closes)
+    hits: list[tuple[str, str, str]] = []
+    for name, start, end in find_h2_sections(body):
+        if name.casefold() not in _V4_STANDALONE_SECTIONS:
+            continue
+        for i in range(start, end):
+            if footer is not None and i >= footer:
+                continue  # footer + everything after
+            if i in excluded or i in table_idx:
+                continue
+            # Substitute a single space (never ""): an empty-string sub
+            # can JOIN the char before and after the removed span into a
+            # new `#N` token that the raw line never carried. Comment
+            # spans were already space-masked in comment_masked (every
+            # non-fence line has an entry; fence lines are excluded).
+            residue = _LINK_RE.sub(" ", comment_masked[i])  # [label](target) gone
+            residue = _INLINE_CODE_RE.sub(" ", residue)  # `code` escape hatch
+            for m in _BARE_ISSUE_REF_RE.finditer(residue):
+                hits.append((name, m.group(0), lines[i].strip()[:90]))
+    return hits
+
+
+def check_v4_no_bare_issue_refs(body: str) -> CheckResult:
+    """Check 27 (v4 only): no bare `#<digits>` issue refs in the standalone
+    sections. SPEC.md § `## Goal` (v4): the Goal context slot is the ONLY
+    place in the body that may cite prior tasks; `## Takeaways` /
+    `## Methodology` / `## Results` are standalone, and lineage/provenance
+    live in the `**Repro:**`/`**Context:**` footer. Sanctioned forms that
+    do not trip: markdown links (label + target), GFM table rows (the
+    Training-table Source column), fenced/inline code, `<details>` blocks,
+    HTML comments, the footer, YAML frontmatter. Exclusion edge behavior
+    (residuals + directions) is documented on `_bare_issue_ref_hits`. Origin: #841
+    round-2 (bare `#779` x~8 in Methodology survived two ensemble review
+    rounds). PASSes vacuously on v3 / v2 / legacy bodies (forward-only)."""
+    label = "no bare issue refs in standalone sections (v4)"
+    if not is_v4(body):
+        return CheckResult(label, True, "skipped — not a v4 body")
+    hits = _bare_issue_ref_hits(body)
+    if not hits:
+        return CheckResult(label, True, "Takeaways/Methodology/Results carry no bare `#K` refs")
+    shown = "; ".join(f'## {sec}: `{tok}` in "{txt}"' for sec, tok, txt in hits[:5])
+    more = f" (+{len(hits) - 5} more)" if len(hits) > 5 else ""
+    return CheckResult(
+        label,
+        False,
+        f"bare issue reference(s) in standalone section(s) — {shown}{more}. "
+        "Prior-issue references live ONLY in the `## Goal` context slot as "
+        "`[#K](https://eps.superkaiba.com/tasks/K)` links and in the `**Repro:**`/"
+        "`**Context:**` footer (SPEC.md § `## Goal` (v4) + Rule A). Rewrite the prose to "
+        "describe the method standalone and move lineage to the footer. The inline-code "
+        "escape hatch is for NON-issue `#N` strings only (a hex color, an ordinal like "
+        "`GPU #2`) — do NOT backtick a genuine issue reference to silence this check.",
     )
 
 
@@ -6877,16 +7729,21 @@ CHECKS = [
     check_data_subset_disclosure,  # check 19 (v3)
     check_data_unwrapped_example_table,  # check 19b (v3, WARN)
     check_v3_word_caps,  # check 20 (v3)
-    # v4-gated checks (PASS vacuously on non-v4 bodies):
+    # v4-gated checks (PASS vacuously on non-v4 bodies). Check 20 (v4)
+    # `check_v4_word_caps` is NOT here — it needs the issue number for the
+    # events-based folded-round budget scaling, so it is dispatched
+    # separately in `verify_text` (#921):
     check_v4_methodology_shape,  # check 18 (v4)
-    check_v4_word_caps,  # check 20 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
+    check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs in standalone sections
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
     check_figure_text_vs_body_tokens,  # check 24 (WARN)
     check_audit_availability_claims_match_hf,  # check 25
     check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
+    check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
+    check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
 ]
 
 
@@ -7036,6 +7893,12 @@ def verify_text(
     # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
     # whenever no doc is supplied (gate-timing — see the check docstring).
     results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
+    # Check 20 (v4) word caps needs the issue number for the events-based
+    # folded-round budget scaling (#921; the v3 twin stays body-only inside
+    # CHECKS), so it is dispatched separately like the other
+    # context-needing checks. PASS-skip on non-v4 bodies, and the events
+    # leg degrades to the footer-only read when `issue` is None/unknown.
+    results.append(check_v4_word_caps(body, issue=issue))
     # Check (#732, judge-API-error denominator) needs the issue number AND
     # the eval-root / body-source-path resolution legs (the body-only CHECKS
     # list carries none of these), so it also lives outside CHECKS. Graceful

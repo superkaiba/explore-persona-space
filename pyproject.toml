@@ -49,6 +49,7 @@ dependencies = [
                                 # hard dep (#745). hf_xet (the Xet-path
                                 # accelerator the project repos actually use) is
                                 # already an installed transitive dep.
+    "jsonschema>=4",
 ]
 
 [project.optional-dependencies]

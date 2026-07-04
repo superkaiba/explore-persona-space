@@ -1,0 +1,624 @@
+{
+  "commit": "1abb2a37",
+  "created": "2026-07-04T07:42:11Z",
+  "figsize": [
+    9.5,
+    6.0
+  ],
+  "points": [
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6278371257176184,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6115788883374935,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6067155540158999,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6839674878089025,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7021123695616012,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7167697397574042,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6602531567494664,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7026052683743429,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.701703519878439,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7500805458151236,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7549988508676921,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7580190037467693,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7322952703092068,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.73373885886396,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7246122961587342,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7518201384107392,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7643677694105366,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7616808128014093,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7199929570349071,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7350005199615786,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7354383000376054,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7766591891386434,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7832258016185589,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7826517192909067,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7195798784502943,
+      "error": 0.04643754127718147,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7217584234121357,
+      "error": 0.0437246229867192,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.724876033826538,
+      "error": 0.04316650793569521,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6458313719073034,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6636262780363721,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6585652407420913,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7346502208763563,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.658972745361678,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7313770600218044,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7709974611854802,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.756587064854379,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7234731005539832,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7274436183666302,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7908586502901931,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7695131840022522,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7482325651812971,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7452752974559477,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.781108894305475,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7837152775755729,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7192931859494183,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7182957582134017,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6458313719073034,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6278371257176184,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6115788883374935,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6067155540158999,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6636262780363721,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6585652407420913,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6839674878089025,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7021123695616012,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7167697397574042,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7346502208763563,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.658972745361678,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.6602531567494664,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7026052683743429,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.701703519878439,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7313770600218044,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7709974611854802,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7500805458151236,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7549988508676921,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7580190037467693,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.756587064854379,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7234731005539832,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7322952703092068,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.73373885886396,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7246122961587342,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7274436183666302,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7908586502901931,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7518201384107392,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7643677694105366,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7616808128014093,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7695131840022522,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7482325651812971,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7199929570349071,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7350005199615786,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7354383000376054,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7452752974559477,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.781108894305475,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7766591891386434,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7832258016185589,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7826517192909067,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7837152775755729,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 0.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7192931859494183,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 25.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7195798784502943,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 50.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7217584234121357,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 75.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.724876033826538,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%) \u2014 0/100 = committed rounds 4 / 1+3 (squares)": 100.0,
+      "held-out skill-over-mean R\u00b2 (committed best layer)": 0.7182957582134017,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 90
+}

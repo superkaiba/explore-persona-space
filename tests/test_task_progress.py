@@ -948,3 +948,34 @@ def test_shared_vectors_cover_required_cases():
     gate_names = {g["name"] for g in fixture["gating_vectors"]}
     for needle in ("awaiting_promotion", "completed", "followups_running", "blocked", "stale"):
         assert any(needle in n for n in gate_names), f"missing gating vector: {needle}"
+
+
+# ── 12. #950 regression: splitlines() Unicode-boundary shred ───────────────
+
+
+def test_unicode_boundary_note_does_not_drop_whole_task(tmp_path, monkeypatch):
+    """#950 regression (incident #825): one raw-U+2028-bearing event note must
+    not drop the WHOLE task's events from collect_stage_spans. The pre-fix
+    shape read `ev_path.read_text().splitlines()` inside a whole-file
+    `except (OSError, json.JSONDecodeError): continue` — splitlines() shredded
+    the note line (raw U+2028/U+2029/NEL are Unicode line boundaries left by
+    the `ensure_ascii=False` writer), the JSONDecodeError fired, and EVERY
+    event of the task was silently dropped. The fix routes through the
+    canonical tolerant `_iter_jsonl` (split("\\n") + per-line skip)."""
+    root = tmp_path / "tasks"
+    _install_tree(monkeypatch, root)
+    d = _write_task(root, "completed", 42, "experiment", [_ev(T0, "approved", "running")])
+    # Rewrite events.jsonl exactly as post_event does: ensure_ascii=False,
+    # one \n-terminated record per line, one note carrying a raw U+2028.
+    events = [
+        _ev(T0, "approved", "running", note="line one\u2028line two"),
+        _ev(T0 + timedelta(hours=2.0), "running", "verifying"),
+    ]
+    (d / "events.jsonl").write_text(
+        "\n".join(json.dumps(e, ensure_ascii=False) for e in events) + "\n",
+        encoding="utf-8",
+    )
+    spans = tp.collect_stage_spans()
+    running = [s for s in spans if s["task_id"] == 42 and s["stage"] == "running"]
+    assert len(running) == 1, spans  # the task's events were NOT dropped
+    assert running[0]["dur_h"] == 2.0

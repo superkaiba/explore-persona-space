@@ -5,8 +5,11 @@ the git / /proc plumbing is exercised by the dry-run smoke in CI usage.
 
 import importlib.util
 import itertools
+import os
 import sys
 from pathlib import Path
+
+import pytest
 
 if "worktree_audit" in sys.modules:
     worktree_audit = sys.modules["worktree_audit"]
@@ -561,3 +564,512 @@ def test_bind_missing_seam_force_pass_still_works(tmp_path, monkeypatch):
     monkeypatch.setenv("EPS_WORKTREE_REQUIRE_BIND", "1")
     monkeypatch.setenv("EPS_WORKTREE_BIND_PROBE", "true")
     assert worktree_audit._data_disk_bind_missing(plain) is False
+
+
+# --- Venv-reap arm (#912): pure decision (should_reap_venv) -----------------
+
+should_reap_venv = worktree_audit.should_reap_venv
+effective_venv_idle_days = worktree_audit.effective_venv_idle_days
+
+_NOW = 1_750_000_000.0
+
+
+def _ts_days_ago(days: float) -> float:
+    return _NOW - days * 86400.0
+
+
+def _reap_kwargs(**over):
+    """Baseline reap-eligible kwargs for should_reap_venv; override per test."""
+    kw = dict(
+        worktree_kept=True,
+        has_venv=True,
+        venv_is_symlink=False,
+        is_live=False,
+        exe_in_venv=False,
+        newest_activity_ts=_ts_days_ago(999.0),
+        now=_NOW,
+        idle_days_required=7.0,
+    )
+    kw.update(over)
+    return kw
+
+
+def test_venv_reap_managed_pin_never_touched():
+    # Anti-drift: the managed-worktree exclusion is the underscore PREFIX; pin
+    # that the real managed pin still carries it (a rename breaks this test,
+    # not the guard).
+    from explore_persona_space.task_workflow import _MANAGED_MAIN_WORKTREE_NAME
+
+    assert _MANAGED_MAIN_WORKTREE_NAME == "_task-main-pin"
+    assert _MANAGED_MAIN_WORKTREE_NAME.startswith("_")
+    d = should_reap_venv(_MANAGED_MAIN_WORKTREE_NAME, **_reap_kwargs())
+    assert not d.remove
+    assert "managed" in d.reason
+
+
+def test_venv_reap_live_holder_blocks():
+    d = should_reap_venv("issue-500", **_reap_kwargs(is_live=True))
+    assert not d.remove
+    assert "live process" in d.reason
+
+
+def test_venv_reap_exe_holder_blocks():
+    d = should_reap_venv("issue-500", **_reap_kwargs(exe_in_venv=True))
+    assert not d.remove
+    assert "executes from this .venv" in d.reason
+
+
+def test_venv_reap_idle_window_boundary():
+    # >= semantics pinned at the equality cell (mirror of
+    # test_grace_boundary_is_exclusive_below).
+    keep = should_reap_venv("issue-500", **_reap_kwargs(newest_activity_ts=_ts_days_ago(6.9)))
+    assert not keep.remove
+    assert "active" in keep.reason
+    at_boundary = should_reap_venv(
+        "issue-500", **_reap_kwargs(newest_activity_ts=_ts_days_ago(7.0))
+    )
+    assert at_boundary.remove
+    above = should_reap_venv("issue-500", **_reap_kwargs(newest_activity_ts=_ts_days_ago(7.1)))
+    assert above.remove
+
+
+def test_venv_reap_unknown_idleness_fails_closed():
+    d = should_reap_venv("issue-500", **_reap_kwargs(newest_activity_ts=None))
+    assert not d.remove
+    assert "could not be established" in d.reason
+
+
+def test_venv_reap_symlink_venv_skipped():
+    d = should_reap_venv("issue-500", **_reap_kwargs(has_venv=False, venv_is_symlink=True))
+    assert not d.remove
+    assert "symlink" in d.reason
+
+
+def test_venv_reap_no_venv_is_silent():
+    d = should_reap_venv("issue-500", **_reap_kwargs(has_venv=False))
+    assert not d.remove
+    assert d.reason == "venv: none present"
+
+
+def test_venv_reap_human_named_is_eligible():
+    # Deliberate scope-widening (plan §11 D6): human-named worktrees are
+    # venv-eligible (a venv delete is recoverable; the worktree-removal
+    # "manual cleanup only" rule does not transfer).
+    d = should_reap_venv("compute-router", **_reap_kwargs(newest_activity_ts=_ts_days_ago(10.0)))
+    assert d.remove
+    assert "reapable" in d.reason
+
+
+def test_venv_reap_removed_worktree_skips():
+    d = should_reap_venv("issue-500", **_reap_kwargs(worktree_kept=False))
+    assert not d.remove
+    assert "being removed" in d.reason
+
+
+# --- Venv-reap arm: pressure tightening (pure) -------------------------------
+
+
+def test_effective_venv_idle_days_pressure_tightens():
+    assert effective_venv_idle_days(7.0, disk_pct=95.0, threshold_pct=90.0) == 2.0
+
+
+def test_effective_venv_idle_days_threshold_inclusive():
+    assert effective_venv_idle_days(7.0, disk_pct=90.0, threshold_pct=90.0) == 2.0
+
+
+def test_effective_venv_idle_days_never_loosens():
+    assert effective_venv_idle_days(1.0, disk_pct=99.0, threshold_pct=90.0) == 1.0
+
+
+def test_effective_venv_idle_days_below_threshold_unchanged():
+    assert effective_venv_idle_days(7.0, disk_pct=89.9, threshold_pct=90.0) == 7.0
+
+
+# --- Venv-reap arm: impure helpers + destructive branches (tmp_path) ---------
+
+
+def _backdate(path, days: float, now: float = _NOW) -> None:
+    old = now - days * 86400.0
+    os.utime(path, (old, old))
+
+
+def _make_venv_worktree(base: Path, name: str = "issue-9001", idle_days: float = 30.0) -> Path:
+    """Fake linked worktree: root + a ``.venv`` with content + a ``.git``
+    FILE pointing at a fake gitdir carrying HEAD/index. EVERY idleness
+    signal is backdated ``idle_days`` before ``_NOW`` (parents last — file
+    creation bumps dir mtimes)."""
+    wt = base / name
+    venv = wt / ".venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").write_text("#!fake interpreter\n")
+    gitdir = base / f"gitadmin-{name}"
+    gitdir.mkdir()
+    (gitdir / "HEAD").write_text("ref: refs/heads/main\n")
+    (gitdir / "index").write_bytes(b"\x00index")
+    (wt / ".git").write_text(f"gitdir: {gitdir}\n")
+    for p in (
+        venv / "bin" / "python",
+        venv / "bin",
+        venv,
+        gitdir / "HEAD",
+        gitdir / "index",
+        gitdir,
+        wt / ".git",
+        wt,
+    ):
+        _backdate(p, idle_days)
+    return wt
+
+
+def _NO_EXE() -> set[str]:
+    """Injected exe-holder probe: no holders, no /proc pass."""
+    return set()
+
+
+def _NO_LIVE(_root: str) -> dict:
+    """Injected live-holder probe: no holders, no /proc pass."""
+    return {}
+
+
+def test_venv_newest_activity_ts_reads_gitdir(tmp_path):
+    wt = _make_venv_worktree(tmp_path, idle_days=30.0)
+    ts = worktree_audit._venv_newest_activity_ts(wt)
+    assert ts == pytest.approx(_ts_days_ago(30.0), abs=1.0)
+    # git-admin activity (a fresh index mtime) dominates root/.venv mtimes —
+    # a commit that touches no top-level entry still counts as activity.
+    gitdir = Path((wt / ".git").read_text().split(":", 1)[1].strip())
+    fresh = _ts_days_ago(1.0)
+    os.utime(gitdir / "index", (fresh, fresh))
+    assert worktree_audit._venv_newest_activity_ts(wt) == pytest.approx(fresh, abs=1.0)
+    # Corrupt .git file -> None (fail toward keep).
+    (wt / ".git").write_text("not a gitdir pointer\n")
+    assert worktree_audit._venv_newest_activity_ts(wt) is None
+
+
+def test_venv_newest_activity_ts_missing_git_file_is_none(tmp_path):
+    wt = tmp_path / "issue-9009"
+    (wt / ".venv").mkdir(parents=True)
+    assert worktree_audit._venv_newest_activity_ts(wt) is None
+
+
+def test_reap_venv_rename_first_and_symlink_inside_not_followed(tmp_path):
+    outside = tmp_path / "outside.txt"
+    outside.write_text("precious")
+    wt = _make_venv_worktree(tmp_path, name="issue-9002")
+    (wt / ".venv" / "link").symlink_to(outside)
+    old_mtime = wt.stat().st_mtime
+    err = worktree_audit._reap_venv(
+        wt, ".claude/worktrees/", exe_holders=_NO_EXE, live_holders=_NO_LIVE
+    )
+    assert err is None
+    assert not (wt / ".venv").exists()
+    assert outside.read_text() == "precious"  # symlink removed as a link, target intact
+    assert not list(wt.glob(".venv.reap-tmp-*"))  # no leftover on success
+    assert wt.stat().st_mtime == pytest.approx(old_mtime, abs=0.01)  # mtime restored
+
+
+def test_venv_exe_holder_regex_matches_reap_tmp_component():
+    pat = worktree_audit._VENV_EXE_RE
+    m = pat.match("issue-912-venvsmoke/.venv/bin/python3")
+    assert m is not None and m.group(1) == "issue-912-venvsmoke"
+    # .venv-PREFIXED components match too, so a process exec'd from a
+    # renamed-aside leftover still protects it (post-rename gate).
+    m = pat.match("issue-742/.venv.reap-tmp-9/bin/python")
+    assert m is not None and m.group(1) == "issue-742"
+    # Only a worktree-ROOT .venv counts.
+    assert pat.match("issue-742/data/.venv/bin/python") is None
+
+
+def test_venv_leftover_sweep_dry_run_inert(tmp_path):
+    wt = _make_venv_worktree(tmp_path, name="issue-9003")
+    leftover = wt / ".venv.reap-tmp-777"
+    (leftover / "bin").mkdir(parents=True)
+    _backdate(wt, 30.0)
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        False,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert leftover.is_dir()  # dry-run NEVER deletes — not even leftovers
+    assert (wt / ".venv").is_dir()
+    assert res.venv_candidates == ["issue-9003"]
+
+
+def test_venv_leftover_sweep_apply_reaps(tmp_path):
+    wt = _make_venv_worktree(tmp_path, name="issue-9004")
+    leftover = wt / ".venv.reap-tmp-777"
+    (leftover / "bin").mkdir(parents=True)
+    _backdate(wt, 30.0)
+    old_mtime = wt.stat().st_mtime
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert not leftover.exists()
+    assert "issue-9004/.venv.reap-tmp-777" in res.venv_reaped
+    assert res.venv_bytes["issue-9004/.venv.reap-tmp-777"] is None  # unmeasured
+    assert "issue-9004" in res.venv_reaped  # the eligible .venv is reaped too
+    assert not (wt / ".venv").exists()
+    assert wt.stat().st_mtime == pytest.approx(old_mtime, abs=0.01)  # mtime restored
+
+
+def test_venv_leftover_sweep_holder_blocks(tmp_path):
+    wt = _make_venv_worktree(tmp_path, name="issue-9005")
+    leftover = wt / ".venv.reap-tmp-777"
+    (leftover / "bin").mkdir(parents=True)
+    _backdate(wt, 30.0)
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=lambda: {"issue-9005"},  # fresh probes see a holder
+        live_holders=_NO_LIVE,
+    )
+    assert leftover.is_dir()  # protected leftover kept
+    assert any("protected leftover" in d.reason for d in res.venv_skipped)
+    # ...and the fresh re-verify blocks the .venv reap on the same holder:
+    assert (wt / ".venv").is_dir()
+    assert res.venv_reaped == []
+
+
+def test_reap_venv_rmtree_failure_leaves_inert_leftover(tmp_path, monkeypatch):
+    wt = _make_venv_worktree(tmp_path, name="issue-9006")
+    old_mtime = wt.stat().st_mtime
+
+    def boom(path, *a, **k):
+        raise OSError("disk says no")
+
+    monkeypatch.setattr(worktree_audit.shutil, "rmtree", boom)
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert res.venv_failed == ["issue-9006"]
+    assert any("rmtree failed" in d.reason for d in res.venv_skipped)
+    assert not (wt / ".venv").exists()  # renamed aside — never a half-broken .venv
+    assert len(list(wt.glob(".venv.reap-tmp-*"))) == 1  # inert leftover
+    assert wt.stat().st_mtime == pytest.approx(old_mtime, abs=0.01)  # mtime restored
+
+
+def test_venv_arm_symlinked_worktree_root_is_contained(tmp_path):
+    # Root-symlink containment: a symlinked entry under .claude/worktrees/
+    # must never be classified, leftover-swept, or deleted THROUGH.
+    outside = tmp_path / "other-project"
+    sentinel = outside / ".venv" / "keep.txt"
+    sentinel.parent.mkdir(parents=True)
+    sentinel.write_text("do not delete")
+    (outside / ".venv.reap-tmp-1").mkdir()
+    _backdate(outside, 30.0)
+    wtroot = tmp_path / "worktrees"
+    wtroot.mkdir()
+    link = wtroot / "issue-9007"
+    link.symlink_to(outside)
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        link,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert sentinel.read_text() == "do not delete"
+    assert (outside / ".venv").is_dir()
+    assert (outside / ".venv.reap-tmp-1").is_dir()  # leftover sweep never ran through
+    assert res.venv_reaped == [] and res.venv_candidates == []
+    assert any("symlink" in d.reason for d in res.venv_skipped)
+
+
+def test_venv_arm_integration_dry_run_no_delete(tmp_path, monkeypatch):
+    wt = _make_venv_worktree(tmp_path, name="issue-9008")
+    calls: list = []
+    real_reap = worktree_audit._reap_venv
+    monkeypatch.setattr(
+        worktree_audit,
+        "_reap_venv",
+        lambda *a, **k: (calls.append(a), real_reap(*a, **k))[1],
+    )
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        False,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert res.venv_candidates == ["issue-9008"]
+    assert (wt / ".venv").is_dir()
+    assert calls == []  # _reap_venv is never invoked in dry-run
+    assert isinstance(res.venv_bytes["issue-9008"], int)  # measured for the report
+
+
+def test_venv_arm_integration_apply_reaps_one(tmp_path):
+    wt = _make_venv_worktree(tmp_path, name="issue-9010")
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert res.venv_reaped == ["issue-9010"]
+    assert res.venv_failed == []
+    assert not (wt / ".venv").exists()
+    assert not list(wt.glob(".venv.reap-tmp-*"))
+    assert isinstance(res.venv_bytes["issue-9010"], int)
+
+
+def test_venv_arm_integration_fresh_reverify_unsafe_skips(tmp_path):
+    # Snapshot-safe (live={} / venv_exe=set()) but the FRESH re-probe sees a
+    # holder that appeared mid-audit -> skip, venv intact, stale size dropped.
+    wt = _make_venv_worktree(tmp_path, name="issue-9011")
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=lambda _root: {"issue-9011": [(1234, "claude --resume abc")]},
+    )
+    assert res.venv_reaped == []
+    assert (wt / ".venv").is_dir()
+    assert any("became unsafe mid-audit" in d.reason for d in res.venv_skipped)
+    assert "issue-9011" not in res.venv_bytes  # stale pre-verify size entry dropped
+
+
+def test_venv_arm_integration_kill_switch_off(tmp_path, monkeypatch):
+    monkeypatch.setenv("EPM_WORKTREE_VENV_REAP", "0")
+    assert worktree_audit._venv_reap_enabled() is False
+    wt = _make_venv_worktree(tmp_path, name="issue-9012")
+    res = worktree_audit.AuditResult(venv_enabled=worktree_audit._venv_reap_enabled())
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert (wt / ".venv").is_dir()  # arm disabled: nothing classified or deleted
+    assert res.venv_reaped == []
+    assert res.venv_candidates == []
+    assert res.venv_skipped == []
+
+
+def test_venv_reap_enabled_defaults_on(monkeypatch):
+    monkeypatch.delenv("EPM_WORKTREE_VENV_REAP", raising=False)
+    assert worktree_audit._venv_reap_enabled() is True
+
+
+def test_venv_arm_no_venv_is_silent(tmp_path):
+    wt = tmp_path / "issue-9014"
+    wt.mkdir()
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        False,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=_NO_EXE,
+        live_holders=_NO_LIVE,
+    )
+    assert res.venv_skipped == []  # the no-venv majority stays silent
+    assert res.venv_candidates == []
+
+
+def test_reap_venv_post_rename_holder_vetoes_rmtree(tmp_path):
+    # A process starts from .venv/bin/python AFTER the fresh pre-rename
+    # probes: post-rename its /proc exe resolves under .venv.reap-tmp-*,
+    # which the exe probe matches -> rmtree vetoed, protected leftover kept.
+    wt = _make_venv_worktree(tmp_path, name="issue-9013")
+    (wt / ".venv" / "marker.txt").write_text("contents")
+    _backdate(wt / ".venv", 30.0)
+    _backdate(wt, 30.0)
+    calls = {"n": 0}
+
+    def exe_probe():
+        calls["n"] += 1
+        # 1st call = the fresh pre-rename re-verify (no holder); 2nd call =
+        # the POST-rename gate inside _reap_venv (holder appeared).
+        return {"issue-9013"} if calls["n"] >= 2 else set()
+
+    res = worktree_audit.AuditResult()
+    worktree_audit._venv_arm(
+        wt,
+        {},
+        set(),
+        res,
+        True,
+        7.0,
+        ".claude/worktrees/",
+        _NOW,
+        exe_holders=exe_probe,
+        live_holders=_NO_LIVE,
+    )
+    assert res.venv_failed == ["issue-9013"]
+    assert not (wt / ".venv").exists()  # rename happened (serialization point)
+    leftovers = list(wt.glob(".venv.reap-tmp-*"))
+    assert len(leftovers) == 1
+    assert (leftovers[0] / "marker.txt").read_text() == "contents"  # rmtree never ran
+    veto = [d for d in res.venv_skipped if "post-rename" in d.reason]
+    assert veto and leftovers[0].name in veto[0].reason

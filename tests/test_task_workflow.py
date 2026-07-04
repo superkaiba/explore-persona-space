@@ -2995,6 +2995,29 @@ def test_set_clean_result_unset_paper_skips_gate(fake_repo):
     assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is False
 
 
+def test_set_clean_result_accepts_report_v1_body(fake_repo):
+    """A v2 report body (carries REPORT_V1_SENTINEL) is a valid non-paper
+    clean-result form: it is not a paper task and has no paper_manifest.json, so
+    set_clean_result flips has_clean_result with no extra gate (mirrors the
+    markdown-v4 path). Pins that the report track is accepted, not rejected."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Report task"))
+    report_body = (
+        "# Experiment: does X predict Y?\n"
+        f"{tw.REPORT_V1_SENTINEL}\n\n"
+        "## TLDR:\nThomas-written takeaway.\n\n"
+        "## Motivation:\nWhy we ran it.\n\n"
+        "## Methodology:\nWhat we ran.\n\n"
+        "## Metrics:\nWhat we measured.\n\n"
+        "## Results:\n### rate\nDescription.\n![r](figures/f.png)\n\n"
+        "## Next steps:\nWhat next.\n"
+    )
+    tw.set_body(tid, report_body)
+    assert tw.is_report_body(report_body) is True
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
 # ─── #657: set_body round-trips the paper-stub opt-in (paper / abstract) ─────
 
 
@@ -3180,6 +3203,37 @@ def test_readers_tolerate_partial_trailing_multibyte_utf8(fake_repo, caplog):
     assert any("skipping malformed line" in r.getMessage() for r in caplog.records), (
         "expected a WARNING for the corrupted multibyte line"
     )
+
+
+def test_note_with_raw_unicode_line_boundaries_round_trips(fake_repo):
+    """#950 regression (incident #825): the `ensure_ascii=False` writer leaves
+    raw U+2028/U+2029/NEL inside note strings, and the pre-fix
+    `splitlines()`-based `_iter_jsonl` treated those as line boundaries —
+    shredding the valid record into skip-malformed fragments = the marker was
+    SILENTLY LOST on every read. Under `split("\\n")` the note round-trips
+    byte-intact through post_event → list_events."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    # U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR, NEL U+0085 - all
+    # written RAW by json.dumps(..., ensure_ascii=False).
+    note = "para one\u2028para two\u2029para three\u0085end"
+    tw.post_event(nid, "epm:plan", by="planner", note=note)
+    plan_events = [e for e in tw.list_events(nid) if e["kind"] == "epm:plan"]
+    assert len(plan_events) == 1  # the record survives as exactly ONE row
+    assert plan_events[0]["note"] == note  # note byte-intact, boundaries raw
+
+
+def test_crlf_terminated_record_parses(fake_repo):
+    """#950: `split("\\n")` leaves a trailing `\\r` on a `\\r\\n`-terminated
+    record; `json.loads` tolerates it as JSON whitespace — pinned here as a
+    committed test, not a session probe."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    ev.write_bytes(b'{"ts":"2026-07-03T00:00:00Z","kind":"epm:test","version":1,"by":"t"}\r\n')
+    events = tw.list_events(nid)
+    assert len(events) == 1
+    assert events[0]["kind"] == "epm:test"
 
 
 # T-helper

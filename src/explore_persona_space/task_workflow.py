@@ -67,6 +67,7 @@ excluded from auto-dispatch / the clarifier. Revivable via
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import fcntl
 import functools
@@ -144,6 +145,47 @@ KINDS = (
 # Status that means "user has reviewed and approved a clean-result body; user
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
+
+# Workflow-pipeline versions a task can be pinned to (EPS workflow-v2 plan,
+# Assumption 2). "v1" is the current pipeline; "v2" is the report-only
+# pipeline the `/issue` dispatcher branches to when a task's frontmatter
+# carries `workflow: v2`. The default for a NEW task resolves as
+# explicit-arg > env EPM_DEFAULT_WORKFLOW > DEFAULT_WORKFLOW_VERSION; the
+# flip of the default to "v2" is a later one-line env/config change after the
+# dogfood, NOT wired here. `workflow_version()` fail-opens to v1 so legacy
+# tasks (no `workflow:` key) resolve to the current pipeline everywhere.
+WORKFLOW_VERSIONS = ("v1", "v2")
+DEFAULT_WORKFLOW_VERSION = "v1"
+
+
+def workflow_version(frontmatter: dict[str, Any]) -> str:
+    """Return the workflow-pipeline version a task is pinned to.
+
+    Reads the ``workflow`` frontmatter key and fail-OPENS to
+    :data:`DEFAULT_WORKFLOW_VERSION` ("v1") for an absent, empty, or unknown
+    value — so legacy tasks (which have no ``workflow:`` key) resolve to the
+    current v1 pipeline everywhere and a garbage value never crashes a caller.
+    """
+    value = frontmatter.get("workflow")
+    if isinstance(value, str) and value.strip() in WORKFLOW_VERSIONS:
+        return value.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
+def _resolve_workflow_version(explicit: str | None) -> str:
+    """Resolve a NEW task's workflow version at creation time.
+
+    Precedence: explicit arg > env ``EPM_DEFAULT_WORKFLOW`` >
+    :data:`DEFAULT_WORKFLOW_VERSION`. An unknown value at any layer falls
+    through to the next (fail-open to v1). The CLI validates the explicit arg
+    with ``argparse`` choices, so an unknown value here can only reach us from
+    a programmatic caller — treat it as unset rather than crash.
+    """
+    for candidate in (explicit, os.environ.get("EPM_DEFAULT_WORKFLOW")):
+        if isinstance(candidate, str) and candidate.strip() in WORKFLOW_VERSIONS:
+            return candidate.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
 
 # Intermediate pipeline statuses a `followups_running` task may NOT re-enter
 # mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
@@ -749,6 +791,29 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
     return v is True or (isinstance(v, str) and v.strip().lower() == "true")
 
 
+#: Body sentinel for the v2 report clean-result form (workflow v2 — the
+#: report-only track: Motivation / Methodology / Metrics / Results-as-plots
+#: written by agents, TLDR / Next-steps written by Thomas). Placed on the line
+#: after the H1 ``# Experiment: ...`` title, mirroring the ``<!-- clean-result-v4 -->``
+#: convention. ``scripts/verify_report.py`` is the mechanical verifier for this
+#: form. Unlike ``paper: true`` (a frontmatter flag), a report body is
+#: identified by this BODY sentinel.
+REPORT_V1_SENTINEL = "<!-- report-v1 -->"
+
+
+def is_report_body(body: str) -> bool:
+    """True when ``body`` is a v2 report clean-result (carries ``REPORT_V1_SENTINEL``).
+
+    Detects the v2 report form by its body sentinel, the analogue of
+    :func:`is_paper_task` for the report track. Consumers (dashboard rendering,
+    promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
+    report body as a valid clean-result form alongside the markdown-v4 and paper
+    tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
+    frontmatter flag, only this sentinel.
+    """
+    return REPORT_V1_SENTINEL in body
+
+
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
 # Workflow-surface fixes (a `<!-- workflow-fix-candidate v1 -->` block or a
 # surfaced prose follow-up) are filed as a `kind: infra` task and implemented by
@@ -1258,6 +1323,27 @@ STAGE_LIVENESS_KINDS = frozenset(
         "epm:proposed-tests",
     }
 )
+# Progress-note substrings that are ANTI-liveness for a stage-dispatch
+# freshness window (#949; incident #810): bracketed telemetry posted by the
+# session watcher / spawn machinery, never by the stage's own worker. The
+# watcher's own progress clock excludes the same classes
+# (scripts/autonomous_session_watch.py::_WATCHER_NOTE_SENTINELS — a script,
+# not importable from src/, so matched here by the shared bracketed
+# prefixes: every watcher sentinel embeds "[autonomous_session_watch:" and
+# spawn_session's bookkeeping sentinel embeds "[spawn-session:"). The
+# self-stamped "[long-phase-heartbeat]" prefix is DELIBERATELY absent — it
+# is posted by the stage's own long-running phase and IS liveness. The
+# sibling deliberate-stop exclusion (checked inline in
+# stage_dispatch_should_skip) also drops ANY note with
+# by == "spawn_session-stop" regardless of content — a future genuine
+# liveness post from spawn_session must use a different `by` or get a
+# carve-out here.
+STAGE_ANTILIVENESS_NOTE_SUBSTRINGS = frozenset(
+    {
+        "[autonomous_session_watch:",
+        "[spawn-session:",
+    }
+)
 
 _STAGE_ALIASES = {"code-reviewing": "code-review"}
 
@@ -1336,8 +1422,12 @@ def stage_dispatch_should_skip(
     (``STAGE_RESULT_KINDS[_normalize_stage(stage)]`` — clearing is round-agnostic by
     design, result markers carry no parsable round) or ``epm:failure``. While in
     flight, the freshness clock starts at the LATEST of the breadcrumb and any later
-    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress``;
-    a breadcrumb never refreshes any window): effective age < window -> skip reason;
+    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress`` —
+    EXCLUDING anti-liveness notes: a ``deliberate-stop`` record (``by ==
+    "spawn_session-stop"``) and bracketed watcher / spawn-session telemetry
+    (``STAGE_ANTILIVENESS_NOTE_SUBSTRINGS``) are stop/bookkeeping records, not
+    stage liveness, and never refresh a window (#810); a breadcrumb never
+    refreshes any window): effective age < window -> skip reason;
     >= window -> None (stalled, re-dispatch allowed). A malformed breadcrumb ``ts``
     fails toward dispatch (None); a malformed liveness ``ts`` is ignored. TOCTOU is a
     non-goal — two orchestrators both checking BEFORE either posts its breadcrumb can
@@ -1363,6 +1453,16 @@ def stage_dispatch_should_skip(
         if kind == "epm:progress":
             note = (event.get("note", "") or "").lstrip()
             if note.startswith("stage-dispatch "):
+                continue
+            # Anti-liveness (#810/#949): a deliberate session stop is the
+            # death record of the stage's owner, and bracketed watcher /
+            # spawn-session telemetry is third-party bookkeeping — neither
+            # is evidence the stage's OWN work is alive, so neither
+            # refreshes the window. (They do NOT clear the in-flight
+            # state; only result kinds / epm:failure / expiry do that.)
+            if note.startswith("deliberate-stop ") or event.get("by") == "spawn_session-stop":
+                continue
+            if any(s in note for s in STAGE_ANTILIVENESS_NOTE_SUBSTRINGS):
                 continue
         elif kind not in STAGE_LIVENESS_KINDS:
             continue
@@ -1435,11 +1535,20 @@ TRIAGE_EXEMPT_KINDS = frozenset(
 )
 
 # ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
-# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
-# "unknown", and on #779 both self- and PM-chat-posted markers carried
-# by="unknown" — so this set only strips known machine identities; it never
-# claims to identify externality (that is the orchestrator's judgment call,
-# SKILL.md § Pre-dispatch external-marker triage).
+# NOTE on session/human posts: ``by`` is unreliable on LEGACY markers and
+# non-compliant emitters (post_event defaults by="unknown"; on #779 both
+# self- and PM-chat posts carried by="unknown"). Compliant emitters now set
+# a distinctive by (the #966 convention list): "pm-chat" (PM-session
+# cross-session posts), "autonomous_session_watch" (watcher passes),
+# "spawn_session" / "spawn_session-stop" (spawn helper). A value on that
+# convention list is a trustworthy-POSITIVE externality signal for the
+# LLM-side triage read (conventional, not authenticated — nothing verifies
+# the emitter, but in-repo emitters set only their own identity); absence
+# ("unknown") proves nothing (fail-toward-triage). These advisory identities
+# are deliberately NOT in this strip set — machine_by only strips known
+# bookkeeping-machine identities; it never classifies externality (that
+# stays the orchestrator's judgment call, SKILL.md § Pre-dispatch
+# external-marker triage).
 TRIAGE_MACHINE_BY = frozenset(
     {
         "poll_pipeline",
@@ -1467,6 +1576,48 @@ TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
 # a triage record is also excluded from candidates.
 TRIAGE_LINE_PREFIX = "external-markers triaged:"
 
+# #889 landed 2026-07-03T04:05Z (commit 34fd730192); records before this
+# epoch are legacy per the SKILL.md accepted-residuals clause and are never
+# flagged by the post-hoc observer (#967).
+TRIAGE_DUTY_EPOCH_TS = "2026-07-03T05:00:00Z"
+
+# In-the-wild external-advisory signatures (SKILL.md § Pre-dispatch
+# external-marker triage names these); shared so the skill text and the
+# post-hoc observer (#967) use ONE list.
+TRIAGE_EXTERNAL_SIGNATURES = frozenset(
+    {"PM-chat", "user-raised", "user directive", "# Audit", "AMENDMENT", "SCOPE RESTORE"}
+)
+
+# Normalized stage tokens (see _normalize_stage) that carry NO compute-launch
+# triage duty -> a line-less breadcrumb with one of these NEVER flags (#967).
+# DELIBERATELY EASY TO EXTEND: append benign tokens observed in the wild here
+# (one frozenset literal; each addition needs only a live-example citation).
+# interp-critique / clean-result-fix / value-critique are live post-epoch
+# benign follow-up families observed on #810/#922 (task #967 plan §2).
+TRIAGE_NONCOMPUTE_STAGES = frozenset(
+    {
+        "planning",
+        "implementing",
+        "code-review",
+        "interpreting",
+        "clean-result",
+        "verifying",
+        "methodology-reference",
+        "related-work",
+        "interp-critique",
+        "clean-result-fix",
+        "value-critique",
+    }
+)
+
+# Positive-compute stage tokens: warn-class evidence for a line-less
+# breadcrumb (#967). "grid" is #779's incident token; the rest are the
+# SKILL.md duty text's own compute nouns ("a fit / sweep / statistical
+# battery") plus crash-fix relaunches. EXACT match on the NORMALIZED token,
+# never substring (substring matching would re-open the false-positive
+# surface the three-way classifier closes).
+TRIAGE_COMPUTE_STAGE_TOKENS = frozenset({"grid", "sweep", "battery", "fit", "fits", "relaunch"})
+
 
 def triage_candidates_since_last_dispatch(
     events: list[dict],
@@ -1493,8 +1644,11 @@ def triage_candidates_since_last_dispatch(
     ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
     or the note contains the triage line (it is a triage record, not an
     advisory). Chronological order preserved. Deliberately over-approximates —
-    it ENUMERATES for LLM-side triage and never classifies externality
-    (``by`` cannot: default "unknown").
+    it ENUMERATES for LLM-side triage and never classifies externality (a
+    ``by`` on the #966 convention list — pm-chat / autonomous_session_watch /
+    spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
+    signal for that LLM-side read, but ``by`` defaults to "unknown", so
+    absence proves nothing).
     """
     boundary = -1
     for idx in range(len(events) - 1, -1, -1):
@@ -1503,8 +1657,29 @@ def triage_candidates_since_last_dispatch(
         if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
             boundary = idx
             break
+    return _triage_window_candidates(
+        events[boundary + 1 :], exempt_kinds=exempt_kinds, machine_by=machine_by
+    )
+
+
+def _triage_window_candidates(
+    window: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+) -> list[dict]:
+    """The #889 candidate filter over an already-bounded window slice.
+
+    Shared by the pre-dispatch enumerator (window = since the last duty-bound
+    record) and the post-hoc observer (window = between two historical
+    boundary records; #967). Filter semantics are the enumerator's, verbatim:
+    an event is a candidate unless its kind is in ``exempt_kinds``, its
+    ``by`` is in ``machine_by``, its note is empty/absent, its note is
+    breadcrumb-shaped (lstripped note begins ``"stage-dispatch "``), or its
+    note contains the triage line. Chronological order preserved.
+    """
     candidates: list[dict] = []
-    for event in events[boundary + 1 :]:
+    for event in window:
         if event.get("kind", "") in exempt_kinds:
             continue
         if event.get("by", "") in machine_by:
@@ -1518,6 +1693,269 @@ def triage_candidates_since_last_dispatch(
             continue
         candidates.append(event)
     return candidates
+
+
+def _parse_ts_str(raw: str | None) -> datetime | None:
+    """Parse an ISO-8601 threshold string via :func:`_stage_event_ts`;
+    ``None`` on a missing/malformed value (fail-soft)."""
+    if not raw:
+        return None
+    return _stage_event_ts({"ts": raw})
+
+
+def _ts_delta_s(a: dict, b: dict) -> float | None:
+    """Seconds from event ``a`` to event ``b`` (positive when ``b`` is later).
+
+    ``None`` when either event's ``ts`` is missing/malformed — a malformed
+    NEIGHBOR timestamp therefore provides no adjacency coverage in
+    :func:`audit_dispatch_triage` (#967); the audited record itself is
+    skipped earlier, at the top of the audit loop."""
+    ta, tb = _stage_event_ts(a), _stage_event_ts(b)
+    if ta is None or tb is None:
+        return None
+    return (tb - ta).total_seconds()
+
+
+def _triage_disposition_is_none(note: str) -> bool:
+    """True when the FIRST triage-line occurrence in ``note`` records a
+    ``none`` disposition (the remainder after the prefix, stripped and
+    lowercased, starts with ``none``)."""
+    idx = note.find(TRIAGE_LINE_PREFIX)
+    if idx < 0:
+        return False
+    rest = note[idx + len(TRIAGE_LINE_PREFIX) :].strip().lower()
+    return rest.startswith("none")
+
+
+def _triage_signature_hits(candidates: list[dict]) -> list[str]:
+    """Sorted external-advisory signatures found in the candidates' notes."""
+    return sorted(
+        {
+            sig
+            for c in candidates
+            for sig in TRIAGE_EXTERNAL_SIGNATURES
+            if sig in (c.get("note") or "")
+        }
+    )
+
+
+def audit_dispatch_triage(
+    events: list[dict],
+    *,
+    adjacency_s: float = 1800.0,
+    grace_s: float = 120.0,
+    epoch_ts: str | None = TRIAGE_DUTY_EPOCH_TS,
+    min_ts: str | None = None,
+    mature_before_ts: str | None = None,
+) -> dict:
+    """Post-hoc, NON-GATING audit of the pre-dispatch triage duty (#967).
+
+    Returns ``{"violations": [...], "cursor_ts": str | None}``. One violation
+    dict per non-compliant MATURED audited record: ``{"record_ts",
+    "record_kind", "stage", "violation", "severity", "candidate_count",
+    "candidate_kinds", "signature_hits", "note_head"}``.
+
+    BOUNDARY records (kind in :data:`TRIAGE_LAUNCH_KINDS` OR a note carrying
+    :data:`TRIAGE_LINE_PREFIX`) ALONE bound the pre-record candidate windows
+    and serve as adjacency neighbors; the AUDITED set additionally includes
+    line-less ``stage-dispatch`` breadcrumbs — audited but never
+    window-closing, preserving the enumerator's fail-toward-triage contract
+    (MF1). Three violation classes:
+
+    - ``launch-missing-line`` (warn): a launch marker with no triage line
+      whose nearest previous AND next boundary records are not triage-line
+      records within ``adjacency_s``.
+    - ``breadcrumb-missing-line``: a line-less breadcrumb, three-way
+      classified on its normalized stage token — exempt
+      (:data:`TRIAGE_NONCOMPUTE_STAGES`) -> no flag; positive compute
+      evidence (a ``pid=`` field or a :data:`TRIAGE_COMPUTE_STAGE_TOKENS`
+      token) -> warn; unknown -> info. NOTE: :func:`_normalize_stage`
+      strips ONE leading ``followup-`` prefix; the SUFFIX form
+      ``free-analysis-followup`` passes through intact.
+    - ``none-with-candidates``: a triage-line record with a ``none``
+      disposition whose pre-record boundary window re-enumerates non-empty
+      after dropping candidates within ``grace_s`` of the record (a
+      grace-delta that cannot be computed keeps the candidate — fail toward
+      visibility; the class is info-tier by default). Severity ``warn``
+      only on an external-signature hit, else ``info``.
+
+    Records with ts > ``mature_before_ts`` are DEFERRED — not evaluated, not
+    consumed: ``cursor_ts`` is the max parseable ts among audited records at
+    or before ``mature_before_ts``, so a caller advancing its cursor to
+    ``cursor_ts`` re-sees immature records next tick (MF2). Records at or
+    before ``min_ts`` / before ``epoch_ts`` are skipped but still consumable
+    by the cursor. An audited record with an unparseable ts is skipped
+    entirely (fail-soft, never consumed). Pure read — never mutates
+    ``events``; marker-cap overflow is a CALLER concern (see
+    ``triage_observer_pass``): an over-cap warn is permanently
+    sidecar+push-only, never deferred.
+    """
+    boundary_idx = [
+        i
+        for i, e in enumerate(events)
+        if e.get("kind", "") in TRIAGE_LAUNCH_KINDS or TRIAGE_LINE_PREFIX in (e.get("note") or "")
+    ]
+    audited_idx = sorted(
+        set(boundary_idx)
+        | {
+            i
+            for i, e in enumerate(events)
+            if e.get("kind", "") == "epm:progress"
+            and (e.get("note") or "").lstrip().startswith("stage-dispatch ")
+        }
+    )
+    mature_dt = _parse_ts_str(mature_before_ts)
+    epoch_dt = _parse_ts_str(epoch_ts)
+    min_dt = _parse_ts_str(min_ts)
+
+    violations: list[dict] = []
+    cursor_dt: datetime | None = None
+    cursor_ts: str | None = None
+
+    for i in audited_idx:
+        e = events[i]
+        ts_dt = _stage_event_ts(e)
+        if ts_dt is None:
+            continue  # unparseable ts: fail-soft skip, never consumed (tested)
+        if mature_dt is not None and ts_dt > mature_dt:
+            continue  # MF2: immature — defer, do not consume
+        if cursor_dt is None or ts_dt > cursor_dt:
+            cursor_dt, cursor_ts = ts_dt, e.get("ts", "")
+        if epoch_dt is not None and ts_dt < epoch_dt:
+            continue  # legacy pre-fix record (accepted residual)
+        if min_dt is not None and ts_dt <= min_dt:
+            continue  # already evaluated (caller cursor / lookback)
+        v = _audit_record_violation(
+            events, i, boundary_idx, adjacency_s=adjacency_s, grace_s=grace_s
+        )
+        if v is not None:
+            violations.append(v)
+
+    return {"violations": violations, "cursor_ts": cursor_ts}
+
+
+def _make_triage_violation(
+    e: dict,
+    *,
+    stage: str | None,
+    violation: str,
+    severity: str,
+    window: list[dict],
+    grace_s: float,
+) -> dict:
+    """Build one :func:`audit_dispatch_triage` violation dict, re-enumerating
+    the pre-record boundary window's candidates so the flag names what the
+    dispatch should have read. The ``none-with-candidates`` class trims
+    candidates within ``grace_s`` of the record (the SKILL.md accepted
+    residual); a grace-delta that cannot be computed keeps the candidate
+    (fail toward visibility — the class is info-tier by default)."""
+    cands = _triage_window_candidates(window)
+    if violation == "none-with-candidates":
+        cands = [c for c in cands if (d := _ts_delta_s(c, e)) is None or d > grace_s]
+    return {
+        "record_ts": e.get("ts", ""),
+        "record_kind": e.get("kind", ""),
+        "stage": stage,
+        "violation": violation,
+        "severity": severity,
+        "candidate_count": len(cands),
+        "candidate_kinds": sorted({c.get("kind", "") for c in cands}),
+        "signature_hits": _triage_signature_hits(cands),
+        "note_head": (e.get("note") or "")[:120],
+    }
+
+
+def _adjacent_triage_coverage(
+    events: list[dict], e: dict, prev_j: int | None, next_k: int | None, adjacency_s: float
+) -> bool:
+    """True when the nearest previous OR next BOUNDARY record is a
+    triage-line record within ``adjacency_s`` of ``e`` (the launch-marker
+    compliance form). Requiring the NEAREST boundary neighbor — not just any
+    record in the ±window — keeps crash-fix relaunch bursts individually
+    duty-bound; a malformed neighbor ts provides no coverage."""
+    if prev_j is not None and TRIAGE_LINE_PREFIX in (events[prev_j].get("note") or ""):
+        d = _ts_delta_s(events[prev_j], e)
+        if d is not None and d <= adjacency_s:
+            return True
+    if next_k is not None and TRIAGE_LINE_PREFIX in (events[next_k].get("note") or ""):
+        d = _ts_delta_s(e, events[next_k])
+        if d is not None and d <= adjacency_s:
+            return True
+    return False
+
+
+def _audit_record_violation(
+    events: list[dict],
+    i: int,
+    boundary_idx: list[int],
+    *,
+    adjacency_s: float,
+    grace_s: float,
+) -> dict | None:
+    """Classify ONE matured, post-epoch audited record (index ``i``) for
+    :func:`audit_dispatch_triage`; returns a violation dict or None.
+
+    Nearest neighbors + the pre-record window come from BOUNDARY records
+    only (MF1): a line-less breadcrumb never closes a window nor serves as
+    an adjacency neighbor."""
+    e = events[i]
+    note = e.get("note") or ""
+    has_line = TRIAGE_LINE_PREFIX in note
+    kind = e.get("kind", "")
+    pos = bisect.bisect_left(boundary_idx, i)
+    prev_j = boundary_idx[pos - 1] if pos > 0 else None
+    npos = pos + 1 if pos < len(boundary_idx) and boundary_idx[pos] == i else pos
+    next_k = boundary_idx[npos] if npos < len(boundary_idx) else None
+    window = events[(prev_j + 1 if prev_j is not None else 0) : i]
+
+    if kind in TRIAGE_LAUNCH_KINDS and not has_line:
+        if _adjacent_triage_coverage(events, e, prev_j, next_k, adjacency_s):
+            return None
+        return _make_triage_violation(
+            e,
+            stage=None,
+            violation="launch-missing-line",
+            severity="warn",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    stripped = note.lstrip()
+    if not has_line and stripped.startswith("stage-dispatch "):
+        fields = _breadcrumb_fields(stripped)
+        raw_stage = fields.get("stage", "")
+        norm = _normalize_stage(raw_stage)
+        if norm in TRIAGE_NONCOMPUTE_STAGES:
+            return None  # known-benign family: no flag (MF4)
+        positive_compute = "pid" in fields or norm in TRIAGE_COMPUTE_STAGE_TOKENS
+        return _make_triage_violation(
+            e,
+            stage=raw_stage,
+            violation="breadcrumb-missing-line",
+            severity="warn" if positive_compute else "info",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    if has_line and _triage_disposition_is_none(note):
+        stage = (
+            _breadcrumb_fields(stripped).get("stage")
+            if stripped.startswith("stage-dispatch ")
+            else None
+        )
+        v = _make_triage_violation(
+            e,
+            stage=stage,
+            violation="none-with-candidates",
+            severity="info",
+            window=window,
+            grace_s=grace_s,
+        )
+        if v["candidate_count"]:
+            if v["signature_hits"]:
+                v["severity"] = "warn"
+            return v
+    return None
 
 
 # ─── Same-issue follow-up label grouping (#894) ────────────────────────────
@@ -1552,6 +1990,26 @@ _FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
 # (`followup_retro_close_evidence`). Case-sensitive by design — a missed
 # close is safe (the label stays queued), a wrong close is not.
 _ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+# Queue-context veto for the class-3 read (#961): a clause naming the label
+# as queued / unrun / scoped / armed / dispatched is a QUEUE mention, never
+# completion evidence (park/handoff notes routinely announce round X complete
+# while enumerating the queued next label Y on the same line — #825
+# 2026-07-04T04:21:23Z, #595 2026-06-14T06:20:31Z, #763 2026-07-02T10:47:16Z).
+# Case-INSENSITIVE by design: a veto only ever narrows.
+_QUEUE_CONTEXT_WORD = re.compile(
+    r"unrun|queue|dispatch|scoped|deferred|pending|armed", re.IGNORECASE
+)
+
+# In-clause completion-vocabulary supplement for the class-3 read (#961): the
+# dominant true-positive park-note shape is "(label) complete; ... PASS" —
+# the token's clause says complete/COMPLETE while the _ROUND_COMPLETION_WORD
+# sits in a later clause (#505/#542/#545/#559/#613/#654 park notes). Applies
+# ONLY inside a line that already passed the line-level
+# _ROUND_COMPLETION_WORD gate, so new evidence stays a strict subset of the
+# pre-#961 match. Case-sensitive (mirrors _ROUND_COMPLETION_WORD's deliberate
+# case-sensitivity); the lookbehind rejects "incomplete"/"INcomplete".
+_CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
 
 
 def parse_followup_note_field(note: str, field: str) -> str | None:
@@ -1811,7 +2269,18 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
     3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
        note with the exact parenthesized round token ``(<label>)`` AND a
        round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
-       line.
+       line, where additionally (#961) the token's own ``;``/``.``-delimited
+       clause carries a completion word (the line-level list, or the
+       case-sensitive ``complete``/``COMPLETE`` supplement
+       :data:`_CLAUSE_COMPLETION_WORD`) and NO queue-context word
+       (:data:`_QUEUE_CONTEXT_WORD`). Park/handoff notes routinely announce
+       round X complete while enumerating the queued next label Y on the
+       same line (#825 2026-07-04, #595 2026-06-14) — binding the
+       completion signal to the label's clause and vetoing queued/unrun/
+       scoped/armed/dispatch mentions keeps such notes from closing a
+       queued round. The #961 narrowing keeps class-3 evidence a strict
+       subset of the pre-#961 line-level match (a missed close is safe,
+       a wrong close is not).
 
     Returns the one-line evidence string of the FIRST matching class (class
     order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
@@ -1846,12 +2315,35 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
         if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
             continue
         for line in (ev.get("note") or "").splitlines():
-            if token in line and _ROUND_COMPLETION_WORD.search(line):
+            if _class3_line_is_close_evidence(line, token):
                 return (
                     f"{kind} at {ev.get('ts', '?')} carries the round token "
-                    f"({label}) plus a round-completion word"
+                    f"({label}) plus a round-completion word in the same clause"
                 )
     return None
+
+
+def _class3_line_is_close_evidence(line: str, token: str) -> bool:
+    """The #961 two-gate class-3 line check for :func:`followup_retro_close_evidence`.
+
+    Gate 1 is the pre-#961 line-level check, retained verbatim so the #961
+    narrowing can never ADD evidence (new ⊆ old); gate 2 binds the completion
+    signal to the token's own ``;``/``.``-delimited clause and vetoes
+    queue-context mentions. Returns True iff the line is class-3 evidence.
+    """
+    # Gate 1 — the pre-#961 line-level check, retained verbatim.
+    if token not in line or not _ROUND_COMPLETION_WORD.search(line):
+        return False
+    # Gate 2 (#961) — bind the completion signal to the label's own
+    # ;/.-delimited clause and veto queue-context mentions.
+    for clause in re.split(r"[;.]", line):
+        if token not in clause:
+            continue
+        if _QUEUE_CONTEXT_WORD.search(clause):
+            continue  # label named as queued/armed/dispatched — not evidence
+        if _ROUND_COMPLETION_WORD.search(clause) or _CLAUSE_COMPLETION_WORD.search(clause):
+            return True
+    return False
 
 
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
@@ -2270,12 +2762,22 @@ def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
     corrupted line falls through to the existing ``JSONDecodeError`` skip
     path — completing the recovery story.
+
+    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
+    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
+    strings, and ``splitlines()`` treats those as line boundaries — shredding
+    a valid record into skip-malformed fragments = silent marker loss
+    (gotchas.md; #825 → #950).
     """
     if not path.exists():
         return []
     out: list[dict[str, Any]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
-    for lineno, line in enumerate(text.splitlines(), 1):
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False notes are Unicode line boundaries that would shred
+    # valid records into skip-malformed fragments = silent marker loss
+    # (gotchas.md; #825 → #950).
+    for lineno, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
         try:
@@ -2658,6 +3160,12 @@ class NewTaskRequest:
     # The clean-result `## Reproducibility` `**Context:**` row carries it
     # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
     origin_prompt: str | None = None
+    # Workflow-pipeline version this task runs under: "v1" (current default)
+    # or "v2" (report-only pipeline). None -> resolved at creation via
+    # _resolve_workflow_version(): explicit > env EPM_DEFAULT_WORKFLOW >
+    # DEFAULT_WORKFLOW_VERSION. Always written to frontmatter `workflow:` so
+    # the `/issue` dispatcher can branch (EPS workflow-v2 plan, Assumption 2).
+    workflow: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -2686,6 +3194,11 @@ def create_task(req: NewTaskRequest) -> int:
             fm["parent_id"] = req.parent_id
         if req.origin_prompt and req.origin_prompt.strip():
             fm["origin_prompt"] = req.origin_prompt.strip()
+        # Pin the workflow-pipeline version (explicit > EPM_DEFAULT_WORKFLOW >
+        # v1). Always written so the /issue dispatcher can branch; purely
+        # additive — legacy tasks with no `workflow:` key fail-open to v1 via
+        # workflow_version() (EPS workflow-v2 plan, Assumption 2).
+        fm["workflow"] = _resolve_workflow_version(req.workflow)
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.
@@ -2844,6 +3357,14 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
     marked a clean-result before the HF upload lands. Clearing (``value=False``)
     and every non-paper task skip the manifest gate.
+
+    A **v2 report** body (carries ``REPORT_V1_SENTINEL`` — see
+    :func:`is_report_body`) is a valid non-paper clean-result form: it is not a
+    ``paper: true`` task and carries no ``paper_manifest.json``, so it flows
+    through the non-paper path here and flips ``has_clean_result`` with no extra
+    gate. Its own mechanical gate is ``scripts/verify_report.py`` (run before
+    ``set-clean-result`` / at promote time), the report-track analogue of
+    ``verify_task_body.py`` / ``verify_paper.py``.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"

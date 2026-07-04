@@ -1,0 +1,832 @@
+{
+  "commit": "627aaaa8b5",
+  "created": "2026-07-04T06:32:39Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.006731609868115496,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.017163789410024055,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.017163789410024055,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.006181185564110514,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.005516554281308483,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (CoT-augmented \u2212 CoT-alone oracle), 95% bootstrap CI": -0.005516554281308483,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.12065669558173853,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": -0.28776879800145494,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": -0.2988103853731021,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": -0.253769850904606,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.06257084565970605,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.42969254233641163,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.4732399948765983,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.4062084357831345,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.3554541351846393,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.3369947208202665,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.3632741282182599,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.38937349996964576,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.31170242912581647,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.2601589605441982,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.22963721875351495,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.25212652487698106,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.17541159229676606,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.16814389207592906,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.12538586160666865,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.10729556477248725,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.09532543039934871,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.08658387155723268,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.10173812515619785,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.32196633059813606,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.3464017959677119,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.3632557106847518,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.28899653837502004,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.35320629167673023,
+      "series": "direct (context\u2192answer)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.5524341232393029,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.5347554198153273,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.6065305817104225,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.6619856315621089,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.8739867979189476,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.8935392483254206,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.9107168847026391,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.9186258871684589,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.9152093660975296,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.9237906533798669,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.9249990426833634,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.9331980085379848,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.9156458424857088,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.9088294909913431,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.8974718549880468,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.888757114870202,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.8824106622369771,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.8741367884569229,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.8648879830305096,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.8644227353325269,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.8668715501076266,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.8710622178893221,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.885748096011552,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.894513170856608,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.9002118390976903,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.9041876312916208,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.8950954718383287,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.889064033504825,
+      "series": "stage-2 oracle (CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": -0.11850738109026193,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": -0.018121899238136008,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": -0.06020055517949041,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.03631991719558547,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.14298210345043982,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.4174503940282289,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.46285968963608737,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.40435802046476255,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.3701383159478987,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.34931780707444315,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.3651626912133936,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.3974455023475153,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.3202468536493548,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.26372329054386656,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.22440107244887908,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.27127329271393796,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.1981889357564226,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.2167756074423446,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.19736368651683311,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.14690940788510876,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.11298167645833901,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.11804003433871513,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.06277955642420807,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.09052273801612432,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.08450060967578321,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.3238890025934952,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.29031413659146643,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.3679148768930447,
+      "series": "composed (context\u2192predicted CoT\u2192answer)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.46697485029661556,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.5284722585983779,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.5975139803634466,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.6515464627483565,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.8481344401753761,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.8740041885364195,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.8915797600861182,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.8984742031375016,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2": 0.8948052931115344,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2": 0.9014734807954781,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2": 0.902588480145412,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2": 0.9110424962027501,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2": 0.8923910085137358,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2": 0.8844255935713605,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2": 0.8723543959474046,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2": 0.8631589646957989,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2": 0.8577260290591705,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2": 0.8505749041046022,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2": 0.8383395846257156,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2": 0.8286861901660069,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2": 0.8314880415274619,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2": 0.8231258876125475,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2": 0.8226253048643616,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2": 0.8256055688703845,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2": 0.8251707469377414,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2": 0.8191852131154813,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2": 0.7878048460784081,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2": 0.7832881017705384,
+      "series": "CoT-augmented ([context, CoT]\u2192answer)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 118
+}

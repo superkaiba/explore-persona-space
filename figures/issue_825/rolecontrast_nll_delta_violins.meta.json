@@ -1,0 +1,84 @@
+{
+  "commit": "0e64a49a3d",
+  "created": "2026-07-04T10:41:46Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -2.313835327107632,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.929957201891986,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.4850715493317694,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.5112375424708007,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -0.9501095673816351,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 6.2,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.105128324892864,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 7.2,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.951410621646913,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 8.2,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -2.231940025130999,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 10.399999999999999,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.6346910443213196,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 11.399999999999999,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.1857384510835975,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 12.399999999999999,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.3812400510427543,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 13.399999999999999,
+      "per-conversation NLL delta (nats/token),\nassistant \u2212 user": -1.2794570314816665,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

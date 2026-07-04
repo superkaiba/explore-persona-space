@@ -46,15 +46,18 @@ from workflow_lint import (  # noqa: E402
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_heredoc_dotenv,
+    check_hollow_verification_gate_review_lens,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_registry,
+    check_no_literal_round_marker_versions,
     check_no_workflow_improver_spawn,
     check_pipe_python,
     check_script_references,
     check_skill_references,
     check_smoke_architecture_review_lens,
     check_smoke_output_hygiene,
+    check_stale_label_disposition_clause,
     check_upload_as_file,
     check_vm_thread_cap_guidance,
     check_wandb_required,
@@ -2645,6 +2648,81 @@ def test_workflow_lint_check_no_workflow_improver_spawn_cli_exits_zero():
     )
 
 
+# ─── --check-no-literal-round-marker-versions (#917) ────────────────────────
+
+
+def test_no_literal_round_marker_versions_live_tree():
+    """No checked-in workflow prose instructs a literal v1 for a
+    round-versioned marker kind (#917 — the #825/#389 collision class).
+    The E1-E7 sweep of #917 established zero hits at introduction."""
+    errors = check_no_literal_round_marker_versions()
+    assert errors == [], (
+        "literal round-marker version instruction found in the workflow "
+        "surface (rephrase to `v<n>` / max+1, #917):\n" + "\n".join(errors)
+    )
+
+
+def test_check_no_literal_round_marker_versions_flags_literal_v1(tmp_path):
+    """A literal `epm:results v1` posting instruction in an in-scope file
+    (here a rule .md) IS flagged — the guard actually trips."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "stray.md").write_text("On completion, post `epm:results v1` on the task.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "max+1" in errors[0]
+    assert "stray.md:1" in errors[0]
+
+
+def test_check_no_literal_round_marker_versions_wrapped_pair_trips(tmp_path):
+    """A line-wrapped kind/version pair still trips — the scan is whole-file,
+    so the `\\s+` between kind and `v1` may span a newline."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "a.md").write_text("then post `epm:proposed-tests\n  v1` and EXIT.\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_check_no_literal_round_marker_versions_no_false_positives(tmp_path):
+    """`v<n>`, `v12`, and a genuinely-once kind (`epm:failure v1`) never
+    match — the pattern is restricted to the 3 round-versioned kinds and
+    `v1` is word-bounded."""
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "ok.md").write_text(
+        "post `epm:results v<n>` (max+1 per the rule); the legitimate\n"
+        "`epm:experiment-implementation v12` round-12 example; and\n"
+        "`epm:failure v1` is a genuinely-once marker, out of scope.\n"
+    )
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_check_no_literal_round_marker_versions_excluded_paths_pass(tmp_path):
+    """A hit under an EXCLUDED path (.claude/plans/, .claude/agent-memory/)
+    passes — pins the exclusion set (archives may legitimately quote the
+    incident text; a mis-enumerated exclusion would false-FAIL the default
+    lint bundle on archive text)."""
+    plans = tmp_path / ".claude" / "plans"
+    plans.mkdir(parents=True)
+    (plans / "issue-825.md").write_text("the brief said: post `epm:results v1` (historical)\n")
+    mem = tmp_path / ".claude" / "agent-memory" / "implementer"
+    mem.mkdir(parents=True)
+    (mem / "note.md").write_text("brief instructed `epm:experiment-implementation v1`\n")
+    errors = check_no_literal_round_marker_versions(repo_root=tmp_path)
+    assert errors == [], errors
+
+
+def test_workflow_lint_check_no_literal_round_marker_versions_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-no-literal-round-marker-versions")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-no-literal-round-marker-versions failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 def test_workflow_lint_check_gate_ids_unique_cli_exits_zero():
     """The dedicated flag must exist and pass on the committed tree
     (all current gate ids are unique)."""
@@ -2935,6 +3013,123 @@ def test_long_loop_restartability_review_lens_flags_missing_per_file(tmp_path) -
     assert any("'Long-loop restartability'" in e for e in errors), errors
     assert any("'3.5, 3.6, 3.7'" in e for e in errors), errors
     assert any("'Intra-phase grain'" in e for e in errors), errors
+
+
+def test_hollow_gate_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #890 lens on all three surfaces."""
+    assert check_hollow_verification_gate_review_lens() == []
+
+
+def _write_hollow_gate_conforming_tree(tmp_path) -> None:
+    """Write all three #890 surfaces with their full per-file assertions."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n**Hollow-verification-gate sub-check.** trace gate->dispatch\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.68, 3.6}}\n"
+    )
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+
+
+def test_hollow_gate_review_lens_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A tmp tree carrying every per-file assertion returns no errors (#890)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    assert check_hollow_verification_gate_review_lens(repo_root=tmp_path) == []
+
+
+def test_hollow_gate_review_lens_flags_missing_per_file(tmp_path) -> None:
+    """Each surface failing a DIFFERENT assertion FAILs exactly once per file.
+
+    The Claude file loses the sub-check PROSE (keeps its Blocker-tags line),
+    the codex file drops the tag from its Blocker-tags LINE (keeps prose +
+    the 0.68 placeholder), the efficiency file loses its Blocker-tags line
+    entirely — so the check emits exactly one error per file, one per
+    assertion kind (prose token / tag-off-template-line / template-line-gone).
+    """
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\nno sub-check here\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.68, 3.6}}\n"
+    )
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+    )
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 3, errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/efficiency-critic.md") for s in subjects) == 1, subjects
+    assert any("'Hollow-verification-gate sub-check'" in e for e in errors), errors
+    assert any("dropped out of the verdict template" in e for e in errors), errors
+    assert any("no line starts with" in e for e in errors), errors
+
+
+def test_hollow_gate_review_lens_flags_missing_rubric_enumeration(tmp_path) -> None:
+    """A codex placeholder line lacking '0.68' FAILs (the #606 class)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.7, 3.6}}\n"
+    )
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("/codex-code-reviewer.md"), errors
+    assert "0.68" in errors[0] and "INLINED RUBRIC" in errors[0], errors
+
+
+def test_hollow_gate_review_lens_flags_missing_file(tmp_path) -> None:
+    """A missing required surface file is itself an error (the #891 shape)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "agents" / "efficiency-critic.md").unlink()
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("/efficiency-critic.md"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_hollow_gate_review_lens_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible),
+    closing the dead-tripwire gap where all direct-call tests stay green while
+    the CLI never runs the check. Follows the
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` pattern (in-process
+    ``main([])``, ``_REPO_ROOT`` monkeypatched; other bundled checks contribute
+    unrelated errors on the minimal tree, so the assertion keys on the
+    hollow-gate diagnostic + the offending file path)."""
+    import workflow_lint as wl
+
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+        "**Blocker tags:** [`substantive`]\n"
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "hollow-verification-gate" in err and "efficiency-critic.md" in err, (
+        f"the hollow-gate diagnostic (naming efficiency-critic.md) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
 
 
 def _write_smoke_arch_conforming_tree(tmp_path) -> None:
@@ -3399,4 +3594,201 @@ def test_vm_thread_cap_guidance_bundled_in_no_flags(tmp_path, capsys, monkeypatc
         f"the #891 vm-thread-cap diagnostic (naming code-style.md) is missing "
         f"from the no-flags default run's stderr — the check is not bundled "
         f"into no_flags:\n{err}"
+    )
+
+
+# --- #963 stale-label disposition-clause tests -------------------------------
+
+# Conforming fixture: deliberately re-wrapped at a DIFFERENT column than the
+# live SKILL.md, with FOUR of the five required tokens split mid-phrase across
+# a line break (the reflow proof for the whitespace-normalized matching), and
+# a span-end DECOY sentence AFTER the `\n\n` terminator that matches the
+# negative regex ("On None, skip ...") — which must NOT trip the check
+# (mechanically pins the paragraph-scoped extraction).
+_STALE_LABEL_CONFORMING = (
+    "# issue skill\n"
+    "\n"
+    "**Stale-label disposition rule (mechanical evidence only).** Run\n"
+    "`task_workflow.followup_retro_close_evidence(events, label)` before executing\n"
+    "a dispatched label. This check is a GHOST-label filter, NOT an\n"
+    "execution gate. A None return\n"
+    "means NO prior-run evidence exists and for a fresh never-run label\n"
+    "the label\n"
+    "EXECUTES as the dispatched round. The\n"
+    "skip-and-surface disposition applies ONLY when the orchestrator suspects\n"
+    "the label already ran.\n"
+    "\n"
+    "**Next.** On None, skip the label.\n"
+)
+
+_STALE_LABEL_EXECUTE_TOKEN = "the label EXECUTES as the dispatched round"
+
+
+def _write_stale_label_tree(tmp_path, body: str) -> None:
+    """Write ``.claude/skills/issue/SKILL.md`` under ``tmp_path`` with ``body``."""
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(body, encoding="utf-8")
+
+
+def test_stale_label_disposition_clause_live_tree_passes() -> None:
+    """The real SKILL.md carries the #894/#763 paragraph with all five tokens
+    and no unconditional skip-on-None coupling (pins Assumption 4)."""
+    assert check_stale_label_disposition_clause() == []
+
+
+def test_stale_label_disposition_clause_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A re-wrapped but token-identical paragraph PASSes (normalization works),
+    and the span-end DECOY ('On None, skip the label.' AFTER the blank-line
+    terminator) does not trip the negative regex (paragraph scoping works)."""
+    _write_stale_label_tree(tmp_path, _STALE_LABEL_CONFORMING)
+    assert check_stale_label_disposition_clause(repo_root=tmp_path) == []
+
+
+def test_stale_label_disposition_clause_flags_missing_execute_clause(tmp_path) -> None:
+    """Deleting the fresh-label-execute clause -> exactly one error naming
+    that token (the task's primary regression target)."""
+    body = _STALE_LABEL_CONFORMING.replace("EXECUTES as the dispatched round", "runs normally")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert repr(_STALE_LABEL_EXECUTE_TOKEN) in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_unconditional_skip_on_none(tmp_path) -> None:
+    """A paragraph regaining 'On None return, skip the label ...' INSIDE the
+    span FAILs via the negative regex. All five positive tokens are kept
+    present so the test isolates the regex: ``len(errors) == 1`` is asserted
+    mechanically, not incidentally."""
+    body = _STALE_LABEL_CONFORMING.replace(
+        "the label already ran.\n",
+        "the label already ran. On None return, skip the label and surface it.\n",
+    )
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "'On None ... skip'" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_duplicate_anchor(tmp_path) -> None:
+    """A SECOND copy of the bold anchor -> exactly one duplicate-anchor error
+    (MF2: span identity is load-bearing for the negative assertion — a stale
+    duplicate could satisfy the token scan while the operative paragraph
+    regresses)."""
+    body = (
+        _STALE_LABEL_CONFORMING
+        + "\n**Stale-label disposition rule (stale duplicate).** Old copy.\n"
+    )
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "UNIQUE" in errors[0], errors
+    assert "2 bold anchors" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_split_paragraph(tmp_path) -> None:
+    """A blank line inserted mid-paragraph (before the execute clause)
+    truncates the span at the first blank line and FAILs the downstream
+    tokens (pins Assumption 3's intended truncation behavior)."""
+    body = _STALE_LABEL_CONFORMING.replace("\nthe label\nEXECUTES", "\n\nthe label\nEXECUTES")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert errors, "expected missing-token FAILs on a split paragraph"
+    assert all("missing token" in e for e in errors), errors
+    assert any(repr(_STALE_LABEL_EXECUTE_TOKEN) in e for e in errors), errors
+
+
+def test_stale_label_disposition_clause_flags_missing_paragraph(tmp_path) -> None:
+    """SKILL.md present but anchor absent -> exactly one error naming the
+    bold anchor."""
+    _write_stale_label_tree(tmp_path, "# issue skill\n\nNo stale-label paragraph here.\n")
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing the bold anchor" in errors[0], errors
+    assert repr("**Stale-label disposition rule") in errors[0], errors
+
+
+def test_stale_label_disposition_clause_flags_missing_file(tmp_path) -> None:
+    """An empty tmp tree (no SKILL.md at all) -> a missing-file error."""
+    errors = check_stale_label_disposition_clause(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing" in errors[0], errors
+
+
+def test_stale_label_disposition_clause_paragraph_at_eof_passes(tmp_path) -> None:
+    """A conforming paragraph that is the LAST content of the file — no
+    blank-line terminator after it — still PASSes: pins the ``end == -1``
+    span fallback (the span extends to EOF when ``text.find("\\n\\n", start)``
+    misses)."""
+    body = _STALE_LABEL_CONFORMING.split("\n\n**Next.")[0]
+    assert body != _STALE_LABEL_CONFORMING
+    # Precondition for exercising the fallback: no blank line anywhere at or
+    # after the anchor, so the span-end search MUST return -1.
+    assert "\n\n" not in body[body.find("**Stale-label disposition rule") :]
+    _write_stale_label_tree(tmp_path, body)
+    assert check_stale_label_disposition_clause(repo_root=tmp_path) == []
+
+
+def test_stale_label_disposition_clause_wired_into_default_run(tmp_path, capsys, monkeypatch):
+    """The no-flags CLI-path REGISTRATION test (MF1): the default run must
+    exercise ``check_stale_label_disposition_clause`` — deleting the dispatch
+    branch (``if args.check_stale_label_disposition or no_flags:``) or its
+    ``or no_flags`` disjunct must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the
+    CLI never runs the check. NOTE: this test canNOT pin the
+    ``or args.check_stale_label_disposition`` membership in the ``no_flags``
+    tuple — ``main([])`` passes no flags, so ``no_flags`` computes True with
+    or without that line; the tuple membership is pinned by
+    ``test_stale_label_disposition_clause_dedicated_flag_isolated`` below.
+    Follows the ``test_smoke_output_hygiene_wired_into_default_run`` /
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` house pattern:
+    doctored non-conforming tree (execute clause deleted), ``_REPO_ROOT``
+    monkeypatched to the fixture, ``main([])`` in-process. Other bundled
+    checks contribute unrelated errors on the minimal tree, so the assertion
+    keys on the #963 diagnostic string."""
+    import workflow_lint as wl
+
+    body = _STALE_LABEL_CONFORMING.replace("EXECUTES as the dispatched round", "runs normally")
+    assert body != _STALE_LABEL_CONFORMING
+    _write_stale_label_tree(tmp_path, body)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a non-conforming tree:\n{err}"
+    assert "#963" in err, (
+        f"the #963 stale-label-disposition diagnostic is missing from the "
+        f"no-flags default run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
+
+
+def test_stale_label_disposition_clause_dedicated_flag_isolated(tmp_path, capsys, monkeypatch):
+    """The dedicated ``--check-stale-label-disposition`` flag runs ONLY the
+    stale-label check (``no_flags`` computes False): on a minimal tree where
+    the stale-label paragraph CONFORMS but the full default bundle FAILs
+    (other bundled checks miss their files), the dedicated-flag invocation
+    exits 0. Mutation-visibility — the leg the ``main([])`` wiring test above
+    cannot pin: deleting ``or args.check_stale_label_disposition`` from the
+    ``no_flags`` tuple makes the dedicated-flag invocation compute
+    ``no_flags`` True and run the FULL bundle on the failing minimal tree ->
+    rc != 0 -> this test FAILs. (Verified empirically on 2026-07-04 by
+    stripping that tuple line: this test fails, the wiring test stays green.)
+    """
+    import workflow_lint as wl
+
+    _write_stale_label_tree(tmp_path, _STALE_LABEL_CONFORMING)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-stale-label-disposition"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-stale-label-disposition ran more than the (conforming) stale-label "
+        f"check — no_flags mis-computed True, i.e. the flag's membership in the "
+        f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
     )

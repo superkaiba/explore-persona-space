@@ -434,12 +434,23 @@ location after re-verifying, or move it to §12 Assumptions flagged
 subcommand and returns a false "0 files" via swallowed stderr).
 
 **Reused code/helper throughput inspection (checklist item (i)) is recorded
-here too.** When the plan reuses a parent's fit / analysis / eval code helper,
-this card carries the item-(i) inspection triple — helper/function name,
-batched-or-serial verdict, device handling (`.claude/rules/artifact-reuse.md`
+here too.** When the plan reuses a parent's fit / analysis / eval /
+upload-verify-staging code helper,
+this card carries the item-(i) inspection record — helper/function name,
+batched-or-serial verdict, device handling, plus the Hub-call-scoping verdict
+when the helper touches the Hub (`.claude/rules/artifact-reuse.md`
 item (i)) — and the implied wall-time is reflected in the matching §9 row.
-"N/A — no artifact reuse" does NOT cover reused fit/analysis code: a plan with
+"N/A — no artifact reuse" does NOT cover reused fit/analysis/upload-verify
+code: a plan with
 no HF artifact reuse but with an inherited fit helper still fills this row.
+
+**Pairwise provenance coherence (checklist item (j)) is recorded here too.**
+When the plan reuses a mutually-dependent artifact PAIR, this card carries the
+item-(j) attestation — the member dates at the consumed revisions (per-repo
+`get_paths_info(..., expand=True, revision=...)`; git members via
+`git log -1`: consumed input vs dependent capture) and the coherence verdict;
+an input postdating its capture is a failed check regardless of sha pins
+(#922).
 
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the

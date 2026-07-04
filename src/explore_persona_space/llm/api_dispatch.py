@@ -71,11 +71,13 @@ dispatcher and its tests.
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import datetime as _dt
 import json
 import logging
 import os
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -501,7 +503,9 @@ def _atomic_write_json(path: Path, obj: Any) -> None:
     rename is atomic on POSIX) — the interrupt-safe checkpoint contract (§1b).
     """
     path = Path(path)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    # Per-PID tmp name: concurrent sessions share ~/.task-workflow files (the
+    # headroom snapshot), and a fixed tmp collides across writers mid-write.
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
     with open(tmp, "w") as f:
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)
@@ -705,6 +709,9 @@ async def _dispatch_sync(
             try:
                 raw = await client.messages.with_raw_response.create(**params)
                 state.note_remaining(raw.headers)
+                # Best-effort cross-session headroom snapshot (fail-soft; never
+                # raises into the dispatch loop — see record_headroom_observation).
+                record_headroom_observation(org, params.get("model", "unknown"), raw.headers)
                 msg = raw.parse()
                 text = next((b.text for b in msg.content if b.type == "text"), "")
                 parsed = parse_response(text)
@@ -1117,6 +1124,11 @@ async def dispatch_calls(
         model: Claude model id (sets the per-key concurrency family).
         build_request: ``item -> Messages-API params`` (model/max_tokens/messages/...).
             MUST include the ``model`` field; this dispatcher does not inject it.
+            NOTE: the Messages API has NO "system" message role — a builder
+            forwarding caller message lists verbatim MUST lift system-role
+            entries to the top-level ``system=`` param (see
+            ``llm.models.Prompt.anthropic_format``); a system-bearing list
+            400s every request (gotchas.md, #906 r11).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
@@ -1412,11 +1424,234 @@ def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> No
     )
 
 
+# ── Persisted headroom snapshot + `--status` CLI (v2 cross-session coord) ─────
+#
+# A best-effort observability side-channel so a SEPARATE process
+# (``python -m explore_persona_space.llm.api_dispatch --status``, a planner
+# sizing an API workload) can read the last-seen per-org rate-limit headroom
+# WITHOUT making a live probe call. Every dispatch that observes rate-limit
+# headers (the :meth:`OrgState.note_remaining` path) folds the reading into
+# ``~/.task-workflow/api-headroom.json``, throttled to at most one write per
+# ``HEADROOM_MIN_WRITE_INTERVAL_S`` so a burst of concurrent calls does not
+# hammer the file.
+#
+# SANCTIONED FAIL-SOFT: :func:`record_headroom_observation` is the ONE place in
+# this module where an exception is caught and swallowed. The snapshot is pure
+# observability — dispatch correctness never depends on it — so a write failure
+# (disk full, permission, a concurrent-writer race) MUST NEVER propagate into
+# the live dispatch path. Every OTHER error path in this module fails loud by
+# design; this one is the deliberate exception.
+
+HEADROOM_SNAPSHOT_PATH = Path.home() / ".task-workflow" / "api-headroom.json"
+HEADROOM_MIN_WRITE_INTERVAL_S = 5.0
+# Staleness bands for `--status` (seconds): fresh < 60s, stale < 1h, else very-stale.
+HEADROOM_FRESH_MAX_S = 60
+HEADROOM_STALE_MAX_S = 3600
+_headroom_last_write_monotonic: float = 0.0
+
+
+def _headroom_observation_from_headers(headers: Any) -> dict[str, int] | None:
+    """Extract ``{requests_remaining, tokens_remaining}`` from response headers.
+
+    ``tokens_remaining`` is the MOST-BINDING of the input/output token limiters
+    (mirrors :meth:`OrgState.note_remaining`'s min-fraction logic). Returns
+    ``None`` when no rate-limit header is present (nothing to record).
+    """
+    req = _header_int(headers, "anthropic-ratelimit-requests-remaining")
+    token_vals = [
+        v
+        for name in (
+            "anthropic-ratelimit-output-tokens-remaining",
+            "anthropic-ratelimit-input-tokens-remaining",
+        )
+        if (v := _header_int(headers, name)) is not None
+    ]
+    obs: dict[str, int] = {}
+    if req is not None:
+        obs["requests_remaining"] = req
+    if token_vals:
+        obs["tokens_remaining"] = min(token_vals)
+    return obs or None
+
+
+def merge_headroom_snapshot(
+    snapshot: dict,
+    org_label: str,
+    model: str,
+    observation: dict,
+    *,
+    observed_at_iso: str,
+    writer_pid: int,
+) -> dict:
+    """Pure merge: fold one observation into the snapshot; return a NEW dict.
+
+    Shape: ``{org_key_alias: {model: {requests_remaining, tokens_remaining,
+    observed_at_iso}}, "writer_pid": <int>}``. The newest observation for an
+    ``(org, model)`` pair wins. Pure / no I/O so it is unit-tested directly.
+    """
+    out = dict(snapshot) if isinstance(snapshot, dict) else {}
+    prev_org = out.get(org_label)
+    org_entry = dict(prev_org) if isinstance(prev_org, dict) else {}
+    org_entry[model] = {**observation, "observed_at_iso": observed_at_iso}
+    out[org_label] = org_entry
+    out["writer_pid"] = writer_pid
+    return out
+
+
+def record_headroom_observation(
+    org_label: str,
+    model: str,
+    headers: Any,
+    *,
+    path: Path | None = None,
+    now_monotonic: float | None = None,
+    now_iso: str | None = None,
+) -> None:
+    """Best-effort, throttled persist of one header observation. NEVER raises.
+
+    See the section header: this is the sanctioned fail-soft. Any exception is
+    logged at debug and swallowed so a snapshot-write failure cannot break the
+    live dispatch loop that called it.
+    """
+    global _headroom_last_write_monotonic
+    try:
+        obs = _headroom_observation_from_headers(headers)
+        if obs is None:
+            return
+        mono = time.monotonic() if now_monotonic is None else now_monotonic
+        if mono - _headroom_last_write_monotonic < HEADROOM_MIN_WRITE_INTERVAL_S:
+            return
+        _headroom_last_write_monotonic = mono
+        p = HEADROOM_SNAPSHOT_PATH if path is None else Path(path)
+        current: dict = {}
+        if p.exists():
+            try:
+                loaded = json.loads(p.read_text())
+                if isinstance(loaded, dict):
+                    current = loaded
+            except (json.JSONDecodeError, OSError):
+                current = {}
+        iso = now_iso or _dt.datetime.now(_dt.UTC).isoformat()
+        merged = merge_headroom_snapshot(
+            current, org_label, model, obs, observed_at_iso=iso, writer_pid=os.getpid()
+        )
+        p.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_json(p, merged)
+    except Exception:
+        logger.debug("headroom snapshot write failed (swallowed)", exc_info=True)
+
+
+def _staleness_label(observed_at_iso: str, now: _dt.datetime) -> str:
+    """``fresh`` (<60s) / ``stale`` (<1h) / ``very-stale`` (>=1h) / ``unknown``."""
+    try:
+        obs = _dt.datetime.fromisoformat(observed_at_iso)
+    except (ValueError, TypeError):
+        return "unknown"
+    if obs.tzinfo is None:
+        obs = obs.replace(tzinfo=_dt.UTC)
+    age = (now - obs).total_seconds()
+    if age < HEADROOM_FRESH_MAX_S:
+        return "fresh"
+    if age < HEADROOM_STALE_MAX_S:
+        return "stale"
+    return "very-stale"
+
+
+def build_headroom_status_rows(snapshot: dict, *, now: _dt.datetime) -> list[dict]:
+    """Flatten a snapshot into per-``(org, model)`` rows with a staleness label.
+
+    Pure — both the CLI text and JSON renderers consume this. Skips the
+    top-level ``writer_pid`` key and tolerates a malformed org / model entry
+    (skips it rather than raising).
+    """
+    rows: list[dict] = []
+    for org_label, models in sorted(snapshot.items()):
+        if org_label == "writer_pid" or not isinstance(models, dict):
+            continue
+        for model, entry in sorted(models.items()):
+            if not isinstance(entry, dict):
+                continue
+            observed = str(entry.get("observed_at_iso", ""))
+            rows.append(
+                {
+                    "org": org_label,
+                    "model": model,
+                    "requests_remaining": entry.get("requests_remaining"),
+                    "tokens_remaining": entry.get("tokens_remaining"),
+                    "observed_at_iso": observed,
+                    "staleness": _staleness_label(observed, now),
+                }
+            )
+    return rows
+
+
+def format_headroom_status_text(rows: list[dict], *, writer_pid: Any = None) -> str:
+    """Human-readable per-org/model headroom table with staleness labels."""
+    if not rows:
+        return "api-headroom: no observations recorded yet."
+    lines = ["api-headroom (per-org / per-model last-observed remaining):"]
+    for r in rows:
+        lines.append(
+            f"  [{r['staleness']:>10}] org={r['org']:<10} model={r['model']:<30} "
+            f"requests_remaining={r['requests_remaining']} "
+            f"tokens_remaining={r['tokens_remaining']} @ {r['observed_at_iso']}"
+        )
+    if writer_pid is not None:
+        lines.append(f"  (last writer pid: {writer_pid})")
+    return "\n".join(lines)
+
+
+def _cmd_status(
+    *, path: Path | None = None, as_json: bool = False, now: _dt.datetime | None = None
+) -> int:
+    p = HEADROOM_SNAPSHOT_PATH if path is None else Path(path)
+    now = now or _dt.datetime.now(_dt.UTC)
+    if not p.exists():
+        if as_json:
+            print(json.dumps({"rows": [], "note": "no headroom snapshot file yet"}, indent=2))
+        else:
+            print(f"api-headroom: no snapshot at {p} yet (no dispatch has observed headers).")
+        return 0
+    try:
+        snapshot = json.loads(p.read_text())
+        if not isinstance(snapshot, dict):
+            raise ValueError("snapshot is not an object")
+    except (json.JSONDecodeError, ValueError, OSError) as exc:
+        sys.stderr.write(f"api-headroom: unreadable snapshot {p}: {exc}\n")
+        return 1
+    rows = build_headroom_status_rows(snapshot, now=now)
+    writer_pid = snapshot.get("writer_pid")
+    if as_json:
+        print(json.dumps({"rows": rows, "writer_pid": writer_pid}, indent=2, sort_keys=True))
+    else:
+        print(format_headroom_status_text(rows, writer_pid=writer_pid))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Multi-org Anthropic dispatcher — headroom status (v2 coordination)."
+    )
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="print the last-observed per-org/model rate-limit headroom (with a "
+        "staleness label per entry) from ~/.task-workflow/api-headroom.json.",
+    )
+    parser.add_argument("--json", action="store_true", help="emit JSON (use with --status).")
+    args = parser.parse_args(argv)
+    if args.status:
+        return _cmd_status(as_json=args.json)
+    parser.print_help()
+    return 0
+
+
 __all__ = [
     "DEFAULT_BATCH_CHUNK_SIZE",
     "DEFAULT_FAMILY_CONCURRENCY",
     "DEFAULT_MAX_429_RETRIES",
     "FANOUT_SLACK",
+    "HEADROOM_SNAPSHOT_PATH",
     "ORG_ENV_KEYS",
     "RESULT_ERROR",
     "RESULT_OK",
@@ -1426,9 +1661,17 @@ __all__ = [
     "DispatchResult",
     "DispatchRoute",
     "OrgState",
+    "build_headroom_status_rows",
     "decide_dispatch_route",
     "detect_org_keys",
     "dispatch_calls",
     "family_concurrency_cap",
+    "main",
+    "merge_headroom_snapshot",
     "model_family",
+    "record_headroom_observation",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

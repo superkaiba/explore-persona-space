@@ -474,33 +474,114 @@ def test_cmd_provision_cpu_intent_routes_to_create_cpu_pod(
     assert cpu_provision_stubs["gpu_create_calls"] == 0
 
 
-def test_cmd_provision_cpu_small_default_volume_is_cpu_default(
-    isolated_state, stub_list_team_pods, cpu_provision_stubs
+@pytest.mark.parametrize(
+    ("intent", "expected_volume_gb"),
+    [
+        # cpu-small: CPU default 40, then clamped to the cpu3g cap (20) by the
+        # #1010 effective-payload clamp (the untouched default effective 50
+        # exceeds the 20 GB validation cap — pre-#1010 RunPod REJECTED every
+        # default cpu-small provision outright).
+        ("cpu-small", 20),
+        # cpu-mid: CPU default 40 rides through unclamped (effective 50 == cap).
+        ("cpu-mid", 40),
+    ],
+)
+def test_cmd_provision_cpu_default_volume_is_cpu_default(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs, intent, expected_volume_gb
 ):
-    """`provision --intent cpu-small` with no explicit --volume-gb uses the
-    cheap CPU default (40 GB), not the 200 GB GPU argparse default (#747 minor
-    fix). A 200 GB persistent volume on a cents/hr CPU pod defeats the lane."""
+    """`provision --intent cpu-*` with no explicit --volume-gb never uses the
+    200 GB GPU argparse default (#747 minor fix — a 200 GB persistent volume
+    on a cents/hr CPU pod defeats the lane): the cheap CPU default (40 GB)
+    applies, further clamped to the instance's #1010 container-disk cap where
+    the cap sits below it."""
     _write_metadata_file({})
     stub_list_team_pods.return_value = []
 
-    ns = _cpu_provision_ns(747, "cpu-small")  # volume_gb left at the 200 default
+    ns = _cpu_provision_ns(747, intent)  # volume_gb left at the 200 default
     pod_lifecycle.cmd_provision(ns)
 
-    assert cpu_provision_stubs["cpu_calls"][0]["volume_gb"] == 40
+    assert cpu_provision_stubs["cpu_calls"][0]["volume_gb"] == expected_volume_gb
 
 
-def test_cmd_provision_cpu_small_explicit_volume_is_honored(
+def test_cmd_provision_cpu_small_explicit_subcap_volume_is_honored(
     isolated_state, stub_list_team_pods, cpu_provision_stubs
 ):
-    """An explicit non-default --volume-gb is honored on a CPU intent (only the
-    implicit 200 GB default is rewritten to the CPU default)."""
+    """An explicit sub-cap --volume-gb is honored on a CPU intent (only the
+    implicit 200 GB default is rewritten to the CPU default; the #1010 clamp
+    only ever REDUCES an over-cap knob, so a 15 GB volume rides through while
+    the 50 GB default container disk clamps to the cpu3g cap)."""
     _write_metadata_file({})
     stub_list_team_pods.return_value = []
 
-    ns = _cpu_provision_ns(747, "cpu-small", volume_gb=120)
+    ns = _cpu_provision_ns(747, "cpu-small", volume_gb=15)
     pod_lifecycle.cmd_provision(ns)
 
-    assert cpu_provision_stubs["cpu_calls"][0]["volume_gb"] == 120
+    call = cpu_provision_stubs["cpu_calls"][0]
+    assert call["volume_gb"] == 15
+    assert call["container_disk_gb"] == 20  # default 50 clamped to the cap
+
+
+# ---------------------------------------------------------------------------
+# cmd_provision — #1010 CPU effective-payload cap clamp / pre-API refusal
+#
+# RunPod validates deployCpuPod's EFFECTIVE container disk —
+# max(container_disk_gb, volume_gb); runpod_api._deploy_cpu_once folds the CPU
+# volume into containerDiskInGb — against a per-flavor cap (probe 2026-07-04:
+# cpu3g <= 20, cpu3c <= 80). These assert the create_cpu_pod CALL KWARGS (the
+# EFFECTIVE payload), never a pod_lifecycle local, which the fold false-PASSes.
+# ---------------------------------------------------------------------------
+
+
+def test_cpu_provision_clamps_default_disk_to_instance_cap(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """#1010: the untouched defaults (container 50 / CPU volume 40 ->
+    effective 50) exceed the cpu3g cap (20); the CPU branch clamps the
+    EFFECTIVE payload to the cap and PROCEEDS (pre-#1010 RunPod validation
+    rejected every default cpu-small provision — the lane was broken)."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    ns = _cpu_provision_ns(1010, "cpu-small")
+    pod_lifecycle.cmd_provision(ns)
+
+    call = cpu_provision_stubs["cpu_calls"][0]
+    assert max(call["container_disk_gb"], call["volume_gb"]) == 20
+
+
+def test_cpu_provision_refuses_explicit_disk_above_cap(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """#1010: an EXPLICIT above-default-band request (> 50 GB effective) over
+    the instance cap refuses pre-API with exit 1 (same UX as the 'Pod already
+    exists' refusal) — never a paid create RunPod's validation would reject."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    ns = _cpu_provision_ns(1010, "cpu-small", container_disk_gb=60)
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(ns)
+    assert exc.value.code == 1
+    assert cpu_provision_stubs["cpu_calls"] == []  # pre-API: create never called
+
+
+def test_cpu_provision_threaded_floor_50_clamps_not_refuses_when_cap_below_50(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """#1010 invariant: an effective payload of exactly 50 (the untouched
+    default AND the router-threaded `--container-disk-gb max(50, boot)` floor)
+    ALWAYS rides the clamp branch, never the refusal — a stated-small-footprint
+    cpu-small auto-launch arrives here at exactly 50 and MUST clamp-and-proceed
+    at the cap, not exit 1."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    # The router-threaded shape: --container-disk-gb 50 explicit on the argv.
+    ns = _cpu_provision_ns(1010, "cpu-small", container_disk_gb=50)
+    pod_lifecycle.cmd_provision(ns)
+
+    call = cpu_provision_stubs["cpu_calls"][0]
+    assert max(call["container_disk_gb"], call["volume_gb"]) == 20
 
 
 # ---------------------------------------------------------------------------

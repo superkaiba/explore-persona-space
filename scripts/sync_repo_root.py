@@ -38,7 +38,8 @@ Exit codes::
     3  push failed after the one retry
     4  a bounded git subprocess timed out (rebase aborted cleanly)
     5  precondition failure (HEAD not main, fresh rebase/merge husk present,
-       index.lock persistently held, task-workflow lock held past the bound)
+       interrupted ``git am`` state, index.lock persistently held,
+       task-workflow lock held past the bound)
     6  unexpected error (fail loud; swept files restored from the journal; a
        failure inside the restore itself also routes here, report emitted)
 
@@ -73,7 +74,12 @@ Safety invariants (binding; pinned by tests/test_sync_repo_root.py):
     ``shutil.move`` replace a prior rescue copy and clobber its manifest).
   * Fail loud; no silent husks; a young (< ``EPM_ROOT_SYNC_HUSK_AGE_S``)
     rebase/merge husk or a persistent index.lock is reported and exits 5 —
-    never deleted.
+    never deleted. A STALE husk is git-aborted; when git itself cannot abort
+    it (the head-name-less shape a crashed autostash-pull leaves) its
+    autostash is rescued to the stash list and the husk dir is ARCHIVED to
+    the rescue root — never deleted — with a rescue failure blocking the
+    move; an interrupted ``git am`` session (``rebase-apply/applying``) is
+    refused (exit 5), never touched.
 
 Residual risk (documented, not closed here): a session running a direct
 ``git commit`` on the root (not via ``task.py``) is NOT excluded by the
@@ -453,10 +459,12 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
 
     Order is load-bearing: (1) index.lock bounded wait FIRST (a husk abort
     needs the index; never deleted); (2) husk triage (stale → abort +
-    continue, young → exit 5) BEFORE the branch check, because a mid-rebase
-    husk leaves HEAD detached — checking the branch first would make the
-    stale-husk auto-abort unreachable; (3) HEAD==main; (4) stranded-autostash
-    recovery for entries left by PREVIOUS crashed loops.
+    continue; stale un-abortable head-name-less rebase → rescue autostash +
+    archive-aside; stale ``git am`` session → exit 5; young → exit 5) BEFORE
+    the branch check, because a mid-rebase husk leaves HEAD detached —
+    checking the branch first would make the stale-husk auto-abort
+    unreachable; (3) HEAD==main; (4) stranded-autostash recovery for entries
+    left by PREVIOUS crashed loops.
     """
     gd = _git_dir(repo)
     index_lock = gd / "index.lock"
@@ -488,16 +496,58 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
                 f"young {husk.name} husk ({age:.0f}s old, threshold {_husk_age_s():.0f}s) — "
                 "someone may be mid-operation; refusing to touch it.",
             )
+        # Discriminators scoped to REBASE state dirs only (MERGE_HEAD — even a
+        # malformed directory — routes to the explicit refuse branch below).
+        is_rebase_dir = abort_args[0] == "rebase" and husk.is_dir()
+        am_in_progress = is_rebase_dir and (husk / "applying").exists()
+        headnameless = is_rebase_dir and not (husk / "head-name").exists()
         if dry_run:
-            _msg(report, f"DRY-RUN: stale {husk.name} husk ({age:.0f}s old) would be aborted")
+            if am_in_progress:
+                _msg(
+                    report,
+                    f"DRY-RUN: stale {husk.name} state is a `git am` session "
+                    "(`applying` present) — a real run would refuse (exit 5); "
+                    "resolve via `git am --continue` / `git am --abort`",
+                )
+            elif headnameless:
+                _msg(
+                    report,
+                    f"DRY-RUN: stale head-name-less {husk.name} husk ({age:.0f}s old) — "
+                    "un-abortable by git; autostash would be rescued to the stash "
+                    "list, then the husk dir archived to the rescue root",
+                )
+            else:
+                _msg(report, f"DRY-RUN: stale {husk.name} husk ({age:.0f}s old) would be aborted")
             continue
-        git(repo, *abort_args)
-        _msg(
-            report,
-            f"STALE-HUSK ABORT: {husk.name} was {age:.0f}s old (> {_husk_age_s():.0f}s); "
-            f"ran `git {' '.join(abort_args)}` (restores original HEAD + re-applies autostash).",
-        )
-        report["actions_performed"] = True
+        aborted = git(repo, *abort_args, check=False)
+        if aborted.returncode == 0:
+            _msg(
+                report,
+                f"STALE-HUSK ABORT: {husk.name} was {age:.0f}s old (> {_husk_age_s():.0f}s); "
+                f"ran `git {' '.join(abort_args)}` "
+                "(restores original HEAD + re-applies autostash).",
+            )
+            report["actions_performed"] = True
+            continue
+        if am_in_progress:
+            raise SyncAbortError(
+                EXIT_PRECONDITION,
+                f"stale {husk.name} state is an interrupted `git am` session "
+                f"(`{husk.name}/applying` present; `git rebase --abort` "
+                f"rc={aborted.returncode}). Refusing to touch it — the patch data and "
+                "--continue capability belong to the am session's owner.\n"
+                "resolve manually: `git am --continue` (finish) or `git am --abort` "
+                "(discard), then re-run the sync.",
+            )
+        if not headnameless:
+            raise SyncAbortError(
+                EXIT_UNEXPECTED,
+                f"stale {husk.name} husk: `git {' '.join(abort_args)}` failed "
+                f"(rc={aborted.returncode}) and the husk is not the known un-abortable "
+                f"head-name-less rebase shape — refusing to touch it.\n"
+                f"stderr: {aborted.stderr.strip()}",
+            )
+        _recover_headnameless_husk(repo, husk, age, aborted, report)
 
     branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch != "main":
@@ -509,6 +559,104 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
 
     # Entries stranded by PREVIOUS crashed loops.
     recover_stranded_autostash(repo, report, dry_run=dry_run, preflight_case=True)
+
+
+def _recover_headnameless_husk(
+    repo: Path, husk: Path, age: float, aborted: subprocess.CompletedProcess[str], report: dict
+) -> None:
+    """Rescue-then-ARCHIVE for a stale, un-abortable, head-name-less rebase husk.
+
+    A crashed ``pull --rebase --autostash`` can die after writing
+    ``<state-dir>/autostash`` but before ``head-name`` (2026-07-03 incident,
+    #971); git can neither represent nor abort a rebase without ``head-name``
+    (``git rebase --abort`` rc=1), so the husk permanently wedges preflight.
+    The caller has already excluded an interrupted ``git am`` session (the
+    ``applying`` marker — ``git am`` shares ``rebase-apply``); this helper
+    re-checks both discriminators immediately before the move (TOCTOU).
+    Recovery order preserves the never-lose-data invariant: (1) rescue the
+    autostash commit into the stash list (``git stash store -m autostash``;
+    guarded by a 40-hex pre-check, ``cat-file -e`` resolvability, and a
+    ``rev-parse <sha>^2`` stash-shapedness check — a stored non-stash commit
+    would wedge the stranded-autostash pass downstream; idempotent via a
+    stash-reflog containment check; a store failure on a storable commit
+    BLOCKS the move — fail loud, husk kept); non-storable autostash content
+    is preserved verbatim under ``RESCUE_ROOT`` first; (2) only then
+    ``shutil.move`` the ENTIRE husk dir into a fresh exclusive
+    ``allocate_rescue_dir()`` — archive-aside, never deletion: every husk
+    file survives for unforeseen shapes, and the same-device rename closes
+    the mid-``rmtree`` mtime-refresh re-wedge window. The stored entry's
+    subject is exactly ``autostash``, so preflight step (4)
+    (``recover_stranded_autostash``) immediately rescue-patches and
+    pops-if-clean. Deliberately NOT ``git rebase --quit``: quit removes the
+    state dir and exits 0 even when its internal autostash store FAILS
+    (verified on git 2.34.1), so rescue failure could not block removal.
+    """
+    autostash_file = husk / "autostash"
+    sha = autostash_file.read_text().strip() if autostash_file.exists() else ""
+    if not autostash_file.exists():
+        disposition = "no autostash file present"
+    elif not sha:
+        disposition = "autostash file empty — nothing to rescue"
+    else:
+        is_hex40 = len(sha) == 40 and all(c in "0123456789abcdef" for c in sha)
+        resolvable = (
+            is_hex40
+            and git(repo, "cat-file", "-e", f"{sha}^{{commit}}", check=False).returncode == 0
+        )
+        stash_shaped = (
+            resolvable
+            and git(repo, "rev-parse", "-q", "--verify", f"{sha}^2", check=False).returncode == 0
+        )
+        if not stash_shaped:
+            RESCUE_ROOT.mkdir(parents=True, exist_ok=True)
+            rescue_path = RESCUE_ROOT / f"husk-autostash-{husk.name}-{_rescue_timestamp()}.txt"
+            rescue_path.write_text(autostash_file.read_text())
+            reason = (
+                "not a 40-hex sha"
+                if not is_hex40
+                else "does not resolve to a commit"
+                if not resolvable
+                else "resolves but is not stash-shaped (no second parent) — storing it "
+                "would wedge the stranded-autostash pass"
+            )
+            disposition = (
+                f"autostash content {sha!r}: {reason}; nothing storable — content "
+                f"preserved at {rescue_path} (and in the archived husk dir)"
+            )
+        elif sha in git(repo, "rev-list", "-g", "refs/stash", check=False).stdout.split():
+            disposition = f"autostash {sha[:12]} already present in the stash reflog"
+        else:
+            store = git(repo, "stash", "store", "-m", "autostash", sha, check=False)
+            if store.returncode != 0:
+                raise SyncAbortError(
+                    EXIT_UNEXPECTED,
+                    f"head-name-less {husk.name} husk: could not rescue autostash {sha} "
+                    f"(`git stash store` rc={store.returncode}: {store.stderr.strip()}); "
+                    "husk left in place — nothing moved.\n"
+                    f"manual: git stash store -m autostash {sha}  # then re-run the sync",
+                )
+            disposition = (
+                f"stored autostash {sha[:12]} as a stash entry "
+                "(handled next by the stranded-autostash pass)"
+            )
+        report["stash"].append(f"husk-rescue: {disposition}")
+    # TOCTOU recheck (recompute the discriminators immediately before the move):
+    # a concurrent operation may have materialized real state since triage.
+    if (husk / "head-name").exists() or (husk / "applying").exists():
+        raise SyncAbortError(
+            EXIT_UNEXPECTED,
+            f"{husk.name} husk changed while being recovered (head-name/applying "
+            "appeared) — a concurrent operation may be live; nothing moved.",
+        )
+    dest = allocate_rescue_dir() / husk.name
+    shutil.move(str(husk), str(dest))
+    _msg(
+        report,
+        f"STALE-HUSK ARCHIVED: {husk.name} was {age:.0f}s old (> {_husk_age_s():.0f}s), "
+        f"head-name-less and un-abortable (`git rebase --abort` rc={aborted.returncode}: "
+        f"{aborted.stderr.strip()}); {disposition}; husk dir archived to {dest}.",
+    )
+    report["actions_performed"] = True
 
 
 # ─── Untracked-collision pre-sweep ───────────────────────────────────────────

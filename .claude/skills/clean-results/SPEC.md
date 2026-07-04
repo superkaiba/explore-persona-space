@@ -641,6 +641,14 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   ``same-issue follow-up round `<followup_label>` `` clause, the
   machine-countable form check 20's round-scaled prose budget reads;
   #921) · created/run dates.
+  Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
+  the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
+  scanning — the quote is provenance text, not a provenance link; #959;
+  applies identically to grandfathered v3 `## Reproducibility` bodies).
+  Pinned-link requirements continue to bind on every non-quoted footer
+  row. A verbatim prompt containing URLs must `>`-prefix EVERY prompt
+  line — an un-prefixed lazy-continuation line stays scanned
+  (fail-closed).
   This footer is the ONLY place run-context provenance lives in the body
   (the "state facts, not sources" rule still bans weaving prompt/person
   attributions into Takeaways / Results prose).
@@ -922,7 +930,11 @@ Forward-only: each check branches on the sentinel. The v4 checks
     27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
-(check 22), HF-URL-resolves (check 23). The Goal-of-experiment frontmatter
+(check 22), HF-URL-resolves (check 23), and figure-sidecar opaque
+config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
+slugs in figure-sidecar-carried text — plain-English condition names only;
+slugs stay in the Repro config row; sidecar-carried strings, not full
+PNG-pixel coverage). The Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 

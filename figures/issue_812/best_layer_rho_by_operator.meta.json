@@ -1,0 +1,306 @@
+{
+  "commit": "6d0bc450bf",
+  "created": "2026-07-03T04:17:21Z",
+  "figsize": [
+    7.6,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.325,
+      "best-layer held-out Spearman rho": 0.5855942376950779,
+      "error": 0.2208332593652802,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.675,
+      "best-layer held-out Spearman rho": 0.6123889555822329,
+      "error": 0.19934405330304447,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.675,
+      "best-layer held-out Spearman rho": 0.7477070828331333,
+      "error": 0.12592233782423645,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.675,
+      "best-layer held-out Spearman rho": 0.8364387255130392,
+      "error": 0.10175496284170932,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.675,
+      "best-layer held-out Spearman rho": 0.8741896758703481,
+      "error": 0.10048560026924364,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.675,
+      "best-layer held-out Spearman rho": 0.6893157262905162,
+      "error": 0.19047384149626226,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.675,
+      "best-layer held-out Spearman rho": 0.7578871548619448,
+      "error": 0.16126757294620603,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.195,
+      "best-layer held-out Spearman rho": 0.5871308523409363,
+      "error": 0.18840055496112607,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.805,
+      "best-layer held-out Spearman rho": 0.6561824729891956,
+      "error": 0.1821431332859759,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.805,
+      "best-layer held-out Spearman rho": 0.6838415366146459,
+      "error": 0.18385279703100393,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.805,
+      "best-layer held-out Spearman rho": 0.7493276996730659,
+      "error": 0.1447346231925929,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.805,
+      "best-layer held-out Spearman rho": 0.7511644657863146,
+      "error": 0.14953333185736717,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.805,
+      "best-layer held-out Spearman rho": 0.569939975990396,
+      "error": 0.18600210100680825,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.805,
+      "best-layer held-out Spearman rho": 0.701032412965186,
+      "error": 0.15633160721288014,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.065,
+      "best-layer held-out Spearman rho": 0.6158463385354142,
+      "error": 0.20948350485717032,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.935,
+      "best-layer held-out Spearman rho": 0.7286914765906362,
+      "error": 0.140772977430967,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.935,
+      "best-layer held-out Spearman rho": 0.7322448979591836,
+      "error": 0.13158085092622196,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.935,
+      "best-layer held-out Spearman rho": 0.7796292748136521,
+      "error": 0.14094148310241228,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.935,
+      "best-layer held-out Spearman rho": 0.6605042016806723,
+      "error": 0.1659007287246314,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.935,
+      "best-layer held-out Spearman rho": 0.6871068427370949,
+      "error": 0.1750388550183798,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.935,
+      "best-layer held-out Spearman rho": 0.8198319327731092,
+      "error": 0.12368851670035608,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.065,
+      "best-layer held-out Spearman rho": 0.6393757503001202,
+      "error": 0.19917407073157598,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.065,
+      "best-layer held-out Spearman rho": 0.7870828331332532,
+      "error": 0.1315122505433065,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.065,
+      "best-layer held-out Spearman rho": 0.8219447779111644,
+      "error": 0.12535453870783153,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.065,
+      "best-layer held-out Spearman rho": 0.8404245111495979,
+      "error": 0.10913592210452971,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.065,
+      "best-layer held-out Spearman rho": 0.8818727490996399,
+      "error": 0.08967638974778658,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.065,
+      "best-layer held-out Spearman rho": 0.7492436974789916,
+      "error": 0.16687661555409766,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.065,
+      "best-layer held-out Spearman rho": 0.7907322929171668,
+      "error": 0.15796472816712692,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.195,
+      "best-layer held-out Spearman rho": 0.569267707082833,
+      "error": 0.2331086077842107,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.195,
+      "best-layer held-out Spearman rho": 0.7473229291716686,
+      "error": 0.13282513059670942,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.195,
+      "best-layer held-out Spearman rho": 0.7566386554621848,
+      "error": 0.15195048737917227,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.195,
+      "best-layer held-out Spearman rho": 0.7317998471749457,
+      "error": 0.17276065299704818,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.195,
+      "best-layer held-out Spearman rho": 0.8029291716686675,
+      "error": 0.13648923530551865,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.195,
+      "best-layer held-out Spearman rho": 0.7434813925570227,
+      "error": 0.15954271641684542,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.195,
+      "best-layer held-out Spearman rho": 0.8225210084033613,
+      "error": 0.1167209051137777,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.325,
+      "best-layer held-out Spearman rho": 0.5675390156062424,
+      "error": 0.21548509957711942,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.325,
+      "best-layer held-out Spearman rho": 0.7164945978391357,
+      "error": 0.14949494949494951,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.325,
+      "best-layer held-out Spearman rho": 0.7145738295318126,
+      "error": 0.1356053663066214,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.325,
+      "best-layer held-out Spearman rho": 0.7500480223784682,
+      "error": 0.1487258398054775,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 4.325,
+      "best-layer held-out Spearman rho": 0.7644177671068426,
+      "error": 0.14298227380467388,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.325,
+      "best-layer held-out Spearman rho": 0.6427370948379352,
+      "error": 0.17763758373412797,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 6.325,
+      "best-layer held-out Spearman rho": 0.7876590636254501,
+      "error": 0.1386139340302901,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 42
+}

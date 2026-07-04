@@ -1,0 +1,2068 @@
+{
+  "commit": "93f66562db",
+  "created": "2026-07-03T15:47:05Z",
+  "figsize": [
+    11.0,
+    8.0
+  ],
+  "points": [
+    {
+      "x": 14.0,
+      "ridge held-out R\u00b2": -1.2471222314141484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "ridge held-out R\u00b2": -1.0130732311658832,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "ridge held-out R\u00b2": -0.7689149983504386,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "ridge held-out R\u00b2": -0.6461710031759245,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "ridge held-out R\u00b2": -2.3068829406785896,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "ridge held-out R\u00b2": -1.7097311298372473,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "ridge held-out R\u00b2": -1.535100016496025,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "ridge held-out R\u00b2": -1.520340997758224,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "ridge held-out R\u00b2": -1.503404412219381,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "ridge held-out R\u00b2": -1.4914567949865596,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "ridge held-out R\u00b2": -1.4282257406656034,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "ridge held-out R\u00b2": -1.4857533595035184,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "ridge held-out R\u00b2": -1.4541802957557048,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "ridge held-out R\u00b2": -1.4334333660870895,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "ridge held-out R\u00b2": -1.472881849819848,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "ridge held-out R\u00b2": -1.4567676257954147,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "ridge held-out R\u00b2": -1.4328676240025664,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "ridge held-out R\u00b2": -1.3115370953809595,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "ridge held-out R\u00b2": -1.2471222314141484,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "ridge held-out R\u00b2": -1.2262968339286835,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "ridge held-out R\u00b2": -1.1709476989188947,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "ridge held-out R\u00b2": -1.1389038179352764,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "ridge held-out R\u00b2": -1.0130732311658832,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "ridge held-out R\u00b2": -0.7689149983504386,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "ridge held-out R\u00b2": -0.7480986914699306,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "ridge held-out R\u00b2": -0.7544042775203157,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "ridge held-out R\u00b2": -0.7468293061076174,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "ridge held-out R\u00b2": -0.7434688512813945,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "ridge held-out R\u00b2": -0.6915141431230918,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "ridge held-out R\u00b2": -0.7003181373121781,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "ridge held-out R\u00b2": -0.6461710031759245,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "ridge held-out R\u00b2": -0.47363439088321524,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "ridge held-out R\u00b2": -2.3861599518543626,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "ridge held-out R\u00b2": -1.9124916742898317,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "ridge held-out R\u00b2": -1.695561161906963,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "ridge held-out R\u00b2": -1.8785953479444344,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "ridge held-out R\u00b2": -1.9382083978530789,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "ridge held-out R\u00b2": -1.9932414474014912,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "ridge held-out R\u00b2": -2.039291164966493,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "ridge held-out R\u00b2": -2.1937621249625536,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "ridge held-out R\u00b2": -2.073000124325186,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "ridge held-out R\u00b2": -2.0339106442533645,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "ridge held-out R\u00b2": -2.113466262553175,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "ridge held-out R\u00b2": -2.099167049790717,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "ridge held-out R\u00b2": -2.1403225523400597,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "ridge held-out R\u00b2": -1.968748861914015,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "ridge held-out R\u00b2": -1.9237428878658975,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "ridge held-out R\u00b2": -1.941821688013024,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "ridge held-out R\u00b2": -1.9122140371993068,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "ridge held-out R\u00b2": -1.9653443372732777,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "ridge held-out R\u00b2": -1.7946380438151461,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "ridge held-out R\u00b2": -1.4272499394227478,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "ridge held-out R\u00b2": -1.4319890468315877,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "ridge held-out R\u00b2": -1.4220889255339983,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "ridge held-out R\u00b2": -1.430266968298088,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "ridge held-out R\u00b2": -1.3655100177843145,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "ridge held-out R\u00b2": -1.221699508045691,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "ridge held-out R\u00b2": -1.2489863845298874,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "ridge held-out R\u00b2": -1.1212441058127531,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "ridge held-out R\u00b2": -0.8066296952623677,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "y": -1.0216424328637896,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "y": -0.8556450387232581,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "y": -0.6544569649350971,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "y": -0.4570006462357865,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": -2.0889722017402645,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": -1.6234909450061314,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": -1.3653469290844535,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": -1.382844507268417,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": -1.361189923850564,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": -1.351255794918337,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "y": -1.2995190882165835,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "y": -1.2664113276357067,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": -1.1647482863342322,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "y": -1.132817027185078,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "y": -1.1155740586037037,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "y": -1.114602451793672,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "y": -1.0715441364845906,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.0,
+      "y": -1.069228827847303,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "y": -1.0216424328637896,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.0,
+      "y": -1.0071596992781382,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": -0.9708226143761152,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.0,
+      "y": -0.9818924312626451,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "y": -0.8556450387232581,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "y": -0.6544569649350971,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 20.0,
+      "y": -0.5850026398992556,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 21.0,
+      "y": -0.5713243125635814,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 22.0,
+      "y": -0.5269413989232843,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 23.0,
+      "y": -0.5024509211794286,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 24.0,
+      "y": -0.4702054646584506,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 25.0,
+      "y": -0.4976900160896467,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "y": -0.4570006462357865,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 27.0,
+      "y": -0.23319980541019492,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": -2.5972740672870183,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": -1.9193937576653983,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": -1.6844136678400434,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": -1.824119491930571,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": -2.0298242888970806,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": -2.0347527280777786,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": -2.0287802032810403,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": -2.17903225130524,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": -2.0208147404785604,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": -1.9617698414027442,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": -2.011765717564313,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": -2.0202441088418586,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": -2.0816854104241003,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.0,
+      "y": -1.9699609096571473,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "y": -2.014378004352124,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.0,
+      "y": -1.9623281202477423,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": -1.9976489657346517,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.0,
+      "y": -2.090634243400931,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "y": -1.8942351284136185,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "y": -1.6051478189019184,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 20.0,
+      "y": -1.6700632318951056,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 21.0,
+      "y": -1.6528103622819912,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 22.0,
+      "y": -1.6199054189550988,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 23.0,
+      "y": -1.5356419053543453,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 24.0,
+      "y": -1.3242483771851692,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 25.0,
+      "y": -1.3419304529931866,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "y": -1.075702113328283,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 27.0,
+      "y": -0.7185413340284599,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": -1.996306496208518,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": -1.5048774837511334,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": -1.287539358943678,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -1.4064715169756457,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": -1.5434398963494202,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": -1.5455878020765912,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": -1.485775543371553,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": -1.603825898826451,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": -1.4402936524388648,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": -1.3927159062031853,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": -1.3593378299960146,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": -1.3902934275971326,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": -1.3336682893202405,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 13.0,
+      "y": -1.330627621763468,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "y": -1.3004815535069008,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 15.0,
+      "y": -1.3112234520780448,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": -1.3015005976546554,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 17.0,
+      "y": -1.3439554092868224,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "y": -1.2430560469650818,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "y": -0.9787609344778898,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 20.0,
+      "y": -0.9581788262909761,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 21.0,
+      "y": -0.8913323784296829,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 22.0,
+      "y": -0.8431245769758651,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 23.0,
+      "y": -0.8185525647165264,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 24.0,
+      "y": -0.724633290301899,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25.0,
+      "y": -0.723951429083914,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "y": -0.6592799769816764,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 27.0,
+      "y": -0.4358369856549771,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "ridge held-out R\u00b2": -0.8651466757403417,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "ridge held-out R\u00b2": -0.8014545526362202,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "ridge held-out R\u00b2": -0.6155126988680195,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "ridge held-out R\u00b2": -0.5540960947806346,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "ridge held-out R\u00b2": -1.9149051831916775,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "ridge held-out R\u00b2": -1.47152230585526,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "ridge held-out R\u00b2": -1.3528563555064856,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "ridge held-out R\u00b2": -1.392259992491275,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "ridge held-out R\u00b2": -1.4135773704709527,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "ridge held-out R\u00b2": -1.3693966205424903,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "ridge held-out R\u00b2": -1.4064482410886634,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "ridge held-out R\u00b2": -1.2757445023286844,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "ridge held-out R\u00b2": -1.189195668045664,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "ridge held-out R\u00b2": -1.0401093889958073,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "ridge held-out R\u00b2": -1.0379747146277212,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "ridge held-out R\u00b2": -1.0389583581039594,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "ridge held-out R\u00b2": -0.9696909286307198,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "ridge held-out R\u00b2": -0.9369764650982604,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "ridge held-out R\u00b2": -0.8651466757403417,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "ridge held-out R\u00b2": -0.8521983527559209,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "ridge held-out R\u00b2": -0.8479022087391292,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "ridge held-out R\u00b2": -0.8649438652970693,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "ridge held-out R\u00b2": -0.8014545526362202,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "ridge held-out R\u00b2": -0.6155126988680195,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "ridge held-out R\u00b2": -0.6354338611783674,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "ridge held-out R\u00b2": -0.6567762040415783,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "ridge held-out R\u00b2": -0.6836206146878196,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "ridge held-out R\u00b2": -0.6793518770435161,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "ridge held-out R\u00b2": -0.6386163030025163,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "ridge held-out R\u00b2": -0.6561772570116373,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "ridge held-out R\u00b2": -0.5540960947806346,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "ridge held-out R\u00b2": -0.3900589996467494,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "ridge held-out R\u00b2": -2.5889108025517107,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "ridge held-out R\u00b2": -2.0086511331972785,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "ridge held-out R\u00b2": -1.7573572921488116,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "ridge held-out R\u00b2": -1.9356488013397954,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "ridge held-out R\u00b2": -2.0213074498373045,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "ridge held-out R\u00b2": -2.057497452895961,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "ridge held-out R\u00b2": -2.0549952130687585,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "ridge held-out R\u00b2": -2.255748723765482,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "ridge held-out R\u00b2": -2.0831633071347673,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "ridge held-out R\u00b2": -1.9621460146657834,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "ridge held-out R\u00b2": -1.9802492424540241,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "ridge held-out R\u00b2": -2.0392556744289565,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "ridge held-out R\u00b2": -2.006208809755165,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "ridge held-out R\u00b2": -1.8292475495760092,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "ridge held-out R\u00b2": -1.8303820787782201,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "ridge held-out R\u00b2": -1.8393695965843149,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "ridge held-out R\u00b2": -1.9204163441290287,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "ridge held-out R\u00b2": -2.0667023725173244,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "ridge held-out R\u00b2": -1.8384804982201848,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "ridge held-out R\u00b2": -1.649589414624506,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "ridge held-out R\u00b2": -1.699333965077726,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "ridge held-out R\u00b2": -1.6933192386349423,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "ridge held-out R\u00b2": -1.766744375899136,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "ridge held-out R\u00b2": -1.779131660144861,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "ridge held-out R\u00b2": -1.6080190354798938,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "ridge held-out R\u00b2": -1.599483388997173,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "ridge held-out R\u00b2": -1.3162971846035858,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "ridge held-out R\u00b2": -1.0252949403098923,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "ridge held-out R\u00b2": -2.052475013953795,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "ridge held-out R\u00b2": -1.6295960664533675,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "ridge held-out R\u00b2": -1.339265185734586,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "ridge held-out R\u00b2": -1.562254342975626,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "ridge held-out R\u00b2": -1.6528294444118252,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "ridge held-out R\u00b2": -1.6257728079864195,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "ridge held-out R\u00b2": -1.6619871669527968,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "ridge held-out R\u00b2": -1.7748745187062185,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "ridge held-out R\u00b2": -1.6587029718705661,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "ridge held-out R\u00b2": -1.6166591304603486,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "ridge held-out R\u00b2": -1.6395132542669981,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "ridge held-out R\u00b2": -1.6753015835093708,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "ridge held-out R\u00b2": -1.6251234696182295,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "ridge held-out R\u00b2": -1.4743266082429147,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "ridge held-out R\u00b2": -1.4540643634916468,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "ridge held-out R\u00b2": -1.4993077447882075,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "ridge held-out R\u00b2": -1.493780998227697,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "ridge held-out R\u00b2": -1.5981286069009264,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "ridge held-out R\u00b2": -1.4109527959417214,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "ridge held-out R\u00b2": -1.2695539052690172,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "ridge held-out R\u00b2": -1.3245160554165722,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "ridge held-out R\u00b2": -1.3327792728274184,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "ridge held-out R\u00b2": -1.4521855656032074,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "ridge held-out R\u00b2": -1.4644003141841297,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "ridge held-out R\u00b2": -1.2953490278138782,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "ridge held-out R\u00b2": -1.2681710770715182,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "ridge held-out R\u00b2": -1.0403235187386888,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "ridge held-out R\u00b2": -0.7995835314199298,
+      "series": "Haiku-written u2 (matched rows refit)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "y": -2.3587042399305598,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 18.0,
+      "y": -2.0077238185828175,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "y": -1.8398703921023376,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "y": -1.8585845280559434,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 0.0,
+      "y": -1.8608866459149103,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "y": -2.4486275659533683,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "y": -2.308963420353443,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "y": -2.6239892418173487,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "y": -6.045178853582653,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "y": -5.050945409044112,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "y": -4.417883459111466,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "y": -4.345918064250339,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "y": -3.5592424377623795,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "y": -3.562325503468407,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "y": -3.4375892158345627,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "y": -2.6850976616337014,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "y": -3.5469983224233594,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "y": -2.597401827640389,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "y": -2.3587042399305598,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "y": -2.309065589274391,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "y": -2.1178265526064246,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "y": -2.0932199793670363,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "y": -2.0077238185828175,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "y": -1.8398703921023376,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "y": -1.9596236071156166,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "y": -1.9358144178690284,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "y": -1.9674264432627724,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "y": -1.9437604834760056,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "y": -1.9762005016612783,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "y": -2.052185991808633,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "y": -1.8585845280559434,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "y": -2.1170500032117263,
+      "series": "self-written u2 (this round)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 0.0,
+      "y": -2.4860685120060912,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "y": -1.9330436305812428,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "y": -1.6734616444821597,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "y": -2.235471604317771,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "y": -4.276493680152718,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "y": -4.044855401166247,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "y": -4.631043064416713,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "y": -4.339288337268233,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "y": -3.123966125886443,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "y": -2.51983904350429,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "y": -2.6577019487501494,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "y": -2.4726710807451058,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "y": -2.112812239243354,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "y": -1.9457190408650025,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "y": -1.8901788900613843,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "y": -1.8314537579676995,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "y": -1.6932261467456122,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "y": -1.7661457304706851,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "y": -1.6738222188914968,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "y": -1.4893560397043863,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "y": -1.5373671505952675,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "y": -1.542267715148113,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "y": -1.4926720723092535,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "y": -1.4616526254676998,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "y": -1.3681426832627954,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "y": -1.3953016678854375,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "y": -1.2108970442009106,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "y": -0.9472050193210624,
+      "series": "Haiku-written u2 (parent rows)",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 296
+}

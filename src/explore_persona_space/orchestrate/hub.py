@@ -461,6 +461,7 @@ def list_repo_files_complete(
     *,
     repo_type: str = "model",
     revision: str | None = None,
+    path_in_repo: str | None = None,
 ) -> list[str]:
     """Enumerate EVERY file in an HF repo via the paginated tree API.
 
@@ -490,12 +491,29 @@ def list_repo_files_complete(
         repo_id: HF Hub repo ID.
         repo_type: ``'model'`` / ``'dataset'`` / ``'space'``.
         revision: Optional git revision; ``None`` resolves to the repo default.
+        path_in_repo: Optional prefix that scopes the walk SERVER-side — the
+            prefix rides in the tree URL, so pagination covers only that
+            subtree. REQUIRED against the ~1M-file data repo, where a
+            full-repo listing wedges (>600 s, #920 — the #833 gotcha).
+            ``None`` (the default) preserves the historical full-repo walk;
+            the kwarg is then NOT forwarded to ``list_repo_tree`` at all, so
+            kwarg-free calls stay byte-identical (including against strict
+            test fakes). A non-existent path raises ``EntryNotFoundError``
+            DURING iteration (inside the retry thunk — the generator is
+            lazy; verified live on hub 0.36.2), which ``_retry_upload``
+            re-raises immediately (non-transient) for callers to map to
+            their own missing semantics.
 
     Returns:
-        Sorted list of every file path in the repo (``RepoFolder`` entries are
-        dropped; only files are returned).
+        Sorted list of every file path in the repo (or under ``path_in_repo``
+        when given; ``RepoFolder`` entries are dropped; only files are
+        returned).
     """
     from huggingface_hub.hf_api import RepoFile
+
+    tree_kwargs: dict = {}
+    if path_in_repo is not None:
+        tree_kwargs["path_in_repo"] = path_in_repo
 
     def _list() -> list[str]:
         # ``list_repo_tree`` returns a generator; a cursor-page 504 raises
@@ -508,6 +526,7 @@ def list_repo_files_complete(
                 repo_type=repo_type,
                 revision=revision,
                 recursive=True,
+                **tree_kwargs,
             )
             if isinstance(entry, RepoFile)
         ]

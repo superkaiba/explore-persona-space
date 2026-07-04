@@ -42,6 +42,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE torch freezes its pool.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import issue779_capture_answer_summaries as P1  # noqa: E402
 import issue779_common as C  # noqa: E402
 import torch  # noqa: E402
@@ -62,6 +68,32 @@ SUMMARIES2 = (
 )
 IM_START_ID = 151644
 NEXT_USER_SUFFIX = "<|im_start|>user\n"
+
+# Equivalence-gate bars — measured calibration (pod-77902 H100, 2026-07-03;
+# diagnostic logs /workspace/logs/issue779_gate_diag_{bf16,fp32}.log):
+#   - fp32 batch-3 vs batch-1 agrees at cos=1.000000 on EVERY (item, summary)
+#     cell (per-layer min 1.000000): the capture path has NO padding/indexing
+#     bug (right-pad + causal mask => pads cannot influence real positions).
+#   - bf16 batch-3 vs batch-1 differences are depth-amplified kernel numerics:
+#     layer-0 cos >= 0.999995 everywhere; the worst flattened cell was
+#     0.998770 (item 1 v_im_start, driven by layer 27 ALONE at 0.996907) —
+#     which tripped the old flat 0.999 bar. Pass-1's realized gate on the
+#     same rig was 0.999748: the 0.999 bar had no headroom for pass-2's
+#     single-position template-token states (span means smooth the jitter;
+#     single positions do not).
+#   - a REAL off-by-one / pad / row-mapping bug reads cos_flat 0.39-0.62 and
+#     layer-0 cos 0.43-0.84 (measured between adjacent-position states,
+#     identical in both dtypes) — far below either bar.
+# Gate design: (a) EARLY-layer per-layer cosine (first GATE_EARLY_LAYERS
+# layers) >= 0.999 is the sharp bug catcher — mask/RoPE/pad/row bugs corrupt
+# layer 0 immediately, where bf16 batched-kernel jitter is ~1e-6; (b) the
+# flattened cosine >= 0.995 bounds depth-amplified bf16 jitter with >=4x the
+# measured worst deviation as headroom while staying ~0.35 above the ~0.6
+# bug regime. max_rel stays reported-never-asserted (same rationale as
+# pass 1: bf16 one-ULP diffs read ~2-3% of the global max).
+GATE_COS_FLAT_MIN = 0.995
+GATE_COS_EARLY_MIN = 0.999
+GATE_EARLY_LAYERS = 4
 
 
 def _next_user_suffix_ids(tokenizer) -> list[int]:
@@ -170,7 +202,14 @@ def capture_pass2_batched(
 
 
 def equivalence_gate_p2(model, tokenizer, layers: list[int], suffix_ids: list[int]) -> dict:
-    """Batched (padded) vs batch-1 equivalence for the pass-2 capture path."""
+    """Batched (padded) vs batch-1 equivalence for the pass-2 capture path.
+
+    Two asserts (calibration comment at GATE_COS_FLAT_MIN): early-layer
+    per-layer cosine >= GATE_COS_EARLY_MIN catches real padding / indexing /
+    mask bugs (they corrupt layer 0, where bf16 jitter is ~1e-6); the
+    flattened all-layer cosine >= GATE_COS_FLAT_MIN bounds depth-amplified
+    bf16 padded-batch kernel jitter.
+    """
     msgs = [
         [{"role": "system", "content": "You are helpful."}, {"role": "user", "content": "Hi."}],
         [
@@ -190,18 +229,27 @@ def equivalence_gate_p2(model, tokenizer, layers: list[int], suffix_ids: list[in
     ]
     bat = capture_pass2_batched(model, tokenizer, items, layers, 3, suffix_ids)
     ser = [capture_pass2_batched(model, tokenizer, [it], layers, 1, suffix_ids)[0] for it in items]
-    max_rel, cos_min = 0.0, 1.0
+    max_rel, cos_min, early_cos_min = 0.0, 1.0, 1.0
     for s, b in zip(ser, bat, strict=True):
         for k in range(len(SUMMARIES2)):
-            a = s["summ"][k].double().flatten()
-            c = b["summ"][k].double().flatten()
+            a = s["summ"][k].double()  # (L, H)
+            c = b["summ"][k].double()
             scale = float(a.abs().max()) + 1e-12
             max_rel = max(max_rel, float((a - c).abs().max()) / scale)
-            cos_min = min(cos_min, float(torch.dot(a, c) / (a.norm() * c.norm() + 1e-12)))
-    # cosine-only bar, same rationale as pass 1 (bf16 padded-batch numerics).
-    assert cos_min >= 0.999, (cos_min, max_rel)
-    logger.info("[gate-p2] equivalence PASS (cos_min=%.6f max_rel=%.4f)", cos_min, max_rel)
-    return {"cos_min": cos_min, "max_rel": max_rel}
+            af, cf = a.flatten(), c.flatten()
+            cos_min = min(cos_min, float(torch.dot(af, cf) / (af.norm() * cf.norm() + 1e-12)))
+            per_layer = torch.nn.functional.cosine_similarity(a, c, dim=1)  # (L,)
+            early_cos_min = min(early_cos_min, float(per_layer[:GATE_EARLY_LAYERS].min()))
+    # Two-bar gate (calibration + rationale at GATE_COS_FLAT_MIN definition).
+    assert early_cos_min >= GATE_COS_EARLY_MIN, (early_cos_min, cos_min, max_rel)
+    assert cos_min >= GATE_COS_FLAT_MIN, (cos_min, early_cos_min, max_rel)
+    logger.info(
+        "[gate-p2] equivalence PASS (cos_min=%.6f early_cos_min=%.6f max_rel=%.4f)",
+        cos_min,
+        early_cos_min,
+        max_rel,
+    )
+    return {"cos_min": cos_min, "early_cos_min": early_cos_min, "max_rel": max_rel}
 
 
 def _save_shard_p2(

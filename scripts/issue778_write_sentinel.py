@@ -44,6 +44,13 @@ def main() -> None:
     parser.add_argument("--logs-dir", default="/workspace/logs")
     parser.add_argument("--out-root", default="data/issue_778")
     parser.add_argument("--eval-results-root", default="eval_results/issue_778")
+    parser.add_argument(
+        "--round",
+        choices=["v1", "v2rerun"],
+        default="v1",
+        help="v2rerun: the faithful-extraction-honest-nulls-rerun pod phase "
+        "(no training — adapter_paths/wandb are explicit N/A per plan v8 §10)",
+    )
     args = parser.parse_args()
 
     try:
@@ -52,6 +59,51 @@ def main() -> None:
         upload_summary = {"parse_error": args.upload_summary[:500]}
 
     exp_name = f"issue{args.issue}_{args.slug}"
+
+    if args.round == "v2rerun":
+        # The v2 rerun trains NOTHING: the 24 reused rs-LoRA adapters are
+        # untouched and no WandB training run exists — stated explicitly
+        # (plan v8 §10) rather than left blank.
+        note = {
+            "experiment": exp_name,
+            "followup_label": "faithful-extraction-honest-nulls-rerun",
+            "phases_completed": ["setup", "extract_v2", "neutral", "upload"],
+            "note": (
+                "v2 rerun pod GPU phases complete (faithful paired-mask extraction "
+                "generation + ALL-rollout acts capture + neutral UltraChat capture + "
+                "analysis_tensors_v2 bundle upload). The Batch-API judge phase + the "
+                "paired mask + r_B v2 build + the 10-family honest null ladder run "
+                "OFF-POD on the VM after pod release (plan v8 §4/§9)."
+            ),
+            "reproducibility_card": {
+                "hf_data_repo": upload_summary.get(
+                    "hf_data_repo", "superkaiba1/explore-persona-space-data"
+                ),
+                "analysis_tensors_v2": {
+                    "prefix": upload_summary.get("prefix"),
+                    "n_files_verified": upload_summary.get("n_files_verified"),
+                },
+                "adapter_paths": (
+                    "N/A — no training this round (the 24 reused rs-LoRA adapters at "
+                    "issue778_persona_vectors/adapters/ are untouched)"
+                ),
+                "wandb_url": (
+                    "N/A — no training this round; no live training metrics exist "
+                    "(generation + activation capture + closed-form statistics only)"
+                ),
+            },
+            "reproducibility": lib.repro_metadata(),
+            "eval_results_root": args.eval_results_root,
+        }
+        path = lib.write_results_sentinel(
+            issue=args.issue,
+            kind="epm:results",
+            version=1,
+            note=note,
+            logs_dir=Path(args.logs_dir),
+        )
+        print(f"[sentinel] wrote {path}", flush=True)
+        return
     adapters = upload_summary.get("adapters", {})
     adapter_paths = {cell: v.get("path_in_repo") for cell, v in adapters.items()}
     wandb_run_names = [f"issue778_{cell}" for cell in adapters]

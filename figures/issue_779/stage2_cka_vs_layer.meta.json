@@ -1,0 +1,404 @@
+{
+  "commit": "f9df0deec9",
+  "created": "2026-07-03T08:02:14Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "transformer layer": 0.0,
+      "similarity / fraction": 0.27061381776382787,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 1.0,
+      "similarity / fraction": 0.2723955087988068,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 2.0,
+      "similarity / fraction": 0.39594088435563396,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 3.0,
+      "similarity / fraction": 0.429247122729316,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 4.0,
+      "similarity / fraction": 0.43201420676964475,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 5.0,
+      "similarity / fraction": 0.43688277954558585,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 6.0,
+      "similarity / fraction": 0.43590314220075493,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 7.0,
+      "similarity / fraction": 0.43235073553692877,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 8.0,
+      "similarity / fraction": 0.4633641155521284,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 9.0,
+      "similarity / fraction": 0.39129810726289105,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 10.0,
+      "similarity / fraction": 0.3955064653850098,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 11.0,
+      "similarity / fraction": 0.3991171223164567,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 12.0,
+      "similarity / fraction": 0.4725704992909166,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 13.0,
+      "similarity / fraction": 0.554126342537027,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 14.0,
+      "similarity / fraction": 0.606326581374001,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 15.0,
+      "similarity / fraction": 0.6321706798892983,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 16.0,
+      "similarity / fraction": 0.6566877947337728,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 17.0,
+      "similarity / fraction": 0.6662508007320157,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 18.0,
+      "similarity / fraction": 0.6920241860390071,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 19.0,
+      "similarity / fraction": 0.713656840978494,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 20.0,
+      "similarity / fraction": 0.7005007106027953,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 21.0,
+      "similarity / fraction": 0.7167434077860855,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 22.0,
+      "similarity / fraction": 0.6976455545269157,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 23.0,
+      "similarity / fraction": 0.6678785776664825,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 24.0,
+      "similarity / fraction": 0.6879171881548102,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 25.0,
+      "similarity / fraction": 0.6840602870233004,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 26.0,
+      "similarity / fraction": 0.682401825147669,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 27.0,
+      "similarity / fraction": 0.6384174250834207,
+      "series": "set-to-set linear CKA(c_x, v_x)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transformer layer": 0.0,
+      "similarity / fraction": 0.4344152708080111,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 1.0,
+      "similarity / fraction": 0.4366442622925259,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 2.0,
+      "similarity / fraction": 0.48991003156778207,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 3.0,
+      "similarity / fraction": 0.4932519454402809,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 4.0,
+      "similarity / fraction": 0.500835983388473,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 5.0,
+      "similarity / fraction": 0.4971059343293741,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 6.0,
+      "similarity / fraction": 0.501974512820489,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 7.0,
+      "similarity / fraction": 0.5265117059011367,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 8.0,
+      "similarity / fraction": 0.5446164108170338,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 9.0,
+      "similarity / fraction": 0.5141878177984678,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 10.0,
+      "similarity / fraction": 0.5228121864875515,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 11.0,
+      "similarity / fraction": 0.5398454046522232,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 12.0,
+      "similarity / fraction": 0.557270787116934,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 13.0,
+      "similarity / fraction": 0.5967467289391657,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 14.0,
+      "similarity / fraction": 0.5976552930556907,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 15.0,
+      "similarity / fraction": 0.6155589234144051,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 16.0,
+      "similarity / fraction": 0.6263785692417689,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 17.0,
+      "similarity / fraction": 0.6252758546522984,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 18.0,
+      "similarity / fraction": 0.6348727625267729,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 19.0,
+      "similarity / fraction": 0.6774168966194924,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 20.0,
+      "similarity / fraction": 0.6588175014278702,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 21.0,
+      "similarity / fraction": 0.65509328299297,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 22.0,
+      "similarity / fraction": 0.6402177369228369,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 23.0,
+      "similarity / fraction": 0.6277973829298957,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 24.0,
+      "similarity / fraction": 0.628632082316966,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 25.0,
+      "similarity / fraction": 0.6280123409685059,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 26.0,
+      "similarity / fraction": 0.6043536108359037,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer": 27.0,
+      "similarity / fraction": 0.5762964368982405,
+      "series": "held-out reconstruction R2 of h  (5-fold)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 56
+}

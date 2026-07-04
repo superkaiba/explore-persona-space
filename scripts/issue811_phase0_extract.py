@@ -48,9 +48,6 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -64,6 +61,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue667_extract as ex  # noqa: E402  (reuse the extractor's pure helpers)
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 logger = logging.getLogger("issue811.phase0")
 
@@ -89,11 +88,15 @@ def _base_answer_summaries(
     """Teacher-force ``messages + response`` through BASE θ0 only; base summaries.
 
     Mirrors ``issue667_extract._mean_resp_acts`` but for the BASE leg ONLY (no
-    trained model): reads the mean-over-response-span residual AND the turn_nl
-    (turn-close newline, ``full_ids[-1]``) single-position residual from the SAME
-    base forward pass. Returns ``{layer: {"mean": v0_mean, "turn_nl": v0_turn_nl}}``
+    trained model): reads the mean-over-response-span residual, the turn_nl
+    (turn-close newline, ``full_ids[-1]``) single-position residual, AND (#811
+    maxp round) #810's crowned ``maxp`` — the per-dimension element-wise max over
+    the response CONTENT tokens ``[p : content_end)`` (EXCLUDING the turn-close
+    ``<|im_end|>``+newline #810 refuted as summaries) — all from the SAME base
+    forward pass. Returns ``{layer: {"mean": ..., "turn_nl": ..., "maxp": ...}}``
     (base vectors only — the gate needs no ``v_plus``). Fails loud (KILL-2 code)
-    if the turn-close newline assert breaks; identical assert to Phase 1's reader.
+    if the turn-close newline / maxp span asserts break; identical asserts to
+    Phase 1's reader.
     """
     prompt_text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     full_msgs = [*messages, {"role": "assistant", "content": response}]
@@ -120,13 +123,42 @@ def _base_answer_summaries(
     # KILL-2 (code): locate the turn-close newline BEFORE any GPU reduce — the
     # assert failing HALTs the cell (same signal Phase 1 raises).
     turn_nl_idx = ex._locate_turn_close_newline(full_ids, tok)
+    # #811 maxp round: content span = [p : content_end), content tokens ONLY —
+    # #810's crowned recipe (issue658_common.summarize_answer_span, "maxp"; the
+    # #658 span never included the turn-close <|im_end|>+"\n", which #810 swept
+    # as SEPARATE summaries and refuted). Same KILL-2 asserts as Phase 1's reader.
+    content_end = turn_nl_idx - 1
+    if full_ids[content_end] != ex.IM_END_ID:
+        raise RuntimeError(
+            f"[maxp-assert] token at content_end={content_end} is id="
+            f"{full_ids[content_end]}, expected <|im_end|> (id {ex.IM_END_ID}) — "
+            "the maxp content-span scoping broke (KILL-2, failure_class: code)"
+        )
+    if content_end <= p:
+        raise RuntimeError(
+            f"[maxp-assert] empty maxp content span: content_end={content_end} "
+            f"<= prompt_len={p} (KILL-2, failure_class: code)"
+        )
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
     acts_b = ex.extract_layer_activations(base_model, ids, layers)
     res: dict[int, dict[str, np.ndarray]] = {}
     for li in layers:
         hb_mean = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
         hb_nl = acts_b[li][0, turn_nl_idx, :].float().cpu().numpy().astype(np.float32)
-        res[li] = {"mean": hb_mean, "turn_nl": hb_nl}
+        # Crowned reduction REUSED from issue658_common via the Phase-1 module
+        # (recipe="maxp" == span.max(dim=0).values); finiteness is a KILL-2 assert
+        # (bf16→fp32 element-wise max is exact — non-finite = upstream bug).
+        hb_mx = ex.summarize_answer_span(acts_b[li][0, p:content_end, :].float(), "maxp")
+        if not bool(torch.isfinite(hb_mx).all()):
+            raise RuntimeError(
+                f"[maxp-assert] non-finite base maxp summary at layer {li} "
+                "(KILL-2, failure_class: code)"
+            )
+        res[li] = {
+            "mean": hb_mean,
+            "turn_nl": hb_nl,
+            "maxp": hb_mx.cpu().numpy().astype(np.float32),
+        }
     return res
 
 
@@ -152,13 +184,17 @@ def _extract_base_target(
     """
     tmsgs0 = ex.build_messages_for(registry, demos, tcid, behavior, probes[0])
     c_c_all = _context_vector_base(base, tok, tmsgs0, device)  # (N_LAYERS, HIDDEN)
-    acc: dict[int, dict[str, list[np.ndarray]]] = {li: {"mean": [], "turn_nl": []} for li in layers}
+    acc: dict[int, dict[str, list[np.ndarray]]] = {
+        li: {"mean": [], "turn_nl": [], "maxp": []} for li in layers
+    }
     n_gen = n_trunc = 0
     for qi, q in enumerate(probes):
         tmsgs = ex.build_messages_for(registry, demos, tcid, behavior, q)
         r = r_lookup.get((tcid, qi))
         if r is None:
             r = ex._greedy_response(base, tok, tmsgs, device, ex.N_GEN_TOKENS)
+            # Record the CPU-fallback R so the post-loop persist captures it too.
+            r_lookup[(tcid, qi)] = r
         n_gen += 1
         if not r.strip():
             n_trunc += 1
@@ -167,6 +203,7 @@ def _extract_base_target(
         for li in layers:
             acc[li]["mean"].append(per_layer[li]["mean"])
             acc[li]["turn_nl"].append(per_layer[li]["turn_nl"])
+            acc[li]["maxp"].append(per_layer[li]["maxp"])
     for li in layers:
         if not acc[li]["mean"]:
             continue  # empty-response target for this layer — skip its .npz (loud via count)
@@ -177,6 +214,9 @@ def _extract_base_target(
             "c_C": c_c_all[c_idx],
             "v0": np.stack(acc[li]["mean"]).mean(axis=0).astype(np.float32),
             "v0_turn_nl": np.stack(acc[li]["turn_nl"]).mean(axis=0).astype(np.float32),
+            # #811 maxp round: per-probe content-token element-wise max, probe-mean
+            # (the SAME accumulator shape as mean/turn_nl — #658's recipe_accum).
+            "v0_maxp": np.stack(acc[li]["maxp"]).mean(axis=0).astype(np.float32),
             "behavior": np.asarray(behavior),
             "source_cid": np.asarray(cell_dir.name.rsplit("_seed", 1)[0]),
             "target_cid": np.asarray(tcid),
@@ -245,6 +285,11 @@ def run(args) -> int:
         logger.info("phase0 Phase A: vLLM-generating %d base R responses", len(gen_msgs))
         responses = ex.vllm_generate_R(tok, gen_msgs, max_new_tokens=args.max_new_tokens)
         r_lookup = dict(zip(gen_keys, responses, strict=True))
+        # Persist the rollout TEXT the moment generation completes, BEFORE the
+        # teacher-force reduce (#779; Upload Policy raw-completions row).
+        ex.persist_r_text(
+            Path(args.out), behavior, source_cid, tok, r_lookup, stage="phase0_extraction"
+        )
 
     base = AutoModelForCausalLM.from_pretrained(
         ex.BASE_MODEL, torch_dtype=dtype, token=os.environ.get("HF_TOKEN")
@@ -283,6 +328,11 @@ def run(args) -> int:
         len(targets),
         n_gen,
         n_trunc,
+    )
+    # Re-dump R after the loop: on the CPU-smoke path (no vLLM Phase A) the
+    # per-probe HF-greedy fallbacks were recorded into r_lookup during the loop.
+    ex.persist_r_text(
+        Path(args.out), behavior, source_cid, tok, r_lookup, stage="phase0_extraction"
     )
 
     # Atomic completion sentinel — written ONLY after every target's base .npz is

@@ -47,3 +47,4 @@
 - [Check siblings before drafting](feedback_check_siblings_before_drafting.md) — ls `_multiseed`/`_replication`/`_redo` sibling dirs first; they often hold the refutation of the primary run's headline.
 - [Pin effective batch across matrix](feedback_pin_effective_batch_across_matrix.md) — verify every matrix cell ran the same effective batch/steps; mismatches masquerade as interaction effects.
 - [Glob all layouts for eval JSONs](feedback_glob_both_layouts_for_eval.md) — per-seed detailed JSONs live in 4 layouts; union all globs + verify count == n_seeds before aggregating.
+- [Saved fp16 maps suffice for recentered transfer reads](feedback_saved_fp16_maps_recentered_transfer.md) — W_raw alone reproduces committed transfer rows (validate vs one first); stream target store shard-by-shard; /mnt/eps-data root is root-owned, stage under the user dir. #931.
