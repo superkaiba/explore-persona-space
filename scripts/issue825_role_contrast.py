@@ -447,7 +447,12 @@ def run_mlp_paired(
 def _record_deferred_failure(out_dir: Path, unit: str, exc: BaseException) -> None:
     """Fail-loud-deferred (MF-C): print the traceback, persist to
     fit_failures.json (with the exception's status_hint for gate routing), keep
-    going — the wrapper's POST-upload gates HALT on the record."""
+    going. Contract (round-2 fix, deferred-failures-bypass-gates): the deferred
+    pair's terminal JSON is left unwritten, summarize TOLERATES that (minimal
+    headline noting the deferred set), uploads still run, and the wrapper's
+    POST-upload gates HALT via check_deferred with the REGISTERED status
+    (``bundle_schema_mismatch`` for a BundleSchemaError-classed failure, else
+    ``fit_deferred_failure``) — never ``summarize_error``."""
     import traceback
 
     traceback.print_exc()
@@ -469,6 +474,24 @@ def _record_deferred_failure(out_dir: Path, unit: str, exc: BaseException) -> No
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(failures, indent=2) + "\n")
+
+
+def _clear_deferred_failure(out_dir: Path, unit: str) -> None:
+    """Drop stale fit_failures.json records for a unit that has now completed
+    successfully — a ``--resume`` re-run after a fix must not HALT gate 1 on a
+    superseded record (reconciler v6 'observed but not raised')."""
+    path = out_dir / "fit_failures.json"
+    if not path.exists():
+        return
+    failures = json.loads(path.read_text())
+    kept = [e for e in failures if e.get("cell_id") != unit]
+    if kept == failures:
+        return
+    if kept:
+        path.write_text(json.dumps(kept, indent=2) + "\n")
+    else:
+        path.unlink()
+    print(f"[role_contrast] cleared {len(failures) - len(kept)} stale deferred record(s): {unit}")
 
 
 def regime_key(args, allowlist: list | None, equivalence_gate: bool) -> dict:
@@ -837,8 +860,12 @@ def _pair_done(pair: dict, args, allow_map: dict, equivalence_gate: bool) -> boo
 
 
 def cmd_fit(args) -> int:
-    """The 12-pair fit phase: per-pair crashes DEFER to fit_failures.json (MF-C);
-    every binding gate is evaluated ONLY post-upload by the gates mode."""
+    """The 12-pair fit phase: per-pair crashes DEFER to fit_failures.json (MF-C)
+    and the wrapper sequence STILL reaches the binding post-upload gates —
+    summarize tolerates the deferred pairs' missing JSONs, uploads run, then
+    check_deferred HALTs with the registered status (``bundle_schema_mismatch``
+    | ``fit_deferred_failure``), never ``summarize_error`` (round-2 fix). A
+    pair that completes (fresh or on ``--resume``) clears its stale record."""
     assert args.allowlists.exists(), f"--allowlists missing: {args.allowlists}"
     allow_map = json.loads(args.allowlists.read_text())
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -846,13 +873,14 @@ def cmd_fit(args) -> int:
         eq = i < args.equivalence_gate_pairs
         if args.resume and _pair_done(pair, args, allow_map, eq):
             print(f"[role_contrast] RESUME skip {pair['pair_id']} (outputs present, regime match)")
-            continue
-        try:
-            run_pair(pair, args, allow_map, equivalence_gate=eq)
-        except Exception as e:  # deferred, never pre-upload fatal (MF-C)
-            _record_deferred_failure(args.out_dir, pair["pair_id"], e)
-            continue
-        # RAM hygiene: run_pair's locals (bundle arrays) are freed on return.
+        else:
+            try:
+                run_pair(pair, args, allow_map, equivalence_gate=eq)
+            except Exception as e:  # deferred, never pre-upload fatal (MF-C)
+                _record_deferred_failure(args.out_dir, pair["pair_id"], e)
+                continue
+            # RAM hygiene: run_pair's locals (bundle arrays) are freed on return.
+        _clear_deferred_failure(args.out_dir, pair["pair_id"])
     print("[role_contrast] fit done")
     return 0
 
@@ -940,15 +968,43 @@ def _slim(d: dict, drop: tuple[str, ...] = ("per_row", "distribution")) -> dict:
 
 def cmd_summarize(args) -> int:
     """headline_metrics.json: §1 labels per provenance, per-pair delta tables,
-    companions, gate table, MF-R + MF-RC verbatim, corrected inverted read."""
+    companions, gate table, MF-R + MF-RC verbatim, corrected inverted read.
+
+    Deferred-failure tolerance (round-2 fix, deferred-failures-bypass-gates):
+    when fit_failures.json records exist, a missing pair JSON is TOLERATED —
+    the pair is listed under the block's ``deferred_missing_pairs`` and the
+    headline carries the deferred set — so the wrapper sequence still reaches
+    upload + gates, where check_deferred HALTs FIRST with the registered
+    status. A missing pair JSON with NO deferred record is still a hard assert
+    (fail-loud: that is a run-order bug, and ``summarize_error`` is then the
+    correct sentinel status)."""
+    deferred = _deferred_entries(args.out_dir)
+    have_deferred = any(deferred.values())
     prov_blocks: dict[str, dict] = {}
     n_total = 0
     for prov in PROVENANCES:
-        block: dict = {"pairs": {}, "localized_negatives": [], "inverted_headline_reads": []}
+        block: dict = {
+            "pairs": {},
+            "localized_negatives": [],
+            "inverted_headline_reads": [],
+            "deferred_missing_pairs": [],
+        }
         confirmed = True
         for pair in [p for p in pair_registry() if p["provenance"] == prov]:
             pj = _load_json(args.out_dir / prov / f"{pair['pair_id']}.json")
-            assert pj is not None, f"missing pair JSON for {pair['pair_id']} — run fit first"
+            if pj is None and have_deferred:
+                block["deferred_missing_pairs"].append(pair["pair_id"])
+                confirmed = False
+                print(
+                    f"[role_contrast] summarize: {pair['pair_id']} JSON missing with deferred "
+                    "failure(s) recorded — tolerated; the post-upload gates HALT with the "
+                    "registered status"
+                )
+                continue
+            assert pj is not None, (
+                f"missing pair JSON for {pair['pair_id']} with NO deferred failure recorded "
+                "— run fit first"
+            )
             n_total += pj["n_joint"]
             entry: dict = {}
             for li in map(str, HEADLINE_LAYERS):
@@ -1007,7 +1063,11 @@ def cmd_summarize(args) -> int:
                     "delta_of_layer_maxes_descriptive"
                 ],
             }
-        if block["inverted_headline_reads"]:
+        if block["deferred_missing_pairs"]:
+            # Honest label for a run that HALTs at gate 1: never a science label
+            # computed over a partial pair set (round-2 fix).
+            block["label"] = "INCOMPLETE-DEFERRED-FAILURES"
+        elif block["inverted_headline_reads"]:
             block["label"] = "INVERTED"
         elif confirmed and not block["localized_negatives"]:
             block["label"] = "ROLE-GAP-CONFIRMED"
@@ -1038,6 +1098,9 @@ def cmd_summarize(args) -> int:
             "weighted form, fp64, shared resamples across roles)"
         ),
         "provenances": prov_blocks,
+        # The deferred set rides the headline verbatim (minimal-headline contract:
+        # the gates HALT on it next, with the registered status).
+        "deferred_failures": deferred,
         "reproduction_gate_table": build_gate_table(args),
         "interpretation_rule_mf_r": MF_R_RULE,
         "interpretation_rule_mf_rc": MF_RC_RULE,
@@ -1054,13 +1117,21 @@ def cmd_summarize(args) -> int:
 # ---------------------------------------------------------------------------
 
 
-def check_deferred(out_dir: Path) -> dict:
-    """Gate 1 sweep: any deferred fit failure HALTs; a bundle-schema assert is
-    routed to its own status (plan §7 gate 1). Binding in smoke too."""
-    deferred = {
+def _deferred_entries(out_dir: Path) -> dict[str, list[dict]]:
+    """Every fit_failures.json record under out_dir (rglob — nested sweeps too),
+    keyed by relative path. Shared by summarize (tolerance) + gate 1 (HALT)."""
+    return {
         str(p.relative_to(out_dir)): json.loads(p.read_text())
         for p in sorted(out_dir.rglob("fit_failures.json"))
     }
+
+
+def check_deferred(out_dir: Path) -> dict:
+    """Gate 1 sweep: any deferred fit failure HALTs; a bundle-schema assert is
+    routed to its own status (plan §7 gate 1). Binding in smoke too. Fires
+    FIRST in cmd_gates, so a deferred-failure run always exits with the
+    registered status — never a downstream gate's."""
+    deferred = _deferred_entries(out_dir)
     if deferred:
         entries = [e for v in deferred.values() for e in v]
         schema = [e for e in entries if e.get("status_hint") == "bundle_schema_mismatch"]
@@ -1264,38 +1335,78 @@ def _data_repo() -> str:
 
 
 def cmd_fail_sentinel(args) -> int:
-    """Upload-then-exit for a crashed fit/summarize phase (plan §4.3 hard-req 2):
-    FIRST push whatever text/JSON the phase produced (unconditional non-LFS
-    path; smoke = structural print), THEN write the FAILURE sentinel."""
+    """Upload-then-exit for a crashed smoke/fit/summarize phase (plan §4.3
+    hard-req 2): FIRST push whatever the phase produced — out_dir text/JSON to
+    eval_results_mirror AND any completed preds npz (+ preds_manifest.json)
+    from ``--preds-dir`` to analysis_tensors, mirroring the normal UPLOAD-a/b
+    phases (round-2 fix, failure-sentinel-misses-preds-upload: a crash after k
+    pairs completed must not lose their preds) — THEN write the FAILURE
+    sentinel. Smoke = structural print."""
     produced = (
         sorted(str(p.relative_to(args.out_dir)) for p in args.out_dir.rglob("*.json"))
         if args.out_dir.exists()
         else []
     )
+    preds_dir: Path | None = getattr(args, "preds_dir", None)
+    preds = (
+        sorted(preds_dir.glob("preds_pair_*.npz"))
+        if preds_dir is not None and preds_dir.exists()
+        else []
+    )
+    manifest_path = args.out_dir / "preds_manifest.json"
     if eps_smoke():
         print(
-            f"[role_contrast] [smoke] fail-sentinel structural: {len(produced)} JSONs would upload"
+            f"[role_contrast] [smoke] fail-sentinel structural: {len(produced)} JSONs + "
+            f"{len(preds)} preds npz would upload"
         )
-    elif produced:
+    elif produced or preds:
         assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (source .env before upload)"
         from huggingface_hub import HfApi
 
+        api = HfApi()
         signal.alarm(2700)
         try:
-            HfApi().upload_folder(
-                folder_path=str(args.out_dir),
-                repo_id=_data_repo(),
-                repo_type="dataset",
-                path_in_repo=f"{HF_RC_PREFIX}/eval_results_mirror",
-                allow_patterns=["**/*.json", "*.json"],
-                commit_message=(
-                    f"issue-825 {FOLLOWUP_LABEL}: {args.phase} FAILURE path upload-then-exit "
-                    "(produced JSONs BEFORE the sentinel)"
-                ),
-            )
+            if produced:
+                api.upload_folder(
+                    folder_path=str(args.out_dir),
+                    repo_id=_data_repo(),
+                    repo_type="dataset",
+                    path_in_repo=f"{HF_RC_PREFIX}/eval_results_mirror",
+                    allow_patterns=["**/*.json", "*.json"],
+                    commit_message=(
+                        f"issue-825 {FOLLOWUP_LABEL}: {args.phase} FAILURE path upload-then-exit "
+                        "(produced JSONs BEFORE the sentinel)"
+                    ),
+                )
+            if preds:
+                api.upload_folder(
+                    folder_path=str(preds_dir),
+                    repo_id=_data_repo(),
+                    repo_type="dataset",
+                    path_in_repo=f"{HF_RC_PREFIX}/analysis_tensors",
+                    allow_patterns=["preds_pair_*.npz"],
+                    commit_message=(
+                        f"issue-825 {FOLLOWUP_LABEL}: {args.phase} FAILURE path UPLOAD-b mirror "
+                        "(completed preds npz BEFORE the sentinel)"
+                    ),
+                )
+                if manifest_path.exists():
+                    api.upload_file(
+                        path_or_fileobj=str(manifest_path),
+                        path_in_repo=f"{HF_RC_PREFIX}/analysis_tensors/preds_manifest.json",
+                        repo_id=_data_repo(),
+                        repo_type="dataset",
+                        commit_message=(
+                            f"issue-825 {FOLLOWUP_LABEL}: {args.phase} FAILURE path preds "
+                            "manifest (BEFORE the sentinel)"
+                        ),
+                    )
         finally:
             signal.alarm(0)
-        print(f"[role_contrast] fail-sentinel upload: ok ({len(produced)} JSONs)")
+        print(
+            f"[role_contrast] fail-sentinel upload: ok ({len(produced)} JSONs + "
+            f"{len(preds)} preds npz)"
+        )
     else:
         print("[role_contrast] fail-sentinel: nothing produced — nothing to upload")
     write_sentinel(
@@ -1305,6 +1416,7 @@ def cmd_fail_sentinel(args) -> int:
             "followup_label": FOLLOWUP_LABEL,
             "failure": f"{args.phase} phase exited non-zero (see the [phase={args.phase}] log traceback)",
             "uploaded_before_sentinel": produced,
+            "uploaded_preds_before_sentinel": [p.name for p in preds],
         },
     )
     return 0
@@ -1387,16 +1499,26 @@ def cmd_fabricate_smoke(args) -> int:
     exercised; conv ids IDENTICAL across provenances — the production 0..1999
     collision shape, provenance-scoped processing must never join on them).
     Writes row_allowlists.json dropping the last conv per onpolicy user cell
-    (exercises intersect-before-folds)."""
+    (exercises intersect-before-folds).
+
+    Fault injector (round-2 fix, deferred-failures-bypass-gates smoke leg):
+    ``EPS_SMOKE_CORRUPT_PAIR=<pair_id>`` fabricates THAT pair's bundle with
+    n_turns=2 (< PROV_MIN_TURNS), so load_pair_bundle raises BundleSchemaError
+    at fit — proving the defer -> summarize-tolerate -> upload -> gate
+    registered-status routing end-to-end through the dispatched wrapper."""
+    corrupt = os.environ.get("EPS_SMOKE_CORRUPT_PAIR", "")
+    if corrupt and corrupt not in {p["pair_id"] for p in pair_registry()}:
+        raise ValueError(f"EPS_SMOKE_CORRUPT_PAIR={corrupt!r} is not a registry pair_id")
     rng = np.random.default_rng(0)
     n_layers, dim, n_per_shard, n_shards = fit_cells.EXPECTED_LAYERS, 8, 3, 3
     dirs = {"haiku": args.haiku_dir, "real": args.real_dir, "onpolicy": args.onpolicy_dir}
     for prov in PROVENANCES:
-        n_turns = PROV_MIN_TURNS[prov]
         d = dirs[prov]
         d.mkdir(parents=True, exist_ok=True)
         for model in MODELS:
             for fmt in FORMATS:
+                is_corrupt = f"pair_{prov}_{model}_{fmt}" == corrupt
+                n_turns = 2 if is_corrupt else PROV_MIN_TURNS[prov]
                 cbase = 0
                 for s in range(n_shards):
                     slots = rng.normal(size=(n_per_shard, 2, n_layers, dim)).astype(np.float32)
@@ -1405,7 +1527,8 @@ def cmd_fabricate_smoke(args) -> int:
                         * 0.5
                     )
                     profiles[:, 1] += 0.8 * slots[:, 0]  # assistant target predictable
-                    profiles[:, 2] += 0.3 * slots[:, 1]  # user target weaker
+                    if n_turns >= 3:
+                        profiles[:, 2] += 0.3 * slots[:, 1]  # user target weaker
                     nll = np.concatenate(
                         [
                             rng.uniform(0.4, 0.8, size=(n_per_shard, 2)),
@@ -1427,6 +1550,11 @@ def cmd_fabricate_smoke(args) -> int:
                     }
                     torch.save(payload, d / f"{model}_{fmt}_m_shard{s:03d}.pt")
                     cbase += n_per_shard
+    if corrupt:
+        print(
+            f"[role_contrast] smoke fault injection: {corrupt} fabricated with n_turns=2 "
+            "(BundleSchemaError at load -> deferred -> registered gate status)"
+        )
     all_ids = [f"c{i}" for i in range(n_per_shard * n_shards)]
     allow = {cell_id(m, "user", f): all_ids[:-1] for m in MODELS for f in FORMATS}
     args.allowlists.parent.mkdir(parents=True, exist_ok=True)

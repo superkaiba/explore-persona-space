@@ -13,6 +13,12 @@
 #   The production run FIRST executes itself as a redirected smoke child
 #   ([phase=smoke]) — the batched-vs-serial bootstrap equivalence gate binds
 #   there on the first 2 pairs (plan §4.3 hard-req 3).
+# Deferred-failure smoke leg (round-2 fix, deferred-failures-bypass-gates):
+#   EPS_SMOKE_CORRUPT_PAIR=<pair_id> bash ... --smoke  fabricates ONE corrupt
+#   bundle (BundleSchemaError at fit) and must exit NON-zero from [phase=gate]
+#   with a FAILURE sentinel status=bundle_schema_mismatch — never
+#   summarize_error: summarize tolerates the deferred pair, uploads still run,
+#   check_deferred fires FIRST in gates with the registered status.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -84,7 +90,7 @@ if [[ -z "$SMOKE" ]]; then
     echo "[phase=smoke] FAILED — tail of $SMOKE_LOG:"
     tail -n 80 "$SMOKE_LOG"
     uv run python scripts/issue825_role_contrast.py fail-sentinel --phase smoke \
-      --out-dir "$OUT_DIR" --sentinel "$SENTINEL"
+      --out-dir "$OUT_DIR" --preds-dir "$PREDS_DIR" --sentinel "$SENTINEL"
     exit 1
   fi
   echo "[phase=smoke] child PASS (equivalence gate bound on 2 pairs; log: $SMOKE_LOG)"
@@ -212,8 +218,11 @@ assert not missing, f"committed comparison JSONs missing: {missing} (broken/spar
 PY
 
 echo "[phase=fit]"
-# Per-pair crashes DEFER to fit_failures.json (MF-C); binding gates run ONLY
-# post-upload. A top-level crash is upload-then-exit via fail-sentinel.
+# Per-pair crashes DEFER to fit_failures.json (MF-C): summarize TOLERATES the
+# deferred pairs' missing JSONs, uploads still run, and the POST-upload gates
+# HALT with the registered status (bundle_schema_mismatch |
+# fit_deferred_failure). Only a TOP-LEVEL fit crash (the loop itself dying) is
+# upload-then-exit via fail-sentinel here.
 if ! uv run python scripts/issue825_role_contrast.py fit \
   --haiku-dir "$TS_HAIKU" --real-dir "$TS_REAL" --onpolicy-dir "$TS_ONPOLICY" \
   --allowlists "$ALLOWLIST" --out-dir "$OUT_DIR" --preds-dir "$PREDS_DIR" \
@@ -222,18 +231,21 @@ if ! uv run python scripts/issue825_role_contrast.py fit \
   --folds "$FOLDS" --null-draws "$NULLS" --n-boot "$NBOOT" --seed 0 \
   --equivalence-gate-pairs "$EQ_PAIRS" --resume; then
   uv run python scripts/issue825_role_contrast.py fail-sentinel --phase fit \
-    --out-dir "$OUT_DIR" --sentinel "$SENTINEL"
+    --out-dir "$OUT_DIR" --preds-dir "$PREDS_DIR" --sentinel "$SENTINEL"
   echo "[phase=fit] FAILED — produced JSONs uploaded, FAILURE sentinel written (upload-then-exit)"
   exit 1
 fi
 
 echo "[phase=summarize]"
+# summarize exits non-zero ONLY on a genuine summarize bug (a missing pair
+# JSON with NO deferred record, or a crash) — a deferred fit failure is
+# tolerated above, so status summarize_error is never the deferred class.
 if ! uv run python scripts/issue825_role_contrast.py summarize \
   --out-dir "$OUT_DIR" \
   --committed-haiku "$COMMITTED_HAIKU" --committed-real "$COMMITTED_REAL" \
   --committed-onpolicy "$COMMITTED_ONPOLICY"; then
   uv run python scripts/issue825_role_contrast.py fail-sentinel --phase summarize \
-    --out-dir "$OUT_DIR" --sentinel "$SENTINEL"
+    --out-dir "$OUT_DIR" --preds-dir "$PREDS_DIR" --sentinel "$SENTINEL"
   echo "[phase=summarize] FAILED — produced JSONs uploaded, FAILURE sentinel written"
   exit 1
 fi
@@ -251,15 +263,25 @@ pairs = sorted(out.rglob("pair_*.json"))
 cells = sorted(out.rglob("cells_M_*.json"))
 nulls = sorted(out.rglob("nulls_M_*.json"))
 npz = sorted(preds.glob("preds_pair_*.npz"))
-assert len(pairs) == 12, f"expected 12 pair JSONs, found {len(pairs)}"
-assert len(cells) == 24, f"expected 24 cell payloads, found {len(cells)}"
-assert len(nulls) == 24, f"expected 24 null payloads, found {len(nulls)}"
-assert len(npz) == 12, f"expected 12 preds npz, found {len(npz)}"
-assert (out / "headline_metrics.json").exists()
-manifest = json.loads((out / "preds_manifest.json").read_text())
-assert len(manifest["files"]) == 12, sorted(manifest["files"])
-print(f"[smoke] upload structural assert PASS: {len(pairs)} pairs, {len(cells)} cells, "
-      f"{len(nulls)} nulls, {len(npz)} npz + headline + manifest would upload")
+deferred = sorted(out.rglob("fit_failures.json"))
+if deferred:
+    # Deferred fit failure(s) recorded: pair JSONs are LEGITIMATELY missing, so
+    # the strict counts are relaxed — production uploads whatever exists, and
+    # the post-upload gates HALT next with the REGISTERED status (round-2 fix).
+    n_def = sum(len(json.loads(p.read_text())) for p in deferred)
+    assert (out / "headline_metrics.json").exists()  # summarize tolerated + still wrote it
+    print(f"[smoke] upload structural: {n_def} deferred fit failure(s) recorded — strict "
+          f"counts relaxed ({len(pairs)} pairs, {len(npz)} npz would upload); gates HALT next")
+else:
+    assert len(pairs) == 12, f"expected 12 pair JSONs, found {len(pairs)}"
+    assert len(cells) == 24, f"expected 24 cell payloads, found {len(cells)}"
+    assert len(nulls) == 24, f"expected 24 null payloads, found {len(nulls)}"
+    assert len(npz) == 12, f"expected 12 preds npz, found {len(npz)}"
+    assert (out / "headline_metrics.json").exists()
+    manifest = json.loads((out / "preds_manifest.json").read_text())
+    assert len(manifest["files"]) == 12, sorted(manifest["files"])
+    print(f"[smoke] upload structural assert PASS: {len(pairs)} pairs, {len(cells)} cells, "
+          f"{len(nulls)} nulls, {len(npz)} npz + headline + manifest would upload")
 PY
 else
   uv run python - <<'PY'

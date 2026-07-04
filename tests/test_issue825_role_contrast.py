@@ -10,6 +10,13 @@ mirroring tests/test_issue825_realuser_gates.py. The production smoke bypasses
 numeric gates under EPS_SMOKE=1, so these tests are the numeric gates' only
 executable coverage.
 
+Round-2 regression coverage (reconciler v6): the deferred-failure PRODUCTION
+SEQUENCE (fit-deferred -> summarize-tolerate -> gates) ends in the REGISTERED
+sentinel status (``bundle_schema_mismatch`` | ``fit_deferred_failure``), never
+``summarize_error``; fail-sentinel mirrors UPLOAD-b (preds npz ->
+analysis_tensors) before the sentinel write; a successful ``--resume`` re-run
+clears its stale fit_failures.json record.
+
 Network-free and model-free: synthetic arrays + JSON under tmp_path.
 """
 
@@ -455,6 +462,160 @@ def test_generic_deferred_failure(scaffold):
         )
     )
     _assert_failure(scaffold, "fit_deferred_failure")
+
+
+def _defer_and_unlink(scaffold, pair: dict, error_type: str, status_hint: str | None) -> None:
+    """Fabricate the round-2 BLOCKER shape: one pair's terminal JSON missing +
+    its deferred record in fit_failures.json (the state cmd_fit leaves after a
+    per-pair crash of ANY class)."""
+    (scaffold.out_dir / pair["provenance"] / f"{pair['pair_id']}.json").unlink()
+    (scaffold.out_dir / "fit_failures.json").write_text(
+        json.dumps(
+            [
+                {
+                    "cell_id": pair["pair_id"],
+                    "error_type": error_type,
+                    "error": "boom",
+                    "status_hint": status_hint,
+                }
+            ]
+        )
+    )
+
+
+def test_deferred_failure_reaches_gates_with_registered_status(scaffold):
+    """Round-2 BLOCKER deferred-failures-bypass-gates: drive the SAME function
+    sequence the production wrapper dispatches (summarize -> [upload] ->
+    gates). summarize returning 0 means the wrapper NEVER takes its
+    fail-sentinel --phase summarize branch, so the sentinel status is the
+    REGISTERED gate status — never summarize_error."""
+    pair = rc.pair_registry()[7]  # a real-provenance pair
+    _defer_and_unlink(scaffold, pair, "ValueError", None)
+    assert rc.cmd_summarize(scaffold) == 0  # tolerated -> wrapper reaches upload + gates
+    headline = json.loads((scaffold.out_dir / "headline_metrics.json").read_text())
+    block = headline["provenances"][pair["provenance"]]
+    assert block["deferred_missing_pairs"] == [pair["pair_id"]]
+    assert block["label"] == "INCOMPLETE-DEFERRED-FAILURES"
+    assert headline["deferred_failures"]  # the minimal headline carries the deferred set
+    sent = _assert_failure(scaffold, "fit_deferred_failure")
+    assert sent["status"] != "summarize_error"
+
+
+def test_deferred_bundle_schema_failure_routes_registered_status(scaffold):
+    """BundleSchemaError-classed variant: the plan-registered gate-1 status
+    bundle_schema_mismatch is reachable through the production sequence."""
+    pair = rc.pair_registry()[10]  # an onpolicy pair
+    _defer_and_unlink(scaffold, pair, "BundleSchemaError", "bundle_schema_mismatch")
+    assert rc.cmd_summarize(scaffold) == 0
+    sent = _assert_failure(scaffold, "bundle_schema_mismatch")
+    assert sent["status"] != "summarize_error"
+
+
+def test_missing_pair_without_deferred_record_still_fails_loud(scaffold):
+    """Fail-loud preserved: a missing pair JSON with NO deferred record is a
+    run-order bug — summarize raises (status summarize_error is then correct)."""
+    pair = rc.pair_registry()[2]
+    (scaffold.out_dir / pair["provenance"] / f"{pair['pair_id']}.json").unlink()
+    with pytest.raises(AssertionError, match="NO deferred failure"):
+        rc.cmd_summarize(scaffold)
+
+
+def test_fit_defers_real_bundle_schema_error_end_to_end(tmp_path, monkeypatch):
+    """cmd_fit with a REAL corrupted bundle (EPS_SMOKE_CORRUPT_PAIR fault
+    injector, n_turns=2): the raised BundleSchemaError is deferred with its
+    status_hint, summarize tolerates, gates HALT with bundle_schema_mismatch."""
+    args = _args(tmp_path)
+    pair = {
+        "pair_id": "pair_real_instruct_chat",
+        "provenance": "real",
+        "model": "instruct",
+        "format": "chat",
+    }
+    monkeypatch.setenv("EPS_SMOKE_CORRUPT_PAIR", pair["pair_id"])
+    rc.cmd_fabricate_smoke(args)
+    monkeypatch.delenv("EPS_SMOKE", raising=False)
+    monkeypatch.setattr(rc, "pair_registry", lambda: [pair])
+    assert rc.cmd_fit(args) == 0  # deferred, never pre-upload fatal (MF-C)
+    failures = json.loads((args.out_dir / "fit_failures.json").read_text())
+    assert failures[0]["error_type"] == "BundleSchemaError"
+    assert failures[0]["status_hint"] == "bundle_schema_mismatch"
+    assert not (args.out_dir / "real" / f"{pair['pair_id']}.json").exists()
+    assert rc.cmd_summarize(args) == 0
+    with pytest.raises(SystemExit):
+        rc.cmd_gates(args)
+    sent = json.loads(args.sentinel.read_text())
+    assert sent["status"] == "bundle_schema_mismatch"
+
+
+def test_fit_clears_stale_deferred_record_after_successful_rerun(tmp_path, monkeypatch):
+    """Reconciler v6 'observed but not raised': a pair that succeeds on re-run
+    drops its stale fit_failures.json record, so gate 1 does not HALT a run
+    whose failure was already fixed."""
+    args = _args(tmp_path)
+    rc.cmd_fabricate_smoke(args)
+    pair = {
+        "pair_id": "pair_haiku_instruct_chat",
+        "provenance": "haiku",
+        "model": "instruct",
+        "format": "chat",
+    }
+    monkeypatch.setattr(rc, "pair_registry", lambda: [pair])
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    (args.out_dir / "fit_failures.json").write_text(
+        json.dumps(
+            [
+                {
+                    "cell_id": pair["pair_id"],
+                    "error_type": "ValueError",
+                    "error": "boom",
+                    "status_hint": None,
+                }
+            ]
+        )
+    )
+    assert rc.cmd_fit(args) == 0
+    assert not (args.out_dir / "fit_failures.json").exists()
+
+
+def test_fail_sentinel_uploads_preds_npz_to_analysis_tensors(tmp_path, monkeypatch):
+    """Round-2 CONCERN failure-sentinel-misses-preds-upload: fail-sentinel
+    mirrors UPLOAD-b (preds_pair_*.npz + preds_manifest.json ->
+    analysis_tensors) BEFORE writing the FAILURE sentinel."""
+    import huggingface_hub
+
+    monkeypatch.delenv("EPS_SMOKE", raising=False)
+    monkeypatch.setenv("HF_TOKEN", "token-for-test")
+    args = _args(tmp_path)
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    (args.out_dir / "some.json").write_text("{}")
+    (args.out_dir / "preds_manifest.json").write_text(json.dumps({"files": {}}))
+    args.preds_dir.mkdir(parents=True, exist_ok=True)
+    (args.preds_dir / "preds_pair_haiku_instruct_chat.npz").write_bytes(b"npz")
+    calls: dict[str, list] = {"folders": [], "files": []}
+
+    class FakeApi:
+        def upload_folder(self, **kw):
+            calls["folders"].append(kw)
+
+        def upload_file(self, **kw):
+            calls["files"].append(kw)
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", FakeApi)
+    assert rc.cmd_fail_sentinel(args) == 0
+    tensor_calls = [k for k in calls["folders"] if k["path_in_repo"].endswith("/analysis_tensors")]
+    assert len(tensor_calls) == 1
+    assert tensor_calls[0]["folder_path"] == str(args.preds_dir)
+    assert tensor_calls[0]["allow_patterns"] == ["preds_pair_*.npz"]
+    assert any(
+        k["path_in_repo"].endswith("/analysis_tensors/preds_manifest.json") for k in calls["files"]
+    )
+    mirror_calls = [
+        k for k in calls["folders"] if k["path_in_repo"].endswith("/eval_results_mirror")
+    ]
+    assert len(mirror_calls) == 1  # UPLOAD-a mirror unchanged
+    sent = json.loads(args.sentinel.read_text())
+    assert sent["status"] == "fit_error"
+    assert sent["note"]["uploaded_preds_before_sentinel"] == ["preds_pair_haiku_instruct_chat.npz"]
 
 
 def test_coverage_miss_missing_pair_json(scaffold):
