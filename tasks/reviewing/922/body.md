@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_922.md](https://github.com/superkaiba/explore-persona-space/blob/980e4d4b2dc5e3e3fb1c5fb0e0a96e0b957f827a/docs/methodology/issue_922.md) · [gist](https://gist.github.com/superkaiba/8583bdcafcf63dc2b61e4c7cb6d5793f)
+
 ## Takeaways
 
 - A per-layer affine map rolled from the last prompt token forecasts answer-time activations at 32 tokens with skill 0.38–0.42 over the frozen-state null — no token generated.
