@@ -69,8 +69,8 @@
     "1006": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1006",
-      "status": "proposed",
+      "path": "tasks/planning/1006",
+      "status": "planning",
       "title": "workflow-fix: verify_plan.py check \u2014 registered verdict lattices must be mutually exclusive + exhaustive"
     },
     "101": {
