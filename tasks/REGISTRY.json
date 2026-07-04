@@ -6750,8 +6750,8 @@
     "995": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/995",
-      "status": "proposed",
+      "path": "tasks/planning/995",
+      "status": "planning",
       "title": "daily-fix: batch_judge retry read-after-write 404 post-create"
     },
     "996": {
