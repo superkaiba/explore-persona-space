@@ -35,7 +35,12 @@ else
 import shutil, sys, time
 from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
-from huggingface_hub import hf_hub_download, list_repo_files
+from huggingface_hub import hf_hub_download
+sys.path.insert(0, "scripts")
+# Scoped listing (never a full-tree list_repo_files crawl of the ~1M-file data
+# repo — the 429 quota wedge hit live on the GPU phase, gotchas #833; every
+# 300s poll would otherwise be a full crawl). Bounded 429/5xx retry inside.
+from issue810_common import scoped_remote_listing
 packs = [f"$HF_MIRROR/btdr_summaries_k{p}.pt" for p in (25, 50, 75)]
 # Fetch EVERYTHING the git_commit phase adds (the `_he` fetch<->add contract):
 # per-k recon fits + per-k null matrices (n_perms=0 -> empty per-draw dict, but
@@ -47,7 +52,7 @@ jsons = [
 ]
 deadline = time.time() + 12 * 3600
 while time.time() < deadline:
-    files = set(list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset"))
+    files = scoped_remote_listing("$HF_MIRROR")
     if all(p in files for p in packs) and all(
         f"$HF_MIRROR/eval_results/{n}" in files for n in jsons
     ):
