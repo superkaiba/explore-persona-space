@@ -1,0 +1,3541 @@
+{
+  "commit": "9443c47eee",
+  "created": "2026-07-04T13:54:26Z",
+  "figsize": [
+    11.5,
+    4.3
+  ],
+  "points": [
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.5252886414527893,
+      "error": 0.02240069955587387,
+      "series": "context map (prefix + query k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.4926324188709259,
+      "error": 0.02354244887828827,
+      "series": "context map (prefix + query k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.4861755073070526,
+      "error": 0.02423430234193802,
+      "series": "context map (prefix + query k)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.1349865198135376,
+      "error": 0.02240069955587387,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.14851970970630646,
+      "error": 0.02354244887828827,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.15624621510505676,
+      "error": 0.02423430234193802,
+      "series": "prefix-only map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.5252886414527893,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.4926324188709259,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.4861755073070526,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.5089285373687744,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.47666245698928833,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.46868517994880676,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.5426514148712158,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.508883535861969,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.5020368695259094,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.1349865198135376,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.14851970970630646,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.15624621510505676,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.11194606125354767,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.12387840449810028,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.13313256204128265,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "turn k": 2.0,
+      "held-out skill (6-block mean)": 0.1567474603652954,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 3.0,
+      "held-out skill (6-block mean)": 0.17096330225467682,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "turn k": 4.0,
+      "held-out skill (6-block mean)": 0.1816011667251587,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6613977551460266,
+      "prefix-only map, per-conversation skill": 0.3541179299354553,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39095479249954224,
+      "prefix-only map, per-conversation skill": 0.24259454011917114,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5308728218078613,
+      "prefix-only map, per-conversation skill": 0.29283714294433594,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3711223006248474,
+      "prefix-only map, per-conversation skill": 0.01494288444519043,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.8303295969963074,
+      "prefix-only map, per-conversation skill": 0.2120378613471985,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4294428825378418,
+      "prefix-only map, per-conversation skill": 0.09148019552230835,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7853007316589355,
+      "prefix-only map, per-conversation skill": 0.4271950125694275,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6633586883544922,
+      "prefix-only map, per-conversation skill": 0.22938108444213867,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4616537094116211,
+      "prefix-only map, per-conversation skill": 0.07751095294952393,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2573654055595398,
+      "prefix-only map, per-conversation skill": 0.1371280550956726,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.38182806968688965,
+      "prefix-only map, per-conversation skill": -0.04786884784698486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.20033752918243408,
+      "prefix-only map, per-conversation skill": 0.05694538354873657,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6331945061683655,
+      "prefix-only map, per-conversation skill": 0.33240407705307007,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3806799650192261,
+      "prefix-only map, per-conversation skill": 0.17195135354995728,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.29289382696151733,
+      "prefix-only map, per-conversation skill": -0.09825277328491211,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49617117643356323,
+      "prefix-only map, per-conversation skill": -0.26271677017211914,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2129562497138977,
+      "prefix-only map, per-conversation skill": -0.17287015914916992,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7300936579704285,
+      "prefix-only map, per-conversation skill": 0.25268352031707764,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3183073401451111,
+      "prefix-only map, per-conversation skill": -0.04797089099884033,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.26077938079833984,
+      "prefix-only map, per-conversation skill": -0.31000518798828125,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2956398129463196,
+      "prefix-only map, per-conversation skill": 0.1646168828010559,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4514527916908264,
+      "prefix-only map, per-conversation skill": -0.26602423191070557,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.376812219619751,
+      "prefix-only map, per-conversation skill": 0.187829852104187,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2851296663284302,
+      "prefix-only map, per-conversation skill": 0.029573261737823486,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.45468389987945557,
+      "prefix-only map, per-conversation skill": 0.236253559589386,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49155253171920776,
+      "prefix-only map, per-conversation skill": 0.3140525817871094,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48746997117996216,
+      "prefix-only map, per-conversation skill": 0.18779343366622925,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5521320104598999,
+      "prefix-only map, per-conversation skill": 0.30259835720062256,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3862258791923523,
+      "prefix-only map, per-conversation skill": -0.033014535903930664,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3985222578048706,
+      "prefix-only map, per-conversation skill": 0.09063178300857544,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3433351516723633,
+      "prefix-only map, per-conversation skill": -0.0848855972290039,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6203829646110535,
+      "prefix-only map, per-conversation skill": -0.47505366802215576,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47508901357650757,
+      "prefix-only map, per-conversation skill": 0.19531559944152832,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.07860183715820312,
+      "prefix-only map, per-conversation skill": 0.025481343269348145,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39478766918182373,
+      "prefix-only map, per-conversation skill": 0.11846470832824707,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4065445065498352,
+      "prefix-only map, per-conversation skill": 0.2143726348876953,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1500091552734375,
+      "prefix-only map, per-conversation skill": 0.3062901496887207,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.38491952419281006,
+      "prefix-only map, per-conversation skill": -0.28881025314331055,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.30758827924728394,
+      "prefix-only map, per-conversation skill": -0.11047542095184326,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7201015949249268,
+      "prefix-only map, per-conversation skill": 0.2646811008453369,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4577966332435608,
+      "prefix-only map, per-conversation skill": 0.3250945210456848,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.38341087102890015,
+      "prefix-only map, per-conversation skill": 0.3116781711578369,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.30353134870529175,
+      "prefix-only map, per-conversation skill": -0.03822767734527588,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.8183684349060059,
+      "prefix-only map, per-conversation skill": 0.4971877932548523,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5201209783554077,
+      "prefix-only map, per-conversation skill": 0.29429084062576294,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.06918913125991821,
+      "prefix-only map, per-conversation skill": 0.028082668781280518,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6264811158180237,
+      "prefix-only map, per-conversation skill": 0.2911403775215149,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.40463924407958984,
+      "prefix-only map, per-conversation skill": 0.12954747676849365,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46232759952545166,
+      "prefix-only map, per-conversation skill": 0.3806702494621277,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2411799430847168,
+      "prefix-only map, per-conversation skill": 0.11306339502334595,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.30285102128982544,
+      "prefix-only map, per-conversation skill": 0.2024768590927124,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.34900617599487305,
+      "prefix-only map, per-conversation skill": -1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3300700783729553,
+      "prefix-only map, per-conversation skill": 0.23507535457611084,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.047907114028930664,
+      "prefix-only map, per-conversation skill": -0.5285165309906006,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5764906406402588,
+      "prefix-only map, per-conversation skill": 0.21921926736831665,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3476370573043823,
+      "prefix-only map, per-conversation skill": -0.048769474029541016,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1123536229133606,
+      "prefix-only map, per-conversation skill": -0.09706616401672363,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.42266857624053955,
+      "prefix-only map, per-conversation skill": 0.13086795806884766,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4308398365974426,
+      "prefix-only map, per-conversation skill": 0.14624905586242676,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.1374112367630005,
+      "prefix-only map, per-conversation skill": 0.0651891827583313,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.28681516647338867,
+      "prefix-only map, per-conversation skill": -0.04510068893432617,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5690639615058899,
+      "prefix-only map, per-conversation skill": 0.44061243534088135,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.27210748195648193,
+      "prefix-only map, per-conversation skill": 0.2855531573295593,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6899901628494263,
+      "prefix-only map, per-conversation skill": 0.3876040577888489,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4551922082901001,
+      "prefix-only map, per-conversation skill": 0.4666624665260315,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.311481237411499,
+      "prefix-only map, per-conversation skill": 0.1760844588279724,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4224058985710144,
+      "prefix-only map, per-conversation skill": -0.13307130336761475,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3901746869087219,
+      "prefix-only map, per-conversation skill": 0.19769150018692017,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6761926412582397,
+      "prefix-only map, per-conversation skill": -0.1710585355758667,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.25861257314682007,
+      "prefix-only map, per-conversation skill": 0.24318426847457886,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.09565269947052002,
+      "prefix-only map, per-conversation skill": 0.0729677677154541,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.27852118015289307,
+      "prefix-only map, per-conversation skill": 0.14418244361877441,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.22849100828170776,
+      "prefix-only map, per-conversation skill": 0.32318150997161865,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3249485492706299,
+      "prefix-only map, per-conversation skill": -0.7170153856277466,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5606153011322021,
+      "prefix-only map, per-conversation skill": -0.6644923686981201,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.41733676195144653,
+      "prefix-only map, per-conversation skill": 0.17700684070587158,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3658004403114319,
+      "prefix-only map, per-conversation skill": 0.24667835235595703,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.34865039587020874,
+      "prefix-only map, per-conversation skill": 0.1014702320098877,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46483737230300903,
+      "prefix-only map, per-conversation skill": -0.6689707040786743,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3858814835548401,
+      "prefix-only map, per-conversation skill": -0.6084836721420288,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.28307199478149414,
+      "prefix-only map, per-conversation skill": 0.21112310886383057,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6208535432815552,
+      "prefix-only map, per-conversation skill": 0.4643399715423584,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6109136343002319,
+      "prefix-only map, per-conversation skill": 0.16227883100509644,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -1.0,
+      "prefix-only map, per-conversation skill": 0.20514529943466187,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.34576696157455444,
+      "prefix-only map, per-conversation skill": 0.12572509050369263,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5117021203041077,
+      "prefix-only map, per-conversation skill": 0.35926127433776855,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35660046339035034,
+      "prefix-only map, per-conversation skill": 0.15394186973571777,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1668994426727295,
+      "prefix-only map, per-conversation skill": -0.017119884490966797,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.29712754487991333,
+      "prefix-only map, per-conversation skill": 0.10645431280136108,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.09706419706344604,
+      "prefix-only map, per-conversation skill": 0.22485023736953735,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37903714179992676,
+      "prefix-only map, per-conversation skill": 0.18617260456085205,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3957087993621826,
+      "prefix-only map, per-conversation skill": 0.0393790602684021,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.11130446195602417,
+      "prefix-only map, per-conversation skill": -0.07405292987823486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4300488829612732,
+      "prefix-only map, per-conversation skill": -0.03020179271697998,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6277995109558105,
+      "prefix-only map, per-conversation skill": 0.26148271560668945,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32435691356658936,
+      "prefix-only map, per-conversation skill": 0.19980621337890625,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6875123977661133,
+      "prefix-only map, per-conversation skill": 0.41519635915756226,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4293299913406372,
+      "prefix-only map, per-conversation skill": 0.13081586360931396,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33826500177383423,
+      "prefix-only map, per-conversation skill": 0.13270002603530884,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4738274812698364,
+      "prefix-only map, per-conversation skill": 0.08931839466094971,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1856251358985901,
+      "prefix-only map, per-conversation skill": 0.07373732328414917,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4712197780609131,
+      "prefix-only map, per-conversation skill": -0.07141375541687012,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39702415466308594,
+      "prefix-only map, per-conversation skill": -0.06034553050994873,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47792476415634155,
+      "prefix-only map, per-conversation skill": 0.35169482231140137,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.11979955434799194,
+      "prefix-only map, per-conversation skill": 0.15746325254440308,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3917001485824585,
+      "prefix-only map, per-conversation skill": 0.16682231426239014,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33463871479034424,
+      "prefix-only map, per-conversation skill": 0.01583784818649292,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3113720417022705,
+      "prefix-only map, per-conversation skill": 0.2563996911048889,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.15150314569473267,
+      "prefix-only map, per-conversation skill": -0.05530500411987305,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.21752840280532837,
+      "prefix-only map, per-conversation skill": 0.07980924844741821,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39745867252349854,
+      "prefix-only map, per-conversation skill": 0.28536105155944824,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4959888458251953,
+      "prefix-only map, per-conversation skill": 0.26924312114715576,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2899291515350342,
+      "prefix-only map, per-conversation skill": -0.5303263664245605,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3040720820426941,
+      "prefix-only map, per-conversation skill": 0.17955756187438965,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5718454718589783,
+      "prefix-only map, per-conversation skill": 0.04104799032211304,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43438494205474854,
+      "prefix-only map, per-conversation skill": 0.09357994794845581,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.527870774269104,
+      "prefix-only map, per-conversation skill": 0.32405269145965576,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6638098955154419,
+      "prefix-only map, per-conversation skill": 0.020023584365844727,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.744255542755127,
+      "prefix-only map, per-conversation skill": -0.06913352012634277,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.535047173500061,
+      "prefix-only map, per-conversation skill": 0.21951031684875488,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4206610918045044,
+      "prefix-only map, per-conversation skill": 0.22419065237045288,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.30631041526794434,
+      "prefix-only map, per-conversation skill": 0.09193015098571777,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.55169677734375,
+      "prefix-only map, per-conversation skill": 0.3060038089752197,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3864579200744629,
+      "prefix-only map, per-conversation skill": 0.37198394536972046,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.23857265710830688,
+      "prefix-only map, per-conversation skill": -0.12434530258178711,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7568540573120117,
+      "prefix-only map, per-conversation skill": -0.41683411598205566,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4754117727279663,
+      "prefix-only map, per-conversation skill": -0.1872495412826538,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2819925546646118,
+      "prefix-only map, per-conversation skill": -0.01575613021850586,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3260922431945801,
+      "prefix-only map, per-conversation skill": -0.3441171646118164,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2354699969291687,
+      "prefix-only map, per-conversation skill": 0.14860105514526367,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1176760196685791,
+      "prefix-only map, per-conversation skill": -0.03922009468078613,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47908204793930054,
+      "prefix-only map, per-conversation skill": 0.05654561519622803,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5742972493171692,
+      "prefix-only map, per-conversation skill": 0.10122472047805786,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.15806621313095093,
+      "prefix-only map, per-conversation skill": -0.2813769578933716,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.41395699977874756,
+      "prefix-only map, per-conversation skill": 0.18190687894821167,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4011438488960266,
+      "prefix-only map, per-conversation skill": 0.1828414797782898,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5294123888015747,
+      "prefix-only map, per-conversation skill": 0.30749017000198364,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.18771272897720337,
+      "prefix-only map, per-conversation skill": -0.22919857501983643,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46818476915359497,
+      "prefix-only map, per-conversation skill": -0.26149845123291016,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5452244281768799,
+      "prefix-only map, per-conversation skill": 0.2828115224838257,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.38973236083984375,
+      "prefix-only map, per-conversation skill": 0.3495447635650635,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47437965869903564,
+      "prefix-only map, per-conversation skill": 0.18231582641601562,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3699858784675598,
+      "prefix-only map, per-conversation skill": -0.01202845573425293,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5920151472091675,
+      "prefix-only map, per-conversation skill": 0.5493652820587158,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33417636156082153,
+      "prefix-only map, per-conversation skill": 0.10116952657699585,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.17017728090286255,
+      "prefix-only map, per-conversation skill": -0.04727065563201904,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1495800018310547,
+      "prefix-only map, per-conversation skill": 0.10870534181594849,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.26467376947402954,
+      "prefix-only map, per-conversation skill": -0.19007766246795654,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.12101656198501587,
+      "prefix-only map, per-conversation skill": -0.16259360313415527,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47081315517425537,
+      "prefix-only map, per-conversation skill": -0.07230687141418457,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3177180886268616,
+      "prefix-only map, per-conversation skill": 0.12254601716995239,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3628098964691162,
+      "prefix-only map, per-conversation skill": -0.13202357292175293,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6331817507743835,
+      "prefix-only map, per-conversation skill": 0.4831688404083252,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5706499218940735,
+      "prefix-only map, per-conversation skill": 0.023656785488128662,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.20085197687149048,
+      "prefix-only map, per-conversation skill": 0.04510676860809326,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4524359703063965,
+      "prefix-only map, per-conversation skill": 0.036828577518463135,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.334558367729187,
+      "prefix-only map, per-conversation skill": 0.10542291402816772,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3785526752471924,
+      "prefix-only map, per-conversation skill": -0.03487575054168701,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5293920040130615,
+      "prefix-only map, per-conversation skill": 0.1409648060798645,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49911510944366455,
+      "prefix-only map, per-conversation skill": 0.21172690391540527,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4254324436187744,
+      "prefix-only map, per-conversation skill": 0.3624899387359619,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6191059350967407,
+      "prefix-only map, per-conversation skill": 0.28018176555633545,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5139263868331909,
+      "prefix-only map, per-conversation skill": -0.37972569465637207,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.26173990964889526,
+      "prefix-only map, per-conversation skill": 0.1765991449356079,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6192985773086548,
+      "prefix-only map, per-conversation skill": 0.21265053749084473,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4940282106399536,
+      "prefix-only map, per-conversation skill": 0.15723294019699097,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3925265669822693,
+      "prefix-only map, per-conversation skill": 0.24085217714309692,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7620788812637329,
+      "prefix-only map, per-conversation skill": -0.17959153652191162,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46368545293807983,
+      "prefix-only map, per-conversation skill": -0.236547589302063,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37060534954071045,
+      "prefix-only map, per-conversation skill": -0.013564467430114746,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46522271633148193,
+      "prefix-only map, per-conversation skill": 0.14713656902313232,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5251153707504272,
+      "prefix-only map, per-conversation skill": 0.23287469148635864,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.24076807498931885,
+      "prefix-only map, per-conversation skill": 0.09530943632125854,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4107702374458313,
+      "prefix-only map, per-conversation skill": -0.0335383415222168,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2605358958244324,
+      "prefix-only map, per-conversation skill": 0.06815087795257568,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5381929278373718,
+      "prefix-only map, per-conversation skill": 0.18237906694412231,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47529029846191406,
+      "prefix-only map, per-conversation skill": -0.13483238220214844,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4793112277984619,
+      "prefix-only map, per-conversation skill": 0.0008941292762756348,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4063190221786499,
+      "prefix-only map, per-conversation skill": 0.41879957914352417,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2751549482345581,
+      "prefix-only map, per-conversation skill": -0.11482608318328857,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3852308392524719,
+      "prefix-only map, per-conversation skill": 0.2452026605606079,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5191268920898438,
+      "prefix-only map, per-conversation skill": 0.2097874879837036,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.36368751525878906,
+      "prefix-only map, per-conversation skill": 0.007974028587341309,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4438316822052002,
+      "prefix-only map, per-conversation skill": 0.15747535228729248,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6929813623428345,
+      "prefix-only map, per-conversation skill": -0.06492435932159424,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5377932786941528,
+      "prefix-only map, per-conversation skill": 0.04491609334945679,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5221055746078491,
+      "prefix-only map, per-conversation skill": 0.1268843412399292,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2676656246185303,
+      "prefix-only map, per-conversation skill": 0.0882919430732727,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7373663187026978,
+      "prefix-only map, per-conversation skill": 0.5656865835189819,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5978083610534668,
+      "prefix-only map, per-conversation skill": 0.18130385875701904,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39753538370132446,
+      "prefix-only map, per-conversation skill": 0.09333431720733643,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43407154083251953,
+      "prefix-only map, per-conversation skill": 0.0371512770652771,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4964011311531067,
+      "prefix-only map, per-conversation skill": 0.2815325856208801,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49981969594955444,
+      "prefix-only map, per-conversation skill": 0.18157869577407837,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3690774440765381,
+      "prefix-only map, per-conversation skill": 0.1266613006591797,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.17949199676513672,
+      "prefix-only map, per-conversation skill": -0.006191611289978027,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2543862462043762,
+      "prefix-only map, per-conversation skill": 0.2022252082824707,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.29614710807800293,
+      "prefix-only map, per-conversation skill": 0.18690192699432373,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4208153486251831,
+      "prefix-only map, per-conversation skill": 0.12783300876617432,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.680580735206604,
+      "prefix-only map, per-conversation skill": 0.44219541549682617,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3731995224952698,
+      "prefix-only map, per-conversation skill": -0.13198018074035645,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37113094329833984,
+      "prefix-only map, per-conversation skill": 0.07962298393249512,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.42420077323913574,
+      "prefix-only map, per-conversation skill": -0.12286198139190674,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5968455076217651,
+      "prefix-only map, per-conversation skill": 0.25165361166000366,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7929722666740417,
+      "prefix-only map, per-conversation skill": 0.27043038606643677,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3069527745246887,
+      "prefix-only map, per-conversation skill": 0.06494027376174927,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6152101755142212,
+      "prefix-only map, per-conversation skill": 0.23895764350891113,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4254591464996338,
+      "prefix-only map, per-conversation skill": 0.23021477460861206,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32959622144699097,
+      "prefix-only map, per-conversation skill": -0.007632255554199219,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.29954856634140015,
+      "prefix-only map, per-conversation skill": 0.0915602445602417,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4401833415031433,
+      "prefix-only map, per-conversation skill": 0.1162763237953186,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6067215204238892,
+      "prefix-only map, per-conversation skill": 0.29441899061203003,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7903016209602356,
+      "prefix-only map, per-conversation skill": 0.31948864459991455,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.22956156730651855,
+      "prefix-only map, per-conversation skill": -0.05846142768859863,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.12406963109970093,
+      "prefix-only map, per-conversation skill": -0.5281215906143188,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2986740469932556,
+      "prefix-only map, per-conversation skill": 0.12539279460906982,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6589258313179016,
+      "prefix-only map, per-conversation skill": 0.35935550928115845,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48614656925201416,
+      "prefix-only map, per-conversation skill": 0.27207785844802856,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7544971704483032,
+      "prefix-only map, per-conversation skill": 0.5584614872932434,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6384283900260925,
+      "prefix-only map, per-conversation skill": 0.19533491134643555,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4774952530860901,
+      "prefix-only map, per-conversation skill": 0.29230988025665283,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32270747423171997,
+      "prefix-only map, per-conversation skill": 0.1437467336654663,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4160091280937195,
+      "prefix-only map, per-conversation skill": 0.1404302716255188,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6111483573913574,
+      "prefix-only map, per-conversation skill": 0.3576542139053345,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.30847543478012085,
+      "prefix-only map, per-conversation skill": 0.1171148419380188,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48470014333724976,
+      "prefix-only map, per-conversation skill": 0.08825153112411499,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4809325337409973,
+      "prefix-only map, per-conversation skill": 0.07867425680160522,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4793989062309265,
+      "prefix-only map, per-conversation skill": -0.11176729202270508,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.425470769405365,
+      "prefix-only map, per-conversation skill": 0.21982938051223755,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.364637553691864,
+      "prefix-only map, per-conversation skill": 0.2251608967781067,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3239840865135193,
+      "prefix-only map, per-conversation skill": -0.06078779697418213,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3354020118713379,
+      "prefix-only map, per-conversation skill": 0.10144299268722534,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4116596579551697,
+      "prefix-only map, per-conversation skill": 0.18612444400787354,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.21349692344665527,
+      "prefix-only map, per-conversation skill": 0.06746602058410645,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7426148653030396,
+      "prefix-only map, per-conversation skill": 0.4633718729019165,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47059905529022217,
+      "prefix-only map, per-conversation skill": 0.2166275978088379,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5475189685821533,
+      "prefix-only map, per-conversation skill": -0.8173917531967163,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.31068581342697144,
+      "prefix-only map, per-conversation skill": 0.07972478866577148,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.22775179147720337,
+      "prefix-only map, per-conversation skill": 0.18838614225387573,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6182197332382202,
+      "prefix-only map, per-conversation skill": -0.07318532466888428,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3375106453895569,
+      "prefix-only map, per-conversation skill": -0.05039417743682861,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4941393733024597,
+      "prefix-only map, per-conversation skill": -0.05280625820159912,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3567351698875427,
+      "prefix-only map, per-conversation skill": 0.3138306140899658,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43140721321105957,
+      "prefix-only map, per-conversation skill": 0.21204090118408203,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4114067554473877,
+      "prefix-only map, per-conversation skill": 0.015131473541259766,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.41444671154022217,
+      "prefix-only map, per-conversation skill": 0.16091203689575195,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6998403072357178,
+      "prefix-only map, per-conversation skill": 0.2594051957130432,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6377838850021362,
+      "prefix-only map, per-conversation skill": 0.5379186868667603,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.41495251655578613,
+      "prefix-only map, per-conversation skill": -0.09101235866546631,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33642953634262085,
+      "prefix-only map, per-conversation skill": -0.04170680046081543,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7400965094566345,
+      "prefix-only map, per-conversation skill": 0.08850318193435669,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.26943904161453247,
+      "prefix-only map, per-conversation skill": 0.2055608630180359,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4397584795951843,
+      "prefix-only map, per-conversation skill": 0.03265005350112915,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4419909119606018,
+      "prefix-only map, per-conversation skill": 0.3277490735054016,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5426480174064636,
+      "prefix-only map, per-conversation skill": -0.39222192764282227,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33015286922454834,
+      "prefix-only map, per-conversation skill": 0.18463236093521118,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.44538289308547974,
+      "prefix-only map, per-conversation skill": -0.23425579071044922,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.477222740650177,
+      "prefix-only map, per-conversation skill": 0.338731050491333,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6276161670684814,
+      "prefix-only map, per-conversation skill": -0.04188895225524902,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5363390445709229,
+      "prefix-only map, per-conversation skill": 0.27186208963394165,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.00961458683013916,
+      "prefix-only map, per-conversation skill": 0.08214229345321655,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6709758043289185,
+      "prefix-only map, per-conversation skill": 0.6185050010681152,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3674180507659912,
+      "prefix-only map, per-conversation skill": 0.40730100870132446,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5348364114761353,
+      "prefix-only map, per-conversation skill": 0.1110578179359436,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6912420392036438,
+      "prefix-only map, per-conversation skill": 0.38178396224975586,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4793533682823181,
+      "prefix-only map, per-conversation skill": 0.4958420991897583,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4371509552001953,
+      "prefix-only map, per-conversation skill": 0.445002019405365,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.21011966466903687,
+      "prefix-only map, per-conversation skill": -0.1330428123474121,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3557388186454773,
+      "prefix-only map, per-conversation skill": -0.044159770011901855,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3726156949996948,
+      "prefix-only map, per-conversation skill": 0.24984490871429443,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7097960710525513,
+      "prefix-only map, per-conversation skill": -0.00585782527923584,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.46366703510284424,
+      "prefix-only map, per-conversation skill": -0.12499821186065674,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6608140468597412,
+      "prefix-only map, per-conversation skill": 0.14701896905899048,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.19392412900924683,
+      "prefix-only map, per-conversation skill": 0.039784789085388184,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32330137491226196,
+      "prefix-only map, per-conversation skill": -0.07900416851043701,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.351576030254364,
+      "prefix-only map, per-conversation skill": -0.026785969734191895,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.18775349855422974,
+      "prefix-only map, per-conversation skill": -0.36890995502471924,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.45211732387542725,
+      "prefix-only map, per-conversation skill": 0.13491785526275635,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6971337199211121,
+      "prefix-only map, per-conversation skill": 0.1284191608428955,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5561776757240295,
+      "prefix-only map, per-conversation skill": 0.26730477809906006,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.489762544631958,
+      "prefix-only map, per-conversation skill": 0.15817701816558838,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.15910977125167847,
+      "prefix-only map, per-conversation skill": 0.1279674768447876,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4855883717536926,
+      "prefix-only map, per-conversation skill": 0.32388657331466675,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4578428268432617,
+      "prefix-only map, per-conversation skill": -0.2280726432800293,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4920242428779602,
+      "prefix-only map, per-conversation skill": 0.0893436074256897,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48185640573501587,
+      "prefix-only map, per-conversation skill": 0.204839825630188,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6193700432777405,
+      "prefix-only map, per-conversation skill": 0.353104829788208,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3529750108718872,
+      "prefix-only map, per-conversation skill": 0.11439651250839233,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3568977117538452,
+      "prefix-only map, per-conversation skill": -0.14859771728515625,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5258002877235413,
+      "prefix-only map, per-conversation skill": -0.17939352989196777,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4739248752593994,
+      "prefix-only map, per-conversation skill": 0.16311925649642944,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35906845331192017,
+      "prefix-only map, per-conversation skill": 0.3106318712234497,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6008634567260742,
+      "prefix-only map, per-conversation skill": 0.29479146003723145,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.10991036891937256,
+      "prefix-only map, per-conversation skill": -0.00033414363861083984,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5196972489356995,
+      "prefix-only map, per-conversation skill": 0.20570582151412964,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4826757311820984,
+      "prefix-only map, per-conversation skill": 0.2435644268989563,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4431378245353699,
+      "prefix-only map, per-conversation skill": -0.10728645324707031,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2119433879852295,
+      "prefix-only map, per-conversation skill": 0.06118077039718628,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.04332226514816284,
+      "prefix-only map, per-conversation skill": 0.1461653709411621,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.336489200592041,
+      "prefix-only map, per-conversation skill": -0.06887149810791016,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5076171159744263,
+      "prefix-only map, per-conversation skill": -0.062421560287475586,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.44330698251724243,
+      "prefix-only map, per-conversation skill": 0.1296045184135437,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.54639732837677,
+      "prefix-only map, per-conversation skill": 0.2751208543777466,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6112281680107117,
+      "prefix-only map, per-conversation skill": -0.3544466495513916,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6537065505981445,
+      "prefix-only map, per-conversation skill": -0.10346746444702148,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5198520421981812,
+      "prefix-only map, per-conversation skill": 0.07073974609375,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.22616887092590332,
+      "prefix-only map, per-conversation skill": 0.13846421241760254,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7619022727012634,
+      "prefix-only map, per-conversation skill": 0.27565836906433105,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3798096179962158,
+      "prefix-only map, per-conversation skill": -0.8567361831665039,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.569430947303772,
+      "prefix-only map, per-conversation skill": 0.2163493037223816,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6233009099960327,
+      "prefix-only map, per-conversation skill": 0.0407063364982605,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6973642110824585,
+      "prefix-only map, per-conversation skill": 0.5076439380645752,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.0379328727722168,
+      "prefix-only map, per-conversation skill": -0.03571474552154541,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48104214668273926,
+      "prefix-only map, per-conversation skill": -0.5051261186599731,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.17585498094558716,
+      "prefix-only map, per-conversation skill": 0.266224205493927,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5482000112533569,
+      "prefix-only map, per-conversation skill": 0.30396634340286255,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7187411785125732,
+      "prefix-only map, per-conversation skill": 0.5623735189437866,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3352384567260742,
+      "prefix-only map, per-conversation skill": -0.0313340425491333,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4866485595703125,
+      "prefix-only map, per-conversation skill": 0.39877843856811523,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7781493663787842,
+      "prefix-only map, per-conversation skill": 0.49556201696395874,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6312087774276733,
+      "prefix-only map, per-conversation skill": 0.14307641983032227,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.22779381275177002,
+      "prefix-only map, per-conversation skill": -0.15209674835205078,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.38861197233200073,
+      "prefix-only map, per-conversation skill": 0.0847783088684082,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6814072132110596,
+      "prefix-only map, per-conversation skill": 0.23732757568359375,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2963641285896301,
+      "prefix-only map, per-conversation skill": 0.06363624334335327,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.27534013986587524,
+      "prefix-only map, per-conversation skill": -0.12649941444396973,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39553898572921753,
+      "prefix-only map, per-conversation skill": 0.020482420921325684,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2950674891471863,
+      "prefix-only map, per-conversation skill": 0.1144188642501831,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3274347186088562,
+      "prefix-only map, per-conversation skill": -0.020881056785583496,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5471868515014648,
+      "prefix-only map, per-conversation skill": 0.31562328338623047,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6414844989776611,
+      "prefix-only map, per-conversation skill": 0.26842933893203735,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.34889888763427734,
+      "prefix-only map, per-conversation skill": -0.16883742809295654,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7255845069885254,
+      "prefix-only map, per-conversation skill": -0.07188713550567627,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.45403021574020386,
+      "prefix-only map, per-conversation skill": 0.18780308961868286,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5244330167770386,
+      "prefix-only map, per-conversation skill": -0.08530652523040771,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5102552175521851,
+      "prefix-only map, per-conversation skill": 0.15724992752075195,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.28352129459381104,
+      "prefix-only map, per-conversation skill": 0.2473381757736206,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49237996339797974,
+      "prefix-only map, per-conversation skill": 0.11828118562698364,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3382951021194458,
+      "prefix-only map, per-conversation skill": 0.0976182222366333,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35851866006851196,
+      "prefix-only map, per-conversation skill": 0.17558497190475464,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47429734468460083,
+      "prefix-only map, per-conversation skill": 0.36477988958358765,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4430192708969116,
+      "prefix-only map, per-conversation skill": 0.12730616331100464,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.324832558631897,
+      "prefix-only map, per-conversation skill": -0.30385661125183105,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5965540409088135,
+      "prefix-only map, per-conversation skill": 0.410194456577301,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7477810382843018,
+      "prefix-only map, per-conversation skill": 0.09781867265701294,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4821345806121826,
+      "prefix-only map, per-conversation skill": -0.0005713701248168945,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5300966501235962,
+      "prefix-only map, per-conversation skill": -1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.45602279901504517,
+      "prefix-only map, per-conversation skill": 0.3252837061882019,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5482379198074341,
+      "prefix-only map, per-conversation skill": 0.26498091220855713,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33751070499420166,
+      "prefix-only map, per-conversation skill": -0.08477938175201416,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4681527614593506,
+      "prefix-only map, per-conversation skill": 0.37134915590286255,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5942054986953735,
+      "prefix-only map, per-conversation skill": 0.30142074823379517,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33929818868637085,
+      "prefix-only map, per-conversation skill": 0.026379108428955078,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.19346874952316284,
+      "prefix-only map, per-conversation skill": 0.20277273654937744,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4351804852485657,
+      "prefix-only map, per-conversation skill": 0.09309917688369751,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5756986141204834,
+      "prefix-only map, per-conversation skill": -0.2953481674194336,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4798523783683777,
+      "prefix-only map, per-conversation skill": 0.0002785325050354004,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32343530654907227,
+      "prefix-only map, per-conversation skill": 0.08715981245040894,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.547566294670105,
+      "prefix-only map, per-conversation skill": -0.12155354022979736,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37613487243652344,
+      "prefix-only map, per-conversation skill": 0.20656871795654297,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35749751329421997,
+      "prefix-only map, per-conversation skill": 0.1574212908744812,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.39011067152023315,
+      "prefix-only map, per-conversation skill": 0.006451964378356934,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.31841498613357544,
+      "prefix-only map, per-conversation skill": 0.2637447118759155,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2193007469177246,
+      "prefix-only map, per-conversation skill": 0.06807011365890503,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48382478952407837,
+      "prefix-only map, per-conversation skill": 0.2685626149177551,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5362083315849304,
+      "prefix-only map, per-conversation skill": 0.06287127733230591,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4027574062347412,
+      "prefix-only map, per-conversation skill": 0.13674426078796387,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.1125187873840332,
+      "prefix-only map, per-conversation skill": -0.09713089466094971,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6397290229797363,
+      "prefix-only map, per-conversation skill": 0.394802451133728,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.33124178647994995,
+      "prefix-only map, per-conversation skill": 0.10675644874572754,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4984152913093567,
+      "prefix-only map, per-conversation skill": 0.21590662002563477,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5148929357528687,
+      "prefix-only map, per-conversation skill": 0.19022798538208008,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.44704097509384155,
+      "prefix-only map, per-conversation skill": 0.27857398986816406,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.40474069118499756,
+      "prefix-only map, per-conversation skill": 0.18021279573440552,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5522271394729614,
+      "prefix-only map, per-conversation skill": 0.3267669081687927,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4143276810646057,
+      "prefix-only map, per-conversation skill": -0.13833796977996826,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.19609737396240234,
+      "prefix-only map, per-conversation skill": -0.1343843936920166,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.12516272068023682,
+      "prefix-only map, per-conversation skill": -0.2060704231262207,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5979036688804626,
+      "prefix-only map, per-conversation skill": -0.1114274263381958,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.23694854974746704,
+      "prefix-only map, per-conversation skill": -0.0375363826751709,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5354119539260864,
+      "prefix-only map, per-conversation skill": 0.35349035263061523,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1935606598854065,
+      "prefix-only map, per-conversation skill": 0.26665806770324707,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2665907144546509,
+      "prefix-only map, per-conversation skill": 0.0381811261177063,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3987412452697754,
+      "prefix-only map, per-conversation skill": -0.10855770111083984,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5141928195953369,
+      "prefix-only map, per-conversation skill": -0.25012481212615967,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3821534514427185,
+      "prefix-only map, per-conversation skill": 0.03657346963882446,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.36349308490753174,
+      "prefix-only map, per-conversation skill": -0.08286726474761963,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2073041796684265,
+      "prefix-only map, per-conversation skill": -0.004394412040710449,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.017573893070220947,
+      "prefix-only map, per-conversation skill": -0.24651503562927246,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.10254150629043579,
+      "prefix-only map, per-conversation skill": 0.10632652044296265,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.27797698974609375,
+      "prefix-only map, per-conversation skill": 0.02551710605621338,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6831458806991577,
+      "prefix-only map, per-conversation skill": 0.364391565322876,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.424116313457489,
+      "prefix-only map, per-conversation skill": 0.2474108338356018,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3863809108734131,
+      "prefix-only map, per-conversation skill": -0.06426608562469482,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4747087359428406,
+      "prefix-only map, per-conversation skill": -0.5374598503112793,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.40761256217956543,
+      "prefix-only map, per-conversation skill": 0.1477564573287964,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6738100647926331,
+      "prefix-only map, per-conversation skill": 0.033084869384765625,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.13262081146240234,
+      "prefix-only map, per-conversation skill": -0.09590327739715576,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6207268238067627,
+      "prefix-only map, per-conversation skill": -0.42996394634246826,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5101617574691772,
+      "prefix-only map, per-conversation skill": 0.3563882112503052,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4122387170791626,
+      "prefix-only map, per-conversation skill": 0.22569847106933594,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5272588729858398,
+      "prefix-only map, per-conversation skill": 0.35435664653778076,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7080211043357849,
+      "prefix-only map, per-conversation skill": 0.4961889982223511,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6536800861358643,
+      "prefix-only map, per-conversation skill": 0.6348025798797607,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48803091049194336,
+      "prefix-only map, per-conversation skill": 0.24357706308364868,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.739106297492981,
+      "prefix-only map, per-conversation skill": -0.27161943912506104,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4267130494117737,
+      "prefix-only map, per-conversation skill": 0.1447654366493225,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6024810075759888,
+      "prefix-only map, per-conversation skill": 0.40070509910583496,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.20877885818481445,
+      "prefix-only map, per-conversation skill": 0.079967200756073,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4859468936920166,
+      "prefix-only map, per-conversation skill": 0.1670120358467102,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.55159991979599,
+      "prefix-only map, per-conversation skill": -0.09932947158813477,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5217454433441162,
+      "prefix-only map, per-conversation skill": 0.22382408380508423,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6030989289283752,
+      "prefix-only map, per-conversation skill": 0.3871612548828125,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4003116488456726,
+      "prefix-only map, per-conversation skill": 0.14960509538650513,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.13598096370697021,
+      "prefix-only map, per-conversation skill": 0.08189117908477783,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3840981125831604,
+      "prefix-only map, per-conversation skill": -0.005029439926147461,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5879318714141846,
+      "prefix-only map, per-conversation skill": 0.2970072627067566,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6049903631210327,
+      "prefix-only map, per-conversation skill": 0.35694098472595215,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4270835518836975,
+      "prefix-only map, per-conversation skill": 0.29546016454696655,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7182735204696655,
+      "prefix-only map, per-conversation skill": -0.057099223136901855,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4781922698020935,
+      "prefix-only map, per-conversation skill": 0.24152028560638428,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5947370529174805,
+      "prefix-only map, per-conversation skill": 0.3037857413291931,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4490276575088501,
+      "prefix-only map, per-conversation skill": 0.13677376508712769,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.21322304010391235,
+      "prefix-only map, per-conversation skill": 0.1946435570716858,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.12385642528533936,
+      "prefix-only map, per-conversation skill": 0.028903186321258545,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37470346689224243,
+      "prefix-only map, per-conversation skill": -0.08921933174133301,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3514804244041443,
+      "prefix-only map, per-conversation skill": 0.14010381698608398,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6167940497398376,
+      "prefix-only map, per-conversation skill": 0.18685293197631836,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3740096092224121,
+      "prefix-only map, per-conversation skill": 0.0674172043800354,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6306698322296143,
+      "prefix-only map, per-conversation skill": 0.28979921340942383,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4924420118331909,
+      "prefix-only map, per-conversation skill": 0.022420287132263184,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4746077060699463,
+      "prefix-only map, per-conversation skill": 0.2943029999732971,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6217615604400635,
+      "prefix-only map, per-conversation skill": 0.20526903867721558,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5956824421882629,
+      "prefix-only map, per-conversation skill": -0.11440920829772949,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5599035024642944,
+      "prefix-only map, per-conversation skill": 0.23954826593399048,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6949449777603149,
+      "prefix-only map, per-conversation skill": 0.07067114114761353,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3377031087875366,
+      "prefix-only map, per-conversation skill": -0.046777963638305664,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6189010143280029,
+      "prefix-only map, per-conversation skill": 0.0960950255393982,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6829326152801514,
+      "prefix-only map, per-conversation skill": 0.42429834604263306,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.531501293182373,
+      "prefix-only map, per-conversation skill": 0.34028178453445435,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.28328418731689453,
+      "prefix-only map, per-conversation skill": 0.12721210718154907,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3846976161003113,
+      "prefix-only map, per-conversation skill": -0.13332271575927734,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.47366517782211304,
+      "prefix-only map, per-conversation skill": 0.27078211307525635,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3341856598854065,
+      "prefix-only map, per-conversation skill": 0.30901163816452026,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.42977041006088257,
+      "prefix-only map, per-conversation skill": 0.14245229959487915,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7572590112686157,
+      "prefix-only map, per-conversation skill": 0.46932142972946167,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35265451669692993,
+      "prefix-only map, per-conversation skill": -0.2742292881011963,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.0308229923248291,
+      "prefix-only map, per-conversation skill": -0.3069394826889038,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4183415174484253,
+      "prefix-only map, per-conversation skill": 0.11457580327987671,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.8765407800674438,
+      "prefix-only map, per-conversation skill": 0.6546189785003662,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.37172508239746094,
+      "prefix-only map, per-conversation skill": 0.22651934623718262,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43427419662475586,
+      "prefix-only map, per-conversation skill": -0.05179870128631592,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.19910502433776855,
+      "prefix-only map, per-conversation skill": 0.09976458549499512,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3310461640357971,
+      "prefix-only map, per-conversation skill": 0.11886757612228394,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4847647547721863,
+      "prefix-only map, per-conversation skill": 0.3603910803794861,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3639680743217468,
+      "prefix-only map, per-conversation skill": -0.09336471557617188,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.11243510246276855,
+      "prefix-only map, per-conversation skill": 0.04005950689315796,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43021076917648315,
+      "prefix-only map, per-conversation skill": 0.21168971061706543,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3424113392829895,
+      "prefix-only map, per-conversation skill": 0.28900665044784546,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49620628356933594,
+      "prefix-only map, per-conversation skill": 0.3992008566856384,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.528788685798645,
+      "prefix-only map, per-conversation skill": 0.15846163034439087,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.48237818479537964,
+      "prefix-only map, per-conversation skill": 0.05141180753707886,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49833840131759644,
+      "prefix-only map, per-conversation skill": 0.25589221715927124,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4415382742881775,
+      "prefix-only map, per-conversation skill": 0.23040932416915894,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3332098722457886,
+      "prefix-only map, per-conversation skill": 0.16166001558303833,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4751893877983093,
+      "prefix-only map, per-conversation skill": 0.3681824803352356,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5606873035430908,
+      "prefix-only map, per-conversation skill": 0.053561270236968994,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4482194781303406,
+      "prefix-only map, per-conversation skill": 0.30380988121032715,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32887202501296997,
+      "prefix-only map, per-conversation skill": 0.13421756029129028,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.06970411539077759,
+      "prefix-only map, per-conversation skill": 0.11463797092437744,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.2761589288711548,
+      "prefix-only map, per-conversation skill": 0.07474100589752197,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6506713032722473,
+      "prefix-only map, per-conversation skill": 0.581378698348999,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5514880418777466,
+      "prefix-only map, per-conversation skill": -0.20925462245941162,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35001593828201294,
+      "prefix-only map, per-conversation skill": 0.18023622035980225,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5535160303115845,
+      "prefix-only map, per-conversation skill": 0.33440762758255005,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.36299651861190796,
+      "prefix-only map, per-conversation skill": -0.27081525325775146,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.24416613578796387,
+      "prefix-only map, per-conversation skill": 0.40984445810317993,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4490619897842407,
+      "prefix-only map, per-conversation skill": 0.22889643907546997,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49121302366256714,
+      "prefix-only map, per-conversation skill": 0.10760444402694702,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.24430954456329346,
+      "prefix-only map, per-conversation skill": 0.17641550302505493,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6598812937736511,
+      "prefix-only map, per-conversation skill": -0.024224162101745605,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.564998984336853,
+      "prefix-only map, per-conversation skill": 0.218123197555542,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.7243577837944031,
+      "prefix-only map, per-conversation skill": 0.27199041843414307,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.600409984588623,
+      "prefix-only map, per-conversation skill": 0.29930591583251953,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.49126726388931274,
+      "prefix-only map, per-conversation skill": -0.0017364025115966797,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.43557173013687134,
+      "prefix-only map, per-conversation skill": 0.129924476146698,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3761308193206787,
+      "prefix-only map, per-conversation skill": 0.1750783920288086,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3004211187362671,
+      "prefix-only map, per-conversation skill": 0.37973546981811523,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.1689695119857788,
+      "prefix-only map, per-conversation skill": 0.04944324493408203,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.5850903391838074,
+      "prefix-only map, per-conversation skill": -0.022917866706848145,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.4138535261154175,
+      "prefix-only map, per-conversation skill": 0.3311043381690979,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.6077283620834351,
+      "prefix-only map, per-conversation skill": 0.2047080397605896,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.35093140602111816,
+      "prefix-only map, per-conversation skill": 0.15604043006896973,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.31711554527282715,
+      "prefix-only map, per-conversation skill": -0.6477850675582886,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.336664080619812,
+      "prefix-only map, per-conversation skill": 0.2085382342338562,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.10035812854766846,
+      "prefix-only map, per-conversation skill": 0.056028008460998535,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.3946743607521057,
+      "prefix-only map, per-conversation skill": 0.22484946250915527,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.42632371187210083,
+      "prefix-only map, per-conversation skill": 0.20634979009628296,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": -0.10448026657104492,
+      "prefix-only map, per-conversation skill": -0.08906126022338867,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context map, per-conversation skill at turn 4": 0.32099735736846924,
+      "prefix-only map, per-conversation skill": 0.027711808681488037,
+      "label": "conv 4026",
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 524
+}
