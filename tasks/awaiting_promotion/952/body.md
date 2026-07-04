@@ -2,7 +2,8 @@
 title: The own-answer advantage in predicting answer activations from context is position-uniform
   at the selected read-out layer (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-07-03T23:33:32Z'
 has_clean_result: true
 parent_id: 823
