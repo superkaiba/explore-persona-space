@@ -2459,9 +2459,11 @@ _C20_POINT_RE = re.compile(r"(?P<qty>[^\s,;()]+)\s*(?P<cmp>≥|>=|≤|<=|>|<)\s*
 _C20_POINT_POS = ("≥", ">=", ">")
 
 # CI atoms: a `CI`/`CIs` token, a tiny closed copula gap, then one idiom.
-# Axis binding: `paired` within the 40 chars BEFORE the CI token → paired
-# axis, else primary. Idiom order matters: side-qualified excludes before the
-# bare two-sided exclude.
+# Axis binding: `paired` within the 40 chars BEFORE the CI token (window
+# clamped at the previous atom's span end — a preceding atom's own `paired`
+# wording never leaks into this atom's binding) → paired axis, else primary.
+# Idiom order matters: side-qualified excludes before the bare two-sided
+# exclude.
 _C20_CI_TOKEN_RE = re.compile(r"(?i)\bCIs?\b")
 _C20_CI_GAP_RE = re.compile(r"(?:\s+(?:is|are|stays?|remains?))?\s*")
 _C20_Z = r"(?:0|zero)(?!\.?\d)"
@@ -2637,7 +2639,9 @@ def _c20_segment(label_text: str) -> tuple[str | None, str | None]:
 
 def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], int, int]], set]:
     """All sign/CI atoms in ``segment`` as ``(axis, values, start, end)``
-    (sorted by position) plus the set of normalized POINT quantities."""
+    (sorted by position) plus the set of normalized POINT quantities. The
+    axis-binding lookback is clamped at the previous atom's span end so a
+    preceding atom's `paired` token never mis-binds a later primary atom."""
     atoms: list[tuple[str, frozenset[str], int, int]] = []
     qtys: set[str] = set()
     for m in _C20_POINT_RE.finditer(segment):
@@ -2654,7 +2658,13 @@ def _c20_collect_atoms(segment: str) -> tuple[list[tuple[str, frozenset[str], in
                 break
         if hit is None:
             continue  # the stray CI token becomes completeness residue
-        lookback = segment[max(0, m.start() - 40) : m.start()].lower()
+        # Clamp the lookback at the previous atom's span end: a paired atom
+        # < 40 chars BEFORE a primary atom would otherwise leak its `paired`
+        # token into THIS atom's window, binding both atoms to the paired
+        # axis — a contradictory conjunction that never fires, manufacturing
+        # a tier-1 gap → false FAIL (round-1 code-review Minor).
+        prev_end = max((a[3] for a in atoms if a[3] <= m.start()), default=0)
+        lookback = segment[max(0, m.start() - 40, prev_end) : m.start()].lower()
         axis = "paired" if "paired" in lookback else "primary"
         atoms.append((axis, hit[1], m.start(), hit[0].end()))
     atoms.sort(key=lambda a: a[2])
