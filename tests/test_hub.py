@@ -1006,6 +1006,19 @@ class TestRetryBudgetAndRetryAfter:
         assert calls["n"] == 6
         assert clock.sleeps == [10.0, 20.0, 40.0, 80.0, 160.0]
 
+    def test_budget_zero_caps_retry_after_at_backoff_ceiling(self):
+        """Round-2 Minor: under the ``budget_s=0`` kill switch there is no
+        deadline clamp, so a pathological Retry-After: 4000 would sleep
+        5 x 900 s ~ 4500 s — defeating the fail-fast purpose the switch
+        restores (~310 s legacy stack). The header is capped at the legacy
+        180 s backoff ceiling instead."""
+        thunk, calls = _permanent_storm(lambda: _rate_limited("4000"))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=0)
+        assert calls["n"] == 6
+        assert clock.sleeps == [180.0] * 5
+
     def test_backoff_jitter_upper_endpoint_capped(self, monkeypatch):
         """§9b jitter endpoint: with jitter pinned to its UPPER endpoint (1.0),
         the capped backoff sleep is 180 x 1.25 = 225 (cap applies BEFORE
@@ -1027,7 +1040,10 @@ class TestRetryBudgetAndRetryAfter:
 
     def test_env_budget_parsed_and_unparseable_falls_back(self, monkeypatch, caplog):
         """EPM_HF_RETRY_BUDGET_S: numeric binds; unparseable falls back to 1800
-        with a warning; unset/empty default 1800; negative floors at 0."""
+        with a warning; unset/empty default 1800; negative floors at 0;
+        NON-FINITE (inf/nan/1e999) falls back to 1800 (round-2 Minor: "inf"
+        would make the retry loop unbounded on a permanently-down Hub, "nan"
+        would silently degrade to the 0 kill switch)."""
         monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "120")
         assert hub._retry_budget_s() == 120.0
         monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "abc")
@@ -1040,6 +1056,9 @@ class TestRetryBudgetAndRetryAfter:
         assert hub._retry_budget_s() == 1800.0
         monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "-5")
         assert hub._retry_budget_s() == 0.0
+        for nonfinite in ("inf", "-inf", "nan", "1e999"):
+            monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", nonfinite)
+            assert hub._retry_budget_s() == 1800.0, nonfinite
 
     def test_transient_message_rate_limit_markers(self):
         """Response-less rate-limit TEXT is transient (#931 xet Rust boundary);
@@ -1116,14 +1135,86 @@ class TestVerifyRepoPathsUploaded:
             hub.verify_repo_paths_uploaded(api, "org/data", ["other/x.json"], path_in_repo="bucket")
         api.list_repo_tree.assert_not_called()
 
-    def test_exact_file_prefix_equality_allowed(self):
-        """§9b equality allowance exercised: an expected path EQUAL to
-        path_in_repo verifies against a listing that returns that exact path."""
-        api = self._api(["bucket/x.json"])
+    @staticmethod
+    def _file_exists_fake(results: list):
+        """Signature-conformant ``HfApi.file_exists`` fake (mirrors the real
+        ``file_exists(repo_id, filename, *, repo_type=..., revision=..., token=...)``
+        keyword surface); pops ``results`` per call — an Exception entry is
+        raised, anything else returned. Records calls for assertion."""
+        calls: list[tuple] = []
+
+        def fake_file_exists(repo_id, filename, *, repo_type=None, revision=None, token=None):
+            calls.append((repo_id, filename, repo_type, revision))
+            result = results.pop(0)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        return fake_file_exists, calls
+
+    def test_exact_file_prefix_verifies_via_file_exists(self):
+        """Round-1 BLOCKER regression (exact-file-prefix-verify-false-missing):
+        the LIVE tree endpoint 404s on an exact-FILE path_in_repo (hub 0.36.2,
+        #939), so the fake ``list_repo_tree`` RAISES EntryNotFoundError and the
+        helper must fall back to a ``file_exists`` probe — a successfully-
+        uploaded file must NOT be reported missing. Pre-fix this returned
+        ``["bucket/x.json"]`` (EntryNotFoundError => all expected missing)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, fe_calls = self._file_exists_fake([True])
         missing = hub.verify_repo_paths_uploaded(
             api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
         )
         assert missing == []
+        assert fe_calls == [("org/data", "bucket/x.json", "dataset", None)]
+
+    def test_exact_file_prefix_absent_reports_missing(self):
+        """The False variant: tree 404s AND ``file_exists`` is False -> the
+        exact file IS missing (the caller's fail-loud still fires on a
+        genuinely absent file)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, _fe_calls = self._file_exists_fake([False])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
+        )
+        assert missing == ["bucket/x.json"]
+
+    def test_exact_file_fallback_probe_is_retried(self):
+        """The ``file_exists`` fallback is a fresh Hub call on the verify path
+        — a transient 500 on the probe retries instead of crashing the verify
+        leg (the #920 class must not re-enter through the fallback)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, fe_calls = self._file_exists_fake([_http_err(500), True])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            missing = hub.verify_repo_paths_uploaded(
+                api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
+            )
+        assert missing == []
+        assert len(fe_calls) == 2
+        mock_sleep.assert_called_once()
+
+    def test_directory_prefix_absent_never_probes_file_exists(self):
+        """A directory-like prefix (no expected path EQUAL to it) keeps the
+        all-missing semantics on EntryNotFoundError — the file_exists fallback
+        never fires."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree bucket not found"))
+        api.file_exists, fe_calls = self._file_exists_fake([])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json", "bucket/b.json"], path_in_repo="bucket"
+        )
+        assert missing == ["bucket/a.json", "bucket/b.json"]
+        assert fe_calls == []
 
     def test_scoped_kwarg_forwarded(self):
         """The walk is scoped SERVER-side: path_in_repo + recursive=True are
