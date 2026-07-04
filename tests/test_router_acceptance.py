@@ -1680,3 +1680,42 @@ def test_evaluate_pass_checklist_artifact_lane_overrides_check_a_only(tmp_path) 
     )
     failed = {c.name for c in verdict_no_override.checks if not c.passed}
     assert failed == {"hf_artifact_present"}
+
+
+def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
+    """#988 body test (code-style: one production-body test per seam-stubbed
+    function): execute the REAL ``ra._default_list_hf_repo_files`` — fakes only
+    at the Hub boundary (``HfApi`` construction + the paginated
+    ``list_repo_files_complete`` walk, signature-conformant by construction).
+    ``path_in_repo`` routes through the REAL ``list_hf_files_under_path`` body;
+    ``None`` keeps the seam-compat full listing."""
+    import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    class _StubApi:
+        def __init__(self, token=None):
+            self.token = token
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
+
+    calls: list[tuple[str, str, str | None, str | None]] = []
+
+    def _fake_complete(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
+        calls.append((repo_id, repo_type, revision, path_in_repo))
+        if path_in_repo is not None:
+            return [f"{path_in_repo}/adapter.bin"]
+        return ["root.bin", "router_acceptance/issue-1-nibi/adapter.bin"]
+
+    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+
+    out = ra._default_list_hf_repo_files(
+        "org/model", repo_type="model", path_in_repo="router_acceptance/issue-1-nibi"
+    )
+    assert out == ["router_acceptance/issue-1-nibi/adapter.bin"]
+    assert calls[-1] == ("org/model", "model", None, "router_acceptance/issue-1-nibi")
+
+    out = ra._default_list_hf_repo_files("org/model", repo_type="model")
+    assert out == ["root.bin", "router_acceptance/issue-1-nibi/adapter.bin"]
+    assert calls[-1] == ("org/model", "model", None, None)

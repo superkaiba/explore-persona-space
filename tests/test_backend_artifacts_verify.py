@@ -1410,3 +1410,42 @@ def test_check_hf_paths_scopes_listing_per_declared_path() -> None:
     )
     assert res["status"] == "FAIL"
     assert "HF Hub 503" in res["detail"]
+
+
+def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
+    """#988 body test (code-style: one production-body test per seam-stubbed
+    function): execute the REAL ``_default_list_hf_repo_files`` — fakes only at
+    the Hub boundary (``HfApi`` construction + the paginated
+    ``list_repo_files_complete`` walk, signature-conformant by construction).
+    ``path_in_repo`` routes through the REAL ``list_hf_files_under_path`` body
+    (scoped server-side kwarg threaded, trailing slash normalized); ``None``
+    keeps the seam-compat full listing."""
+    import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
+    from explore_persona_space.backends.artifacts import _default_list_hf_repo_files
+
+    class _StubApi:
+        def __init__(self, token=None):
+            self.token = token
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
+
+    calls: list[tuple[str, str, str | None, str | None]] = []
+
+    def _fake_complete(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
+        calls.append((repo_id, repo_type, revision, path_in_repo))
+        if path_in_repo is not None:
+            return [f"{path_in_repo}/a.json"]
+        return ["root.json", "issue1/a.json"]
+
+    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset", path_in_repo="issue1/raw/")
+    assert out == ["issue1/raw/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, "issue1/raw")
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset")
+    assert out == ["root.json", "issue1/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, None)
