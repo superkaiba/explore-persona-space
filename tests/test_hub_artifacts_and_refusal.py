@@ -14,10 +14,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from huggingface_hub.hf_api import RepoFile, RepoFolder
+from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
 from explore_persona_space.eval.refusal import detect_refusal, filter_refusals
 from explore_persona_space.orchestrate.hub import (
     _HF_URL_RE,
+    list_hf_files_under_path,
     list_repo_files_complete,
     verify_artifacts_exist,
 )
@@ -69,6 +71,111 @@ class TestListRepoFilesComplete:
         api = _make_api_with_files(["a.json", "b.json"])
         result = list_repo_files_complete(api, "owner/repo")
         assert result == ["a.json", "b.json"]
+
+
+# ── list_hf_files_under_path (the shared scoped-listing helper, #988) ────────
+
+
+class _ProbeApi:
+    """Signature-mirroring ``HfApi`` stand-in for the exact-file fallback tests.
+
+    Boundary fakes conform BY CONSTRUCTION (def-mirrored ``list_repo_tree`` /
+    ``file_exists``), never a bare ``MagicMock`` — the real helper body runs
+    end to end against them (code-style rule: one production-body test per
+    seam-stubbed function, #906).
+    """
+
+    def __init__(self, *, tree_raises: Exception, file_exists_result: bool = False):
+        self._tree_raises = tree_raises
+        self.file_exists_result = file_exists_result
+        self.tree_calls: list[dict] = []
+        self.file_exists_calls: list[dict] = []
+
+    def list_repo_tree(
+        self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+    ):
+        self.tree_calls.append(
+            {
+                "repo_id": repo_id,
+                "repo_type": repo_type,
+                "revision": revision,
+                "recursive": recursive,
+                "path_in_repo": path_in_repo,
+            }
+        )
+        raise self._tree_raises
+
+    def file_exists(self, repo_id, filename, *, repo_type=None, revision=None):
+        self.file_exists_calls.append(
+            {
+                "repo_id": repo_id,
+                "filename": filename,
+                "repo_type": repo_type,
+                "revision": revision,
+            }
+        )
+        return self.file_exists_result
+
+    def list_repo_files(self, *args, **kwargs):  # pragma: no cover - must never run
+        raise AssertionError("bare full-repo listing (list_repo_files) must never be called")
+
+
+class TestListHfFilesUnderPath:
+    """Unit tests for the #920/#988 scoped-listing helper (all network mocked)."""
+
+    def test_dir_path_threads_path_in_repo_and_prefix_filters(self):
+        """A dir path threads the server-side scope kwarg; the defensive
+        client-side filter drops out-of-prefix paths a strict fake (whose
+        list_repo_tree ignores path_in_repo) would leak through."""
+        api = _make_api_with_files(["a/b/one.json", "a/b/two.json", "other/x.json"])
+        result = list_hf_files_under_path(api, "owner/repo", "a/b/", repo_type="dataset")
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "a/b"
+        assert result == ["a/b/one.json", "a/b/two.json"]
+        api.file_exists.assert_not_called()
+
+    def test_exact_file_falls_back_to_file_exists_true(self):
+        """The tree endpoint 404s on an exact FILE path (EntryNotFoundError);
+        a True file_exists probe resolves it to [path]."""
+        api = _ProbeApi(
+            tree_raises=EntryNotFoundError("entry a/b/x.json not found"),
+            file_exists_result=True,
+        )
+        result = list_hf_files_under_path(api, "owner/repo", "a/b/x.json", repo_type="dataset")
+        assert result == ["a/b/x.json"]
+        assert api.tree_calls[0]["path_in_repo"] == "a/b/x.json"
+        assert api.file_exists_calls == [
+            {
+                "repo_id": "owner/repo",
+                "filename": "a/b/x.json",
+                "repo_type": "dataset",
+                "revision": None,
+            }
+        ]
+
+    def test_absent_path_returns_empty(self):
+        api = _ProbeApi(
+            tree_raises=EntryNotFoundError("entry ghost not found"), file_exists_result=False
+        )
+        assert list_hf_files_under_path(api, "owner/repo", "ghost", repo_type="dataset") == []
+        assert len(api.file_exists_calls) == 1
+
+    @pytest.mark.parametrize("bad_path", ["", "/", "//"])
+    def test_empty_path_raises_value_error(self, bad_path):
+        """A falsy/slash-only path would silently degrade to the full-repo
+        listing the helper exists to avoid — it raises instead."""
+        api = _ProbeApi(tree_raises=AssertionError("tree walk must not fire on an empty path"))
+        with pytest.raises(ValueError, match="empty path"):
+            list_hf_files_under_path(api, "owner/repo", bad_path)
+        assert api.tree_calls == []
+        assert api.file_exists_calls == []
+
+    def test_repository_not_found_propagates(self):
+        """Repo-level not-found is NOT mapped to [] — it propagates so callers
+        fail loud rather than reading a real artifact as missing."""
+        api = _ProbeApi(tree_raises=RepositoryNotFoundError("repo gone"))
+        with pytest.raises(RepositoryNotFoundError):
+            list_hf_files_under_path(api, "owner/ghost", "a/b")
+        assert api.file_exists_calls == []
 
 
 # ── verify_artifacts_exist ────────────────────────────────────────────────────
@@ -224,6 +331,59 @@ class TestVerifyArtifactsExist:
             ok, missing = verify_artifacts_exist(plan)
         assert ok is True
         assert missing == []
+
+    def test_repo_root_url_uses_repo_info_never_lists(self, tmp_path):
+        """A repo-root URL is proven by ONE repo_info call — never a tree
+        listing of any scope (#920/#988)."""
+        plan = tmp_path / "plan.md"
+        plan.write_text("whole repo https://huggingface.co/org/models\n")
+        api = MagicMock()
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+        assert api.repo_info.call_count == 1
+        assert api.list_repo_tree.call_count == 0
+
+    def test_repo_root_repo_info_failure_propagates(self, tmp_path):
+        """A missing repo on the repo-root branch propagates (fail-loud) —
+        never a swallowed False (#988 site-1 negative path)."""
+        plan = tmp_path / "plan.md"
+        plan.write_text("whole repo https://huggingface.co/org/ghost-repo\n")
+        api = MagicMock()
+        api.repo_info.side_effect = RepositoryNotFoundError("repo gone")
+        with (
+            patch("huggingface_hub.HfApi", return_value=api),
+            pytest.raises(RepositoryNotFoundError),
+        ):
+            verify_artifacts_exist(plan)
+
+    def test_cited_dir_path_threads_scoped_walk(self, tmp_path):
+        """A cited dir path scopes the tree walk server-side via path_in_repo
+        (#920/#988) instead of full-listing the repo."""
+        plan = tmp_path / "plan.md"
+        plan.write_text("adapter https://huggingface.co/org/models/tree/main/cond_seed42\n")
+        api = _make_api_with_files(["cond_seed42/adapter_model.safetensors"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "cond_seed42"
+
+    @pytest.mark.parametrize("file_exists,expected_ok", [(True, True), (False, False)])
+    def test_exact_file_fallback_marks_present_or_missing(self, tmp_path, file_exists, expected_ok):
+        """A cited blob (exact-file) path resolves via the EntryNotFoundError ->
+        file_exists fallback, present/missing per the probe."""
+        url = "https://huggingface.co/datasets/org/data/blob/main/issue1_x/results.json"
+        plan = tmp_path / "plan.md"
+        plan.write_text(f"data {url}\n")
+        api = MagicMock()
+        api.list_repo_tree.side_effect = EntryNotFoundError("entry not found")
+        api.file_exists.return_value = file_exists
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is expected_ok
+        assert missing == ([] if expected_ok else [url])
 
 
 class TestHfUrlRegexCaptures:

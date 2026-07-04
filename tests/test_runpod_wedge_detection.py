@@ -14,8 +14,9 @@ assertions resolve.
 
 Mirrors the GCP wedge suite in ``test_backend_poll.py``. All RunPod live-API I/O
 is mocked (``runpod_api.get_pod_by_name`` / ``terminate_pod``), the router
-failover + ``list_repo_files`` + ``_issue_cells_for_handle`` are monkeypatched,
-and the sidecar uses ``tmp_path``. No GPU, no network.
+failover + ``bp._list_issue664_hub_files`` (the scoped Hub-listing seam, #988) +
+``_issue_cells_for_handle`` are monkeypatched, and the sidecar uses ``tmp_path``.
+No GPU, no network.
 """
 
 from __future__ import annotations
@@ -328,11 +329,93 @@ def _hf_paths_for(eval_key: str, *, raw_names, store_names):
     return raw | store
 
 
+def test_list_issue664_hub_files_scoped(monkeypatch):
+    """The wedge gate's Hub listing is SCOPED per root prefix (#920/#988): one
+    server-side scoped call per prefix (path_in_repo threaded), results
+    unioned; an absent prefix (EntryNotFoundError -> a stubbed file_exists
+    False) contributes zero files without failing the union. BOTH the tree
+    walk AND the HfApi construction are faked — a patched EntryNotFoundError
+    must NOT fall through to a real file_exists HEAD call (no network)."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    import explore_persona_space.orchestrate.hub as hub
+
+    tree_calls: list[tuple] = []
+    file_exists_calls: list[tuple] = []
+
+    class _StubApi:
+        def __init__(self, token=None):
+            pass
+
+        def file_exists(self, repo_id, path, *, repo_type=None, revision=None):
+            file_exists_calls.append((repo_id, path))
+            return False
+
+        def list_repo_files(self, *a, **k):  # pragma: no cover - must never run
+            raise AssertionError("bare full-repo listing must never be called (#920)")
+
+    def _fake_complete(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
+        tree_calls.append((repo_id, repo_type, revision, path_in_repo))
+        if path_in_repo == "absent_prefix":
+            raise EntryNotFoundError("entry absent_prefix not found")
+        return [f"{path_in_repo}/cell/file.json"]
+
+    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
+
+    files = bp._list_issue664_hub_files(
+        "org/data-repo", ("raw_prefix", "absent_prefix", "store_prefix")
+    )
+    assert files == {"raw_prefix/cell/file.json", "store_prefix/cell/file.json"}
+    assert [c[3] for c in tree_calls] == ["raw_prefix", "absent_prefix", "store_prefix"]
+    assert all(c[1] == "dataset" and c[2] == "main" for c in tree_calls)
+    # The absent prefix fell through to ONE STUBBED file_exists probe (False ->
+    # zero files); the stub proves no real HEAD call could have fired.
+    assert file_exists_calls == [("org/data-repo", "absent_prefix")]
+
+
+def test_wedged_gate_passes_exactly_three_root_prefixes(monkeypatch):
+    """Caller-contract pin (#988): _wedged_run_inputs_on_hf passes EXACTLY the
+    three root prefixes the #664 classifier matches against. A dropped prefix
+    can flip a half-uploaded PARTIAL cell to ABSENT — un-blocking the
+    irreversible pod terminate — so the tuple is pinned by a spy."""
+    import issue664_common as C
+    import issue664_dispatch as D
+
+    cell = _FakeCell("mk_spy_cell_seed42")
+    monkeypatch.setattr(bp, "_issue_cells_for_handle", lambda issue, handle: [cell], raising=False)
+    monkeypatch.setattr(
+        D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
+    )
+
+    seen: list[tuple] = []
+
+    def _spy(repo_id, prefixes):
+        seen.append((repo_id, prefixes))
+        return set()
+
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", _spy)
+
+    gate = bp._wedged_run_inputs_on_hf(689, _runpod_handle())
+    assert seen == [
+        (
+            C.HF_DATA_REPO,
+            (C.HF_RAW_COMPLETIONS_PREFIX, C.HF_STORE_PREFIX, C.HF_MARKER_SLOT_PREFIX),
+        )
+    ]
+    # Empty listing -> the one selected cell classifies ABSENT (rerunnable),
+    # so the gate stays ok (no partial cell).
+    assert gate.ok is True
+    assert gate.absent == [cell.eval_key]
+
+
 def test_per_cell_gate_partial_blocks(tmp_path, monkeypatch):
     """A selected cell with its raw prefix present but MISSING tensors.pt is a
     PARTIAL cell: the gate is not-ok, terminate is NOT called, the failover
     returns reason='runpod_wedge_inputs_unverified'."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cell = _FakeCell("mk_partial_cell_seed42")
@@ -344,7 +427,7 @@ def test_per_cell_gate_partial_blocks(tmp_path, monkeypatch):
         raw_names={"completions__x__ctx.json"},
         store_names={"meta.json"},
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     # The exact-set helpers must agree this cell is partial.
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
@@ -377,7 +460,6 @@ def test_per_cell_gate_mid_sweep_allows(tmp_path, monkeypatch):
     """The headline M1 case: 32 selected cells, 10 COMPLETE on HF + 22 ABSENT
     (not-yet-run). The gate is OK (does NOT block on the 22 rerunnable cells);
     terminate is called once, then a fresh pod is re-provisioned."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cells = [_FakeCell(f"mk_cell_{i:02d}_seed42") for i in range(32)]
@@ -392,7 +474,7 @@ def test_per_cell_gate_mid_sweep_allows(tmp_path, monkeypatch):
             store_names={"tensors.pt", "meta.json"},
         )
     # The remaining 22 cells contribute NO files (absent).
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )
@@ -434,7 +516,6 @@ def test_failover_clean_path_idempotency(tmp_path, monkeypatch):
     """Clean path: terminate_pod is called once, then _relaunch_fresh_runpod. A
     second tick on the OLD handle short-circuits (idempotency) — no double
     terminate."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cell = _FakeCell("mk_done_cell_seed42")
@@ -444,7 +525,7 @@ def test_failover_clean_path_idempotency(tmp_path, monkeypatch):
         raw_names={"completions__x__ctx.json"},
         store_names={"tensors.pt", "meta.json"},
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )
@@ -540,7 +621,6 @@ def test_failover_durable_lease_idempotency(tmp_path, monkeypatch):
     first relaunch, provides the exactly-once dedup that the sentinel cannot.
     terminate_pod + the router launch are each called EXACTLY ONCE across two
     ticks."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     from explore_persona_space.backends import router as R
@@ -554,7 +634,7 @@ def test_failover_durable_lease_idempotency(tmp_path, monkeypatch):
         raw_names={"completions__x__ctx.json"},
         store_names={"tensors.pt", "meta.json"},
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )
@@ -622,7 +702,6 @@ def _failover_with_mocked_gate(monkeypatch):
     """Common setup for the relaunch-error tests: a single COMPLETE cell so the
     per-cell gate is OK (terminate allowed), live API stubbed, terminate_pod a
     no-op recorder. Returns the ``terminated`` list."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cell = _FakeCell("mk_done_cell_seed42")
@@ -632,7 +711,7 @@ def _failover_with_mocked_gate(monkeypatch):
         raw_names={"completions__x__ctx.json"},
         store_names={"tensors.pt", "meta.json"},
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )
@@ -1190,7 +1269,6 @@ def test_cuda_ima_record_no_fallback_when_prior_marker_absent(tmp_path, monkeypa
 def _cuda_ima_failover_gate_ok(monkeypatch):
     """Common setup: a single COMPLETE cell so the inputs gate is OK, live API
     stubbed, terminate_pod a recorder. Returns the ``terminated`` list."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cell = _FakeCell("mk_done_cell_seed42")
@@ -1200,7 +1278,7 @@ def _cuda_ima_failover_gate_ok(monkeypatch):
         raw_names={"completions__x__ctx.json"},
         store_names={"tensors.pt", "meta.json"},
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )
@@ -1375,7 +1453,6 @@ def test_cuda_ima_failover_idempotency_lease(tmp_path, monkeypatch):
 
 def test_cuda_ima_failover_inputs_partial_blocks(tmp_path, monkeypatch):
     """A PARTIAL cell on HF BLOCKS the irreversible terminate (human decides)."""
-    import huggingface_hub
     import issue664_dispatch as D
 
     cell = _FakeCell("mk_partial_cell_seed42")
@@ -1383,7 +1460,7 @@ def test_cuda_ima_failover_inputs_partial_blocks(tmp_path, monkeypatch):
     files = _hf_paths_for(
         cell.eval_key, raw_names={"completions__x__ctx.json"}, store_names={"meta.json"}
     )
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(bp, "_list_issue664_hub_files", lambda repo_id, prefixes: set(files))
     monkeypatch.setattr(
         D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
     )

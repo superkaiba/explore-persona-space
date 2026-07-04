@@ -137,7 +137,10 @@ class FakeHfApi:
     def upload_file(self, *, path_or_fileobj, repo_id, path_in_repo, repo_type):
         self.upload_file_calls.append({"repo_id": repo_id, "path_in_repo": path_in_repo})
 
-    def list_repo_tree(self, *, repo_id, repo_type, revision, recursive):
+    def list_repo_tree(self, *, repo_id, repo_type, revision, recursive, path_in_repo=None):
+        # ``path_in_repo`` accepted since #988 (the _upload verify is scoped);
+        # this fake returns the full recorded set — the helper's defensive
+        # client-side prefix filter preserves the semantics.
         from huggingface_hub.hf_api import RepoFile
 
         return [RepoFile(path=p, size=1, blob_id="b", oid="o") for p in self.tree_files]

@@ -731,7 +731,7 @@ def test_parse_last_json_line_returns_none_on_no_json() -> None:
 def test_check_hf_artifact_present_pass() -> None:
     """HF list shows >=1 file under the per-lane subfolder."""
 
-    def _fake_list(repo_id: str, *, repo_type: str) -> list[str]:
+    def _fake_list(repo_id: str, *, repo_type: str, path_in_repo: str | None = None) -> list[str]:
         return [
             "router_acceptance/issue-500-nibi/adapter_model.safetensors",
             "router_acceptance/issue-500-nibi/adapter_config.json",
@@ -749,7 +749,7 @@ def test_check_hf_artifact_present_pass() -> None:
 def test_check_hf_artifact_present_fail_missing() -> None:
     """An HF list with no matching files yields a FAIL with prefix in detail."""
 
-    def _fake_list(repo_id: str, *, repo_type: str) -> list[str]:
+    def _fake_list(repo_id: str, *, repo_type: str, path_in_repo: str | None = None) -> list[str]:
         return ["router_acceptance/issue-500-gcp/some.bin"]  # WRONG lane
 
     io_ = ra.VerifierIO(list_hf_repo_files=_fake_list)
@@ -763,7 +763,7 @@ def test_check_hf_artifact_present_fail_missing() -> None:
 def test_check_hf_artifact_present_fail_on_transport_error() -> None:
     """Transport exception is surfaced as FAIL (per fail-loud rule)."""
 
-    def _fake_list(repo_id: str, *, repo_type: str) -> list[str]:
+    def _fake_list(repo_id: str, *, repo_type: str, path_in_repo: str | None = None) -> list[str]:
         raise RuntimeError("HF Hub 503")
 
     io_ = ra.VerifierIO(list_hf_repo_files=_fake_list)
@@ -772,6 +772,24 @@ def test_check_hf_artifact_present_fail_on_transport_error() -> None:
     )
     assert not res.passed
     assert "HF Hub 503" in res.detail
+
+
+def test_check_hf_artifact_present_threads_scoped_prefix() -> None:
+    """#988: check (a) scopes the Hub listing SERVER-side to the acceptance
+    subfolder (path_in_repo threaded through the seam) — never a full-repo
+    listing; pass/fail semantics unchanged."""
+    seen: list[str | None] = []
+
+    def _spy(repo_id: str, *, repo_type: str, path_in_repo: str | None = None) -> list[str]:
+        seen.append(path_in_repo)
+        return ["router_acceptance/issue-500-nibi/adapter_model.safetensors"]
+
+    io_ = ra.VerifierIO(list_hf_repo_files=_spy)
+    res = ra.check_hf_artifact_present(
+        issue=500, lane="nibi", repo_id="superkaiba1/explore-persona-space", io=io_
+    )
+    assert res.passed
+    assert seen == ["router_acceptance/issue-500-nibi"]
 
 
 def test_check_git_figure_present_pass(tmp_path: Path) -> None:
@@ -1059,7 +1077,7 @@ def test_evaluate_pass_checklist_overall_pass(tmp_path: Path) -> None:
         ]
 
     io_ = ra.VerifierIO(
-        list_hf_repo_files=lambda _r, repo_type: [
+        list_hf_repo_files=lambda _r, repo_type, path_in_repo=None: [
             "router_acceptance/issue-900-nibi/adapter_model.safetensors"
         ],
         git_tracked=lambda _r, paths: set(paths),
@@ -1094,7 +1112,7 @@ def test_evaluate_pass_checklist_partial_fail_overall_fail(tmp_path: Path) -> No
     (tmp_path / rel).parent.mkdir(parents=True)
     (tmp_path / rel).write_bytes(b"PNG")
     io_ = ra.VerifierIO(
-        list_hf_repo_files=lambda _r, repo_type: [],  # no HF artifact
+        list_hf_repo_files=lambda _r, repo_type, path_in_repo=None: [],  # no HF artifact
         git_tracked=lambda _r, paths: set(paths),
         read_events_jsonl=lambda _n: [
             {"kind": "epm:cluster-launched", "note": json.dumps({"cluster": "nibi"})},
@@ -1389,7 +1407,9 @@ def test_evaluate_pass_checklist_threads_canonical_job_name(tmp_path: Path) -> N
         return []
 
     io_ = ra.VerifierIO(
-        list_hf_repo_files=lambda _r, repo_type: ["router_acceptance/issue-910-nibi/adapter.bin"],
+        list_hf_repo_files=lambda _r, repo_type, path_in_repo=None: [
+            "router_acceptance/issue-910-nibi/adapter.bin"
+        ],
         git_tracked=lambda _r, paths: set(paths),
         read_events_jsonl=lambda _n: [
             {"kind": "epm:cluster-launched", "note": json.dumps({"cluster": "nibi"})},
@@ -1427,7 +1447,7 @@ def test_cli_verify_lane_runs_and_exits_per_verdict(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(
         ra,
         "_default_list_hf_repo_files",
-        lambda _r, repo_type: ["router_acceptance/issue-950-nibi/adapter.bin"],
+        lambda _r, repo_type, path_in_repo=None: ["router_acceptance/issue-950-nibi/adapter.bin"],
     )
     monkeypatch.setattr(ra, "_default_git_tracked", lambda _r, paths: set(paths))
     monkeypatch.setattr(
@@ -1628,7 +1648,7 @@ def test_evaluate_pass_checklist_artifact_lane_overrides_check_a_only(tmp_path) 
     (tmp_path / rel).parent.mkdir(parents=True)
     (tmp_path / rel).write_bytes(b"PNG")
     io_fake = ra.VerifierIO(
-        list_hf_repo_files=lambda _r, repo_type: [
+        list_hf_repo_files=lambda _r, repo_type, path_in_repo=None: [
             f"router_acceptance/issue-{issue}-auto/adapter_model.safetensors"
         ],
         git_tracked=lambda _r, paths: set(paths),

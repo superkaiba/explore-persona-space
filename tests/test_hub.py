@@ -674,3 +674,195 @@ class TestListRepoFilesRetry:
         assert result == ["a/y.json", "b/x.json"]  # sorted files only; non-file dropped
         assert api.list_repo_tree.call_count == 1
         mock_sleep.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# #988 — scoped post-upload verifies + list_hub_datasets prefix dispatch
+# ---------------------------------------------------------------------------
+
+
+def _rf(path: str) -> RepoFile:
+    return RepoFile(path=path, size=1, blob_id="b", oid="o")
+
+
+class TestUploadVerifyScoped:
+    """#988 site 8: ``_upload``'s post-upload verify is SCOPED to
+    ``expected_prefix`` — never a full-repo listing."""
+
+    def test_file_upload_verify_uses_file_exists_fallback(self, tmp_path):
+        """An exact-file dest 404s on the tree endpoint (EntryNotFoundError)
+        and resolves via ONE file_exists probe."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate.hub import _upload
+
+        f = tmp_path / "x.json"
+        f.write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = EntryNotFoundError("entry bucket/x.json not found")
+            api.file_exists.return_value = True
+            result = _upload(f, "org/data", "dataset", "bucket/x.json", upload_as_file=True)
+        assert result == "org/data/bucket/x.json"
+        # The walk was scoped server-side to the exact dest...
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "bucket/x.json"
+        # ...and the exact-file fallback resolved it.
+        api.file_exists.assert_called_once()
+
+    def test_folder_upload_verify_scoped_walk(self, tmp_path):
+        """A folder dest verifies via the scoped tree walk (path_in_repo
+        threaded); no file_exists probe fires."""
+        d = tmp_path / "adir"
+        d.mkdir()
+        (d / "a.json").write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            from explore_persona_space.orchestrate.hub import _upload
+
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = lambda **kw: iter([_rf("bucket/sub/a.json")])
+            result = _upload(d, "org/data", "dataset", "bucket/sub")
+        assert result == "org/data/bucket/sub"
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "bucket/sub"
+        api.file_exists.assert_not_called()
+
+    def test_absent_dest_returns_empty_not_success(self, tmp_path):
+        """An absent dest (EntryNotFoundError + file_exists False) keeps the
+        existing '0 files found ... NOT marking as successful' branch."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate.hub import _upload
+
+        f = tmp_path / "x.json"
+        f.write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = EntryNotFoundError("entry bucket/x.json not found")
+            api.file_exists.return_value = False
+            result = _upload(f, "org/data", "dataset", "bucket/x.json", upload_as_file=True)
+        assert result == ""
+
+
+class TestUploadFolderFilteredVerifyScoped:
+    """#988 site 9: ``_upload_folder_filtered``'s exact-set verify is SCOPED
+    to ``path_in_repo`` (every expected path is <path_in_repo>/<rel> by the
+    function's contract)."""
+
+    def test_verify_threads_path_in_repo(self, tmp_path):
+        from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+        d = tmp_path / "src"
+        d.mkdir()
+        (d / "raw_completions.json").write_text("{}")
+        expected = ["exp/raw/raw_completions.json"]
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = lambda **kw: iter(
+                [_rf("exp/raw/raw_completions.json")]
+            )
+            result = _upload_folder_filtered(
+                d,
+                "org/data",
+                "dataset",
+                "exp/raw",
+                allow_patterns=["raw_completions.json"],
+                expected_repo_paths=expected,
+            )
+        assert result == "org/data/exp/raw"
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "exp/raw"
+
+    def test_partial_listing_still_reports_missing(self, tmp_path):
+        """The exact-set check against the SCOPED listing still fails on a
+        partial commit (one expected path missing -> '')."""
+        from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+        d = tmp_path / "src"
+        d.mkdir()
+        (d / "a.json").write_text("{}")
+        (d / "b.json").write_text("{}")
+        expected = ["exp/raw/a.json", "exp/raw/b.json"]
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            # Scoped listing sees only ONE of the two expected paths.
+            api.list_repo_tree.side_effect = lambda **kw: iter([_rf("exp/raw/a.json")])
+            result = _upload_folder_filtered(
+                d,
+                "org/data",
+                "dataset",
+                "exp/raw",
+                allow_patterns=["*.json"],
+                expected_repo_paths=expected,
+            )
+        assert result == ""
+
+
+class TestListHubDatasetsPrefixDispatch:
+    """#988 site 10: prefix-shape dispatch — dir-like prefixes scope
+    server-side; empty / bare-name prefixes keep the full listing (bare-name
+    partial matching is load-bearing: 'dpo' must keep matching dpo_v2/...)."""
+
+    def _run(self, path_prefix: str, files: list[str], calls: list[dict]):
+        from explore_persona_space.orchestrate.hub import list_hub_datasets
+
+        def _fake_complete(api, repo_id, **kw):
+            calls.append(dict(kw))
+            return list(files)
+
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi"),
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                side_effect=_fake_complete,
+            ),
+        ):
+            return list_hub_datasets(repo_id="org/data", path_prefix=path_prefix)
+
+    def test_dir_like_prefix_scopes_server_side(self):
+        calls: list[dict] = []
+        result = self._run("leakage/", ["leakage/a.json", "leakage/b.json"], calls)
+        assert result == ["leakage/a.json", "leakage/b.json"]
+        assert len(calls) == 1
+        assert calls[0].get("path_in_repo") == "leakage"
+
+    def test_bare_name_prefix_keeps_full_listing_and_partial_match(self):
+        calls: list[dict] = []
+        result = self._run("dpo", ["dpo/a.json", "dpo_v2/b.json", "other/c.json"], calls)
+        # Partial-name contract pinned: 'dpo' also matches dpo_v2/...
+        assert result == ["dpo/a.json", "dpo_v2/b.json"]
+        assert len(calls) == 1
+        assert "path_in_repo" not in calls[0]
+
+    def test_empty_prefix_full_listing(self):
+        calls: list[dict] = []
+        result = self._run("", ["b.json", "a.json"], calls)
+        assert result == ["a.json", "b.json"]
+        assert len(calls) == 1
+        assert "path_in_repo" not in calls[0]
+
+    def test_exception_returns_empty_list(self):
+        from explore_persona_space.orchestrate.hub import list_hub_datasets
+
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi"),
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                side_effect=RuntimeError("boom"),
+            ),
+        ):
+            assert list_hub_datasets(repo_id="org/data", path_prefix="leakage/") == []

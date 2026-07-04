@@ -50,12 +50,14 @@ def offline(monkeypatch, tmp_path):
 
 @pytest.fixture
 def fake_verify(monkeypatch):
-    """Route list_repo_files_complete at the FakeApi's recorded uploads."""
+    """Route the SCOPED verify probe (list_hf_files_under_path, #988) at the
+    FakeApi's recorded uploads. The fake ignores ``path`` and returns the full
+    recorded set — ``_verify_present``'s exact-membership check filters."""
 
-    def _list(api, repo_id, *, repo_type="model", revision=None):
+    def _list(api, repo_id, path, *, repo_type="model", revision=None):
         return sorted(api.uploaded.get((repo_id, repo_type), set()))
 
-    monkeypatch.setattr(upload_sharded, "list_repo_files_complete", _list)
+    monkeypatch.setattr(upload_sharded, "list_hf_files_under_path", _list)
     return _list
 
 
@@ -90,8 +92,8 @@ def test_verify_failure_does_not_delete(tmp_path, offline, monkeypatch):
     local = tmp_path / "store"
     _make_shards(local, ["shard_0000.pt"])
     api = FakeApi()
-    # verify listing returns nothing → the shard is "not present" → raise, no delete.
-    monkeypatch.setattr(upload_sharded, "list_repo_files_complete", lambda *a, **k: [])
+    # verify probe returns nothing → the shard is "not present" → raise, no delete.
+    monkeypatch.setattr(upload_sharded, "list_hf_files_under_path", lambda *a, **k: [])
 
     with pytest.raises(RuntimeError, match="not found at"):
         upload_sharded.upload_dir_sharded(
@@ -167,3 +169,37 @@ def test_non_quota_error_reraises(tmp_path, offline, fake_verify):
 def test_missing_local_dir_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         upload_sharded.upload_dir_sharded(tmp_path / "nope", "repo", "path", api=FakeApi())
+
+
+@pytest.mark.parametrize("exists,expected", [(True, True), (False, False)])
+def test_verify_present_exact_file_probe(monkeypatch, exists, expected):
+    """#988 site 11: ``_verify_present`` probes ONE exact shard path via the
+    scoped helper (EntryNotFoundError -> file_exists fallback) — never a
+    full-repo listing per shard. The REAL list_hf_files_under_path +
+    list_repo_files_complete bodies run; fakes sit only at the HfApi boundary
+    (signature-mirrored, per the #906 body-test discipline)."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    tree_calls: list[str | None] = []
+
+    class _StubApi:
+        def list_repo_tree(
+            self, *, repo_id, repo_type=None, revision=None, recursive=False, path_in_repo=None
+        ):
+            tree_calls.append(path_in_repo)
+            raise EntryNotFoundError("entry not found")
+
+        def file_exists(self, repo_id, filename, *, repo_type=None, revision=None):
+            return exists
+
+        def list_repo_files(self, *a, **k):  # pragma: no cover - must never run
+            raise AssertionError("bare full-repo listing must never be called (#920)")
+
+    ok = upload_sharded._verify_present(
+        _StubApi(),
+        repo_id="org/data",
+        repo_type="dataset",
+        dest="issue900_x/store/shard_0000.pt",
+    )
+    assert ok is expected
+    assert tree_calls == ["issue900_x/store/shard_0000.pt"]
