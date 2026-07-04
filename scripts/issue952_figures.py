@@ -365,10 +365,12 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
         savefig_paper(fig, "exp_layer_selection_sensitivity", dir=out_dir)
         plt.close(fig)
 
-    # Surprisal curves (first 128 positions per arm).
+    # Surprisal companion — ONE two-panel figure (curves + per-slot scatter),
+    # merged from the former exp_surprisal_curves / exp_r2_vs_surprisal_scatter
+    # pair (clean-result round-2: one figure unit per result).
     if tensors_dir is not None:
         colors = dict(zip(ARMS, paper_palette(4), strict=True))
-        fig, ax = plt.subplots(figsize=(6.5, 3.6), layout="constrained")
+        fig, (ax_curves, ax_scatter) = plt.subplots(1, 2, figsize=(11.5, 3.8), layout="constrained")
         any_arm = False
         for arm in ARMS:
             p = tensors_dir / f"surprisal_{arm}.npz"
@@ -384,7 +386,7 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 sums[: len(seg)] += seg
                 cnts[: len(seg)] += 1
             ok = cnts > 0
-            ax.plot(
+            ax_curves.plot(
                 np.arange(1, max_t + 1)[ok],
                 (sums / np.maximum(cnts, 1))[ok],
                 lw=1.3,
@@ -392,20 +394,16 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 label=ARM_LABEL[arm],
             )
             any_arm = True
-        if any_arm:
-            ax.set_xlabel("Answer position t")
-            ax.set_ylabel("Teacher-forced -log P(token)")
-            ax.legend(frameon=False, fontsize=7)
-            set_title_subtitle(
-                ax, "Token-level surprise per arm", "In-context adaptation companion"
-            )
-            savefig_paper(fig, "exp_surprisal_curves", dir=out_dir)
-        plt.close(fig)
+        ax_curves.set_xlabel("Answer position t")
+        ax_curves.set_ylabel("Teacher-forced -log P(token)")
+        ax_curves.legend(frameon=False, fontsize=7)
+        set_title_subtitle(
+            ax_curves, "Token-level surprise per arm", "In-context adaptation companion"
+        )
 
         # Per-position R²-vs-surprisal scatter (plan §6 exploratory; round-2 Minor 3c).
         cells_scatter = stats.get("cells", {})
         scatter_ts = [*range(1, 17), 32, 64, 128]
-        fig, ax = plt.subplots(figsize=(5.6, 3.8), layout="constrained")
         any_pt = False
         for arm in ARMS:
             p = tensors_dir / f"surprisal_{arm}.npz"
@@ -430,17 +428,19 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 ys.append(float(obs))
             if xs:
                 any_pt = True
-                ax.scatter(xs, ys, s=14, color=colors[arm], label=ARM_LABEL[arm], alpha=0.85)
-        if any_pt:
-            ax.set_xlabel("Mean teacher-forced -log P at position t (all captured contexts)")
-            ax.set_ylabel("Test pooled R² at position t")
-            ax.legend(frameon=False, fontsize=7)
-            set_title_subtitle(
-                ax,
-                "Predictability vs token-level surprise per position",
-                "Each point = one answer position t (1-16, 32, 64, 128)",
-            )
-            savefig_paper(fig, "exp_r2_vs_surprisal_scatter", dir=out_dir)
+                ax_scatter.scatter(
+                    xs, ys, s=14, color=colors[arm], label=ARM_LABEL[arm], alpha=0.85
+                )
+        ax_scatter.set_xlabel("Mean teacher-forced -log P at position t (all captured contexts)")
+        ax_scatter.set_ylabel("Test pooled R² at position t")
+        ax_scatter.legend(frameon=False, fontsize=7)
+        set_title_subtitle(
+            ax_scatter,
+            "Predictability vs token-level surprise per position",
+            "Each point = one answer position t (1-16, 32, 64, 128)",
+        )
+        if any_arm or any_pt:
+            savefig_paper(fig, "exp_surprisal_combined", dir=out_dir)
         plt.close(fig)
 
     # Per-cluster R² spread (TF-idf k-means OOD diagnostic; plan §6 item (b)).
@@ -516,6 +516,50 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 "Raw per-unit view behind the pooled R²",
             )
             savefig_paper(fig, "exp_percontext_ecdf", dir=out_dir)
+            plt.close(fig)
+
+        # Per-context paired own-minus-plain gap at t=0 vs t=16 (matched H2
+        # subset, layer 20) — the low-level per-unit view behind the hero-2
+        # matched-contrast decision bars (clean-result round-2, Lens 11).
+        if "M16_L20_cleg_own_ssres" in npz:
+
+            def _m16_r2(leg: str, arm: str) -> np.ndarray:
+                ssr = npz[f"M16_L20_{leg}_{arm}_ssres"].astype(float)
+                sst = npz[f"M16_L20_{leg}_{arm}_sstot"].astype(float)
+                return np.where(sst > 1e-12, 1.0 - ssr / sst, np.nan)
+
+            fig, ax = plt.subplots(figsize=(6.0, 3.6), layout="constrained")
+            leg_labels = {
+                "cleg": "No prefix absorbed (t = 0)",
+                "zleg": "After 16 prefix tokens (t = 16)",
+            }
+            pal2 = paper_palette(2)
+            plotted_gap = False
+            for li, leg in enumerate(("cleg", "zleg")):
+                gap = _m16_r2(leg, "own") - _m16_r2(leg, "ext_plain")
+                gap = gap[np.isfinite(gap)]
+                if len(gap) == 0:
+                    continue
+                xs = np.sort(gap)
+                ax.step(
+                    xs,
+                    np.arange(1, len(xs) + 1) / len(xs),
+                    color=pal2[li],
+                    lw=1.4,
+                    label=f"{leg_labels[leg]}, n={len(gap)}",
+                )
+                plotted_gap = True
+            if plotted_gap:
+                ax.axvline(0, color="#444444", lw=0.8)
+                ax.set_xlabel("Per-context R² gap: own answer minus external plain")
+                ax.set_ylabel("ECDF")
+                ax.legend(frameon=False, fontsize=7, loc="lower right")
+                set_title_subtitle(
+                    ax,
+                    "Per-context gaps behind the matched prefix-closure bars",
+                    "Matched survivors, identical remainder target, layer 20",
+                )
+                savefig_paper(fig, "exp_prefix_gap_percontext", dir=out_dir)
             plt.close(fig)
 
     # Turn-end split-out bars (template vs content L16 slots).
