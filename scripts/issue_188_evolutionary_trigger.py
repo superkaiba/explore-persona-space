@@ -241,7 +241,7 @@ def _judge_records(
       ``cfg.judge.mode`` is missing — preserves backwards compatibility for
       callers (#188, #325, #324, #283) that never specified the field.
     """
-    from explore_persona_space.eval.batch_judge import JudgeCache
+    from explore_persona_space.eval.batch_judge import JudgeCache, rubric_fingerprint
 
     # Resolve mode without mutating cfg; default to batch for backwards compat.
     mode = str(getattr(cfg.judge, "mode", "batch")).lower()
@@ -261,12 +261,17 @@ def _judge_records(
         cache_dir = project_root / cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache = JudgeCache(cache_dir)
+    # Rubric/judge identity for every cache read/write (rule 22, #810/#1018).
+    # The inline user-msg template below is a rubric-free content wrapper whose
+    # suffix is constant per rubric, so the rubric identity is fully carried by
+    # the (model, system prompt) half of the key — no format_user_msg needed.
+    rk = rubric_fingerprint(cfg.judge.model, judge_system_prompt)
 
     judged: dict[str, dict] = {}
     uncached_items: list[tuple[str, str, str, str]] = []
     for rec in records:
         cid = rec["custom_id"]
-        c = cache.get(rec["prompt"], rec["completion"])
+        c = cache.get(rec["prompt"], rec["completion"], rubric_key=rk)
         if c is not None:
             judged[cid] = c
         else:
@@ -289,7 +294,7 @@ def _judge_records(
             new_results = _judge_uncached_via_batch(uncached_items, cfg, judge_system_prompt)
         else:
             new_results = _judge_uncached_via_sync(
-                uncached_items, cfg, judge_system_prompt, cache=cache
+                uncached_items, cfg, judge_system_prompt, cache=cache, rubric_key=rk
             )
         for cid, q, c, _umsg in uncached_items:
             if cid in new_results:
@@ -298,7 +303,7 @@ def _judge_records(
                 # Only cache results the API actually returned. Missing
                 # entries (shouldn't happen, defence against silent SDK gaps)
                 # stay uncached so the next run retries them.
-                cache.put(q, c, parsed)
+                cache.put(q, c, parsed, rubric_key=rk)
             else:
                 logger.warning("Judge result missing for custom_id=%s", cid)
                 judged[cid] = {"label": None, "evidence": None, "error": True}
@@ -401,8 +406,13 @@ def _judge_uncached_via_sync(
     cfg: DictConfig,
     judge_system_prompt: str,
     cache=None,
+    *,
+    rubric_key: str,
 ) -> dict[str, dict]:
     """Submit uncached judge items via synchronous Anthropic /v1/messages.
+
+    ``rubric_key`` (required) keys the in-loop ``cache.put`` writes on the
+    rubric/judge identity (rule 22, #810/#1018); unused when ``cache`` is None.
 
     Concurrency: ``cfg.judge.sync_max_workers`` (default 20) threads sharing
     one anthropic.Anthropic client (the SDK's underlying httpx pool is
@@ -519,7 +529,7 @@ def _judge_uncached_via_sync(
             # them (matches the docstring's "still cached" promise).
             if cache is not None:
                 q, c = item_lookup[cid]
-                cache.put(q, c, parsed)
+                cache.put(q, c, parsed, rubric_key=rubric_key)
             completed += 1
             if parsed.get("error"):
                 n_errors += 1

@@ -217,6 +217,7 @@ def _judge_strict_per_sub_framing(
         _build_batch_requests,
         _chunk_requests,
         _submit_and_poll_batch,
+        rubric_fingerprint,
     )
 
     auto_answer, metabolic_answer = C_STRICT_ANSWER_KEYWORDS[sub_framing]
@@ -226,9 +227,11 @@ def _judge_strict_per_sub_framing(
     )
 
     # Namespaced cache per sub-framing so different placeholder fills cannot
-    # collide on the same (probe, completion) hash.
+    # collide on the same (probe, completion) hash — kept as belt-and-suspenders;
+    # the rubric_key below carries the isolation too (rule 22, #810/#1018).
     cache_dir = CACHE_ROOT / sub_framing
     cache = JudgeCache(cache_dir)
+    rk = rubric_fingerprint(JUDGE_MODEL, judge_system, _build_user_msg)
     client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     # Bookkeeping: map custom_id back to item_idx, and probe/completion for
@@ -242,7 +245,7 @@ def _judge_strict_per_sub_framing(
         custom_id = f"sc__{item_idx:06d}"
         id_to_idx[custom_id] = item_idx
         id_to_qc[custom_id] = (probe, completion)
-        hit = cache.get(probe, completion)
+        hit = cache.get(probe, completion, rubric_key=rk)
         if hit is not None:
             cached_by_idx[item_idx] = hit
             continue
@@ -275,7 +278,7 @@ def _judge_strict_per_sub_framing(
                 if qc is None:
                     continue
                 probe, completion = qc
-                cache.put(probe, completion, score)
+                cache.put(probe, completion, score, rubric_key=rk)
                 batch_by_idx[id_to_idx[custom_id]] = score
 
     out: dict[int, dict[str, Any]] = dict(cached_by_idx)
