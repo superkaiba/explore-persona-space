@@ -48,7 +48,7 @@ relates_to:
 - At matched information the transported ridge read beats both the raw source read and identity transport (intervals excluding zero) in 12 of its 68 primary-layer cells versus about 3–4 by chance; the MLP separately wins 8 of its 68 (an earlier framing pooled the classes as 20 of 136).
 - The late-layer data limitation is real but decelerating: 25× more fit data lifts late-band update R² 0.83 to 0.88 and grows ridge transport wins 37 to 56 of 130 pooled cells, while the mean paired transport gain stays near zero (+0.009).
 - The win is cell-confined; reversals occur (sycophancy 0.10 below identity transport at source 20, system). Winning cells: reconstruction cosine 0.81–0.99.
-- A source-only GRU loses to the ridge everywhere — 0 of 27 transitions, 6 versus 12 of 68 transport cells, aggregate deficit 0.07 — so the prefix-GRU's above-ceiling read reflects its extra prefix information, not the recurrent class.
+- A source-only GRU loses to the ridge at all 27 stage-0 transitions and on the aggregate transport read (deficit 0.07, interval excluding zero; 6 versus 12 of 68 cells) — consistent with the extra prefix information, not recurrence, carrying the prefix-GRU's above-ceiling read, though that contrast is descriptive and its interval spans zero.
 - No matched-information read CI-separates from the raw-target ceiling or approaches the direct prompt-to-trait predictor (0.86–0.91); one-hop retention is high but trait-dependent (about 0.71 for evil, system, ridge), and single-step fit quality does not predict rolled-out reliability.
 
 ## Goal
@@ -123,7 +123,7 @@ What is plotted: per class, the conjunction win-count over the 130 pooled primar
 
 > **Figure.** *The per-unit data behind the aggregate.* Each point is one (trait, source, mode) cell's r change versus the anchor (ridge); per-cell spread (±0.2–0.4) dwarfs the +0.009 mean (black diamond, 95% interval), so the data benefit is cell-specific, not a uniform lift.
 
-Ridge wins grow monotonically from 37 to 56 of 130 cells, and 19 of the 22 newly-winning cells at the largest size survive multiple-comparison correction versus 6.5 by chance — yet the mean paired delta is only +0.009 with an interval spanning zero at every size. This sits between the plan's data-limited and flat outcomes: more unsupervised data reliably flips specific cells above the conjunction bar without lifting the grid uniformly. Transport fidelity edges up (mean reconstruction cosine 0.887 to 0.894) and retention is flat (0.57–0.59); no inverted-U appears anywhere on the curve.
+Ridge wins grow monotonically from 37 to 56 of 130 cells; 19 of the 22 newly-winning cells at the largest size survive multiple-comparison correction (6.5 by chance) — yet the mean paired delta is only +0.009 with an interval spanning zero at every size, and the per-cell change at 100,000 is two-sided (55 cells improve significantly, 20 degrade). This sits between the plan's data-limited and flat outcomes: more unsupervised data reliably flips specific cells without lifting the grid uniformly, and the win growth is trait-skewed (hallucination 16 to 28 cells, sycophancy 14 to 18, evil 7 to 10). Transport fidelity edges up (cosine 0.887 to 0.894) and retention is flat (0.57–0.59); no inverted-U appears.
 
 ### A rolled-forward affine-transported read beats the source-layer read in a minority of cells, above chance in aggregate
 
@@ -139,19 +139,19 @@ What is plotted: within-condition Pearson r versus source layer for the raw sour
 
 Per class, the transported ridge read beats both the source and identity reads (intervals excluding zero) in 12 of its 68 primary-layer cells and the small MLP in 8 of its 68, each versus about 3–4 by chance (cleanest: evil source 8→20, 0.39 vs source 0.20, identity 0.29); an earlier framing pooled the two classes into 20 of 136, crediting the affine map alone. Reversals occur; the largest raw delta (hallucination +0.51) is inflated by an anti-correlated source read (transported 0.27, ceiling 0.30). Attribution rests on transport fidelity (cosine 0.81–0.99, [fidelity](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4824a567aae82fc212c29d8c37d4bbffa5f8b613/figures/issue_841/exploratory_transport_fidelity_cosine.png)), not the shuffle null, which exceeds the real read at one evil cell.
 
-### A source-only GRU loses to the affine ridge everywhere at matched information
+### A source-only GRU loses to the affine ridge at every stage-0 transition and on the aggregate transport read
 
-What is plotted: the Stage-0 atlas with the source-only GRU overlaid on the parent's ridge, MLP, and prefix-GRU lines, plus the per-cell paired within-condition-r delta forest versus ridge and versus prefix-GRU.
+What is plotted: the Stage-0 atlas with the source-only GRU overlaid on the parent's ridge, MLP, and prefix-GRU lines, plus the per-cell paired within-condition-r delta forest versus ridge and prefix-GRU.
 
 ![Stage-0 atlas with the source-only GRU overlaid on ridge, MLP, and prefix-GRU](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4e4485e464fac0452fa20415ac1631fc2ac274aa/figures/issue_841/gru_source_only/heroA_stage0_atlas.png)
 
-> **Figure.** *The source-only GRU sits below ridge and MLP at every transition.* Held-out identity-relative R² on the update per transition; the source-only GRU (blue) tracks just above the prefix-GRU (red) and below the MLP (green) and ridge (orange) everywhere, in both target spaces.
+> **Figure.** *The source-only GRU sits below ridge and MLP at every transition.* Held-out identity-relative R² on the update per transition; the source-only GRU (blue) sits below the MLP (green) and ridge (orange) in both target spaces, and above the prefix-GRU (red) at all 27 raw transitions but only 22 of 27 RMS-normalized (losing transitions 1–5).
 
 ![Per-cell paired delta forest, source-only GRU minus ridge and minus prefix-GRU](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4e4485e464fac0452fa20415ac1631fc2ac274aa/figures/issue_841/gru_source_only/exp_delta_forest.png)
 
 > **Figure.** *The per-cell transport deltas behind the aggregate deficit.* Paired within-condition-r delta per (source, mode) cell, source-only GRU minus ridge (blue) and minus prefix-GRU (orange), 95% intervals; most intervals sit at or below zero, with the scattered positive cells concentrated in hallucination.
 
-The recurrent class does not rescue the matched-information comparison: the source-only GRU beats the ridge at 0 of 27 stage-0 transitions, wins 6 of its 68 transport cells versus the ridge's 12, and its aggregate paired delta versus the transported ridge is −0.07, interval excluding zero (shuffled-context chance: 0 cells). Four of its six wins are cells the ridge does not win — cell-level complementarity, not an aggregate advantage. It out-fits the prefix-GRU at one step on all 27 raw transitions yet transports no better (−0.03, interval spanning zero) — consistent with the prefix information, not recurrence, carrying the parent's above-ceiling read; that contrast is cross-transport-regime (about 27× fewer optimizer steps per transition on the prefix arm, its convergence diagnostics not stored), so descriptive only.
+The source-only GRU beats the ridge at 0 of 27 stage-0 transitions, wins 6 of 68 transport cells versus the ridge's 12, and trails the transported ridge by 0.07 in aggregate, interval excluding zero (shuffled chance: 0 cells). Four of its six wins are cells the ridge does not win — complementarity. It out-fits the prefix-GRU on all 27 raw transitions yet transports no better (−0.03, interval spanning zero) — consistent with the prefix information, not recurrence, carrying the parent's above-ceiling read; the contrast is cross-transport-regime (27× fewer prefix-arm optimizer steps; convergence diagnostics not stored), descriptive only. Scope caveat: unlike the per-transition ridge and MLP fits, this GRU is one model shared across the 27 transitions (transition embedding), partly conflating map class with parametrization.
 
 ### Trait-signal retention stays near the ceiling for the first hops, then drops at a trait-specific mid-depth horizon
 
@@ -175,7 +175,7 @@ What is plotted: retention at each source layer versus that source transition's 
 
 > **Figure.** *Single-step fit quality does not determine transport reliability.* Retention at a source layer versus that layer's single-step update-R², per class, per trait; the two do not track — high-update-R² early transitions carry long horizons and low retention, and the affine ridge (blue) sits above the MLP (orange) at matched update-R².
 
-The divergence anticipated by ReSAE (2605.27819) and EAGLE-3 (2503.01840) holds: a class's single-step update-R² does not determine how much trait signal it transports. The affine ridge has both the best update-R² and the most reliable transport, but the MLP — competitive on single-step fit — drifts off the activation manifold when composed over many hops (reconstruction R² goes large-negative at early source layers), so its long-horizon transport is unreliable. The affine map composes cleanly, and the one-long-hop direct ridge is no better than composing one-step maps at the anchor size; only at 100,000 contexts does its aggregate paired gain clear zero (+0.013).
+The divergence anticipated by ReSAE (2605.27819) and EAGLE-3 (2503.01840) holds: a class's single-step update-R² does not determine how much trait signal it transports. The affine ridge has both the best update-R² and the most reliable transport, but the MLP — competitive on single-step fit — drifts off the activation manifold when composed over many hops (reconstruction R² goes large-negative at early source layers), so its long-horizon transport is unreliable. The affine map composes cleanly, and the one-long-hop direct ridge is no better than composing one-step maps at the anchor size; only at 100,000 contexts does its aggregate paired gain clear zero, and marginally (+0.013, interval lower bound +0.001), while its win count is non-monotone in fit size (42 to 58, 61, 57, 58).
 
 ---
 
