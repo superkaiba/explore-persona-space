@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 980,
+  "highest_id": 981,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6521,6 +6521,13 @@
       "path": "tasks/proposed/980",
       "status": "proposed",
       "title": "workflow-fix: watcher alert for on_hold task with RUNNING pod"
+    },
+    "981": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/981",
+      "status": "proposed",
+      "title": "workflow-fix: rescope BPE-delimiter memory immunity claim"
     },
     "99": {
       "has_clean_result": true,
