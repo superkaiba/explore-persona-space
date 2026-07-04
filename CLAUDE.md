@@ -109,7 +109,7 @@ Bash(run_in_background=true,
     --prompt-file /tmp/codex-prompt-issue-<N>.md --output-file /tmp/codex-output-issue-<N>.md")
 ```
 
-Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:codex-task-failed`. On marker-post failure: retry once, then drop to `tasks/_orphaned_markers/`. Orchestrator posts the verdict marker after reading the output file.
+Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:codex-task-failed`. On marker-post failure: retry once, then drop to `tasks/_orphaned_markers/`. Orchestrator posts the verdict marker after reading the output file. If the wrapper/session is killed leaving the Codex job running (an `epm:codex-task-spawned` with no terminal marker), first confirm the wrapper is actually dead (`pgrep -f 'codex_task.py.*<job-id>'` empty — a live wrapper would double-poll, duplicate markers, and cross-cancel on signal), then re-attach instead of re-dispatching: `uv run python scripts/codex_task.py --issue <N> --reattach <job-id> --output-file <same path>`; the helper's bounded result-fetch retry also absorbs transient `No job found` registry blips (#1020).
 
 ## Context hygiene
 

@@ -1574,11 +1574,11 @@ markers:
   - kind: "epm:codex-task-spawned"
     posted_by: scripts/codex_task.py
     when: "Whenever the orchestrator dispatches a Codex companion task via scripts/codex_task.py with --issue N"
-    fields: "Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap"
+    fields: "Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap, optional reattach=true token when re-attaching to an existing job (#1020)"
   - kind: "epm:codex-task-completed"
     posted_by: scripts/codex_task.py
     when: "Codex companion task terminated cleanly (phase=done) after the polling loop observed it"
-    fields: "Codex job_id, elapsed seconds, terminal phase"
+    fields: "Codex job_id, elapsed seconds, terminal phase, fetch_retries=<k> token"
   - kind: "epm:codex-task-failed"
     posted_by: scripts/codex_task.py
     when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
