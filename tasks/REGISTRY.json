@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1006,
+  "highest_id": 1007,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -72,6 +72,13 @@
       "path": "tasks/running/1006",
       "status": "running",
       "title": "workflow-fix: verify_plan.py check \u2014 registered verdict lattices must be mutually exclusive + exhaustive"
+    },
+    "1007": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1007",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md tiny-real CPU e2e before first GPU launch (mock-seam smoke gap)"
     },
     "101": {
       "has_clean_result": false,
