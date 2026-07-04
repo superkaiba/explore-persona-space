@@ -37,7 +37,12 @@ marker will be silently skipped. Two requirements, no exceptions:
    terminal line (`[phase=done] SMOKE COMPLETE ...`) and only survives it
    via pid/sentinel corroboration (incident #545, 2026-06-11: a per-cell
    `[phase=done]` echo produced a false `status=done` while the
-   dispatcher was alive and GPUs were at 85%).
+   dispatcher was alive and GPUs were at 85%). Mechanically enforced by
+   `scripts/workflow_lint.py --check-phase-done-reserved` (no-flags
+   default run + the `workflow-lint-phase-done-reserved` pre-commit hook
+   on any `scripts/*.sh|py` change): a `[phase=done]` emission in a phase
+   script invoked non-redirected by a `scripts/**/*.sh` dispatcher FAILs;
+   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`.
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-

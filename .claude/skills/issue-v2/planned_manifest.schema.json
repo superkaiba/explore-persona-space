@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://explore-persona-space/planned_manifest.schema.json",
+  "title": "EPS v2 planned-work manifest",
+  "description": "Machine-readable declaration of the conditions, metrics, and planned figures for a v2 experiment. Emitted by adversarial-planner-v2 (Phase 3); hand-authored for the Phase-1 dogfood. Consumed mechanically by the plotter and verify_report.py --manifest (completeness + per-figure transform recipe). additionalProperties is permitted everywhere for forward-compatibility.",
+  "type": "object",
+  "required": ["issue", "conditions", "metrics", "figures"],
+  "properties": {
+    "issue": {
+      "type": "integer",
+      "description": "The task number this manifest belongs to.",
+      "minimum": 0
+    },
+    "conditions": {
+      "type": "array",
+      "description": "Plain-English condition / arm names the experiment runs. Each MUST appear somewhere in the report text (verify_report.py --manifest coverage check).",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "description": "Plain-English metric / dependent-variable names. Each MUST appear somewhere in the report text.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "figures": {
+      "type": "array",
+      "description": "Planned figures / analyses. Each planned figure id MUST have a matching `### <name>` subsection in the report OR be explicitly marked `not run` (verify_report.py --manifest coverage check).",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "source", "transform", "plotted_quantity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable machine id for the figure (referenced by the plotter and the coverage check).",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "description": "Human-readable figure title (matched against `### <name>` subsection headings).",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "description": "Path or glob of the source eval JSON(s) the figure is built from.",
+            "minLength": 1
+          },
+          "transform": {
+            "type": "string",
+            "description": "Human- and machine-readable recipe of the aggregation / normalization applied to `source` to produce `plotted_quantity` (e.g. 'mean over seeds, trained - base'). The report-verifier recomputes >=1 plotted value from this recipe.",
+            "minLength": 1
+          },
+          "plotted_quantity": {
+            "type": "string",
+            "description": "The quantity actually plotted after `transform` (e.g. 'sycophancy agreement rate (0-1)').",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

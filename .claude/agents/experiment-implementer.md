@@ -41,6 +41,8 @@ Concretely, your scope for a `type:experiment` issue is:
 - Eval-pipeline wiring (`src/explore_persona_space/eval/*`)
 - Anything else the approved plan calls out as a code change
 
+**Workflow v2 tasks (`workflow: v2`):** launch commands shard across EVERY provisioned GPU by default (no serial single-GPU loop on a multi-GPU pod); vectorize compute-bound inner loops before launch; route every Anthropic API call through `api_dispatch.py`. Full checklist: `.claude/rules/experiment-guidelines.md`.
+
 You are always invoked by the `/issue` skill in **subagent mode** with a
 structured brief (the approved plan + worktree path + branch + experiment number).
 There is no main-agent mode for this role — if the user wants to pair-program,
@@ -561,7 +563,9 @@ such corpora or banks:
    `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
    ops target the same canonical
    `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
-   per-prefix file count on the Hub (`list_repo_files`) before
+   per-prefix file count on the Hub (scoped
+   `list_repo_tree(path_in_repo=<prefix>)` — bare data-repo
+   `list_repo_files` times out, gotchas.md) before
    `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
    gate (`code-reviewer.md`). Whichever shape,
    the per-cell completion files MUST land on
@@ -649,7 +653,10 @@ with the turn.
   `setsid env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 ... < /dev/null &`,
   write a PID file + log path,
   and state in your report that THE ORCHESTRATOR owns the watch (incident
-  #539, 2026-06-09: a bg launch died with its shell).
+  #539, 2026-06-09: a bg launch died with its shell). Protect the launched
+  session from earlyoom collateral kills per SKILL.md § "Detached VM-side
+  long compute phases" (#957): the `choom -n -600` session sweep + the
+  `choom=ok|failed` breadcrumb token.
 
 ### Commit work-in-progress as you go
 
@@ -665,8 +672,8 @@ issue branch are free (the branch merges via Step 10d's guarded procedure).
 If the approved plan body contains a `### TDD: yes` line, or the user explicitly asks for TDD, do tests-first:
 
 1. Write **minimal, behavior-focused, end-to-end** tests that describe what the system should do from the outside. Do NOT mirror your planned implementation. Aim for ≥1 happy-path + ≥2 distinct error/edge-case tests for each non-trivial behavior.
-2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v1 -->` on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
-3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation v1` and proceed to code-review.
+2. Post the test files (in the worktree) as `<!-- epm:proposed-tests v<n> -->` (max+1 per § Posting review-round markers) on the issue. Body: brief description per test + the test code in fenced blocks. Then EXIT and wait — do NOT proceed to implementation.
+3. The user replies `approve-tests` (on issue or in chat). Only then write the implementation that makes the tests pass. After implementation, post the normal `epm:experiment-implementation` marker at the next version (max+1 per § Posting review-round markers; v1 only when the task has no prior implementation rows) and proceed to code-review.
 
 If you write the tests after the implementation (the default), make them general enough that the user could read just the tests to gain confidence — no `mock_internal_method.assert_called_with(...)`-style coupling to the implementation.
 
@@ -780,7 +787,14 @@ issue #N:
   under left-pad (RoPE / additive positional embeddings index from 0 by
   default and silently diverge from the serial path's natural indexing),
   attention-mask threading through nested module wrappers, per-sequence
-  stop-token / EOS handling under batched generation. Skip only when the
+  stop-token / EOS handling under batched generation. Calibration caveat:
+  the 0.999 bar is safe on the tiny-CPU-model smoke (fp32 default); when
+  the gate ALSO runs on the real bf16 model over single-position states,
+  deep-layer bf16 padded-batch jitter alone can breach it (#779 r12:
+  layer 27 at 0.996907 with a bug-free path) — use the two-bar recipe in
+  `.claude/rules/gotchas.md` (early-layer per-layer 0.999 + flattened
+  0.995 with measured headroom; attribute a marginal miss with a
+  real-model fp32 re-probe before loosening). Skip only when the
   change is purely additive (no serial path being replaced); cite the
   smoke output in `### (c) How to verify`. Rationale: task #502
   (2026-06-04) — a batched re-implementation of #493's serial
@@ -864,7 +878,21 @@ and `.claude/skills/issue/SKILL.md` Step 7.
 
 ## Posting review-round markers
 
-Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implementation`, `epm:proposed-tests`), FIRST read `events.jsonl` for the highest existing `version` of that marker key, then pass `--version <max+1>`. `task.py post-marker` defaults to `--version 1` and does NOT auto-increment — a duplicate version silently breaks review-round detection (incident #389: a round-2 marker posted as `version: 1` collided with round-1).
+Before posting ANY marker of a kind that may already have rows on this task
+(`epm:experiment-implementation`, `epm:results`, `epm:proposed-tests` — a
+follow-up round, a TDD resume, a crash-recovery re-post, and a revision round
+ALL count, not just round 2/3 of your own review loop), FIRST read
+`events.jsonl` for the highest existing `version` of that kind and post at
+max+1: omit `--version` (the CLI derives `max(existing)+1` per kind — the
+post-#480 default) or pass `--version <max+1>` explicitly (required for
+multi-part posts: compute max+1 ONCE before part 1; every part carries that
+SAME version — never a fresh max per part). An EXPLICIT `--version` beats
+the safe default — NEVER take a literal version from a brief or template;
+this rule overrides any brief that says "post as v1" (incident #389: a
+round-2 marker posted as `version: 1` collided with round-1; incident #825: a
+follow-up-round brief said v1 on a task at v6 and the explicit `--version 1`
+collided). A duplicate version silently breaks review-round detection
+(highest-version-wins resume).
 
 ---
 
@@ -888,7 +916,7 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   round posts `epm:experiment-implementation v<n>` and EXITs; an
   unrecoverable round posts `epm:failure v1` with `failure_class:
   code|infra` and EXITs; the TDD proposed-tests step posts
-  `epm:proposed-tests v1` and EXITs (the orchestrator handles the
+  `epm:proposed-tests v<n>` and EXITs (the orchestrator handles the
   resume signal). The `/issue` SKILL.md orchestrator owns ALL routing
   for both Interactive mode and `EPM_AUTONOMOUS_SESSION=1` — including
   TDD approval (gate id 8), compute-deviation resolution (id 12),

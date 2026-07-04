@@ -311,6 +311,57 @@ Abort affordance: any state, user runs `task.py set-status <N> blocked`
 -> skill posts abort request via `epm:abort`, watcher kills run if one
 exists.
 
+User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
+pause is a DURABLE park, never a prose-only marker. The session driving <N>
+(or the PM/chat session receiving the directive) executes IN THIS ORDER —
+the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
+LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
+the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
+`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
+whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
+(`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
+alert fires too:
+
+1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
+   backstop cron must not outlive the pause), then Step 8-bis: stop any
+   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; volume
+   preserved until the daily stale-pod audit terminates EXITED pods >24h —
+   add the `keep-running` tag if the volume must outlive that) and post
+   `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
+   self-terminates at its `--max-run-duration` fence, or run
+   `uv run python scripts/dispatch_issue.py finalize --issue <N>`. The
+   autonomous "never stop a pod to PARK" ban does not apply here: a user
+   pause is a user directive, not an autonomous park.
+2. LAST — the commit point: `uv run python scripts/task.py set-status <N>
+   on_hold --note "USER PAUSE (verbatim: '<user words>');
+   paused_from=<prior status>; resume: task.py set-status <N>
+   <prior status> && spawn_session.py spawn-issue --issue <N> --auto"`.
+   `on_hold` is in the watcher PARK set (`autonomous_session_watch.py`
+   `PARK`): no orphan-respawn, no auto-dispatch, registration kept. The
+   transition is legal from EVERY status WITHOUT `--force-followup-exit`
+   (`on_hold` is not in `FOLLOWUP_HELD_BLOCKED_STATUSES`); pausing a
+   `followups_running` round abandons that round's in-flight subagents —
+   record `paused_from` so resume restores the held status.
+3. EXIT the turn. Do NOT leave status at an ACTIVE value with a prose
+   hold note — the watcher's orphan-respawn pass cannot parse prose and
+   will respawn against the hold (incident #816, 2026-07-02).
+
+Resume is user-greenlight ONLY: `task.py set-status <N> <paused_from>` (or
+`proposed` for a full re-triage), then `spawn_session.py spawn-issue
+--issue <N> --auto`; the events.jsonl markers re-enter the loop at the same
+point (a resumed `followups_running` round may re-park at
+`awaiting_promotion` via the round-complete re-park — Step 9b § Same-issue
+follow-up loop — expected, not a bug). Distinct mechanism: the
+`.paused-takeover-*` registration sentinel
+(`.claude/rules/background-automation.md` § Deliberate session takeover) is
+a short-TTL (~6h, FAIL-OPEN) session-TAKEOVER shield — it does NOT
+implement a user pause. Known carve-out: a PROGRAM daemon that hardcodes
+task revival (e.g. `run_program_orchestrator.sh`, the #660 leakage program,
+revives its four pinned tasks from `on_hold`) can override the park for
+exactly those pinned ids — pausing a program-pinned task additionally
+requires the program's STOP sentinel.
+
 ---
 
 ## Orchestration Procedure
@@ -502,7 +553,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     the open concern_id); do NOT state the Decision and then end the turn.
   <!-- gate: gates.tdd_gate -->
   - `tdd_gate` → no `AskUserQuestion` at this site (it's event-driven —
-    the implementer posts `epm:proposed-tests v1` and exits; the resume
+    the implementer posts `epm:proposed-tests v<n>` and exits; the resume
     signal is `epm:approve-tests` posted via `task.py post-marker`). In
     autonomous mode, auto-post `epm:approve-tests` IF the proposed-tests
     body lists ≥1 test per acceptance criterion from the original task
@@ -845,6 +896,21 @@ armed it. So the immediate spawn IS the handoff — there is no safe
 deferred variant.
 
 ### Step 0: Load state
+
+**Workflow-version dispatch (run BEFORE anything else).** Read the task's
+`workflow` frontmatter field and, if it is `v2`, hand the whole task off to the
+v2 skill and EXIT this skill immediately — v1 does nothing further for a v2 task.
+This is a read-only probe (no markers, no mutation); the v2 skill re-runs the
+same Step-0 guards itself.
+
+```bash
+uv run python scripts/task.py view <N> --json | uv run python -c \
+  "import json,sys; print((json.load(sys.stdin).get('frontmatter') or {}).get('workflow') or 'v1')"
+# → "v2"  : announce "Task #<N> is workflow: v2 — delegating to issue-v2." then
+#           invoke the Skill tool `issue-v2` with the same task number <N> and STOP
+#           (do NOT run any step below; issue-v2 owns the whole lifecycle).
+# → "v1" / absent / empty : continue below UNCHANGED (v1 path, byte-for-byte).
+```
 
 **Single-orchestrator guard (run FIRST).** Exactly ONE session may drive
 `/issue <N>` at a time. Before doing anything else, check whether another
@@ -1903,6 +1969,18 @@ Brief passed to the implementer:
   `experiment-implementer.md` § "Deferred production-path TODOs are
   persisted concerns, not (d) prose", so round-N briefs surface the
   duty without the implementer having to recall its agent spec.
+- **Marker-version discipline — a brief NEVER instructs a literal marker
+  version.** Any brief line about posting `epm:experiment-implementation` /
+  `epm:results` / `epm:proposed-tests` says: "post at the next version —
+  read `events.jsonl` for the highest existing version of the kind and use
+  max+1, or omit `--version` (the CLI derives max+1)". Never "post as `v1`"
+  or any literal `v<k>`: on a fresh task max+1 IS 1, but on a follow-up
+  round / TDD resume / crash-recovery re-post prior rows exist, and an
+  explicit `--version` beats the CLI's safe default (incident #825: a
+  follow-up-round brief instructed a literal `v1` for the implementation
+  marker on a task already at v6 — the #389 collision class). See
+  `experiment-implementer.md` / `implementer.md` § Posting review-round
+  markers.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
@@ -1916,7 +1994,7 @@ Brief passed to the implementer:
   (a) the approved plan body contains a literal `### TDD: yes` line, OR
   (b) the task body / latest user comment in `comments.jsonl` contains
   `request-tdd`. When `tdd_mode=true`, the implementer writes tests
-  first, posts them as `epm:proposed-tests v1`, and EXITs without writing
+  first, posts them as `epm:proposed-tests v<n>` (max+1), and EXITs without writing
   implementation. This skill then parks at `running` (implementing
   sub-phase) and waits — see Resume semantics below: an `approve-tests`
   marker posted via `task.py post-marker <N> epm:approve-tests` **after**
@@ -3325,7 +3403,7 @@ session may have finished the run while this session was mid-review):
    dispatch; re-derive scope from the markers (the run may already be
    done) or re-provision via Step 6b.
 2. **Run still pending.** `uv run python scripts/task.py latest-marker
-   <N>` + the recent `events.jsonl` tail: if `epm:results v1` +
+   <N>` + the recent `events.jsonl` tail: if `epm:results v<n>` +
    `epm:upload-verification PASS` (or `epm:pod-terminated v1`) postdate
    the failure being recovered, the (re)launch is STALE — the work
    already completed. Do not dispatch; reduce the brief to the genuinely
@@ -3875,9 +3953,72 @@ The orchestrator handles the named gate inline rather than continuing to
 poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
 (`fact-candidates`): the pipeline is waiting on a user answer, so the
 orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
-exception: the orchestrator resolves it itself (a pod-cycle around an
-off-pod step) and resumes the loop in the same turn — see the per-gate
-handlers below.
+exception: the orchestrator resolves it itself (on the RunPod lane a
+pod-cycle around an off-pod step; on the GCP lane finalize + fresh
+dispatch — see the GCP-lane teardown leg below) and resumes the loop in
+the same turn — see the per-gate handlers below.
+
+**GCP-lane blocking gates — instance-teardown leg (EVERY handler, PARK-mode
+and auto-resolving; #908/#763/#935).** On the GCP lane a blocking-gate exit is
+a CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
+does NOT power the VM off — the GCE instance stays RUNNING only within the
+bounded done-grace window (default 90 min,
+`EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; the #935 self-poweroff best-effort
+persists the undrained sentinel set to HF `issue<N>_done/<attempt_id>/` at
+expiry, then powers off; the clean-exit path keeps it alive only for sentinel
+draining — `backends/gcp.py` `teardown` docstring). The finalize teardown leg
+below remains PRIMARY — never wait out the grace. Two operational lines
+(REQUIRED — the only defense on the DELETE outcome): (a) on a
+`workload_done_self_poweroff` poll (TERMINATED + guest `eps/phase=done` — the
+grace expired on the STOP outcome) OR a post-expiry `dead("instance not
+found")` poll, CHECK the HF data-repo prefix `issue<N>_done/<attempt_id>/`
+BEFORE any crash-fix routing — the run SUCCEEDED and self-powered-off;
+recover the undrained completion/gate sentinels from that prefix and run
+finalize with `--skip-confirm-artifacts`. (b) Gate sentinels persist to that
+same prefix at grace expiry on a BEST-EFFORT basis (one retry) — the prefix
+is NOT guaranteed to exist, and the persist also never fires on a mid-grace
+preemption or manual stop, so an ABSENT prefix does NOT distinguish "poller
+drained normally" from "expiry persist failed"; on a STOP-outcome instance
+the `eps/done_persist` guest attribute (`ok|failed`, a SEPARATE key from
+`eps/phase`) disambiguates. Pre-existing residual (unworsened by #935): a
+#908 stale reclaim at a FRESH dispatch during the grace deletes the VM
+before the expiry persist fires. By the time `status=gate` reaches
+this step the sentinel is already drained (the poller drained it to post the
+gate marker), and the VM holds NOTHING a later gate resolution needs — so
+tear the instance down at the earliest point after the drain, split by gate
+class: **PARK-mode gates** run the finalize command after the gate marker is
+posted and BEFORE the park — before raising the user question, before
+posting `step-completed parked`, before exiting — NEVER leave the instance
+up through the user-wait window (the user's pick is NOT a teardown
+precondition); **auto-resolving gates** (including a PARK-mode gate's
+autonomous auto-resolve branch) run it after the auto-resolve step completes
+and BEFORE dispatching any off-pod phase or the fresh tail dispatch:
+
+```bash
+uv run python scripts/dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts
+```
+
+`finalize` DELETEs the instance AND retires the handle sidecar
+(`.claude/cache/issue-<N>-handle.json` → `<name>.finalized`); a raw `gcloud
+compute instances delete` leaves a stale sidecar the next launch would
+misread — use it only when no sidecar exists. `--skip-confirm-artifacts` is
+REQUIRED at a mid-pipeline gate: the run's declared final artifacts do not
+exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction. The
+instance stays up ONLY for sentinel draining — never through an off-pod
+phase or a park (Step 8-bis: a pod must not idle on a halt; incident #763:
+an A100-80 idled ~40 min after the `cofit_phaseA_done` gate-park). The next
+pipeline phase provisions FRESH via the normal Step 6d.1 dispatch. There is
+no GCP analogue of the RunPod `pod.py stop`/`resume` cycle (`pv_phase1_done`
+below): GCE instances are ephemeral by design, and a STOPPED instance would
+be deleted by the next launch's stale reclaim anyway — the GCP phase-cycle
+is teardown + fresh dispatch. Backstop only (never the plan):
+`backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
+`eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
+reclaim deletes it, so a missed teardown no longer silently no-ops the next
+dispatch (#763 leg 2) — but the zombie still bills until the #935 done-grace
+self-poweroff (default 90 min), that next dispatch, or the daily janitor
+sweep, so the handler-side teardown stays mandatory (never wait out the
+grace).
 
 Gate handlers (one per registered `<name>`):
 
@@ -3929,7 +4070,10 @@ Gate handlers (one per registered `<name>`):
   marker, materialises `fact_pick.json` on disk, and the next pipeline
   phase proceeds. In autonomous mode the orchestrator resumes the
   polling loop directly without a re-invocation. (See plan §4.2 of any
-  fact-teaching task for the on-pod resume contract.)
+  fact-teaching task for the on-pod resume contract. GCP lane: the
+  instance was already finalized per the GCP-lane teardown leg above —
+  the resume is a FRESH Step 6d.1 dispatch of the fact-pick tail, never
+  a poll against the old instance.)
 
 - **`pv_phase1_done`** (issue #763 persona-vector extraction —
   off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
@@ -3956,13 +4100,20 @@ Gate handlers (one per registered `<name>`):
      stop --issue <N>`. This frees the GPU through the deadline-bounded
      stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
      monitoring stack"); the PV rollouts are already on HF, so nothing on
-     the pod's ephemeral disk is lost.
+     the pod's ephemeral disk is lost. (RunPod lane. On the GCP lane there
+     is no stop/resume — apply the GCP-lane instance-teardown leg above:
+     `finalize --skip-confirm-artifacts` once the phase-1 artifacts are
+     confirmed on HF, then re-dispatch the tail as a fresh launch.)
   2. **Run the judge OFF-POD on the VM**: `uv run python
      scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
      ships on the `issue-763` branch — it lands on `main` when #763 merges;
      the reference is a forward / sibling-branch one, not a dead tool.)
      This is VM-safe by construction and NOT a `task.py` pod-shellout: it
-     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     fetches the PV rollouts from HF via `snapshot_download` (NOTE: on the
+     ~1M-file data repo `snapshot_download` wedges in full-tree
+     enumeration — `.claude/rules/gotchas.md`; patch the script to scoped
+     `list_repo_tree(path_in_repo=...)` staging before re-running this
+     phase on a #763 follow-up), batch-judges
      through
      `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
      `messages.batches.create` + deadline-less poller), and uploads the
@@ -3989,10 +4140,14 @@ Gate handlers (one per registered `<name>`):
      `pid`/`log` from that marker.
 
   Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
-  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
-  the pod is burning GPU again after resume, so the `/issue-tick <N>`
-  backstop cron stays armed and the bg-Bash poll chain continues against
-  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved.
+  (RunPod lane — the stop/judge/resume cycle above keeps ONE pod across
+  phases, so the pod is burning GPU again after resume. GCP lane: there
+  is no stop/resume — the instance was finalized per the GCP-lane
+  teardown leg above, and the tail runs as a FRESH dispatch, so the poll
+  loop resumes against the NEW handle, never the old instance.) Either
+  way the `/issue-tick <N>` backstop cron stays armed and the bg-Bash
+  poll chain continues. (Contrast with `fact-candidates` above, which parks
   for a user pick and tears the cron down.) **Idempotency on re-entry:**
   if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
   by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
@@ -4018,16 +4173,21 @@ Gate handlers (one per registered `<name>`):
 **PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
 branch): the tail below applies ONLY to gates that EXIT the skill to wait
 on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
-their own continuation — they do NOT teardown and do NOT EXIT; their
-handler resumes the polling loop in the same turn, so it skips this whole
-paragraph.
+their own continuation — they do NOT tear down the RUNPOD pod mid-cycle
+(the stop/judge/resume cycle IS the continuation) and do NOT EXIT; on the
+GCP lane the auto-resolve handler DOES tear the instance down (finalize +
+fresh dispatch, per the GCP-lane teardown leg above) — "no teardown" is
+RunPod-scoped. Their handler resumes the polling loop in the same turn,
+so it skips this whole paragraph.
 
 For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
 Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
-burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
+burning GPU (on the GCP lane because the teardown leg above already
+finalized the instance BEFORE this park), so the backstop should not keep
+re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
@@ -4094,9 +4254,9 @@ sources contribute to `running`-phase progress:
 - **Entry script on the pod**: writes `[phase=done]` to its log on
   graceful completion AND writes a JSON sentinel file at
   `/workspace/logs/issue-<N>-results.json` containing the
-  `epm:results v1` payload. The orchestrator's polling-loop terminal
+  `epm:results` payload. The orchestrator's polling-loop terminal
   tick (Step 6d.2) reads the sentinel on its next poll and posts
-  `epm:results v1` from the local VM via `task.py post-marker`. The
+  the `epm:results` marker from the local VM via `task.py post-marker`. The
   pod NEVER calls `task.py` directly — enforced by
   `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
   "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
@@ -4136,7 +4296,7 @@ sources contribute to `running`-phase progress:
 
   **Orchestrator-composed fallback.** When the driver emits only
   granular per-cell / per-shard sentinels (no single results sentinel)
-  and the orchestrator composes the `epm:results v1` payload itself
+  and the orchestrator composes the `epm:results` payload itself
   from the drained pieces, the composed payload obeys the SAME contract
   above — in particular the `reproducibility_card` structured-field
   requirement. Composing the card's adapter / WandB info as prose is
@@ -4996,6 +5156,8 @@ aggregation / permutation battery) MUST be launched fully detached:
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
+    bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
+      || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
 The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
 shell runs with job control ON, where `setsid` forks and a bare `$!` is the
@@ -5008,13 +5170,47 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry two additional fields:
-`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry three additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
 genuinely new field), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
+The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
+badness to every python process), so a long detached fit is the designated
+victim whenever ANY neighbor spikes memory: #811's ~5h fits phase (RSS 6.8 GiB)
+was SIGTERM-killed at ~2h (rc=143, 0 checkpoints) by a NEIGHBOR's spike — its
+logged badness 1002 decomposes exactly as (1000 + 53‰ RSS)×2/3 + 300
+prefer-bonus. The `choom -n -600` sweep runs over the phase's whole SESSION
+(`pgrep -s` — `setsid` made `$PHASE_PID` the session id, so the sweep catches
+the leader AND any already-forked child; children forked later inherit
+`oom_score_adj` across fork), subtracting ~400 display points: decisively below
+every default-adj neighbor while staying killable — NOT `-1000`, which earlyoom
+and the kernel OOM killer skip entirely, so a genuinely runaway fit must still
+die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
+on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
+`choom=failed` breadcrumb token — never block a launch on choom, and never read
+the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
+it does not exempt the phase). Record `choom=ok` ONLY when the sweep pipeline
+itself exited zero; anything else records `choom=failed`. The −600 derivation
+assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
+re-derive from the decomposition above if that config changes.
+**Collateral-kill signature + second-kill pod pivot.** Phase dead rc=143
+(SIGTERM; rc=137 when earlyoom escalated to SIGKILL) + an earlyoom journal line
+at the death timestamp naming the phase pid, with the memory SPIKER a NEIGHBOR
+(phase RSS well under the pressure; attribute via the kill-source checklist,
+`failure_patterns.md` § exit-137/143, + the watcher's `earlyoom-kill` sidecar
+rows) = a collateral kill: `failure_class: infra`, NOT a code bug — do not
+dispatch a crash-fix round against the phase. Recovery ladder: relaunch ONCE
+with protection verified (`choom=ok`); if a PROTECTED phase is earlyoom-killed
+AGAIN, the VM is structurally memory-contended for this phase (or the phase
+itself is now the top consumer) — route it to the cheap CPU pod lane
+(`cpu-mid` / `cpu-bigmem` by footprint, CLAUDE.md § CPU-only phases) instead of
+a third VM relaunch. The phase-is-the-spiker variant + the stream-reduce rule
+stay in `.claude/rules/gotchas.md` (earlyoom entry).
 
 **The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
 shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
@@ -5079,7 +5275,10 @@ re-invocation).**
    window** — effective age is measured from the LATEST of the
    breadcrumb and any subsequent liveness marker (`epm:codex-task-*`,
    `epm:smoke-architecture-check`, `epm:proposed-tests`, or a
-   non-breadcrumb `epm:progress`): a healthy long-running round keeps
+   non-breadcrumb `epm:progress` — excluding anti-liveness notes: a
+   `deliberate-stop` stop record and `[autonomous_session_watch:...]` /
+   `[spawn-session:...]` telemetry never refresh the window, #810/#949):
+   a healthy long-running round keeps
    refreshing its window; a dead one goes silent and re-dispatches once
    the window expires. The mechanical form of this rule is
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
@@ -5431,7 +5630,8 @@ did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
-or the wider explicit value + one-line reason) per the Step 9 entry-guard
+or the wider explicit value + one-line reason) + the earlyoom protection state
+(`choom=ok|failed`) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
@@ -6704,7 +6904,12 @@ orchestrators driving one round is the #778 root cause.
      `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and park at `plan_pending` over
      the cap; interactive sessions ask.
    - `experiment-implementer` + `code-reviewer` if the diff needs code
-     changes (same ensemble shape as Step 5).
+     changes (same ensemble shape as Step 5). The round's implementer brief
+     follows the Step 4b brief contract INCLUDING its marker-version-
+     discipline bullet — on a follow-up round prior
+     `epm:experiment-implementation` rows ALWAYS exist, so a brief
+     instructing a literal `v1` reproduces the #825 collision; the brief
+     defers to max+1 (or tells the implementer to omit `--version`).
    - Fresh compute dispatch on the SAME issue, through the slice-6
      router exactly like the parent run: read the task's `backend:`
      frontmatter and run `dispatch_issue.py launch --issue <N>
@@ -7888,7 +8093,10 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
-  xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --
+  # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
+  # (#897): the hook's working-tree-revert detector would bounce the bare
+  # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
+  xargs -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
@@ -8058,7 +8266,7 @@ dedicated "working" statuses):
 | `plan_pending` | `epm:plan` exists | awaiting user approval | show plan path, EXIT |
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
-| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
+| `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation` at the next version (max+1 per § Posting review-round markers; omit `--version` and the CLI derives it) as normal |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
 | `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |

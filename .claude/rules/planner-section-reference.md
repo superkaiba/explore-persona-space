@@ -184,11 +184,60 @@ max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
 display and does NOT neutralise it). §6 ALSO registers persistence of the
 per-draw × per-axis statistic matrix (one matrix per headline statistic)
 as a downstream artifact (per the Upload Policy) so the analyzer can
-recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+recompute the honest max-selected band post-hoc. §6 ALSO reports, next to
+each registered null-band read, the band's upper bound alongside the DV's
+achievable ceiling (a bounded DV's bound; for a difference statistic,
+max-attainable-favored-arm MINUS the exact registered comparison-arm
+quantity the statistic uses — never the raw single-arm bound; when no
+estimator bound is derivable, the largest previously-observed in-line
+effect as a severity REFERENCE POINT, which is not a ceiling) — band ≥
+estimator-bound ceiling ⇒ the test is uninformative-by-construction:
+pre-commit the narration of any non-rejection as failure-to-reject (never
+evidence of absence/reversal; a separately reachable opposite-tail
+rejection stays legitimate), draw band + ceiling in the figure, report the
+band-to-ceiling margin, and prefer redesigning the read (#810: band p97.5
+0.800 vs an achievable difference ceiling derived from ~0.857 max skill —
+even the parent round's +0.209 effect could not clear it). Band ≥ only the
+fallback reference point ⇒ report low-severity (underpowered against every
+previously-observed effect), not zero power. Full check:
+`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling
+informativeness check. Full recipe + carve-outs
 (a pre-registered fixed position or a mechanistic single-anchor ablation
 does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
 whose headline is not selected over any free axis write "N/A — no
 max-over-axis selection in the headline" and move on.
+
+**Required: OOD generalization folds (group-structured held-out
+predictive DVs).** If any DV is a held-out predictive statistic —
+reconstruction R² / skill, read-out ρ, predictor accuracy, any
+"held-out" / "cross-validated" number — over a sample with known GROUP
+structure (context/prompt families, genres, persona panels, behavior
+classes, seeds sharing a template), §6 MUST: (a) NAME the sample's
+grouping axes — "no known structure" is a positive claim requiring an
+explicit iid argument, the only pointwise-only exemption; (b) register
+at least one GROUP-level held-out fold — leave-one-family-out (LOFO) /
+leave-one-genre-out / leave-one-persona-out, or a corpus/genre
+TRANSFER arm (fit on corpus A, evaluate on corpus B — the strongest
+form, counts); (c) report BOTH and label EVERY headline with its
+fold — pointwise LOO/LOCO may stay (it upper-bounds
+within-distribution skill) but never carries a generalization claim
+alone; a claim that holds under LOO and fails under the group fold is
+reported as within-family interpolation, not generalization; (d) give
+any max/argmax-over-free-axis selection inside a group-fold headline
+its selection-symmetric null (the block above) computed under the
+SAME fold structure; and (e) frame CIs and "unresolved" calls on
+GROUP-level n — G quasi-independent test units, not n points.
+Pointwise LOO trains on same-family siblings of every test point, so
+it measures within-family interpolation and can REORDER cross-context
+claims: #810's LOCO headline (max-pool 0.826 best answer-side
+summary vs mean 0.800; trained-ridge read-out ρ ≈ 0.909) reordered
+under the 7-fold leave-one-FAMILY-out re-read (mean 0.804 ≥ turn_nl
+0.791 > max-pool 0.760 at LOCO-best layers) and the read-out
+collapsed to ρ ≈ 0.285. Full rule:
+`.claude/rules/ood-generalization-folds.md`. Plans with no held-out
+predictive DV write "N/A — no held-out predictive DV" and move on; a
+plan claiming a genuinely iid sample writes the iid argument here
+instead of the N/A.
 
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
@@ -319,9 +368,10 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
 
-**Serial-fit-loop & draw-battery sizing (REQUIRED whenever any §9 component
-loops a fit / solve / factorization / draw over cells, folds, layers, arms,
-traits, seeds, or draws).**
+**Serial-fit-loop, draw-battery & store-serialization sizing (REQUIRED
+whenever any §9 component loops a fit / solve / factorization / draw — or a
+per-item serialization / per-file upload — over cells, folds, layers, arms,
+traits, seeds, draws, or output files).**
 (a) Write the multiplier arithmetic EXPLICITLY in the row's basis:
 `total_calls = draws × cells × folds × …` and
 `projected_wall = total_calls × per_call_cost / parallelism`. A battery/null
@@ -341,6 +391,13 @@ substitution.
 (d) A row with `total_calls` >~500 or projected serial wall > 4 h triggers the
 floor cross-check (`.claude/rules/plan-compute-sizing.md`) and the batching
 requirement (`.claude/rules/vectorize-many-cell-fits.md`).
+(e) For a store-heavy phase (>~10^3 output files or >~50 GB written), ground
+`per_call_cost` on a MEASURED one-item serialization + upload wall-time at
+production shape — bytes/file-counts alone are not a basis — and default
+client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
+(#813: `savez_compressed` 103.8 s vs plain `savez` 1.2 s per file for a
+1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
+`.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
@@ -383,6 +440,14 @@ batched-or-serial verdict, device handling (`.claude/rules/artifact-reuse.md`
 item (i)) — and the implied wall-time is reflected in the matching §9 row.
 "N/A — no artifact reuse" does NOT cover reused fit/analysis code: a plan with
 no HF artifact reuse but with an inherited fit helper still fills this row.
+
+**Pairwise provenance coherence (checklist item (j)) is recorded here too.**
+When the plan reuses a mutually-dependent artifact PAIR, this card carries the
+item-(j) attestation — the member dates at the consumed revisions (per-repo
+`get_paths_info(..., expand=True, revision=...)`; git members via
+`git log -1`: consumed input vs dependent capture) and the coherence verdict;
+an input postdating its capture is a failed check regardless of sha pins
+(#922).
 
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the
@@ -459,7 +524,8 @@ INPUT-DATA artifact the design loads — a parent's `train/*.jsonl` mix, an
 on-policy response cache, an `eval_results/` JSON consumed as a downstream
 input — gets a §11 `Source:` line naming (a) the producing issue `#<M>`, AND
 (b) HOW the file is FETCHED on the target backend named in §9: an HF repo path
-the worker `snapshot_download`s, a committed `eval_results/...` path that
+the worker stages (scoped `list_repo_tree` + per-file `hf_hub_download` for
+data-repo subtrees — gotchas.md), a committed `eval_results/...` path that
 arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
 is the §11 record of the step-5 check `(h)` (source resolution +
 target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a
