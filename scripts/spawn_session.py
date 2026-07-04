@@ -1245,10 +1245,12 @@ def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
     NOTE: the daemon's /list returns ONLY handshaken children (it filters
     ``happySessionId !== undefined``, bundle line 4079) — a just-forked,
     never-handshaken child is NOT in this list by design. With ``strict=True``
-    a daemon-unreachable / unparseable /list RAISES RuntimeError instead of
-    returning ``[]`` — used by the #956 reap's late-handshake probe, where a
-    silent ``[]`` must not read as "no late handshake" when the daemon was
-    simply unreachable."""
+    a daemon-unreachable / unparseable / wrong-shape /list (a parseable
+    non-dict body, or a non-list ``children`` field) RAISES RuntimeError
+    instead of returning ``[]`` — used by the #956 reap's late-handshake
+    probe, where a silent ``[]`` must not read as "no late handshake" when
+    the daemon was simply unreachable. LENIENT mode keeps its historical
+    semantics untouched for existing callers."""
     try:
         url = f"http://127.0.0.1:{daemon_port()}/list"
         req = urllib.request.Request(
@@ -1260,6 +1262,13 @@ def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
         if strict:
             raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
+    if strict:
+        if not isinstance(data, dict):
+            raise RuntimeError(f"daemon /list returned non-dict JSON: {repr(data)[:200]}")
+        children = data.get("children", [])
+        if not isinstance(children, list):
+            raise RuntimeError(f"daemon /list 'children' is not a list: {repr(children)[:200]}")
+        return children
     children = data.get("children", [])
     return children if isinstance(children, list) else []
 
@@ -1565,9 +1574,12 @@ def _stop_session_raw(session_id: str) -> bool:
     block the retry. :func:`_stop_spawned_session` (which conflates the two
     as False) keeps its existing callers unchanged.
 
-    Asserts nothing beyond ``{success: bool}``: if a live daemon ever returns
-    a different response shape, the ``.get("success")`` read degrades to
-    False — acceptable (False routes to the reap's fail-safe branches)."""
+    Response-shape guard: a PARSEABLE body that is not a ``{success: bool}``
+    dict — non-dict JSON (e.g. ``[]``), or a missing / non-bool ``success``
+    field — ALSO raises RuntimeError. Wrong shape carries no verdict about
+    tracking state, so it blocks the retry exactly like a transport failure;
+    it never degrades to False (False is the daemon's own 'pid untracked'
+    verdict and feeds the already-gone branch)."""
     url = f"http://127.0.0.1:{daemon_port()}/stop-session"
     req = urllib.request.Request(
         url,
@@ -1577,9 +1589,14 @@ def _stop_session_raw(session_id: str) -> bool:
     )
     try:
         with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
-            return bool(json.loads(resp.read()).get("success"))
+            data = json.loads(resp.read())
     except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
         raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
+        raise RuntimeError(
+            f"daemon /stop-session returned unexpected response shape: {repr(data)[:200]}"
+        )
+    return bool(data.get("success"))
 
 
 def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: str) -> None:
