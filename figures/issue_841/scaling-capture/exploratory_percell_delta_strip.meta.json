@@ -1,0 +1,3160 @@
+{
+  "commit": "d7662ff21b",
+  "created": "2026-07-04T06:28:39Z",
+  "figsize": [
+    9.0,
+    5.5
+  ],
+  "points": [
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.32,
+      "per-cell within-condition r delta (ridge)": 0.0007,
+      "error": 0.0106,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.32,
+      "per-cell within-condition r delta (ridge)": 0.0073,
+      "error": 0.0118,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.32,
+      "per-cell within-condition r delta (ridge)": 0.008,
+      "error": 0.011800000000000001,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.32,
+      "per-cell within-condition r delta (ridge)": 0.009,
+      "error": 0.011550000000000001,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08766593553790827,
+      "per-cell within-condition r delta (ridge)": -0.06862540859305113,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.01955889927934326,
+      "per-cell within-condition r delta (ridge)": -0.04831233446213939,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.1147513343716424,
+      "per-cell within-condition r delta (ridge)": -0.03898824740178097,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.06315776929899644,
+      "per-cell within-condition r delta (ridge)": -0.034528606776133924,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.12986324867595214,
+      "per-cell within-condition r delta (ridge)": -0.04635718248122067,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.1521991525237619,
+      "per-cell within-condition r delta (ridge)": 0.05662722895544353,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08356470463691296,
+      "per-cell within-condition r delta (ridge)": -0.05970728252223991,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0915405776886252,
+      "per-cell within-condition r delta (ridge)": -0.04733768719279553,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.11900363754382531,
+      "per-cell within-condition r delta (ridge)": 0.018211823070322625,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.01587649987341852,
+      "per-cell within-condition r delta (ridge)": -0.10767042933223597,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.04134463224557401,
+      "per-cell within-condition r delta (ridge)": 0.06010162139338978,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.1365647964315526,
+      "per-cell within-condition r delta (ridge)": -0.03914885968810877,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.04603683842581266,
+      "per-cell within-condition r delta (ridge)": -0.007513886582082643,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.10328371624666557,
+      "per-cell within-condition r delta (ridge)": -0.05448843221665767,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.018107456375254044,
+      "per-cell within-condition r delta (ridge)": 0.07564783986141431,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.0872836090288714,
+      "per-cell within-condition r delta (ridge)": 0.0739503907535965,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.017467131845067124,
+      "per-cell within-condition r delta (ridge)": -0.049157769279372376,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1395784780466639,
+      "per-cell within-condition r delta (ridge)": -0.0035557623326029075,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.10484197503762624,
+      "per-cell within-condition r delta (ridge)": -0.027299243965009518,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.042132607719060744,
+      "per-cell within-condition r delta (ridge)": -0.0018556355809951075,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08258807682731964,
+      "per-cell within-condition r delta (ridge)": 0.012159966323412763,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.04655169019844213,
+      "per-cell within-condition r delta (ridge)": 0.004897511840903923,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.15062336780636906,
+      "per-cell within-condition r delta (ridge)": -0.06498774632519586,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.12579875882310323,
+      "per-cell within-condition r delta (ridge)": -0.10085610416127984,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0890827190636038,
+      "per-cell within-condition r delta (ridge)": -0.030094238451473937,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.09771561348737037,
+      "per-cell within-condition r delta (ridge)": -0.021249764749079185,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.01064927880734906,
+      "per-cell within-condition r delta (ridge)": -0.03224604362789858,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1459827949480868,
+      "per-cell within-condition r delta (ridge)": 0.027275824860056808,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1106273625383847,
+      "per-cell within-condition r delta (ridge)": -0.007439379445622257,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.05857566503758549,
+      "per-cell within-condition r delta (ridge)": 0.005593852840566821,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.07832388989050149,
+      "per-cell within-condition r delta (ridge)": 0.025396490537279437,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.14960311437894722,
+      "per-cell within-condition r delta (ridge)": -0.09876610172286901,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.055735885395791385,
+      "per-cell within-condition r delta (ridge)": 0.04401064319897198,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.041452894068841964,
+      "per-cell within-condition r delta (ridge)": 0.016970571815434488,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.009742140391741455,
+      "per-cell within-condition r delta (ridge)": -0.002617202038809663,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.09936916509302858,
+      "per-cell within-condition r delta (ridge)": -0.003256733820443558,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.11842511829264907,
+      "per-cell within-condition r delta (ridge)": 0.011504009802742847,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.0077744236077011974,
+      "per-cell within-condition r delta (ridge)": -0.005229186796781027,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.08738900830371708,
+      "per-cell within-condition r delta (ridge)": -0.0043181694890035704,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0543404782984033,
+      "per-cell within-condition r delta (ridge)": 0.0023043524668587834,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.020111385960854156,
+      "per-cell within-condition r delta (ridge)": 0.03617194871291146,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.10645702273850796,
+      "per-cell within-condition r delta (ridge)": 0.04599997317890268,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.06408483264071971,
+      "per-cell within-condition r delta (ridge)": -0.01148060850976751,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.060042674757746856,
+      "per-cell within-condition r delta (ridge)": -0.043363245593191546,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.10632313644646432,
+      "per-cell within-condition r delta (ridge)": -0.031542999687103335,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.09752459439897662,
+      "per-cell within-condition r delta (ridge)": -0.046880861269300744,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.03600691871034417,
+      "per-cell within-condition r delta (ridge)": -0.020058327962222455,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.06773500674232188,
+      "per-cell within-condition r delta (ridge)": -0.002213950436513512,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.058398561271992167,
+      "per-cell within-condition r delta (ridge)": -0.008855309393972305,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.11527920524502086,
+      "per-cell within-condition r delta (ridge)": -0.07326730643729651,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.09602937520796534,
+      "per-cell within-condition r delta (ridge)": 0.014452459813893509,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.15764407367967823,
+      "per-cell within-condition r delta (ridge)": 0.01490983880821714,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.09181580080068427,
+      "per-cell within-condition r delta (ridge)": -0.02454184292893513,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0527522741094503,
+      "per-cell within-condition r delta (ridge)": 0.02211863628384403,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.06565292116042723,
+      "per-cell within-condition r delta (ridge)": 0.008711787953247563,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08983328992702971,
+      "per-cell within-condition r delta (ridge)": -0.026201073264281283,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.013146951827731207,
+      "per-cell within-condition r delta (ridge)": 0.02183884934387892,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.02199718270492601,
+      "per-cell within-condition r delta (ridge)": -0.0172564427252766,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.11526496059914962,
+      "per-cell within-condition r delta (ridge)": 0.019392233904039102,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.12335037646848851,
+      "per-cell within-condition r delta (ridge)": 0.010832982463862995,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.05388894777295092,
+      "per-cell within-condition r delta (ridge)": 0.02624333934670242,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.009249214034197595,
+      "per-cell within-condition r delta (ridge)": 0.0065097146105491666,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.020875554073980424,
+      "per-cell within-condition r delta (ridge)": 0.015507180060177927,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08479963437312818,
+      "per-cell within-condition r delta (ridge)": 0.013335730140335178,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.04310986240018905,
+      "per-cell within-condition r delta (ridge)": 0.014393890155504074,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.017145408210558655,
+      "per-cell within-condition r delta (ridge)": 0.009421365895284084,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.018946291438532326,
+      "per-cell within-condition r delta (ridge)": -0.04219324578895842,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.0627359686199641,
+      "per-cell within-condition r delta (ridge)": -0.05233524045372137,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1501382929382594,
+      "per-cell within-condition r delta (ridge)": 0.0051354590366028685,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.020250435445644033,
+      "per-cell within-condition r delta (ridge)": 0.02478533011281478,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.09133290469775066,
+      "per-cell within-condition r delta (ridge)": 0.01429744736010402,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.02927083400811642,
+      "per-cell within-condition r delta (ridge)": -0.014829801918948615,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.11308898344581317,
+      "per-cell within-condition r delta (ridge)": -0.003252829939776214,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.08513936452309097,
+      "per-cell within-condition r delta (ridge)": 0.005086084466517121,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1413431226594989,
+      "per-cell within-condition r delta (ridge)": -0.009650878436277932,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.06995715455296111,
+      "per-cell within-condition r delta (ridge)": -0.0010275259646651547,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.06604999751466124,
+      "per-cell within-condition r delta (ridge)": -0.0034804922703130514,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.051813284712606406,
+      "per-cell within-condition r delta (ridge)": -0.08495149414078276,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.01825028874920906,
+      "per-cell within-condition r delta (ridge)": 0.008237860179458212,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.09084742691405231,
+      "per-cell within-condition r delta (ridge)": -0.00027647050802831474,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.05258033290476402,
+      "per-cell within-condition r delta (ridge)": 0.04164666841100284,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.029956204339177422,
+      "per-cell within-condition r delta (ridge)": 0.033754999661399054,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.10048652309313108,
+      "per-cell within-condition r delta (ridge)": 0.028992156588252826,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.10656866562953475,
+      "per-cell within-condition r delta (ridge)": 0.0038948546969646003,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.15273213659716464,
+      "per-cell within-condition r delta (ridge)": 0.0016956817561870619,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.13118468455179463,
+      "per-cell within-condition r delta (ridge)": -0.01165251275634116,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0711549921908641,
+      "per-cell within-condition r delta (ridge)": -0.14252300751207952,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.012199286319556024,
+      "per-cell within-condition r delta (ridge)": -0.2748372373683762,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.10839303070924743,
+      "per-cell within-condition r delta (ridge)": 0.005944064745176558,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.00033432803307634207,
+      "per-cell within-condition r delta (ridge)": -0.060351845960321976,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.11126012713178611,
+      "per-cell within-condition r delta (ridge)": 0.015573421403700327,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.06282252002487554,
+      "per-cell within-condition r delta (ridge)": 0.04841892353277294,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.017229991816310186,
+      "per-cell within-condition r delta (ridge)": 0.01830737780476871,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.03807320764912561,
+      "per-cell within-condition r delta (ridge)": 0.06472679798262868,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.06351613147267951,
+      "per-cell within-condition r delta (ridge)": 0.11490608616610298,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0416904297980443,
+      "per-cell within-condition r delta (ridge)": 0.03041618496065318,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.04421996462291507,
+      "per-cell within-condition r delta (ridge)": 0.09242606599006875,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.13195202581884768,
+      "per-cell within-condition r delta (ridge)": -0.020694488729138427,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.12223811132143511,
+      "per-cell within-condition r delta (ridge)": 0.06470896877357263,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.14780725265584463,
+      "per-cell within-condition r delta (ridge)": -6.965771361899797e-05,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.13074582102643426,
+      "per-cell within-condition r delta (ridge)": 0.051400901984212155,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.06390628281943986,
+      "per-cell within-condition r delta (ridge)": 0.004923961911581176,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.07492161233295373,
+      "per-cell within-condition r delta (ridge)": 0.016835353237321937,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.15013644075127167,
+      "per-cell within-condition r delta (ridge)": 0.014192989609082107,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08920028926905427,
+      "per-cell within-condition r delta (ridge)": -0.12024844462381079,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.0694048605308786,
+      "per-cell within-condition r delta (ridge)": -0.3506051305892135,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.016204319313987636,
+      "per-cell within-condition r delta (ridge)": 0.030345337516345827,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.07288270020954911,
+      "per-cell within-condition r delta (ridge)": -0.06395136901766152,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.12915489211088022,
+      "per-cell within-condition r delta (ridge)": 0.05389920887207894,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.1288327668940293,
+      "per-cell within-condition r delta (ridge)": 0.04802527853579941,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.014151587253244446,
+      "per-cell within-condition r delta (ridge)": 0.12079628658162289,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.0952437232655263,
+      "per-cell within-condition r delta (ridge)": 0.09230856227985751,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.062093880271791205,
+      "per-cell within-condition r delta (ridge)": 0.10372305121509001,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.025350262061406698,
+      "per-cell within-condition r delta (ridge)": 0.07643996281059412,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.10343270945944585,
+      "per-cell within-condition r delta (ridge)": 0.13798415453716972,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.11411657090956015,
+      "per-cell within-condition r delta (ridge)": -0.016791296657461596,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.08272624954726723,
+      "per-cell within-condition r delta (ridge)": 0.13144647011721866,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.07022814590429977,
+      "per-cell within-condition r delta (ridge)": -0.0004330385228319411,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.0217302272719668,
+      "per-cell within-condition r delta (ridge)": 0.12074192769968695,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.04073882902478182,
+      "per-cell within-condition r delta (ridge)": 0.04955467618310422,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.026911350052075372,
+      "per-cell within-condition r delta (ridge)": 0.08705278780041237,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.04795091249754241,
+      "per-cell within-condition r delta (ridge)": 0.06571854305535674,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1329778172352355,
+      "per-cell within-condition r delta (ridge)": 0.048933276478522636,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.026941631305404917,
+      "per-cell within-condition r delta (ridge)": 0.04119665701633518,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.1466834643641944,
+      "per-cell within-condition r delta (ridge)": 0.008149891064290204,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.00192293784175393,
+      "per-cell within-condition r delta (ridge)": 0.011339633694868345,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.054444412053508695,
+      "per-cell within-condition r delta (ridge)": 0.006521922603418773,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.113752259562865,
+      "per-cell within-condition r delta (ridge)": 0.0077270636904100964,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": -0.12691105032878347,
+      "per-cell within-condition r delta (ridge)": 0.0057259030970706615,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.028046263096867863,
+      "per-cell within-condition r delta (ridge)": 0.004390121070690922,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8945897499318035,
+      "per-cell within-condition r delta (ridge)": -0.06771198909245682,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.136038437880575,
+      "per-cell within-condition r delta (ridge)": -0.026161952967837403,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0259395647041263,
+      "per-cell within-condition r delta (ridge)": 0.0028580183768107947,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9509983374511478,
+      "per-cell within-condition r delta (ridge)": 0.05108531438280764,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0290929572740533,
+      "per-cell within-condition r delta (ridge)": -0.05723728297428596,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8472972387295032,
+      "per-cell within-condition r delta (ridge)": 0.04917935821500374,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1467389482372625,
+      "per-cell within-condition r delta (ridge)": -0.039763435921866666,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.994337099821728,
+      "per-cell within-condition r delta (ridge)": -0.014928503119178357,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0904752727200915,
+      "per-cell within-condition r delta (ridge)": 0.056942082629023116,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8664735999751804,
+      "per-cell within-condition r delta (ridge)": -0.09800799922842668,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9957306658682114,
+      "per-cell within-condition r delta (ridge)": -0.006879941038328563,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9970262381934467,
+      "per-cell within-condition r delta (ridge)": 0.040687990878587266,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1401044655919945,
+      "per-cell within-condition r delta (ridge)": 0.02353386551651898,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0229529767603442,
+      "per-cell within-condition r delta (ridge)": 0.022041222076036704,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9915166083382252,
+      "per-cell within-condition r delta (ridge)": -0.0026932577201079083,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.925432212189406,
+      "per-cell within-condition r delta (ridge)": 0.08512684884671001,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9461020791496166,
+      "per-cell within-condition r delta (ridge)": -0.09528173307341692,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.006615168790892,
+      "per-cell within-condition r delta (ridge)": -0.0026411443293060666,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9804516672976149,
+      "per-cell within-condition r delta (ridge)": -0.04147717234446868,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8469158655617057,
+      "per-cell within-condition r delta (ridge)": -0.010580633402805462,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1044134157421945,
+      "per-cell within-condition r delta (ridge)": 0.025507383679705786,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1267714469887253,
+      "per-cell within-condition r delta (ridge)": 0.0003786821149538433,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8848797084795554,
+      "per-cell within-condition r delta (ridge)": -0.08645829854194781,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0172915659324957,
+      "per-cell within-condition r delta (ridge)": -0.07689249574107822,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8747442371633419,
+      "per-cell within-condition r delta (ridge)": -0.040201829420974666,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0551168297727398,
+      "per-cell within-condition r delta (ridge)": 0.06133258273155595,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9299948108284827,
+      "per-cell within-condition r delta (ridge)": -0.029514082245045675,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0510152431014086,
+      "per-cell within-condition r delta (ridge)": 0.04956769450149279,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0726382765718023,
+      "per-cell within-condition r delta (ridge)": 0.012365077133085526,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0859671974136502,
+      "per-cell within-condition r delta (ridge)": -0.006595425553861209,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8744771027058869,
+      "per-cell within-condition r delta (ridge)": 0.05752479079364467,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1331237904440346,
+      "per-cell within-condition r delta (ridge)": -0.06774708449747596,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9136684770863619,
+      "per-cell within-condition r delta (ridge)": -0.017264146824113584,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8519720179763776,
+      "per-cell within-condition r delta (ridge)": 0.12188955878120966,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0175527902052748,
+      "per-cell within-condition r delta (ridge)": 0.0008335381903399747,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9586951308359803,
+      "per-cell within-condition r delta (ridge)": 0.05493258566226128,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1055327178023722,
+      "per-cell within-condition r delta (ridge)": 0.040019821331068905,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0986404710605766,
+      "per-cell within-condition r delta (ridge)": 0.020145652392560776,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.941484445703269,
+      "per-cell within-condition r delta (ridge)": 0.022865302311762564,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1449278064223183,
+      "per-cell within-condition r delta (ridge)": -0.009896658450160217,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.933093708204838,
+      "per-cell within-condition r delta (ridge)": 0.005053005099357688,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0048182813541486,
+      "per-cell within-condition r delta (ridge)": 0.030627627102519102,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9219088289816328,
+      "per-cell within-condition r delta (ridge)": -0.035136037311315316,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1395339424156683,
+      "per-cell within-condition r delta (ridge)": -0.07088807188972629,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8926745016262458,
+      "per-cell within-condition r delta (ridge)": -0.03950100018618155,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8543713982055453,
+      "per-cell within-condition r delta (ridge)": -0.09405552941023496,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9792310592009721,
+      "per-cell within-condition r delta (ridge)": 0.010252261138026214,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.157560180497868,
+      "per-cell within-condition r delta (ridge)": 0.03896168974194582,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1253367252015725,
+      "per-cell within-condition r delta (ridge)": 0.02929160222171831,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0795545662262238,
+      "per-cell within-condition r delta (ridge)": -0.011790124104043176,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.125053597081128,
+      "per-cell within-condition r delta (ridge)": 0.06858589773711313,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1259029247033163,
+      "per-cell within-condition r delta (ridge)": 0.045977683666377084,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0060346753236638,
+      "per-cell within-condition r delta (ridge)": 0.012923200508432098,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9410972965858537,
+      "per-cell within-condition r delta (ridge)": 0.06900462182536005,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0870439782755161,
+      "per-cell within-condition r delta (ridge)": 0.04095421941859867,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0517316042136835,
+      "per-cell within-condition r delta (ridge)": 0.024468919967530978,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9595704732395872,
+      "per-cell within-condition r delta (ridge)": 0.013263523122556964,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8702293337796849,
+      "per-cell within-condition r delta (ridge)": -0.01992550457081399,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0789726756316884,
+      "per-cell within-condition r delta (ridge)": 0.024013546114949325,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9239873650953166,
+      "per-cell within-condition r delta (ridge)": 0.013667808213952526,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1397802081708093,
+      "per-cell within-condition r delta (ridge)": 0.01386528592824654,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9171105840018191,
+      "per-cell within-condition r delta (ridge)": -0.016584045640247846,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8792825383716756,
+      "per-cell within-condition r delta (ridge)": 0.018909426939066276,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1059560550799699,
+      "per-cell within-condition r delta (ridge)": 0.009223394675314633,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8890509813198381,
+      "per-cell within-condition r delta (ridge)": 0.01987827643544582,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8973658586104765,
+      "per-cell within-condition r delta (ridge)": 0.0078010722516120845,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0318024932866698,
+      "per-cell within-condition r delta (ridge)": -0.090626052398825,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1198598530679886,
+      "per-cell within-condition r delta (ridge)": -0.19260065829689157,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9028590930286634,
+      "per-cell within-condition r delta (ridge)": -0.025847063993251956,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9393035753280303,
+      "per-cell within-condition r delta (ridge)": -0.03283522460856231,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0887695482371769,
+      "per-cell within-condition r delta (ridge)": -0.007972987122019382,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1509844563395095,
+      "per-cell within-condition r delta (ridge)": -0.046646769347913425,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0002371795847496,
+      "per-cell within-condition r delta (ridge)": 0.013465361176409008,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8860472008164002,
+      "per-cell within-condition r delta (ridge)": -0.0353097022738566,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8444596120666245,
+      "per-cell within-condition r delta (ridge)": 0.010288398335773052,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9134899295996337,
+      "per-cell within-condition r delta (ridge)": 0.02589534761586329,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8821831096916868,
+      "per-cell within-condition r delta (ridge)": 0.034042533793670365,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0568507755561143,
+      "per-cell within-condition r delta (ridge)": -0.003307555899173864,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8789864014811299,
+      "per-cell within-condition r delta (ridge)": 0.04138763857283123,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0020255781186025,
+      "per-cell within-condition r delta (ridge)": 0.02972703427974191,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0621639794057236,
+      "per-cell within-condition r delta (ridge)": 0.031027580571021063,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0259573149506886,
+      "per-cell within-condition r delta (ridge)": 0.03919830929262191,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9039282085312185,
+      "per-cell within-condition r delta (ridge)": 0.029983333444499327,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.097319848378324,
+      "per-cell within-condition r delta (ridge)": 0.015465552662321302,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0689302814770565,
+      "per-cell within-condition r delta (ridge)": -0.008276069442714085,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0764748812529734,
+      "per-cell within-condition r delta (ridge)": -0.01624864648752744,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8819384804983402,
+      "per-cell within-condition r delta (ridge)": -0.042056716776500525,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8796012171681102,
+      "per-cell within-condition r delta (ridge)": -0.22451332443850658,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1368200163220825,
+      "per-cell within-condition r delta (ridge)": 0.03670368844979244,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.967225022023981,
+      "per-cell within-condition r delta (ridge)": -0.09988106753291323,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9363035813699008,
+      "per-cell within-condition r delta (ridge)": 0.03439607989419974,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9963468945124907,
+      "per-cell within-condition r delta (ridge)": 0.07429575694886126,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0521165480843464,
+      "per-cell within-condition r delta (ridge)": 0.10067526041052183,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1457994422550304,
+      "per-cell within-condition r delta (ridge)": 0.15121695129942694,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9316627926022576,
+      "per-cell within-condition r delta (ridge)": 0.16541826003291338,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1359386973798486,
+      "per-cell within-condition r delta (ridge)": 0.050752840098223284,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.847955037243602,
+      "per-cell within-condition r delta (ridge)": 0.10652049269929509,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.017663373544584,
+      "per-cell within-condition r delta (ridge)": -0.011157287525335069,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0428720357379473,
+      "per-cell within-condition r delta (ridge)": 0.06088932613582776,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.873887169200241,
+      "per-cell within-condition r delta (ridge)": -0.03888473104403653,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.884908671060452,
+      "per-cell within-condition r delta (ridge)": 0.10639767525649807,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9741165821812172,
+      "per-cell within-condition r delta (ridge)": 0.0025745435804139793,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.149194211885818,
+      "per-cell within-condition r delta (ridge)": 0.01941587315970933,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0307336170349992,
+      "per-cell within-condition r delta (ridge)": 0.017227433868527875,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1385674309120677,
+      "per-cell within-condition r delta (ridge)": -0.10473650035716674,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0973954929961507,
+      "per-cell within-condition r delta (ridge)": -0.37878704797623763,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9895621124976933,
+      "per-cell within-condition r delta (ridge)": 0.05844614702041173,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0911243037607,
+      "per-cell within-condition r delta (ridge)": -0.120038613678773,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.845707770872636,
+      "per-cell within-condition r delta (ridge)": 0.045588025137038746,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.8749260789650352,
+      "per-cell within-condition r delta (ridge)": 0.0613890314762644,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1054171567624755,
+      "per-cell within-condition r delta (ridge)": 0.0879875515705123,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0949814682640517,
+      "per-cell within-condition r delta (ridge)": 0.10407888018582662,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9144450374292588,
+      "per-cell within-condition r delta (ridge)": 0.15895335334852018,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0098462689916972,
+      "per-cell within-condition r delta (ridge)": 0.06706691232564749,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0339250626240035,
+      "per-cell within-condition r delta (ridge)": 0.049328665910995995,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1176764652083235,
+      "per-cell within-condition r delta (ridge)": -0.061248297536816126,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0329942903483922,
+      "per-cell within-condition r delta (ridge)": 0.1133776916860863,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9720229021675777,
+      "per-cell within-condition r delta (ridge)": -0.019497736768774337,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9597388938902984,
+      "per-cell within-condition r delta (ridge)": 0.13715968503379483,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9762822676395232,
+      "per-cell within-condition r delta (ridge)": 0.007082461414049612,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0486179281855916,
+      "per-cell within-condition r delta (ridge)": 0.07520229254715138,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.117597002160744,
+      "per-cell within-condition r delta (ridge)": 0.05529658644358548,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.985247002264416,
+      "per-cell within-condition r delta (ridge)": 0.04413351224878048,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.9193086601444346,
+      "per-cell within-condition r delta (ridge)": 0.02305336427779786,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.915731956159226,
+      "per-cell within-condition r delta (ridge)": 0.008741559318796666,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0787245696779029,
+      "per-cell within-condition r delta (ridge)": -0.0017222820605822253,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.1013020042956514,
+      "per-cell within-condition r delta (ridge)": 0.0009004412544409979,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.87368898555332,
+      "per-cell within-condition r delta (ridge)": 0.001170818920510741,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 0.861298834225657,
+      "per-cell within-condition r delta (ridge)": 0.0058608068129164526,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.0302187724020646,
+      "per-cell within-condition r delta (ridge)": 0.004134806862227114,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8867754381416635,
+      "per-cell within-condition r delta (ridge)": -0.061883767093574404,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1038925409460294,
+      "per-cell within-condition r delta (ridge)": 0.06734647867733409,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.939307095655704,
+      "per-cell within-condition r delta (ridge)": -0.03536452633529058,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8860390185507656,
+      "per-cell within-condition r delta (ridge)": 0.05690747706694821,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.134710551195984,
+      "per-cell within-condition r delta (ridge)": -0.06933478061499357,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.892970151275289,
+      "per-cell within-condition r delta (ridge)": -0.005422112050953554,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9311104263481393,
+      "per-cell within-condition r delta (ridge)": -0.04383185176272353,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8891562864614588,
+      "per-cell within-condition r delta (ridge)": 0.01456835333583019,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8769568203729137,
+      "per-cell within-condition r delta (ridge)": -0.01709268923967705,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8467673652276608,
+      "per-cell within-condition r delta (ridge)": 0.009998601596889423,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8577265309325632,
+      "per-cell within-condition r delta (ridge)": -0.01240208290900643,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8958852706994729,
+      "per-cell within-condition r delta (ridge)": 0.020386056648374673,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.857082218440696,
+      "per-cell within-condition r delta (ridge)": 0.01770798150109043,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0291660211555107,
+      "per-cell within-condition r delta (ridge)": 0.023803848140790118,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.057828648575842,
+      "per-cell within-condition r delta (ridge)": 0.005108691379198435,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.965961746186249,
+      "per-cell within-condition r delta (ridge)": 0.08291910162122401,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9417571510246558,
+      "per-cell within-condition r delta (ridge)": -0.06547287706943167,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0014483958471136,
+      "per-cell within-condition r delta (ridge)": -0.004472579021389644,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1200015815150746,
+      "per-cell within-condition r delta (ridge)": -0.02282395291933359,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.112362120583106,
+      "per-cell within-condition r delta (ridge)": -0.002828237654105892,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8539120198440935,
+      "per-cell within-condition r delta (ridge)": 0.0216895145731138,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8980794910708878,
+      "per-cell within-condition r delta (ridge)": 0.0018692173009174917,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9157583587534068,
+      "per-cell within-condition r delta (ridge)": -0.11043849646066052,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9198040242663077,
+      "per-cell within-condition r delta (ridge)": 0.006029131457274406,
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.022794448557687,
+      "per-cell within-condition r delta (ridge)": -0.06785815462423486,
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9732039762250215,
+      "per-cell within-condition r delta (ridge)": 0.03638109590879669,
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.85576131837683,
+      "per-cell within-condition r delta (ridge)": -0.020513336557695022,
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.959556524307063,
+      "per-cell within-condition r delta (ridge)": 0.020366035365047996,
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.007600943589644,
+      "per-cell within-condition r delta (ridge)": 0.02166215402552105,
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.872535008929189,
+      "per-cell within-condition r delta (ridge)": 0.06697639250627027,
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.106706737212339,
+      "per-cell within-condition r delta (ridge)": 0.009989727770589013,
+      "_kind": "scatter",
+      "_group": 294
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8566277972688334,
+      "per-cell within-condition r delta (ridge)": -0.008076316661601468,
+      "_kind": "scatter",
+      "_group": 295
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.13594939808578,
+      "per-cell within-condition r delta (ridge)": -0.022384570568593498,
+      "_kind": "scatter",
+      "_group": 296
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8717162053055603,
+      "per-cell within-condition r delta (ridge)": 0.08865723517745594,
+      "_kind": "scatter",
+      "_group": 297
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.109943984511281,
+      "per-cell within-condition r delta (ridge)": -0.01679835802336302,
+      "_kind": "scatter",
+      "_group": 298
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1288490060568375,
+      "per-cell within-condition r delta (ridge)": 0.05807985104398822,
+      "_kind": "scatter",
+      "_group": 299
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1534626177877096,
+      "per-cell within-condition r delta (ridge)": 0.04493763860330425,
+      "_kind": "scatter",
+      "_group": 300
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.09664828168755,
+      "per-cell within-condition r delta (ridge)": 0.0355736840065643,
+      "_kind": "scatter",
+      "_group": 301
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0894328130468254,
+      "per-cell within-condition r delta (ridge)": 0.055319606225512546,
+      "_kind": "scatter",
+      "_group": 302
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.045594648318575,
+      "per-cell within-condition r delta (ridge)": -0.08436331434136596,
+      "_kind": "scatter",
+      "_group": 303
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.089278833465001,
+      "per-cell within-condition r delta (ridge)": 0.01819697698865988,
+      "_kind": "scatter",
+      "_group": 304
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.883056706692207,
+      "per-cell within-condition r delta (ridge)": 0.08268182337287036,
+      "_kind": "scatter",
+      "_group": 305
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0115417715032438,
+      "per-cell within-condition r delta (ridge)": -0.016668032714744152,
+      "_kind": "scatter",
+      "_group": 306
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0045513184609325,
+      "per-cell within-condition r delta (ridge)": -0.07300693699226907,
+      "_kind": "scatter",
+      "_group": 307
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1144230861192184,
+      "per-cell within-condition r delta (ridge)": -0.024888786243717237,
+      "_kind": "scatter",
+      "_group": 308
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9880957969899251,
+      "per-cell within-condition r delta (ridge)": -0.08023188159310167,
+      "_kind": "scatter",
+      "_group": 309
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9632286387521132,
+      "per-cell within-condition r delta (ridge)": 0.0364014539876262,
+      "_kind": "scatter",
+      "_group": 310
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.044660246795875,
+      "per-cell within-condition r delta (ridge)": 0.057421738052252716,
+      "_kind": "scatter",
+      "_group": 311
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9252682616002708,
+      "per-cell within-condition r delta (ridge)": 0.045848294705407425,
+      "_kind": "scatter",
+      "_group": 312
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8847258915052663,
+      "per-cell within-condition r delta (ridge)": 0.03546890177030995,
+      "_kind": "scatter",
+      "_group": 313
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9929207276875986,
+      "per-cell within-condition r delta (ridge)": 0.029886683727814667,
+      "_kind": "scatter",
+      "_group": 314
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9734045979503632,
+      "per-cell within-condition r delta (ridge)": 0.07056567491696059,
+      "_kind": "scatter",
+      "_group": 315
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9144223809692396,
+      "per-cell within-condition r delta (ridge)": -0.008019022268851872,
+      "_kind": "scatter",
+      "_group": 316
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.957603779236841,
+      "per-cell within-condition r delta (ridge)": 0.06102368358797827,
+      "_kind": "scatter",
+      "_group": 317
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9572455839443992,
+      "per-cell within-condition r delta (ridge)": 0.047251788471446954,
+      "_kind": "scatter",
+      "_group": 318
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9447985806120145,
+      "per-cell within-condition r delta (ridge)": 0.030764581872127827,
+      "_kind": "scatter",
+      "_group": 319
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9614285055126173,
+      "per-cell within-condition r delta (ridge)": 0.032109258383581474,
+      "_kind": "scatter",
+      "_group": 320
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0594378705459024,
+      "per-cell within-condition r delta (ridge)": -0.01591613747859466,
+      "_kind": "scatter",
+      "_group": 321
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9350004718628113,
+      "per-cell within-condition r delta (ridge)": 0.03692809634230032,
+      "_kind": "scatter",
+      "_group": 322
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.143634536548909,
+      "per-cell within-condition r delta (ridge)": 0.03325406602359715,
+      "_kind": "scatter",
+      "_group": 323
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.133231366252217,
+      "per-cell within-condition r delta (ridge)": 0.02017890468118344,
+      "_kind": "scatter",
+      "_group": 324
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9938913370560252,
+      "per-cell within-condition r delta (ridge)": -0.011082390307703194,
+      "_kind": "scatter",
+      "_group": 325
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9450755856015005,
+      "per-cell within-condition r delta (ridge)": 0.01662420389816688,
+      "_kind": "scatter",
+      "_group": 326
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.011339132745601,
+      "per-cell within-condition r delta (ridge)": 0.01806878654293731,
+      "_kind": "scatter",
+      "_group": 327
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.11153935640756,
+      "per-cell within-condition r delta (ridge)": 0.02279619759589191,
+      "_kind": "scatter",
+      "_group": 328
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0488279489792327,
+      "per-cell within-condition r delta (ridge)": 0.017551058128031927,
+      "_kind": "scatter",
+      "_group": 329
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0974053849430647,
+      "per-cell within-condition r delta (ridge)": -0.0789722882787347,
+      "_kind": "scatter",
+      "_group": 330
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.010471128341037,
+      "per-cell within-condition r delta (ridge)": -0.2367745678692647,
+      "_kind": "scatter",
+      "_group": 331
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0425336413656385,
+      "per-cell within-condition r delta (ridge)": -0.0002818174744741442,
+      "_kind": "scatter",
+      "_group": 332
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9322097965383878,
+      "per-cell within-condition r delta (ridge)": 0.01667911648622375,
+      "_kind": "scatter",
+      "_group": 333
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.075165811939293,
+      "per-cell within-condition r delta (ridge)": -0.006764995120337125,
+      "_kind": "scatter",
+      "_group": 334
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9047694698002298,
+      "per-cell within-condition r delta (ridge)": -0.06113917007882799,
+      "_kind": "scatter",
+      "_group": 335
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0623354012219193,
+      "per-cell within-condition r delta (ridge)": 0.0009284035672581514,
+      "_kind": "scatter",
+      "_group": 336
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1154301018642863,
+      "per-cell within-condition r delta (ridge)": -0.039809637680569804,
+      "_kind": "scatter",
+      "_group": 337
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8822729079364942,
+      "per-cell within-condition r delta (ridge)": 0.026353400871215904,
+      "_kind": "scatter",
+      "_group": 338
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0366015169734144,
+      "per-cell within-condition r delta (ridge)": 0.034872457626428155,
+      "_kind": "scatter",
+      "_group": 339
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.870430639433579,
+      "per-cell within-condition r delta (ridge)": 0.0364325732126603,
+      "_kind": "scatter",
+      "_group": 340
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0722290010468565,
+      "per-cell within-condition r delta (ridge)": 0.006899309064720166,
+      "_kind": "scatter",
+      "_group": 341
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8670378300235264,
+      "per-cell within-condition r delta (ridge)": 0.009689675766387601,
+      "_kind": "scatter",
+      "_group": 342
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1395007432642004,
+      "per-cell within-condition r delta (ridge)": 0.04637109370245876,
+      "_kind": "scatter",
+      "_group": 343
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8839705376120968,
+      "per-cell within-condition r delta (ridge)": 0.004619928349407276,
+      "_kind": "scatter",
+      "_group": 344
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.146841678690906,
+      "per-cell within-condition r delta (ridge)": 0.025606524479484805,
+      "_kind": "scatter",
+      "_group": 345
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.096282936347231,
+      "per-cell within-condition r delta (ridge)": 0.01997086820390359,
+      "_kind": "scatter",
+      "_group": 346
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0299782414292333,
+      "per-cell within-condition r delta (ridge)": 0.012710153989432538,
+      "_kind": "scatter",
+      "_group": 347
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.090439713481455,
+      "per-cell within-condition r delta (ridge)": -0.006811255375228198,
+      "_kind": "scatter",
+      "_group": 348
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0944367484745876,
+      "per-cell within-condition r delta (ridge)": -0.02507335837736413,
+      "_kind": "scatter",
+      "_group": 349
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.142728660101546,
+      "per-cell within-condition r delta (ridge)": -0.10826820045083729,
+      "_kind": "scatter",
+      "_group": 350
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.92108267322854,
+      "per-cell within-condition r delta (ridge)": -0.2265940560403331,
+      "_kind": "scatter",
+      "_group": 351
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.028824286514659,
+      "per-cell within-condition r delta (ridge)": 0.002522310784743631,
+      "_kind": "scatter",
+      "_group": 352
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8704157432206083,
+      "per-cell within-condition r delta (ridge)": -0.17315118355472106,
+      "_kind": "scatter",
+      "_group": 353
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0371730240077186,
+      "per-cell within-condition r delta (ridge)": 0.025091985181162513,
+      "_kind": "scatter",
+      "_group": 354
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8948132173096923,
+      "per-cell within-condition r delta (ridge)": 0.0983231590184987,
+      "_kind": "scatter",
+      "_group": 355
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0207841956711814,
+      "per-cell within-condition r delta (ridge)": 0.13588678268808269,
+      "_kind": "scatter",
+      "_group": 356
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.023177764490832,
+      "per-cell within-condition r delta (ridge)": 0.20437078914658177,
+      "_kind": "scatter",
+      "_group": 357
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9891152489539927,
+      "per-cell within-condition r delta (ridge)": 0.11517679719036156,
+      "_kind": "scatter",
+      "_group": 358
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.007242168164199,
+      "per-cell within-condition r delta (ridge)": 0.07119640566268909,
+      "_kind": "scatter",
+      "_group": 359
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.084455484802108,
+      "per-cell within-condition r delta (ridge)": 0.08463514778191983,
+      "_kind": "scatter",
+      "_group": 360
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.095758309283861,
+      "per-cell within-condition r delta (ridge)": -0.013110492915646033,
+      "_kind": "scatter",
+      "_group": 361
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9974890289841374,
+      "per-cell within-condition r delta (ridge)": 0.017506821570880432,
+      "_kind": "scatter",
+      "_group": 362
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.031869901287236,
+      "per-cell within-condition r delta (ridge)": -0.09687167851080619,
+      "_kind": "scatter",
+      "_group": 363
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1379955954208327,
+      "per-cell within-condition r delta (ridge)": 0.08880227711016198,
+      "_kind": "scatter",
+      "_group": 364
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8783147483203593,
+      "per-cell within-condition r delta (ridge)": -0.0187884908949425,
+      "_kind": "scatter",
+      "_group": 365
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8774731410880354,
+      "per-cell within-condition r delta (ridge)": 0.01609633853671083,
+      "_kind": "scatter",
+      "_group": 366
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8680668838114458,
+      "per-cell within-condition r delta (ridge)": 0.018841900619402607,
+      "_kind": "scatter",
+      "_group": 367
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.050516251212969,
+      "per-cell within-condition r delta (ridge)": -0.1785126022457051,
+      "_kind": "scatter",
+      "_group": 368
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9739546562529213,
+      "per-cell within-condition r delta (ridge)": -0.30931771991014373,
+      "_kind": "scatter",
+      "_group": 369
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0877828531653897,
+      "per-cell within-condition r delta (ridge)": 0.05473565243028283,
+      "_kind": "scatter",
+      "_group": 370
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0547940522587496,
+      "per-cell within-condition r delta (ridge)": -0.11789964721015983,
+      "_kind": "scatter",
+      "_group": 371
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9467640826650363,
+      "per-cell within-condition r delta (ridge)": 0.06659953378496725,
+      "_kind": "scatter",
+      "_group": 372
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1274772951556913,
+      "per-cell within-condition r delta (ridge)": 0.09192132193953384,
+      "_kind": "scatter",
+      "_group": 373
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.084010287062609,
+      "per-cell within-condition r delta (ridge)": 0.12358855541289177,
+      "_kind": "scatter",
+      "_group": 374
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9265711810912562,
+      "per-cell within-condition r delta (ridge)": 0.12209899197357821,
+      "_kind": "scatter",
+      "_group": 375
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9565414456870573,
+      "per-cell within-condition r delta (ridge)": 0.09409510761885215,
+      "_kind": "scatter",
+      "_group": 376
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.940620793665364,
+      "per-cell within-condition r delta (ridge)": 0.08392916461164468,
+      "_kind": "scatter",
+      "_group": 377
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.89043572756,
+      "per-cell within-condition r delta (ridge)": 0.025060921935482094,
+      "_kind": "scatter",
+      "_group": 378
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8872906792135014,
+      "per-cell within-condition r delta (ridge)": -0.04734149555011827,
+      "_kind": "scatter",
+      "_group": 379
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.139560788280238,
+      "per-cell within-condition r delta (ridge)": 0.08561654546369507,
+      "_kind": "scatter",
+      "_group": 380
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.980129291903601,
+      "per-cell within-condition r delta (ridge)": -0.0802920167040691,
+      "_kind": "scatter",
+      "_group": 381
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.962662343288771,
+      "per-cell within-condition r delta (ridge)": 0.147787393998707,
+      "_kind": "scatter",
+      "_group": 382
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.073499426776761,
+      "per-cell within-condition r delta (ridge)": 0.011491010294222448,
+      "_kind": "scatter",
+      "_group": 383
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.016957780880928,
+      "per-cell within-condition r delta (ridge)": 0.09037359928536581,
+      "_kind": "scatter",
+      "_group": 384
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1395647957883077,
+      "per-cell within-condition r delta (ridge)": 0.05912920725303683,
+      "_kind": "scatter",
+      "_group": 385
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.0896964780510054,
+      "per-cell within-condition r delta (ridge)": 0.04316787597250016,
+      "_kind": "scatter",
+      "_group": 386
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9933982605198528,
+      "per-cell within-condition r delta (ridge)": 0.026719205377618127,
+      "_kind": "scatter",
+      "_group": 387
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.9604350315138643,
+      "per-cell within-condition r delta (ridge)": 0.009669368121845934,
+      "_kind": "scatter",
+      "_group": 388
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.155722094375783,
+      "per-cell within-condition r delta (ridge)": 0.005592035151876451,
+      "_kind": "scatter",
+      "_group": 389
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.069683275521166,
+      "per-cell within-condition r delta (ridge)": 0.0035205000779845452,
+      "_kind": "scatter",
+      "_group": 390
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.144382291201229,
+      "per-cell within-condition r delta (ridge)": 0.002087027083005122,
+      "_kind": "scatter",
+      "_group": 391
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 1.8779131447094533,
+      "per-cell within-condition r delta (ridge)": 0.009027592376686155,
+      "_kind": "scatter",
+      "_group": 392
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.1121707773410505,
+      "per-cell within-condition r delta (ridge)": 0.00793661431581727,
+      "_kind": "scatter",
+      "_group": 393
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0438636428771866,
+      "per-cell within-condition r delta (ridge)": -0.05992360716692258,
+      "_kind": "scatter",
+      "_group": 394
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.879014937067236,
+      "per-cell within-condition r delta (ridge)": 0.06458951321222563,
+      "_kind": "scatter",
+      "_group": 395
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.028242559990151,
+      "per-cell within-condition r delta (ridge)": -0.053786275945634815,
+      "_kind": "scatter",
+      "_group": 396
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0595508368337434,
+      "per-cell within-condition r delta (ridge)": 0.05149560555201099,
+      "_kind": "scatter",
+      "_group": 397
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.843936859484353,
+      "per-cell within-condition r delta (ridge)": -0.08382415066536808,
+      "_kind": "scatter",
+      "_group": 398
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9853817477893587,
+      "per-cell within-condition r delta (ridge)": -0.0001715852232966053,
+      "_kind": "scatter",
+      "_group": 399
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.104127843582823,
+      "per-cell within-condition r delta (ridge)": -0.04146844819201822,
+      "_kind": "scatter",
+      "_group": 400
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9345148881101086,
+      "per-cell within-condition r delta (ridge)": 0.025280187921528127,
+      "_kind": "scatter",
+      "_group": 401
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9867353861755364,
+      "per-cell within-condition r delta (ridge)": 0.03515170271100013,
+      "_kind": "scatter",
+      "_group": 402
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.981540520661726,
+      "per-cell within-condition r delta (ridge)": 0.0032814030158933027,
+      "_kind": "scatter",
+      "_group": 403
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.936616765261597,
+      "per-cell within-condition r delta (ridge)": 0.00230055350974814,
+      "_kind": "scatter",
+      "_group": 404
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1339014065649775,
+      "per-cell within-condition r delta (ridge)": 0.007540147191497981,
+      "_kind": "scatter",
+      "_group": 405
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.090014091338085,
+      "per-cell within-condition r delta (ridge)": 0.02520134783483166,
+      "_kind": "scatter",
+      "_group": 406
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8753882915187554,
+      "per-cell within-condition r delta (ridge)": -0.004148344261281411,
+      "_kind": "scatter",
+      "_group": 407
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1590510905080236,
+      "per-cell within-condition r delta (ridge)": 0.032813848870272264,
+      "_kind": "scatter",
+      "_group": 408
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1213440077784784,
+      "per-cell within-condition r delta (ridge)": 0.07894917809301932,
+      "_kind": "scatter",
+      "_group": 409
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9308507001164923,
+      "per-cell within-condition r delta (ridge)": -0.05410886033470458,
+      "_kind": "scatter",
+      "_group": 410
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1078069054915,
+      "per-cell within-condition r delta (ridge)": 0.012551391893885155,
+      "_kind": "scatter",
+      "_group": 411
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8740542501988426,
+      "per-cell within-condition r delta (ridge)": -0.020190035141535168,
+      "_kind": "scatter",
+      "_group": 412
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1597135137517562,
+      "per-cell within-condition r delta (ridge)": -0.005277342498868021,
+      "_kind": "scatter",
+      "_group": 413
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.053019115554092,
+      "per-cell within-condition r delta (ridge)": 0.026954692994611062,
+      "_kind": "scatter",
+      "_group": 414
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.048040004978815,
+      "per-cell within-condition r delta (ridge)": -0.0054944572393730295,
+      "_kind": "scatter",
+      "_group": 415
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8689410326349223,
+      "per-cell within-condition r delta (ridge)": -0.10441345599528862,
+      "_kind": "scatter",
+      "_group": 416
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.12705068764692,
+      "per-cell within-condition r delta (ridge)": 0.02888501322600978,
+      "_kind": "scatter",
+      "_group": 417
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8492798410254303,
+      "per-cell within-condition r delta (ridge)": -0.06041324493626027,
+      "_kind": "scatter",
+      "_group": 418
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9170649785731673,
+      "per-cell within-condition r delta (ridge)": 0.03242369659325378,
+      "_kind": "scatter",
+      "_group": 419
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.885767000053323,
+      "per-cell within-condition r delta (ridge)": -0.009253130800005172,
+      "_kind": "scatter",
+      "_group": 420
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.08856574102151,
+      "per-cell within-condition r delta (ridge)": 0.020777698927171018,
+      "_kind": "scatter",
+      "_group": 421
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9034253527081275,
+      "per-cell within-condition r delta (ridge)": 0.038824831538578186,
+      "_kind": "scatter",
+      "_group": 422
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1314042326818834,
+      "per-cell within-condition r delta (ridge)": 0.10300808995535257,
+      "_kind": "scatter",
+      "_group": 423
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.050006092584797,
+      "per-cell within-condition r delta (ridge)": 0.04582877891097423,
+      "_kind": "scatter",
+      "_group": 424
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.851572067358303,
+      "per-cell within-condition r delta (ridge)": -0.01844842451630907,
+      "_kind": "scatter",
+      "_group": 425
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.841737546921184,
+      "per-cell within-condition r delta (ridge)": -0.02207754738661854,
+      "_kind": "scatter",
+      "_group": 426
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.856530533444608,
+      "per-cell within-condition r delta (ridge)": 0.11067160487566075,
+      "_kind": "scatter",
+      "_group": 427
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.033896056847273,
+      "per-cell within-condition r delta (ridge)": 0.0036919723985805314,
+      "_kind": "scatter",
+      "_group": 428
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.096474179475013,
+      "per-cell within-condition r delta (ridge)": 0.08238746683945147,
+      "_kind": "scatter",
+      "_group": 429
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.916336902600764,
+      "per-cell within-condition r delta (ridge)": 0.06242428172531032,
+      "_kind": "scatter",
+      "_group": 430
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1118108297353833,
+      "per-cell within-condition r delta (ridge)": 0.04184028945838042,
+      "_kind": "scatter",
+      "_group": 431
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8583142208490435,
+      "per-cell within-condition r delta (ridge)": 0.05255983326372057,
+      "_kind": "scatter",
+      "_group": 432
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0963084331653365,
+      "per-cell within-condition r delta (ridge)": -0.08760216044292454,
+      "_kind": "scatter",
+      "_group": 433
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1368945376551296,
+      "per-cell within-condition r delta (ridge)": 0.008304127208991346,
+      "_kind": "scatter",
+      "_group": 434
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0870746877134017,
+      "per-cell within-condition r delta (ridge)": 0.07852781608336815,
+      "_kind": "scatter",
+      "_group": 435
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.063398650873164,
+      "per-cell within-condition r delta (ridge)": -0.015382807899432416,
+      "_kind": "scatter",
+      "_group": 436
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1081536699697225,
+      "per-cell within-condition r delta (ridge)": -0.08030336097968979,
+      "_kind": "scatter",
+      "_group": 437
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8528484158550613,
+      "per-cell within-condition r delta (ridge)": -0.03545640600963976,
+      "_kind": "scatter",
+      "_group": 438
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.904570275430098,
+      "per-cell within-condition r delta (ridge)": -0.07343261059670386,
+      "_kind": "scatter",
+      "_group": 439
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.879975577377806,
+      "per-cell within-condition r delta (ridge)": 0.03379087581785925,
+      "_kind": "scatter",
+      "_group": 440
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.001449916861756,
+      "per-cell within-condition r delta (ridge)": 0.08095683099066957,
+      "_kind": "scatter",
+      "_group": 441
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0784602010652304,
+      "per-cell within-condition r delta (ridge)": 0.03490054849117834,
+      "_kind": "scatter",
+      "_group": 442
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0416037902644475,
+      "per-cell within-condition r delta (ridge)": 0.03337035485318002,
+      "_kind": "scatter",
+      "_group": 443
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1123619519238193,
+      "per-cell within-condition r delta (ridge)": 0.018505596156595888,
+      "_kind": "scatter",
+      "_group": 444
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.889668157581149,
+      "per-cell within-condition r delta (ridge)": 0.05529569703531348,
+      "_kind": "scatter",
+      "_group": 445
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0750787494192515,
+      "per-cell within-condition r delta (ridge)": -0.007687102286488723,
+      "_kind": "scatter",
+      "_group": 446
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9017732770780493,
+      "per-cell within-condition r delta (ridge)": 0.06326324739357403,
+      "_kind": "scatter",
+      "_group": 447
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9266428004216962,
+      "per-cell within-condition r delta (ridge)": 0.07235003283366226,
+      "_kind": "scatter",
+      "_group": 448
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0671695031300175,
+      "per-cell within-condition r delta (ridge)": 0.03305002716339456,
+      "_kind": "scatter",
+      "_group": 449
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.153665531167578,
+      "per-cell within-condition r delta (ridge)": 0.04471168282034621,
+      "_kind": "scatter",
+      "_group": 450
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0356939539126624,
+      "per-cell within-condition r delta (ridge)": -0.025187324001759936,
+      "_kind": "scatter",
+      "_group": 451
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8574401007972146,
+      "per-cell within-condition r delta (ridge)": 0.04120595622302603,
+      "_kind": "scatter",
+      "_group": 452
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0372188703768104,
+      "per-cell within-condition r delta (ridge)": 0.03871997580746078,
+      "_kind": "scatter",
+      "_group": 453
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8535521765056533,
+      "per-cell within-condition r delta (ridge)": 0.01660895087599268,
+      "_kind": "scatter",
+      "_group": 454
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1229266276373817,
+      "per-cell within-condition r delta (ridge)": -0.00488659787323098,
+      "_kind": "scatter",
+      "_group": 455
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0670650512321984,
+      "per-cell within-condition r delta (ridge)": 0.014415152406211829,
+      "_kind": "scatter",
+      "_group": 456
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.895400910855201,
+      "per-cell within-condition r delta (ridge)": 0.019439890423562645,
+      "_kind": "scatter",
+      "_group": 457
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8693507218637433,
+      "per-cell within-condition r delta (ridge)": 0.01984366325425302,
+      "_kind": "scatter",
+      "_group": 458
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.898730633241702,
+      "per-cell within-condition r delta (ridge)": 0.016519512401628078,
+      "_kind": "scatter",
+      "_group": 459
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1536086974573414,
+      "per-cell within-condition r delta (ridge)": -0.08644526987703538,
+      "_kind": "scatter",
+      "_group": 460
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9867394055867167,
+      "per-cell within-condition r delta (ridge)": -0.24541716805342317,
+      "_kind": "scatter",
+      "_group": 461
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0909059034692508,
+      "per-cell within-condition r delta (ridge)": -0.004093162364235542,
+      "_kind": "scatter",
+      "_group": 462
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0436506694744887,
+      "per-cell within-condition r delta (ridge)": 0.00890245072686767,
+      "_kind": "scatter",
+      "_group": 463
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.023172207986764,
+      "per-cell within-condition r delta (ridge)": -0.005684593442395747,
+      "_kind": "scatter",
+      "_group": 464
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.886441681492816,
+      "per-cell within-condition r delta (ridge)": -0.06978364967616194,
+      "_kind": "scatter",
+      "_group": 465
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1427278251385906,
+      "per-cell within-condition r delta (ridge)": -0.014270737290770663,
+      "_kind": "scatter",
+      "_group": 466
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.93642964240471,
+      "per-cell within-condition r delta (ridge)": -0.03898881672023849,
+      "_kind": "scatter",
+      "_group": 467
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0249655090584135,
+      "per-cell within-condition r delta (ridge)": 0.007951062410745668,
+      "_kind": "scatter",
+      "_group": 468
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.063928302268501,
+      "per-cell within-condition r delta (ridge)": 0.042694448285499925,
+      "_kind": "scatter",
+      "_group": 469
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0477546096784986,
+      "per-cell within-condition r delta (ridge)": 0.01197776771495479,
+      "_kind": "scatter",
+      "_group": 470
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.140990211102566,
+      "per-cell within-condition r delta (ridge)": 0.01443790254369498,
+      "_kind": "scatter",
+      "_group": 471
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8875004767744183,
+      "per-cell within-condition r delta (ridge)": 0.003553209808092428,
+      "_kind": "scatter",
+      "_group": 472
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0026728763030213,
+      "per-cell within-condition r delta (ridge)": 0.04524559892992755,
+      "_kind": "scatter",
+      "_group": 473
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.969291005037045,
+      "per-cell within-condition r delta (ridge)": -0.002630330867755548,
+      "_kind": "scatter",
+      "_group": 474
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.991733993434438,
+      "per-cell within-condition r delta (ridge)": 0.026860669195595432,
+      "_kind": "scatter",
+      "_group": 475
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8781496083832785,
+      "per-cell within-condition r delta (ridge)": 0.03352538615595957,
+      "_kind": "scatter",
+      "_group": 476
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.882910275159285,
+      "per-cell within-condition r delta (ridge)": 0.02064509267631609,
+      "_kind": "scatter",
+      "_group": 477
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9289841746500023,
+      "per-cell within-condition r delta (ridge)": -0.0017581722616898388,
+      "_kind": "scatter",
+      "_group": 478
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.937505473203466,
+      "per-cell within-condition r delta (ridge)": -0.033584432870131575,
+      "_kind": "scatter",
+      "_group": 479
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.976929028378032,
+      "per-cell within-condition r delta (ridge)": -0.0861691767384144,
+      "_kind": "scatter",
+      "_group": 480
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.035516015051721,
+      "per-cell within-condition r delta (ridge)": -0.1911481723039799,
+      "_kind": "scatter",
+      "_group": 481
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.043081317573844,
+      "per-cell within-condition r delta (ridge)": 0.012696554006500105,
+      "_kind": "scatter",
+      "_group": 482
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9717794869073826,
+      "per-cell within-condition r delta (ridge)": -0.18696412483078106,
+      "_kind": "scatter",
+      "_group": 483
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9708105950171833,
+      "per-cell within-condition r delta (ridge)": 0.037011247038833295,
+      "_kind": "scatter",
+      "_group": 484
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.909641128543028,
+      "per-cell within-condition r delta (ridge)": 0.0845429047382999,
+      "_kind": "scatter",
+      "_group": 485
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0282579994908825,
+      "per-cell within-condition r delta (ridge)": 0.13497113612424844,
+      "_kind": "scatter",
+      "_group": 486
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9414530916215162,
+      "per-cell within-condition r delta (ridge)": 0.1747788018759253,
+      "_kind": "scatter",
+      "_group": 487
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8515391469687565,
+      "per-cell within-condition r delta (ridge)": 0.07392721823055692,
+      "_kind": "scatter",
+      "_group": 488
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9738880141301953,
+      "per-cell within-condition r delta (ridge)": 0.04771052847288948,
+      "_kind": "scatter",
+      "_group": 489
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9917224560288544,
+      "per-cell within-condition r delta (ridge)": 0.07004165214086344,
+      "_kind": "scatter",
+      "_group": 490
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9121897178253473,
+      "per-cell within-condition r delta (ridge)": 0.0011514341422849406,
+      "_kind": "scatter",
+      "_group": 491
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.023186538599077,
+      "per-cell within-condition r delta (ridge)": -0.0348162820335251,
+      "_kind": "scatter",
+      "_group": 492
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.021047008138215,
+      "per-cell within-condition r delta (ridge)": -0.11287841310299286,
+      "_kind": "scatter",
+      "_group": 493
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0646406979553187,
+      "per-cell within-condition r delta (ridge)": 0.08028106488421033,
+      "_kind": "scatter",
+      "_group": 494
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.047343514304387,
+      "per-cell within-condition r delta (ridge)": -0.0016002415281433091,
+      "_kind": "scatter",
+      "_group": 495
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.04877857808673,
+      "per-cell within-condition r delta (ridge)": 0.029144559464328645,
+      "_kind": "scatter",
+      "_group": 496
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9411885285836936,
+      "per-cell within-condition r delta (ridge)": 0.024715771230307826,
+      "_kind": "scatter",
+      "_group": 497
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.091978311035505,
+      "per-cell within-condition r delta (ridge)": -0.15612601901967144,
+      "_kind": "scatter",
+      "_group": 498
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0157262027518974,
+      "per-cell within-condition r delta (ridge)": -0.32937192060458953,
+      "_kind": "scatter",
+      "_group": 499
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.978053822457565,
+      "per-cell within-condition r delta (ridge)": 0.06709813115874291,
+      "_kind": "scatter",
+      "_group": 500
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.040323993901138,
+      "per-cell within-condition r delta (ridge)": -0.13067405327560289,
+      "_kind": "scatter",
+      "_group": 501
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9554103470240816,
+      "per-cell within-condition r delta (ridge)": 0.06771816575889611,
+      "_kind": "scatter",
+      "_group": 502
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0040765582741624,
+      "per-cell within-condition r delta (ridge)": 0.08537308086967599,
+      "_kind": "scatter",
+      "_group": 503
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0757458203143107,
+      "per-cell within-condition r delta (ridge)": 0.13835552057764122,
+      "_kind": "scatter",
+      "_group": 504
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1236489237515865,
+      "per-cell within-condition r delta (ridge)": 0.10522082606785593,
+      "_kind": "scatter",
+      "_group": 505
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.134738303134461,
+      "per-cell within-condition r delta (ridge)": 0.055375208119311126,
+      "_kind": "scatter",
+      "_group": 506
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0011625360585916,
+      "per-cell within-condition r delta (ridge)": 0.07731943048847123,
+      "_kind": "scatter",
+      "_group": 507
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.006488036716982,
+      "per-cell within-condition r delta (ridge)": 0.025434801823845943,
+      "_kind": "scatter",
+      "_group": 508
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0959585314444276,
+      "per-cell within-condition r delta (ridge)": 0.0038220351381654805,
+      "_kind": "scatter",
+      "_group": 509
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9406242213581444,
+      "per-cell within-condition r delta (ridge)": 0.04243324859254266,
+      "_kind": "scatter",
+      "_group": 510
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.107962355950422,
+      "per-cell within-condition r delta (ridge)": -0.03602584874238146,
+      "_kind": "scatter",
+      "_group": 511
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9981253268855754,
+      "per-cell within-condition r delta (ridge)": 0.12054358220709072,
+      "_kind": "scatter",
+      "_group": 512
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8770741517872858,
+      "per-cell within-condition r delta (ridge)": 0.040233890046232734,
+      "_kind": "scatter",
+      "_group": 513
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.863058927063342,
+      "per-cell within-condition r delta (ridge)": 0.10215754085231687,
+      "_kind": "scatter",
+      "_group": 514
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.109437827532628,
+      "per-cell within-condition r delta (ridge)": 0.08360019200161267,
+      "_kind": "scatter",
+      "_group": 515
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.857781733410201,
+      "per-cell within-condition r delta (ridge)": 0.036029008713326593,
+      "_kind": "scatter",
+      "_group": 516
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.92979565956277,
+      "per-cell within-condition r delta (ridge)": 0.027750022316692213,
+      "_kind": "scatter",
+      "_group": 517
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9469216129604945,
+      "per-cell within-condition r delta (ridge)": 0.005167207369012494,
+      "_kind": "scatter",
+      "_group": 518
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.89535822246131,
+      "per-cell within-condition r delta (ridge)": 0.0047586321181915525,
+      "_kind": "scatter",
+      "_group": 519
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.9404458783366367,
+      "per-cell within-condition r delta (ridge)": 0.003679162597347352,
+      "_kind": "scatter",
+      "_group": 520
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.0776616213520276,
+      "per-cell within-condition r delta (ridge)": 0.004916431454939918,
+      "_kind": "scatter",
+      "_group": 521
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 2.8446985099392226,
+      "per-cell within-condition r delta (ridge)": 0.006523539960276992,
+      "_kind": "scatter",
+      "_group": 522
+    },
+    {
+      "fit-set size n (delta vs the 4,000-context anchor)": 3.1046954958466197,
+      "per-cell within-condition r delta (ridge)": 0.0066700963802606705,
+      "_kind": "scatter",
+      "_group": 523
+    }
+  ],
+  "n_series": 524,
+  "total_points": 524
+}
