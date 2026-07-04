@@ -515,6 +515,71 @@ def test_repro_fenced_github_moving_ref_ignored():
     assert ok, [r.render() for r in results if not r.passed]
 
 
+def test_repro_blockquoted_bare_url_ignored_by_permanence():
+    """A bare (unpinned) URL inside a `>` blockquote in `## Reproducibility`
+    — the SPEC-mandated verbatim originating-prompt quote (`**Context:**`
+    row) — is provenance TEXT, not a provenance link: check 8 must not
+    flag it (#825 → #959; mirrors the fence exemption). Nested `> >`
+    lines and INDENTED `  > ` quote lines are covered too (the strip is
+    lstrip-based, not a bare `startswith`)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> test in the base model https://huggingface.co/Qwen/Qwen2.5-7B\n"
+        "> > nested quote citing https://wandb.ai/someone/some-project\n"
+        "  > indented quote citing https://wandb.ai/someone/other-project\n"
+        "> for both user and assistant\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_repro_nonquoted_bare_url_beside_blockquote_still_fails():
+    """The blockquote exemption is line-scoped: a NON-quoted unpinned HF
+    URL in the footer still FAILs check 8 even when its quoted twin sits
+    one line up (the check stays binding for non-quoted footer URLs)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> quoted: https://huggingface.co/Qwen/Qwen2.5-7B\n\n"
+        "Base model: https://huggingface.co/Qwen/Qwen2.5-7B\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert not perm.passed
+    assert perm.detail.count("unpinned HF URL") == 1, perm.detail
+
+
+def test_repro_quoted_fence_does_not_corrupt_fence_state():
+    """A fence marker INSIDE a blockquote (`> ```) must not toggle fence
+    state: the quoted run (incl. a quoted moving-ref URL) is dropped by
+    the blockquote pass, and a NON-quoted unpinned URL after it is still
+    scanned and FAILs. Catches a fence-state-corruption variant (a quoted
+    fence marker toggling state would swallow the non-quoted URL)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "> ```\n"
+        "> https://github.com/superkaiba/explore-persona-space/blob/main/x.py\n"
+        "> ```\n\n"
+        "Unquoted: https://huggingface.co/Qwen/Qwen2.5-7B\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert not perm.passed
+    assert "unpinned HF URL" in perm.detail
+    assert "github.com" not in perm.detail  # the quoted moving-ref was never scanned
+
+
 def test_confidence_mismatch():
     body = GOOD_BODY.replace("Confidence: MODERATE", "Confidence: HIGH")
     ok, results = verify_task_body.verify_text(body)
@@ -1060,6 +1125,25 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
     by_name = _results_by_name(results)
     assert by_name[_REPRO_8B_NAME].passed
     assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
+
+
+def test_gather_repro_artifact_urls_skips_blockquoted():
+    """Check 8b must not existence-probe a same-repo URL quoted inside
+    the verbatim originating-prompt blockquote — same #959 collision
+    class as check 8 (a verbatim quote cannot be edited if its cited
+    path later dies). Non-quoted same-repo URLs are still gathered.
+    Deterministic unit test of the gather — no git, no network."""
+    repro = (
+        "**Code:** [run](https://github.com/superkaiba/explore-persona-space"
+        "/blob/0123456789abcdef/scripts/run.py)\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> see https://github.com/superkaiba/explore-persona-space"
+        "/blob/deadbeefdead/scripts/gone.py\n"
+    )
+    urls = verify_task_body._gather_repro_artifact_urls(repro)
+    assert urls == [
+        "https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py"
+    ]
 
 
 # ─── Check 23: HF Hub revision-pin existence ──────────────────────────────
@@ -4571,6 +4655,25 @@ def test_v4_good_body_passes_all():
     # The only FAILs are the two existence probes on the fake sha.
     fails = [r.name for r in results if not r.passed]
     assert set(fails) <= {"Figure URL resolvable", "Reproducibility artifact URLs exist"}, fails
+
+
+def test_v4_context_blockquote_bare_url_passes_permanence():
+    """The #825 incident shape: a v4 `**Context:**` verbatim
+    originating-prompt blockquote citing a bare HF URL must PASS check 8
+    with no hyperlink-to-pinned-revision workaround (#959). Asserts the
+    permanence check only (per the `_V4_GOOD_BODY` convention — the
+    fixture's fake SHAs fail the existence probes, so overall PASS is
+    not assertable)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt, verbatim:\n\n"
+        "> test in the base model (https://huggingface.co/Qwen/Qwen2.5-7B)\n"
+        "> -- make sure this is the proper base model\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
 
 
 def test_v4_v3_content_h2_is_hard_fail():
