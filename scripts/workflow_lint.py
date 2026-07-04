@@ -316,6 +316,18 @@ Behaviours:
   non-blank line. Also enforced at commit time by the
   ``workflow-lint-phase-done-reserved`` pre-commit hook on any
   ``scripts/*.sh|py`` change (#930).
+* ``--check-stale-label-disposition`` (also bundled into the no-flags default
+  run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
+  paragraph (bold anchor ``**Stale-label disposition rule``, which must be
+  UNIQUE — the check carries a negative assertion, so span identity is
+  load-bearing) loses any of its five #894/#763 semantic tokens — most
+  critically the fresh-label-execute clause ("the label EXECUTES as the
+  dispatched round") — or regains an unconditional skip-on-None coupling
+  ("On None ... skip", a targeted negative regex over the
+  whitespace-normalized paragraph span; a literal-coupling backstop only,
+  the positive tokens are the primary defense). Paragraph-scoped: the span
+  runs from the anchor to the first blank line, so a mid-paragraph split
+  FAILs loudly (#963).
 
 Exit codes:
 
@@ -5201,6 +5213,82 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+# The #963 stale-label disposition-clause tokens. The paragraph span runs from
+# the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
+# assertion, so span identity is load-bearing) to the first blank line, and is
+# whitespace-normalized before matching (two tokens span a hard line wrap in
+# the live file, and an innocent prose reflow must not FAIL the fleet).
+_STALE_LABEL_ANCHOR = "**Stale-label disposition rule"
+_STALE_LABEL_REQUIRED_TOKENS = (
+    "followup_retro_close_evidence",
+    "GHOST-label filter, NOT an execution gate",
+    "A None return means NO prior-run evidence exists",
+    "the label EXECUTES as the dispatched round",
+    "The skip-and-surface disposition applies ONLY when",
+)
+_STALE_LABEL_SKIP_ON_NONE_RE = re.compile(r"\bon\s+(?:a\s+)?none\b.{0,120}?\bskip", re.IGNORECASE)
+
+
+def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the /issue Step 0 stale-label disposition paragraph (#894/#763)
+    loses its fresh-label-execute semantics or regains an unconditional
+    skip-on-None branch (#963).
+
+    Scope notes (round-1 critique):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — phrasings
+        like "when None is returned, skip" are covered by the positive
+        tokens, not the regex; do not weaken a positive token "because the
+        regex covers it".
+    (b) The check is paragraph-scoped — a contradictory instruction written
+        OUTSIDE the anchored paragraph is invisible to it (inherent to the
+        token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all
+        downstream tokens at once — the span ends at the first blank line,
+        so a deliberate restructure requires a deliberate lint update.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
+    text = skill.read_text(encoding="utf-8")
+    n_anchors = text.count(_STALE_LABEL_ANCHOR)
+    if n_anchors == 0:
+        return [
+            f"{skill}: missing the bold anchor {_STALE_LABEL_ANCHOR!r} (#963) — the Step 0 "
+            f"stale-label disposition paragraph pins the #894/#763 fresh-label-execute "
+            f"semantics and must not be removed or renamed without updating this lint."
+        ]
+    if n_anchors > 1:
+        return [
+            f"{skill}: {n_anchors} bold anchors {_STALE_LABEL_ANCHOR!r} found — the stale-label "
+            f"disposition paragraph must be UNIQUE (a stale duplicate could satisfy the token "
+            f"scan while the operative Step 0 paragraph regresses; #963). Remove the duplicate."
+        ]
+    start = text.find(_STALE_LABEL_ANCHOR)
+    end = text.find("\n\n", start)
+    normalized = re.sub(r"\s+", " ", text[start : end if end != -1 else len(text)])
+    errors: list[str] = []
+    for token in _STALE_LABEL_REQUIRED_TOKENS:
+        if token not in normalized:
+            errors.append(
+                f"{skill}: stale-label disposition paragraph missing token {token!r} (#963) — "
+                f"note: the span ends at the first blank line, so a split paragraph FAILs all "
+                f"downstream tokens at once (a deliberate restructure needs a lint update)."
+            )
+    if _STALE_LABEL_SKIP_ON_NONE_RE.search(normalized):
+        errors.append(
+            f"{skill}: stale-label disposition paragraph couples a None return to a skip "
+            f"instruction ('On None ... skip') — a fresh never-run label must EXECUTE as the "
+            f"dispatched round (#963); the skip-and-surface disposition is reserved for "
+            f"suspected-stale ghost labels."
+        )
+    return errors
+
+
 # The #842 smoke output-path hygiene anchor phrase. Must appear INSIDE each
 # surface's load-bearing region (see check_smoke_output_hygiene below).
 SMOKE_OUTPUT_HYGIENE_ANCHOR = "Smoke outputs never overwrite committed artifacts"
@@ -6269,6 +6357,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-stale-label-disposition",
+        action="store_true",
+        help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
+        "paragraph (bold anchor '**Stale-label disposition rule', which must "
+        "be UNIQUE) loses any of its five #894/#763 semantic tokens — most "
+        "critically the fresh-label-execute clause ('the label EXECUTES as "
+        "the dispatched round') — or regains an unconditional skip-on-None "
+        "coupling ('On None ... skip', a targeted negative regex over the "
+        "whitespace-normalized paragraph span). Paragraph-scoped: the span "
+        "runs from the anchor to the first blank line (#963). Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-output-hygiene",
         action="store_true",
         help="FAIL if the #842 smoke output-path hygiene rule ('Smoke outputs "
@@ -6423,6 +6524,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
@@ -6508,6 +6610,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_long_loop_restartability_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_stale_label_disposition or no_flags:
+        errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:
