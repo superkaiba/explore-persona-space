@@ -1,0 +1,16 @@
+{
+  "revision": "a23e79f17f053c58e7ce1bb16dff9bac30e55729",
+  "prefixes": [
+    "issue825_onpolicy_user_turn/analysis_tensors",
+    "issue825_real_user_turn_null/analysis_tensors/turnstore_realuser",
+    "issue825_userbase_map/analysis_tensors"
+  ],
+  "n_files": 48,
+  "total_bytes": 172540556048,
+  "allowlist_keys": {
+    "M_instruct_user_chat": 1914,
+    "M_instruct_user_naturalistic": 1722,
+    "M_pretrained_user_chat": 1999,
+    "M_pretrained_user_naturalistic": 1738
+  }
+}
