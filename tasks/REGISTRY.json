@@ -6350,8 +6350,8 @@
     "959": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/959",
-      "status": "proposed",
+      "path": "tasks/planning/959",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body URL-permanence check vs verbatim-blockquote prompts"
     },
     "96": {
