@@ -326,6 +326,10 @@ def main() -> int:
 
     results_dir = Path(args.results)
     out_dir = Path(args.out)
+    # savefig_paper writes to out_dir.parent/"issue_928" at EVERY call site — a
+    # mismatched --out would make the upload loop iterate an EMPTY dir (silent
+    # no-op upload; code-review r2 minor).
+    assert out_dir.name == "issue_928", f"--out must end in issue_928 (savefig_paper): {out_dir}"
     out_dir.mkdir(parents=True, exist_ok=True)
     blob = load_json(results_dir / "recon_skill_grid.json")
     boot = blob["bootstrap"]

@@ -20,6 +20,15 @@ Pins two permanent invariants of the #928 CoT-decomposition pipeline:
    reuses wrong cached rows — the #722 r3 lesson). This test fails pre-fix
    (no checkpointing existed) and pins the invariant against future refactors
    that would silently strip the resume path.
+4. Generation-identity resume keys (round 3, code-review r2 BLOCKERs
+   ``long-loop-restartability-missing`` / ``-fit-capture``): the Phase-B
+   store-blob skip predicate REJECTS a blob whose ``max_new_tokens`` /
+   rollout-content digest differ from the run's (or whose ``probe_indices``
+   do not index the RUN's probe list — the non-circular check), and
+   ``Store.identity_digest()`` differs between two stores with identical
+   metadata + row counts but different capture content, discarding stale
+   fit units. Both fail pre-fix (the predicate omitted the generation
+   identity; the digest hashed metadata + row counts only).
 """
 
 from __future__ import annotations
@@ -91,8 +100,13 @@ def test_group_perm_matrix_preserves_group_blocks():
             assert len(src_groups) == 1  # a whole block maps to ONE source group
 
 
-def _make_synth_store(tmp_path):
-    """Tiny synthetic per-(C, q) summary store (4 contexts x 2 rows x 2 layers x H=8)."""
+def _make_synth_store(tmp_path, content_seed: int = 0, rollout_digest: str | None = None):
+    """Tiny synthetic per-(C, q) summary store (4 contexts x 2 rows x 2 layers x H=8).
+
+    ``content_seed`` varies the per_q CONTENT at identical metadata / row
+    counts; ``rollout_digest`` (when set) stamps every blob with an
+    extractor-style generation-identity digest (round 3).
+    """
     import torch
     from issue928_common import SUMMARY_NAMES, dump_json
 
@@ -112,13 +126,13 @@ def _make_synth_store(tmp_path):
         },
         store_dir / "manifest.json",
     )
-    g = torch.Generator().manual_seed(0)
+    g = torch.Generator().manual_seed(content_seed)
     for c in ctx:
         per_q = torch.randn(2, len(SUMMARY_NAMES), 2, 8, generator=g)
-        torch.save(
-            {"context_id": c, "per_q": per_q, "probe_avg": per_q.mean(0)},
-            store_dir / "percq_summaries" / f"{c}.pt",
-        )
+        blob = {"context_id": c, "per_q": per_q, "probe_avg": per_q.mean(0)}
+        if rollout_digest is not None:
+            blob["rollout_digest"] = rollout_digest
+        torch.save(blob, store_dir / "percq_summaries" / f"{c}.pt")
     return store_dir
 
 
@@ -177,3 +191,99 @@ def test_prepare_checkpoint_dir_mismatch_discards_stale_units(tmp_path):
     d3 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key2)
     assert not (d3 / "layer_0.pt").exists()  # mismatch -> stale units discarded
     assert load_json(d3 / fit_mod.FIT_MANIFEST_NAME) == key2
+
+
+def test_reusable_store_blob_rejects_stale_generation_identity(tmp_path):
+    """Round-3 BLOCKER invariant (fails pre-fix — `long-loop-restartability-missing`):
+    a Phase-B store blob must be REJECTED (so capture recomputes) when
+    max_new_tokens or the rollout CONTENT changed at the SAME probe count,
+    when the generation-identity fields are absent (pre-round-3 blob), or
+    when probe_indices do not index the RUN's probe list (non-circular)."""
+    import torch
+    from issue928_common import SUMMARY_NAMES
+    from issue928_extract_thinking_store import reusable_store_blob, rollout_content_digest
+
+    probes = ["p0", "p1", "p2"]
+    completions = [("<think>\nr\n</think>\n\nans", "stop")] * len(probes)
+    digest = rollout_content_digest(probes, completions)
+    blob = {
+        "context_id": "c0",
+        "family": "famA",
+        "rung": "greedy",
+        "model": "test-model",
+        "probe_pool_hash": "h",
+        "capture_layers": [0, 1],
+        "summary_names": list(SUMMARY_NAMES),
+        "probe_indices": [0, 2],
+        "per_q": torch.zeros(2, len(SUMMARY_NAMES), 2, 8, dtype=torch.float16),
+        "probe_avg": torch.zeros(len(SUMMARY_NAMES), 2, 8, dtype=torch.float16),
+        "coverage": {
+            "n_probes_total": 3,
+            "n_well_formed": 3,
+            "n_captured": 2,
+            "capture_drop_reasons": {},
+        },
+        "max_new_tokens": 8192,
+        "rollout_digest": digest,
+    }
+    path = tmp_path / "c0.pt"
+    torch.save(blob, path)
+    run = dict(
+        model_name="test-model",
+        family="famA",
+        rung="greedy",
+        probe_pool_hash="h",
+        capture_layers=[0, 1],
+        summary_names=list(SUMMARY_NAMES),
+        n_probes=3,
+        hidden_size=8,
+    )
+    got, why = reusable_store_blob(path, "c0", max_new_tokens=8192, rollout_digest=digest, **run)
+    assert got is not None and why == ""  # matching generation identity -> reusable
+
+    # (i) changed generation cap at identical shapes / probe count -> recapture.
+    got, why = reusable_store_blob(path, "c0", max_new_tokens=16384, rollout_digest=digest, **run)
+    assert got is None and "max_new_tokens" in why
+
+    # (ii) changed rollout CONTENT at the same probe count -> recapture.
+    regen = rollout_content_digest(probes, [("<think>\nr\n</think>\n\nCHANGED", "stop")] * 3)
+    got, why = reusable_store_blob(path, "c0", max_new_tokens=8192, rollout_digest=regen, **run)
+    assert got is None and "rollout_digest" in why
+
+    # (iii) pre-round-3 blob missing the identity fields -> recapture.
+    legacy = {k: v for k, v in blob.items() if k not in ("max_new_tokens", "rollout_digest")}
+    torch.save(legacy, path)
+    got, why = reusable_store_blob(path, "c0", max_new_tokens=8192, rollout_digest=digest, **run)
+    assert got is None and "mismatch" in why
+
+    # (iv) probe_indices outside the RUN's 3-probe list -> recapture. The OLD
+    # circular check (per_q.shape[0] vs the blob's OWN indices) passed this.
+    torch.save(dict(blob, probe_indices=[0, 7]), path)
+    got, why = reusable_store_blob(path, "c0", max_new_tokens=8192, rollout_digest=digest, **run)
+    assert got is None and "probe_indices" in why
+
+
+def test_identity_digest_keys_on_content_and_discards_stale_units(tmp_path):
+    """Round-3 BLOCKER invariant (fails pre-fix — `long-loop-restartability-fit-capture`):
+    two stores with IDENTICAL metadata + row counts but different per_q content
+    (or different extractor rollout digests) must hash to different
+    identity_digest() values, and the changed digest must make
+    prepare_checkpoint_dir DISCARD the old partial units."""
+    import issue928_fit_decomposition as fit_mod
+
+    s_a = fit_mod.Store(_make_synth_store(tmp_path / "a"))
+    s_b = fit_mod.Store(_make_synth_store(tmp_path / "b", content_seed=1))
+    assert s_a.identity_digest() != s_b.identity_digest()  # per_q content differs
+
+    # extractor-written rollout digests (round 3) take precedence: identical
+    # tensors, different generation identity -> different store identity.
+    s_c = fit_mod.Store(_make_synth_store(tmp_path / "c", rollout_digest="d1"))
+    s_d = fit_mod.Store(_make_synth_store(tmp_path / "d", rollout_digest="d2"))
+    assert s_c.identity_digest() != s_d.identity_digest()
+
+    key_a = {"regime": "avg_q", "store_identity": s_a.identity_digest()}
+    d1 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key_a)
+    (d1 / "layer_0.pt").write_bytes(b"unit")
+    key_b = dict(key_a, store_identity=s_b.identity_digest())
+    d2 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key_b)
+    assert not (d2 / "layer_0.pt").exists()  # stale units from the old store discarded
