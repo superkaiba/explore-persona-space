@@ -4,3 +4,4 @@
 {"ts": "2026-07-04T12:26:07Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail: 0; n_warn: 0; plan v1 (mechanical pre-pass verify_plan.py --issue 1010; kind-exempt SKIPs on experiment-only checks)."}
 {"ts": "2026-07-04T12:47:36Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6cxmg2-4y71hs effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-07-04T12:48:30Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6cysnz-uwpi9g effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-07-04T12:48:39Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr6cxmg2-4y71hs phase=done after 61s."}
