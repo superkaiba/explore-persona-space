@@ -148,3 +148,4 @@
 {"ts": "2026-07-04T15:44:38Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1a bank gen done"}
 {"ts": "2026-07-04T15:44:49Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1b bank judging done"}
 {"ts": "2026-07-04T15:45:00Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1c capture done"}
+{"ts": "2026-07-04T15:45:15Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1d bank capture done"}
