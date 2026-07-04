@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1025,
+  "highest_id": 1026,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -219,6 +219,13 @@
       "path": "tasks/proposed/1025",
       "status": "proposed",
       "title": "daily-fix: codex-critic leak guard strips cross-issue #N refs"
+    },
+    "1026": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1026",
+      "status": "proposed",
+      "title": "daily-fix: upload-verifier in flight blocks finalize/status-advance"
     },
     "104": {
       "has_clean_result": false,
