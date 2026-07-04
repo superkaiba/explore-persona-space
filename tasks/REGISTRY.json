@@ -6631,8 +6631,8 @@
     "985": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/985",
-      "status": "proposed",
+      "path": "tasks/planning/985",
+      "status": "planning",
       "title": "workflow-fix: production-body test rule for seam-stubbed fns"
     },
     "986": {
