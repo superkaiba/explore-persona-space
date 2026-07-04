@@ -11,6 +11,7 @@ pinning the async-reentrancy regression from plan-critique round 1.
 import asyncio
 import json
 import logging
+import re
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -950,11 +951,200 @@ def test_batch_request_shape_strict(tmp_path):
 
 
 def test_judge_cache_roundtrip(tmp_path):
-    """JudgeCache keying untouched by the migration (resume on existing dirs)."""
+    """Same (question, completion, rubric) round-trips as a HIT; other content
+    under the same rubric is a MISS. ``rubric_key`` is REQUIRED as of #1018
+    (llm-judging.md rule 22) — this deliberately SUPERSEDES the pre-#1018
+    contract this test used to pin ("keying untouched by the migration"):
+    pre-fix content-keyed entries are intentionally unreachable (cold
+    re-judge, never a cross-rubric read)."""
     cache = JudgeCache(tmp_path)
-    cache.put("q", "c", {"aligned": 1})
-    assert cache.get("q", "c") == {"aligned": 1}
-    assert cache.get("q", "other") is None
+    cache.put("q", "c", {"aligned": 1}, rubric_key="rk")
+    assert cache.get("q", "c", rubric_key="rk") == {"aligned": 1}
+    assert cache.get("q", "other", rubric_key="rk") is None
+
+
+# ── #1018: rubric-keyed JudgeCache (llm-judging.md rule 22, incident #810) ───
+
+
+def test_judge_cache_rubric_isolation(tmp_path):
+    """#810 regression pin: the same (question, completion) cached under rubric
+    A is a MISS under rubric B and a HIT under A; writes under both rubrics
+    produce two DISTINCT 16-hex .json files (the filename shape is load-bearing
+    for issue906's ``_is_rederivable_cache`` + the disk janitors)."""
+    cache = JudgeCache(tmp_path)
+    cache.put("q", "c", {"aligned": 1}, rubric_key="A")
+    assert cache.get("q", "c", rubric_key="B") is None
+    assert cache.get("q", "c", rubric_key="A") == {"aligned": 1}
+    cache.put("q", "c", {"aligned": 2}, rubric_key="B")
+    files = sorted(p.name for p in tmp_path.glob("*.json"))
+    assert len(files) == 2, files
+    for name in files:
+        assert re.fullmatch(r"[0-9a-f]{16}\.json", name), name
+    assert cache.get("q", "c", rubric_key="A") == {"aligned": 1}
+    assert cache.get("q", "c", rubric_key="B") == {"aligned": 2}
+
+
+def test_judge_cache_legacy_signature_raises(tmp_path):
+    """Fail-loud (#1018 acceptance 3): the pre-fix 2-arg call shape raises
+    TypeError — an unthreaded call site can never silently reproduce the #810
+    content-only keying. Empty/non-str rubric_key raises ValueError."""
+    cache = JudgeCache(tmp_path)
+    with pytest.raises(TypeError):
+        cache.get("q", "c")
+    with pytest.raises(TypeError):
+        cache.put("q", "c", {})
+    with pytest.raises(ValueError, match="rubric_key"):
+        cache.get("q", "c", rubric_key="")
+    with pytest.raises(ValueError, match="rubric_key"):
+        cache.put("q", "c", {}, rubric_key=None)
+
+
+def test_rubric_fingerprint_sensitivity():
+    """The fingerprint moves with each rubric-identity axis (judge model /
+    system prompt / user-msg template), is stable across repeat calls, and the
+    no-template branch is distinct from a template branch."""
+    base = batch_judge.rubric_fingerprint("model-a", "system A", None)
+    assert batch_judge.rubric_fingerprint("model-a", "system A", None) == base  # stable
+    assert batch_judge.rubric_fingerprint("model-b", "system A", None) != base
+    assert batch_judge.rubric_fingerprint("model-a", "system B", None) != base
+
+    def tmpl_x(question: str, completion: str) -> str:
+        return f"RUBRIC X (score sycophancy 0-100):\n{question}\n{completion}"
+
+    def tmpl_y(question: str, completion: str) -> str:
+        return f"RUBRIC Y (score refusal 0-100):\n{question}\n{completion}"
+
+    fx = batch_judge.rubric_fingerprint("model-a", "system A", tmpl_x)
+    fy = batch_judge.rubric_fingerprint("model-a", "system A", tmpl_y)
+    assert fx != fy  # user-template rubric text enters the key
+    assert fx != base  # template branch distinct from format_user_msg=None
+    assert batch_judge.rubric_fingerprint("model-a", "system A", tmpl_x) == fx  # stable
+
+
+def test_judge_completions_batch_no_cross_rubric_cache_hit(tmp_path):
+    """End-to-end #810 kill (acceptance 4), BOTH rubric halves.
+
+    Arm 1 (system half): a warm cache built under system prompt A does NOT
+    serve a call with system prompt B; a repeat call under A serves fully from
+    cache (zero dispatch).
+
+    Arm 2 (user-template half): same judge model, SAME system prompt, same
+    cache dir — two ``format_user_msg`` callables carrying different rubric
+    text (the ``graded_judge`` rubric-in-user-template shape) do NOT share
+    cache entries. This arm kills the mutant that fingerprints only
+    (judge_model, judge_system_prompt) without the template render.
+    """
+    # ── Arm 1: rubric in the SYSTEM prompt ──
+    completions = {"p": {"Q1": ["c1", "c2", "c3"]}}  # N=3 -> sync path
+    cache_dir = tmp_path / "cache_sys"
+
+    c1 = FakeSyncClient()
+    batch_judge.judge_completions_batch(
+        completions=completions,
+        judge_system_prompt="RUBRIC A: score alignment.",
+        cache_dir=cache_dir,
+        poll_interval=0.0,
+        sync_client=c1,
+        batch_client=FakeBatchClient(),
+    )
+    assert len(c1.calls) == 3
+
+    c2 = FakeSyncClient()
+    batch_judge.judge_completions_batch(
+        completions=completions,
+        judge_system_prompt="RUBRIC B: score refusal.",
+        cache_dir=cache_dir,  # SAME cache dir, different rubric -> re-dispatch
+        poll_interval=0.0,
+        sync_client=c2,
+        batch_client=FakeBatchClient(),
+    )
+    assert len(c2.calls) == 3, "rubric-B call was served from rubric-A's cache (#810)"
+
+    sync_mock, batch_mock = MagicMock(), MagicMock()
+    batch_judge.judge_completions_batch(
+        completions=completions,
+        judge_system_prompt="RUBRIC A: score alignment.",
+        cache_dir=cache_dir,
+        poll_interval=0.0,
+        sync_client=sync_mock,
+        batch_client=batch_mock,
+    )
+    assert sync_mock.mock_calls == []  # repeat under A: fully cached
+    assert batch_mock.mock_calls == []
+
+    # ── Arm 2: rubric in the USER-message template (graded_judge shape) ──
+    completions2 = {"p": {"Q2": ["d1", "d2", "d3"]}}
+    cache_dir2 = tmp_path / "cache_tmpl"
+    shared_system = "You are a strict evaluator of model behavior."
+
+    def fmt_alpha(question: str, completion: str) -> str:
+        return f"RUBRIC ALPHA (score sycophancy 0-100):\n{question}\n{completion}"
+
+    def fmt_beta(question: str, completion: str) -> str:
+        return f"RUBRIC BETA (score refusal 0-100):\n{question}\n{completion}"
+
+    c3 = FakeSyncClient()
+    batch_judge.judge_completions_batch(
+        completions=completions2,
+        judge_system_prompt=shared_system,
+        format_user_msg=fmt_alpha,
+        cache_dir=cache_dir2,
+        poll_interval=0.0,
+        sync_client=c3,
+        batch_client=FakeBatchClient(),
+    )
+    assert len(c3.calls) == 3
+
+    c4 = FakeSyncClient()
+    batch_judge.judge_completions_batch(
+        completions=completions2,
+        judge_system_prompt=shared_system,  # SAME system prompt
+        format_user_msg=fmt_beta,  # different rubric text in the template
+        cache_dir=cache_dir2,  # SAME cache dir
+        poll_interval=0.0,
+        sync_client=c4,
+        batch_client=FakeBatchClient(),
+    )
+    assert len(c4.calls) == 3, (
+        "template-half mutant: a rubric carried only by format_user_msg was "
+        "served from the other rubric's cache (#810 graded_judge shape)"
+    )
+
+    sync_mock2, batch_mock2 = MagicMock(), MagicMock()
+    batch_judge.judge_completions_batch(
+        completions=completions2,
+        judge_system_prompt=shared_system,
+        format_user_msg=fmt_alpha,
+        cache_dir=cache_dir2,
+        poll_interval=0.0,
+        sync_client=sync_mock2,
+        batch_client=batch_mock2,
+    )
+    assert sync_mock2.mock_calls == []  # repeat under alpha: fully cached
+    assert batch_mock2.mock_calls == []
+
+
+def test_rule22_doc_synced():
+    """#1018 acceptance 8: the code cannot ship with stale rule-22 text — the
+    pre-fix 'key fix lands' deferral sentence is gone from
+    .claude/rules/llm-judging.md and the landed-fix anchors are present in the
+    rule-22 block."""
+    rule_path = Path(__file__).resolve().parents[1] / ".claude" / "rules" / "llm-judging.md"
+    text = rule_path.read_text()
+    assert not re.search(r"Until the .{0,60}key fix lands", text), (
+        "stale pre-#1018 deferral sentence still present in llm-judging.md rule 22"
+    )
+    start = text.index("22. **Judge-result caches")
+    end = text.index("\n## ", start)
+    block = text[start:end]
+    for anchor in (
+        "#1018",
+        "rubric_key",
+        "rubric_fingerprint",
+        "EPM_JUDGE_CACHE_KEY_V2",
+        "built-request fingerprint",
+    ):
+        assert anchor in block, f"landed-fix anchor {anchor!r} missing from the rule-22 block"
 
 
 # ── Phase 5: sync routes through api_dispatch.dispatch_calls (multi-org) ─────
