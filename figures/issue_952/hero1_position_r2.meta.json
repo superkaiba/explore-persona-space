@@ -1,0 +1,1188 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:24Z",
+  "figsize": [
+    9.2,
+    4.4
+  ],
+  "points": [
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 0.0,
+      "Held-out test pooled R\u00b2": 0.5019921911682905,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 1.0,
+      "Held-out test pooled R\u00b2": 0.3648254054743617,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 2.0,
+      "Held-out test pooled R\u00b2": 0.3023675245191998,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 3.0,
+      "Held-out test pooled R\u00b2": 0.2757153858127398,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 4.0,
+      "Held-out test pooled R\u00b2": 0.25205667605253823,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 5.0,
+      "Held-out test pooled R\u00b2": 0.2192431561122432,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 6.0,
+      "Held-out test pooled R\u00b2": 0.20340538820161214,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 7.0,
+      "Held-out test pooled R\u00b2": 0.19341528709832412,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 8.0,
+      "Held-out test pooled R\u00b2": 0.18673230931156648,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 9.0,
+      "Held-out test pooled R\u00b2": 0.17386735063661607,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 10.0,
+      "Held-out test pooled R\u00b2": 0.16457946171233517,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 11.0,
+      "Held-out test pooled R\u00b2": 0.1542858358569188,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 12.0,
+      "Held-out test pooled R\u00b2": 0.15184524343725025,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 13.0,
+      "Held-out test pooled R\u00b2": 0.14524282057686888,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 14.0,
+      "Held-out test pooled R\u00b2": 0.14159577991944539,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 15.0,
+      "Held-out test pooled R\u00b2": 0.13710777455712164,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 16.0,
+      "Held-out test pooled R\u00b2": 0.16335551079551147,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 17.0,
+      "Held-out test pooled R\u00b2": 0.11108115473229341,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 18.0,
+      "Held-out test pooled R\u00b2": 0.09817177955350609,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 19.0,
+      "Held-out test pooled R\u00b2": 0.09517538186452312,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 20.0,
+      "Held-out test pooled R\u00b2": 0.09030086310102603,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 21.0,
+      "Held-out test pooled R\u00b2": 0.09289748912028506,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 22.0,
+      "Held-out test pooled R\u00b2": 0.09068380773228024,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 23.0,
+      "Held-out test pooled R\u00b2": 0.09414415748426253,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 24.0,
+      "Held-out test pooled R\u00b2": 0.09962683301517739,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 25.0,
+      "Held-out test pooled R\u00b2": 0.11870457064570372,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 26.0,
+      "Held-out test pooled R\u00b2": 0.10941464152037994,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 27.0,
+      "Held-out test pooled R\u00b2": 0.11057337116066512,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 28.0,
+      "Held-out test pooled R\u00b2": 0.1105098930020807,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 29.0,
+      "Held-out test pooled R\u00b2": 0.11084083641436182,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 30.0,
+      "Held-out test pooled R\u00b2": 0.10940395405113457,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 31.0,
+      "Held-out test pooled R\u00b2": 0.11498952383720151,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 32.0,
+      "Held-out test pooled R\u00b2": 0.1198849877377497,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 33.0,
+      "Held-out test pooled R\u00b2": 0.11999321957701181,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 34.0,
+      "Held-out test pooled R\u00b2": 0.11688770771278778,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 35.0,
+      "Held-out test pooled R\u00b2": 0.116023252218863,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 36.0,
+      "Held-out test pooled R\u00b2": 0.11331767259400305,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 37.0,
+      "Held-out test pooled R\u00b2": 0.12412198284427667,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 38.0,
+      "Held-out test pooled R\u00b2": 0.16892843344060715,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 39.0,
+      "Held-out test pooled R\u00b2": 0.37111094234984976,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 40.0,
+      "Held-out test pooled R\u00b2": 0.4883687220690578,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 41.0,
+      "Held-out test pooled R\u00b2": 0.485964646765246,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 0.0,
+      "Held-out test pooled R\u00b2": 0.5189145510051423,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 1.0,
+      "Held-out test pooled R\u00b2": 0.3010099868118392,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 2.0,
+      "Held-out test pooled R\u00b2": 0.25357636155244045,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 3.0,
+      "Held-out test pooled R\u00b2": 0.2357619979926986,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 4.0,
+      "Held-out test pooled R\u00b2": 0.20824654506119744,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 5.0,
+      "Held-out test pooled R\u00b2": 0.18835262000638064,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 6.0,
+      "Held-out test pooled R\u00b2": 0.17062376234149046,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 7.0,
+      "Held-out test pooled R\u00b2": 0.16290869044203982,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 8.0,
+      "Held-out test pooled R\u00b2": 0.15913920230171696,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 9.0,
+      "Held-out test pooled R\u00b2": 0.1493406071045823,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 10.0,
+      "Held-out test pooled R\u00b2": 0.14556832801359054,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 11.0,
+      "Held-out test pooled R\u00b2": 0.14222444664738831,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 12.0,
+      "Held-out test pooled R\u00b2": 0.1389447470106152,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 13.0,
+      "Held-out test pooled R\u00b2": 0.13083554057444302,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 14.0,
+      "Held-out test pooled R\u00b2": 0.12752213898645237,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 15.0,
+      "Held-out test pooled R\u00b2": 0.12710388307567655,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 16.0,
+      "Held-out test pooled R\u00b2": 0.1311571437247484,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 17.0,
+      "Held-out test pooled R\u00b2": 0.09539585890753843,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 18.0,
+      "Held-out test pooled R\u00b2": 0.0904637886638815,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 19.0,
+      "Held-out test pooled R\u00b2": 0.08460816280056105,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 20.0,
+      "Held-out test pooled R\u00b2": 0.08054074183153781,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 21.0,
+      "Held-out test pooled R\u00b2": 0.08217545089094946,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 22.0,
+      "Held-out test pooled R\u00b2": 0.07809434149564154,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 23.0,
+      "Held-out test pooled R\u00b2": 0.07419240962595663,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 24.0,
+      "Held-out test pooled R\u00b2": 0.08665078737233955,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 25.0,
+      "Held-out test pooled R\u00b2": 0.09621331173926884,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 26.0,
+      "Held-out test pooled R\u00b2": 0.08519699948001647,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 27.0,
+      "Held-out test pooled R\u00b2": 0.08645877880388075,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 28.0,
+      "Held-out test pooled R\u00b2": 0.08720843660911493,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 29.0,
+      "Held-out test pooled R\u00b2": 0.09139999666343745,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 30.0,
+      "Held-out test pooled R\u00b2": 0.09554467705120762,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 31.0,
+      "Held-out test pooled R\u00b2": 0.09792930211609574,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 32.0,
+      "Held-out test pooled R\u00b2": 0.09923430936042954,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 33.0,
+      "Held-out test pooled R\u00b2": 0.10368720054927638,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 34.0,
+      "Held-out test pooled R\u00b2": 0.10551838330405117,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 35.0,
+      "Held-out test pooled R\u00b2": 0.1100572455075689,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 36.0,
+      "Held-out test pooled R\u00b2": 0.11083995376271116,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 37.0,
+      "Held-out test pooled R\u00b2": 0.11389814688621303,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 38.0,
+      "Held-out test pooled R\u00b2": 0.1528892511233434,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 39.0,
+      "Held-out test pooled R\u00b2": 0.2804858409893115,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 40.0,
+      "Held-out test pooled R\u00b2": 0.4493432829864209,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 41.0,
+      "Held-out test pooled R\u00b2": 0.469738505382273,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 0.0,
+      "Held-out test pooled R\u00b2": 0.5537298712604914,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 1.0,
+      "Held-out test pooled R\u00b2": 0.256948575946062,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 2.0,
+      "Held-out test pooled R\u00b2": 0.1690706639513565,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 3.0,
+      "Held-out test pooled R\u00b2": 0.15553469549003895,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 4.0,
+      "Held-out test pooled R\u00b2": 0.1378990265068385,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 5.0,
+      "Held-out test pooled R\u00b2": 0.12714116420982846,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 6.0,
+      "Held-out test pooled R\u00b2": 0.10926631930148856,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 7.0,
+      "Held-out test pooled R\u00b2": 0.11043819436992108,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 8.0,
+      "Held-out test pooled R\u00b2": 0.09967044346708676,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 9.0,
+      "Held-out test pooled R\u00b2": 0.09006004032675619,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 10.0,
+      "Held-out test pooled R\u00b2": 0.08816033719325655,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 11.0,
+      "Held-out test pooled R\u00b2": 0.0844857300494849,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 12.0,
+      "Held-out test pooled R\u00b2": 0.08056729422486231,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 13.0,
+      "Held-out test pooled R\u00b2": 0.0788763881154021,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 14.0,
+      "Held-out test pooled R\u00b2": 0.0809850509810991,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 15.0,
+      "Held-out test pooled R\u00b2": 0.07460334543948088,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 16.0,
+      "Held-out test pooled R\u00b2": 0.07264246187537071,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 17.0,
+      "Held-out test pooled R\u00b2": 0.05560884894632856,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 18.0,
+      "Held-out test pooled R\u00b2": 0.04780556827560489,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 19.0,
+      "Held-out test pooled R\u00b2": 0.04707774028942979,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 20.0,
+      "Held-out test pooled R\u00b2": 0.04734662567052439,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 21.0,
+      "Held-out test pooled R\u00b2": 0.0463071499582155,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 22.0,
+      "Held-out test pooled R\u00b2": 0.04161791716940766,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 23.0,
+      "Held-out test pooled R\u00b2": 0.041309434541072165,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 24.0,
+      "Held-out test pooled R\u00b2": 0.041705028746725326,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 25.0,
+      "Held-out test pooled R\u00b2": 0.04453794003642231,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 26.0,
+      "Held-out test pooled R\u00b2": 0.03650357262030712,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 27.0,
+      "Held-out test pooled R\u00b2": 0.03761731181176586,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 28.0,
+      "Held-out test pooled R\u00b2": 0.040339002022931836,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 29.0,
+      "Held-out test pooled R\u00b2": 0.04504823762111532,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 30.0,
+      "Held-out test pooled R\u00b2": 0.044950506936975554,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 31.0,
+      "Held-out test pooled R\u00b2": 0.04539532991709416,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 32.0,
+      "Held-out test pooled R\u00b2": 0.04395168826638274,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 33.0,
+      "Held-out test pooled R\u00b2": 0.0442561085368659,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 34.0,
+      "Held-out test pooled R\u00b2": 0.04599583077225966,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 35.0,
+      "Held-out test pooled R\u00b2": 0.04637368730990821,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 36.0,
+      "Held-out test pooled R\u00b2": 0.04136178690520953,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 37.0,
+      "Held-out test pooled R\u00b2": 0.043234562475315985,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 38.0,
+      "Held-out test pooled R\u00b2": 0.056774088717768345,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 39.0,
+      "Held-out test pooled R\u00b2": 0.12567501357793265,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 40.0,
+      "Held-out test pooled R\u00b2": 0.3153436916265825,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 41.0,
+      "Held-out test pooled R\u00b2": 0.3699124482717342,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 0.0,
+      "Held-out test pooled R\u00b2": 0.11038023403858865,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 1.0,
+      "Held-out test pooled R\u00b2": 0.06531562421497139,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 2.0,
+      "Held-out test pooled R\u00b2": 0.0332329088900114,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 3.0,
+      "Held-out test pooled R\u00b2": 0.015825352096327516,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 4.0,
+      "Held-out test pooled R\u00b2": 0.0051107186378693825,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 5.0,
+      "Held-out test pooled R\u00b2": -0.003486569943520701,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 6.0,
+      "Held-out test pooled R\u00b2": -0.007092100589747297,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 7.0,
+      "Held-out test pooled R\u00b2": -0.009960993125879503,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 8.0,
+      "Held-out test pooled R\u00b2": -0.013204427850897593,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 9.0,
+      "Held-out test pooled R\u00b2": -0.016019837001122195,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 10.0,
+      "Held-out test pooled R\u00b2": -0.017177329165135147,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 11.0,
+      "Held-out test pooled R\u00b2": -0.019515349272805516,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 12.0,
+      "Held-out test pooled R\u00b2": -0.02120947270827922,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 13.0,
+      "Held-out test pooled R\u00b2": -0.02210612654175681,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 14.0,
+      "Held-out test pooled R\u00b2": -0.021390391473957715,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 15.0,
+      "Held-out test pooled R\u00b2": -0.022169308129406984,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 16.0,
+      "Held-out test pooled R\u00b2": -0.0171979764509389,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 17.0,
+      "Held-out test pooled R\u00b2": -0.028260535090692374,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 18.0,
+      "Held-out test pooled R\u00b2": -0.028920309443120962,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 19.0,
+      "Held-out test pooled R\u00b2": -0.03007575608906654,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 20.0,
+      "Held-out test pooled R\u00b2": -0.028639494698582624,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 21.0,
+      "Held-out test pooled R\u00b2": -0.028362014246918532,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 22.0,
+      "Held-out test pooled R\u00b2": -0.028664490190043246,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 23.0,
+      "Held-out test pooled R\u00b2": -0.030755780288730605,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 24.0,
+      "Held-out test pooled R\u00b2": -0.03086415848039681,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 25.0,
+      "Held-out test pooled R\u00b2": -0.03120816453307973,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 26.0,
+      "Held-out test pooled R\u00b2": -0.030563102202120662,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 27.0,
+      "Held-out test pooled R\u00b2": -0.029454583312946037,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 28.0,
+      "Held-out test pooled R\u00b2": -0.03192292985150136,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 29.0,
+      "Held-out test pooled R\u00b2": -0.02858294356081381,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 30.0,
+      "Held-out test pooled R\u00b2": -0.030469502956787187,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 31.0,
+      "Held-out test pooled R\u00b2": -0.029807700515463553,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 32.0,
+      "Held-out test pooled R\u00b2": -0.03154340108428144,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 33.0,
+      "Held-out test pooled R\u00b2": -0.029845236863838442,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 34.0,
+      "Held-out test pooled R\u00b2": -0.030174302180843382,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 35.0,
+      "Held-out test pooled R\u00b2": -0.032567034085441815,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 36.0,
+      "Held-out test pooled R\u00b2": -0.029669987994837665,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 37.0,
+      "Held-out test pooled R\u00b2": -0.02878267457273842,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 38.0,
+      "Held-out test pooled R\u00b2": -0.02698424654841136,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 39.0,
+      "Held-out test pooled R\u00b2": -0.0014679848013396946,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 40.0,
+      "Held-out test pooled R\u00b2": 0.09601055445019169,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position (first 16 tokens | relative deciles | last 16 tokens; shaded = turn-end template tokens)": 41.0,
+      "Held-out test pooled R\u00b2": 0.10608670217694083,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 168
+}

@@ -1,0 +1,460 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:53Z",
+  "figsize": [
+    5.6,
+    3.8
+  ],
+  "points": [
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.4207126254669741,
+      "Test pooled R\u00b2 at position t": 0.5019921911682905,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.2531666864029061,
+      "Test pooled R\u00b2 at position t": 0.3648254054743617,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.3107038487925787,
+      "Test pooled R\u00b2 at position t": 0.3023675245191998,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.29181194007501093,
+      "Test pooled R\u00b2 at position t": 0.2757153858127398,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.29454368955563887,
+      "Test pooled R\u00b2 at position t": 0.25205667605253823,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.3658623849811193,
+      "Test pooled R\u00b2 at position t": 0.2192431561122432,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.33648883282434644,
+      "Test pooled R\u00b2 at position t": 0.20340538820161214,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.3750081361710438,
+      "Test pooled R\u00b2 at position t": 0.19341528709832412,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.3715247439650728,
+      "Test pooled R\u00b2 at position t": 0.18673230931156648,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.37011130302387535,
+      "Test pooled R\u00b2 at position t": 0.17386735063661607,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.3537942703678542,
+      "Test pooled R\u00b2 at position t": 0.16457946171233517,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.35795769246676346,
+      "Test pooled R\u00b2 at position t": 0.1542858358569188,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.38628411342599006,
+      "Test pooled R\u00b2 at position t": 0.15184524343725025,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.4326221938960378,
+      "Test pooled R\u00b2 at position t": 0.14524282057686888,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.4546089486484311,
+      "Test pooled R\u00b2 at position t": 0.14159577991944539,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 0.4766015768675536,
+      "Test pooled R\u00b2 at position t": 0.13710777455712164,
+      "series": "Own answer (regenerated)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 11.542946414038443,
+      "Test pooled R\u00b2 at position t": 0.5189145510051423,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.55617439948177,
+      "Test pooled R\u00b2 at position t": 0.3010099868118392,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.7228023797626764,
+      "Test pooled R\u00b2 at position t": 0.25357636155244045,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.7597081718377403,
+      "Test pooled R\u00b2 at position t": 0.2357619979926986,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.5755855030134234,
+      "Test pooled R\u00b2 at position t": 0.20824654506119744,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.800693683575391,
+      "Test pooled R\u00b2 at position t": 0.18835262000638064,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.6755137162516243,
+      "Test pooled R\u00b2 at position t": 0.17062376234149046,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.9284253336115569,
+      "Test pooled R\u00b2 at position t": 0.16290869044203982,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.7390122475552605,
+      "Test pooled R\u00b2 at position t": 0.15913920230171696,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.8217115545542213,
+      "Test pooled R\u00b2 at position t": 0.1493406071045823,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.758863359017767,
+      "Test pooled R\u00b2 at position t": 0.14556832801359054,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.9429945673876192,
+      "Test pooled R\u00b2 at position t": 0.14222444664738831,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.920311327768623,
+      "Test pooled R\u00b2 at position t": 0.1389447470106152,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.9114138420039866,
+      "Test pooled R\u00b2 at position t": 0.13083554057444302,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.9714755791462935,
+      "Test pooled R\u00b2 at position t": 0.12752213898645237,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 1.9540529243159428,
+      "Test pooled R\u00b2 at position t": 0.12710388307567655,
+      "series": "External plain (Claude)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 18.476934983147064,
+      "Test pooled R\u00b2 at position t": 0.5537298712604914,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 10.727609503487585,
+      "Test pooled R\u00b2 at position t": 0.256948575946062,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 5.460873349689584,
+      "Test pooled R\u00b2 at position t": 0.1690706639513565,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 5.004671858192363,
+      "Test pooled R\u00b2 at position t": 0.15553469549003895,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.628717085075583,
+      "Test pooled R\u00b2 at position t": 0.1378990265068385,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.65839593393119,
+      "Test pooled R\u00b2 at position t": 0.12714116420982846,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.1175793601805495,
+      "Test pooled R\u00b2 at position t": 0.10926631930148856,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.90936168474557,
+      "Test pooled R\u00b2 at position t": 0.11043819436992108,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.136037156315643,
+      "Test pooled R\u00b2 at position t": 0.09967044346708676,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.8822303009527346,
+      "Test pooled R\u00b2 at position t": 0.09006004032675619,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.9777722717869763,
+      "Test pooled R\u00b2 at position t": 0.08816033719325655,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.8703263215545487,
+      "Test pooled R\u00b2 at position t": 0.0844857300494849,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.909782197266507,
+      "Test pooled R\u00b2 at position t": 0.08056729422486231,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.163665232784219,
+      "Test pooled R\u00b2 at position t": 0.0788763881154021,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.943321178154301,
+      "Test pooled R\u00b2 at position t": 0.0809850509810991,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.0375768292868885,
+      "Test pooled R\u00b2 at position t": 0.07460334543948088,
+      "series": "External distinct-style (Claude)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 19.212870999338534,
+      "Test pooled R\u00b2 at position t": 0.11038023403858865,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 9.259888395728279,
+      "Test pooled R\u00b2 at position t": 0.06531562421497139,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 7.772235006551468,
+      "Test pooled R\u00b2 at position t": 0.0332329088900114,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 6.962853593882342,
+      "Test pooled R\u00b2 at position t": 0.015825352096327516,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 5.571572272239472,
+      "Test pooled R\u00b2 at position t": 0.0051107186378693825,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 5.464046619176741,
+      "Test pooled R\u00b2 at position t": -0.003486569943520701,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.758198679191874,
+      "Test pooled R\u00b2 at position t": -0.007092100589747297,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.601479859352892,
+      "Test pooled R\u00b2 at position t": -0.009960993125879503,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.001709362146944,
+      "Test pooled R\u00b2 at position t": -0.013204427850897593,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 4.477255380919901,
+      "Test pooled R\u00b2 at position t": -0.016019837001122195,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.4098110481418904,
+      "Test pooled R\u00b2 at position t": -0.017177329165135147,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.4278516295155885,
+      "Test pooled R\u00b2 at position t": -0.019515349272805516,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.2703250909475745,
+      "Test pooled R\u00b2 at position t": -0.02120947270827922,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.3284103939770597,
+      "Test pooled R\u00b2 at position t": -0.02210612654175681,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 3.0514297598660756,
+      "Test pooled R\u00b2 at position t": -0.021390391473957715,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Mean teacher-forced -log P at position t (all captured contexts)": 2.9716740035423936,
+      "Test pooled R\u00b2 at position t": -0.022169308129406984,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 64
+}

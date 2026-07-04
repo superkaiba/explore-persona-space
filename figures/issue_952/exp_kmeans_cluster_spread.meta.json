@@ -1,0 +1,252 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:54Z",
+  "figsize": [
+    6.5,
+    3.6
+  ],
+  "points": [
+    {
+      "TF-idf k-means cluster (test contexts)": -0.3,
+      "Mean per-context R\u00b2 (position slots)": 0.193409415893571,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 0.7,
+      "Mean per-context R\u00b2 (position slots)": 0.16000787657067256,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 1.7,
+      "Mean per-context R\u00b2 (position slots)": 0.3015608038631721,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 2.7,
+      "Mean per-context R\u00b2 (position slots)": 0.16811905279477507,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 3.7,
+      "Mean per-context R\u00b2 (position slots)": 0.17175279728539583,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 4.7,
+      "Mean per-context R\u00b2 (position slots)": 0.4452599127690851,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 5.7,
+      "Mean per-context R\u00b2 (position slots)": 0.1882550159741175,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 6.7,
+      "Mean per-context R\u00b2 (position slots)": 0.15302377334878553,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 7.7,
+      "Mean per-context R\u00b2 (position slots)": 0.17496494393378068,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 8.7,
+      "Mean per-context R\u00b2 (position slots)": 0.19101396374083657,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": -0.1,
+      "Mean per-context R\u00b2 (position slots)": 0.11766622451274564,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 0.9,
+      "Mean per-context R\u00b2 (position slots)": 0.13602063158495098,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 1.9,
+      "Mean per-context R\u00b2 (position slots)": 0.31362288427854873,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 2.9,
+      "Mean per-context R\u00b2 (position slots)": 0.1843388447545649,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 3.9,
+      "Mean per-context R\u00b2 (position slots)": 0.15710739199359378,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 4.9,
+      "Mean per-context R\u00b2 (position slots)": 0.3055934761141705,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 5.9,
+      "Mean per-context R\u00b2 (position slots)": 0.17731492128542617,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 6.9,
+      "Mean per-context R\u00b2 (position slots)": 0.13058511195234812,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 7.9,
+      "Mean per-context R\u00b2 (position slots)": 0.14125595002361194,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 8.9,
+      "Mean per-context R\u00b2 (position slots)": 0.15406448968983108,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 0.1,
+      "Mean per-context R\u00b2 (position slots)": 0.06365331903595679,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 1.1,
+      "Mean per-context R\u00b2 (position slots)": 0.0813476736786614,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 2.1,
+      "Mean per-context R\u00b2 (position slots)": 0.22178656358362325,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 3.1,
+      "Mean per-context R\u00b2 (position slots)": 0.09352404232024744,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 4.1,
+      "Mean per-context R\u00b2 (position slots)": 0.12134469530576825,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 5.1,
+      "Mean per-context R\u00b2 (position slots)": 0.1715614882399098,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 6.1,
+      "Mean per-context R\u00b2 (position slots)": 0.11418007657731795,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 7.1,
+      "Mean per-context R\u00b2 (position slots)": 0.072988627527734,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 8.1,
+      "Mean per-context R\u00b2 (position slots)": 0.12235222420412659,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 9.1,
+      "Mean per-context R\u00b2 (position slots)": 0.07552563666019732,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 0.3,
+      "Mean per-context R\u00b2 (position slots)": -0.01370176548630997,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 1.3,
+      "Mean per-context R\u00b2 (position slots)": -0.014273336424476967,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 2.3,
+      "Mean per-context R\u00b2 (position slots)": 0.011899664681895194,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 3.3,
+      "Mean per-context R\u00b2 (position slots)": 0.02371861076184583,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 4.3,
+      "Mean per-context R\u00b2 (position slots)": -0.007572558743186987,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 5.3,
+      "Mean per-context R\u00b2 (position slots)": -0.01644709972269607,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 6.3,
+      "Mean per-context R\u00b2 (position slots)": -0.010949001479623457,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 7.3,
+      "Mean per-context R\u00b2 (position slots)": -0.01801587034012032,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 8.3,
+      "Mean per-context R\u00b2 (position slots)": -0.015677907295601663,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "TF-idf k-means cluster (test contexts)": 9.3,
+      "Mean per-context R\u00b2 (position slots)": -0.012793771397444014,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 40
+}

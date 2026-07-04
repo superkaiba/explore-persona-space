@@ -1,0 +1,3596 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:49Z",
+  "figsize": [
+    6.5,
+    3.6
+  ],
+  "points": [
+    {
+      "Answer position t": 1.0,
+      "Teacher-forced -log P(token)": 0.4207126254669743,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 2.0,
+      "Teacher-forced -log P(token)": 0.25316668640290657,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 3.0,
+      "Teacher-forced -log P(token)": 0.31070384879257934,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 4.0,
+      "Teacher-forced -log P(token)": 0.2918119400750115,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 5.0,
+      "Teacher-forced -log P(token)": 0.29454368955563986,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 6.0,
+      "Teacher-forced -log P(token)": 0.3658623849811197,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 7.0,
+      "Teacher-forced -log P(token)": 0.33648883282434655,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 8.0,
+      "Teacher-forced -log P(token)": 0.37500813617104406,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 9.0,
+      "Teacher-forced -log P(token)": 0.3715247439650736,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 10.0,
+      "Teacher-forced -log P(token)": 0.37011130302387607,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 11.0,
+      "Teacher-forced -log P(token)": 0.35379427036785416,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 12.0,
+      "Teacher-forced -log P(token)": 0.3579576924667638,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 13.0,
+      "Teacher-forced -log P(token)": 0.38628411342599067,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 14.0,
+      "Teacher-forced -log P(token)": 0.43262219389603823,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 15.0,
+      "Teacher-forced -log P(token)": 0.4546089486484314,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 16.0,
+      "Teacher-forced -log P(token)": 0.4766015768675533,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 17.0,
+      "Teacher-forced -log P(token)": 0.4732845303928995,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 18.0,
+      "Teacher-forced -log P(token)": 0.4795502089769297,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 19.0,
+      "Teacher-forced -log P(token)": 0.48862880201559233,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 20.0,
+      "Teacher-forced -log P(token)": 0.5217009234064294,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 21.0,
+      "Teacher-forced -log P(token)": 0.46705838119916326,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 22.0,
+      "Teacher-forced -log P(token)": 0.4728446188141062,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 23.0,
+      "Teacher-forced -log P(token)": 0.47995557105579867,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 24.0,
+      "Teacher-forced -log P(token)": 0.4713866343650714,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 25.0,
+      "Teacher-forced -log P(token)": 0.5060537559399283,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 26.0,
+      "Teacher-forced -log P(token)": 0.4710570677175164,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 27.0,
+      "Teacher-forced -log P(token)": 0.4899700227379894,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 28.0,
+      "Teacher-forced -log P(token)": 0.5263760372619064,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 29.0,
+      "Teacher-forced -log P(token)": 0.5164966566754166,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 30.0,
+      "Teacher-forced -log P(token)": 0.4616617790450376,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 31.0,
+      "Teacher-forced -log P(token)": 0.4846608634657495,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 32.0,
+      "Teacher-forced -log P(token)": 0.5104576389193483,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 33.0,
+      "Teacher-forced -log P(token)": 0.5150334943805858,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 34.0,
+      "Teacher-forced -log P(token)": 0.5374538109875973,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 35.0,
+      "Teacher-forced -log P(token)": 0.5350822169002541,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 36.0,
+      "Teacher-forced -log P(token)": 0.5440579904953895,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 37.0,
+      "Teacher-forced -log P(token)": 0.5255812172020856,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 38.0,
+      "Teacher-forced -log P(token)": 0.5063612402544299,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 39.0,
+      "Teacher-forced -log P(token)": 0.5305466664496565,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 40.0,
+      "Teacher-forced -log P(token)": 0.480311950015854,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 41.0,
+      "Teacher-forced -log P(token)": 0.5019938407568647,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 42.0,
+      "Teacher-forced -log P(token)": 0.5280935850292406,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 43.0,
+      "Teacher-forced -log P(token)": 0.5239185201446563,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 44.0,
+      "Teacher-forced -log P(token)": 0.5522907395464587,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 45.0,
+      "Teacher-forced -log P(token)": 0.5604591428485165,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 46.0,
+      "Teacher-forced -log P(token)": 0.5444276285489359,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 47.0,
+      "Teacher-forced -log P(token)": 0.5280335818806556,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 48.0,
+      "Teacher-forced -log P(token)": 0.5518745814419733,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 49.0,
+      "Teacher-forced -log P(token)": 0.5682814609967358,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 50.0,
+      "Teacher-forced -log P(token)": 0.53428331827978,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 51.0,
+      "Teacher-forced -log P(token)": 0.5108127845185169,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 52.0,
+      "Teacher-forced -log P(token)": 0.5513928342896313,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 53.0,
+      "Teacher-forced -log P(token)": 0.560120689042707,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 54.0,
+      "Teacher-forced -log P(token)": 0.5843033231295023,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 55.0,
+      "Teacher-forced -log P(token)": 0.550988890853299,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 56.0,
+      "Teacher-forced -log P(token)": 0.5723268225115375,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 57.0,
+      "Teacher-forced -log P(token)": 0.539509838357644,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 58.0,
+      "Teacher-forced -log P(token)": 0.5635783486097088,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 59.0,
+      "Teacher-forced -log P(token)": 0.5921128722561378,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 60.0,
+      "Teacher-forced -log P(token)": 0.6087659795541497,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 61.0,
+      "Teacher-forced -log P(token)": 0.6130461674475348,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 62.0,
+      "Teacher-forced -log P(token)": 0.5775167359942683,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 63.0,
+      "Teacher-forced -log P(token)": 0.6007918512042216,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 64.0,
+      "Teacher-forced -log P(token)": 0.6063745955587971,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 65.0,
+      "Teacher-forced -log P(token)": 0.6010742546992518,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 66.0,
+      "Teacher-forced -log P(token)": 0.55307108850838,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 67.0,
+      "Teacher-forced -log P(token)": 0.5689087612642988,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 68.0,
+      "Teacher-forced -log P(token)": 0.5617409972275498,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 69.0,
+      "Teacher-forced -log P(token)": 0.5932348479783918,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 70.0,
+      "Teacher-forced -log P(token)": 0.5808631379780714,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 71.0,
+      "Teacher-forced -log P(token)": 0.5695957300906576,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 72.0,
+      "Teacher-forced -log P(token)": 0.5761771238413976,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 73.0,
+      "Teacher-forced -log P(token)": 0.5402956533420087,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 74.0,
+      "Teacher-forced -log P(token)": 0.5703534898165382,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 75.0,
+      "Teacher-forced -log P(token)": 0.6240595311598841,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 76.0,
+      "Teacher-forced -log P(token)": 0.6061637159454457,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 77.0,
+      "Teacher-forced -log P(token)": 0.5488777784937999,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 78.0,
+      "Teacher-forced -log P(token)": 0.5821854582967166,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 79.0,
+      "Teacher-forced -log P(token)": 0.584464012349405,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 80.0,
+      "Teacher-forced -log P(token)": 0.5459085902381275,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 81.0,
+      "Teacher-forced -log P(token)": 0.5883424252853313,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 82.0,
+      "Teacher-forced -log P(token)": 0.5562298616108244,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 83.0,
+      "Teacher-forced -log P(token)": 0.5627802728469186,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 84.0,
+      "Teacher-forced -log P(token)": 0.6122106277114745,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 85.0,
+      "Teacher-forced -log P(token)": 0.5618109078074341,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 86.0,
+      "Teacher-forced -log P(token)": 0.5762884741355643,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 87.0,
+      "Teacher-forced -log P(token)": 0.6070885048546643,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 88.0,
+      "Teacher-forced -log P(token)": 0.5540096723157616,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 89.0,
+      "Teacher-forced -log P(token)": 0.5823056971379373,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 90.0,
+      "Teacher-forced -log P(token)": 0.5917605820070794,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 91.0,
+      "Teacher-forced -log P(token)": 0.5933117393563134,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 92.0,
+      "Teacher-forced -log P(token)": 0.57721392289844,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 93.0,
+      "Teacher-forced -log P(token)": 0.6087434504860684,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 94.0,
+      "Teacher-forced -log P(token)": 0.5620915536802014,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 95.0,
+      "Teacher-forced -log P(token)": 0.6031471120370364,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 96.0,
+      "Teacher-forced -log P(token)": 0.5739177308994075,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 97.0,
+      "Teacher-forced -log P(token)": 0.5675352181534601,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 98.0,
+      "Teacher-forced -log P(token)": 0.6581127061292652,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 99.0,
+      "Teacher-forced -log P(token)": 0.5765543596393373,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 100.0,
+      "Teacher-forced -log P(token)": 0.5764067019048049,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 101.0,
+      "Teacher-forced -log P(token)": 0.5694505649170218,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 102.0,
+      "Teacher-forced -log P(token)": 0.621366178826753,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 103.0,
+      "Teacher-forced -log P(token)": 0.5951267199523899,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 104.0,
+      "Teacher-forced -log P(token)": 0.6140699026539007,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 105.0,
+      "Teacher-forced -log P(token)": 0.6668091874322811,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 106.0,
+      "Teacher-forced -log P(token)": 0.6554342595548281,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 107.0,
+      "Teacher-forced -log P(token)": 0.6049156558552815,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 108.0,
+      "Teacher-forced -log P(token)": 0.6048604314979088,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 109.0,
+      "Teacher-forced -log P(token)": 0.6161712026459014,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 110.0,
+      "Teacher-forced -log P(token)": 0.6101800968154711,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 111.0,
+      "Teacher-forced -log P(token)": 0.5996384066548963,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 112.0,
+      "Teacher-forced -log P(token)": 0.56291083969033,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 113.0,
+      "Teacher-forced -log P(token)": 0.5964983537476132,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 114.0,
+      "Teacher-forced -log P(token)": 0.6123649486258713,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 115.0,
+      "Teacher-forced -log P(token)": 0.5826765377575066,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 116.0,
+      "Teacher-forced -log P(token)": 0.6178569582926808,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 117.0,
+      "Teacher-forced -log P(token)": 0.6113951742688413,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 118.0,
+      "Teacher-forced -log P(token)": 0.5818827370041797,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 119.0,
+      "Teacher-forced -log P(token)": 0.6598782182032555,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 120.0,
+      "Teacher-forced -log P(token)": 0.630321442607899,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 121.0,
+      "Teacher-forced -log P(token)": 0.6303934740865292,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 122.0,
+      "Teacher-forced -log P(token)": 0.5870479202062354,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 123.0,
+      "Teacher-forced -log P(token)": 0.5935479441867849,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 124.0,
+      "Teacher-forced -log P(token)": 0.6068069606590418,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 125.0,
+      "Teacher-forced -log P(token)": 0.5891868565446043,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 126.0,
+      "Teacher-forced -log P(token)": 0.6120601700245926,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 127.0,
+      "Teacher-forced -log P(token)": 0.6439616218120456,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 128.0,
+      "Teacher-forced -log P(token)": 0.5820291665360976,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Answer position t": 1.0,
+      "Teacher-forced -log P(token)": 11.542946414038445,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 2.0,
+      "Teacher-forced -log P(token)": 3.5561743994817756,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 3.0,
+      "Teacher-forced -log P(token)": 1.7228023797626781,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 4.0,
+      "Teacher-forced -log P(token)": 1.7597081718377412,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 5.0,
+      "Teacher-forced -log P(token)": 1.5755855030134254,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 6.0,
+      "Teacher-forced -log P(token)": 1.8006936835753946,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 7.0,
+      "Teacher-forced -log P(token)": 1.6755137162516267,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 8.0,
+      "Teacher-forced -log P(token)": 1.9284253336115584,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 9.0,
+      "Teacher-forced -log P(token)": 1.7390122475552623,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 10.0,
+      "Teacher-forced -log P(token)": 1.8217115545542244,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 11.0,
+      "Teacher-forced -log P(token)": 1.7588633590177702,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 12.0,
+      "Teacher-forced -log P(token)": 1.9429945673876214,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 13.0,
+      "Teacher-forced -log P(token)": 1.9203113277686248,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 14.0,
+      "Teacher-forced -log P(token)": 1.9114138420039906,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 15.0,
+      "Teacher-forced -log P(token)": 1.9714755791462955,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 16.0,
+      "Teacher-forced -log P(token)": 1.9540529243159448,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 17.0,
+      "Teacher-forced -log P(token)": 1.9287467472447566,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 18.0,
+      "Teacher-forced -log P(token)": 1.9315345054524398,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 19.0,
+      "Teacher-forced -log P(token)": 1.9021922141850613,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 20.0,
+      "Teacher-forced -log P(token)": 1.8516807168709506,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 21.0,
+      "Teacher-forced -log P(token)": 1.8292968452803764,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 22.0,
+      "Teacher-forced -log P(token)": 1.8415068833316703,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 23.0,
+      "Teacher-forced -log P(token)": 1.7820655653801687,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 24.0,
+      "Teacher-forced -log P(token)": 1.858097058377902,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 25.0,
+      "Teacher-forced -log P(token)": 1.868769410591631,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 26.0,
+      "Teacher-forced -log P(token)": 1.7645837078038025,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 27.0,
+      "Teacher-forced -log P(token)": 1.797580689414103,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 28.0,
+      "Teacher-forced -log P(token)": 1.7750801477520386,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 29.0,
+      "Teacher-forced -log P(token)": 1.7362994526939004,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 30.0,
+      "Teacher-forced -log P(token)": 1.7604027837957272,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 31.0,
+      "Teacher-forced -log P(token)": 1.7354967426191188,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 32.0,
+      "Teacher-forced -log P(token)": 1.749789821073016,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 33.0,
+      "Teacher-forced -log P(token)": 1.730345820388411,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 34.0,
+      "Teacher-forced -log P(token)": 1.7862211021497838,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 35.0,
+      "Teacher-forced -log P(token)": 1.7618650752153602,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 36.0,
+      "Teacher-forced -log P(token)": 1.7865910975327857,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 37.0,
+      "Teacher-forced -log P(token)": 1.741775753286738,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 38.0,
+      "Teacher-forced -log P(token)": 1.7356811771585892,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 39.0,
+      "Teacher-forced -log P(token)": 1.6976490455271906,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 40.0,
+      "Teacher-forced -log P(token)": 1.779716024923009,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 41.0,
+      "Teacher-forced -log P(token)": 1.6573434939322222,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 42.0,
+      "Teacher-forced -log P(token)": 1.5900174028315655,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 43.0,
+      "Teacher-forced -log P(token)": 1.6225606106203756,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 44.0,
+      "Teacher-forced -log P(token)": 1.5549415436915819,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 45.0,
+      "Teacher-forced -log P(token)": 1.598423447674537,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 46.0,
+      "Teacher-forced -log P(token)": 1.6498952024270903,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 47.0,
+      "Teacher-forced -log P(token)": 1.5682763345997737,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 48.0,
+      "Teacher-forced -log P(token)": 1.527744064259485,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 49.0,
+      "Teacher-forced -log P(token)": 1.6963468184626205,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 50.0,
+      "Teacher-forced -log P(token)": 1.580804908024336,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 51.0,
+      "Teacher-forced -log P(token)": 1.5333088054552932,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 52.0,
+      "Teacher-forced -log P(token)": 1.512165811890142,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 53.0,
+      "Teacher-forced -log P(token)": 1.5490732325328371,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 54.0,
+      "Teacher-forced -log P(token)": 1.48340218547689,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 55.0,
+      "Teacher-forced -log P(token)": 1.5796915993693266,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 56.0,
+      "Teacher-forced -log P(token)": 1.5221784805073384,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 57.0,
+      "Teacher-forced -log P(token)": 1.429218272550611,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 58.0,
+      "Teacher-forced -log P(token)": 1.4055937272331542,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 59.0,
+      "Teacher-forced -log P(token)": 1.4587867379335642,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 60.0,
+      "Teacher-forced -log P(token)": 1.4455338328981606,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 61.0,
+      "Teacher-forced -log P(token)": 1.4403149111098614,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 62.0,
+      "Teacher-forced -log P(token)": 1.4107161657668825,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 63.0,
+      "Teacher-forced -log P(token)": 1.4134546808590125,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 64.0,
+      "Teacher-forced -log P(token)": 1.4699470113305062,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 65.0,
+      "Teacher-forced -log P(token)": 1.4411921515453723,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 66.0,
+      "Teacher-forced -log P(token)": 1.3888254988902207,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 67.0,
+      "Teacher-forced -log P(token)": 1.3801616526313383,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 68.0,
+      "Teacher-forced -log P(token)": 1.376349035029287,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 69.0,
+      "Teacher-forced -log P(token)": 1.4031112382878732,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 70.0,
+      "Teacher-forced -log P(token)": 1.479695831339032,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 71.0,
+      "Teacher-forced -log P(token)": 1.4068764137594307,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 72.0,
+      "Teacher-forced -log P(token)": 1.4287730873985445,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 73.0,
+      "Teacher-forced -log P(token)": 1.3609213217360214,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 74.0,
+      "Teacher-forced -log P(token)": 1.4261242651839983,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 75.0,
+      "Teacher-forced -log P(token)": 1.393803491531876,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 76.0,
+      "Teacher-forced -log P(token)": 1.3713267332904389,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 77.0,
+      "Teacher-forced -log P(token)": 1.3546635860373528,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 78.0,
+      "Teacher-forced -log P(token)": 1.4020180057561997,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 79.0,
+      "Teacher-forced -log P(token)": 1.3715745025798676,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 80.0,
+      "Teacher-forced -log P(token)": 1.355796946135922,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 81.0,
+      "Teacher-forced -log P(token)": 1.4220302747650333,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 82.0,
+      "Teacher-forced -log P(token)": 1.3740635712359937,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 83.0,
+      "Teacher-forced -log P(token)": 1.319364397720928,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 84.0,
+      "Teacher-forced -log P(token)": 1.365819746339972,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 85.0,
+      "Teacher-forced -log P(token)": 1.326226481767844,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 86.0,
+      "Teacher-forced -log P(token)": 1.3929231871643295,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 87.0,
+      "Teacher-forced -log P(token)": 1.3458266847382547,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 88.0,
+      "Teacher-forced -log P(token)": 1.3137872267689257,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 89.0,
+      "Teacher-forced -log P(token)": 1.3379204504575422,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 90.0,
+      "Teacher-forced -log P(token)": 1.3241376642258174,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 91.0,
+      "Teacher-forced -log P(token)": 1.348798537716519,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 92.0,
+      "Teacher-forced -log P(token)": 1.3815852784633589,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 93.0,
+      "Teacher-forced -log P(token)": 1.336280137214623,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 94.0,
+      "Teacher-forced -log P(token)": 1.354691442585222,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 95.0,
+      "Teacher-forced -log P(token)": 1.3903417293585052,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 96.0,
+      "Teacher-forced -log P(token)": 1.3443437156019715,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 97.0,
+      "Teacher-forced -log P(token)": 1.4100416692401168,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 98.0,
+      "Teacher-forced -log P(token)": 1.3923899928624066,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 99.0,
+      "Teacher-forced -log P(token)": 1.304494701631727,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 100.0,
+      "Teacher-forced -log P(token)": 1.4116416672621184,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 101.0,
+      "Teacher-forced -log P(token)": 1.3904202586887309,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 102.0,
+      "Teacher-forced -log P(token)": 1.2857920205125697,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 103.0,
+      "Teacher-forced -log P(token)": 1.2794117898416364,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 104.0,
+      "Teacher-forced -log P(token)": 1.2855188873558574,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 105.0,
+      "Teacher-forced -log P(token)": 1.3377912914180108,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 106.0,
+      "Teacher-forced -log P(token)": 1.2718589622706182,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 107.0,
+      "Teacher-forced -log P(token)": 1.4030116239443977,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 108.0,
+      "Teacher-forced -log P(token)": 1.2908260783093095,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 109.0,
+      "Teacher-forced -log P(token)": 1.2325840935159873,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 110.0,
+      "Teacher-forced -log P(token)": 1.2350797231589568,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 111.0,
+      "Teacher-forced -log P(token)": 1.2921141386618447,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 112.0,
+      "Teacher-forced -log P(token)": 1.2960197158210114,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 113.0,
+      "Teacher-forced -log P(token)": 1.2763949744681233,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 114.0,
+      "Teacher-forced -log P(token)": 1.291198518727708,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 115.0,
+      "Teacher-forced -log P(token)": 1.3601126481026937,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 116.0,
+      "Teacher-forced -log P(token)": 1.3356751147821393,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 117.0,
+      "Teacher-forced -log P(token)": 1.3895696127730763,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 118.0,
+      "Teacher-forced -log P(token)": 1.3247614090132753,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 119.0,
+      "Teacher-forced -log P(token)": 1.3626904811305383,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 120.0,
+      "Teacher-forced -log P(token)": 1.3328083963510422,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 121.0,
+      "Teacher-forced -log P(token)": 1.3612291832212138,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 122.0,
+      "Teacher-forced -log P(token)": 1.2985432473322929,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 123.0,
+      "Teacher-forced -log P(token)": 1.3047488047297546,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 124.0,
+      "Teacher-forced -log P(token)": 1.3176512241323217,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 125.0,
+      "Teacher-forced -log P(token)": 1.3470644357461854,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 126.0,
+      "Teacher-forced -log P(token)": 1.3059474013664762,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 127.0,
+      "Teacher-forced -log P(token)": 1.3296236306817903,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 128.0,
+      "Teacher-forced -log P(token)": 1.26726643392972,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Answer position t": 1.0,
+      "Teacher-forced -log P(token)": 18.47693498314707,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 2.0,
+      "Teacher-forced -log P(token)": 10.727609503487589,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 3.0,
+      "Teacher-forced -log P(token)": 5.46087334968959,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 4.0,
+      "Teacher-forced -log P(token)": 5.0046718581923635,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 5.0,
+      "Teacher-forced -log P(token)": 4.6287170850755865,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 6.0,
+      "Teacher-forced -log P(token)": 4.658395933931193,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 7.0,
+      "Teacher-forced -log P(token)": 4.117579360180554,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 8.0,
+      "Teacher-forced -log P(token)": 3.9093616847455714,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 9.0,
+      "Teacher-forced -log P(token)": 4.136037156315641,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 10.0,
+      "Teacher-forced -log P(token)": 3.8822303009527355,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 11.0,
+      "Teacher-forced -log P(token)": 3.9777722717869786,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 12.0,
+      "Teacher-forced -log P(token)": 3.870326321554554,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 13.0,
+      "Teacher-forced -log P(token)": 3.9097821972665106,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 14.0,
+      "Teacher-forced -log P(token)": 4.163665232784222,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 15.0,
+      "Teacher-forced -log P(token)": 3.943321178154306,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 16.0,
+      "Teacher-forced -log P(token)": 4.037576829286892,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 17.0,
+      "Teacher-forced -log P(token)": 3.768306068624669,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 18.0,
+      "Teacher-forced -log P(token)": 3.950259342787291,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 19.0,
+      "Teacher-forced -log P(token)": 3.8616250218544375,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 20.0,
+      "Teacher-forced -log P(token)": 3.8617952627552423,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 21.0,
+      "Teacher-forced -log P(token)": 3.7384952629122608,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 22.0,
+      "Teacher-forced -log P(token)": 3.710927520376219,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 23.0,
+      "Teacher-forced -log P(token)": 3.501203950276943,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 24.0,
+      "Teacher-forced -log P(token)": 3.5055137371200353,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 25.0,
+      "Teacher-forced -log P(token)": 3.557027850624499,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 26.0,
+      "Teacher-forced -log P(token)": 3.3553154157322167,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 27.0,
+      "Teacher-forced -log P(token)": 3.382267162388787,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 28.0,
+      "Teacher-forced -log P(token)": 3.35526655735269,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 29.0,
+      "Teacher-forced -log P(token)": 3.466700590130329,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 30.0,
+      "Teacher-forced -log P(token)": 3.2095213611054336,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 31.0,
+      "Teacher-forced -log P(token)": 3.217365300354453,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 32.0,
+      "Teacher-forced -log P(token)": 3.149095557556798,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 33.0,
+      "Teacher-forced -log P(token)": 3.1677593498448355,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 34.0,
+      "Teacher-forced -log P(token)": 3.2089510314042413,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 35.0,
+      "Teacher-forced -log P(token)": 3.058433738649813,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 36.0,
+      "Teacher-forced -log P(token)": 2.9421321541925063,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 37.0,
+      "Teacher-forced -log P(token)": 3.0543106116971224,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 38.0,
+      "Teacher-forced -log P(token)": 3.1893615315692485,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 39.0,
+      "Teacher-forced -log P(token)": 3.0733714780001704,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 40.0,
+      "Teacher-forced -log P(token)": 3.113938077636868,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 41.0,
+      "Teacher-forced -log P(token)": 2.9462372963488552,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 42.0,
+      "Teacher-forced -log P(token)": 2.9942361005112383,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 43.0,
+      "Teacher-forced -log P(token)": 2.910212771066208,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 44.0,
+      "Teacher-forced -log P(token)": 2.9147277792527584,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 45.0,
+      "Teacher-forced -log P(token)": 2.8674774709740567,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 46.0,
+      "Teacher-forced -log P(token)": 2.839845249424957,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 47.0,
+      "Teacher-forced -log P(token)": 2.916270715271559,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 48.0,
+      "Teacher-forced -log P(token)": 2.8979987512134913,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 49.0,
+      "Teacher-forced -log P(token)": 2.9582090494046143,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 50.0,
+      "Teacher-forced -log P(token)": 2.843154112915932,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 51.0,
+      "Teacher-forced -log P(token)": 2.82141850874142,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 52.0,
+      "Teacher-forced -log P(token)": 2.8183566048593223,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 53.0,
+      "Teacher-forced -log P(token)": 2.7626841004380043,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 54.0,
+      "Teacher-forced -log P(token)": 2.7960464120337156,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 55.0,
+      "Teacher-forced -log P(token)": 2.832339227173086,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 56.0,
+      "Teacher-forced -log P(token)": 2.7320113126229413,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 57.0,
+      "Teacher-forced -log P(token)": 2.7480318315153207,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 58.0,
+      "Teacher-forced -log P(token)": 2.9170638394209747,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 59.0,
+      "Teacher-forced -log P(token)": 2.695739010659842,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 60.0,
+      "Teacher-forced -log P(token)": 2.6609852340941273,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 61.0,
+      "Teacher-forced -log P(token)": 2.768285281613601,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 62.0,
+      "Teacher-forced -log P(token)": 2.669429514876826,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 63.0,
+      "Teacher-forced -log P(token)": 2.62834761469071,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 64.0,
+      "Teacher-forced -log P(token)": 2.6757733928017955,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 65.0,
+      "Teacher-forced -log P(token)": 2.6570603025681447,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 66.0,
+      "Teacher-forced -log P(token)": 2.569602629447152,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 67.0,
+      "Teacher-forced -log P(token)": 2.685026552572884,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 68.0,
+      "Teacher-forced -log P(token)": 2.636866420833811,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 69.0,
+      "Teacher-forced -log P(token)": 2.4785583209457465,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 70.0,
+      "Teacher-forced -log P(token)": 2.441167105179287,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 71.0,
+      "Teacher-forced -log P(token)": 2.5854229977985246,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 72.0,
+      "Teacher-forced -log P(token)": 2.5308138594200793,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 73.0,
+      "Teacher-forced -log P(token)": 2.617128019046463,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 74.0,
+      "Teacher-forced -log P(token)": 2.538010068039748,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 75.0,
+      "Teacher-forced -log P(token)": 2.5417238870332026,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 76.0,
+      "Teacher-forced -log P(token)": 2.5270776446753853,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 77.0,
+      "Teacher-forced -log P(token)": 2.5318642542619343,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 78.0,
+      "Teacher-forced -log P(token)": 2.4611707231501043,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 79.0,
+      "Teacher-forced -log P(token)": 2.4700635673353992,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 80.0,
+      "Teacher-forced -log P(token)": 2.502192841029941,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 81.0,
+      "Teacher-forced -log P(token)": 2.457822024097379,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 82.0,
+      "Teacher-forced -log P(token)": 2.458624164330551,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 83.0,
+      "Teacher-forced -log P(token)": 2.500775063276854,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 84.0,
+      "Teacher-forced -log P(token)": 2.5329294897865298,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 85.0,
+      "Teacher-forced -log P(token)": 2.4960195225748607,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 86.0,
+      "Teacher-forced -log P(token)": 2.4494376652300356,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 87.0,
+      "Teacher-forced -log P(token)": 2.428744212220735,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 88.0,
+      "Teacher-forced -log P(token)": 2.524669464599169,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 89.0,
+      "Teacher-forced -log P(token)": 2.498190893720308,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 90.0,
+      "Teacher-forced -log P(token)": 2.42533691938389,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 91.0,
+      "Teacher-forced -log P(token)": 2.3948858276315463,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 92.0,
+      "Teacher-forced -log P(token)": 2.4638365231744546,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 93.0,
+      "Teacher-forced -log P(token)": 2.475287257075652,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 94.0,
+      "Teacher-forced -log P(token)": 2.4715419998578283,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 95.0,
+      "Teacher-forced -log P(token)": 2.423122348059852,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 96.0,
+      "Teacher-forced -log P(token)": 2.4859261940151622,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 97.0,
+      "Teacher-forced -log P(token)": 2.485942002736806,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 98.0,
+      "Teacher-forced -log P(token)": 2.495210562423257,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 99.0,
+      "Teacher-forced -log P(token)": 2.4317734778033686,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 100.0,
+      "Teacher-forced -log P(token)": 2.422720119057273,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 101.0,
+      "Teacher-forced -log P(token)": 2.404431651486529,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 102.0,
+      "Teacher-forced -log P(token)": 2.485158400375001,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 103.0,
+      "Teacher-forced -log P(token)": 2.3949709107593913,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 104.0,
+      "Teacher-forced -log P(token)": 2.350085206604563,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 105.0,
+      "Teacher-forced -log P(token)": 2.365599266315034,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 106.0,
+      "Teacher-forced -log P(token)": 2.4150831062232525,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 107.0,
+      "Teacher-forced -log P(token)": 2.396393813752783,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 108.0,
+      "Teacher-forced -log P(token)": 2.406054013520748,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 109.0,
+      "Teacher-forced -log P(token)": 2.339163265954078,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 110.0,
+      "Teacher-forced -log P(token)": 2.4582859055694337,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 111.0,
+      "Teacher-forced -log P(token)": 2.3617588665926172,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 112.0,
+      "Teacher-forced -log P(token)": 2.396469356484877,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 113.0,
+      "Teacher-forced -log P(token)": 2.391515620310569,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 114.0,
+      "Teacher-forced -log P(token)": 2.2391497200387205,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 115.0,
+      "Teacher-forced -log P(token)": 2.3553280792510938,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 116.0,
+      "Teacher-forced -log P(token)": 2.3585314962216475,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 117.0,
+      "Teacher-forced -log P(token)": 2.3974610980805937,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 118.0,
+      "Teacher-forced -log P(token)": 2.3870036780193877,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 119.0,
+      "Teacher-forced -log P(token)": 2.4077350913262174,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 120.0,
+      "Teacher-forced -log P(token)": 2.43924094968045,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 121.0,
+      "Teacher-forced -log P(token)": 2.368962086374478,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 122.0,
+      "Teacher-forced -log P(token)": 2.3937326284875673,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 123.0,
+      "Teacher-forced -log P(token)": 2.387507238798182,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 124.0,
+      "Teacher-forced -log P(token)": 2.324374912255003,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 125.0,
+      "Teacher-forced -log P(token)": 2.301979240172854,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 126.0,
+      "Teacher-forced -log P(token)": 2.3806257402951947,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 127.0,
+      "Teacher-forced -log P(token)": 2.3946181669174016,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 128.0,
+      "Teacher-forced -log P(token)": 2.385267445437225,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Answer position t": 1.0,
+      "Teacher-forced -log P(token)": 19.212870999338527,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 2.0,
+      "Teacher-forced -log P(token)": 9.259888395728279,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 3.0,
+      "Teacher-forced -log P(token)": 7.772235006551477,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 4.0,
+      "Teacher-forced -log P(token)": 6.962853593882346,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 5.0,
+      "Teacher-forced -log P(token)": 5.571572272239473,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 6.0,
+      "Teacher-forced -log P(token)": 5.464046619176744,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 7.0,
+      "Teacher-forced -log P(token)": 4.758198679191874,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 8.0,
+      "Teacher-forced -log P(token)": 4.601479859352891,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 9.0,
+      "Teacher-forced -log P(token)": 4.001709362146944,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 10.0,
+      "Teacher-forced -log P(token)": 4.477255380919904,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 11.0,
+      "Teacher-forced -log P(token)": 3.4098110481418917,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 12.0,
+      "Teacher-forced -log P(token)": 3.427851629515589,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 13.0,
+      "Teacher-forced -log P(token)": 3.2703250909475763,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 14.0,
+      "Teacher-forced -log P(token)": 3.328410393977059,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 15.0,
+      "Teacher-forced -log P(token)": 3.0514297598660765,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 16.0,
+      "Teacher-forced -log P(token)": 2.971674003542394,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 17.0,
+      "Teacher-forced -log P(token)": 2.927722094679147,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 18.0,
+      "Teacher-forced -log P(token)": 2.745745336015006,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 19.0,
+      "Teacher-forced -log P(token)": 2.49317647816712,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 20.0,
+      "Teacher-forced -log P(token)": 2.839128666003345,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 21.0,
+      "Teacher-forced -log P(token)": 2.6286645567591065,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 22.0,
+      "Teacher-forced -log P(token)": 2.342958517186104,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 23.0,
+      "Teacher-forced -log P(token)": 2.300511297098163,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 24.0,
+      "Teacher-forced -log P(token)": 2.2613308693689342,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 25.0,
+      "Teacher-forced -log P(token)": 2.2260000723368503,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 26.0,
+      "Teacher-forced -log P(token)": 2.1722921005790314,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 27.0,
+      "Teacher-forced -log P(token)": 2.1711308896522534,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 28.0,
+      "Teacher-forced -log P(token)": 2.183797129622571,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 29.0,
+      "Teacher-forced -log P(token)": 2.0999520630414303,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 30.0,
+      "Teacher-forced -log P(token)": 1.9886490883994778,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 31.0,
+      "Teacher-forced -log P(token)": 1.9233371898800748,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 32.0,
+      "Teacher-forced -log P(token)": 1.8928595950592606,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 33.0,
+      "Teacher-forced -log P(token)": 1.8906090788533905,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 34.0,
+      "Teacher-forced -log P(token)": 1.960773896821272,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 35.0,
+      "Teacher-forced -log P(token)": 1.7992592605133155,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 36.0,
+      "Teacher-forced -log P(token)": 1.8468425286304844,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 37.0,
+      "Teacher-forced -log P(token)": 1.745280123903376,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 38.0,
+      "Teacher-forced -log P(token)": 1.7558624589631913,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 39.0,
+      "Teacher-forced -log P(token)": 1.7722275514717605,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 40.0,
+      "Teacher-forced -log P(token)": 1.6867149156627834,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 41.0,
+      "Teacher-forced -log P(token)": 1.618242859572827,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 42.0,
+      "Teacher-forced -log P(token)": 1.6077603186406284,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 43.0,
+      "Teacher-forced -log P(token)": 1.6031880994029581,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 44.0,
+      "Teacher-forced -log P(token)": 1.6475769862710465,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 45.0,
+      "Teacher-forced -log P(token)": 1.614254451226977,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 46.0,
+      "Teacher-forced -log P(token)": 1.581353003549621,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 47.0,
+      "Teacher-forced -log P(token)": 1.5256200810544056,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 48.0,
+      "Teacher-forced -log P(token)": 1.5331373308838887,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 49.0,
+      "Teacher-forced -log P(token)": 1.5736144719970502,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 50.0,
+      "Teacher-forced -log P(token)": 1.4420310417933364,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 51.0,
+      "Teacher-forced -log P(token)": 1.3866817431885186,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 52.0,
+      "Teacher-forced -log P(token)": 1.3838015728900535,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 53.0,
+      "Teacher-forced -log P(token)": 1.4211541923538342,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 54.0,
+      "Teacher-forced -log P(token)": 1.4821079976126317,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 55.0,
+      "Teacher-forced -log P(token)": 1.4019087339297636,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 56.0,
+      "Teacher-forced -log P(token)": 1.4476423432089756,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 57.0,
+      "Teacher-forced -log P(token)": 1.3276701540008808,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 58.0,
+      "Teacher-forced -log P(token)": 1.405730114875522,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 59.0,
+      "Teacher-forced -log P(token)": 1.3667936544606072,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 60.0,
+      "Teacher-forced -log P(token)": 1.4246940980442286,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 61.0,
+      "Teacher-forced -log P(token)": 1.333598630078651,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 62.0,
+      "Teacher-forced -log P(token)": 1.3053832764145257,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 63.0,
+      "Teacher-forced -log P(token)": 1.3860379985960016,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 64.0,
+      "Teacher-forced -log P(token)": 1.3743016642598591,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 65.0,
+      "Teacher-forced -log P(token)": 1.3620730995869463,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 66.0,
+      "Teacher-forced -log P(token)": 1.2636161805787067,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 67.0,
+      "Teacher-forced -log P(token)": 1.220443447770284,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 68.0,
+      "Teacher-forced -log P(token)": 1.229999321008078,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 69.0,
+      "Teacher-forced -log P(token)": 1.2526378865169965,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 70.0,
+      "Teacher-forced -log P(token)": 1.257593083931771,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 71.0,
+      "Teacher-forced -log P(token)": 1.2564508853875125,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 72.0,
+      "Teacher-forced -log P(token)": 1.2647381251798546,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 73.0,
+      "Teacher-forced -log P(token)": 1.1921417417449327,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 74.0,
+      "Teacher-forced -log P(token)": 1.2843540043353847,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 75.0,
+      "Teacher-forced -log P(token)": 1.257235544834948,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 76.0,
+      "Teacher-forced -log P(token)": 1.273953306507003,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 77.0,
+      "Teacher-forced -log P(token)": 1.1800948702877252,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 78.0,
+      "Teacher-forced -log P(token)": 1.1954771887801219,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 79.0,
+      "Teacher-forced -log P(token)": 1.1575121694040065,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 80.0,
+      "Teacher-forced -log P(token)": 1.086230282253783,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 81.0,
+      "Teacher-forced -log P(token)": 1.1260313156246546,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 82.0,
+      "Teacher-forced -log P(token)": 1.1063120023394057,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 83.0,
+      "Teacher-forced -log P(token)": 1.1016651274018634,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 84.0,
+      "Teacher-forced -log P(token)": 1.2331488929559902,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 85.0,
+      "Teacher-forced -log P(token)": 1.1590940789175879,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 86.0,
+      "Teacher-forced -log P(token)": 1.1217267316025166,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 87.0,
+      "Teacher-forced -log P(token)": 1.1905020586243573,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 88.0,
+      "Teacher-forced -log P(token)": 1.0890113297475332,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 89.0,
+      "Teacher-forced -log P(token)": 1.1219859810584933,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 90.0,
+      "Teacher-forced -log P(token)": 1.1428893469590446,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 91.0,
+      "Teacher-forced -log P(token)": 1.1136094755390473,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 92.0,
+      "Teacher-forced -log P(token)": 1.0732542440481625,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 93.0,
+      "Teacher-forced -log P(token)": 1.1848104634423944,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 94.0,
+      "Teacher-forced -log P(token)": 1.0208627049101855,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 95.0,
+      "Teacher-forced -log P(token)": 1.136797421855399,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 96.0,
+      "Teacher-forced -log P(token)": 1.0223549288062634,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 97.0,
+      "Teacher-forced -log P(token)": 1.0429643017392896,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 98.0,
+      "Teacher-forced -log P(token)": 1.1314470978657811,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 99.0,
+      "Teacher-forced -log P(token)": 1.0741375298560345,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 100.0,
+      "Teacher-forced -log P(token)": 1.0172022369800764,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 101.0,
+      "Teacher-forced -log P(token)": 1.0323071305185292,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 102.0,
+      "Teacher-forced -log P(token)": 1.0553287717356779,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 103.0,
+      "Teacher-forced -log P(token)": 0.9948823260952883,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 104.0,
+      "Teacher-forced -log P(token)": 1.0180688199862618,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 105.0,
+      "Teacher-forced -log P(token)": 1.0861110744816376,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 106.0,
+      "Teacher-forced -log P(token)": 1.0670364933510839,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 107.0,
+      "Teacher-forced -log P(token)": 0.9841357582832707,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 108.0,
+      "Teacher-forced -log P(token)": 1.0168971759687973,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 109.0,
+      "Teacher-forced -log P(token)": 0.9727178813977457,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 110.0,
+      "Teacher-forced -log P(token)": 1.0210842473200892,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 111.0,
+      "Teacher-forced -log P(token)": 1.0204710710554752,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 112.0,
+      "Teacher-forced -log P(token)": 0.9139289785278679,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 113.0,
+      "Teacher-forced -log P(token)": 0.9779499064131285,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 114.0,
+      "Teacher-forced -log P(token)": 1.023830504072659,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 115.0,
+      "Teacher-forced -log P(token)": 0.9778075874850083,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 116.0,
+      "Teacher-forced -log P(token)": 0.9787624096067428,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 117.0,
+      "Teacher-forced -log P(token)": 0.9769797947282944,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 118.0,
+      "Teacher-forced -log P(token)": 1.0250006167992793,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 119.0,
+      "Teacher-forced -log P(token)": 1.0244279787586628,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 120.0,
+      "Teacher-forced -log P(token)": 1.031678301483475,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 121.0,
+      "Teacher-forced -log P(token)": 0.992531070161643,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 122.0,
+      "Teacher-forced -log P(token)": 0.9469591767841066,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 123.0,
+      "Teacher-forced -log P(token)": 0.9528722374058458,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 124.0,
+      "Teacher-forced -log P(token)": 0.9817957374387448,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 125.0,
+      "Teacher-forced -log P(token)": 0.9566486105661957,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 126.0,
+      "Teacher-forced -log P(token)": 0.9594954790030967,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 127.0,
+      "Teacher-forced -log P(token)": 0.9962216950061499,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Answer position t": 128.0,
+      "Teacher-forced -log P(token)": 0.9680425458059099,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 512
+}

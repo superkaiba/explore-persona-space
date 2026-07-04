@@ -196,8 +196,8 @@ def hero2_matched_prefix(stats: dict, closure: dict, out_dir: pathlib.Path) -> N
         set_title_subtitle(
             ax_bars,
             "Does absorbing the answer prefix close the own-advantage?",
-            "Left bar: gap with context only (t=0); right bar: gap with the prefix absorbed "
-            f"(layer {l_star}; common survivors, identical positions->t target)",
+            f"Left bar: G at t=0; right bar: G at t (layer {l_star},\n"
+            "common survivors, identical target)",
         )
     else:
         ax_bars.text(0.5, 0.5, "no matched cells (smoke)", ha="center", va="center")
@@ -221,11 +221,11 @@ def hero2_matched_prefix(stats: dict, closure: dict, out_dir: pathlib.Path) -> N
     ax_closure.set_xticklabels([str(t) for t in PREFIX_TS], fontsize=8)
     ax_closure.set_xlabel("Prefix length t (tokens absorbed)")
     ax_closure.set_ylabel("Remainder-mean test R² (descriptive)")
-    ax_closure.legend(frameon=False, fontsize=6, loc="center left")
+    ax_closure.legend(frameon=False, fontsize=6, loc="upper right")
     set_title_subtitle(
         ax_closure,
         "Prediction of the remainder as the prefix is absorbed",
-        "Descriptive view; survivor populations vary per t (attrition strip below)",
+        "Descriptive view; survivor\npopulations vary per t",
     )
 
     # (c)+(d) Attrition strip: n surviving + fraction excluded per (arm, t).
