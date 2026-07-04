@@ -188,8 +188,8 @@
     "1021": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1021",
-      "status": "approved",
+      "path": "tasks/running/1021",
+      "status": "running",
       "title": "daily-fix: flip stale blocked to running on relaunch"
     },
     "1022": {
