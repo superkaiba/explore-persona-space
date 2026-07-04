@@ -114,9 +114,29 @@ assert set(EQUIV_GATE_LAYERS) <= set(LAYER_GRID), (
 PREFIX_TS = (1, 2, 4, 8, 16, 32, 64, 128)
 DECILES = (0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95)
 
-# Split (plan §0b)
+# Split (plan §0b: 60/20/20 under rng(952) over the analysis pool).
+#
+# DATA-FORCED DEVIATION (round 2; binding concern i823-pool-coherence-empty-answers):
+# the plan's literal 2998/1000/1000 assumed n_pool = 4998 (the full common-valid
+# mask), but 103 ROWS of the pinned #823 external-arm artifacts carry EMPTY
+# ``answer_text`` inside the common-valid pool — 28 in ext_plain (b2_seed42) +
+# 75 in ext_style (b1_seed43), with 25 context ids empty in BOTH arms, so the
+# union is 78 DISTINCT ids (own + mismatch carry 0 empties; verified 2026-07-04
+# on the byte-pinned revision). The analysis pool is the ALL-ARMS-NONEMPTY
+# INTERSECTION (n = 4920) and the 60/20/20 PROPORTIONS re-realize to
+# 2952/984/984 under the SAME rng(952) permutation protocol. The #823 seed-42
+# derangement is reused verbatim RESTRICTED to the surviving pool (never
+# rebuilt); the restriction has 0 fixed points over the kept ids (verified —
+# recorded in phase0_verify.json). Disclosed as a data-forced deviation (not a
+# design change) in phase0_verify.json ("plan_deviation") and the final
+# epm:results card ("plan_deviations").
 SPLIT_SEED = 952
-SPLIT_FRACTIONS = (2998, 1000, 1000)  # train / val / test over the 4998 common-valid pool
+SPLIT_PROPORTIONS = (0.6, 0.2, 0.2)
+PLAN_SPLIT_LITERAL = (2998, 1000, 1000)  # plan §0b literal at n_pool=4998 — SUPERSEDED above
+EXPECTED_EMPTY_ANSWER_COUNTS = {"own": 0, "ext_plain": 28, "ext_style": 75, "mismatch": 0}
+EXPECTED_N_EXCLUDED = 78  # union of empty-answer context ids across the 4 arms
+EXPECTED_POOL_N = 4998 - EXPECTED_N_EXCLUDED  # 4920 analysis-pool contexts
+SPLIT_SIZES_REALIZED = (2952, 984, 984)  # round(.6*4920) / round(.2*4920) / remainder
 
 # Judge recipe (plan §4 1b; llm-judging rules 1/3/4/6/7/9/22)
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
@@ -289,28 +309,33 @@ def locate_phase0_file(name: str, base_dir: pathlib.Path) -> pathlib.Path:
     return hf_download(f"{ISSUE_SLUG}/phase0/{name}", base_dir / "hf_dl" / "phase0", "main")
 
 
-def make_split(common_valid_ids: list[int]) -> dict:
-    """Deterministic 60/20/20 split over the common-valid pool (plan §0b, rng 952).
+def make_split(pool_ids: list[int]) -> dict:
+    """Deterministic 60/20/20 split over the ANALYSIS pool (plan §0b, rng 952).
 
-    For a smoke pool (< 4998 ids) the same proportions apply (60/20/20 rounded),
-    keeping the smoke on the identical code path.
+    The pool is the all-arms-nonempty intersection from ``compute_analysis_pool``
+    (n = 4920 in production — see the data-forced deviation note at the split
+    constants). The smoke pool (10 ids) rides the SAME proportional code path.
     """
-    ids = sorted(int(i) for i in common_valid_ids)
+    ids = sorted(int(i) for i in pool_ids)
     rng = np.random.default_rng(SPLIT_SEED)
     perm = rng.permutation(len(ids))
-    if len(ids) == sum(SPLIT_FRACTIONS):
-        n_tr, n_val, _ = SPLIT_FRACTIONS
-    else:
-        n_tr = max(1, round(0.6 * len(ids)))
-        n_val = max(1, round(0.2 * len(ids)))
+    n_tr = max(1, round(SPLIT_PROPORTIONS[0] * len(ids)))
+    n_val = max(1, round(SPLIT_PROPORTIONS[1] * len(ids)))
     order = [ids[i] for i in perm]
-    return {
+    split = {
         "seed": SPLIT_SEED,
         "n_pool": len(ids),
         "train": sorted(order[:n_tr]),
         "val": sorted(order[n_tr : n_tr + n_val]),
         "test": sorted(order[n_tr + n_val :]),
     }
+    if len(ids) == EXPECTED_POOL_N:
+        sizes = tuple(len(split[k]) for k in ("train", "val", "test"))
+        assert sizes == SPLIT_SIZES_REALIZED, (
+            f"realized split {sizes} != pinned {SPLIT_SIZES_REALIZED} at n_pool="
+            f"{EXPECTED_POOL_N} — split protocol drift"
+        )
+    return split
 
 
 def parse_judge_score(text: str) -> float | None:
@@ -334,36 +359,155 @@ def parse_judge_score(text: str) -> float | None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def phase0_verify(base_dir: pathlib.Path, smoke: bool) -> dict:
-    """Download + verify the five #823 completion artifacts; reconstruct prompts; split.
-
-    Plan §4 0a/0b. Asserts byte sizes against the Hub-verified table, records
-    sha256 per file, applies the 4998-context common-valid mask, reconstructs
-    the LMSYS prompts at the pinned revision (#823 Phase 0b replay), and writes
-    ``phase0_verify.json`` + ``split_seed952.json`` under
-    ``base_dir/eval_results/issue_952/``. Returns the verify record (with
-    ``pool_ids`` and the split).
-    """
-    log_phase("p0_substrate")
+def _download_i823_files(base_dir: pathlib.Path) -> dict[str, pathlib.Path]:
+    """Download (idempotent) the five pinned #823 files + assert the byte table."""
     dl_dir = base_dir / "data" / "issue_952" / "hf_dl"
     local_paths: dict[str, pathlib.Path] = {}
-    shas: dict[str, str] = {}
     for key, rel in I823_FILES.items():
         p = hf_download(f"{I823_PREFIX}/{rel}", dl_dir, I823_REVISION)
-        local_paths[key] = p
         size = p.stat().st_size
         assert size == I823_EXPECTED_BYTES[key], (
             f"{key}: byte size {size} != pinned {I823_EXPECTED_BYTES[key]} "
             f"(revision {I823_REVISION}) — refusing to proceed on a drifted artifact"
         )
-        shas[key] = sha256_file(p)
-        logger.info("[p0] %s: %d bytes, sha256=%s", key, size, shas[key][:16])
+        local_paths[key] = p
+    return local_paths
 
+
+def compute_analysis_pool(base_dir: pathlib.Path) -> dict:
+    """FULL-pool coherence verification over the pinned #823 artifacts (round 2).
+
+    Fix for the binding concern ``i823-pool-coherence-empty-answers``: loads all
+    four parent arm artifacts + the derangement ONCE and, over EVERY common-valid
+    id, verifies BEFORE any consumption:
+
+    - **coverage** — the id resolves in every artifact exactly as
+      ``load_arm_texts`` consumes it (positional index for own/b2/b1; string key
+      in the derangement ``contexts``), and the id is in-range for the #823 arm
+      TENSORS' 5000-row axis (the capture-equivalence gate's read pattern);
+    - **coherence** — ``answer_text`` is NON-EMPTY per arm (a bare
+      set-inclusion / key check passes on this data: the empty rows carry
+      ``filled: True, in_common_valid: True``, so emptiness must be keyed on the
+      text itself);
+    - **derangement property** — the #823 seed-42 mapping RESTRICTED to the kept
+      pool has ``source_context != id`` (fixed points are COUNTED and recorded,
+      never "fixed" by rebuilding — plan §10 Seeds).
+
+    Returns ``{"pool_ids" (kept, sorted), "excluded_ids", "empty_counts_by_arm",
+    "derangement_fixed_points_kept", "n_common_valid", "local_paths"}``. The
+    kept pool is the all-arms-nonempty intersection (n = 4920 on the pinned
+    bytes; asserted against the pinned expected counts).
+    """
+    local_paths = _download_i823_files(base_dir)
     common_valid = json.loads(local_paths["common_valid"].read_text())["common_valid_idx"]
     common_valid = sorted(int(i) for i in common_valid)
     assert len(common_valid) == 4998, f"common_valid n={len(common_valid)} != 4998"
 
-    pool_ids = common_valid[:N_SMOKE] if smoke else common_valid
+    own_recs = json.loads(local_paths["own"].read_text())
+    b2_recs = json.loads(local_paths["ext_plain"].read_text())
+    b1_recs = json.loads(local_paths["ext_style"].read_text())
+    derang = json.loads(local_paths["mismatch"].read_text())
+    der_ctx = derang["contexts"]
+
+    # Coverage: every consumption pattern in load_arm_texts + the tensor gate.
+    max_id = max(common_valid)
+    for name, recs in (("own", own_recs), ("ext_plain", b2_recs), ("ext_style", b1_recs)):
+        assert len(recs) > max_id, (
+            f"{name}: list len {len(recs)} does not cover max common-valid id {max_id}"
+        )
+    missing_der = [i for i in common_valid if str(i) not in der_ctx]
+    assert not missing_der, (
+        f"derangement missing {len(missing_der)} common-valid keys, e.g. {missing_der[:5]}"
+    )
+    first_der = der_ctx[str(common_valid[0])]
+    assert "source_context" in first_der and "answer_text" in first_der, sorted(first_der)
+
+    # Coherence: non-empty answer_text per arm over the FULL common-valid pool.
+    texts_by_arm = {
+        "own": {i: own_recs[i]["answer_text"] for i in common_valid},
+        "ext_plain": {i: b2_recs[i]["answer_text"] for i in common_valid},
+        "ext_style": {i: b1_recs[i]["answer_text"] for i in common_valid},
+        "mismatch": {i: der_ctx[str(i)]["answer_text"] for i in common_valid},
+    }
+    empty_ids_by_arm = {
+        a: sorted(i for i, t in d.items() if not t) for a, d in texts_by_arm.items()
+    }
+    empty_counts = {a: len(v) for a, v in empty_ids_by_arm.items()}
+    excluded = sorted(set().union(*empty_ids_by_arm.values()))
+    kept = sorted(set(common_valid) - set(excluded))
+    logger.info(
+        "[pool-coherence] empty answer_text per arm %s; excluded %d distinct ids; "
+        "analysis pool n=%d",
+        empty_counts,
+        len(excluded),
+        len(kept),
+    )
+    assert empty_counts == EXPECTED_EMPTY_ANSWER_COUNTS, (
+        f"empty-answer counts {empty_counts} != pinned {EXPECTED_EMPTY_ANSWER_COUNTS} on the "
+        f"byte-pinned revision {I823_REVISION} — artifact/coherence drift"
+    )
+    assert len(kept) == EXPECTED_POOL_N, (len(kept), EXPECTED_POOL_N)
+
+    # Derangement property over the kept pool (restriction, never rebuilt).
+    fixed_points = [i for i in kept if int(der_ctx[str(i)]["source_context"]) == i]
+    if fixed_points:
+        # Per the plan's mismatched-arm definition such a context would be
+        # self-paired (matched, not mismatched) — record and surface loudly;
+        # rebuilding the derangement is BANNED (plan §10 Seeds).
+        logger.warning(
+            "[pool-coherence] derangement restriction has %d fixed points over kept ids "
+            "(e.g. %s) — recorded; these contexts' mismatch arm is self-paired",
+            len(fixed_points),
+            fixed_points[:5],
+        )
+    return {
+        "pool_ids": kept,
+        "excluded_ids": excluded,
+        "empty_counts_by_arm": empty_counts,
+        "empty_ids_by_arm": empty_ids_by_arm,
+        "derangement_fixed_points_kept": len(fixed_points),
+        "n_common_valid": len(common_valid),
+        "local_paths": local_paths,
+    }
+
+
+PLAN_DEVIATION_NOTE = (
+    "pool-wide exclusion of 78 common-valid context ids whose pinned #823 external-arm "
+    "answer_text is EMPTY (28 ext_plain + 75 ext_style rows; 25 ids empty in both arms) — "
+    "the analysis pool is the all-arms-nonempty intersection n=4920 and the plan §0b "
+    "60/20/20 split re-realizes to 2952/984/984 under the same rng(952) protocol "
+    "(plan literal 2998/1000/1000 assumed n_pool=4998). Data-forced deviation, not a "
+    "design change (concern i823-pool-coherence-empty-answers)."
+)
+
+
+def phase0_verify(base_dir: pathlib.Path, smoke: bool) -> dict:
+    """Download + verify the five #823 completion artifacts; reconstruct prompts; split.
+
+    Plan §4 0a/0b + the round-2 full-pool coherence verification
+    (``compute_analysis_pool``). Asserts byte sizes against the Hub-verified
+    table, records sha256 per file, verifies per-arm non-empty answer_text
+    coverage over the FULL common-valid mask (excluding the 78 empty-answer ids
+    — see ``PLAN_DEVIATION_NOTE``), reconstructs the LMSYS prompts at the
+    pinned revision (#823 Phase 0b replay), and writes ``phase0_verify.json`` +
+    ``split_seed952.json`` under ``base_dir/eval_results/issue_952/``. Returns
+    the verify record (with ``pool_ids`` and the split).
+    """
+    log_phase("p0_substrate")
+    pool_rec = compute_analysis_pool(base_dir)
+    local_paths: dict[str, pathlib.Path] = pool_rec["local_paths"]
+    shas: dict[str, str] = {}
+    for key in I823_FILES:
+        shas[key] = sha256_file(local_paths[key])
+        logger.info(
+            "[p0] %s: %d bytes, sha256=%s",
+            key,
+            local_paths[key].stat().st_size,
+            shas[key][:16],
+        )
+
+    kept = pool_rec["pool_ids"]
+    pool_ids = kept[:N_SMOKE] if smoke else kept
     logger.info("[p0] pool: %d contexts (smoke=%s)", len(pool_ids), smoke)
 
     # Prompt reconstruction — #823 Phase 0b replay (first_user_turn, first 5000).
@@ -392,6 +536,16 @@ def phase0_verify(base_dir: pathlib.Path, smoke: bool) -> dict:
         if len(prompts) >= n_needed:
             break
     assert len(prompts) >= n_needed, f"LMSYS reconstruction short: {len(prompts)} < {n_needed}"
+    # Release the streaming dataset DETERMINISTICALLY: an IterableDataset that
+    # survives to interpreter shutdown aborts the process in the pinned
+    # datasets/pyarrow env (SIGABRT rc=134, "terminate called without an active
+    # exception" AFTER all work completed — the #654 finalize-time family;
+    # bisected + verified 2026-07-04). An rc=134 at the END of a clean pod run
+    # would be classified as a workload crash by the GCE EXIT trap.
+    import gc
+
+    del row, ds
+    gc.collect()
     prompts_path = base_dir / "data" / "issue_952" / "prompts.json"
     prompts_path.parent.mkdir(parents=True, exist_ok=True)
     prompts_path.write_text(json.dumps(prompts, default=_json_np))
@@ -410,7 +564,15 @@ def phase0_verify(base_dir: pathlib.Path, smoke: bool) -> dict:
         "files": {k: str(local_paths[k]) for k in I823_FILES},
         "sha256": shas,
         "byte_sizes": {k: local_paths[k].stat().st_size for k in I823_FILES},
-        "n_common_valid": len(common_valid),
+        "n_common_valid": pool_rec["n_common_valid"],
+        "pool_coherence": {
+            "empty_answer_counts_by_arm": pool_rec["empty_counts_by_arm"],
+            "n_excluded": len(pool_rec["excluded_ids"]),
+            "excluded_ids": pool_rec["excluded_ids"],
+            "derangement_fixed_points_kept": pool_rec["derangement_fixed_points_kept"],
+            "n_analysis_pool": len(pool_rec["pool_ids"]),
+        },
+        "plan_deviation": PLAN_DEVIATION_NOTE,
         "n_pool": len(pool_ids),
         "lmsys_revision": LMSYS_REVISION,
         "n_prompts": len(prompts),
@@ -432,6 +594,9 @@ def load_arm_texts(base_dir: pathlib.Path, pool_ids: list[int]) -> dict[str, dic
 
     Returns arm -> {context_id -> answer_text}. The mismatched arm reads the
     #823 seed-42 derangement file VERBATIM (never rebuilt — plan §10 Seeds).
+    ``pool_ids`` MUST be (a subset of) the coherence-verified analysis pool from
+    ``compute_analysis_pool``; the zero-empty assert below is the regression
+    backstop for that contract, no longer the first line of defense.
     """
     dl_dir = base_dir / "data" / "issue_952" / "hf_dl"
 
@@ -1418,6 +1583,9 @@ def _capture_equivalence_gate(
         I823_REVISION,
     )
     ref = torch.load(str(ref_path), map_location="cpu").numpy()  # (5000, 28, H) fp32
+    assert ref.shape[0] > max(int(c) for c in ids), (
+        f"{arm}: #823 tensor rows {ref.shape[0]} do not cover max pool id — coverage violation"
+    )
     gate_layer_pos = [LAYER_GRID.index(la) for la in EQUIV_GATE_LAYERS]
     m823 = SLOT_IDX["mean_823"]
     n_ok = n_checked = n_trunc = 0
@@ -1457,39 +1625,150 @@ def _capture_equivalence_gate(
     return rec
 
 
+def _capture_regime(pool_ids: list[int], smoke: bool, batch_size: int) -> dict:
+    """Output-affecting regime keys for the 1c per-arm resume predicate.
+
+    EVERY key that changes the shard contents is part of the key (a resume that
+    ignores a regime flag silently reuses wrong cached rows — #722 r3):
+    pool identity, layer grid, slot registry, model, truncation cap, batch size
+    (bf16 batched numerics are batch-dependent), smoke flag.
+    """
+    return {
+        "n_pool": len(pool_ids),
+        "pool_sha": hashlib.sha256(json.dumps([int(i) for i in pool_ids]).encode()).hexdigest(),
+        "layer_grid": list(LAYER_GRID),
+        "slot_names_sha": hashlib.sha256(json.dumps(list(SLOT_NAMES)).encode()).hexdigest(),
+        "model": DEFAULT_MODEL,
+        "seq_max_len": SEQ_MAX_LEN,
+        "batch_size": int(batch_size),
+        "smoke": bool(smoke),
+    }
+
+
+def _capture_done_path(base_dir: pathlib.Path, arm: str) -> pathlib.Path:
+    return base_dir / "analysis_tensors" / f"capture_done_{arm}.json"
+
+
+def _load_capture_done(base_dir: pathlib.Path, arm: str, regime: dict) -> dict | None:
+    """1c resume predicate (concern long-loop-restartability-1c-1e-blocking).
+
+    Returns the persisted per-arm done record iff the sentinel exists, its
+    regime keys match the CURRENT regime exactly, and every listed shard file
+    still exists on disk; else None (recapture the arm)."""
+    p = _capture_done_path(base_dir, arm)
+    if not p.exists():
+        return None
+    try:
+        rec = json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("[1c-resume] unreadable sentinel %s (%s) — recapturing arm", p, e)
+        return None
+    if rec.get("regime") != regime:
+        logger.warning(
+            "[1c-resume] %s: sentinel regime mismatch (stale/foreign regime) — recapturing arm",
+            arm,
+        )
+        return None
+    missing = [f for f in rec.get("files", []) if not (base_dir / f).exists()]
+    if missing:
+        logger.warning(
+            "[1c-resume] %s: %d listed shard files missing (e.g. %s) — recapturing arm",
+            arm,
+            len(missing),
+            missing[:2],
+        )
+        return None
+    return rec
+
+
+def _write_capture_done(
+    base_dir: pathlib.Path,
+    arm: str,
+    regime: dict,
+    files: list[pathlib.Path],
+    equiv: dict,
+) -> None:
+    """Atomic (tmp + os.replace) per-arm 1c done sentinel: regime + files + gate record."""
+    import time
+
+    p = _capture_done_path(base_dir, arm)
+    rec = {
+        "arm": arm,
+        "regime": regime,
+        "files": [str(f.relative_to(base_dir)) for f in files],
+        "equiv": equiv,
+        "ts": time.time(),
+    }
+    tmp = p.with_name(p.name + ".tmp")
+    tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
+    os.replace(tmp, p)
+
+
 def phase_capture(
     base_dir: pathlib.Path, smoke: bool, pool_ids: list[int], uploader: _UploadWorker
 ) -> None:
-    """Phase 1c: LMSYS teacher-forced slot capture, 4 arms (GPU)."""
+    """Phase 1c: LMSYS teacher-forced slot capture, 4 arms (GPU).
+
+    Per-arm resume: an arm whose regime-keyed done sentinel + shard files exist
+    is SKIPPED on re-entry (its gate record is read from the sentinel and its
+    shards re-submitted for upload) — a crash at arm k forfeits only arm k
+    (concern long-loop-restartability-1c-1e-blocking)."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     log_phase("p1c_capture")
+    batch_size = int(os.environ.get("EPM_TF_BATCH_SIZE", "4" if smoke else "8"))
+    regime = _capture_regime(pool_ids, smoke, batch_size)
+    done_map = {arm: _load_capture_done(base_dir, arm, regime) for arm in ARMS}
+    todo = [arm for arm in ARMS if done_map[arm] is None]
+    logger.info(
+        "[1c] arms to capture: %s (resume-skipped: %s)", todo, [a for a in ARMS if a not in todo]
+    )
+
     prompts_path = base_dir / "data" / "issue_952" / "prompts.json"
     assert prompts_path.exists(), f"prompts missing: {prompts_path} (run phase0 first)"
     prompts: list[str] = json.loads(prompts_path.read_text())
     arm_texts = load_arm_texts(base_dir, pool_ids)
 
-    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        DEFAULT_MODEL,
-        torch_dtype=torch.bfloat16,
-        device_map="cuda" if torch.cuda.is_available() else "cpu",
-        trust_remote_code=True,
-    )
-    model.eval()
-
-    _alignment_gate(model, tokenizer, prompts, pool_ids, base_dir)
-
-    # #823 own-arm RAW-text token lengths (the mean_823 min-length convention).
-    own_raw_lens = {
-        cid: len(tokenizer(arm_texts["own"][cid], add_special_tokens=False)["input_ids"])
-        for cid in pool_ids
-    }
+    model = None
+    tokenizer = None
+    own_raw_lens: dict[int, int] = {}
     prompts_by_id = {cid: prompts[cid] for cid in pool_ids}
-    batch_size = int(os.environ.get("EPM_TF_BATCH_SIZE", "4" if smoke else "8"))
+    if todo:
+        tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            DEFAULT_MODEL,
+            torch_dtype=torch.bfloat16,
+            device_map="cuda" if torch.cuda.is_available() else "cpu",
+            trust_remote_code=True,
+        )
+        model.eval()
+
+        _alignment_gate(model, tokenizer, prompts, pool_ids, base_dir)
+
+        # #823 own-arm RAW-text token lengths (the mean_823 min-length convention).
+        own_raw_lens = {
+            cid: len(tokenizer(arm_texts["own"][cid], add_special_tokens=False)["input_ids"])
+            for cid in pool_ids
+        }
+    else:
+        logger.info("[1c-resume] all 4 arms already captured — model load + alignment gate skipped")
+
     equiv_records = []
     for arm in ARMS:
+        done = done_map[arm]
+        if done is not None:
+            logger.info(
+                "[1c-resume] SKIP arm %s (sentinel + %d shard files present under this regime); "
+                "re-submitting upload (idempotent)",
+                arm,
+                len(done["files"]),
+            )
+            equiv_records.append(done["equiv"])
+            uploader.submit(
+                f"1c shards {arm} (resume)", [base_dir / f for f in done["files"]], base_dir
+            )
+            continue
         log_phase(f"p1c_extract_{arm}")
         slots, spans, surp = _tf_capture_slots_arm(
             model,
@@ -1510,6 +1789,7 @@ def phase_capture(
             ids=np.asarray(pool_ids, dtype=np.int64),
         )
         paths.append(base_dir / "analysis_tensors" / f"surprisal_{arm}.npz")
+        _write_capture_done(base_dir, arm, regime, paths, equiv_records[-1])
         uploader.submit(f"1c shards {arm}", paths, base_dir)
         del slots
         if torch.cuda.is_available():
@@ -1764,6 +2044,92 @@ def _pooled_at_frozen(res, split: str, lam_idx: np.ndarray) -> np.ndarray:
     return pooled[lam_idx, np.arange(pooled.shape[1])]
 
 
+# ── 1e per-unit checkpoint shards (concern long-loop-restartability-1c-1e-blocking) ──
+
+
+def _battery_regime(
+    smoke: bool,
+    pool_ids: list[int],
+    split: dict,
+    fit_device: str,
+    have_bank: bool,
+    min_train: int,
+) -> dict:
+    """Output-affecting regime keys for the 1e per-unit resume (incl. descope flags).
+
+    EVERY output-affecting key is part of the key — pool + split identity,
+    layer grid, λ grid, fit device (GPU/CPU BLAS numerics differ), row floor,
+    bank presence, and the three descope-ladder env flags (#722 r3 lesson:
+    a resume that ignores a regime flag silently reuses wrong cached rows).
+    """
+    return {
+        "smoke": bool(smoke),
+        "n_pool": len(pool_ids),
+        "pool_sha": hashlib.sha256(json.dumps([int(i) for i in pool_ids]).encode()).hexdigest(),
+        "split_sha": hashlib.sha256(
+            json.dumps({k: split[k] for k in ("train", "val", "test")}, default=_json_np).encode()
+        ).hexdigest(),
+        "layer_grid": list(LAYER_GRID),
+        "lambdas": [float(v) for v in DEFAULT_LAMBDAS_LIST],
+        "fit_device": fit_device,
+        "min_train": int(min_train),
+        "have_bank": bool(have_bank),
+        "descope": {
+            "skip_pooled_prefix": os.environ.get("EPM_I952_SKIP_POOLED_PREFIX", ""),
+            "prefix_lstar_only": os.environ.get("EPM_I952_PREFIX_LSTAR_ONLY", ""),
+            "drop_categories": os.environ.get("EPM_I952_DROP_CATEGORIES", ""),
+        },
+    }
+
+
+def _init_battery_ckpt(base_dir: pathlib.Path, regime: dict) -> pathlib.Path:
+    """Init (or regime-invalidate) the 1e checkpoint dir; returns the dir.
+
+    A regime mismatch DELETES the stale unit shards (loudly) and rewrites the
+    regime file — a resume never mixes shards across regimes."""
+    ck = base_dir / "analysis_tensors" / "battery_ckpt"
+    ck.mkdir(parents=True, exist_ok=True)
+    rpath = ck / "regime.json"
+    if rpath.exists():
+        try:
+            on_disk = json.loads(rpath.read_text())
+        except (OSError, json.JSONDecodeError):
+            on_disk = None
+        if on_disk != regime:
+            stale = sorted(ck.glob("*.npz"))
+            logger.warning(
+                "[1e-ckpt] regime mismatch — invalidating %d stale unit shards in %s",
+                len(stale),
+                ck,
+            )
+            for p in stale:
+                p.unlink()
+    rpath.write_text(json.dumps(regime, indent=2, default=_json_np))
+    return ck
+
+
+def _ckpt_save(path: pathlib.Path, arrays: dict[str, np.ndarray], payload: dict) -> None:
+    """Atomic (tmp + os.replace) per-unit shard: arrays + JSON payload (__json__ key)."""
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as f:
+        np.savez(f, __json__=np.asarray(json.dumps(payload, default=_json_np)), **arrays)
+    os.replace(tmp, path)
+
+
+def _ckpt_load(path: pathlib.Path) -> tuple[dict[str, np.ndarray], dict] | None:
+    """Load one unit shard -> (arrays, payload); None when absent/unreadable."""
+    if not path.exists():
+        return None
+    try:
+        with np.load(path, allow_pickle=False) as d:
+            payload = json.loads(str(d["__json__"]))
+            arrays = {k: d[k] for k in d.files if k != "__json__"}
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
+        logger.warning("[1e-ckpt] unreadable unit shard %s (%s) — recomputing unit", path, e)
+        return None
+    return arrays, payload
+
+
 def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + selection + outputs
     base_dir: pathlib.Path,
     smoke: bool,
@@ -1819,10 +2185,14 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
 
     # Bank stores (present iff 1d ran and kept pairs exist).
     bank_rows_by_role: dict[str, list[str]] = {}
-    bank_slots: dict[str, dict[str, np.ndarray]] = {}
-    bank_meta: dict[str, dict] = {}
     bank_shard0 = tensors_dir / f"slots_bank_own_L{LAYER_GRID[0]}.pt"
     have_bank = bank_shard0.exists()
+
+    # Per-unit resume shards (concern long-loop-restartability-1c-1e-blocking):
+    # each long-loop unit below persists its result the moment it completes and
+    # is SKIPPED on re-entry; the final JSON/NPZ outputs assemble from shards.
+    regime = _battery_regime(smoke, pool_ids, split, fit_device, have_bank, min_train)
+    ck_dir = _init_battery_ckpt(base_dir, regime)
 
     meta: dict[str, Any] = {
         "layers": list(LAYER_GRID),
@@ -1873,7 +2243,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         # Synthetic PRODUCTION-shape parity cell — the compute-deviation basis
         # (plan §4: smoke includes one full-size cell; measures per-call cost).
         rng = np.random.default_rng(9521)
-        n_tr_full = SPLIT_FRACTIONS[0]
+        n_tr_full = SPLIT_SIZES_REALIZED[0]
         xs = rng.standard_normal((n_tr_full, EXPECTED_HIDDEN)).astype(np.float64)
         w = rng.standard_normal((EXPECTED_HIDDEN, EXPECTED_HIDDEN)) / np.sqrt(EXPECTED_HIDDEN)
         ys = xs @ w + 0.5 * rng.standard_normal((n_tr_full, EXPECTED_HIDDEN))
@@ -1958,8 +2328,22 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     test_pooled_b = np.full_like(val_pooled_b, np.nan)
     cell_seconds: list[float] = []
     for li, layer in enumerate(LAYER_GRID):
+        upath = ck_dir / f"pass1_L{layer}.npz"
+        cached = _ckpt_load(upath)
+        if cached is not None:
+            arrs, payload = cached
+            val_pooled_a[li] = arrs["val_a"]
+            test_pooled_a[li] = arrs["test_a"]
+            val_pooled_b[li] = arrs["val_b"]
+            test_pooled_b[li] = arrs["test_b"]
+            cell_seconds.append(float(payload["svd_seconds"]))
+            if li == 0 and payload.get("c_last_cross_arm_cos_min") is not None:
+                meta["c_last_cross_arm_cos_min"] = payload["c_last_cross_arm_cos_min"]
+            logger.info("[1e-ckpt] SKIP pass-1 layer %d (unit shard present)", layer)
+            continue
         slots_by_arm = {arm: _load_layer_slots(base_dir, arm, layer)[0] for arm in ARMS}
         c_last = slots_by_arm["own"][:, SLOT_IDX["c_last"], :]
+        cross_arm_cos: float | None = None
         if li == 0:
             # c_last cross-arm sanity (own is canonical; arms shared the prompt).
             a0 = c_last[tr_a[:5]].astype(np.float64)
@@ -1968,7 +2352,8 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                 float(np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y) + 1e-9))
                 for x, y in zip(a0, b0, strict=True)
             ]
-            meta["c_last_cross_arm_cos_min"] = min(cs) if cs else float("nan")
+            cross_arm_cos = min(cs) if cs else float("nan")
+            meta["c_last_cross_arm_cos_min"] = cross_arm_cos
             if cs and min(cs) < 0.99:
                 logger.warning("[1e] c_last cross-arm cosine min %.4f < 0.99", min(cs))
         res_a = run_ridge_cell(
@@ -2004,6 +2389,16 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         )
         val_pooled_b[li] = res_b.pooled["val"]
         test_pooled_b[li] = res_b.pooled["test"]
+        _ckpt_save(
+            upath,
+            {
+                "val_a": val_pooled_a[li],
+                "test_a": test_pooled_a[li],
+                "val_b": val_pooled_b[li],
+                "test_b": test_pooled_b[li],
+            },
+            {"svd_seconds": float(res_a.svd_seconds), "c_last_cross_arm_cos_min": cross_arm_cos},
+        )
         del slots_by_arm, c_last, res_a, res_b
         logger.info("[1e] pass-1 layer %d done (%d/%d)", layer, li + 1, len(LAYER_GRID))
 
@@ -2038,84 +2433,96 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     # ── pass 2 at l_star: per-context stats + bank eval splits ──────────────────
     slots_star = {arm: _load_layer_slots(base_dir, arm, l_star)[0] for arm in ARMS}
     c_star = slots_star["own"][:, SLOT_IDX["c_last"], :]
-    eval_splits: dict[str, tuple[np.ndarray, np.ndarray]] = {
-        "val": (c_star[va_a], _stack_targets(slots_star, va_a, GROUPS_A)),
-        "test": (c_star[te_a], _stack_targets(slots_star, te_a, GROUPS_A)),
-    }
-    if have_bank:
-        for role in ("divergent", "control"):
-            b_slots: dict[str, np.ndarray] = {}
-            ids_ref: list | None = None
-            for arm in BANK_ARMS:
-                arr, ids = _load_layer_slots(base_dir, f"bank_{arm}", l_star)
-                b_slots[arm] = arr
-                ids_ref = ids
-                bank_slots.setdefault(arm, {})
-                bank_meta.setdefault(arm, {"ids": ids})
-            assert ids_ref is not None
-            role_rows = [
-                i for i, qid in enumerate(ids_ref) if qid.endswith("_div") == (role == "divergent")
-            ]
-            bank_rows_by_role[role] = [ids_ref[i] for i in role_rows]
-            xb = b_slots["own"][role_rows][:, SLOT_IDX["c_last"], :]
-            yb = _stack_targets(b_slots, np.asarray(role_rows), GROUPS_A)
-            key = "bank_div" if role == "divergent" else "bank_ctl"
-            eval_splits[key] = (xb, yb)
-    res_star = run_ridge_cell(
-        c_star[tr_a],
-        _stack_targets(slots_star, tr_a, GROUPS_A),
-        eval_splits,
-        group_names=[f"{s}|{a}" for s, a in GROUPS_A],
-        device=fit_device,
-        allow_train_nan_imputation=True,
-    )
-    ssr_t, sst_t = _extract_frozen(res_star, "test", lam_idx_a)
-    npz["A_test_ssres"] = ssr_t.astype(np.float32)
-    npz["A_test_sstot"] = sst_t.astype(np.float32)
-    npz["A_test_ctx_ids"] = np.asarray([pool_ids[p] for p in te_a], dtype=np.int64)
-    npz["A_group_names"] = np.asarray([f"{s}|{a}" for s, a in GROUPS_A])
-    npz["A_lam_idx"] = lam_idx_a
-    for key, role in (("bank_div", "divergent"), ("bank_ctl", "control")):
-        if key in eval_splits:
-            ssr_b, sst_b = _extract_frozen(res_star, key, lam_idx_a)
-            npz[f"{key}_ssres"] = ssr_b.astype(np.float32)
-            npz[f"{key}_sstot"] = sst_b.astype(np.float32)
-            npz[f"{key}_ids"] = np.asarray(bank_rows_by_role[role])
-
-    pos_test_pooled = _pooled_at_frozen(res_star, "test", lam_idx_a)
-    per_ctx_r2 = np.where(sst_t > 1e-12, 1.0 - ssr_t / np.where(sst_t > 0, sst_t, 1.0), np.nan)
-    position_report: dict[str, Any] = {"l_star": l_star, "universe": "U_A (span>=32 all arms)"}
-    for gi, (slot, arm) in enumerate(GROUPS_A):
-        if slot not in POSITION_SLOTS:
-            continue
-        col = per_ctx_r2[:, gi]
-        position_report.setdefault(arm, {})[slot] = {
-            "test_pooled_r2": float(pos_test_pooled[gi]),
-            "lambda": DEFAULT_LAMBDAS_LIST[int(lam_idx_a[gi])],
-            "per_context_mean": float(np.nanmean(col)) if np.isfinite(col).any() else None,
-            "per_context_median": float(np.nanmedian(col)) if np.isfinite(col).any() else None,
-            "n_valid_test": int(res_star.n_valid["test"][gi]),
+    pass2_path = ck_dir / "pass2_star.npz"
+    cached2 = _ckpt_load(pass2_path)
+    if cached2 is not None:
+        arrs2, payload2 = cached2
+        npz.update(arrs2)
+        position_report: dict[str, Any] = payload2["position_report"]
+        logger.info("[1e-ckpt] SKIP pass-2 at l_star=%d (unit shard present)", l_star)
+    else:
+        npz2: dict[str, np.ndarray] = {}
+        eval_splits: dict[str, tuple[np.ndarray, np.ndarray]] = {
+            "val": (c_star[va_a], _stack_targets(slots_star, va_a, GROUPS_A)),
+            "test": (c_star[te_a], _stack_targets(slots_star, te_a, GROUPS_A)),
         }
-    # Battery-B (full-universe D10) companion at l_star.
-    res_star_b = run_ridge_cell(
-        c_star[tr_b],
-        _stack_targets(slots_star, tr_b, GROUPS_B),
-        {
-            "val": (c_star[va_b], _stack_targets(slots_star, va_b, GROUPS_B)),
-            "test": (c_star[te_b], _stack_targets(slots_star, te_b, GROUPS_B)),
-        },
-        group_names=[f"{s}|{a}" for s, a in GROUPS_B],
-        device=fit_device,
-    )
-    ssr_tb, sst_tb = _extract_frozen(res_star_b, "test", lam_idx_b)
-    npz["B_test_ssres"] = ssr_tb.astype(np.float32)
-    npz["B_test_sstot"] = sst_tb.astype(np.float32)
-    npz["B_test_ctx_ids"] = np.asarray([pool_ids[p] for p in te_b], dtype=np.int64)
-    npz["B_group_names"] = np.asarray([f"{s}|{a}" for s, a in GROUPS_B])
-    b_test_pooled = _pooled_at_frozen(res_star_b, "test", lam_idx_b)
-    position_report["battery_B_full_universe"] = {
-        f"{s}|{a}": float(b_test_pooled[gi]) for gi, (s, a) in enumerate(GROUPS_B)
-    }
+        if have_bank:
+            for role in ("divergent", "control"):
+                b_slots: dict[str, np.ndarray] = {}
+                ids_ref: list | None = None
+                for arm in BANK_ARMS:
+                    arr, ids = _load_layer_slots(base_dir, f"bank_{arm}", l_star)
+                    b_slots[arm] = arr
+                    ids_ref = ids
+                assert ids_ref is not None
+                role_rows = [
+                    i
+                    for i, qid in enumerate(ids_ref)
+                    if qid.endswith("_div") == (role == "divergent")
+                ]
+                bank_rows_by_role[role] = [ids_ref[i] for i in role_rows]
+                xb = b_slots["own"][role_rows][:, SLOT_IDX["c_last"], :]
+                yb = _stack_targets(b_slots, np.asarray(role_rows), GROUPS_A)
+                key = "bank_div" if role == "divergent" else "bank_ctl"
+                eval_splits[key] = (xb, yb)
+        res_star = run_ridge_cell(
+            c_star[tr_a],
+            _stack_targets(slots_star, tr_a, GROUPS_A),
+            eval_splits,
+            group_names=[f"{s}|{a}" for s, a in GROUPS_A],
+            device=fit_device,
+            allow_train_nan_imputation=True,
+        )
+        ssr_t, sst_t = _extract_frozen(res_star, "test", lam_idx_a)
+        npz2["A_test_ssres"] = ssr_t.astype(np.float32)
+        npz2["A_test_sstot"] = sst_t.astype(np.float32)
+        npz2["A_test_ctx_ids"] = np.asarray([pool_ids[p] for p in te_a], dtype=np.int64)
+        npz2["A_group_names"] = np.asarray([f"{s}|{a}" for s, a in GROUPS_A])
+        npz2["A_lam_idx"] = lam_idx_a
+        for key, role in (("bank_div", "divergent"), ("bank_ctl", "control")):
+            if key in eval_splits:
+                ssr_b, sst_b = _extract_frozen(res_star, key, lam_idx_a)
+                npz2[f"{key}_ssres"] = ssr_b.astype(np.float32)
+                npz2[f"{key}_sstot"] = sst_b.astype(np.float32)
+                npz2[f"{key}_ids"] = np.asarray(bank_rows_by_role[role])
+
+        pos_test_pooled = _pooled_at_frozen(res_star, "test", lam_idx_a)
+        per_ctx_r2 = np.where(sst_t > 1e-12, 1.0 - ssr_t / np.where(sst_t > 0, sst_t, 1.0), np.nan)
+        position_report = {"l_star": l_star, "universe": "U_A (span>=32 all arms)"}
+        for gi, (slot, arm) in enumerate(GROUPS_A):
+            if slot not in POSITION_SLOTS:
+                continue
+            col = per_ctx_r2[:, gi]
+            position_report.setdefault(arm, {})[slot] = {
+                "test_pooled_r2": float(pos_test_pooled[gi]),
+                "lambda": DEFAULT_LAMBDAS_LIST[int(lam_idx_a[gi])],
+                "per_context_mean": float(np.nanmean(col)) if np.isfinite(col).any() else None,
+                "per_context_median": float(np.nanmedian(col)) if np.isfinite(col).any() else None,
+                "n_valid_test": int(res_star.n_valid["test"][gi]),
+            }
+        # Battery-B (full-universe D10) companion at l_star.
+        res_star_b = run_ridge_cell(
+            c_star[tr_b],
+            _stack_targets(slots_star, tr_b, GROUPS_B),
+            {
+                "val": (c_star[va_b], _stack_targets(slots_star, va_b, GROUPS_B)),
+                "test": (c_star[te_b], _stack_targets(slots_star, te_b, GROUPS_B)),
+            },
+            group_names=[f"{s}|{a}" for s, a in GROUPS_B],
+            device=fit_device,
+        )
+        ssr_tb, sst_tb = _extract_frozen(res_star_b, "test", lam_idx_b)
+        npz2["B_test_ssres"] = ssr_tb.astype(np.float32)
+        npz2["B_test_sstot"] = sst_tb.astype(np.float32)
+        npz2["B_test_ctx_ids"] = np.asarray([pool_ids[p] for p in te_b], dtype=np.int64)
+        npz2["B_group_names"] = np.asarray([f"{s}|{a}" for s, a in GROUPS_B])
+        b_test_pooled = _pooled_at_frozen(res_star_b, "test", lam_idx_b)
+        position_report["battery_B_full_universe"] = {
+            f"{s}|{a}": float(b_test_pooled[gi]) for gi, (s, a) in enumerate(GROUPS_B)
+        }
+        _ckpt_save(pass2_path, npz2, {"position_report": position_report})
+        npz.update(npz2)
+        del res_star, res_star_b
     (out_dir / "position_r2_by_arm.json").write_text(
         json.dumps(position_report, indent=2, default=_json_np)
     )
@@ -2130,17 +2537,31 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     closure: dict[str, Any] = {"layers": prefix_layers, "attrition": {}, "cells": {}}
     d10_group_names = list(D10_SLOTS)
     for layer in prefix_layers:
-        slots_l = (
-            slots_star
-            if layer == l_star
-            else {arm: _load_layer_slots(base_dir, arm, layer)[0] for arm in ARMS}
-        )
+        slots_l: dict[str, np.ndarray] | None = None  # lazy — loaded only if a unit computes
         for t in PREFIX_TS:
+            upath = ck_dir / f"prefix_L{layer}_t{t}.npz"
+            cached = _ckpt_load(upath)
+            if cached is not None:
+                arrs, payload = cached
+                closure["attrition"].update(payload["attrition"])
+                closure["cells"].update(payload["cells"])
+                npz.update(arrs)
+                logger.info("[1e-ckpt] SKIP prefix L%d t%d (unit shard present)", layer, t)
+                continue
+            if slots_l is None:
+                slots_l = (
+                    slots_star
+                    if layer == l_star
+                    else {arm: _load_layer_slots(base_dir, arm, layer)[0] for arm in ARMS}
+                )
+            unit_attr: dict[str, Any] = {}
+            unit_cells: dict[str, Any] = {}
+            unit_npz: dict[str, np.ndarray] = {}
             per_arm_res = {}
             for arm in ARMS:
                 m = surv[arm][t]
                 tr_c, va_c, te_c = _rows(m, tr_pos), _rows(m, va_pos), _rows(m, te_pos)
-                closure["attrition"][f"{arm}|t{t}"] = {
+                unit_attr[f"{arm}|t{t}"] = {
                     "n_train": len(tr_c),
                     "n_val": len(va_c),
                     "n_test": len(te_c),
@@ -2179,7 +2600,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                 li_t = int(np.nanargmax(np.nanmean(np.stack(vals), axis=0)))
                 for arm, r in per_arm_res.items():
                     key = f"L{layer}|{arm}|t{t}|{target}"
-                    closure["cells"][key] = {
+                    unit_cells[key] = {
                         "test_pooled_r2": float(r.pooled["test"][li_t, ti]),
                         "val_pooled_r2": float(r.pooled["val"][li_t, ti]),
                         "lambda": DEFAULT_LAMBDAS_LIST[li_t],
@@ -2188,22 +2609,26 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                     if target == "rem_mean":
                         ssr_c = r.ss_res["test"][:, ti, li_t].astype(np.float32)
                         sst_c = r.ss_tot["test"][:, ti].astype(np.float32)
-                        npz[f"P_{arm}_t{t}_L{layer}_ssres"] = ssr_c
-                        npz[f"P_{arm}_t{t}_L{layer}_sstot"] = sst_c
-                        npz[f"P_{arm}_t{t}_L{layer}_ctx_ids"] = np.asarray(
+                        unit_npz[f"P_{arm}_t{t}_L{layer}_ssres"] = ssr_c
+                        unit_npz[f"P_{arm}_t{t}_L{layer}_sstot"] = sst_c
+                        unit_npz[f"P_{arm}_t{t}_L{layer}_ctx_ids"] = np.asarray(
                             [pool_ids[p] for p in _rows(surv[arm][t], te_pos)], dtype=np.int64
                         )
             # Decile-probe descriptive summary (imputed targets; report only).
             for arm, r in per_arm_res.items():
                 dec_val = r.pooled["val"][:, 2:]
                 li_d = int(np.nanargmax(np.nanmean(dec_val, axis=1))) if dec_val.size else 0
-                closure["cells"][f"L{layer}|{arm}|t{t}|decile_probes"] = {
+                unit_cells[f"L{layer}|{arm}|t{t}|decile_probes"] = {
                     "test_pooled_r2_by_decile": [float(v) for v in r.pooled["test"][li_d, 2:]],
                     "lambda": DEFAULT_LAMBDAS_LIST[li_d],
                     "imputed_frac": [float(v) for v in r.imputed_frac[2:]],
                 }
             del per_arm_res
-        if layer != l_star:
+            _ckpt_save(upath, unit_npz, {"attrition": unit_attr, "cells": unit_cells})
+            closure["attrition"].update(unit_attr)
+            closure["cells"].update(unit_cells)
+            npz.update(unit_npz)
+        if slots_l is not None and layer != l_star:
             del slots_l
 
     # ── pooled-prefix battery (secondary; l_star only) ──────────────────────────
@@ -2216,6 +2641,13 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         }
         logger.warning("[1e] descope: pooled-prefix secondary battery skipped")
     for t in PREFIX_TS if not skip_pooled else ():
+        upath = ck_dir / f"pooledprefix_t{t}.npz"
+        cached = _ckpt_load(upath)
+        if cached is not None:
+            closure["pooled_prefix_secondary"].update(cached[1]["cells"])
+            logger.info("[1e-ckpt] SKIP pooled-prefix t%d (unit shard present)", t)
+            continue
+        unit_cells = {}
         per_arm_res = {}
         for arm in ARMS:
             m = surv[arm][t]
@@ -2247,10 +2679,12 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                 continue
             li_t = int(np.nanargmax(np.nanmean(np.stack(vals), axis=0)))
             for arm, r in per_arm_res.items():
-                closure["pooled_prefix_secondary"][f"{arm}|t{t}|{target}"] = {
+                unit_cells[f"{arm}|t{t}|{target}"] = {
                     "test_pooled_r2": float(r.pooled["test"][li_t, ti]),
                     "lambda": DEFAULT_LAMBDAS_LIST[li_t],
                 }
+        _ckpt_save(upath, {}, {"cells": unit_cells})
+        closure["pooled_prefix_secondary"].update(unit_cells)
 
     # ── MATCHED H2 decision cells (common subset, identical target; plan §3) ────
     matched: dict[str, Any] = {}
@@ -2266,6 +2700,15 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
             matched[f"t{t2}"]["skipped"] = True
             continue
         for layer in prefix_layers:
+            upath = ck_dir / f"matched_t{t2}_L{layer}.npz"
+            cached = _ckpt_load(upath)
+            if cached is not None:
+                arrs, payload = cached
+                npz.update(arrs)
+                matched[f"t{t2}"][f"L{layer}"] = payload["layer_rec"]
+                logger.info("[1e-ckpt] SKIP matched t%d L%d (unit shard present)", t2, layer)
+                continue
+            unit_npz: dict[str, np.ndarray] = {}
             slots_l = (
                 slots_star
                 if layer == l_star
@@ -2334,19 +2777,19 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                     if s == f"rem_{target}_gt{t2}":
                         layer_rec[f"cleg|{a}|{target}"] = float(res_cleg.pooled["test"][li_c, gi])
                         if target == "mean":
-                            npz[f"M{t2}_L{layer}_cleg_{a}_ssres"] = res_cleg.ss_res["test"][
+                            unit_npz[f"M{t2}_L{layer}_cleg_{a}_ssres"] = res_cleg.ss_res["test"][
                                 :, gi, li_c
                             ].astype(np.float32)
-                            npz[f"M{t2}_L{layer}_cleg_{a}_sstot"] = res_cleg.ss_tot["test"][
+                            unit_npz[f"M{t2}_L{layer}_cleg_{a}_sstot"] = res_cleg.ss_tot["test"][
                                 :, gi
                             ].astype(np.float32)
                 for a in MATCHED_ARMS:
                     layer_rec[f"zleg|{a}|{target}"] = float(zres[a].pooled["test"][li_z, ti])
                     if target == "mean":
-                        npz[f"M{t2}_L{layer}_zleg_{a}_ssres"] = (
+                        unit_npz[f"M{t2}_L{layer}_zleg_{a}_ssres"] = (
                             zres[a].ss_res["test"][:, ti, li_z].astype(np.float32)
                         )
-                        npz[f"M{t2}_L{layer}_zleg_{a}_sstot"] = (
+                        unit_npz[f"M{t2}_L{layer}_zleg_{a}_sstot"] = (
                             zres[a].ss_tot["test"][:, ti].astype(np.float32)
                         )
                 layer_rec[f"lambda_cleg_{target}"] = DEFAULT_LAMBDAS_LIST[li_c]
@@ -2359,6 +2802,8 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                 layer_rec[f"G_matched_0_{ext}"] = g0
                 layer_rec[f"G_matched_t_{ext}"] = gt
                 layer_rec[f"delta_G_{ext}"] = g0 - gt
+            _ckpt_save(upath, unit_npz, {"layer_rec": layer_rec})
+            npz.update(unit_npz)
             matched[f"t{t2}"][f"L{layer}"] = layer_rec
             del res_cleg, zres
             if layer != l_star:
@@ -2540,6 +2985,24 @@ def phase_bank_score(
         upload_paths += sorted(p for p in judge_dir.rglob("*.json") if p.is_file())
     upload_paths += sorted(tensors_dir.glob("slots_bank_*.pt"))
     upload_paths += sorted(tensors_dir.glob("spans_*.json"))
+    # Workload-log leg (plan §10 artifacts: HF logs/issue-952-workload.log). A CLEAN
+    # GCE run's log dies with the instance DELETE unless uploaded here; the GCE
+    # startup script exports its path as EPS_LOG_PATH (backends/gcp.log_path_for).
+    log_src = pathlib.Path(os.environ.get("EPS_LOG_PATH") or "/workspace/logs/issue-952.log")
+    if log_src.is_file():
+        import shutil
+
+        log_dest = base_dir / "logs" / "issue-952-workload.log"
+        log_dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(log_src, log_dest)
+        upload_paths.append(log_dest)
+        logger.info(
+            "[p1f] workload log staged for upload: %s (%d bytes)",
+            log_src,
+            log_dest.stat().st_size,
+        )
+    else:
+        logger.warning("[p1f] workload log not found at %s — upload leg skipped", log_src)
     uploader.submit("1f terminal", [p for p in upload_paths if p.exists()], base_dir)
     uploader.join()
     log_phase("p1f_done")
@@ -2561,6 +3024,16 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
         )
     except Exception as e:
         logger.warning("git sha lookup failed (recorded 'unknown'): %s", e)
+    # Results-card plan_deviations (round-2 concern i823-pool-coherence-empty-answers):
+    # prefer the live phase0_verify.json record; fall back to the static note.
+    deviation = PLAN_DEVIATION_NOTE
+    try:
+        rec = json.loads(
+            (base_dir / "eval_results" / "issue_952" / "phase0_verify.json").read_text()
+        )
+        deviation = rec.get("plan_deviation", deviation)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("phase0_verify.json unreadable for the results card (%s) — static note", e)
     card = {
         "hf_data_repo": HF_DATA_REPO,
         "issue_slug": ISSUE_SLUG,
@@ -2568,6 +3041,7 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
         "raw_completions_prefix": f"{ISSUE_SLUG}/raw_completions/",
         "eval_results_prefix": f"{ISSUE_SLUG}/eval_results/issue_952/",
         "wandb_url": "n/a (no model training in this experiment)",
+        "plan_deviations": [deviation],
     }
     write_sentinel(
         pathlib.Path(f"/workspace/logs/issue-952-epm_results-{int(time.time())}.json"),
@@ -2596,16 +3070,16 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
 
 
 def _load_pool_and_split(base_dir: pathlib.Path, smoke: bool) -> tuple[list[int], dict]:
-    """Pool ids + split — from the phase0 outputs (recomputed deterministically)."""
-    cv_path = base_dir / "data" / "issue_952" / "hf_dl" / I823_PREFIX / I823_FILES["common_valid"]
-    if not cv_path.exists():
-        cv_path = hf_download(
-            f"{I823_PREFIX}/{I823_FILES['common_valid']}",
-            base_dir / "data" / "issue_952" / "hf_dl",
-            I823_REVISION,
-        )
-    common_valid = sorted(int(i) for i in json.loads(cv_path.read_text())["common_valid_idx"])
-    pool_ids = common_valid[:N_SMOKE] if smoke else common_valid
+    """Pool ids + split — recomputed deterministically via the SAME coherence path.
+
+    Runs the full-pool coherence verification (``compute_analysis_pool``) so a
+    ``--phases`` invocation that skips phase0 consumes the IDENTICAL 4920-id
+    analysis pool (all-arms-nonempty intersection), never the raw common-valid
+    mask (round-2 fix, concern i823-pool-coherence-empty-answers).
+    """
+    pool_rec = compute_analysis_pool(base_dir)
+    kept = pool_rec["pool_ids"]
+    pool_ids = kept[:N_SMOKE] if smoke else kept
     split = make_split(pool_ids)
     persisted = (
         base_dir
@@ -2658,7 +3132,11 @@ def parse_args():
     import argparse
 
     p = argparse.ArgumentParser(description="Issue #952 pod-side driver")
-    p.add_argument("--smoke", action="store_true", help="10 LMSYS contexts + 1 bank pair/category")
+    p.add_argument(
+        "--smoke",
+        action="store_true",
+        help=f"10 LMSYS contexts + {BANK_SMOKE_PER_CAT} bank pairs/category",
+    )
     p.add_argument(
         "--phases",
         type=str,

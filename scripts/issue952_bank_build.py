@@ -558,13 +558,17 @@ def main() -> None:
 
     if not args.skip_upload:
         split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+        # A --smoke run's Hub dests carry the _smoke suffix on EVERY file so a
+        # smoke upload can never clobber the canonical phase-0 artifacts the
+        # pod driver's locate_phase0_file fetches (round-2 review Minor 1).
+        sfx = "_smoke" if args.smoke else ""
         upload_phase0(
             [
-                (bank_path, f"{ISSUE_SLUG}/phase0/divergence_bank_queries.json"),
-                (claude_path, f"{ISSUE_SLUG}/phase0/claude_seed42.json"),
-                (claude_path, f"{ISSUE_SLUG}/raw_completions/bank/claude_seed42.json"),
+                (bank_path, f"{ISSUE_SLUG}/phase0/divergence_bank_queries{sfx}.json"),
+                (claude_path, f"{ISSUE_SLUG}/phase0/claude_seed42{sfx}.json"),
+                (claude_path, f"{ISSUE_SLUG}/raw_completions/bank/claude_seed42{sfx}.json"),
                 (eval_dir / split_name, f"{ISSUE_SLUG}/phase0/{split_name}"),
-                (eval_dir / "phase0_verify.json", f"{ISSUE_SLUG}/phase0/phase0_verify.json"),
+                (eval_dir / "phase0_verify.json", f"{ISSUE_SLUG}/phase0/phase0_verify{sfx}.json"),
             ]
         )
     logger.info("Phase 0 complete")

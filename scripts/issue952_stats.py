@@ -713,6 +713,134 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
     }
 
 
+# ── TF-idf k-means OOD / near-dup diagnostic (plan §6 OOD mitigation (b)) ───────
+
+KMEANS_K = 10  # plan §6: TF-idf k-means (k=10) over test contexts
+NEAR_DUP_COS = 0.9  # train<->test near-duplicate flag threshold (TF-idf cosine)
+
+
+def _reconstruct_lmsys_prompts(n_needed: int) -> list[str]:
+    """#823 Phase 0b replay at the pinned revision (fallback when --prompts absent)."""
+    from datasets import load_dataset
+
+    from explore_persona_space.experiments.issue_952.run_952 import LMSYS_REVISION
+
+    ds = load_dataset(
+        "lmsys/lmsys-chat-1m", split="train", streaming=True, revision=LMSYS_REVISION, token=True
+    )
+    prompts: list[str] = []
+    for row in ds:
+        text = ""
+        for msg in row.get("conversation", []):
+            if msg["role"] == "user":
+                text = msg["content"].strip()
+                break
+        if text:
+            prompts.append(text)
+        if len(prompts) >= n_needed:
+            break
+    assert len(prompts) >= n_needed, f"LMSYS reconstruction short: {len(prompts)} < {n_needed}"
+    # Deterministic release — a streaming IterableDataset surviving to interpreter
+    # shutdown SIGABRTs (rc=134) in the pinned datasets env (see run_952.phase0_verify).
+    import gc
+
+    del row, ds
+    gc.collect()
+    return prompts
+
+
+def kmeans_ood_diagnostic(npz: dict[str, np.ndarray], split: dict, prompts: list[str]) -> dict:
+    """Plan §6 OOD mitigation (b): TF-idf k-means (k=10) over TEST contexts with
+    per-cluster R² spread per arm, PLUS a train<->test near-duplicate read (max
+    TF-idf cosine of each test context to any train context). Exploratory
+    diagnostic — feeds no H1/H2/H3 decision."""
+    from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    if "A_test_ssres" not in npz:
+        return {"status": "skipped — no A-family per-context stats in npz"}
+    test_ids = [int(i) for i in npz["A_test_ctx_ids"].tolist()]
+    train_ids = [int(i) for i in split["train"]]
+    n_prompts = len(prompts)
+    missing = [i for i in test_ids + train_ids if i >= n_prompts]
+    assert not missing, f"prompts list (n={n_prompts}) does not cover ids, e.g. {missing[:5]}"
+
+    groups = [g for g in npz["A_group_names"].tolist()]
+    pos_set = set(POSITION_SLOTS)
+    per_arm_r2: dict[str, np.ndarray] = {}
+    for arm in ARMS:
+        cols = [
+            gi
+            for gi, g in enumerate(groups)
+            if g.endswith(f"|{arm}") and g.split("|")[0] in pos_set
+        ]
+        ssr = npz["A_test_ssres"][:, cols].astype(float)
+        sst = npz["A_test_sstot"][:, cols].astype(float)
+        r2 = np.where(np.isfinite(ssr) & np.isfinite(sst) & (sst > 1e-12), 1.0 - ssr / sst, np.nan)
+        with np.errstate(invalid="ignore"):
+            per_arm_r2[arm] = np.nanmean(r2, axis=1)  # per-context mean over position slots
+
+    vec = TfidfVectorizer(max_features=20_000)
+    x_all = vec.fit_transform([prompts[i] for i in test_ids + train_ids])
+    x_test = x_all[: len(test_ids)]
+    x_train = x_all[len(test_ids) :]
+    k = int(min(KMEANS_K, len(test_ids)))
+    labels = KMeans(n_clusters=k, random_state=0, n_init=10).fit_predict(x_test)
+    clusters: list[dict] = []
+    for c in range(k):
+        rows = np.where(labels == c)[0]
+        rec: dict[str, Any] = {"cluster": int(c), "n": len(rows)}
+        for arm in ARMS:
+            vals = per_arm_r2[arm][rows]
+            fin = np.isfinite(vals)
+            rec[arm] = {
+                "mean_r2": float(np.mean(vals[fin])) if fin.any() else None,
+                "median_r2": float(np.median(vals[fin])) if fin.any() else None,
+                "n_valid": int(fin.sum()),
+            }
+        clusters.append(rec)
+    spread: dict[str, Any] = {}
+    for arm in ARMS:
+        means = [c[arm]["mean_r2"] for c in clusters if c[arm]["mean_r2"] is not None]
+        spread[arm] = (
+            {
+                "min": float(min(means)),
+                "max": float(max(means)),
+                "range": float(max(means) - min(means)),
+            }
+            if means
+            else None
+        )
+    # TF-idf rows are L2-normalized (norm='l2' default) -> cosine = dot product.
+    if len(train_ids):
+        max_cos = np.asarray((x_test @ x_train.T).max(axis=1).todense()).ravel()
+    else:
+        max_cos = np.zeros(len(test_ids))
+    over_key = f"n_test_over_{NEAR_DUP_COS:.2f}"
+    near_dup = {
+        "max_cos_median": float(np.median(max_cos)),
+        "max_cos_p95": float(np.percentile(max_cos, 95)),
+        "max_cos_max": float(np.max(max_cos)) if max_cos.size else None,
+        over_key: int((max_cos > NEAR_DUP_COS).sum()),
+    }
+    logger.info(
+        "[kmeans] k=%d over %d test contexts; near-dup max-cos median %.3f p95 %.3f (>%.2f: %d)",
+        k,
+        len(test_ids),
+        near_dup["max_cos_median"],
+        near_dup["max_cos_p95"],
+        NEAR_DUP_COS,
+        near_dup[over_key],
+    )
+    return {
+        "k": k,
+        "n_test": len(test_ids),
+        "per_cluster": clusters,
+        "cluster_spread_mean_r2": spread,
+        "train_test_near_dup": near_dup,
+    }
+
+
 # ── driver ──────────────────────────────────────────────────────────────────────
 
 
@@ -725,6 +853,18 @@ def main() -> None:
     ap.add_argument("--out", type=str, default=None, help="default: <eval-dir>/stats_summary.json")
     ap.add_argument("--n-draws", type=int, default=N_DRAWS_DEFAULT)
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--prompts",
+        type=str,
+        default=None,
+        help="prompts.json (the phase0 LMSYS replay output); reconstructed at the "
+        "pinned LMSYS revision when absent (needs HF token)",
+    )
+    ap.add_argument(
+        "--skip-kmeans",
+        action="store_true",
+        help="skip the TF-idf k-means OOD / near-dup diagnostic (plan §6 item (b))",
+    )
     args = ap.parse_args()
 
     t0 = time.time()
@@ -774,6 +914,17 @@ def main() -> None:
         else {"status": "no_bank"}
     )
 
+    # TF-idf k-means OOD / near-dup diagnostic (plan §6 OOD mitigation (b)).
+    if args.skip_kmeans:
+        kmeans_diag: dict[str, Any] = {"status": "skipped (--skip-kmeans)"}
+    else:
+        if args.prompts:
+            prompts = json.loads(pathlib.Path(args.prompts).read_text())
+        else:
+            n_needed = max([int(i) for i in npz["A_test_ctx_ids"]] + list(split["train"])) + 1
+            prompts = _reconstruct_lmsys_prompts(n_needed)
+        kmeans_diag = kmeans_ood_diagnostic(npz, split, prompts)
+
     git_sha = "unknown"
     try:
         git_sha = (
@@ -799,6 +950,7 @@ def main() -> None:
         "h2_intersection_reads": h2_inter,
         "h2_positive_control": pos_ctl,
         "h3": h3,
+        "kmeans_ood_diagnostic": kmeans_diag,
         "attrition": closure.get("attrition", {}),
         "matched_paired_n": {
             k: v.get("paired_n")
