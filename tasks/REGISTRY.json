@@ -6638,8 +6638,8 @@
     "986": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/986",
-      "status": "planning",
+      "path": "tasks/approved/986",
+      "status": "approved",
       "title": "workflow-fix: cap-headroom check in check_agent_spec_size"
     },
     "987": {
