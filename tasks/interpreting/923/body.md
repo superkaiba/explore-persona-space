@@ -151,7 +151,7 @@ Pooled held-out skill R² at layer 18 on the UltraChat grid (n = 7200 cells), pe
 
 > **Figure.** *The stitched pair (0.540) beats the full-prompt read (0.460) in every held-out family, most in format contexts.* Context-only 0.093, Query-only 0.448, Blended predictions 0.533; ceilings 0.078 (context) and 0.914 (additive). Lower panels: the per-family and per-cell data behind the pooled bars.
 
-The residual, −0.081 (interval −0.157 to −0.045), is the anticipated bottleneck: under this ridge/PCA/fold estimator the last-input-token vector is less linearly readable than the disjoint pair. Blended predictions add no feature dimensions yet nearly match the stitched fit, arguing against doubled feature count as the main explanation. The decomposability fraction is undefined here (best-single-to-full gap 0.012, guard 0.073); the full-prompt arm is also the noisiest, with bootstrap uncertainty roughly triple the stitched arm's.
+The residual, −0.081 (interval −0.157 to −0.045), is the plan's pre-registered bottleneck outcome: under this ridge/PCA/fold estimator the last-input-token vector is less linearly readable than the disjoint pair. Blended predictions add no feature dimensions yet nearly match the stitched fit. This argues against doubled feature count as the main explanation. The decomposability fraction is undefined here (best-single-to-full gap 0.012, guard 0.073); the full-prompt arm is also the noisiest, with bootstrap uncertainty roughly triple the stitched arm's.
 
 ### The full-prompt deficit persists without family transfer and in the ambient target space
 
@@ -203,7 +203,7 @@ First figure: pooled held-out skill R² at layer 18 for the three query-only pre
 
 > **Figure.** *A penalty-selection failure, not absent signal.* The masked-context read pools −3.03 on Betley (inside its null band, p = 1.0) but reads 0.407 at the largest fixed penalty — in family with the empty-system read (0.419) — and is healthy on UltraChat at every penalty (0.454–0.455).
 
-The masked-context feature differs per cell (query positions depend on context length), so train folds hold near-duplicate feature rows per query; leave-one-out penalty selection then favors small penalties that amplify within-query variation out-of-fold — catastrophic on the 36-train-query Betley folds, harmless on the 108-train-query UltraChat folds. The masked stitched variant stays healthy under fold selection (0.531): adding the per-context block breaks the near-duplicate structure the penalty selection trips on. The pooled number stands as measured. On UltraChat the masked presentation matches the template-based ones (0.455 vs 0.448/0.457), licensing the attention-mixing reading of the residual over template mismatch.
+The masked-context feature differs per cell (query positions depend on context length), so train folds hold near-duplicate feature rows per query; leave-one-out penalty selection then favors small penalties that amplify within-query variation out-of-fold — catastrophic on the 36-train-query Betley folds, harmless on the 108-train-query UltraChat folds. The masked stitched variant stays healthy under fold selection (0.531): adding the per-context block breaks the near-duplicate structure the penalty selection trips on. The pooled number stands as measured. On UltraChat the masked presentation matches the template-based ones (0.455 vs 0.448/0.457). This licenses the attention-mixing reading of the residual over template mismatch.
 
 ### Store-reduced and fresh-captured targets agree at the median, with a small tail of divergent regenerations
 
@@ -213,7 +213,7 @@ Histogram over the 50 regeneration spot-check cells (25 per genre): per-cell cos
 
 > **Figure.** *Median agreement 0.995; 14 of 50 cells fall below 0.99, worst 0.880.* Both genres agree equally (mean of per-cell means 0.990 in each). The histogram summarizes each cell's mean over layers.
 
-At the per-layer grain the divergence is deeper: per-cell minimum-over-layers cosines reach 0.72 (25 of 50 below 0.99), and the worst layer-18 cosine is 0.84. The tail is expected under greedy regeneration: batching numerics can flip one token, after which the completion — and its activation — legitimately diverges. The check validates joining store-reduced targets (original 48 queries per genre) with fresh-captured ones (96 extension queries); a provenance offset would be shared by every arm, depressing rather than creating the arm ordering.
+At the per-layer grain the divergence is deeper: per-cell minimum-over-layers cosines reach 0.72 (25 of 50 below 0.99), and the worst layer-18 cosine is 0.84. The tail is expected under greedy regeneration: batching numerics can flip one token, after which the completion — and its activation — legitimately diverges. The check is consistent with joining store-reduced targets (original 48 queries per genre) with fresh-captured ones (96 extension queries); a provenance offset would be shared by every arm, depressing rather than creating the arm ordering.
 
 ---
 
