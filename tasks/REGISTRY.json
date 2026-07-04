@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1016,
+  "highest_id": 1017,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -149,6 +149,13 @@
       "path": "tasks/proposed/1016",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body per-file HF membership check"
+    },
+    "1017": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1017",
+      "status": "proposed",
+      "title": "workflow-fix: codex twin round-bound 1-3 vs cap-5 delta rounds"
     },
     "102": {
       "has_clean_result": false,
