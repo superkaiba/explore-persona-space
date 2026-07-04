@@ -6589,8 +6589,8 @@
     "980": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/980",
-      "status": "running",
+      "path": "tasks/reviewing/980",
+      "status": "reviewing",
       "title": "workflow-fix: watcher alert for on_hold task with RUNNING pod"
     },
     "981": {
