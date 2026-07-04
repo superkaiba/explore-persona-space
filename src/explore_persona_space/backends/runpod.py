@@ -392,14 +392,34 @@ def _render_launch_script(
     ``sentinel_path`` the launch handle declares. This mirrors the
     established backend-owned writer convention on the sibling lanes
     (``gcp.py``'s startup-script sentinel heredoc; ``slurm.py``'s
-    terminal block). The outer portion clears any stale sentinel at the
-    declared path before detach (same guard family as the pidfile rm),
-    and the launcher exits with the workload's own rc so the exit status
-    is unchanged by the chain.
+    terminal block). The outer portion clears, before detach (same guard
+    family as the pidfile rm), EVERY stale sentinel the #685
+    single-live-sibling fallback could resolve on a same-pod
+    re-execution: the declared attempt path PLUS the flat legacy path
+    ``issue_<N>/.completion-sentinel.json`` and the attempt-sibling
+    wildcard ``issue_<N>/*/.completion-sentinel.json`` — the
+    experimenter step-11.3 breadth, ported here by #976 (a prior
+    attempt's success sentinel survives on the persistent ``/workspace``
+    volume, and ``_check_sentinel`` validates phase+issue only, so a
+    resolved stale sibling would finalize a crashed re-execution green).
+    The widened clear also removes a COMPLETED prior attempt's sentinel
+    before a pending finalize reads it — the fail-loud direction
+    (finalize FAILs "sentinel missing", never a false green; the same
+    supersession semantics as the experimenter step-11.3 clear). The
+    launcher exits with the workload's own rc so the exit status is
+    unchanged by the chain.
     """
     launcher = _launcher_path(issue)
     epoch_file = _launch_epoch_path(issue)
     sentinel_dir = sentinel_path.rsplit("/", 1)[0]
+    # #976: stale-clear breadth mirrors artifacts._resolve_live_sentinel's
+    # sibling probe (_default_glob_sentinels: grandparent-of-declared +
+    # */<name>) plus the experimenter step-11.3 flat legacy path — whatever
+    # the #685 single-live-sibling fallback COULD resolve on a same-pod
+    # re-execution, this clear removes first. Derived from sentinel_path
+    # itself (no second copy of the /workspace/eval_results/issue_<N> root).
+    issue_dir = sentinel_dir.rsplit("/", 1)[0]
+    sentinel_name = sentinel_path.rsplit("/", 1)[1]
     sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
     if "'" in sentinel_json:
         # The JSON is embedded single-quoted inside the launcher; both
@@ -418,7 +438,7 @@ def _render_launch_script(
             "  exit 5",
             "fi",
             f"rm -f {pid_file}",
-            f"rm -f {sentinel_path}",
+            f"rm -f {sentinel_path} {issue_dir}/{sentinel_name} {issue_dir}/*/{sentinel_name}",
             f"mkdir -p {sentinel_dir}",
             f"date +%s > {epoch_file}",
             f"cat > {launcher} << 'EPSEOF'",
