@@ -95,7 +95,7 @@ Subagents have ONE turn. The harness re-invokes the ORCHESTRATOR on each bg `Bas
 
 - Waits longer than ~5 min belong to the orchestrator's bg-Bash polling loop (`scripts/poll_pipeline.py`), NOT subagent sleep-chains.
 - Subagents are for bounded, in-context work: launch+confirm, write+commit, check+report. `experimenter` is canonical: launches and exits within 60s; orchestrator polls.
-- **End the turn when bg work is in flight.** Don't sleep-poll or block-wait. Anti-pattern: launching N parallel subagents and sequentially `TaskOutput`-blocking each — serializes work the harness wants parallel and loses notifications.
+- **End the turn when bg work is in flight.** Don't sleep-poll or block-wait. Anti-pattern: launching N parallel subagents and sequentially `TaskOutput`-blocking each — serializes work the harness wants parallel and loses notifications. A foreground `sleep N && <cmd>` chain is mechanically BLOCKED by a harness guard (15+ blocked attempts across ~13 sessions on 2026-07-03, each a wasted turn) — poll via a background `Bash` or a `Monitor` until-loop instead, and load deferred tool schemas first (`ToolSearch("select:Monitor,TaskOutput")`); calling an unloaded deferred tool fails with `InputValidationError`.
 
 ### Codex ensemble review
 
