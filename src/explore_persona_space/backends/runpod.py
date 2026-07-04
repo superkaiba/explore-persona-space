@@ -1028,6 +1028,16 @@ class RunPodBackend(ComputeBackend):
             # getattr-guarded so a mixed-version worktree (a poll_once that
             # predates the field) degrades to None rather than crashing.
             crash_signature=getattr(raw, "crash_signature", None),
+            # #983: copy the post-done phase-consistency advisory surfaces
+            # through (same passthrough contract as stall_reason above —
+            # dropping them at this rewrap would silently strip the advisory
+            # from the backend_poll lane's JSON before
+            # ``_serialize_poll_result`` can surface it, the #664
+            # stall_reason lesson). getattr-guarded for a mixed-version
+            # worktree; the marker + Telegram push already fired inside
+            # ``poll_once`` regardless.
+            post_done_phase_advisory_posted=getattr(raw, "post_done_phase_advisory_posted", False),
+            post_done_phase_lines=tuple(getattr(raw, "post_done_phase_lines", ()) or ()),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

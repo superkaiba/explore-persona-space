@@ -242,6 +242,15 @@ def _serialize_poll_result(result) -> dict:
         # result that predates the field (the GCP/SLURM lanes do not set
         # it) so the JSON shape stays uniform across lanes without crashing.
         "stall_reason": getattr(result, "stall_reason", None),
+        # #983 post-done phase-consistency guard surfaces: True when the
+        # tick posted the [post-done-phase-advisory] marker, plus the new
+        # [phase=...] lines the guard observed after the recorded done.
+        # ``getattr``-defended like ``stall_reason`` so an older /
+        # duck-typed result degrades to the defaults, never crashes.
+        "post_done_phase_advisory_posted": bool(
+            getattr(result, "post_done_phase_advisory_posted", False)
+        ),
+        "post_done_phase_lines": list(getattr(result, "post_done_phase_lines", ()) or ()),
     }
 
 

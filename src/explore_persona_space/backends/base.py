@@ -361,6 +361,19 @@ class PollResult:
     # serialization), so it adds no key to the orchestrator's parser. Declared
     # LAST so existing positional ``PollResult`` constructions are unaffected.
     crash_signature: str | None = None
+    # #983 post-done phase-consistency guard, mirroring
+    # ``scripts/poll_pipeline.PollResult``: True when the tick posted the
+    # ``[post-done-phase-advisory]`` marker — a poll AFTER a corroborated done
+    # observed genuinely NEW ``[phase=...]`` lines after the recorded done
+    # line — plus the new phase lines observed this tick. The RunPod lane
+    # copies both through from ``poll_once`` (``RunPodBackend.poll``); SLURM +
+    # GCP never set them, so the defaults keep cross-lane serialization
+    # uniform. ``backend_poll._serialize_poll_result`` reads both via
+    # ``getattr`` so a mixed-version worktree degrades to the defaults rather
+    # than crashing. Declared LAST so existing positional ``PollResult``
+    # constructions are unaffected.
+    post_done_phase_advisory_posted: bool = False
+    post_done_phase_lines: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
