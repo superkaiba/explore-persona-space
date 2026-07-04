@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 998,
+  "highest_id": 999,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6654,6 +6654,13 @@
       "path": "tasks/proposed/998",
       "status": "proposed",
       "title": "daily-fix: exempt verbatim sample lines from humanize ban scan"
+    },
+    "999": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/999",
+      "status": "proposed",
+      "title": "daily-fix: fix session_progress_report write_self_report crash"
     }
   }
 }
