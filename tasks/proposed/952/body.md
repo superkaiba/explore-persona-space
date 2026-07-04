@@ -59,6 +59,9 @@ goal: 'On frozen Qwen-2.5-7B-Instruct with ridge-only maps and a train/validatio
   divergence query bank (≈4 quirk categories × ~40–60 queries, each with matched same-template
   entity-swapped controls), testing whether off-policy predictability fails specifically
   where the two models'' behaviors diverge while on-policy predictability holds.'
+relates_to:
+- spec-context-as-vector
+- identity-contextual-vs-base
 ---
 # Token-position-resolved on/off-policy characterization of the context→answer activation map + divergence-conditioned evaluation (Qwen vs Claude)
 
