@@ -63,3 +63,4 @@
 {"ts": "2026-07-04T02:17:56Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "planning", "note": "plan_contradiction_replan pivot: Gate-1 degeneration conjunct amendment."}
 {"ts": "2026-07-04T02:33:36Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verdict: PASS; n_fail=0 n_warn=0; plan version v3 (Gate-1 amendment after pivot 1; one mechanical patch: c18 Row-coverage line per the verifier's prescribed remedy — new check added to main since v2 verification)"}
 {"ts": "2026-07-04T02:46:17Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr5rgc2k-0krokn effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-07-04T02:47:50Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr5rgc2k-0krokn phase=done after 91s."}
