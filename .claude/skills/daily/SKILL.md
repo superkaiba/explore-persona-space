@@ -43,7 +43,9 @@ uv run python scripts/task.py view <N>
 ## Output
 
 Write the brief to `logs/daily/YYYY-MM-DD.md` (relative to the repo root —
-`~/explore-persona-space/`). One file per date. The file is a written RECORD
+`~/explore-persona-space/`). One file per date. For a BACKFILL run
+(`/daily <YYYY-MM-DD>`) substitute the target date throughout — see
+"Backfill a missed day (date argument)". The file is a written RECORD
 of what the run applied + noted; the actual surfacing to Thomas happens over
 Telegram (see "Surfacing flow (applied / filed / held)"), not via this file. Handle an
 existing file as follows:
@@ -438,6 +440,62 @@ on. The stub is committed locally; the #711 heartbeat
 (`scripts/cron_daily_healthcheck.sh`) will surface a still-missing stub the
 next day as the backstop. Durability here is best-effort; nothing in the
 project hangs on the push succeeding.
+
+### Headless (cron) mode — the daily file is never hostage to background work
+
+The nightly entrypoint is HEADLESS: crontab
+`27 23 * * * sh -c "cd ~/explore-persona-space && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 claude -p /daily"`.
+In `-p` mode the harness TERMINATES the process when background tasks are
+still running `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` (cron pins 3h; harness
+default 600s) after the final turn ends. On 2026-07-01 the run ended its
+turn "waiting on the filing driver" with the daily file unwritten and was
+killed at the 600s default; the 07-02/07-03 nights also died with their
+files unwritten (one logged nothing, one left a kill-less trailing-wait
+tail) (#994). Two rules:
+
+1. **Write-then-wait ordering.** The daily file write + `git commit` + push +
+   Telegram enqueue are the load-bearing outputs — never gate them on a
+   background task. Once mining + routing results are in hand, WRITE the file
+   (recording any still-running filing driver's ids as "dispatch pending"),
+   commit, push, enqueue — only THEN may a turn end with residual background
+   work (e.g. watching a filing driver) still in flight.
+2. **Join load-bearing background work synchronously.** Anything the daily
+   file's content depends on (transcript miners, a driver whose filed `#id`s
+   you want to record) is collected by blocking on its TaskOutput in-turn —
+   not by ending the turn and relying on a background-completion wake. The 3h
+   cron ceiling is a BACKSTOP for slow stragglers, not the design; a healthy
+   run never hits it.
+
+### Backfill a missed day (date argument)
+
+`/daily` accepts an optional ISO date argument — `/daily 2026-07-01` —
+making the run a BACKFILL for that date. Trigger: the #711 heartbeat
+(`scripts/cron_daily_healthcheck.sh`) alerts that a nightly file never
+landed; its alert names the exact command:
+
+    cd ~/explore-persona-space && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 \
+      /home/thomasjiralerspong/.local/bin/claude -p '/daily <missed-date>'
+
+Semantics — everywhere this file says "today", read the TARGET DATE:
+
+- Output `logs/daily/<target-date>.md`, frontmatter `date: <target-date>`.
+- Transcript inputs: keep transcripts with ≥1 in-file message `timestamp`
+  dated the target date (UTC); the mtime pre-filter widens to "modified on or
+  after <target-date>" (later processes bump old mtimes — same hazard as the
+  2026-06-22 incident, same in-file-timestamp cross-check).
+- Promoted-results filter: `promoted_at` on the target date.
+- The existing-file rules under "Output" apply unchanged (a date whose file
+  already has a non-empty `## Applied workflow improvements` → refuse).
+- Route-1/2/3 fixes still fire, with one extra check: before applying or
+  filing, confirm against the CURRENT tree that the problem is not already
+  fixed (a backfill mines stale transcripts); skip with a note if it is.
+  Route-2 dedup on `(target_file, fingerprint)` catches same-bug re-raises
+  (e.g. from the partially-run 2026-07-03 night).
+- Telegram digest line reads `EPS daily <target-date> (backfill): ...`.
+- Do not start a backfill within 60 min of the 23:27 nightly; two concurrent
+  /daily processes double-mine and race the shared repo root.
+
+No argument → today, exactly as before.
 
 ### Other rules
 
