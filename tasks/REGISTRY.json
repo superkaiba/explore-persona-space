@@ -6314,8 +6314,8 @@
     "954": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/954",
-      "status": "planning",
+      "path": "tasks/approved/954",
+      "status": "approved",
       "title": "workflow-fix: mint RunPod handle sidecar on GCP\u2192RunPod failover"
     },
     "96": {
