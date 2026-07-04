@@ -17,13 +17,15 @@ origin_prompt: "Run this issue in the background with happy coder:\n# How does t
   \ try to predict second answer from query 2 using the first mapping, etc.\n\n(no\
   \ approval needed from me)"
 workflow: v1
-goal: 'Characterize whether the context→answer mapping (trained so far on mostly short
-  contexts) holds up or changes systematically as the context gets longer and spans
-  many chat turns: (a) is the mapping from (prefix + query 1 → answer 1) the same
-  as the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer
-  2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping;
-  (c) does any systematic change with context length offer an account of persona drift
-  / context rot.'
+goal: 'Characterize whether the mappings (trained so far on mostly short contexts)
+  hold up or change systematically as the context gets longer and spans many chat
+  turns — training BOTH the context→answer mapping AND the prefix→answer mapping on
+  the SAME data: (a) is the mapping from (prefix + query 1 → answer 1) the same as
+  the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer 2,
+  3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping; (c)
+  does any systematic change in either mapping with context length offer an account
+  of persona drift / context rot. Open design question for the planner: how to obtain
+  multiple queries per prefix to average over for the prefix→answer mapping.'
 relates_to:
 - spec-context-as-vector
 - spec-sysprompt-vs-drift
@@ -32,7 +34,7 @@ relates_to:
 
 ## Goal
 
-Characterize whether the mappings studied in the project's mapping experiments (trained so far on mostly short contexts) hold up — or change systematically — as the context gets longer and spans many chat turns. Train BOTH mapping types, on the SAME data: (i) the **context→answer** mapping (full context so far — prefix + current query → answer) and (ii) the **prefix→answer** mapping (prefix alone → answer, marginalizing over queries). Questions: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2) at later turns; (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs (e.g. prefix + query 1, and other prefix/query combinations) using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot.
+Characterize whether the mappings (trained so far on mostly short contexts) hold up or change systematically as the context gets longer and spans many chat turns — training BOTH the context→answer mapping AND the prefix→answer mapping on the SAME data: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot. Open design question for the planner: how to obtain multiple queries per prefix to average over for the prefix→answer mapping.
 
 ## Motivation
 
