@@ -1,0 +1,1006 @@
+{
+  "commit": "04d530b01d",
+  "created": "2026-07-02T23:05:57Z",
+  "figsize": [
+    15.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.2403788610143681,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.12176854901957233,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.22582950606460814,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.10408406499802238,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.05911763901735664,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.1490536842098753,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": -0.059474067189167965,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.14880521143305162,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.3363980825282597,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.3265546358712513,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transported within-condition r (system mode)": 0.3811481200467802,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.1944106252072233,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.20424935380280712,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.18764343374423148,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.06177358038770245,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.1652435347898242,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.018660727199472572,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": -0.09650180072360401,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.12367260318016861,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.4363215855328037,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.2740136465443485,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transported within-condition r (system mode)": 0.35368604089766875,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": -0.001128191326919964,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.13841999762041768,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.13311703030667077,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.09674455668770938,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.009518809279602896,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.369041967670353,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.0028990456024049274,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.2303188023939478,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.42270248948231703,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.2863297766006682,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transported within-condition r (system mode)": 0.4084368796381346,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.2049086450620919,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.2596804817552759,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.28235073271769534,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.13930399488818546,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.1118737254282198,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.13276019108122342,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": -0.13777987192669824,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.26153442626436013,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.27486855154168177,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.33300333241766655,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transported within-condition r (system mode)": 0.35329120399461367,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.4996336326448584,
+      "series": "Raw-target ceiling r = 0.50",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 1.0,
+      "Transported within-condition r (system mode)": 0.4996336326448584,
+      "series": "Raw-target ceiling r = 0.50",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.24346715982059677,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": -0.004813062175412535,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.1483229708254671,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": -0.18211452469481226,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": -0.014118227609994385,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.0986024785969089,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.14308202654494834,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.511954245881662,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.4891374970065331,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.6667665339703517,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transported within-condition r (system mode)": 0.6577722725604088,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transported within-condition r (system mode)": 0.5974978920175726,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transported within-condition r (system mode)": 0.5930681233052421,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transported within-condition r (system mode)": 0.6123325298442348,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.15060280000349344,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.2128264223123867,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.35625586608222704,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.27479481058136446,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.1643797492662304,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.08573057954518344,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.13861993561026556,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.534076338735925,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.470884400190403,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.5819065332579249,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transported within-condition r (system mode)": 0.5567591050820779,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transported within-condition r (system mode)": 0.5952314500781221,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transported within-condition r (system mode)": 0.5924278993107918,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transported within-condition r (system mode)": 0.6118580436770555,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.2961854386859763,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.0390963280910973,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": -0.10118037229326537,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": -0.02807889287730665,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.1208794521645026,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": -0.06715812862293456,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.06121427647041884,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.27144104746067776,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.260446609741619,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.5424487369199745,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transported within-condition r (system mode)": 0.5911455254535878,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transported within-condition r (system mode)": 0.6666890516564596,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transported within-condition r (system mode)": 0.6112250266888168,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transported within-condition r (system mode)": 0.6380349522432986,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.022548190355175333,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.17231052478451744,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.2520266208897156,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.34404704808533415,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.045693218049185955,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.24576243679304707,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.04912474711125704,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.41491224270467153,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.48977723642991094,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transported within-condition r (system mode)": 0.5329271185191532,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transported within-condition r (system mode)": 0.6280597666287718,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transported within-condition r (system mode)": 0.5354805035176265,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transported within-condition r (system mode)": 0.5866734794230457,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transported within-condition r (system mode)": 0.6117959185002333,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.6023495304146909,
+      "series": "Raw-target ceiling r = 0.60",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 1.0,
+      "Transported within-condition r (system mode)": 0.6023495304146909,
+      "series": "Raw-target ceiling r = 0.60",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.20646889039852195,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.2293163765499672,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.042682732383921416,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.26290282383519664,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.11709798866790658,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.298450688696113,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.25671412012240435,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.32074970071904074,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.42206101640729865,
+      "series": "Identity transport",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.02316805407944668,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.25107002846811016,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": 0.30989846617422645,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.2771109382064097,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.2666346205699254,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.19652234395354162,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.23178721919161688,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.3121549598196172,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.4445422533346967,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.051914129955486804,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": -0.31910258036269945,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": -0.29648810477497045,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.15586608558662743,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.23967697163009866,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.16251299399705685,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.32913164525398336,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.30151848942608217,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.4307226184815958,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": -0.06313168408405273,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transported within-condition r (system mode)": 0.11719852142345662,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transported within-condition r (system mode)": -0.05940071219488895,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transported within-condition r (system mode)": 0.13532910464918602,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transported within-condition r (system mode)": 0.04822728349078048,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transported within-condition r (system mode)": 0.3194452614119396,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transported within-condition r (system mode)": 0.22457846188046304,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transported within-condition r (system mode)": 0.3288618077025695,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transported within-condition r (system mode)": 0.4055909009410243,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transported within-condition r (system mode)": 0.45595581160174337,
+      "series": "Raw-target ceiling r = 0.46",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Source layer \u2113": 1.0,
+      "Transported within-condition r (system mode)": 0.45595581160174337,
+      "series": "Raw-target ceiling r = 0.46",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 142
+}
