@@ -4,8 +4,9 @@ Replaces the hand-rolled sequential async judge pattern with Anthropic's
 native batch endpoint (50% cost discount, no rate limit management needed).
 
 Cache pattern inspired by safety-tooling's cache_manager — simple file-based
-JSONL keyed by hash of (question, completion), avoiding redundant API calls
-on experiment resume.
+JSON keyed by hash of (rubric/judge identity, question, completion), avoiding
+redundant API calls on experiment resume without ever serving one rubric's
+judgment for another (llm-judging.md rule 22, #810/#1018).
 
 Usage:
     from explore_persona_space.eval.batch_judge import judge_completions_batch
@@ -91,13 +92,56 @@ def make_custom_id(item_id: str) -> str:
 
 # ── Judge cache ──────────────────────────────────────────────────────────────
 
+# Rubric-identity cache keying (llm-judging.md rule 22, #810/#1018). The literal
+# version tag enters every key preimage, so this — and any FUTURE key-schema
+# change that bumps it — is an explicit, automatic bust of all pre-change
+# entries: a cold miss re-judges (safe direction); a wrong read is impossible.
+_JUDGE_CACHE_KEY_VERSION = "EPM_JUDGE_CACHE_KEY_V2"
+_RUBRIC_SENTINEL_Q = "<RUBRIC_FINGERPRINT_SENTINEL_QUESTION>"
+_RUBRIC_SENTINEL_C = "<RUBRIC_FINGERPRINT_SENTINEL_COMPLETION>"
+
+
+def rubric_fingerprint(
+    judge_model: str,
+    judge_system_prompt: str,
+    format_user_msg: Callable[[str, str], str] | None = None,
+) -> str:
+    """Stable rubric/judge identity hash for JudgeCache keys (rule 22, #810).
+
+    Renders ``format_user_msg`` on fixed sentinel strings so a rubric that
+    lives in the USER-message template (e.g. ``graded_judge`` fills the whole
+    0-100 rubric into the user msg under a generic system prompt) enters the
+    key, not only a system-prompt rubric. ``None`` means "no user template
+    contributes rubric content" (caller builds content-only user messages).
+
+    This fingerprints rubric/judge IDENTITY, not the full request: sampling
+    knobs like ``max_tokens``/temperature are deliberately excluded (they carry
+    no rubric semantics; contrast the api_dispatch adapter, which deliberately
+    over-keys on the full built request). A formatter that selects its rubric
+    by INPUT-DEPENDENT branching (different rubric text per question) is
+    outside the fingerprint's discrimination — no in-repo formatter does that;
+    such a caller must fold the branch into the system prompt or use disjoint
+    cache dirs.
+    """
+    rendered = (
+        format_user_msg(_RUBRIC_SENTINEL_Q, _RUBRIC_SENTINEL_C)
+        if format_user_msg is not None
+        else "<no-user-template>"
+    )
+    content = f"{judge_model}\n===\n{judge_system_prompt}\n===\n{rendered}"
+    return hashlib.sha256(content.encode()).hexdigest()[:16]
+
 
 class JudgeCache:
     """Simple file-based cache for judge results, keyed by prompt content hash.
 
     Each cached result is stored as a single JSON file named by the hash of
-    (question + completion). Cache hits avoid redundant Batch API calls on
-    experiment resume.
+    (rubric/judge identity, question, completion) — the ``rubric_key`` is a
+    REQUIRED keyword argument on every read/write so a cached judgment can
+    never be served across rubrics (llm-judging.md rule 22; incident #810).
+    Cache hits avoid redundant Batch API calls on experiment resume. Filenames
+    keep the ``{16-hex}.json`` shape (load-bearing for
+    ``issue906_phase1_pilot._is_rederivable_cache`` + the disk janitors).
     """
 
     def __init__(self, cache_dir: Path):
@@ -107,13 +151,21 @@ class JudgeCache:
         self._misses = 0
 
     @staticmethod
-    def _hash_key(question: str, completion: str) -> str:
-        content = f"{question}\n---\n{completion}"
+    def _hash_key(question: str, completion: str, *, rubric_key: str) -> str:
+        """Hash (key-schema version, rubric identity, question, completion) to 16 hex chars."""
+        if not isinstance(rubric_key, str) or not rubric_key:
+            raise ValueError(
+                f"rubric_key must be a non-empty str (got {rubric_key!r}); derive it via "
+                "rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)."
+            )
+        content = (
+            f"{_JUDGE_CACHE_KEY_VERSION}\n---\n{rubric_key}\n---\n{question}\n---\n{completion}"
+        )
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def get(self, question: str, completion: str) -> dict | None:
-        """Look up a cached judge result. Returns None on miss."""
-        key = self._hash_key(question, completion)
+    def get(self, question: str, completion: str, *, rubric_key: str) -> dict | None:
+        """Look up a cached judge result under ``rubric_key``. Returns None on miss."""
+        key = self._hash_key(question, completion, rubric_key=rubric_key)
         path = self.cache_dir / f"{key}.json"
         if path.exists():
             self._hits += 1
@@ -122,9 +174,9 @@ class JudgeCache:
         self._misses += 1
         return None
 
-    def put(self, question: str, completion: str, result: dict) -> None:
-        """Store a judge result in the cache."""
-        key = self._hash_key(question, completion)
+    def put(self, question: str, completion: str, result: dict, *, rubric_key: str) -> None:
+        """Store a judge result in the cache under ``rubric_key``."""
+        key = self._hash_key(question, completion, rubric_key=rubric_key)
         path = self.cache_dir / f"{key}.json"
         with open(path, "w") as f:
             json.dump(result, f)
@@ -379,8 +431,13 @@ def _enumerate_and_check_cache(
     completions: dict[str, dict[str, list[str]]],
     cache: JudgeCache | None,
     format_user_msg: Callable[[str, str], str],
+    *,
+    rubric_key: str,
 ) -> tuple[int, dict[str, dict], list[tuple[str, str, str, str]]]:
     """Enumerate all (persona, question, completion) tuples, checking cache.
+
+    ``rubric_key`` (required) is the rubric/judge identity hash every cache
+    lookup is keyed under — see :func:`rubric_fingerprint` (rule 22, #810).
 
     Returns:
         (total_count, cached_scores, uncached_items)
@@ -397,7 +454,7 @@ def _enumerate_and_check_cache(
                 total += 1
 
                 if cache:
-                    cached = cache.get(question, comp)
+                    cached = cache.get(question, comp, rubric_key=rubric_key)
                     if cached is not None:
                         cached_scores[custom_id] = cached
                         continue
@@ -516,7 +573,8 @@ def judge_completions_batch(
     """Judge all completions via the batch-aware dispatcher with optional caching.
 
     Workflow:
-    1. Check cache for each (question, completion) pair
+    1. Check cache for each (question, completion) pair under the derived
+       rubric/judge identity key (rule 22 — see :func:`rubric_fingerprint`)
     2. Dispatch uncached pairs through judge_dispatch (sync below the
        tier-scaled threshold, Message Batches at/above it, in <=8k sub-batches)
     3. Parse results, update cache
@@ -554,10 +612,14 @@ def judge_completions_batch(
         format_user_msg = _default_format_user_msg
 
     cache = JudgeCache(cache_dir) if cache_dir else None
+    # Rubric/judge identity for every cache read/write in this call (rule 22,
+    # #810): derived from the resolved judge model + system prompt + user-msg
+    # template, so callers need no new parameter.
+    rubric_key = rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)
 
     # Phase 1: Check cache, build list of uncached items
     total, cached_scores, uncached_items = _enumerate_and_check_cache(
-        completions, cache, format_user_msg
+        completions, cache, format_user_msg, rubric_key=rubric_key
     )
     n_cached = len(cached_scores)
     n_to_submit = len(uncached_items)
@@ -604,7 +666,7 @@ def judge_completions_batch(
         if cache:
             for custom_id, question, comp, _user_msg in uncached_items:
                 if custom_id in batch_scores:
-                    cache.put(question, comp, batch_scores[custom_id])
+                    cache.put(question, comp, batch_scores[custom_id], rubric_key=rubric_key)
 
     if cache:
         logger.info("Cache stats: %s", cache.stats)

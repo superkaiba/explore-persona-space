@@ -1495,9 +1495,12 @@ def _judge_categorical_batch(
         _build_batch_requests,
         _chunk_requests,
         _submit_and_poll_batch,
+        rubric_fingerprint,
     )
 
     cache = JudgeCache(cache_dir)
+    # Rubric/judge identity for every cache read/write (rule 22, #810/#1018).
+    rk = rubric_fingerprint(judge_model, rubric["judge_system"], _build_judge_user_msg)
     client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
     cell_for_id: dict[str, str] = {}
@@ -1506,7 +1509,7 @@ def _judge_categorical_batch(
     for idx, (cell_tag, probe, completion) in enumerate(items):
         custom_id = f"cat__{idx:06d}"
         cell_for_id[custom_id] = cell_tag
-        hit = cache.get(probe, completion)
+        hit = cache.get(probe, completion, rubric_key=rk)
         if hit is not None:
             cached[custom_id] = hit
             continue
@@ -1541,7 +1544,7 @@ def _judge_categorical_batch(
             qc = uncached_by_id.get(custom_id)
             if qc is not None:
                 q, c = qc
-                cache.put(q, c, score)
+                cache.put(q, c, score, rubric_key=rk)
 
     all_scores = {**cached, **batch_scores}
     by_cell: dict[str, dict[str, Any]] = {}
@@ -1608,6 +1611,7 @@ def _judge_framing_binary_batch(
         _build_batch_requests,
         _chunk_requests,
         _submit_and_poll_batch,
+        rubric_fingerprint,
     )
 
     rubric = FRAMING_RUBRICS[framing_id]
@@ -1625,9 +1629,12 @@ def _judge_framing_binary_batch(
     for gated_pred, group in by_gated.items():
         # Resolve the gated-predicate value into the rubric system prompt
         judge_system = rubric["judge_system"].format(gated_predicate=gated_pred)
-        # Cache namespaced per (rubric_version, gated_predicate)
+        # Cache namespaced per (rubric_version, gated_predicate) — kept as
+        # belt-and-suspenders; the rubric_key below carries the isolation too
+        # (rule 22, #810/#1018).
         sub_cache = cache_dir / f"gated_{gated_pred}"
         cache = JudgeCache(sub_cache)
+        rk = rubric_fingerprint(judge_model, judge_system, _build_judge_user_msg)
         client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
         cell_for_id: dict[str, str] = {}
@@ -1638,7 +1645,7 @@ def _judge_framing_binary_batch(
             custom_id = f"f{framing_id}__{orig_idx:06d}"
             cell_for_id[custom_id] = cell_tag
             item_for_id[custom_id] = (probe, completion)
-            hit = cache.get(probe, completion)
+            hit = cache.get(probe, completion, rubric_key=rk)
             if hit is not None:
                 cached[custom_id] = hit
                 continue
@@ -1676,7 +1683,7 @@ def _judge_framing_binary_batch(
                 qc = uncached_by_id.get(custom_id)
                 if qc is not None:
                     q, c = qc
-                    cache.put(q, c, score)
+                    cache.put(q, c, score, rubric_key=rk)
 
         all_scores = {**cached, **batch_scores}
         for custom_id, score in all_scores.items():

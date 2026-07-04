@@ -17,10 +17,11 @@ Notes for callers:
   temperature parameter, so the multi-sample draws vary at the Anthropic API
   default. Threading it through the shared client is a named follow-up, not
   this module's job (semantic identity with the #778 implementation).
-- ``JudgeCache`` keys on the ``(question, answer)`` content hash, so a REUSED
-  ``cache_dir`` collapses all ``n_draws`` repeats of an item to one cached
-  score. Pre-existing behavior (unchanged here); use a fresh per-run
-  ``cache_dir`` when the draws must be independent (#778 did).
+- ``JudgeCache`` keys on the (rubric/judge identity, question, answer) hash
+  (#1018, llm-judging.md rule 22) — the rubric key differentiates RUBRICS, not
+  draws, so a REUSED ``cache_dir`` still collapses all ``n_draws`` repeats of
+  an item to one cached score. Use a fresh per-run ``cache_dir`` when the
+  draws must be independent (#778 did).
 """
 
 from __future__ import annotations

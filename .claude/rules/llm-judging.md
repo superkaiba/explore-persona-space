@@ -234,21 +234,31 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     (reasoning, score) pair with the refusal file (vs 18.7% baseline) — an
     exact-pair fingerprint implicating cache reuse rather than a prompt bug
     (independent temperature>0 judge draws would not be byte-identical).
-    The SAFE in-repo patterns: a
-    full-payload cache key (`llm/api_dispatch.py::_cache_key_parts` keys on
-    (item_id, full-payload JSON) — safe ONLY when the caller's payload
-    embeds the rubric-bearing user message; the rubric's system-prompt half
-    is typically NOT in the payload, so payload-key safety is
-    caller-dependent, not structural), and a DISJOINT per-rubric
-    `cache_dir` partition (`datagen.py`'s `judge_cache/pos` vs
-    `judge_cache/neg`).
-    Until the `batch_judge.py` key fix lands (a separate follow-up), the
-    per-rubric `cache_dir` is the accepted key surrogate. Plan-side: any
-    plan whose eval judges >1 rubric/behavior over a shared completion
-    pool — or resumes judging against a previously-populated shared cache
-    dir — NAMES its judge-cache key fields (or the per-rubric cache
-    partition); critics REVISE a shared multi-rubric judge cache without a
-    rubric-bearing key.
+    The key fix LANDED in #1018: `JudgeCache.get`/`put`/`_hash_key` now
+    REQUIRE a keyword-only `rubric_key` (an unthreaded call site raises
+    `TypeError`), derived via the helper
+    `rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)`
+    — the user-msg template is sentinel-rendered into the fingerprint so a
+    rubric living in the USER message (the `graded_judge` shape) enters the
+    key, not only a system-prompt rubric. The generic adapter
+    `llm/api_dispatch.py::_cache_key_parts` returns
+    (item_id, payload JSON, built-request fingerprint) and threads the
+    fingerprint as the `rubric_key` — the built params dict embeds model +
+    system + messages, so the adapter key is STRUCTURAL (no longer
+    caller-dependent; deliberately over-keyed on full request params), and
+    the api_dispatch batch checkpoint additionally stores a run-level
+    request fingerprint in its `state.json` that is recomputed on load and
+    FAILS LOUD on mismatch (a rubric-B dispatch can never replay rubric-A's
+    checkpoint). The key schema embeds the literal `EPM_JUDGE_CACHE_KEY_V2`
+    version tag, so all pre-fix content-keyed entries are automatically
+    unreachable — a cold re-judge, never a wrong read. Per-rubric
+    `cache_dir` partitions (`datagen.py`'s `judge_cache/pos` vs
+    `judge_cache/neg`) remain good hygiene but are no longer load-bearing.
+    Plan-side: any plan whose eval judges >1 rubric/behavior over a shared
+    completion pool — or resumes judging against a previously-populated
+    shared cache dir — NAMES its judge-cache key fields (or the per-rubric
+    cache partition); critics REVISE a shared multi-rubric judge cache
+    without a rubric-bearing key.
 
 ## Do NOT over-rely on (adversarially refuted)
 

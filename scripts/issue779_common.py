@@ -543,9 +543,10 @@ def judge_rollouts_n5(
 
     Cache (BLOCKER ``judge-n5-cache-rerun-collapses-draws``): the judge cache is
     DISABLED here (``cache_dir`` is ignored, ``judge_completions_batch`` is called
-    with ``cache_dir=None``). ``JudgeCache._hash_key`` keys ONLY on
-    ``(question, completion)`` — NOT the draw index or custom_id — so the
-    ``n_draws`` expanded copies of an identical ``(question, completion)`` collapse
+    with ``cache_dir=None``). ``JudgeCache._hash_key`` keys on
+    (rubric/judge identity, question, completion) as of #1018 — still NOT the
+    draw index or custom_id — so the ``n_draws`` expanded copies of an identical
+    ``(question, completion)`` under one rubric collapse
     to ONE cache entry; on a rerun with a warm cache all ``n_draws`` lookups would
     HIT that single entry and the N=5 mean would silently degrade to one cached
     draw repeated ``n_draws`` times. A draw-aware cache key is not cleanly
