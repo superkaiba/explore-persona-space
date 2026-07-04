@@ -6497,8 +6497,8 @@
     "976": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/976",
-      "status": "running",
+      "path": "tasks/reviewing/976",
+      "status": "reviewing",
       "title": "workflow-fix: widen runpod stale-sentinel clear to wildcard"
     },
     "977": {
