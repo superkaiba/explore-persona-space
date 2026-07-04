@@ -520,6 +520,20 @@ def test_missing_pair_without_deferred_record_still_fails_loud(scaffold):
         rc.cmd_summarize(scaffold)
 
 
+def test_mixed_deferred_and_unrecorded_missing_pair_fails_loud(scaffold):
+    """Round-3 CONCERN deferred-tolerance-global-flag: the tolerance is
+    PER-PAIR. Pure-deferred state (pair A recorded + A missing) tolerates and
+    returns 0; pair A's record must NOT license pair B's UNRECORDED missing
+    JSON — that stays the hard fail-loud assert (a run-order bug)."""
+    pair_a = rc.pair_registry()[7]  # a real-provenance pair
+    pair_b = rc.pair_registry()[2]  # a haiku-provenance pair, no record
+    _defer_and_unlink(scaffold, pair_a, "ValueError", None)
+    assert rc.cmd_summarize(scaffold) == 0  # pure-deferred: still tolerated
+    (scaffold.out_dir / pair_b["provenance"] / f"{pair_b['pair_id']}.json").unlink()
+    with pytest.raises(AssertionError, match="NO deferred failure"):
+        rc.cmd_summarize(scaffold)
+
+
 def test_fit_defers_real_bundle_schema_error_end_to_end(tmp_path, monkeypatch):
     """cmd_fit with a REAL corrupted bundle (EPS_SMOKE_CORRUPT_PAIR fault
     injector, n_turns=2): the raised BundleSchemaError is deferred with its

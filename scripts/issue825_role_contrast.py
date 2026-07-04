@@ -970,16 +970,18 @@ def cmd_summarize(args) -> int:
     """headline_metrics.json: §1 labels per provenance, per-pair delta tables,
     companions, gate table, MF-R + MF-RC verbatim, corrected inverted read.
 
-    Deferred-failure tolerance (round-2 fix, deferred-failures-bypass-gates):
-    when fit_failures.json records exist, a missing pair JSON is TOLERATED —
-    the pair is listed under the block's ``deferred_missing_pairs`` and the
-    headline carries the deferred set — so the wrapper sequence still reaches
-    upload + gates, where check_deferred HALTs FIRST with the registered
-    status. A missing pair JSON with NO deferred record is still a hard assert
-    (fail-loud: that is a run-order bug, and ``summarize_error`` is then the
-    correct sentinel status)."""
+    Deferred-failure tolerance (round-2 fix, deferred-failures-bypass-gates;
+    scoped PER PAIR in round 3, deferred-tolerance-global-flag): a missing
+    pair JSON is TOLERATED only when that pair's OWN cell_id is recorded in
+    fit_failures.json — the pair is listed under the block's
+    ``deferred_missing_pairs`` and the headline carries the deferred set — so
+    the wrapper sequence still reaches upload + gates, where check_deferred
+    HALTs FIRST with the registered status. A missing pair JSON with NO
+    deferred record (even alongside OTHER pairs' records) is still a hard
+    assert (fail-loud: that is a run-order bug, and ``summarize_error`` is
+    then the correct sentinel status)."""
     deferred = _deferred_entries(args.out_dir)
-    have_deferred = any(deferred.values())
+    deferred_pair_ids = {e.get("cell_id") for v in deferred.values() for e in v}
     prov_blocks: dict[str, dict] = {}
     n_total = 0
     for prov in PROVENANCES:
@@ -992,7 +994,7 @@ def cmd_summarize(args) -> int:
         confirmed = True
         for pair in [p for p in pair_registry() if p["provenance"] == prov]:
             pj = _load_json(args.out_dir / prov / f"{pair['pair_id']}.json")
-            if pj is None and have_deferred:
+            if pj is None and pair["pair_id"] in deferred_pair_ids:
                 block["deferred_missing_pairs"].append(pair["pair_id"])
                 confirmed = False
                 print(
