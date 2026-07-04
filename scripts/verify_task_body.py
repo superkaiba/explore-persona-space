@@ -516,6 +516,26 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `ctx_blk_max@L12 x ans_uhdr_max@L12` after three review passes each
   deferred it as a cosmetic nit, costing a REVISE round.
 
+- **check 29** (`check_figure_tracked_at_head`, WARN): every body-linked
+  same-repo `figures/issue_<N>/...` figure path must still be tracked on a
+  LIVE local ref — HEAD of the (main-pinned) repo root or the issue's local
+  branch family `issue-<N>` / `issue-<N>-*` (one `for-each-ref` + one
+  `ls-tree -r --name-only <ref> -- figures/issue_<N>/` per ref per unique
+  issue dir; never per-URL — <=5 subprocesses for a typical body). Three
+  states per path: tracked at HEAD → clean PASS; BRANCH-ONLY (on >=1 family
+  ref, absent from HEAD) → PASS with an explicit disclosure note (expected
+  pre-merge; names the `git restore --source=<pinned-sha>` recovery for the
+  post-merge case); missing from every successfully-probed ref → the
+  incident-class WARN, never FAIL (a pinned raw URL is immutable and keeps
+  rendering after tracking loss — drift hygiene, not a broken body).
+  Conservative: any failed probe for an issue dir degrades it to a skip
+  note (a narrowed ref set must never manufacture a WARN); vacuous PASS
+  with no same-repo `figures/issue_<N>/` URLs or an unresolved repo root.
+  The issue number comes from the path itself, so cross-issue figure links
+  check against their own branch family. Incident: task #841 — three
+  `figures/issue_841/` stems tracked at the pinned sha `4824a567aa` but
+  untracked at branch HEAD; the loss was invisible to every check (#964).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -1873,6 +1893,9 @@ _RAW_GITHUB_FIGURE_RE = re.compile(
 )
 _THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
 
+# Repo-relative figure path carrying its own issue number — scope of check 29.
+_ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
+
 
 def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
     """HTTP HEAD ``url``; return the response status code (HTTPError codes
@@ -2007,6 +2030,126 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
             unverified
         )
     return CheckResult("Figure URL resolvable", True, detail)
+
+
+def _issue_figure_paths_by_issue(body: str) -> dict[str, set[str]]:
+    """Same-repo `figures/issue_<N>/...` figure paths inline under the
+    result-narrative section, grouped by the issue number carried in the
+    path itself (check 29's scope). Other hosts / other repos /
+    non-issue-dir paths are out of scope and skipped."""
+    paths_by_issue: dict[str, set[str]] = {}
+    for url in _gather_figure_image_urls(body):
+        url = url.strip()
+        # Strip optional title — `(url "title")` — keep only the URL token
+        # (check-4b idiom).
+        url = url.split(None, 1)[0] if url else url
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue
+        pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
+        if not pm:
+            continue
+        paths_by_issue.setdefault(pm.group("issue"), set()).add(m.group("path"))
+    return paths_by_issue
+
+
+def check_figure_tracked_at_head(body: str) -> CheckResult:
+    """Check 29 (WARN): body-linked same-repo `figures/issue_<N>/...` figure
+    paths must still be tracked on a LIVE local ref — HEAD of the resolved
+    (main-pinned) repo root, or the issue's local branch family
+    `issue-<N>` / `issue-<N>-*`.
+
+    Check 4b verifies existence at the PINNED sha only, and a pinned raw URL
+    is immutable — it keeps rendering after the file falls out of tracking
+    on every live ref, so a merge/rebase can silently drop the canonical
+    figure files with zero verifier signal (incident #841: three
+    `figures/issue_841/` stems tracked at the pinned sha but untracked at
+    branch HEAD). Three-state read, per path:
+
+    - tracked at HEAD -> clean PASS;
+    - BRANCH-ONLY (absent from HEAD, present on >=1 family ref) -> PASS with
+      an explicit disclosure note, never a WARN: this is the EXPECTED state
+      of every pre-merge verification round (the verifier's HEAD is
+      main-pinned while figures live on the issue branch), so WARNing would
+      spam every figure-adding round; the disclosure keeps the post-merge
+      stale-branch-masks-main-loss state visible and names the recovery;
+    - missing from EVERY successfully-probed ref -> the incident-class WARN
+      (`is_warn=True`, `passed=True` -- this check can never FAIL: the
+      pinned URL still renders, so this is drift hygiene, and grandfathered
+      bodies must not regress).
+
+    Conservative on probe failure: if ANY git probe for an issue dir fails,
+    that issue degrades to a `probe failure` skip note and can never WARN --
+    the path might live at the failed ref, so a narrowed ref set must not
+    manufacture a WARN. Per-issue continue (other issue dirs still
+    evaluated); fail-soft everywhere; no network. The issue number comes
+    from the `figures/issue_<N>/` path itself (not `--issue`), so
+    cross-issue figure links are checked against their OWN branch family.
+    (#964)
+    """
+    name = "figure tracked at live refs"
+    paths_by_issue = _issue_figure_paths_by_issue(body)
+    if not paths_by_issue:
+        return CheckResult(name, True, "no same-repo `figures/issue_<N>/` figure URLs to check")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+
+    missing: list[str] = []
+    branch_only: list[str] = []
+    skipped: list[str] = []
+    n_at_head = 0
+    for issue_n, paths in sorted(paths_by_issue.items()):
+        prefix = f"figures/issue_{issue_n}/"
+        family = _git_issue_branch_family(repo, issue_n)
+        probes: dict[str, set[str] | None] = {"HEAD": _git_tracked_under(repo, "HEAD", prefix)}
+        for br in family or []:
+            probes[br] = _git_tracked_under(repo, br, prefix)
+        failed = sorted(label for label, tracked in probes.items() if tracked is None)
+        if family is None:
+            failed.append("branch listing (for-each-ref)")
+        if failed:
+            # CONSERVATIVE: any failed probe for this issue -> no WARN
+            # possible (the path might live at the failed ref); skip note,
+            # continue to the next issue dir.
+            skipped.append(f"`{prefix}` — probe failure ({', '.join(failed)}); drift not assessed")
+            continue
+        head_set = probes["HEAD"]
+        assert head_set is not None  # failed-probe branch above already continued
+        ok_labels = ", ".join(f"`{label}`" for label in sorted(probes))
+        for p in sorted(paths):
+            if p in head_set:
+                n_at_head += 1
+                continue
+            holders = sorted(
+                label
+                for label, tracked in probes.items()
+                if label != "HEAD" and tracked is not None and p in tracked
+            )
+            if holders:
+                branch_only.append(f"`{p}` (on {', '.join(holders)}, not at HEAD)")
+            else:
+                missing.append(
+                    f"body-linked figure `{p}` is tracked at its pinned-SHA URL but MISSING "
+                    f"from every live local ref ({ok_labels}) — the immutable pinned URL "
+                    "still renders, so this tracking loss is otherwise silent (incident "
+                    "#841); restore with `git restore --source=<pinned-sha> -- <path>` and "
+                    "commit on the intended live branch"
+                )
+    suffix = ""
+    if branch_only:
+        suffix += (
+            "; BRANCH-ONLY (not at HEAD/main — expected pre-merge): "
+            + ", ".join(branch_only)
+            + ". If this task is already merged/completed, the canonical copy is missing "
+            "from main — restore with `git restore --source=<pinned-sha> -- <path>` and "
+            "commit on main."
+        )
+    if skipped:
+        suffix += "; skipped: " + "; ".join(skipped)
+    if missing:
+        return CheckResult(name, True, "; ".join(missing) + suffix, is_warn=True)
+    return CheckResult(name, True, f"{n_at_head} figure path(s) tracked at HEAD" + suffix)
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -4170,6 +4313,57 @@ def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
     if cat.returncode == 0:
         return "pass", ""
     return "fail", f"`{path}` is NOT present in the tree at commit `{sha}`"
+
+
+def _git_issue_branch_family(repo: Path, issue_n: str) -> list[str] | None:
+    """Local branch family for an issue: `refs/heads/issue-<N>` plus every
+    `refs/heads/issue-<N>-*` follow-up branch, via ONE
+    `git for-each-ref --format='%(refname:short)'` call (check 29).
+
+    Returns short names (e.g. `['issue-841', 'issue-841-fu2']`); `[]` when
+    no family branch exists; None on any git error (fail-soft — the caller
+    degrades the issue dir to a skip note, never a WARN)."""
+    try:
+        r = subprocess.run(
+            [
+                "git",
+                "for-each-ref",
+                "--format=%(refname:short)",
+                f"refs/heads/issue-{issue_n}",
+                f"refs/heads/issue-{issue_n}-*",
+            ],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()]
+
+
+def _git_tracked_under(repo: Path, ref: str, prefix: str) -> set[str] | None:
+    """Set of paths tracked under `prefix` in the tree at `ref` — ONE
+    `git -c core.quotePath=off ls-tree -r --name-only <ref> -- <prefix>`
+    per call (check 29). Reads the tree object, NOT the working tree, so
+    sparse checkouts are fine; `quotePath=off` keeps non-ASCII paths raw so
+    set membership works. None on any git error (fail-soft: the caller
+    degrades that REF to unprobed — never a WARN from a failed probe)."""
+    try:
+        r = subprocess.run(
+            ["git", "-c", "core.quotePath=off", "ls-tree", "-r", "--name-only", ref, "--", prefix],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    return {line.strip() for line in r.stdout.splitlines() if line.strip()}
 
 
 def check_repro_committed_claims_exist(body: str) -> CheckResult:
@@ -7549,6 +7743,7 @@ CHECKS = [
     check_audit_availability_claims_match_hf,  # check 25
     check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
     check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
+    check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
 ]
 
 

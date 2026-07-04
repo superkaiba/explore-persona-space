@@ -1,16 +1,85 @@
 {
-  "metadata": {
-    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
-    "timestamp": "2026-07-04T06:04:46Z",
-    "seed": 0,
-    "n": 0,
-    "script": "scripts/issue931_figures.py",
-    "issue": 931
-  },
-  "ns": [
-    1000,
-    1035,
-    1982,
-    2000
+  "commit": "179b8f9119",
+  "created": "2026-07-04T08:51:25Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Training rows n": 1982.0,
+      "Held-out $R^2$ @ layer 19": 0.17289959611807892,
+      "label": "0.31",
+      "series": "real-novel character map (full n)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Training rows n": 1035.0,
+      "Held-out $R^2$ @ layer 19": 0.1631951968316161,
+      "label": "0.31",
+      "series": "model-story character map (full n)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Training rows n": 1000.0,
+      "Held-out $R^2$ @ layer 19": 0.49543783220027904,
+      "series": "chat reference (layer 19)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows n": 1035.0,
+      "Held-out $R^2$ @ layer 19": 0.4817351966845739,
+      "series": "chat reference (layer 19)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows n": 1982.0,
+      "Held-out $R^2$ @ layer 19": 0.31616922814913495,
+      "series": "chat reference (layer 19)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows n": 2000.0,
+      "Held-out $R^2$ @ layer 19": 0.31485176461012,
+      "series": "chat reference (layer 19)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows n": 5000.0,
+      "Held-out $R^2$ @ layer 19": 0.6730940896676356,
+      "series": "chat reference (layer 19)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 7,
+  "chat_curve": [
+    {
+      "n": 1000,
+      "r2": 0.49543783220027904
+    },
+    {
+      "n": 1035,
+      "r2": 0.4817351966845739
+    },
+    {
+      "n": 1982,
+      "r2": 0.31616922814913495
+    },
+    {
+      "n": 2000,
+      "r2": 0.31485176461012
+    },
+    {
+      "n": 5000,
+      "r2": 0.6730940896676356
+    }
   ]
 }

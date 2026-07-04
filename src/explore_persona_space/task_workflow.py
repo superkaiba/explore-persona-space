@@ -1535,11 +1535,20 @@ TRIAGE_EXEMPT_KINDS = frozenset(
 )
 
 # ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
-# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
-# "unknown", and on #779 both self- and PM-chat-posted markers carried
-# by="unknown" — so this set only strips known machine identities; it never
-# claims to identify externality (that is the orchestrator's judgment call,
-# SKILL.md § Pre-dispatch external-marker triage).
+# NOTE on session/human posts: ``by`` is unreliable on LEGACY markers and
+# non-compliant emitters (post_event defaults by="unknown"; on #779 both
+# self- and PM-chat posts carried by="unknown"). Compliant emitters now set
+# a distinctive by (the #966 convention list): "pm-chat" (PM-session
+# cross-session posts), "autonomous_session_watch" (watcher passes),
+# "spawn_session" / "spawn_session-stop" (spawn helper). A value on that
+# convention list is a trustworthy-POSITIVE externality signal for the
+# LLM-side triage read (conventional, not authenticated — nothing verifies
+# the emitter, but in-repo emitters set only their own identity); absence
+# ("unknown") proves nothing (fail-toward-triage). These advisory identities
+# are deliberately NOT in this strip set — machine_by only strips known
+# bookkeeping-machine identities; it never classifies externality (that
+# stays the orchestrator's judgment call, SKILL.md § Pre-dispatch
+# external-marker triage).
 TRIAGE_MACHINE_BY = frozenset(
     {
         "poll_pipeline",
@@ -1635,8 +1644,11 @@ def triage_candidates_since_last_dispatch(
     ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
     or the note contains the triage line (it is a triage record, not an
     advisory). Chronological order preserved. Deliberately over-approximates —
-    it ENUMERATES for LLM-side triage and never classifies externality
-    (``by`` cannot: default "unknown").
+    it ENUMERATES for LLM-side triage and never classifies externality (a
+    ``by`` on the #966 convention list — pm-chat / autonomous_session_watch /
+    spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
+    signal for that LLM-side read, but ``by`` defaults to "unknown", so
+    absence proves nothing).
     """
     boundary = -1
     for idx in range(len(events) - 1, -1, -1):

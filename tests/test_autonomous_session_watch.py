@@ -13035,3 +13035,47 @@ def test_triage_observer_nudge_trap_strings():
         assert TRIAGE_LINE_PREFIX not in text
         assert not text.lstrip().startswith("stage-dispatch ")
         assert text.startswith("[autonomous_session_watch:triage-observer]")
+
+
+# ---------------------------------------------------------------------------
+# #966 emitter-side --by convention: every watcher/spawn-helper post-marker
+# subprocess site carries a distinctive --by identity (a trustworthy-positive
+# EXTERNAL signal for the /issue pre-dispatch triage read; never added to
+# TRIAGE_MACHINE_BY — see tests/test_pre_dispatch_triage.py).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fn_name",
+    [
+        "_post_progress_marker",
+        "_post_failure_marker",
+        "_post_followup_run_marker",
+        "_post_campaign_marker",
+    ],
+)
+def test_post_marker_helpers_carry_distinctive_by(fn_name):
+    """#966: each watcher post-marker argv sets ``--by autonomous_session_watch``
+    (source-inspection pin — robust to the helpers' fixture-heavy signatures)."""
+    import inspect
+    import re
+
+    import autonomous_session_watch as asw
+
+    src = inspect.getsource(getattr(asw, fn_name))
+    assert '"--by"' in src and '"autonomous_session_watch"' in src
+    # Adjacency: "--by" is immediately followed by the identity value in the
+    # argv list (not two unrelated occurrences elsewhere in the source).
+    assert re.search(r'"--by",\s*\n\s*"autonomous_session_watch",', src), src
+
+
+def test_spawn_session_duplicate_suppressed_marker_carries_distinctive_by():
+    """#966 sibling pin: the spawn-helper's duplicate-dispatch-suppression post
+    sets ``--by spawn_session`` (distinct from ``cmd_stop``'s
+    ``spawn_session-stop`` — a different pass)."""
+    import inspect
+    import re
+
+    src = inspect.getsource(spawn_session._post_duplicate_suppressed_marker)
+    assert '"--by"' in src and '"spawn_session"' in src
+    assert re.search(r'"--by",\s*\n\s*"spawn_session",', src), src

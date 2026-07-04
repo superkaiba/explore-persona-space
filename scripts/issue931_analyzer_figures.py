@@ -1,4 +1,4 @@
-"""Analyzer-pass figures for issue #931 (repo-root copies + two additions).
+"""Analyzer-pass figures for issue #931 (repo-root copies + regenerations).
 
 1. Copies the run-generated figures from the issue-931 worktree to the
    repo-root ``figures/issue_931/`` so main-pinned URLs resolve.
@@ -6,6 +6,12 @@
 3. Adds the low-level per-unit views behind the delta_char aggregate:
    per-novel (Arm A, labeled) and per-story (Arm B) paired correct-vs-swap
    held-out R^2 at layer 19.
+4. Revision-round-2 regenerations (interpretation-critic r1): plain-English
+   condition labels replacing internal slugs on ``per_novel_r2_scatter``,
+   ``hero2_transfer_matrix``, ``matched_vs_fulln_fractions``,
+   ``strict_vs_recentered`` (also un-overlapped, now a paired dot plot), and
+   ``power_curve_overlay`` (adds the n=5000 endpoint so the non-monotone dip
+   is actually visible).
 
 Run from repo root: ``uv run python scripts/issue931_analyzer_figures.py``
 """
@@ -109,7 +115,7 @@ def fig_delta_char_per_novel() -> None:
                 ),
                 "points": [
                     {"novel": k, "r2_correct": float(a), "r2_swap": float(b)}
-                    for k, a, b in zip(keys, w, s)
+                    for k, a, b in zip(keys, w, s, strict=True)
                 ],
             },
             indent=2,
@@ -139,11 +145,279 @@ def fig_delta_char_per_story() -> None:
                 "frac_correct_gt_swap": frac,
                 "points": [
                     {"story": k, "r2_correct": float(a), "r2_swap": float(b)}
-                    for k, a, b in zip(keys, w, s)
+                    for k, a, b in zip(keys, w, s, strict=True)
                 ],
             },
             indent=2,
         )
+    )
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Revision-round-2 regenerations (plain-English labels; critic r1 requests)
+# ---------------------------------------------------------------------------
+
+_CELL_PLAIN = {
+    "chat_ref": "chat",
+    "chat": "chat",
+    "armA": "real novels",
+    "armA_within": "real novels",
+    "armA_within_lastpos": "real novels",
+    "armB": "model stories",
+    "armB_within": "model stories",
+    "armB_within_lastpos": "model stories",
+    "armC": "separator control",
+    "armC_sep": "separator control",
+    "armC_prevmean": "preceding-sentence control",
+}
+_RECIPE_PLAIN = {"lastpos": "single-position X", "spanmean": "span-mean X"}
+
+
+def _plain_dir(direction: str, recipe: str) -> str:
+    a, b = direction.split("->")
+    return f"{_CELL_PLAIN[a]} → {_CELL_PLAIN[b]} ({_RECIPE_PLAIN[recipe]})"
+
+
+def _merge_meta(name: str, extra: dict) -> None:
+    """Add fields to savefig_paper's sidecar without dropping its provenance."""
+    p = OUT / f"{name}.meta.json"
+    d = json.loads(p.read_text()) if p.exists() else {}
+    d.update(extra)
+    p.write_text(json.dumps(d, indent=2))
+
+
+def _eval(name: str) -> dict:
+    return json.loads((WT_EVAL / name).read_text())
+
+
+def fig_power_curve_overlay() -> None:
+    """Chat power curve INCLUDING the n=5000 full-store endpoint (the dip)."""
+    set_paper_style()
+    pal = paper_palette(4)
+    pc = _eval("power_curve_chat.json")
+    pts = [(c["n"], c["r2_per_layer"][19]) for c in pc["curve"] if c.get("r2_per_layer")]
+    full = _eval("cells_chat_ref.json")
+    pts.append((full["n"], full["r2_per_layer_obs"][19]))
+    pts.sort()
+    ns, r2s = zip(*pts, strict=True)
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    ax.plot(ns, r2s, "o-", color=pal[0], label="chat reference (layer 19)")
+    for i, (n, v) in enumerate(pts):
+        dy = 0.022 if i % 2 == 0 else -0.045
+        ax.text(n, v + dy, f"{v:.2f}", ha="center", fontsize=9)
+    a = _eval("cells_armA_within.json")
+    b = _eval("cells_armB_within.json")
+    ax.scatter(
+        [a["n"]],
+        [a["r2_per_layer_obs"][19]],
+        color=pal[1],
+        zorder=3,
+        label="real-novel character map (full n)",
+    )
+    ax.scatter(
+        [b["n"]],
+        [b["r2_per_layer_obs"][19]],
+        color=pal[2],
+        zorder=3,
+        label="model-story character map (full n)",
+    )
+    ax.set_xlabel("Training rows n")
+    ax.set_ylabel("Held-out $R^2$ @ layer 19")
+    ax.set_ylim(0, 0.78)
+    ax.legend(fontsize=9, loc="upper left")
+    savefig_paper(fig, "power_curve_overlay", dir=OUT)
+    _merge_meta("power_curve_overlay", {"chat_curve": [{"n": n, "r2": v} for n, v in pts]})
+    plt.close(fig)
+
+
+def fig_per_novel_r2_scatter() -> None:
+    """Per-novel held-out R^2 (Arm A within), plain-English axis label."""
+    set_paper_style()
+    pg = _eval("cells_armA_within.json")["per_group_r2_headline"]
+    names = sorted(pg, key=lambda k: pg[k])
+    vals = [pg[k] for k in names]
+    fig, ax = plt.subplots(figsize=(7.0, 0.28 * len(names) + 1.4))
+    ax.scatter(vals, range(len(names)), s=18)
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels([n[:32] for n in names], fontsize=7)
+    ax.axvline(0, color="gray", lw=0.7)
+    ax.set_xlabel("Per-novel held-out $R^2$ @ layer 19, real-novel character map")
+    savefig_paper(fig, "per_novel_r2_scatter", dir=OUT)
+    _merge_meta(
+        "per_novel_r2_scatter",
+        {"points": [{"novel": k, "r2": float(pg[k])} for k in names]},
+    )
+    plt.close(fig)
+
+
+def _matched_recentered_rows() -> dict[str, dict]:
+    tm = _eval("transfer_matrix.json")
+    hl = tm["headline_layer"]
+    seen: dict[str, dict] = {}
+    for r in tm["rows"]:
+        if r["layer"] == hl and r["application"] == "recentered" and r["power_matched"]:
+            seen.setdefault(_plain_dir(r["direction"], r["x_recipe"]), r)
+    return seen
+
+
+def fig_hero2_transfer_matrix() -> None:
+    """Matched recentered transfer fractions, plain-English rows, diverging scale."""
+    set_paper_style()
+    seen = _matched_recentered_rows()
+    labels = list(seen)
+    fracs = np.asarray([seen[k]["fraction_of_ceiling"] for k in labels], dtype=float)
+    fig, ax = plt.subplots(figsize=(8.2, 0.5 * len(labels) + 1.6), layout="constrained")
+    clipped = np.clip(np.nan_to_num(fracs, nan=0.0), -1.0, 1.0)
+    im = ax.imshow(clipped[:, None], cmap="RdBu_r", vmin=-1.0, vmax=1.0, aspect="auto")
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(
+        [
+            f"{lbl}  [source n={seen[lbl]['n_train']}, "
+            f"ceiling n={seen[lbl]['denominator_n_train']}]"
+            for lbl in labels
+        ],
+        fontsize=8,
+    )
+    ax.set_xticks([0])
+    ax.set_xticklabels(["recentered fraction of ceiling @ layer 19"], fontsize=8.5)
+    for i, k in enumerate(labels):
+        v = seen[k]["fraction_of_ceiling"]
+        cell_dark = bool(np.isfinite(v)) and abs(min(max(float(v), -1.0), 1.0)) > 0.6
+        ax.text(
+            0,
+            i,
+            "n/a" if not np.isfinite(v) else f"{v:+.2f}",
+            ha="center",
+            va="center",
+            fontsize=8.5,
+            color="white" if cell_dark else "black",
+        )
+    cb = fig.colorbar(im, ax=ax, shrink=0.8)
+    cb.set_label("fraction of ceiling (clipped at ±1)", fontsize=8)
+    savefig_paper(fig, "hero2_transfer_matrix", dir=OUT)
+    _merge_meta(
+        "hero2_transfer_matrix",
+        {
+            "points": [
+                {
+                    "direction": k,
+                    "fraction_of_ceiling": (
+                        None
+                        if not np.isfinite(seen[k]["fraction_of_ceiling"])
+                        else float(seen[k]["fraction_of_ceiling"])
+                    ),
+                    "transfer_r2": float(seen[k]["transfer_r2"]),
+                    "source_n": seen[k]["n_train"],
+                    "ceiling_n": seen[k]["denominator_n_train"],
+                }
+                for k in labels
+            ]
+        },
+    )
+    plt.close(fig)
+
+
+def fig_matched_vs_fulln() -> None:
+    """Matched vs full-n recentered fractions per direction (symlog x)."""
+    set_paper_style()
+    pal = paper_palette(4)
+    tm = _eval("transfer_matrix.json")
+    hl = tm["headline_layer"]
+    by_dir: dict[str, dict] = {}
+    for r in tm["rows"]:
+        if r["layer"] != hl or r["application"] != "recentered":
+            continue
+        d = by_dir.setdefault(_plain_dir(r["direction"], r["x_recipe"]), {})
+        d["matched" if r["power_matched"] else "full"] = r["fraction_of_ceiling"]
+    keys = [k for k, v in by_dir.items() if "matched" in v]
+    fig, ax = plt.subplots(figsize=(8.4, 0.4 * len(keys) + 1.4))
+    y = np.arange(len(keys))
+    ax.scatter(
+        [by_dir[k]["matched"] for k in keys],
+        y,
+        color=pal[0],
+        s=26,
+        label="power-matched (primary)",
+        zorder=3,
+    )
+    fx = [(by_dir[k].get("full"), i) for i, k in enumerate(keys) if "full" in by_dir[k]]
+    ax.scatter(
+        [v for v, _ in fx],
+        [i for _, i in fx],
+        color=pal[1],
+        s=26,
+        label="full n (secondary)",
+        zorder=2,
+    )
+    ax.set_xscale("symlog", linthresh=1.0)
+    ax.axvline(0, color="gray", lw=0.7)
+    ax.set_yticks(y)
+    ax.set_yticklabels(keys, fontsize=8)
+    ax.set_xlabel("Recentered fraction of ceiling @ layer 19 (symlog scale)")
+    ax.legend(fontsize=9, loc="lower left")
+    savefig_paper(fig, "matched_vs_fulln_fractions", dir=OUT)
+    _merge_meta(
+        "matched_vs_fulln_fractions",
+        {
+            "points": [
+                {
+                    "direction": k,
+                    "matched": (
+                        None
+                        if not np.isfinite(by_dir[k].get("matched", np.nan))
+                        else float(by_dir[k]["matched"])
+                    ),
+                    "full_n": (
+                        None
+                        if not np.isfinite(by_dir[k].get("full", np.nan))
+                        else float(by_dir[k]["full"])
+                    ),
+                }
+                for k in keys
+            ]
+        },
+    )
+    plt.close(fig)
+
+
+def fig_strict_vs_recentered() -> None:
+    """Strict-frozen vs recentered transfer R^2 as a paired dot plot (no overlap)."""
+    set_paper_style()
+    pal = paper_palette(4)
+    tm = _eval("transfer_matrix.json")
+    hl = tm["headline_layer"]
+    by_dir: dict[str, dict] = {}
+    for r in tm["rows"]:
+        if r["layer"] != hl or not r["power_matched"]:
+            continue
+        by_dir.setdefault(_plain_dir(r["direction"], r["x_recipe"]), {})[r["application"]] = r[
+            "transfer_r2"
+        ]
+    keys = sorted(by_dir, key=lambda k: by_dir[k].get("recentered", np.nan))
+    y = np.arange(len(keys))
+    fig, ax = plt.subplots(figsize=(8.4, 0.4 * len(keys) + 1.4))
+    rec = [by_dir[k].get("recentered", np.nan) for k in keys]
+    st = [by_dir[k].get("strict", np.nan) for k in keys]
+    for i in range(len(keys)):
+        ax.plot([st[i], rec[i]], [i, i], color="0.75", lw=1, zorder=1)
+    ax.scatter(rec, y, color=pal[0], s=26, label="recentered (primary)", zorder=3)
+    ax.scatter(st, y, color=pal[1], s=26, label="strict-frozen (secondary)", zorder=2)
+    ax.set_xscale("symlog", linthresh=1.0)
+    ax.axvline(0, color="gray", lw=0.7)
+    ax.set_yticks(y)
+    ax.set_yticklabels(keys, fontsize=8)
+    ax.set_xlabel("Power-matched transfer $R^2$ @ layer 19 (symlog scale)")
+    ax.legend(fontsize=9, loc="upper left")
+    savefig_paper(fig, "strict_vs_recentered", dir=OUT)
+    _merge_meta(
+        "strict_vs_recentered",
+        {
+            "points": [
+                {"direction": k, "recentered": float(r), "strict": float(s)}
+                for k, r, s in zip(keys, rec, st, strict=True)
+            ]
+        },
     )
     plt.close(fig)
 
@@ -153,4 +427,10 @@ if __name__ == "__main__":
     fig_delta_char()
     fig_delta_char_per_novel()
     fig_delta_char_per_story()
+    # Revision-round-2 regenerations OVERWRITE the copied run versions.
+    fig_power_curve_overlay()
+    fig_per_novel_r2_scatter()
+    fig_hero2_transfer_matrix()
+    fig_matched_vs_fulln()
+    fig_strict_vs_recentered()
     print("[i931-figs] done ->", OUT)

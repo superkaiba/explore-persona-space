@@ -1620,6 +1620,8 @@ def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: st
                 "post-marker",
                 str(issue),
                 "epm:progress",
+                "--by",
+                "spawn_session",
                 "--note",
                 note,
             ],

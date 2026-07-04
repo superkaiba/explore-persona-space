@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1001,
+  "highest_id": 1003,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -36,6 +36,20 @@
       "path": "tasks/proposed/1001",
       "status": "proposed",
       "title": "workflow-fix: marker-training-recipe.md training-row token-budget rule (#260 sibling)"
+    },
+    "1002": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1002",
+      "status": "proposed",
+      "title": "workflow-fix: check 27 also FAILs prior-issue markdown links in v4 standalone sections"
+    },
+    "1003": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1003",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas rc=134 \u2014 in-process streaming-datasets release"
     },
     "101": {
       "has_clean_result": false,
@@ -5473,8 +5487,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation map can be learned and how much trait-relevant signal predicted activations retain: fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779 LMSYS corpus, then on #779's exact monitoring rig project rolled-forward predicted activations onto the persona directions at the trait read-out layers and benchmark the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim) against #779's measured rows \u2014 raw projection at the source layer (the matched-information comparison), raw projection at the target layer (the transport ceiling), a direct-hop ridge map, and the learned map h / direct predictor g reference rows \u2014 reporting the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction horizon, and the Delta-R2-vs-retention divergence per (layer, function class).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/841",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/841",
+      "status": "awaiting_promotion",
       "title": "Rolling an activation forward through a learned affine layer map beats a direct read of the source layer in a minority of read-out-layer cells (above chance in aggregate), on Qwen-2.5-7B-Instruct (MODERATE confidence)"
     },
     "842": {
@@ -6100,8 +6114,8 @@
       "goal": "Determine whether the base model's per-cell mean answer activation v(c,q) (answer-token-mean residual profile of the on-policy completion, the #810-winning summary) decomposes into context-only and query-only representational components: with no model training and ridge-only read-outs, predict v(c,q) on the diverse-contexts x UltraChat grid from (a) the last-context-token vector computed with the query absent, (b) the last-query-token vector computed with no context (empty-system / no-system-block / masked-context presentations), (c) their combination (feature concatenation and prediction-level blend), and (d) the full-prompt last-input-token vector, and measure under LOFO context-family x held-out/OOD-query folds how much of the [best-single -> full-prompt] held-out R^2 gap the combination closes, with the interaction residual R^2(full) - R^2(combined) quantifying the attention-mixing information unavailable to disjoint parts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/923",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/923",
+      "status": "awaiting_promotion",
       "title": "Stitched context-only and query-only read-outs beat the full-prompt last-token ridge read-out at recovering the mean answer activation on held-out families and queries (MODERATE confidence)"
     },
     "924": {
@@ -6392,57 +6406,57 @@
     "962": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/962",
-      "status": "running",
+      "path": "tasks/completed/962",
+      "status": "completed",
       "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
     },
     "963": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/963",
-      "status": "planning",
+      "path": "tasks/running/963",
+      "status": "running",
       "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
     },
     "964": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/964",
-      "status": "running",
+      "path": "tasks/completed/964",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body warn on body-linked figures untracked at branch HEAD"
     },
     "965": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/965",
-      "status": "planning",
+      "path": "tasks/completed/965",
+      "status": "completed",
       "title": "workflow-fix: PreToolUse deny-hook for harmful-bank file reads"
     },
     "966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/966",
-      "status": "planning",
+      "path": "tasks/completed/966",
+      "status": "completed",
       "title": "workflow-fix: distinctive --by for PM/watcher advisory markers"
     },
     "967": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/967",
-      "status": "running",
+      "path": "tasks/reviewing/967",
+      "status": "reviewing",
       "title": "workflow-fix: watcher post-hoc external-marker triage observer"
     },
     "968": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/968",
-      "status": "planning",
+      "path": "tasks/reviewing/968",
+      "status": "reviewing",
       "title": "workflow-fix: tag-parity lint for hollow-verification-gate"
     },
     "969": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/969",
-      "status": "running",
+      "path": "tasks/completed/969",
+      "status": "completed",
       "title": "workflow-fix: v4-scope pre_reg prose restriction in body audit"
     },
     "97": {
@@ -6455,22 +6469,22 @@
     "970": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/970",
-      "status": "planning",
+      "path": "tasks/completed/970",
+      "status": "completed",
       "title": "workflow-fix: add SUCCESS|FAILURE to audit verdict_caps"
     },
     "971": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/971",
-      "status": "planning",
+      "path": "tasks/completed/971",
+      "status": "completed",
       "title": "workflow-fix: recover head-name-less rebase husk in root sync"
     },
     "972": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/972",
-      "status": "planning",
+      "path": "tasks/running/972",
+      "status": "running",
       "title": "workflow-fix: artifact-reuse check (i) also covers Hub-API call scoping"
     },
     "973": {
@@ -6483,22 +6497,22 @@
     "974": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/974",
-      "status": "planning",
+      "path": "tasks/completed/974",
+      "status": "completed",
       "title": "workflow-fix: WARN-only check_ood_folds in verify_plan"
     },
     "975": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/975",
-      "status": "running",
+      "path": "tasks/completed/975",
+      "status": "completed",
       "title": "workflow-fix: poll_pipeline synthesized envelope version max+1"
     },
     "976": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/976",
-      "status": "running",
+      "path": "tasks/completed/976",
+      "status": "completed",
       "title": "workflow-fix: widen runpod stale-sentinel clear to wildcard"
     },
     "977": {
