@@ -6364,8 +6364,8 @@
     "960": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/960",
-      "status": "planning",
+      "path": "tasks/approved/960",
+      "status": "approved",
       "title": "workflow-fix: gotchas.md cuDNN-TF32 parity-gate trap (float64-clone gate recipe)"
     },
     "961": {
