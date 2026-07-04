@@ -387,39 +387,98 @@ def load_store_positions(
     return out
 
 
-def _file_sample_digest(path: Path, chunk_bytes: int = 1 << 20) -> str:
-    """sha256 over (size, first/middle/last ``chunk_bytes``) of a file's bytes.
+def file_sha256(path: Path, chunk_bytes: int = 1 << 20) -> str:
+    """EXACT sha256 over a file's FULL raw bytes (streamed, never torch.load).
 
-    Content-based and mtime-invariant: an HF restage of identical bytes keeps
-    the digest, while a recapture with different fp16 activation values
-    changes tensor bytes throughout the (ZIP_STORED, uncompressed) shard, so
-    the sampled regions differ. Never torch.loads the blob — raw bytes only.
+    r4 (`fit-resume-store-content-digest-incomplete`): supersedes the sampled
+    first/middle/last-window digest — a same-size byte change ANYWHERE in the
+    file changes this hash, so a recapture with different fp16 activation
+    values can never evade it. O(file bytes), paid ONCE at shard-write time
+    (``write_store_sidecar``); mtime never enters.
     """
     import hashlib
 
-    size = path.stat().st_size
-    h = hashlib.sha256(f"{size}:".encode())
+    h = hashlib.sha256()
     with open(path, "rb") as f:
-        for off in sorted({0, max(size // 2 - chunk_bytes // 2, 0), max(size - chunk_bytes, 0)}):
-            f.seek(off)
-            h.update(f.read(chunk_bytes))
+        while chunk := f.read(chunk_bytes):
+            h.update(chunk)
     return h.hexdigest()
 
 
-def store_content_digest(store_dir: Path, unit_sets: list[str]) -> str:
-    """Mtime-invariant CONTENT identity of the store shards a consumer reads.
+def write_store_sidecar(
+    store_dir: Path,
+    unit_set: str,
+    *,
+    corpus_fingerprint: str,
+    n_rows: int,
+    hidden: int,
+    shards: dict[str, list[str]],
+) -> dict:
+    """Write one set's ``index.json`` sidecar, hashing every shard AT WRITE time.
 
-    Canonical-JSON sha256 over ``{set: [[shard name, size, sample digest]]}``
-    for the given unit sets — the fit-resume regime key closing
-    `fit-resume-dropout-regime-key-missing` (r3): a same-drop-set RECAPTURE
-    with different activation values invalidates fit resume; restaging
-    byte-identical shards from HF does not (mtime never enters the digest).
+    The single production writer (capture stage + tests): records
+    ``shard_sha256`` — a full-file :func:`file_sha256` per shard, computed
+    from the on-disk bytes at sidecar-write time — so ANY (re)capture
+    refreshes the recorded content identity and the fit regime's
+    :func:`store_content_digest` invalidates resume exactly (r4). Returns
+    the written blob.
     """
+    blob = {
+        "unit_set": unit_set,
+        "corpus_fingerprint": corpus_fingerprint,
+        "n_rows": n_rows,
+        "hidden": hidden,
+        "shards": shards,
+        "shard_sha256": {
+            s: file_sha256(store_shard_path(store_dir, unit_set, int(s))) for s in shards
+        },
+    }
+    write_json_atomic(store_index_path(store_dir, unit_set), blob)
+    return blob
+
+
+def store_content_digest(store_dir: Path, unit_sets: list[str]) -> str:
+    """EXACT content identity of the store shards a consumer reads.
+
+    Canonical-JSON sha256 over ``{set: [[shard name, full-file sha256]]}``
+    for the given unit sets — the fit-resume regime key (r3; r4 exact). The
+    per-shard hashes come from the capture-written sidecar (recorded at
+    shard-write time by :func:`write_store_sidecar`, so ANY recapture —
+    same-size byte changes included — refreshes them and invalidates
+    resume). Fail-loud paths, never silent trust: a sidecar whose
+    ``shard_sha256`` does not cover every on-disk shard ASSERTS
+    (sidecar/shard drift); a sidecar WITHOUT hashes (legacy pre-r4 store)
+    RECOMPUTES the exact hash from shard bytes with a loud warning. Mtime
+    never enters (an HF restage of identical bytes keeps the digest); a
+    missing set dir contributes an empty list (a half-populated store then
+    differs from any populated regime → refit-all, the conservative
+    direction).
+    """
+    store_dir = Path(store_dir)
     payload: dict[str, list] = {}
     for s in unit_sets:
-        d = Path(store_dir) / s
+        d = store_dir / s
         shards = sorted(d.glob("shard_*.pt")) if d.is_dir() else []
-        payload[s] = [[p.name, p.stat().st_size, _file_sample_digest(p)] for p in shards]
+        recorded: dict[str, str] = {}
+        sidecar = store_index_path(store_dir, s)
+        if shards and sidecar.exists():
+            hashes = json.loads(sidecar.read_text()).get("shard_sha256")
+            if hashes is not None:
+                recorded = {
+                    store_shard_path(store_dir, s, int(k)).name: str(v) for k, v in hashes.items()
+                }
+                missing = [p.name for p in shards if p.name not in recorded]
+                assert not missing, (
+                    f"store {s}: sidecar shard_sha256 missing entries for {missing} — "
+                    "sidecar/shard drift; recapture the set (never silently trusted)"
+                )
+        if shards and not recorded:
+            logger.warning(
+                "[store-digest] %s sidecar lacks shard_sha256 (legacy pre-r4 store) — "
+                "recomputing exact content hashes from shard bytes (O(store) read)",
+                s,
+            )
+        payload[s] = [[p.name, recorded.get(p.name) or file_sha256(p)] for p in shards]
     return canonical_sha256(payload)
 
 

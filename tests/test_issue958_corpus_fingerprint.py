@@ -12,8 +12,16 @@ key additionally carries (a) the dropout-set identity (capture-recorded
 dropped uids + per-set invalid conversations) and (b) a CONTENT digest of the
 consumed store shards — a stale fit manifest under a changed dropout set OR a
 regenerated (same-drop-set, different-activations) store must NOT resume, and
-a restored per-cell npz must carry the CURRENT design's test_idx. All tests
-fail pre-fix and pass post-fix.
+a restored per-cell npz must carry the CURRENT design's test_idx.
+
+r3→r4 CONCERNS `fit-resume-store-content-digest-incomplete` +
+`fit-resume-store-digest-omits-graft-set`: the store identity is EXACT —
+canonical sha over the sidecar's write-time per-shard FULL-file sha256, so a
+same-size byte change ANYWHERE (incl. offsets the superseded sampled digest
+never read) invalidates resume — and covers ALL FOUR consumed sets incl.
+graft (a graft-only recapture invalidates the `_prefix_marginal` cell). A
+sidecar without hashes recomputes exactly (never silently trusted); a
+sidecar/shard drift asserts. All tests fail pre-fix and pass post-fix.
 """
 
 from __future__ import annotations
@@ -114,14 +122,37 @@ def test_store_loaders_reject_other_corpus_fingerprint(tmp_path: Path):
 
 
 # ── r3: fit-resume dropout-set + store-content identity ──────────────────────
+# r4: EXACT sidecar-recorded store identity (`fit-resume-store-content-digest-
+# incomplete`) over ALL FOUR consumed sets incl. graft (`fit-resume-store-
+# digest-omits-graft-set`).
+
+CONSUMED_SETS = ["main", "long", "onpol", "graft"]
+# 4 MiB shard: large enough that the SUPERSEDED sampled digest (first/middle/
+# last 1 MiB windows) had un-sampled gaps — the exact hash must not.
+SHARD_BYTES = 4 << 20
+GAP_OFFSET = 1_200_000  # inside (1 MiB, size/2 - 0.5 MiB): unsampled under the old scheme
 
 
-def _mk_store(tmp_path: Path, payload: bytes = b"A" * 4096) -> Path:
-    """A minimal store tree: one raw-bytes shard per consumed unit set."""
+def _refresh_sidecar(store: Path, unit_set: str) -> None:
+    """Re-write one set's sidecar via the PRODUCTION writer (what capture does)."""
+    shards = sorted((store / unit_set).glob("shard_*.pt"))
+    C.write_store_sidecar(
+        store,
+        unit_set,
+        corpus_fingerprint=FP_A,
+        n_rows=3,
+        hidden=4,
+        shards={str(i): [f"{unit_set}:c{i}:k1"] for i in range(len(shards))},
+    )
+
+
+def _mk_store(tmp_path: Path, payload: bytes | None = None) -> Path:
+    """A minimal store tree: one raw-bytes shard + production sidecar per set."""
     store = tmp_path / "store"
-    for s in ("main", "long", "onpol"):
+    for s in CONSUMED_SETS:
         (store / s).mkdir(parents=True, exist_ok=True)
-        (store / s / "shard_000.pt").write_bytes(payload)
+        (store / s / "shard_000.pt").write_bytes(payload or (b"A" * SHARD_BYTES))
+        _refresh_sidecar(store, s)
     return store
 
 
@@ -134,28 +165,60 @@ def _mk_regime(store: Path, dropped_main: tuple[str, ...] = (), invalid_main: tu
         n_long=8,
         stub_rb=True,
         invalid_by_set={"main": sorted(invalid_main), "long": []},
-        dropped_by_set={"main": set(dropped_main), "long": set(), "onpol": set()},
-        store_content_sha=C.store_content_digest(store, ["main", "long", "onpol"]),
+        dropped_by_set={"main": set(dropped_main), "long": set(), "onpol": set(), "graft": set()},
+        store_content_sha=C.store_content_digest(store, CONSUMED_SETS),
     )
 
 
-def test_store_content_digest_content_sensitive_mtime_invariant(tmp_path: Path):
-    """Digest changes on a same-size byte change; mtime alone never changes it."""
+def _flip_byte(shard: Path, offset: int = GAP_OFFSET) -> None:
+    """Same-size in-place byte flip (the vLLM/GPU-nondeterminism recapture shape)."""
+    size = shard.stat().st_size
+    mutated = bytearray(shard.read_bytes())
+    mutated[offset] ^= 0xFF
+    shard.write_bytes(bytes(mutated))
+    assert shard.stat().st_size == size
+
+
+def test_store_content_digest_exact_same_size_change_mtime_invariant(tmp_path: Path):
+    """Any same-size byte change invalidates once the sidecar is refreshed; mtime never does."""
     import os
 
     store = _mk_store(tmp_path)
-    d1 = C.store_content_digest(store, ["main", "long", "onpol"])
+    d1 = C.store_content_digest(store, CONSUMED_SETS)
     # mtime-invariance: identical bytes restaged later (HF re-download) keep the digest
     shard = store / "main" / "shard_000.pt"
     os.utime(shard, (0, 0))
-    assert C.store_content_digest(store, ["main", "long", "onpol"]) == d1
-    # content sensitivity at IDENTICAL size (a recapture with different fp16
-    # activation values keeps torch.save's ZIP_STORED size, changes the bytes)
-    mutated = bytearray(shard.read_bytes())
-    mutated[len(mutated) // 2] ^= 0xFF
-    shard.write_bytes(bytes(mutated))
-    d2 = C.store_content_digest(store, ["main", "long", "onpol"])
-    assert d2 != d1 and shard.stat().st_size == 4096
+    assert C.store_content_digest(store, CONSUMED_SETS) == d1
+    # same-size byte flip at an offset the OLD sampled digest never read, then
+    # sidecar refresh (a recapture ALWAYS rewrites the sidecar hashes at write
+    # time) — the exact digest diverges
+    _flip_byte(shard)
+    _refresh_sidecar(store, "main")
+    d2 = C.store_content_digest(store, CONSUMED_SETS)
+    assert d2 != d1
+
+
+def test_store_content_digest_legacy_sidecar_recomputes_exact(tmp_path: Path):
+    """A sidecar WITHOUT shard_sha256 (legacy store) is never silently trusted."""
+    store = _mk_store(tmp_path)
+    # strip the recorded hashes from one set's sidecar (legacy pre-r4 shape)
+    sidecar = C.store_index_path(store, "main")
+    blob = json.loads(sidecar.read_text())
+    del blob["shard_sha256"]
+    C.write_json_atomic(sidecar, blob)
+    d1 = C.store_content_digest(store, CONSUMED_SETS)
+    # a same-size gap-offset byte flip with NO sidecar refresh still changes
+    # the digest — the legacy path recomputes the exact hash from shard bytes
+    _flip_byte(store / "main" / "shard_000.pt")
+    assert C.store_content_digest(store, CONSUMED_SETS) != d1
+
+
+def test_store_content_digest_asserts_on_sidecar_shard_drift(tmp_path: Path):
+    """An on-disk shard the sidecar's shard_sha256 does not cover fails loud."""
+    store = _mk_store(tmp_path)
+    (store / "main" / "shard_001.pt").write_bytes(b"B" * 64)  # uncovered by sidecar
+    with pytest.raises(AssertionError, match="sidecar/shard drift"):
+        C.store_content_digest(store, CONSUMED_SETS)
 
 
 def test_fit_resume_refuses_changed_dropout_set(tmp_path: Path):
@@ -178,19 +241,47 @@ def test_fit_resume_refuses_changed_dropout_set(tmp_path: Path):
 
 
 def test_fit_resume_refuses_regenerated_store(tmp_path: Path):
-    """A same-drop-set store RECAPTURE (different bytes) must NOT resume."""
+    """A same-drop-set store RECAPTURE (same-size different bytes) must NOT resume."""
     store = _mk_store(tmp_path)
     manifest_path = tmp_path / "fit_manifest.json"
     reg_a = _mk_regime(store)
     m = FIT.load_fit_manifest(manifest_path, reg_a)
     m["cells"]["ctx_k1_A"] = {"done": True, "ts": 0.0}
     C.write_json_atomic(manifest_path, m)
-    # regenerate one shard with different same-size content (vLLM/GPU
-    # nondeterminism shape) — the regime's store_content_sha diverges
-    shard = store / "onpol" / "shard_000.pt"
-    shard.write_bytes(b"B" * 4096)
+    # recapture one shard: same-size byte change at an offset the superseded
+    # sampled digest never read (vLLM/GPU-nondeterminism shape) + the
+    # capture-side sidecar rewrite — the regime's store_content_sha diverges
+    _flip_byte(store / "onpol" / "shard_000.pt")
+    _refresh_sidecar(store, "onpol")
     reg_b = _mk_regime(store)
     assert reg_b != reg_a
+    assert FIT.load_fit_manifest(manifest_path, reg_b)["cells"] == {}
+
+
+def test_fit_resume_refuses_graft_only_recapture(tmp_path: Path):
+    """A graft-ONLY recapture (same drop set) must invalidate `_prefix_marginal`.
+
+    r4 (`fit-resume-store-digest-omits-graft-set`): the manifest-resumable
+    `_prefix_marginal` cell consumes graft shard CONTENT, so the fit regime's
+    store identity must cover the graft set — a graft-only recapture with the
+    dropout identity held EQUAL refits instead of restoring a stale
+    prefix_marginal.json.
+    """
+    store = _mk_store(tmp_path)
+    manifest_path = tmp_path / "fit_manifest.json"
+    reg_a = _mk_regime(store)
+    m = FIT.load_fit_manifest(manifest_path, reg_a)
+    m["cells"]["_prefix_marginal"] = {"done": True, "ts": 0.0}
+    C.write_json_atomic(manifest_path, m)
+    # positive control: identical regime resumes the marginal cell
+    assert FIT.load_fit_manifest(manifest_path, reg_a)["cells"]["_prefix_marginal"]["done"]
+    # graft-only recapture: same-size byte change + sidecar rewrite in the
+    # graft set ONLY; main/long/onpol bytes and the dropout set unchanged
+    _flip_byte(store / "graft" / "shard_000.pt")
+    _refresh_sidecar(store, "graft")
+    reg_b = _mk_regime(store)
+    assert reg_b["dropped_uids_sha"] == reg_a["dropped_uids_sha"]  # dropout identity EQUAL
+    assert reg_b != reg_a  # ONLY the store content identity diverges
     assert FIT.load_fit_manifest(manifest_path, reg_b)["cells"] == {}
 
 
