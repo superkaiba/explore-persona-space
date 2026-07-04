@@ -5150,7 +5150,9 @@ breadcrumb post lands before the new boundary and is not re-enumerated;
 markers posted after a task's LAST compute dispatch are never enumerated
 (they can no longer avert a launch); a legacy launch marker
 (`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
-still closes the window.
+still closes the window. A watcher-side NON-GATING observer audits this
+duty post-hoc (flags missing/'none' lines against a re-run of the
+enumerator's window; observe/alert only, never blocks — #967).
 
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
