@@ -71,6 +71,34 @@ ROWS = list(ROW_LABELS)
 MARGIN = 0.02
 
 
+def context_label(battery_id: str) -> str:
+    """Reader-facing label for a 50-context battery id (no opaque slugs in figure text).
+
+    Families per the store manifest: f1 persona (house + PersonaHub), f2 WildChat
+    prefixes, f3 in-context demos, f4 register rephrasings, f5 format demands,
+    f6 default-assistant anchors, f8 behavior-commanding prompts.
+    """
+    parts = battery_id.split("_")
+    fam, rest = parts[0], parts[1:]
+    if fam == "f1" and rest[0] == "house":
+        return " ".join(rest[1:]).replace("_", " ") + " persona"
+    if fam == "f1" and rest[0] == "phub":
+        return f"PersonaHub persona {int(rest[1])}"
+    if fam == "f2" and rest[0] == "wc":
+        return f"WildChat {rest[1]} prefix {rest[2]}"
+    if fam == "f3" and rest[0] == "icl":
+        return f"{rest[1]} in-context demos ({rest[2]})"
+    if fam == "f4" and rest[0] == "reph":
+        return f"{rest[1]} rephrasing"
+    if fam == "f5" and rest[0] == "fmt":
+        return " ".join(rest[1:]).replace("_", " ") + " format demand"
+    if fam == "f6":
+        return "default template" if rest[0] == "default" else "helpful-assistant prompt"
+    if fam == "f8" and rest[0] == "behav":
+        return f"{rest[1]}-commanding prompt"
+    raise ValueError(f"unrecognized battery id: {battery_id}")
+
+
 def load() -> tuple[dict, dict, dict, dict, dict]:
     he = json.loads((HE_DIR / "reconstruction_skill_header_echo.json").read_text())
     paired = json.loads((HE_DIR / "paired_full_minus_empty.json").read_text())
@@ -255,10 +283,10 @@ def fig_mechanism_percontext(mech: dict) -> None:
         ax.scatter(x, vals, s=14, color=pal[i], alpha=0.65)
         med = float(np.median(vals))
         ax.scatter([i], [med], marker="_", s=420, linewidths=2.6, color="#2d2d2d", zorder=3)
-        # label the single most-moved context (lowest cosine) per row
+        # label the single most-moved context (lowest cosine) per row, reader-facing
         names = list(pc.keys())
         j = int(np.argmin(vals))
-        ax.text(i, vals[j] - 0.04, names[j], fontsize=6, ha="center", color="0.35")
+        ax.text(i, vals[j] - 0.04, context_label(names[j]), fontsize=6, ha="center", color="0.35")
     ax.axhline(0.8, color="#a05050", ls="--", lw=1.2, label="echo-consistency anchor (0.8)")
     ax.set_xticks(range(len(ROWS)), labels=[ROW_LABELS[r] for r in ROWS], rotation=30, ha="right")
     ax.set_ylabel("centered cosine per context (committed best layer)")
