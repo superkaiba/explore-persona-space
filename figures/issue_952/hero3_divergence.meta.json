@@ -1,6 +1,6 @@
 {
-  "commit": "d30b153ac3",
-  "created": "2026-07-04T16:00:34Z",
+  "commit": "a68d7f56a6",
+  "created": "2026-07-04T16:28:11Z",
   "figsize": [
     10.5,
     4.2
@@ -37,287 +37,287 @@
     {
       "Drop, own answer (regenerated)": -0.09229440007835488,
       "Drop, external plain (Claude)": -0.2406604401780733,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.041513082507713905,
       "Drop, external plain (Claude)": -0.08421399073761715,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.06252217312083475,
       "Drop, external plain (Claude)": -0.36295023761779155,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.06705267087947164,
       "Drop, external plain (Claude)": -0.021901477969561656,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.2421318090044744,
       "Drop, external plain (Claude)": -0.19315717370387697,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.013842606079082609,
       "Drop, external plain (Claude)": -0.026380455534403713,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.06316236547969556,
       "Drop, external plain (Claude)": -0.07171306922873477,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.05461566159050779,
       "Drop, external plain (Claude)": -0.10036317297921282,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.07193626772286488,
       "Drop, external plain (Claude)": -0.0423889221546746,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.02365575756285032,
       "Drop, external plain (Claude)": -0.0009301951841569345,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.17763515350154058,
       "Drop, external plain (Claude)": -0.18107916976874028,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.036714497987131445,
       "Drop, external plain (Claude)": 0.06353704320234999,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.05543097926822704,
       "Drop, external plain (Claude)": -0.03529764337407204,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": 0.01028211930306222,
       "Drop, external plain (Claude)": -0.1226423373108334,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.0491618997754647,
       "Drop, external plain (Claude)": 0.003849863997881897,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.13953473585736986,
       "Drop, external plain (Claude)": -0.18388399076012507,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.062091353273780236,
       "Drop, external plain (Claude)": -0.06460196804173801,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.1802731240563038,
       "Drop, external plain (Claude)": -0.252642913270951,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": 0.029941459908308876,
       "Drop, external plain (Claude)": 0.02648146355783154,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": -0.004190700285372384,
       "Drop, external plain (Claude)": -0.008312441450075925,
-      "series": "Model identity (cat-2)",
+      "series": "Model identity",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "Drop, own answer (regenerated)": 0.105349833570763,
       "Drop, external plain (Claude)": -0.004813395600532178,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.052675832834889635,
       "Drop, external plain (Claude)": 0.13953655962898526,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.02486931183842611,
       "Drop, external plain (Claude)": 0.0624557910686413,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.14661815340666529,
       "Drop, external plain (Claude)": -0.08701619621280532,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.15468903730608086,
       "Drop, external plain (Claude)": -0.036977529849485435,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.0344282581083567,
       "Drop, external plain (Claude)": 0.12178287879248184,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.09513806927499435,
       "Drop, external plain (Claude)": -0.12064842898441486,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.08045592019212466,
       "Drop, external plain (Claude)": 0.14742284399058714,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.051114315152276935,
       "Drop, external plain (Claude)": 0.08591180397490095,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.12392504917040337,
       "Drop, external plain (Claude)": -0.035381934119063096,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.014706289580093457,
       "Drop, external plain (Claude)": 0.041518282428187,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.032339646154866175,
       "Drop, external plain (Claude)": 0.13828419707910133,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.005304839649307391,
       "Drop, external plain (Claude)": 0.06720374514812244,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.027963140033246514,
       "Drop, external plain (Claude)": -0.04084589879977918,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.011141321362962753,
       "Drop, external plain (Claude)": -0.03735460413569147,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.17674111986280894,
       "Drop, external plain (Claude)": 0.122166720626121,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": -0.005991200816503062,
       "Drop, external plain (Claude)": -0.023319507826529806,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.005297021390739398,
       "Drop, external plain (Claude)": 0.03439757034689128,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.011131867359834402,
       "Drop, external plain (Claude)": -0.006769775631270236,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.1427558266295298,
       "Drop, external plain (Claude)": 0.15830766344980163,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "Drop, own answer (regenerated)": 0.1810918927199613,
       "Drop, external plain (Claude)": 0.16313760474537087,
-      "series": "Style / formatting (cat-4)",
+      "series": "Style / formatting",
       "_kind": "scatter",
       "_group": 5
     }

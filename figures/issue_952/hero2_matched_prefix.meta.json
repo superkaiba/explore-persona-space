@@ -1,6 +1,6 @@
 {
-  "commit": "d30b153ac3",
-  "created": "2026-07-04T16:00:30Z",
+  "commit": "a68d7f56a6",
+  "created": "2026-07-04T16:28:05Z",
   "figsize": [
     12.5,
     6.8
@@ -8,97 +8,97 @@
   "points": [
     {
       "x": -0.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.023430692789314422,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.023430692789314422,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.175,
-      "Own - external gap G (matched subset,\nidentical target)": -0.0018116218511552429,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": -0.0018116218511552429,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.043331866137881425,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.043331866137881425,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.048587173666276295,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.048587173666276295,
       "_kind": "bar",
       "_group": 3
     },
     {
       "x": 1.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.019065143465882062,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.019065143465882062,
       "_kind": "bar",
       "_group": 4
     },
     {
       "x": 2.175,
-      "Own - external gap G (matched subset,\nidentical target)": -0.013967474176885708,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": -0.013967474176885708,
       "_kind": "bar",
       "_group": 5
     },
     {
       "x": 2.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.03376184855805808,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.03376184855805808,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 3.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.045722041051779905,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.045722041051779905,
       "_kind": "bar",
       "_group": 7
     },
     {
       "x": 3.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.007876572664813453,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.007876572664813453,
       "_kind": "bar",
       "_group": 8
     },
     {
       "x": 4.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.002629663956427386,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.002629663956427386,
       "_kind": "bar",
       "_group": 9
     },
     {
       "x": 4.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.010119798794085644,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.010119798794085644,
       "_kind": "bar",
       "_group": 10
     },
     {
       "x": 5.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.047412971911111934,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.047412971911111934,
       "_kind": "bar",
       "_group": 11
     },
     {
       "x": 5.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.01443479222580113,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.01443479222580113,
       "_kind": "bar",
       "_group": 12
     },
     {
       "x": 6.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.010217763895500775,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.010217763895500775,
       "_kind": "bar",
       "_group": 13
     },
     {
       "x": 6.825,
-      "Own - external gap G (matched subset,\nidentical target)": 0.015118285409443155,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.015118285409443155,
       "_kind": "bar",
       "_group": 14
     },
     {
       "x": 7.175,
-      "Own - external gap G (matched subset,\nidentical target)": 0.046345021990040536,
+      "Own-answer R\u00b2 minus external-answer R\u00b2\n(matched survivors, identical target)": 0.046345021990040536,
       "_kind": "bar",
       "_group": 15
     },
