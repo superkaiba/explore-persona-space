@@ -1322,6 +1322,27 @@ STAGE_LIVENESS_KINDS = frozenset(
         "epm:proposed-tests",
     }
 )
+# Progress-note substrings that are ANTI-liveness for a stage-dispatch
+# freshness window (#949; incident #810): bracketed telemetry posted by the
+# session watcher / spawn machinery, never by the stage's own worker. The
+# watcher's own progress clock excludes the same classes
+# (scripts/autonomous_session_watch.py::_WATCHER_NOTE_SENTINELS — a script,
+# not importable from src/, so matched here by the shared bracketed
+# prefixes: every watcher sentinel embeds "[autonomous_session_watch:" and
+# spawn_session's bookkeeping sentinel embeds "[spawn-session:"). The
+# self-stamped "[long-phase-heartbeat]" prefix is DELIBERATELY absent — it
+# is posted by the stage's own long-running phase and IS liveness. The
+# sibling deliberate-stop exclusion (checked inline in
+# stage_dispatch_should_skip) also drops ANY note with
+# by == "spawn_session-stop" regardless of content — a future genuine
+# liveness post from spawn_session must use a different `by` or get a
+# carve-out here.
+STAGE_ANTILIVENESS_NOTE_SUBSTRINGS = frozenset(
+    {
+        "[autonomous_session_watch:",
+        "[spawn-session:",
+    }
+)
 
 _STAGE_ALIASES = {"code-reviewing": "code-review"}
 
@@ -1400,8 +1421,12 @@ def stage_dispatch_should_skip(
     (``STAGE_RESULT_KINDS[_normalize_stage(stage)]`` — clearing is round-agnostic by
     design, result markers carry no parsable round) or ``epm:failure``. While in
     flight, the freshness clock starts at the LATEST of the breadcrumb and any later
-    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress``;
-    a breadcrumb never refreshes any window): effective age < window -> skip reason;
+    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress`` —
+    EXCLUDING anti-liveness notes: a ``deliberate-stop`` record (``by ==
+    "spawn_session-stop"``) and bracketed watcher / spawn-session telemetry
+    (``STAGE_ANTILIVENESS_NOTE_SUBSTRINGS``) are stop/bookkeeping records, not
+    stage liveness, and never refresh a window (#810); a breadcrumb never
+    refreshes any window): effective age < window -> skip reason;
     >= window -> None (stalled, re-dispatch allowed). A malformed breadcrumb ``ts``
     fails toward dispatch (None); a malformed liveness ``ts`` is ignored. TOCTOU is a
     non-goal — two orchestrators both checking BEFORE either posts its breadcrumb can
@@ -1427,6 +1452,16 @@ def stage_dispatch_should_skip(
         if kind == "epm:progress":
             note = (event.get("note", "") or "").lstrip()
             if note.startswith("stage-dispatch "):
+                continue
+            # Anti-liveness (#810/#949): a deliberate session stop is the
+            # death record of the stage's owner, and bracketed watcher /
+            # spawn-session telemetry is third-party bookkeeping — neither
+            # is evidence the stage's OWN work is alive, so neither
+            # refreshes the window. (They do NOT clear the in-flight
+            # state; only result kinds / epm:failure / expiry do that.)
+            if note.startswith("deliberate-stop ") or event.get("by") == "spawn_session-stop":
+                continue
+            if any(s in note for s in STAGE_ANTILIVENESS_NOTE_SUBSTRINGS):
                 continue
         elif kind not in STAGE_LIVENESS_KINDS:
             continue
