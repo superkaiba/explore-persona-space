@@ -2998,7 +2998,23 @@ ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
 current branch) resolves to `main`, NOT the issue branch where a
 per-issue driver script lives — the GCE startup script then clones
 `main`, the driver is absent, and the workload dies ~4 min in with the
-EXIT trap powering the VM off (#595, 2026-06-13). Four more gcp/auto
+EXIT trap powering the VM off (#595, 2026-06-13). Defense-in-depth
+(#987): `dispatch_issue.py` and `backend_poll.py` self-pin lane-infra
+imports (`explore_persona_space.backends.*`, lazy `scripts.*`) to the
+MAIN checkout via a `__main__`-guarded git-common-dir sys.path
+bootstrap, so a worktree-cwd script-mode invocation of either
+entrypoint no longer imports a stale branch lane template; the
+repo-root invocation rule above remains the documented default (it
+also selects main's venv for third-party deps), and the pin covers
+ONLY script-mode execution — module-IMPORT consumers of `backends/`
+(e.g. `autonomous_session_watch.py`) are deliberately unpinned, so
+the cron-wrapper convention of `cd`-ing to the main checkout before
+invoking them stays load-bearing. Residuals the pin does NOT close:
+pre-#987 worktree COPIES (branches cut before the fix) carry no
+bootstrap until rebased, an already-running process keeps its cached
+stale modules, import-mode callers (`dispatch_for_issue` from a
+worktree venv) get no pin, and already-launched workloads keep the
+template they were rendered with. Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
 (g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —

@@ -46,6 +46,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, replace
@@ -62,6 +63,97 @@ from pathlib import Path
 _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
+
+# Lane-infra main-checkout pin (#987): the two functions below are duplicated
+# VERBATIM in scripts/dispatch_issue.py by design (importing a shared helper
+# before the pin would cache the ambient package and defeat it); the full
+# consumer audit comment lives next to dispatch_issue.py's copy, and
+# tests/test_lane_infra_main_pin.py pins the two copies source-identical.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
 
 # Conservative short bg-poll interval (seconds). Mirrors
 # ``scripts.poll_pipeline.POLL_INTERVAL_DEFAULT_SEC`` — kept as a local
