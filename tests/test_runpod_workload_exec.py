@@ -409,6 +409,97 @@ def test_launcher_chains_sentinel_write_after_workload_success():
     assert payload == {"phase": "done", "issue": 909, "attempt_id": ATTEMPT}
 
 
+def test_launcher_waits_on_fresh_detached_pid_files_before_sentinel():
+    """The rc==0 branch waits on fresh detached ``/workspace/logs/*.pid``
+    workloads BEFORE the sentinel write (#977, the GCP #601 parity —
+    ``test_render_startup_script_workload_cmd_waits_on_detached_pid_files``
+    precedent). Pins: the in-launcher ``WORKLOAD_START_EPOCH`` capture sits
+    AFTER the self-pidfile write and IMMEDIATELY before the workload line;
+    ``WORKLOAD_RC=$?`` is ADJACENT to the workload line (an intervening
+    line would corrupt ``$?``); the freshness predicate renders as ONE
+    line carrying both ``stat -c %Y`` and the INCLUSIVE
+    ``-ge "$WORKLOAD_START_EPOCH"`` (pins the adjacent-string
+    concatenation); and the full ordering chain — pidfile-write <
+    epoch-capture < workload < rc-capture < rc==0 gate < for-loop <
+    freshness < cat < PID-VALUE self-exclusion < kill-0 wait < sentinel
+    printf < exit — holds inside the heredoc. A misordered self-exclusion
+    AFTER the kill-0 wait would deadlock the launcher on its own pid, so
+    the chain includes the exclusion index, not just its presence."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    heredoc_start = next(i for i, line in enumerate(lines) if "<< 'EPSEOF'" in line)
+    heredoc_end = lines.index("EPSEOF", heredoc_start + 1)
+
+    pid_idx = lines.index("echo $$ > /workspace/logs/issue-909.pid")
+    epoch_idx = lines.index("WORKLOAD_START_EPOCH=$(date +%s)")
+    workload_idx = lines.index(WORKLOAD)
+    rc_idx = lines.index("WORKLOAD_RC=$?")
+    gate_idx = next(i for i, line in enumerate(lines) if '"$WORKLOAD_RC" -eq 0' in line)
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    fresh_idx = next(
+        i
+        for i, line in enumerate(lines)
+        if "stat -c %Y" in line and '-ge "$WORKLOAD_START_EPOCH"' in line
+    )
+    cat_idx = lines.index('    wpid=$(cat "$pf" 2>/dev/null) || continue')
+    excl_idx = lines.index('    [ "$wpid" = "$$" ] && continue')
+    wait_idx = lines.index('    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done')
+    printf_idx = next(i for i, line in enumerate(lines) if line.strip().startswith("printf"))
+    exit_idx = lines.index('exit "$WORKLOAD_RC"')
+
+    # Epoch capture IMMEDIATELY before the workload; rc capture ADJACENT
+    # after it (any intervening line would corrupt $?).
+    assert epoch_idx == workload_idx - 1
+    assert rc_idx == workload_idx + 1
+
+    # Full ordering chain, all inside the heredoc (the wait sits strictly
+    # between the rc==0 gate and the sentinel write).
+    assert (
+        heredoc_start
+        < pid_idx
+        < epoch_idx
+        < workload_idx
+        < rc_idx
+        < gate_idx
+        < for_idx
+        < fresh_idx
+        < cat_idx
+        < excl_idx
+        < wait_idx
+        < printf_idx
+        < exit_idx
+        < heredoc_end
+    )
+
+
+def test_launcher_wait_loop_self_exclusion_is_by_pid_value_not_path():
+    """Self-exclusion in the #977 wait loop is by PID VALUE, never by
+    pidfile PATH (the deliberate plan §3.2 decision): the experimenter
+    ``launch_issue_<N>.sh`` convention has the detached driver OVERWRITE
+    the canonical ``/workspace/logs/issue-<N>.pid`` with its OWN pid, so
+    a path-based skip (``[ "$pf" = <canonical> ] && continue``) would
+    skip exactly the driver that must be waited on and reintroduce the
+    premature sentinel for the convention-following case — while ``$$``
+    cannot be reused as long as this launcher is alive, so the pid-value
+    compare is race-free at any mtime granularity. Pins the exclusion
+    line's presence AND that NO wait-loop line string-compares ``$pf``
+    against the canonical pidfile path, so a future "hardening" edit
+    cannot silently re-add the path skip."""
+    script = _render_launch()
+    lines = script.splitlines()
+
+    assert '    [ "$wpid" = "$$" ] && continue' in lines
+
+    for_idx = lines.index("  for pf in /workspace/logs/*.pid; do")
+    done_idx = lines.index("  done", for_idx)
+    canonical_pid_file = "/workspace/logs/issue-909.pid"
+    for line in lines[for_idx : done_idx + 1]:
+        assert not ("$pf" in line and canonical_pid_file in line), (
+            f"wait-loop line path-compares $pf against the canonical pidfile: {line!r}"
+        )
+
+
 def test_launch_script_rejects_single_quote_in_sentinel_json():
     """The single-quoted JSON embed fails LOUD on a caller bug rather than
     rendering a broken launcher."""
