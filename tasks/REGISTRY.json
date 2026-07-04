@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 988,
+  "highest_id": 989,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6577,6 +6577,13 @@
       "path": "tasks/proposed/988",
       "status": "proposed",
       "title": "workflow-fix: bound bare list_repo_files call sites (hang class)"
+    },
+    "989": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/989",
+      "status": "proposed",
+      "title": "daily-fix: 4xx short-circuit in hub _is_transient_upload_error"
     },
     "99": {
       "has_clean_result": true,
