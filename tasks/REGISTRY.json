@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1039,
+  "highest_id": 1040,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -324,6 +324,13 @@
       "path": "tasks/completed/104",
       "status": "completed",
       "title": "[Aim 4] Prompt-search with distributional-match fitness to EM finetune (broader eval)"
+    },
+    "1040": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1040",
+      "status": "proposed",
+      "title": "Fix issue920_*.py torch-before-dotenv import order (test_shared_vm_thread_caps red on main)"
     },
     "105": {
       "has_clean_result": true,
