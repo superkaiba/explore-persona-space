@@ -308,11 +308,12 @@ def _blank_table_rows(text: str) -> str:
     "Blanked" means the line's content is replaced with an empty
     string (the `\n` is preserved). Used by `audit_body` to produce a
     table-cell-exempt scan source for the prose-only categories
-    (`interval_inline`, `condition_labels`). Non-exempt categories
-    keep scanning the unblanked text — `bit_byte_identical`, `pre_reg`,
-    `named_tests`, `letter_labels`, etc. are not prose-vs-table
-    sensitive, and we don't want to silently widen the audit's
-    exemption surface.
+    (`interval_inline`, `condition_labels`), and by
+    `_restrict_pre_reg_to_prose_sections` for the v4-body `pre_reg`
+    scope (whole-body-minus-tables). Non-exempt categories keep
+    scanning the unblanked text — `bit_byte_identical`, `named_tests`,
+    `letter_labels`, etc. are not prose-vs-table sensitive, and we
+    don't want to silently widen the audit's exemption surface.
     """
     lines = text.splitlines()
     table_idx = _table_row_line_indices(lines)
@@ -327,9 +328,13 @@ def _blank_table_rows(text: str) -> str:
 # `### What I ran` legitimately carries `C1` / `D1` codes whose
 # definition IS the table — the `condition_labels` rule targets BARE
 # codes in narrative prose where the reader has no lookup. Other
-# categories (`bit_byte_identical`, `pre_reg`, `named_tests`, ...) keep
+# categories (`bit_byte_identical`, `named_tests`, ...) keep
 # firing on table cells — the prose-vs-table distinction is not
-# load-bearing for those.
+# load-bearing for those. `pre_reg` is a v4-only, function-local
+# exception: on v4 bodies `_restrict_pre_reg_to_prose_sections` blanks
+# table rows itself (membership of this frozenset is UNCHANGED — routing
+# `pre_reg` through it would leak the table exemption to v2/legacy
+# bodies, and `audit_body` dispatches `pre_reg` before this set anyway).
 _TABLE_CELL_EXEMPT_CATEGORIES: frozenset[str] = frozenset({"interval_inline", "condition_labels"})
 
 
@@ -526,6 +531,14 @@ def strip_data_example_blocks(text: str) -> str:
 # prose — spec-permitted there — fires a FALSE positive the critic must
 # hand-adjudicate every round (incident #623: an `## Data → ### Evaluated with`
 # pre-reg mention tripped the audit although Lens 7 exempts that section).
+# Under the v4 spec (`<!-- clean-result-v4 -->`) Lens 7 instead bans pre-reg
+# mentions in ALL FOUR H2s' prose (`## Takeaways` / `## Goal` /
+# `## Methodology` / `## Results`) and permits threshold values ONLY in the
+# Methodology Training hyperparameter table — implemented in
+# `_restrict_pre_reg_to_prose_sections` as a whole-body scan with GFM table
+# rows blanked (ALL positively-detected tables, deliberately wider than the
+# named Training table; the LM clean-result-critic backstops non-Methodology
+# tables).
 # This carve-out is `pre_reg`-only; the other Lens 7 sub-categories (named
 # tests, power analyses, inline `value ± err`) are NOT section-scoped in the
 # spec, so we do not widen their exemption surface.
@@ -533,24 +546,54 @@ _PRE_REG_PROSE_SECTIONS = ("takeaways", "what i ran", "findings")
 
 
 def _restrict_pre_reg_to_prose_sections(body: str, text: str) -> str:
-    """Blank every line of `text` OUTSIDE the three Lens 7 prose sections
-    (`## Takeaways` / `## What I ran` / `## Findings`) so the `pre_reg`
-    scan fires only where the spec bans pre-registration mentions.
+    """Return the `pre_reg` scan source for `text`, scoped per the body's
+    clean-result generation (three regimes):
 
-    Applied ONLY to v3 bodies (the `<!-- clean-result-v3 -->` sentinel) —
-    the section scope is a v3 shape. For v2 / legacy / unstructured bodies
-    (which use `## AI TL;DR` / `## Human TL;DR` / `## TL;DR` / `## Details`
-    H2 names) the restriction is skipped and `text` is returned unchanged,
-    so the prior whole-body `pre_reg` behavior is preserved verbatim and we
-    never silently blank an entire legacy body's prose.
+    - v4 (`<!-- clean-result-v4 -->`): whole-body scan with every
+      positively-detected GFM table-row line blanked. Lens 7 bans pre-reg
+      mentions in ALL FOUR v4 H2s' prose (`## Takeaways` / `## Goal` /
+      `## Methodology` / `## Results`) and the ONLY surface it explicitly
+      permits is the Methodology Training hyperparameter table; since the
+      four sections are nearly the whole v4 body (stray content H2s are a
+      `verify_task_body.py` hard FAIL), the scope is whole-body-minus-tables.
+      NOTE the table exemption is deliberately WIDER than Lens 7's letter:
+      it blanks ALL positively-detected GFM table rows, not only the
+      Methodology Training table — the LM clean-result-critic remains the
+      backstop for a pre-reg mention smuggled into a non-Methodology table.
+      The verbatim originating prompt in the `**Context:**` footer is
+      already exempt for every generation via `strip_context_blockquotes`
+      (#597/#651); the rest of the footer stays scanned deliberately (no
+      incident; the conservative direction).
+    - v3 (`<!-- clean-result-v3 -->`): blank every line OUTSIDE the three
+      Lens 7 v3 prose sections (`## Takeaways` / `## What I ran` /
+      `## Findings`), UNCHANGED (incident #623).
+    - v2 / legacy / unstructured (which use `## AI TL;DR` / `## Human
+      TL;DR` / `## TL;DR` / `## Details` H2 names): `text` is returned
+      unchanged, so the prior whole-body `pre_reg` behavior is preserved
+      verbatim and we never silently blank an entire legacy body's prose.
 
     `text` is the already-cleaned scan source (frontmatter / code / Context
     blockquote / Data example blocks stripped); `body` is the raw body, used
-    only for the v3-sentinel gate. "Blanked" means the line content becomes
+    only for the sentinel gates. "Blanked" means the line content becomes
     an empty string (the trailing `\n` is preserved so sample-output offsets
-    stay stable). A mis-detected boundary degrades to scanning a line that
-    should have been blanked — never to a silently widened exemption.
+    stay stable).
+
+    Degradation property: `_blank_table_rows` blanks only lines
+    `_table_row_line_indices` positively identifies as GFM pipe-table rows
+    (behavior pinned by the existing interval_inline / condition_labels
+    tests), so a misshapen table degrades to its rows being SCANNED (a
+    hand-adjudicated false positive) — never to a silently widened
+    exemption; every PROSE surface not explicitly permitted keeps firing,
+    and a mis-detected v3 section boundary likewise degrades to scanning a
+    line that should have been blanked. v4 is checked BEFORE v3 because
+    the v4 sentinel declares the governing spec for the body — NOT because
+    v4 scans a strict superset (it does not: a table row inside
+    `## Takeaways` / `## Findings` is scanned by the v3 walker yet blanked
+    by the v4 branch); on a malformed dual-sentinel body the v4 branch at
+    least keeps every prose surface in scope.
     """
+    if "<!-- clean-result-v4 -->" in body:
+        return _blank_table_rows(text)
     if "<!-- clean-result-v3 -->" not in body:
         return text
     out: list[str] = []
@@ -622,20 +665,27 @@ def audit_body(body: str) -> dict[str, list[str]]:
     lookup table inside `### What I ran` legitimately carries `C1` /
     `D1` codes whose definition IS the table. All other categories
     keep scanning the unblanked text — the prose-vs-table distinction
-    is not load-bearing for `bit_byte_identical`, `pre_reg`, `named_tests`,
-    `letter_labels`, etc.
+    is not load-bearing for `bit_byte_identical`, `named_tests`,
+    `letter_labels`, etc. (`pre_reg` is the one exception: on v4 bodies
+    its scan source ALSO blanks table rows, routed function-locally
+    through `_restrict_pre_reg_to_prose_sections` below — NOT through
+    `_TABLE_CELL_EXEMPT_CATEGORIES`, whose membership is unchanged).
 
     `interval_inline` additionally blanks figure-caption blockquotes and
     the finding-internal "Why this test" line (Lens 7's two carve-outs)
     via `_strip_interval_inline_exempt_lines` — bracketed bounds in a
     chart caption or a CI-as-test-definition sentence are spec-compliant.
 
-    `pre_reg` (v3 bodies only) scans ONLY the three Lens 7 prose sections
-    (`## Takeaways` / `## What I ran` / `## Findings`) via
-    `_restrict_pre_reg_to_prose_sections` — a spec-permitted procedural
-    "dropped pre-registered" sentence in `## Data` / `## Reproducibility`
-    prose no longer fires a false positive (incident #623). v2 / legacy
-    bodies keep the prior whole-body `pre_reg` behavior.
+    `pre_reg` scans a generation-scoped source via
+    `_restrict_pre_reg_to_prose_sections` (three regimes): v4 bodies scan
+    the whole body with GFM table rows blanked (Lens 7 bans the mention in
+    all four v4 H2s' prose and permits threshold values in the Methodology
+    Training hyperparameter table); v3 bodies scan ONLY the three Lens 7
+    v3 prose sections (`## Takeaways` / `## What I ran` / `## Findings`) —
+    a spec-permitted procedural "dropped pre-registered" sentence in
+    `## Data` / `## Reproducibility` prose no longer fires a false
+    positive (incident #623); v2 / legacy bodies keep the prior whole-body
+    `pre_reg` behavior.
     """
     findings: dict[str, list[str]] = {}
     cleaned = strip_code(
@@ -655,7 +705,8 @@ def audit_body(body: str) -> dict[str, list[str]]:
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
     interval_scan_source = _strip_interval_inline_exempt_lines(_blank_table_rows(interval_cleaned))
-    # `pre_reg` (v3 only) scans only the three Lens 7 prose sections.
+    # `pre_reg` scans a generation-scoped source: v4 = whole body minus
+    # table rows; v3 = the three Lens 7 prose sections; v2/legacy = whole body.
     pre_reg_scan_source = _restrict_pre_reg_to_prose_sections(body, cleaned)
     for name, (pattern, _) in PATTERNS.items():
         if name == "interval_inline":
