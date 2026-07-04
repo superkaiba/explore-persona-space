@@ -206,6 +206,44 @@ def test_baseline_pass_judge_call_matches_judge_graded_contract(baseline_run):
     assert payload["context_id"] == "persona_software_engineer"
 
 
+def test_baseline_pass_persists_rollout_text_before_judge(tmp_path):
+    """r9 CONCERN genreduce-rollout-text-not-persisted (baseline site): the REAL
+    _run_baseline_pass body persists the temperature-sampled (non-regenerable)
+    rollout text to baseline/raw_completions.jsonl BEFORE the judge/reduce step
+    — asserted by reading the file from INSIDE the judge fake — with one
+    {item_id, question, completion} row per judge item, row-for-row."""
+    behavior = BEHAVIORS["sycophancy"]
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "sycophancy"
+    raw_path = class_dir / "baseline" / "raw_completions.jsonl"
+
+    gen = RecordingGen()
+    inner_judge = _make_judge_fake(lambda iid: 80.0)
+    at_judge_time: dict = {}
+
+    def judge(*args, **kwargs):
+        at_judge_time["exists"] = raw_path.is_file()
+        if raw_path.is_file():
+            at_judge_time["rows"] = [json.loads(line) for line in raw_path.read_text().splitlines()]
+        return inner_judge(*args, **kwargs)
+
+    seams = pilot.PilotSeams(verify_generate_fn=gen, judge_fn=judge)
+    result = pilot._run_baseline_pass(behavior, cfg, class_dir, seams)
+
+    # (i) The rollout text existed BEFORE the judge call (persist-before-reduce).
+    assert at_judge_time.get("exists") is True, "rollout text not persisted before the judge call"
+    rows = at_judge_time["rows"]
+    # 2 questions x 2 completions = 4 rows, matching the judge items row-for-row
+    # (same item_id, question, completion — judge_raw.json cross-references).
+    items = inner_judge.recorded[0].arguments["items"]
+    assert [(r["item_id"], r["question"], r["completion"]) for r in rows] == list(items)
+    assert len(rows) == 4
+    # The payload records the artifact path for the clean-result / upload audit.
+    assert result["raw_completions_path"] == str(raw_path)
+    payload = json.loads((class_dir / "baseline" / "baseline.json").read_text())
+    assert payload["raw_completions_path"] == str(raw_path)
+
+
 # ── _run_on_policy_control (concerns trigger-context-onpolicy + score-completions-kwargs) ──
 
 
@@ -376,6 +414,7 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
     baseline = class_dir / "baseline"
     baseline.mkdir(parents=True)
     (baseline / "baseline.json").write_text("{}")
+    (baseline / "raw_completions.jsonl").write_text("{}\n")  # r9 rollout text
     (baseline / "judge_raw.json").write_text("{}")
     (baseline / "judge_cache").mkdir()
     (baseline / "judge_cache" / "item.json").write_text("{}")
@@ -431,6 +470,7 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
         "issue906_pilot/sycophancy/extraction_rollouts/contrastive_completions.jsonl",
         "issue906_pilot/sycophancy/extraction_rollouts/scored_completions.jsonl",
         "issue906_pilot/sycophancy/baseline/baseline.json",
+        "issue906_pilot/sycophancy/baseline/raw_completions.jsonl",
         "issue906_pilot/sycophancy/baseline/judge_raw.json",
         "issue906_pilot/sycophancy/on_policy_control/completions.jsonl",
         "issue906_pilot/sycophancy/on_policy_control/judge_raw.json",
@@ -650,6 +690,130 @@ def test_upload_class_marker_carveout_skips_duplicate_train_mix(tmp_path, monkey
     assert "issue906_pilot/marker/raw_completions/cn.jsonl" in datagen_expected
 
 
+def test_upload_class_marker_verify_rollouts_covered(tmp_path, monkeypatch):
+    """r9 CONCERN genreduce-rollout-text-not-persisted (upload leg): the marker
+    carve-out's greedy slot-read rollout text — verify/marker_rollouts__{base,
+    trained}.jsonl, written by _verify_marker_class's inline path — rides the
+    existing verify upload leg's fail-loud expected set. Only the Hub boundary
+    is substituted (signature-bound); _upload_class / _upload_pilot_dir run
+    REAL."""
+    from types import SimpleNamespace
+
+    cfg = _cfg(tmp_path, upload=True)
+    mix_dir = cfg.out_root / "marker" / "build" / "mix"
+    mix_dir.mkdir(parents=True)
+    (mix_dir / "pos.jsonl").write_text("{}\n")
+    (mix_dir / "cn.jsonl").write_text("{}\n")
+    verify_dir = cfg.out_root / "marker" / "verify"
+    verify_dir.mkdir(parents=True)
+    (verify_dir / "marker_rollouts__base.jsonl").write_text("{}\n")
+    (verify_dir / "marker_rollouts__trained.jsonl").write_text("{}\n")
+
+    folder_calls = _fake_hub_boundary(monkeypatch)
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(mix_dir / "pos.jsonl"),
+        data_paths={"datagen_dir": str(mix_dir)},
+    )
+    out = pilot._upload_class("marker", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "ok", out
+    # (ii) The verify leg now fires for the marker carve-out and its fail-loud
+    # expected set names both rollout files.
+    assert out["verify"] is not None and out["verify"].endswith("/verify")
+    by_bucket = {b.arguments["path_in_repo"]: b for b in folder_calls}
+    verify_expected = set(
+        by_bucket["issue906_pilot/marker/verify"].arguments["expected_repo_paths"]
+    )
+    assert "issue906_pilot/marker/verify/marker_rollouts__base.jsonl" in verify_expected
+    assert "issue906_pilot/marker/verify/marker_rollouts__trained.jsonl" in verify_expected
+
+
+def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
+    """r9 CONCERN genreduce-rollout-text-not-persisted (wiring): the REAL
+    _verify_marker_class INLINE path (marker_verify_fn seam = None) persists
+    greedy rollout text for BOTH model sides to
+    verify/marker_rollouts__{base,trained}.jsonl and reports the paths under
+    rollout_paths. Only the HF weights / tokenizer / PEFT boundaries are faked;
+    _read_marker_slots + validate_marker_slot_record run REAL."""
+    import peft
+    import transformers
+
+    from explore_persona_space.artifacts.recipe import (
+        MARKER_TEXT,
+        MARKER_TOKEN_ID,
+        QWEN_IM_END_ID,
+    )
+
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "marker"
+    behavior = BEHAVIORS["marker"]
+    vocab = 200000  # >= marker id 83399 and im_end id 151645
+
+    class FakeLM:
+        """HF-boundary fake: greedy generate appends [11, 12, im_end]; zero logits."""
+
+        def to(self, device):
+            return self
+
+        def eval(self):
+            return self
+
+        def generate(self, input_ids, **kwargs):
+            new = torch.tensor([[11, 12, QWEN_IM_END_ID]], dtype=torch.long)
+            return torch.cat([input_ids, new], dim=1)
+
+        def __call__(self, input_ids):
+            from unittest.mock import MagicMock
+
+            out = MagicMock()
+            out.logits = torch.zeros(1, input_ids.shape[1], vocab)
+            return out
+
+    class FakeTrained(FakeLM):
+        def __init__(self):
+            # .get("default", None) -> None skips the gauge assert
+            self.peft_config: dict = {}
+
+    class FakeTok:
+        eos_token_id = QWEN_IM_END_ID
+
+        def encode(self, text, add_special_tokens=False):
+            assert text == MARKER_TEXT
+            return [MARKER_TOKEN_ID]  # the in-process marker token-id assert passes
+
+        def apply_chat_template(self, msgs, add_generation_prompt=True, return_tensors="pt"):
+            return torch.tensor([[10, 20]], dtype=torch.long)
+
+        def decode(self, ids, skip_special_tokens=False):
+            return "tok:" + ",".join(str(i) for i in ids)
+
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", lambda *a, **k: FakeTok())
+    monkeypatch.setattr(
+        transformers.AutoModelForCausalLM, "from_pretrained", lambda *a, **k: FakeLM()
+    )
+    monkeypatch.setattr(peft.PeftModel, "from_pretrained", lambda *a, **k: FakeTrained())
+
+    result = pilot._verify_marker_class(
+        behavior, str(tmp_path / "adapter"), cfg, pilot.PilotSeams(), class_dir
+    )
+
+    rollout_paths = result["rollout_paths"]
+    assert rollout_paths is not None, "inline path must report its persisted rollout paths"
+    n_contexts = result["n_eval_contexts"]
+    n_questions = result["n_eval_questions"]
+    for side in ("base", "trained"):
+        path = Path(rollout_paths[side])
+        assert path == class_dir / "verify" / f"marker_rollouts__{side}.jsonl"
+        assert path.is_file(), f"{side} rollout text file was not persisted"
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        assert len(rows) == n_contexts * n_questions
+        # Raw new-token region persisted (im_end included, pre-strip).
+        assert all(r["completion"] == f"tok:11,12,{QWEN_IM_END_ID}" for r in rows)
+    # The three-space reduce still ran on the same records.
+    assert len(result["per_context"]) == n_contexts
+
+
 def test_upload_pilot_dir_explicit_filenames_fail_loud_on_missing(tmp_path):
     """Explicit filenames= mode raises on a missing named file (the training
     mix is a build-contract guarantee; a silent skip would re-open the r8
@@ -666,6 +830,20 @@ def test_upload_pilot_dir_explicit_filenames_fail_loud_on_missing(tmp_path):
         pilot._upload_pilot_dir(
             tmp_path / "absent", "issue906_pilot/x/train_mix", filenames=["train_mix.jsonl"]
         )
+
+
+def test_upload_pilot_dir_raises_on_empty_url(tmp_path, monkeypatch):
+    """Codex r8 Minor: an empty URL from hub._upload_folder_filtered is a FAILED
+    upload — the REAL _upload_pilot_dir body raises RuntimeError instead of
+    returning a falsy 'success'."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    d = tmp_path / "artifacts"
+    d.mkdir()
+    (d / "baseline.json").write_text("{}")
+    monkeypatch.setattr(hub, "_upload_folder_filtered", lambda *a, **k: "")
+    with pytest.raises(RuntimeError, match="failed or was incomplete"):
+        pilot._upload_pilot_dir(d, "issue906_pilot/x/baseline")
 
 
 @pytest.mark.parametrize(

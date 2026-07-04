@@ -207,6 +207,25 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
+def _write_jsonl_atomic(path: Path, rows) -> int:
+    """Write ``rows`` (iterable of dicts) as JSONL via tmp + ``os.replace``.
+
+    Returns the row count. Used to persist generated rollout TEXT before any
+    judge/reduce step (Upload Policy persist-by-default, #779): the text is
+    what makes downstream artifacts regenerable.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    n = 0
+    with open(tmp, "w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            n += 1
+    os.replace(tmp, path)
+    return n
+
+
 @contextmanager
 def _timed(store: dict, key: str):
     """Record wall-seconds for a phase into ``store[key]`` (always, even on raise)."""
@@ -578,7 +597,10 @@ def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: Pilot
     the ``eval.graded_judge.judge_graded`` contract over ``(item_id, question,
     completion)`` triples (the ``organisms._rate_for_cell`` pattern), with
     rule-9 drop-never-coerce accounting.  Results persist to
-    ``<class_dir>/baseline/``.  Called by ``run_class`` when
+    ``<class_dir>/baseline/`` — including the temperature-sampled (hence
+    non-regenerable) rollout TEXT at ``baseline/raw_completions.jsonl``,
+    written BEFORE the judge/reduce step (r8 CONCERN
+    genreduce-rollout-text-not-persisted).  Called by ``run_class`` when
     ``seams.baseline_fn is None`` (the full-run production path).
 
     Returns a dict with at minimum:
@@ -631,6 +653,19 @@ def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: Pilot
     for i, (q, completions) in enumerate(zip(eval_questions, all_completions, strict=True)):
         for j, completion in enumerate(completions):
             items.append((f"baseline-q{i:03d}-c{j}", q, completion))
+
+    # Persist the rollout TEXT before the judge/reduce step (Upload Policy
+    # persist-by-default, #779; r8 CONCERN genreduce-rollout-text-not-persisted):
+    # these completions are temperature-sampled -> NON-regenerable, and the
+    # baseline/ leg of _upload_class ships this file to HF in the fail-loud
+    # expected set. item_id matches the judge item id, so judge_raw.json
+    # cross-references row-for-row.
+    raw_completions_path = baseline_dir / "raw_completions.jsonl"
+    _write_jsonl_atomic(
+        raw_completions_path,
+        ({"item_id": iid, "question": q, "completion": c} for iid, q, c in items),
+    )
+
     result = judge_fn(
         items,
         behavior.judge_rubric,
@@ -674,6 +709,7 @@ def _run_baseline_pass(behavior, cfg: PilotConfig, class_dir: Path, seams: Pilot
         "n_judge_dropped_completions": n_dropped,
         "judge_draws_total": result.n_total_draws,
         "judge_draws_dropped": result.n_dropped_draws,
+        "raw_completions_path": str(raw_completions_path),
         "out_dir": str(baseline_dir),
         "context_id": source_ctx.context_id,
         "git_commit": _git_short_sha(),
@@ -1043,6 +1079,7 @@ def _read_marker_slots(
     marker_token_id: int,
     qwen_im_end_id: int,
     validate_fn,
+    rollout_path: Path,
 ) -> list[dict]:
     """Compute (logp, z_marker, z_eos, logZ) at the post-response marker slot.
 
@@ -1052,74 +1089,104 @@ def _read_marker_slots(
     im_end tokens from generated ids; (3) one forward pass on the stripped ids;
     (4) read logits at position -1 (the post-response slot).
 
+    ``rollout_path`` (REQUIRED — r8 CONCERN genreduce-rollout-text-not-persisted):
+    every generated response R is persisted as one JSONL row
+    ``{context_id, question_index, question, completion}`` the moment it is
+    decoded — BEFORE the per-context averaging reduce — per the Upload Policy
+    persist-by-default rule (#779; greedy text gets no exemption). The
+    completion field is the RAW new-token region (marker / im_end included),
+    decoded with ``skip_special_tokens=False``.
+
     Returns one record per (context_id, system_prompt) pair in contexts_list,
     averaged over all questions.
     """
     import torch
 
+    rollout_path = Path(rollout_path)
+    rollout_path.parent.mkdir(parents=True, exist_ok=True)
     records: list[dict] = []
-    for ctx_id, sp in contexts_list:
-        ctx_logp_sum = 0.0
-        ctx_z_marker_sum = 0.0
-        ctx_z_eos_sum = 0.0
-        ctx_logZ_sum = 0.0
-        n_q = 0
-        for q in questions:
-            msgs = []
-            if sp is not None:
-                msgs.append({"role": "system", "content": sp})
-            msgs.append({"role": "user", "content": q})
-            input_ids_prompt = tokenizer.apply_chat_template(
-                msgs, add_generation_prompt=True, return_tensors="pt"
-            ).to(device)
-            with torch.no_grad():
-                generated = model.generate(
-                    input_ids_prompt,
-                    max_new_tokens=512,
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
+    with open(rollout_path, "w", encoding="utf-8") as rollout_f:
+        for ctx_id, sp in contexts_list:
+            ctx_logp_sum = 0.0
+            ctx_z_marker_sum = 0.0
+            ctx_z_eos_sum = 0.0
+            ctx_logZ_sum = 0.0
+            n_q = 0
+            for q_index, q in enumerate(questions):
+                msgs = []
+                if sp is not None:
+                    msgs.append({"role": "system", "content": sp})
+                msgs.append({"role": "user", "content": q})
+                input_ids_prompt = tokenizer.apply_chat_template(
+                    msgs, add_generation_prompt=True, return_tensors="pt"
+                ).to(device)
+                with torch.no_grad():
+                    generated = model.generate(
+                        input_ids_prompt,
+                        max_new_tokens=512,
+                        do_sample=False,
+                        pad_token_id=tokenizer.eos_token_id,
+                    )
+                gen_ids = generated[0]  # (T_full,) 1-D view
+                prompt_len = input_ids_prompt.shape[1]
+                # Persist the rollout TEXT immediately (per-unit, before the reduce
+                # below): raw new-token region, specials included.
+                completion_text = tokenizer.decode(
+                    gen_ids[prompt_len:].tolist(), skip_special_tokens=False
                 )
-            gen_ids = generated[0]  # (T_full,) 1-D view
-            # Strip trailing im_end tokens so logits[-1, :] reads the marker slot,
-            # not the post-EOS slot (BLOCKER 2 fix).
-            strip_end = gen_ids.shape[0]
-            while strip_end > 1 and gen_ids[strip_end - 1].item() == qwen_im_end_id:
-                strip_end -= 1
-            # BLOCKER (eos-slot-stop-at-marker): if the trained model already emitted the
-            # marker token inside its response R, reading logits at position -1 AFTER the
-            # marker measures "emit a second ※" — a corrupted DV.  Per
-            # marker-leakage-measurement.md § "Strip / stop at the first marker emission
-            # and read the slot where the marker would first appear", truncate strip_end
-            # at the first marker occurrence in the NEW tokens (beyond prompt length).
-            prompt_len = input_ids_prompt.shape[1]
-            new_tokens = gen_ids[prompt_len:strip_end]
-            marker_positions = (new_tokens == marker_token_id).nonzero(as_tuple=False)
-            if marker_positions.numel() > 0:
-                first_marker_offset = int(marker_positions[0].item())
-                strip_end = min(strip_end, prompt_len + first_marker_offset)
-            input_ids_full = gen_ids[:strip_end].unsqueeze(0)  # (1, T_stripped)
-            with torch.no_grad():
-                logits = model(input_ids_full).logits  # (1, T_stripped, V)
-            assert logits.shape[0] == 1, logits.shape
-            slot_logits = logits[0, -1, :]  # (V,)
-            z_marker = slot_logits[marker_token_id].item()
-            z_eos = slot_logits[qwen_im_end_id].item()
-            log_Z = torch.logsumexp(slot_logits, dim=-1).item()
-            logp = z_marker - log_Z
-            ctx_logp_sum += logp
-            ctx_z_marker_sum += z_marker
-            ctx_z_eos_sum += z_eos
-            ctx_logZ_sum += log_Z
-            n_q += 1
-        rec = {
-            "context_id": ctx_id,
-            "logp": ctx_logp_sum / n_q,
-            "z_marker": ctx_z_marker_sum / n_q,
-            "z_eos": ctx_z_eos_sum / n_q,
-            "logZ": ctx_logZ_sum / n_q,
-        }
-        validate_fn(rec, context=f"context={ctx_id}")
-        records.append(rec)
+                rollout_f.write(
+                    json.dumps(
+                        {
+                            "context_id": ctx_id,
+                            "question_index": q_index,
+                            "question": q,
+                            "completion": completion_text,
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+                rollout_f.flush()
+                # Strip trailing im_end tokens so logits[-1, :] reads the marker slot,
+                # not the post-EOS slot (BLOCKER 2 fix).
+                strip_end = gen_ids.shape[0]
+                while strip_end > 1 and gen_ids[strip_end - 1].item() == qwen_im_end_id:
+                    strip_end -= 1
+                # BLOCKER (eos-slot-stop-at-marker): if the trained model already emitted
+                # the marker token inside its response R, reading logits at position -1
+                # AFTER the marker measures "emit a second ※" — a corrupted DV.  Per
+                # marker-leakage-measurement.md § "Strip / stop at the first marker
+                # emission and read the slot where the marker would first appear",
+                # truncate strip_end at the first marker occurrence in the NEW tokens
+                # (beyond prompt length).
+                new_tokens = gen_ids[prompt_len:strip_end]
+                marker_positions = (new_tokens == marker_token_id).nonzero(as_tuple=False)
+                if marker_positions.numel() > 0:
+                    first_marker_offset = int(marker_positions[0].item())
+                    strip_end = min(strip_end, prompt_len + first_marker_offset)
+                input_ids_full = gen_ids[:strip_end].unsqueeze(0)  # (1, T_stripped)
+                with torch.no_grad():
+                    logits = model(input_ids_full).logits  # (1, T_stripped, V)
+                assert logits.shape[0] == 1, logits.shape
+                slot_logits = logits[0, -1, :]  # (V,)
+                z_marker = slot_logits[marker_token_id].item()
+                z_eos = slot_logits[qwen_im_end_id].item()
+                log_Z = torch.logsumexp(slot_logits, dim=-1).item()
+                logp = z_marker - log_Z
+                ctx_logp_sum += logp
+                ctx_z_marker_sum += z_marker
+                ctx_z_eos_sum += z_eos
+                ctx_logZ_sum += log_Z
+                n_q += 1
+            rec = {
+                "context_id": ctx_id,
+                "logp": ctx_logp_sum / n_q,
+                "z_marker": ctx_z_marker_sum / n_q,
+                "z_eos": ctx_z_eos_sum / n_q,
+                "logZ": ctx_logZ_sum / n_q,
+            }
+            validate_fn(rec, context=f"context={ctx_id}")
+            records.append(rec)
     return records
 
 
@@ -1133,6 +1200,13 @@ def _verify_marker_class(
     storage contract (marker-leakage-measurement.md).  Validates each record via
     ``validate_marker_slot_record``.  Returns a dict suitable for
     ``entry["marker_verify"]``.
+
+    On the inline (production) path, every greedy rollout is persisted to
+    ``<class_dir>/verify/marker_rollouts__{base,trained}.jsonl`` BEFORE the
+    per-context reduce (r8 CONCERN genreduce-rollout-text-not-persisted) —
+    ``_upload_class``'s ``verify`` leg ships those files to HF in its fail-loud
+    expected set. The seam path (``seams.marker_verify_fn``) is a test/smoke
+    boundary and persists nothing (``rollout_paths: None`` in the return).
     """
     from explore_persona_space.artifacts.context import CONTEXTS
     from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
@@ -1159,6 +1233,7 @@ def _verify_marker_class(
     for nc in panel:
         eval_contexts.append((nc.slug, nc.system_prompt))
 
+    rollout_paths: dict[str, str] | None = None
     if seams.marker_verify_fn is not None:
         slot_records_trained = seams.marker_verify_fn(
             adapter_path,
@@ -1200,12 +1275,23 @@ def _verify_marker_class(
             validate_fn=validate_marker_slot_record,
         )
 
+        # Greedy rollout text persists per side under verify/ (r8 CONCERN
+        # genreduce-rollout-text-not-persisted); _upload_class's verify leg
+        # ships these JSONLs in its fail-loud expected set.
+        verify_dir = class_dir / "verify"
+        rollout_paths = {
+            "base": str(verify_dir / "marker_rollouts__base.jsonl"),
+            "trained": str(verify_dir / "marker_rollouts__trained.jsonl"),
+        }
+
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
         base_model_hf = AutoModelForCausalLM.from_pretrained(
             cfg.base_model, torch_dtype=dtype, trust_remote_code=True
         ).to(device)
         base_model_hf.eval()
-        slot_records_base = _read_marker_slots(base_model_hf, eval_contexts, **_slots_kwargs)
+        slot_records_base = _read_marker_slots(
+            base_model_hf, eval_contexts, rollout_path=Path(rollout_paths["base"]), **_slots_kwargs
+        )
 
         # Load adapter for trained reads; validate gauge-freedom first.
         trained_model = PeftModel.from_pretrained(base_model_hf, adapter_path)
@@ -1214,7 +1300,12 @@ def _verify_marker_class(
         adapter_cfg = trained_model.peft_config.get("default", None)
         if adapter_cfg is not None:
             assert_gauge_free_adapter_config(adapter_cfg, context="marker_verify")
-        slot_records_trained = _read_marker_slots(trained_model, eval_contexts, **_slots_kwargs)
+        slot_records_trained = _read_marker_slots(
+            trained_model,
+            eval_contexts,
+            rollout_path=Path(rollout_paths["trained"]),
+            **_slots_kwargs,
+        )
 
         del trained_model, base_model_hf
         if torch.cuda.is_available():
@@ -1259,6 +1350,7 @@ def _verify_marker_class(
         "contract_keys": list(MARKER_SLOT_CONTRACT_KEYS),
         "n_eval_questions": n_questions,
         "n_eval_contexts": len(eval_contexts),
+        "rollout_paths": rollout_paths,
         "source_logp_delta": source_logp_delta,
         "max_bystander_logp_delta": max(bystander_logp_deltas) if bystander_logp_deltas else None,
         "mean_bystander_logp_delta": (
@@ -1585,8 +1677,10 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         class_dir = cfg.out_root / behavior_name
         # verify/ eval completions (completions__{side}__{ctx}.json), the
         # organism_report.json, and the per-cell judge_raw.json files —
-        # r8 CONCERN verify-stage-raw-completions-upload-missing. Absent on
-        # the marker carve-out (its verify phase persists no files) -> None.
+        # r8 CONCERN verify-stage-raw-completions-upload-missing. On the
+        # marker carve-out this leg carries the greedy slot-read rollout
+        # text (verify/marker_rollouts__{base,trained}.jsonl — r9 CONCERN
+        # genreduce-rollout-text-not-persisted).
         out["verify"] = _upload_pilot_dir(
             class_dir / "verify",
             f"issue906_pilot/{behavior_name}/verify",
@@ -1606,7 +1700,9 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
             class_dir / "extract",
             f"issue906_pilot/{behavior_name}/extraction_rollouts",
         )
-        # Pre-intervention baseline judged-rate artifacts (plan §4 Phase 0).
+        # Pre-intervention baseline judged-rate artifacts (plan §4 Phase 0),
+        # incl. the temperature-sampled rollout text (raw_completions.jsonl —
+        # r9 CONCERN genreduce-rollout-text-not-persisted).
         out["baseline"] = _upload_pilot_dir(
             class_dir / "baseline",
             f"issue906_pilot/{behavior_name}/baseline",

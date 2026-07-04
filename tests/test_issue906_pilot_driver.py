@@ -938,6 +938,7 @@ def test_read_marker_slots_strips_trailing_im_end(tmp_path):
     fake_tokenizer.apply_chat_template.return_value = torch.tensor(
         [prompt_and_response], dtype=torch.long
     )
+    fake_tokenizer.decode.return_value = "decoded response text"
 
     # validate_fn stub that does nothing (avoids importing the real validator).
     def _noop_validate(rec, context=""):
@@ -956,6 +957,7 @@ def test_read_marker_slots_strips_trailing_im_end(tmp_path):
         marker_token_id=MARKER_TOKEN_ID,
         qwen_im_end_id=QWEN_IM_END_ID,
         validate_fn=_noop_validate,
+        rollout_path=tmp_path / "rollouts.jsonl",
     )
 
     # The forward pass input must NOT include the trailing im_end.
@@ -1023,6 +1025,7 @@ def test_read_marker_slots_truncates_at_marker_in_response(tmp_path):
     fake_tokenizer = MagicMock()
     fake_tokenizer.eos_token_id = QWEN_IM_END_ID
     fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+    fake_tokenizer.decode.return_value = "decoded response text"
 
     def _noop_validate(rec, context=""):
         pass
@@ -1036,6 +1039,7 @@ def test_read_marker_slots_truncates_at_marker_in_response(tmp_path):
         marker_token_id=MARKER_TOKEN_ID,
         qwen_im_end_id=QWEN_IM_END_ID,
         validate_fn=_noop_validate,
+        rollout_path=tmp_path / "rollouts.jsonl",
     )
 
     assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
@@ -1087,6 +1091,7 @@ def test_read_marker_slots_no_marker_unchanged(tmp_path):
     fake_tokenizer = MagicMock()
     fake_tokenizer.eos_token_id = QWEN_IM_END_ID
     fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+    fake_tokenizer.decode.return_value = "decoded response text"
 
     def _noop_validate(rec, context=""):
         pass
@@ -1100,6 +1105,7 @@ def test_read_marker_slots_no_marker_unchanged(tmp_path):
         marker_token_id=MARKER_TOKEN_ID,
         qwen_im_end_id=QWEN_IM_END_ID,
         validate_fn=_noop_validate,
+        rollout_path=tmp_path / "rollouts.jsonl",
     )
 
     assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
@@ -1155,6 +1161,7 @@ def test_read_marker_slots_marker_mid_response(tmp_path):
     fake_tokenizer = MagicMock()
     fake_tokenizer.eos_token_id = QWEN_IM_END_ID
     fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+    fake_tokenizer.decode.return_value = "decoded response text"
 
     def _noop_validate(rec, context=""):
         pass
@@ -1168,6 +1175,7 @@ def test_read_marker_slots_marker_mid_response(tmp_path):
         marker_token_id=MARKER_TOKEN_ID,
         qwen_im_end_id=QWEN_IM_END_ID,
         validate_fn=_noop_validate,
+        rollout_path=tmp_path / "rollouts.jsonl",
     )
 
     assert seen_input_shapes, "_read_marker_slots never called model(input_ids)"
@@ -1176,6 +1184,89 @@ def test_read_marker_slots_marker_mid_response(tmp_path):
         f"Forward input has {fwd_T} tokens; expected {expected_stripped_len} "
         f"(should stop before MARKER at offset 1 in new tokens). ids={seen_input_shapes}"
     )
+
+
+# ── R9 CONCERN genreduce-rollout-text-not-persisted: _read_marker_slots ─────────
+
+
+def test_read_marker_slots_persists_rollout_text(tmp_path):
+    """r9 CONCERN genreduce-rollout-text-not-persisted (marker slot site): the
+    REAL _read_marker_slots body persists every greedy rollout as one JSONL row
+    {context_id, question_index, question, completion} to rollout_path — the
+    RAW new-token region (marker / im_end INCLUDED, i.e. BEFORE the strip /
+    truncate steps that feed the reduce), one row per (context, question).
+    rollout_path is a REQUIRED keyword, so no caller can silently skip
+    persistence."""
+    import inspect
+    import json
+    from unittest.mock import MagicMock
+
+    import torch
+
+    MARKER_TOKEN_ID = 83399
+    QWEN_IM_END_ID = 151645
+
+    # rollout_path must be REQUIRED (no default) — the fail-loud persistence contract.
+    param = inspect.signature(pilot._read_marker_slots).parameters["rollout_path"]
+    assert param.default is inspect.Parameter.empty
+    assert param.kind is inspect.Parameter.KEYWORD_ONLY
+
+    prompt_ids = [10, 20]
+    # New tokens carry a marker AND a trailing im_end: the persisted completion
+    # must be the RAW region (both included), while the forward pass strips them.
+    full_ids = torch.tensor(
+        [[*prompt_ids, 30, 40, MARKER_TOKEN_ID, QWEN_IM_END_ID]], dtype=torch.long
+    )
+
+    vocab_size = 200000
+
+    class FakeModel:
+        def __call__(self, input_ids):
+            T = input_ids.shape[1]
+            logits_data = torch.zeros(1, T, vocab_size)
+            result = MagicMock()
+            result.logits = logits_data
+            return result
+
+        def generate(self, input_ids, **kwargs):
+            return full_ids
+
+    fake_tokenizer = MagicMock()
+    fake_tokenizer.eos_token_id = QWEN_IM_END_ID
+    fake_tokenizer.apply_chat_template.return_value = torch.tensor([prompt_ids], dtype=torch.long)
+    fake_tokenizer.decode.side_effect = lambda ids, **kw: "tok:" + ",".join(str(i) for i in ids)
+
+    rollout_path = tmp_path / "marker_rollouts__trained.jsonl"
+    contexts_list = [("source", "You are helpful."), ("bystander_a", "You are a librarian.")]
+    questions = ["Q one?", "Q two?"]
+    records = pilot._read_marker_slots(
+        FakeModel(),
+        contexts_list,
+        tokenizer=fake_tokenizer,
+        questions=questions,
+        device=torch.device("cpu"),
+        marker_token_id=MARKER_TOKEN_ID,
+        qwen_im_end_id=QWEN_IM_END_ID,
+        validate_fn=lambda rec, context="": None,
+        rollout_path=rollout_path,
+    )
+
+    assert rollout_path.is_file(), "rollout text file was not persisted"
+    rows = [json.loads(line) for line in rollout_path.read_text().splitlines()]
+    # One row per (context, question), in generation order.
+    assert [(r["context_id"], r["question_index"]) for r in rows] == [
+        ("source", 0),
+        ("source", 1),
+        ("bystander_a", 0),
+        ("bystander_a", 1),
+    ]
+    assert [r["question"] for r in rows] == ["Q one?", "Q two?", "Q one?", "Q two?"]
+    # Completion == the RAW new-token region decoded (marker + im_end included),
+    # even though the slot read strips both before the forward pass.
+    expected_completion = f"tok:30,40,{MARKER_TOKEN_ID},{QWEN_IM_END_ID}"
+    assert all(r["completion"] == expected_completion for r in rows), rows
+    # The reduce still ran (one averaged record per context).
+    assert [r["context_id"] for r in records] == ["source", "bystander_a"]
 
 
 # ── R4 CONCERN 3 regression: upload_failed status threaded correctly ──────────
