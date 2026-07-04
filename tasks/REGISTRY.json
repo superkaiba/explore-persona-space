@@ -6715,8 +6715,8 @@
     "990": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/990",
-      "status": "reviewing",
+      "path": "tasks/completed/990",
+      "status": "completed",
       "title": "workflow-fix: exclude deliberate-stop events from progress ts"
     },
     "991": {
