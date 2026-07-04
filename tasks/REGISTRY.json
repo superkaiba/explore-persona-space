@@ -6420,8 +6420,8 @@
     "966": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/966",
-      "status": "approved",
+      "path": "tasks/running/966",
+      "status": "running",
       "title": "workflow-fix: distinctive --by for PM/watcher advisory markers"
     },
     "967": {
