@@ -6448,8 +6448,8 @@
     "968": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/968",
-      "status": "reviewing",
+      "path": "tasks/completed/968",
+      "status": "completed",
       "title": "workflow-fix: tag-parity lint for hollow-verification-gate"
     },
     "969": {
