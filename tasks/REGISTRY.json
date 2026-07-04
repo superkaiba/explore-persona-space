@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 982,
+  "highest_id": 983,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6535,6 +6535,13 @@
       "path": "tasks/proposed/982",
       "status": "proposed",
       "title": "workflow-fix: add c16 N/A escape phrase to adv-planner list"
+    },
+    "983": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/983",
+      "status": "proposed",
+      "title": "workflow-fix: poll guard on phase lines after done-detection"
     },
     "99": {
       "has_clean_result": true,
