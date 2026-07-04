@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1000,
+  "highest_id": 1001,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -29,6 +29,13 @@
       "path": "tasks/proposed/1000",
       "status": "proposed",
       "title": "daily-fix: thin trigger-dense wording from issue-tick surfaces"
+    },
+    "1001": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1001",
+      "status": "proposed",
+      "title": "workflow-fix: marker-training-recipe.md training-row token-budget rule (#260 sibling)"
     },
     "101": {
       "has_clean_result": false,
