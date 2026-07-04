@@ -38,6 +38,7 @@ No Qwen weights, no new judging — analysis over cached tensors only.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import sys
@@ -90,7 +91,7 @@ def _atlas_cell(pred_fit, delta_test_fit, delta_test_raw, train_mean_fit, space,
 
 
 def verify_source_only_gru(device: str) -> dict:
-    """Self-check: ``forward_single`` == a manual GRUCell step (fp32 tol) + ``apply`` finite.
+    """Self-check: ``forward_single`` == a GRUCell step (float64, tight tol) + ``apply`` finite.
 
     Exercises the EXACT functions the entrypoints dispatch — ``MP.DepthGRU.forward_single``
     and ``MP.GruSourceOnlyMap.apply`` dropped into ``MP.transport_iterated`` — NOT an
@@ -99,6 +100,19 @@ def verify_source_only_gru(device: str) -> dict:
     ``GRUCell`` step iff the weights are shared, so we copy the GRU's ``l0`` weights into a
     ``GRUCell`` and assert equality; then assert ``.apply`` yields finite raw Δ̂ of shape
     (N, d) and that a memoryless ``transport_iterated`` roll is the identity when src==tgt.
+
+    The parity comparison runs in float64: on cuda the two fp32 paths run DIFFERENT
+    kernels with different precision defaults — ``forward_single``'s length-1 ``nn.GRU``
+    dispatches to the cuDNN RNN kernel (``torch.backends.cudnn.allow_tf32`` defaults
+    True on H100) while the ``GRUCell`` reference runs plain ATen fp32 matmuls
+    (``torch.backends.cuda.matmul.allow_tf32`` defaults False) — so an fp32 comparison
+    measures TF32-vs-fp32 kernel divergence, not implementation parity (att-8 crash:
+    1.86e-4 under defaults; measured on pod-841: cudnn TF32 off → 1.9e-6, float64 →
+    1.1e-16). TF32 applies only to fp32, so float64 removes the kernel gap entirely and
+    the tol stays TIGHT (1e-8, ~8 orders above measured fp64 noise) — a real math bug
+    (transposed weight, wrong gate order) is O(1) and still fails loudly. The dispatched
+    production-dtype (fp32) forward is still exercised and cross-checked against the
+    fp64 reference at a kernel-noise-tolerant bound.
     """
     torch.manual_seed(0)
     d, hid, emb_dim, n_trans = 16, 8, 4, 5  # tiny toy
@@ -108,17 +122,31 @@ def verify_source_only_gru(device: str) -> dict:
     h = torch.randn(n, d, device=device)
     idx = torch.full((n,), m, device=device, dtype=torch.long)
     with torch.no_grad():
-        out_single = gru.forward_single(h, idx)  # (n, d) — the dispatched forward
-        cell = torch.nn.GRUCell(d + emb_dim, hid).to(device)
-        cell.weight_ih.copy_(gru.gru.weight_ih_l0)
-        cell.weight_hh.copy_(gru.gru.weight_hh_l0)
-        cell.bias_ih.copy_(gru.gru.bias_ih_l0)
-        cell.bias_hh.copy_(gru.gru.bias_hh_l0)
-        x = torch.cat([h, gru.emb(idx)], dim=-1)
-        h_cell = cell(x, torch.zeros(n, hid, device=device))  # one GRUCell step, zero init hidden
-        out_manual = gru.head(h_cell)
-        max_abs = float((out_single - out_manual).abs().max().item())
-    assert max_abs < 1e-4, f"forward_single != GRUCell step (max abs diff {max_abs:.3g})"
+        out_single = gru.forward_single(h, idx)  # (n, d) — the dispatched forward, fp32
+        assert out_single.shape == (n, d), out_single.shape
+        assert bool(torch.isfinite(out_single).all()), "fp32 forward_single non-finite"
+        # float64 clone for the kernel-noise-free parity read (same forward_single code path).
+        gru64 = copy.deepcopy(gru).double()
+        out_single64 = gru64.forward_single(h.double(), idx)
+        cell = torch.nn.GRUCell(d + emb_dim, hid).to(device).double()
+        cell.weight_ih.copy_(gru64.gru.weight_ih_l0)
+        cell.weight_hh.copy_(gru64.gru.weight_hh_l0)
+        cell.bias_ih.copy_(gru64.gru.bias_ih_l0)
+        cell.bias_hh.copy_(gru64.gru.bias_hh_l0)
+        x = torch.cat([h.double(), gru64.emb(idx)], dim=-1)
+        # one GRUCell step, zero init hidden
+        h_cell = cell(x, torch.zeros(n, hid, device=device, dtype=torch.float64))
+        out_manual = gru64.head(h_cell)
+        max_abs = float((out_single64 - out_manual).abs().max().item())
+        max_abs_fp32 = float((out_single.double() - out_manual).abs().max().item())
+    assert max_abs < 1e-8, f"forward_single != GRUCell step (fp64 max abs diff {max_abs:.3g})"
+    # Production-dtype cross-check: fp32 dispatched output within kernel precision of the
+    # fp64 reference (TF32 divergence measured 1.86e-4; 1e-2 gives ~50x headroom while an
+    # O(1) fp32-path cast/dtype bug still fails).
+    assert max_abs_fp32 < 1e-2, (
+        f"fp32 forward_single deviates {max_abs_fp32:.3g} from the fp64 reference — "
+        "beyond TF32 kernel noise; fp32-path bug, not kernel precision"
+    )
 
     smap = MP.GruSourceOnlyMap(gru=gru, transition=m, sigma_m=1.7)
     delta_hat = smap.apply(h)  # raw Δ̂ (no_grad inside apply)
@@ -134,7 +162,12 @@ def verify_source_only_gru(device: str) -> dict:
     logger.info(
         "[verify] forward_single==GRUCell max_abs=%.3g; apply+transport finite: PASS", max_abs
     )
-    return {"forward_single_vs_grucell_max_abs": max_abs, "pass": True}
+    return {
+        "forward_single_vs_grucell_max_abs": max_abs,
+        "forward_single_fp32_vs_fp64_max_abs": max_abs_fp32,
+        "parity_dtype": "float64",
+        "pass": True,
+    }
 
 
 # ── source-only-GRU atlas ───────────────────────────────────────────────────────
