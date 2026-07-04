@@ -1,0 +1,84 @@
+{
+  "commit": "ff88ab9399",
+  "created": "2026-07-04T09:52:12Z",
+  "figsize": [
+    10.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.09272630394772509,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.08874275659718328,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.04726484930402577,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.06545755553002358,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.12029669699298043,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 6.2,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.13614690684942127,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 7.2,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.17159649072670227,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 8.2,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.10979930847132548,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 10.399999999999999,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.11665642891731542,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 11.399999999999999,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.12902459208578312,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 12.399999999999999,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.11534706141926794,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 13.399999999999999,
+      "per-conversation cosine delta,\nassistant \u2212 user (layer 19)": 0.11033177209368103,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

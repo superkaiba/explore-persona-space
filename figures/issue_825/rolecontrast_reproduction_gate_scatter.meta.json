@@ -1,0 +1,132 @@
+{
+  "commit": "18705eca3d",
+  "created": "2026-07-04T09:52:17Z",
+  "figsize": [
+    5.6,
+    5.2
+  ],
+  "points": [
+    {
+      "committed ridge R\u00b2 (layer 19)": 0.07571368282874946,
+      "this round's refit ridge R\u00b2 (layer 19)": 0.07571368282874946,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.4272499394227478,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.4272499394227478,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.07842569894348572,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.07842569894348572,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.6051478189019184,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.6051478189019184,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.4605551809040864,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.4605551809040864,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.4893560397043863,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.4893560397043863,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.38966704296046184,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.38966704296046184,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.649589414624506,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.649589414624506,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.2701471453063349,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.270147145306336,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.9860948479522238,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.9860948479522307,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.3413725606061855,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.3413725606061784,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.117326440052945,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.1173264400529583,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.47061902131263533,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.4706190213126349,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.0466586088093872,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.0466586088093957,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.6068365703210599,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.6068365703210534,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.0339038306339665,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.0339038306339767,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.7689149983504386,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.7689149983504386,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.6544569649350971,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.6544569649350971,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -1.8398703921023376,
+      "this round's refit ridge R\u00b2 (layer 19)": -1.8398703921023376,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "committed ridge R\u00b2 (layer 19)": -0.6155126988680195,
+      "this round's refit ridge R\u00b2 (layer 19)": -0.6155126988680195,
+      "_kind": "scatter",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 20
+}

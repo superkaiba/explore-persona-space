@@ -1,0 +1,96 @@
+{
+  "commit": "18705eca3d",
+  "created": "2026-07-04T09:52:19Z",
+  "figsize": [
+    6.4,
+    5.0
+  ],
+  "points": [
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 2.313835327107632,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 1.5029636222514973,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.929957201891986,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 1.5267221199584327,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.4850715493317694,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 1.0288008588003,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.5112375424708007,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 1.2599223716640442,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 0.9501095673816351,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.8860766939824769,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.105128324892864,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.6689851424554386,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.951410621646913,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 1.37779948563445,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 2.231940025130999,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.36476126952144283,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.6346910443213196,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.7159477026458947,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.1857384510835975,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.77595387944678,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.3812400510427543,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.5760395874967608,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "paired NLL delta, user \u2212 assistant (nats/token)": 1.2794570314816665,
+      "paired ridge R\u00b2 delta,\nassistant \u2212 user (layer 19)": 0.4270672603129233,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

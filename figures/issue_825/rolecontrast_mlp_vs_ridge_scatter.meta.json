@@ -1,0 +1,96 @@
+{
+  "commit": "18705eca3d",
+  "created": "2026-07-04T09:52:21Z",
+  "figsize": [
+    6.4,
+    5.0
+  ],
+  "points": [
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.9152236812196581,
+      "paired MLP R\u00b2 delta (layer 26)": 0.17238329983589668,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.8479777139441846,
+      "paired MLP R\u00b2 delta (layer 26)": 0.1573766519946669,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.6418948934214079,
+      "paired MLP R\u00b2 delta (layer 26)": 0.1892566057071881,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.8507279076814469,
+      "paired MLP R\u00b2 delta (layer 26)": 0.17012131517780701,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.486815498015422,
+      "paired MLP R\u00b2 delta (layer 26)": 0.11379204748867948,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.31253222839519523,
+      "paired MLP R\u00b2 delta (layer 26)": 0.11123176658157914,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 1.3045644132448697,
+      "paired MLP R\u00b2 delta (layer 26)": 0.2927298765468008,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.22049391353733672,
+      "paired MLP R\u00b2 delta (layer 26)": 0.07176331250029713,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.4108426798008802,
+      "paired MLP R\u00b2 delta (layer 26)": 0.10415490488702636,
+      "label": "inst/cha",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.38833272233121585,
+      "paired MLP R\u00b2 delta (layer 26)": 0.08305791008690104,
+      "label": "inst/nat",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.5126352148271629,
+      "paired MLP R\u00b2 delta (layer 26)": 0.08389973455699791,
+      "label": "pret/cha",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "paired ridge R\u00b2 delta (layer 26)": 0.4711703174122335,
+      "paired MLP R\u00b2 delta (layer 26)": 0.07478021571067461,
+      "label": "pret/nat",
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

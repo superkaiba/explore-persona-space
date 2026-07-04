@@ -1,0 +1,540 @@
+{
+  "commit": "ff88ab9399",
+  "created": "2026-07-04T09:51:51Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 1.5029636222514973,
+      "error": 0.04963274096611647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 1.5267221199584327,
+      "error": 0.05821823981491425,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 1.0288008588003,
+      "error": 0.08972485529858532,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 1.2599223716640442,
+      "error": 0.061278195626034204,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.8860766939824769,
+      "error": 0.0389336861660744,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.6689851424554386,
+      "error": 0.03457022550510386,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 1.37779948563445,
+      "error": 0.13078172501035512,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 8.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.36476126952144283,
+      "error": 0.04011776028933303,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 10.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.7159477026458947,
+      "error": 0.03037379901801296,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 11.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.77595387944678,
+      "error": 0.03764471526000834,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 12.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.5760395874967608,
+      "error": 0.0550336409530911,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 13.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 19)": 0.4270672603129233,
+      "error": 0.045467583700714076,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.17238329983589668,
+      "error": 0.012666498589249675,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1573766519946669,
+      "error": 0.011243303353489803,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1892566057071881,
+      "error": 0.010363773254151026,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.17012131517780701,
+      "error": 0.010394227267167905,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 5.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.11379204748867948,
+      "error": 0.010669598369267813,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 6.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.11123176658157914,
+      "error": 0.012954161068417763,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 7.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.2927298765468008,
+      "error": 0.012324536779773965,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 8.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07176331250029713,
+      "error": 0.01030065850655128,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 10.4,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.10415490488702636,
+      "error": 0.009181832498710796,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 11.4,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08305791008690104,
+      "error": 0.012657937394066732,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 12.4,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08389973455699791,
+      "error": 0.014602725089445559,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 13.4,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07478021571067461,
+      "error": 0.01794980721429912,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": -0.22,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1822726790428334,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": -0.11,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.15632442989452167,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16681457300885527,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.11000000000000001,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16508786887097493,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.22,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.19141694836229806,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.78,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16330093303643167,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.89,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.14480866830129457,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.15536092098820342,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.11,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.14760934849342333,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.22,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.17580338915398153,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.78,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1869164969428252,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.89,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.17923229888129677,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.18658975930339483,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.11,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.18430237993598175,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.22,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.20924209347244194,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.78,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16799847586900385,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.89,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16039578538279353,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1702064426362545,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.11,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.16236634456063515,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.22,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.18963952744034807,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 4.98,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.10507067061962438,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.09,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1028465343918129,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.12619794638843096,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.3100000000000005,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.12724770592675727,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.42,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.10759738011677189,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 5.98,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.12464383066873141,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.09,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.12078682629713544,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09325776753587811,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.3100000000000005,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.11951338880375006,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.42,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09795701960240066,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 6.98,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.2857133939944614,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.09,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.29950068078151904,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.27194679860059656,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.3100000000000005,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.3056270673935694,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.42,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.30086144196385756,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.9799999999999995,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07246461309396068,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 8.09,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.05406737381576887,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 8.2,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07042785660921758,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 8.309999999999999,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07607551781019173,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 8.42,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08578120117234678,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 10.179999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.11237798400123011,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.29,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.112564989563805,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.399999999999999,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.1094434897854133,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.509999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09592633934219297,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 10.62,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09046172174249045,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 11.179999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.0902535063492017,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.29,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.10220306669345924,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.399999999999999,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08212077436246601,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.509999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07579913205496014,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 11.62,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.06491307097441812,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 12.179999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09296488212912424,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 12.29,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.10021779166788336,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 12.399999999999999,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09292906961920555,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 12.509999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.07138929657486837,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 12.62,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.06199763279390802,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 13.179999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08189271780548912,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 13.29,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.09933088637908671,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 13.399999999999999,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.08190955545707812,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 13.509999999999998,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.06417024935007543,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 13.62,
+      "paired MLP R\u00b2 delta, assistant \u2212 user (layer 26)": 0.046597669561643684,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 84
+}
