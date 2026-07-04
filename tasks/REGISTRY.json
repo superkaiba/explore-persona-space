@@ -6652,8 +6652,8 @@
     "986": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/986",
-      "status": "reviewing",
+      "path": "tasks/completed/986",
+      "status": "completed",
       "title": "workflow-fix: cap-headroom check in check_agent_spec_size"
     },
     "987": {
