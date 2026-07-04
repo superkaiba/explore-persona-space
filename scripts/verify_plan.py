@@ -38,11 +38,13 @@ Check catalog (id — classification — kind scope)
       vs committed headline                               analysis
   c17 falsification-branch      WARN-only, conditional    experiment +
       causal-claim scope                                  analysis
+  c18 paired-contrast per-arm   FAIL (experiment) / WARN  experiment +
+      source coverage           (analysis), conditional   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17) also
-SKIP when their content trigger does not fire.
+n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18)
+also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -57,6 +59,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no fail-loud acceptance claim`` /
     ``N/A — fail-loud claim not test-backable`` (check 15)
   - ``N/A — no re-extracted reference arms`` (check 16)
+  - ``N/A — no paired contrast`` (check 18)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1338,24 +1341,31 @@ def _c13_registered_gates(plan: str) -> list[dict]:
     return gates
 
 
-def _c13_na_escape_declared(plan: str) -> bool:
-    """True when the ``N/A — no empirical-null gate`` escape appears as a
-    deliberate STANDALONE declaration line (leading list/blockquote markers
-    stripped), never doc-global: the c13 FAIL detail quotes the escape phrase
-    as a remedy option, and this project's convention pastes verifier/bounce
-    text into revised plans verbatim — a substring match would let a bounced
-    plan self-escape re-verification (the #810 spurious-satisfaction
-    structure, one polarity over). NA_RE opens with an inline (?i), so it
-    must sit at pattern position 0 — per-line re.match satisfies that; never
-    prepend a prefix to NA_RE (py3.11+ rejects mid-pattern global flags)."""
+def _standalone_na_declared(plan: str, tail_re: str) -> bool:
+    """True when ``N/A — <tail_re>`` appears as a deliberate STANDALONE
+    declaration line (leading list/blockquote markers stripped), never
+    doc-global: a FAIL detail quotes its escape phrase as a remedy option,
+    and this project's convention pastes verifier/bounce text into revised
+    plans verbatim — a substring match would let a bounced plan self-escape
+    re-verification (the #810 spurious-satisfaction structure, one polarity
+    over). NA_RE opens with an inline (?i), so it must sit at pattern
+    position 0 — per-line re.match satisfies that; never prepend a prefix
+    to NA_RE (py3.11+ rejects mid-pattern global flags). Shared by the c13
+    and c18 escapes (the Supersede rule: one copy of the job)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     for line, fenced in zip(lines, mask, strict=True):
         if fenced:
             continue
-        if re.match(NA_RE + r"no empirical[- ]null gate", line.lstrip(" \t>*-")):
+        if re.match(NA_RE + tail_re, line.lstrip(" \t>*-")):
             return True
     return False
+
+
+def _c13_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no empirical-null gate`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no empirical[- ]null gate")
 
 
 def _c13_evaluate(gates: list[dict], decls: list[tuple[str, int]]) -> dict:
@@ -2103,6 +2113,203 @@ def check_causal_claim_scope(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 18 — paired-contrast per-arm source coverage ────────────────────
+
+# Registration-family sections (H2+ ONLY — a doc-spanning H1 title match
+# would make the section constraint vacuous; both #810 registrations sit
+# under H2 sections): c13's success/kill/evaluation families PLUS
+# hypothesis + nulls + statistic.
+_C18_SECTION_RE = re.compile(
+    r"(?i)hypothes|success criteri|acceptance criteri|decision rule|decision gate"
+    r"|kill[- ]criteri|abort criteri|stop criteri|\bevaluation\b|\bnulls?\b|statistic"
+)
+_C18_PAIRED_RE = re.compile(r"(?i)\bpaired\b")
+_C18_REGIST_RE = re.compile(r"(?i)\bregist")  # registered / registration / registers
+_C18_PAIRCOUNT_RE = re.compile(r"(?i)\b\d[\d,]*\s+(?:pre-named\s+)?pairs\b")
+# D1: a row-coverage declaration; evidence on the same line or within the
+# next _C18_DECL_WINDOW_LINES physical lines (fenced lines excluded).
+_C18_COVERAGE_RE = re.compile(r"(?i)\brow[- ]coverage\b")
+_C18_ARTIFACT_RE = re.compile(
+    r"(?i)\S+\.(?:pt|pth|json|jsonl|npz|npy|safetensors|csv|parquet|arrow)\b"
+    r"|\beval_results/\S+|\banalysis_tensors/\S+|\braw_completions/\S+"
+)
+# v2 (MF-B): the bare `this run` alternative is REMOVED — only the
+# arms-generated construction or an explicit `by construction` counts as
+# by-construction evidence ("Row-coverage: deferred to a later revision of
+# this run's analysis" must FAIL).
+_C18_BYCONSTRUCTION_RE = re.compile(
+    r"(?i)both arms .{0,60}\b(?:generated|produced|computed|fit(?:ted)?|emitted)\b"
+    r"|\bby construction\b"
+)
+# D2 (MF-A): a subset expression AND word-bounded row/pair vocabulary AND
+# coverage/source-key vocabulary must co-occur on the candidate line.
+# Word-bounding kills the 608 v2:164 false-satisfier ("pair" inside
+# "paired" no longer matches); the coverage-vocab conjunct excludes
+# incidental subset prose; the #810 v15 declaration carries standalone
+# row/pairs tokens + coverage/source/keys/assert (replay-verified).
+_C18_SUBSET_RE = re.compile(r"(?i)⊆|\bissubset\b|\bis a subset of\b")
+_C18_ROWPAIR_RE = re.compile(r"(?i)\b(?:pairs?|rows?)\b")
+_C18_COVERAGE_VOCAB_RE = re.compile(r"(?i)coverage|\bsources?\b|\bkeys?\b|\bassert")
+# Candidate-line rejection guards (BOTH satisfier families):
+# (a) paste fingerprint — the c18 FAIL detail carries this literal, so a
+#     verbatim-pasted bounce text can never self-satisfy;
+# (b) cross-issue citation token — a line QUOTING another issue's driver
+#     assert as a worked example is a citation, not a declaration (an
+#     honest declaration describes THIS plan's inputs; recovery for a
+#     legitimate collision: move the citation off the declaration line).
+_C18_PASTE_FINGERPRINT = "#810 v13 class"
+_C18_ISSUE_REF_RE = re.compile(r"#\d{2,}")
+_C18_DECL_WINDOW_LINES = 3
+# Trigger-side spurious-line guard (§3.4 calibration tuning): a FIGURES-
+# enumeration line ("**Figures (over-produce):** ... paired cells; ...
+# registered rows visually distinguished") lists plots, it registers no
+# statistic — the one spurious-trigger class the exhaustive FAIL audit
+# surfaced (7 corpus files: #537 v4-v6, #931 v1-v4). Scoped by LINE SHAPE
+# (a leading figures label), never by content elsewhere on the line; a
+# real registration line never opens with a figures label, so the guard
+# under-triggers safe (SKIP; critics review).
+_C18_FIGURES_LINE_RE = re.compile(r"(?i)^\W{0,8}figures?\b")
+
+# Known accepted mis-triggers (mirroring the c13 §4.5 precedent). Under-
+# triggers that fail SAFE (SKIP — the plan still reaches the fact-checker +
+# critic ensemble): (a) a paired registration line without `regist` / pair-
+# count vocabulary; (b) a registration under a heading outside the H2+
+# section family; (c) a hard-wrapped registration (`paired` and `regist` on
+# different lines). Over-trigger that fails LOUD (bounce, escapable): (d) a
+# Hypothesis-section line merely RECAPPING a sibling's registered paired
+# statistic — remedied by the standalone N/A line. Fail-UNSAFE residuals,
+# accepted and DISCLOSED: (e) a D1/D2-shaped declaration that doesn't
+# actually cover the registered rows — including a ONE-ARM declaration (the
+# #810 v15 exemplar itself is full-side-only; both-arm truth stays with the
+# fact-checker; disposition pinned by fixture); (f) a NON-verbatim
+# paraphrase of the bounce text that reconstructs a satisfying shape while
+# dropping the fingerprint — beyond mechanical defense, same residual class
+# as a dishonest c13 N/A line; (g) a wrapped/reformatted paste that
+# separates the fingerprint from the row-coverage phrase across lines — the
+# line-local guard misses it; the D1 evidence requirement (artifact token /
+# arms-generated phrase) still has to be met by the surviving fragment,
+# which the detail's wording deliberately fails to supply.
+
+
+def _c18_registered_paired_lines(plan: str) -> list[str]:
+    """Non-fenced lines inside a registration-family H2+ section carrying
+    ``paired`` plus registration vocabulary OR an enumerated pair count on
+    the SAME line (#810 v13:33 'Registered per-row statistic: paired ...
+    (7 pairs ...' and v13:103 'Nulls (registration) ... paired bootstrap CI
+    (... 9 pairs are pre-named' both match). Level-1 headings are EXCLUDED
+    from the section match (a title match spans the whole doc). Under-
+    trigger fails safe (SKIP; critics review)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    hits: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C18_PAIRED_RE.search(line):
+            continue
+        if not (_C18_REGIST_RE.search(line) or _C18_PAIRCOUNT_RE.search(line)):
+            continue
+        if _C18_FIGURES_LINE_RE.match(line.strip()):
+            continue
+        if not any(
+            h.line <= i < h.end and h.level >= 2 and _C18_SECTION_RE.search(h.text)
+            for h in headings
+        ):
+            continue
+        hits.append(line.strip())
+    return hits
+
+
+def _c18_candidate_ok(line: str) -> bool:
+    """Rejection guards shared by D1 and D2 candidate lines: the paste
+    fingerprint and cross-issue citation tokens disqualify a line from
+    satisfying the check (bounce-paste + quoted-sibling-example vectors)."""
+    return _C18_PASTE_FINGERPRINT not in line and not _C18_ISSUE_REF_RE.search(line)
+
+
+def _c18_coverage_declarations(plan: str) -> list[str]:
+    """Lines satisfying D1 (row-coverage vocab + source evidence — an
+    artifact token or an arms-generated phrase — on the same line or within
+    the next _C18_DECL_WINDOW_LINES physical lines, fenced lines excluded)
+    or D2 (subset expression + word-bounded row/pair vocab +
+    coverage/source-key vocab, same line). Candidate lines failing
+    ``_c18_candidate_ok`` are rejected."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[str] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _c18_candidate_ok(line):
+            continue
+        if (
+            _C18_SUBSET_RE.search(line)
+            and _C18_ROWPAIR_RE.search(line)
+            and _C18_COVERAGE_VOCAB_RE.search(line)
+        ):
+            out.append(line.strip())
+            continue
+        if _C18_COVERAGE_RE.search(line):
+            window = [line] + [
+                lines[j]
+                for j in range(i + 1, min(i + 1 + _C18_DECL_WINDOW_LINES, len(lines)))
+                if not mask[j]
+            ]
+            if any(_C18_ARTIFACT_RE.search(w) or _C18_BYCONSTRUCTION_RE.search(w) for w in window):
+                out.append(line.strip())
+    return out
+
+
+def _c18_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no paired contrast`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale)."""
+    return _standalone_na_declared(plan, r"no paired contrast")
+
+
+def check_paired_contrast_source_coverage(plan: str, kind: str) -> CheckResult:
+    """A registered paired contrast (a hypothesis/evaluation/success-section
+    line registering a paired statistic over enumerable rows/pairs) must
+    DECLARE a per-context data source covering the registered rows on both
+    arms (D1 row-coverage line / D2 coverage-labeled subset-assert /
+    standalone N/A). Surface check only — pack contents stay with the
+    fact-checker. FAIL (experiment) / WARN (analysis) / SKIP otherwise.
+    Incident: #810 v13 (9-row paired bootstrap; the named full-side pack
+    lacked im_end/turn_nl; 4 independent reviewer catches)."""
+    cid, name = "c18_paired_contrast_source_coverage", "paired-contrast per-arm source coverage"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: registered paired contrasts are an experiment|analysis plan shape",
+        )
+    triggers = _c18_registered_paired_lines(plan)
+    if not triggers:
+        return _skip(cid, name, "no registered paired contrast detected")
+    if _c18_na_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no paired contrast)")
+    decls = _c18_coverage_declarations(plan)
+    if decls:
+        return _pass(
+            cid,
+            name,
+            f'row-coverage declaration found ("{decls[0][:90]}") — declaration surface '
+            "only; whether the named sources truly contain every registered row on both "
+            "arms stays with the fact-checker",
+        )
+    detail = (
+        f'plan registers a paired contrast ("{triggers[0][:90]}") with no per-arm '
+        "row-coverage declaration — a registered pair row absent from a named side makes "
+        "the registered criterion unsatisfiable from the named inputs (the #810 v13 class: "
+        "2 of 9 rows missing from the named full side). Remedy: add ONE non-fenced prose "
+        "line (not inside a code fence) starting 'Row-coverage:' naming, for BOTH arms, "
+        "which per-context store/file supplies every registered row (or stating that the "
+        "plan's own fits produce every registered row on each arm), or state the driver "
+        "assert that set-checks the registered rows against the named sources' keys on a "
+        "non-fenced line, or declare 'N/A — no paired contrast' on its own line; keep the "
+        "declaration line free of cross-issue citations"
+    )
+    if kind == "analysis":
+        return _warn(cid, name, detail + " (analysis kind-degrade: WARN, not FAIL)")
+    return _fail(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -2123,6 +2330,7 @@ CHECKS = [
     check_failloud_test_coverage,
     check_reference_headline_distinction,
     check_causal_claim_scope,
+    check_paired_contrast_source_coverage,
 ]
 
 
