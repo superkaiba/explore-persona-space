@@ -6413,8 +6413,8 @@
     "965": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/965",
-      "status": "running",
+      "path": "tasks/reviewing/965",
+      "status": "reviewing",
       "title": "workflow-fix: PreToolUse deny-hook for harmful-bank file reads"
     },
     "966": {
