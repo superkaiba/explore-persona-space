@@ -24,6 +24,9 @@ goal: 'Characterize whether the context→answer mapping (trained so far on most
   2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping;
   (c) does any systematic change with context length offer an account of persona drift
   / context rot.'
+relates_to:
+- spec-context-as-vector
+- spec-sysprompt-vs-drift
 ---
 # How does the mapping change as the context gets longer
 
