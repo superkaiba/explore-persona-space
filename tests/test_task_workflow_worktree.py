@@ -42,15 +42,31 @@ import pytest
 # explore_persona_space.task_workflow`. We pass this on PYTHONPATH below.
 _REPO_SRC = str(Path(__file__).resolve().parents[1] / "src")
 
-# Bounded live-rebase wait knobs (#996). Every test that exercises the
-# resolver's DETACHED path explicitly sets or POPS both in the child env —
-# a knob leaked into the CI env (e.g. a non-float value, which the resolver
-# parses fail-loud) would otherwise perturb knob-default tests.
+# Bounded live-rebase wait knobs (#996). EVERY child env in this file flows
+# through `_clean_env()`, which POPS both — a knob leaked into the CI/parent
+# env (e.g. a non-float value, which the resolver parses fail-loud) would
+# otherwise perturb knob-default tests. Tests that exercise a knob re-set it
+# explicitly AFTER the pop (`_child_env`).
 _REBASE_WAIT_ENV = "EPM_TASKPY_REBASE_WAIT_SECONDS"
 _REBASE_POLL_ENV = "EPM_TASKPY_REBASE_POLL_SECONDS"
 
 
 # ─── Helpers ───────────────────────────────────────────────────────────────
+
+
+def _clean_env() -> dict[str, str]:
+    """Copy of the parent env with both #996 rebase-wait knobs POPPED.
+
+    The single knob-hygiene chokepoint (round-2 concern
+    `resolver-test-rebase-env-hygiene`): every subprocess env in this file
+    is built from this copy, so a knob leaked into the CI/parent env can
+    never reach a child. Tests that deliberately exercise a knob set it
+    explicitly AFTER this pop (see ``_child_env``).
+    """
+    env = os.environ.copy()
+    for key in (_REBASE_WAIT_ENV, _REBASE_POLL_ENV):
+        env.pop(key, None)
+    return env
 
 
 def _make_main_repo(repo: Path) -> None:
@@ -80,7 +96,7 @@ def _run_resolver(
     stderr). We do NOT pass `check=True` — many tests assert on the
     error message in stderr.
     """
-    env = dict(os.environ)
+    env = _clean_env()
     # Make sure the subprocess can import the project.
     env["PYTHONPATH"] = _REPO_SRC + os.pathsep + env.get("PYTHONPATH", "")
     if extra_env:
@@ -160,7 +176,7 @@ def test_resolves_main_repo_from_worktree(tmp_path: Path) -> None:
 
     # Invoke from inside the worktree, with PYTHONPATH pointing at the
     # tmp repo's src (so we import the test copy of task_workflow).
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -205,7 +221,7 @@ def test_branch_guard_routes_non_main_to_managed_worktree(tmp_path: Path) -> Non
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -255,13 +271,10 @@ def test_branch_guard_distinct_error_on_detached_head(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
-    # Knob hygiene (#996): pop both rebase-wait knobs so a leaked CI value
-    # (e.g. a non-float, which the resolver parses fail-loud) cannot perturb
-    # this knob-DEFAULT detached refusal.
-    env.pop(_REBASE_WAIT_ENV, None)
-    env.pop(_REBASE_POLL_ENV, None)
+    # Knob hygiene (#996): `_clean_env()` popped both rebase-wait knobs, so a
+    # leaked CI value cannot perturb this knob-DEFAULT detached refusal.
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
         cwd=str(main_repo),
@@ -291,7 +304,7 @@ def test_validation_rejects_missing_tasks_dir(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -314,7 +327,7 @@ def test_validation_rejects_bare_repo(tmp_path: Path) -> None:
     # We need a place to drop task_workflow.py such that the subprocess
     # CWD lands inside the bare repo's reach. Just cwd in bare.git and
     # use PYTHONPATH pointing at the dev repo.
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = _REPO_SRC + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -404,7 +417,7 @@ def test_validation_rejects_real_submodule_layout(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(inner / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -445,7 +458,7 @@ def test_resolver_ignores_git_env_poisoning(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     env["GIT_DIR"] = str(bogus)
     env["GIT_WORK_TREE"] = str(tmp_path / "nonexistent")
@@ -490,7 +503,7 @@ def test_pep562_attribute_access_works_lazily(tmp_path: Path) -> None:
         print('REGISTRY_PATH=' + str(tw.REGISTRY_PATH))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -536,7 +549,7 @@ def test_cache_hits_avoid_extra_git_calls(tmp_path: Path) -> None:
         }))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -579,7 +592,7 @@ def test_resolver_uses_module_dir_not_cwd(tmp_path: Path) -> None:
     cwd = tmp_path / "neutral"
     cwd.mkdir()
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -629,7 +642,7 @@ def test_primary_checkout_root_resolves_main_from_worktree(tmp_path: Path) -> No
     )
 
     # PYTHONPATH -> the WORKTREE's src copy (not the primary's).
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(worktree / "src") + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -672,7 +685,7 @@ def test_primary_checkout_root_ignores_branch_state(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -734,7 +747,7 @@ def test_invalidate_cache_clears_primary_checkout_cache(tmp_path: Path) -> None:
         }))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -793,7 +806,7 @@ def test_tasks_dir_cli_subcommand_invokes_real_task_py(tmp_path: Path) -> None:
     _make_main_repo(main_repo)
     _stage_task_cli_tree(main_repo)
 
-    env = dict(os.environ)
+    env = _clean_env()
     # No PYTHONPATH manipulation needed — task.py prepends `src/` to
     # sys.path on import. TASK_PY_NO_COMMIT=1 prevents any inadvertent
     # git commit attempt (tasks-dir is read-only, but defense in depth).
@@ -825,7 +838,7 @@ def test_tasks_dir_cli_routes_on_non_main_branch(tmp_path: Path) -> None:
         check=True,
     )
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["TASK_PY_NO_COMMIT"] = "1"
     proc = subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
@@ -860,12 +873,10 @@ def test_cli_exits_cleanly_on_detached_head(tmp_path: Path) -> None:
         check=True,
     )
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["TASK_PY_NO_COMMIT"] = "1"
-    # Knob hygiene (#996): pop both rebase-wait knobs so a leaked CI value
-    # cannot perturb this knob-DEFAULT detached refusal.
-    env.pop(_REBASE_WAIT_ENV, None)
-    env.pop(_REBASE_POLL_ENV, None)
+    # Knob hygiene (#996): `_clean_env()` popped both rebase-wait knobs, so a
+    # leaked CI value cannot perturb this knob-DEFAULT detached refusal.
     proc = subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
         cwd=str(main_repo),
@@ -900,7 +911,7 @@ def _commit_cli_tree(main_repo: Path) -> None:
 
 def _run_task_cli(main_repo: Path, *cli_args: str) -> subprocess.CompletedProcess[str]:
     """Invoke the real `scripts/task.py` in ``main_repo`` (commits enabled)."""
-    env = dict(os.environ)
+    env = _clean_env()
     return subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), *cli_args],
         cwd=str(main_repo),
@@ -1089,7 +1100,7 @@ def _stage_tw_module(main_repo: Path) -> None:
 def _child_env(main_repo: Path, *, wait: str | None, poll: str | None) -> dict[str, str]:
     """Child env with PYTHONPATH at the test repo's src and BOTH rebase
     knobs explicitly set (str) or POPPED (None) — test-env knob hygiene."""
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     for key, value in ((_REBASE_WAIT_ENV, wait), (_REBASE_POLL_ENV, poll)):
         if value is None:
@@ -1296,6 +1307,38 @@ def test_post_wait_nonmain_reattach_routes_managed_worktree(tmp_path: Path) -> N
         f"post-wait non-main re-attach did not route to the managed worktree: {resolved}"
     )
     assert Path(resolved["TASKS_DIR"]).resolve() == (managed / "tasks").resolve()
+
+
+def test_rebase_knobs_reject_non_finite_values(tmp_path: Path) -> None:
+    """A `nan`/`inf` knob value parses via ``float()`` but would defeat the
+    ``time.monotonic() >= deadline`` bound (unbounded wait) — the knob
+    readers raise ``ValueError`` on any non-finite value (#996 round 2).
+
+    Subprocess-shaped like the other tests so the STAGED worktree copy of
+    ``task_workflow.py`` is exercised (an in-process import could resolve
+    to the primary checkout's editable install instead).
+    """
+    repo = tmp_path / "repo"
+    _stage_tw_module(repo)
+    for env, fn in (
+        (_child_env(repo, wait="nan", poll=None), "_rebase_wait_bound_s"),
+        (_child_env(repo, wait=None, poll="inf"), "_rebase_poll_s"),
+    ):
+        snippet = textwrap.dedent(
+            f"""
+            from explore_persona_space.task_workflow import {fn}
+            {fn}()
+            """
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", snippet],
+            cwd=str(repo),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode != 0, f"{fn} accepted a non-finite knob: {proc.stdout!r}"
+        assert "must be finite" in proc.stderr, f"guard missing for {fn}: {proc.stderr!r}"
 
 
 if __name__ == "__main__":

@@ -74,6 +74,7 @@ import functools
 import hashlib
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -286,14 +287,23 @@ def _rebase_wait_bound_s() -> float:
     """Total bounded-wait budget (seconds) for a live rebase before the
     detached-HEAD refusal fires. ``0`` restores the pre-#996 immediate
     refusal exactly. A non-float env value raises ``ValueError`` (fail
-    loud, project norm)."""
-    return float(os.environ.get(_REBASE_WAIT_ENV, "120"))
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and
+    would wait unbounded."""
+    value = float(os.environ.get(_REBASE_WAIT_ENV, "120"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_WAIT_ENV} must be finite, got {value!r}")
+    return value
 
 
 def _rebase_poll_s() -> float:
     """Poll interval (seconds) between branch-guard re-probes while waiting
-    out a live rebase. A non-float env value raises ``ValueError``."""
-    return float(os.environ.get(_REBASE_POLL_ENV, "2.0"))
+    out a live rebase. A non-float or non-finite env value raises
+    ``ValueError``."""
+    value = float(os.environ.get(_REBASE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_POLL_ENV} must be finite, got {value!r}")
+    return value
 
 
 def _rebase_in_progress(common_dir: Path) -> bool:
