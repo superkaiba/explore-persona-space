@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1012,
+  "highest_id": 1013,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -121,6 +121,13 @@
       "path": "tasks/proposed/1012",
       "status": "proposed",
       "title": "workflow-fix: reconcile stale ensemble round ranges (1-3) with the cap-5 policy"
+    },
+    "1013": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1013",
+      "status": "proposed",
+      "title": "workflow-fix: v4 no-issue-refs check misses markdown-linked refs in Methodology prose"
     },
     "102": {
       "has_clean_result": false,
