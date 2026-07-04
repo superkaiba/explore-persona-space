@@ -1307,6 +1307,8 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -1334,6 +1336,8 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
     # Patched so the unit test never RPCs the real daemon / scans real /proc /
     # spawns task.py subprocesses for whatever sessions are live on the VM.
@@ -2667,6 +2671,8 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_daemon_reachable_with_retry", lambda *a, **kw: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
 
     def _record_stalled(*a, **kw):
         captured_kwargs.update(kw)
@@ -8951,6 +8957,7 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     for pass_name in (
         "vm_disk_pass",
+        "triage_observer_pass",
         "campaign_pass",
         "pod_safety_pass",
         "stalled_session_pass",
@@ -10701,6 +10708,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
     for name in (
         "vm_disk_pass",
         "program_orchestrator_pass",
+        "triage_observer_pass",
         "pod_safety_pass",
         "respawn_pass",
         "stalled_session_pass",
@@ -12745,6 +12753,7 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
         "vm_disk_pass",
         "data_disk_pass",
         "happy_patch_pass",
+        "triage_observer_pass",
         "program_orchestrator_pass",
         "campaign_pass",
         "pod_safety_pass",
@@ -12777,3 +12786,252 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
     assert names == ["gate_push", "stale_registration", "zombie", "idle"]
     consumers = [c for n, c in order if n in ("stale_registration", "zombie", "idle")]
     assert all(c is snapshot for c in consumers)
+
+
+# ─── triage-observer pass (#967) ──────────────────────────────────────────────
+#
+# NON-GATING post-hoc audit of the pre-dispatch external-marker triage duty
+# (origin incident #779). The pure predicate lives in task_workflow
+# (tests/test_pre_dispatch_triage.py); these tests pin the DRIVER: kill
+# switch, dry-run hygiene, the MF3 two-invocation fire-once round-trip
+# through the REAL _save/_load state singleton, the two-pronged non-gating
+# invariant, and the nudge-text trap strings.
+
+
+def _triage_observer_sandbox(tmp_path, monkeypatch, events, *, status="running", issue=321):
+    """Fully sandbox triage_observer_pass: tmp registry + task dir (fresh
+    events.jsonl mtime), tmp state/sidecar singletons, recorded pushes.
+    Returns (asw, state_path, sidecar_path, pushes)."""
+    import json as _json
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    reg_root = tmp_path / "repo"
+    task_rel = f"tasks/{status}/{issue}"
+    task_dir = reg_root / task_rel
+    task_dir.mkdir(parents=True)
+    (task_dir / "events.jsonl").write_text("")  # fresh mtime; list_events is patched
+    reg_path = reg_root / "tasks" / "REGISTRY.json"
+    reg_path.write_text(
+        _json.dumps(
+            {
+                "tasks": {
+                    str(issue): {
+                        "status": status,
+                        "path": task_rel,
+                        "kind": "experiment",
+                        "title": "synthetic",
+                        "has_clean_result": False,
+                    }
+                }
+            }
+        )
+    )
+    monkeypatch.setattr(task_workflow, "registry_path", lambda: reg_path)
+    monkeypatch.setattr(task_workflow, "list_events", lambda _issue: list(events))
+    state_path = tmp_path / "triage-observer.json"
+    sidecar_path = tmp_path / "triage-observer-events.jsonl"
+    monkeypatch.setattr(asw, "_triage_observer_state_path", lambda: state_path)
+    monkeypatch.setattr(asw, "_triage_observer_sidecar_path", lambda: sidecar_path)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry: pushes.append((msg, dry)))
+    return asw, state_path, sidecar_path, pushes
+
+
+def _matured_violating_events():
+    """One post-epoch, MATURED (2h-old — older than the 30-min adjacency
+    horizon), in-lookback launch marker with no triage line anywhere."""
+    from datetime import UTC, datetime, timedelta
+
+    ts = (datetime.now(tz=UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return [{"ts": ts, "kind": "epm:run-launched", "by": "poll_pipeline", "note": "launched"}]
+
+
+def test_triage_observer_kill_switch_skips_everything(tmp_path, monkeypatch):
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    monkeypatch.setenv("EPM_DISABLE_TRIAGE_OBSERVER", "1")
+    state_path = tmp_path / "state.json"
+    sidecar_path = tmp_path / "sidecar.jsonl"
+    monkeypatch.setattr(asw, "_triage_observer_state_path", lambda: state_path)
+    monkeypatch.setattr(asw, "_triage_observer_sidecar_path", lambda: sidecar_path)
+
+    def _forbidden():
+        raise AssertionError("registry must not be read under the kill switch")
+
+    monkeypatch.setattr(task_workflow, "registry_path", _forbidden)
+    assert asw.triage_observer_pass(dry_run=False) is False
+    assert not state_path.exists() and not sidecar_path.exists()
+
+
+def test_decide_triage_observer_actions_routing():
+    import autonomous_session_watch as asw
+
+    w1 = {
+        "record_ts": "2026-07-10T10:00:00Z",
+        "violation": "launch-missing-line",
+        "severity": "warn",
+    }
+    w2 = {
+        "record_ts": "2026-07-10T11:00:00Z",
+        "violation": "breadcrumb-missing-line",
+        "severity": "warn",
+    }
+    i1 = {
+        "record_ts": "2026-07-10T09:00:00Z",
+        "violation": "none-with-candidates",
+        "severity": "info",
+    }
+    flagged = {"2026-07-10T10:00:00Z|launch-missing-line"}
+    actions = asw.decide_triage_observer_actions([i1, w1, w2], flagged, marker_budget=1)
+    # w1 deduped away; warn-before-info ordering; the budget=1 marker lands
+    # on the surviving warn; info rows get neither push nor marker.
+    assert [(a["violation"], a["push"], a["marker"]) for a in actions] == [
+        ("breadcrumb-missing-line", True, True),
+        ("none-with-candidates", False, False),
+    ]
+    assert all(a["sidecar"] for a in actions)
+    # The pure function never mutates the caller's flagged set.
+    assert flagged == {"2026-07-10T10:00:00Z|launch-missing-line"}
+    # Cap-overflow semantics: an over-budget warn keeps push=True and
+    # marker=False (permanently sidecar+push-only — the caller still flags
+    # it, so its marker is NEVER deferred to a later tick).
+    w3 = dict(w1, record_ts="2026-07-10T12:00:00Z")
+    actions = asw.decide_triage_observer_actions([w2, w3], set(), marker_budget=1)
+    assert [(a["severity"], a["push"], a["marker"]) for a in actions] == [
+        ("warn", True, True),
+        ("warn", True, False),
+    ]
+
+
+def test_triage_observer_dry_run_performs_zero_writes(tmp_path, monkeypatch):
+    # Backs the post-merge `--triage-observer-only --dry-run` smoke: a
+    # dry-run must create no sidecar, write no state, and spawn no
+    # subprocess (the #596/#607/#633 pattern).
+    asw, state_path, sidecar_path, _pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+    calls: list = []
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **kw: calls.append(a))
+    asw.triage_observer_pass(dry_run=True)
+    assert calls == []
+    assert not state_path.exists()
+    assert not sidecar_path.exists()
+
+
+def test_triage_observer_fire_once_two_invocations_real_writes(tmp_path, monkeypatch):
+    # MF3: tick 1 on a violating task emits exactly 1 sidecar row + 1
+    # post-marker subprocess + 1 push; tick 2 on UNCHANGED events emits
+    # nothing new. Exercises the REAL _save/_load state round-trip — a
+    # broken round-trip would ship green on single-invocation tests and
+    # produce the re-alert storm the kill criterion forbids.
+    import json as _json
+    import subprocess as _subprocess
+
+    asw, state_path, sidecar_path, pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+    argvs: list[list[str]] = []
+
+    def _fake_run(cmd, *a, **kw):
+        argvs.append([str(c) for c in cmd])
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+
+    assert asw.triage_observer_pass(dry_run=False) is True
+    rows = [_json.loads(line) for line in sidecar_path.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 321
+    assert rows[0]["violation"] == "launch-missing-line"
+    assert rows[0]["severity"] == "warn"
+    marker_cmds = [c for c in argvs if "post-marker" in c]
+    assert len(marker_cmds) == 1
+    assert len(pushes) == 1
+    assert state_path.exists()
+
+    # Non-gating pin, prong (a): the recorded subprocess argv never mutates
+    # task state — no set-status, no session stop, only post-marker.
+    for cmd in argvs:
+        joined = " ".join(cmd)
+        assert "set-status" not in joined
+        assert "spawn_session" not in joined
+        assert any("task.py" in c for c in cmd) and "post-marker" in cmd
+
+    # Tick 2: unchanged events -> 0 new rows / markers / pushes (cursor +
+    # flagged-key dedup, reloaded from the REAL tmp state file).
+    assert asw.triage_observer_pass(dry_run=False) is False
+    assert len(sidecar_path.read_text().splitlines()) == 1
+    assert len([c for c in argvs if "post-marker" in c]) == 1
+    assert len(pushes) == 1
+
+
+def test_triage_observer_never_calls_in_process_mutators(tmp_path, monkeypatch):
+    # Non-gating pin, prong (b): the in-process mutator surfaces reachable
+    # via the lazy task_workflow import are NEVER touched — all task-state
+    # mutation from this pass goes through the post-marker subprocess only.
+    import subprocess as _subprocess
+
+    from explore_persona_space import task_workflow
+
+    asw, _state, sidecar_path, _pushes = _triage_observer_sandbox(
+        tmp_path, monkeypatch, _matured_violating_events()
+    )
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("triage_observer_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, *a, **kw: _subprocess.CompletedProcess(cmd, 0, "", ""),
+    )
+    assert asw.triage_observer_pass(dry_run=False) is True
+    assert sidecar_path.exists()
+
+
+def test_triage_observer_nudge_trap_strings():
+    # The nudge must not itself become a window-closing boundary record
+    # (no triage-line prefix) nor a breadcrumb-shaped note (no lstripped
+    # `stage-dispatch ` prefix), and carries the anti-liveness watcher
+    # sentinel prefix.
+    import autonomous_session_watch as asw
+
+    from explore_persona_space.task_workflow import TRIAGE_LINE_PREFIX
+
+    base = {
+        "record_ts": "2026-07-10T10:00:00Z",
+        "candidate_count": 12,
+        "candidate_kinds": ["epm:progress", "epm:results"],
+        "signature_hits": ["# Audit"],
+    }
+    for v in (
+        {
+            **base,
+            "record_kind": "epm:run-launched",
+            "stage": None,
+            "violation": "launch-missing-line",
+        },
+        {
+            **base,
+            "record_kind": "epm:progress",
+            "stage": "followup-grid",
+            "violation": "breadcrumb-missing-line",
+        },
+        {
+            **base,
+            "record_kind": "epm:progress",
+            "stage": None,
+            "violation": "none-with-candidates",
+        },
+    ):
+        text = asw._triage_observer_nudge(v)
+        assert TRIAGE_LINE_PREFIX not in text
+        assert not text.lstrip().startswith("stage-dispatch ")
+        assert text.startswith("[autonomous_session_watch:triage-observer]")

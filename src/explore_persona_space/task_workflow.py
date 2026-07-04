@@ -67,6 +67,7 @@ excluded from auto-dispatch / the clarifier. Revivable via
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import fcntl
 import functools
@@ -1566,6 +1567,48 @@ TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
 # a triage record is also excluded from candidates.
 TRIAGE_LINE_PREFIX = "external-markers triaged:"
 
+# #889 landed 2026-07-03T04:05Z (commit 34fd730192); records before this
+# epoch are legacy per the SKILL.md accepted-residuals clause and are never
+# flagged by the post-hoc observer (#967).
+TRIAGE_DUTY_EPOCH_TS = "2026-07-03T05:00:00Z"
+
+# In-the-wild external-advisory signatures (SKILL.md § Pre-dispatch
+# external-marker triage names these); shared so the skill text and the
+# post-hoc observer (#967) use ONE list.
+TRIAGE_EXTERNAL_SIGNATURES = frozenset(
+    {"PM-chat", "user-raised", "user directive", "# Audit", "AMENDMENT", "SCOPE RESTORE"}
+)
+
+# Normalized stage tokens (see _normalize_stage) that carry NO compute-launch
+# triage duty -> a line-less breadcrumb with one of these NEVER flags (#967).
+# DELIBERATELY EASY TO EXTEND: append benign tokens observed in the wild here
+# (one frozenset literal; each addition needs only a live-example citation).
+# interp-critique / clean-result-fix / value-critique are live post-epoch
+# benign follow-up families observed on #810/#922 (task #967 plan §2).
+TRIAGE_NONCOMPUTE_STAGES = frozenset(
+    {
+        "planning",
+        "implementing",
+        "code-review",
+        "interpreting",
+        "clean-result",
+        "verifying",
+        "methodology-reference",
+        "related-work",
+        "interp-critique",
+        "clean-result-fix",
+        "value-critique",
+    }
+)
+
+# Positive-compute stage tokens: warn-class evidence for a line-less
+# breadcrumb (#967). "grid" is #779's incident token; the rest are the
+# SKILL.md duty text's own compute nouns ("a fit / sweep / statistical
+# battery") plus crash-fix relaunches. EXACT match on the NORMALIZED token,
+# never substring (substring matching would re-open the false-positive
+# surface the three-way classifier closes).
+TRIAGE_COMPUTE_STAGE_TOKENS = frozenset({"grid", "sweep", "battery", "fit", "fits", "relaunch"})
+
 
 def triage_candidates_since_last_dispatch(
     events: list[dict],
@@ -1602,8 +1645,29 @@ def triage_candidates_since_last_dispatch(
         if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
             boundary = idx
             break
+    return _triage_window_candidates(
+        events[boundary + 1 :], exempt_kinds=exempt_kinds, machine_by=machine_by
+    )
+
+
+def _triage_window_candidates(
+    window: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+) -> list[dict]:
+    """The #889 candidate filter over an already-bounded window slice.
+
+    Shared by the pre-dispatch enumerator (window = since the last duty-bound
+    record) and the post-hoc observer (window = between two historical
+    boundary records; #967). Filter semantics are the enumerator's, verbatim:
+    an event is a candidate unless its kind is in ``exempt_kinds``, its
+    ``by`` is in ``machine_by``, its note is empty/absent, its note is
+    breadcrumb-shaped (lstripped note begins ``"stage-dispatch "``), or its
+    note contains the triage line. Chronological order preserved.
+    """
     candidates: list[dict] = []
-    for event in events[boundary + 1 :]:
+    for event in window:
         if event.get("kind", "") in exempt_kinds:
             continue
         if event.get("by", "") in machine_by:
@@ -1617,6 +1681,269 @@ def triage_candidates_since_last_dispatch(
             continue
         candidates.append(event)
     return candidates
+
+
+def _parse_ts_str(raw: str | None) -> datetime | None:
+    """Parse an ISO-8601 threshold string via :func:`_stage_event_ts`;
+    ``None`` on a missing/malformed value (fail-soft)."""
+    if not raw:
+        return None
+    return _stage_event_ts({"ts": raw})
+
+
+def _ts_delta_s(a: dict, b: dict) -> float | None:
+    """Seconds from event ``a`` to event ``b`` (positive when ``b`` is later).
+
+    ``None`` when either event's ``ts`` is missing/malformed — a malformed
+    NEIGHBOR timestamp therefore provides no adjacency coverage in
+    :func:`audit_dispatch_triage` (#967); the audited record itself is
+    skipped earlier, at the top of the audit loop."""
+    ta, tb = _stage_event_ts(a), _stage_event_ts(b)
+    if ta is None or tb is None:
+        return None
+    return (tb - ta).total_seconds()
+
+
+def _triage_disposition_is_none(note: str) -> bool:
+    """True when the FIRST triage-line occurrence in ``note`` records a
+    ``none`` disposition (the remainder after the prefix, stripped and
+    lowercased, starts with ``none``)."""
+    idx = note.find(TRIAGE_LINE_PREFIX)
+    if idx < 0:
+        return False
+    rest = note[idx + len(TRIAGE_LINE_PREFIX) :].strip().lower()
+    return rest.startswith("none")
+
+
+def _triage_signature_hits(candidates: list[dict]) -> list[str]:
+    """Sorted external-advisory signatures found in the candidates' notes."""
+    return sorted(
+        {
+            sig
+            for c in candidates
+            for sig in TRIAGE_EXTERNAL_SIGNATURES
+            if sig in (c.get("note") or "")
+        }
+    )
+
+
+def audit_dispatch_triage(
+    events: list[dict],
+    *,
+    adjacency_s: float = 1800.0,
+    grace_s: float = 120.0,
+    epoch_ts: str | None = TRIAGE_DUTY_EPOCH_TS,
+    min_ts: str | None = None,
+    mature_before_ts: str | None = None,
+) -> dict:
+    """Post-hoc, NON-GATING audit of the pre-dispatch triage duty (#967).
+
+    Returns ``{"violations": [...], "cursor_ts": str | None}``. One violation
+    dict per non-compliant MATURED audited record: ``{"record_ts",
+    "record_kind", "stage", "violation", "severity", "candidate_count",
+    "candidate_kinds", "signature_hits", "note_head"}``.
+
+    BOUNDARY records (kind in :data:`TRIAGE_LAUNCH_KINDS` OR a note carrying
+    :data:`TRIAGE_LINE_PREFIX`) ALONE bound the pre-record candidate windows
+    and serve as adjacency neighbors; the AUDITED set additionally includes
+    line-less ``stage-dispatch`` breadcrumbs — audited but never
+    window-closing, preserving the enumerator's fail-toward-triage contract
+    (MF1). Three violation classes:
+
+    - ``launch-missing-line`` (warn): a launch marker with no triage line
+      whose nearest previous AND next boundary records are not triage-line
+      records within ``adjacency_s``.
+    - ``breadcrumb-missing-line``: a line-less breadcrumb, three-way
+      classified on its normalized stage token — exempt
+      (:data:`TRIAGE_NONCOMPUTE_STAGES`) -> no flag; positive compute
+      evidence (a ``pid=`` field or a :data:`TRIAGE_COMPUTE_STAGE_TOKENS`
+      token) -> warn; unknown -> info. NOTE: :func:`_normalize_stage`
+      strips ONE leading ``followup-`` prefix; the SUFFIX form
+      ``free-analysis-followup`` passes through intact.
+    - ``none-with-candidates``: a triage-line record with a ``none``
+      disposition whose pre-record boundary window re-enumerates non-empty
+      after dropping candidates within ``grace_s`` of the record (a
+      grace-delta that cannot be computed keeps the candidate — fail toward
+      visibility; the class is info-tier by default). Severity ``warn``
+      only on an external-signature hit, else ``info``.
+
+    Records with ts > ``mature_before_ts`` are DEFERRED — not evaluated, not
+    consumed: ``cursor_ts`` is the max parseable ts among audited records at
+    or before ``mature_before_ts``, so a caller advancing its cursor to
+    ``cursor_ts`` re-sees immature records next tick (MF2). Records at or
+    before ``min_ts`` / before ``epoch_ts`` are skipped but still consumable
+    by the cursor. An audited record with an unparseable ts is skipped
+    entirely (fail-soft, never consumed). Pure read — never mutates
+    ``events``; marker-cap overflow is a CALLER concern (see
+    ``triage_observer_pass``): an over-cap warn is permanently
+    sidecar+push-only, never deferred.
+    """
+    boundary_idx = [
+        i
+        for i, e in enumerate(events)
+        if e.get("kind", "") in TRIAGE_LAUNCH_KINDS or TRIAGE_LINE_PREFIX in (e.get("note") or "")
+    ]
+    audited_idx = sorted(
+        set(boundary_idx)
+        | {
+            i
+            for i, e in enumerate(events)
+            if e.get("kind", "") == "epm:progress"
+            and (e.get("note") or "").lstrip().startswith("stage-dispatch ")
+        }
+    )
+    mature_dt = _parse_ts_str(mature_before_ts)
+    epoch_dt = _parse_ts_str(epoch_ts)
+    min_dt = _parse_ts_str(min_ts)
+
+    violations: list[dict] = []
+    cursor_dt: datetime | None = None
+    cursor_ts: str | None = None
+
+    for i in audited_idx:
+        e = events[i]
+        ts_dt = _stage_event_ts(e)
+        if ts_dt is None:
+            continue  # unparseable ts: fail-soft skip, never consumed (tested)
+        if mature_dt is not None and ts_dt > mature_dt:
+            continue  # MF2: immature — defer, do not consume
+        if cursor_dt is None or ts_dt > cursor_dt:
+            cursor_dt, cursor_ts = ts_dt, e.get("ts", "")
+        if epoch_dt is not None and ts_dt < epoch_dt:
+            continue  # legacy pre-fix record (accepted residual)
+        if min_dt is not None and ts_dt <= min_dt:
+            continue  # already evaluated (caller cursor / lookback)
+        v = _audit_record_violation(
+            events, i, boundary_idx, adjacency_s=adjacency_s, grace_s=grace_s
+        )
+        if v is not None:
+            violations.append(v)
+
+    return {"violations": violations, "cursor_ts": cursor_ts}
+
+
+def _make_triage_violation(
+    e: dict,
+    *,
+    stage: str | None,
+    violation: str,
+    severity: str,
+    window: list[dict],
+    grace_s: float,
+) -> dict:
+    """Build one :func:`audit_dispatch_triage` violation dict, re-enumerating
+    the pre-record boundary window's candidates so the flag names what the
+    dispatch should have read. The ``none-with-candidates`` class trims
+    candidates within ``grace_s`` of the record (the SKILL.md accepted
+    residual); a grace-delta that cannot be computed keeps the candidate
+    (fail toward visibility — the class is info-tier by default)."""
+    cands = _triage_window_candidates(window)
+    if violation == "none-with-candidates":
+        cands = [c for c in cands if (d := _ts_delta_s(c, e)) is None or d > grace_s]
+    return {
+        "record_ts": e.get("ts", ""),
+        "record_kind": e.get("kind", ""),
+        "stage": stage,
+        "violation": violation,
+        "severity": severity,
+        "candidate_count": len(cands),
+        "candidate_kinds": sorted({c.get("kind", "") for c in cands}),
+        "signature_hits": _triage_signature_hits(cands),
+        "note_head": (e.get("note") or "")[:120],
+    }
+
+
+def _adjacent_triage_coverage(
+    events: list[dict], e: dict, prev_j: int | None, next_k: int | None, adjacency_s: float
+) -> bool:
+    """True when the nearest previous OR next BOUNDARY record is a
+    triage-line record within ``adjacency_s`` of ``e`` (the launch-marker
+    compliance form). Requiring the NEAREST boundary neighbor — not just any
+    record in the ±window — keeps crash-fix relaunch bursts individually
+    duty-bound; a malformed neighbor ts provides no coverage."""
+    if prev_j is not None and TRIAGE_LINE_PREFIX in (events[prev_j].get("note") or ""):
+        d = _ts_delta_s(events[prev_j], e)
+        if d is not None and d <= adjacency_s:
+            return True
+    if next_k is not None and TRIAGE_LINE_PREFIX in (events[next_k].get("note") or ""):
+        d = _ts_delta_s(e, events[next_k])
+        if d is not None and d <= adjacency_s:
+            return True
+    return False
+
+
+def _audit_record_violation(
+    events: list[dict],
+    i: int,
+    boundary_idx: list[int],
+    *,
+    adjacency_s: float,
+    grace_s: float,
+) -> dict | None:
+    """Classify ONE matured, post-epoch audited record (index ``i``) for
+    :func:`audit_dispatch_triage`; returns a violation dict or None.
+
+    Nearest neighbors + the pre-record window come from BOUNDARY records
+    only (MF1): a line-less breadcrumb never closes a window nor serves as
+    an adjacency neighbor."""
+    e = events[i]
+    note = e.get("note") or ""
+    has_line = TRIAGE_LINE_PREFIX in note
+    kind = e.get("kind", "")
+    pos = bisect.bisect_left(boundary_idx, i)
+    prev_j = boundary_idx[pos - 1] if pos > 0 else None
+    npos = pos + 1 if pos < len(boundary_idx) and boundary_idx[pos] == i else pos
+    next_k = boundary_idx[npos] if npos < len(boundary_idx) else None
+    window = events[(prev_j + 1 if prev_j is not None else 0) : i]
+
+    if kind in TRIAGE_LAUNCH_KINDS and not has_line:
+        if _adjacent_triage_coverage(events, e, prev_j, next_k, adjacency_s):
+            return None
+        return _make_triage_violation(
+            e,
+            stage=None,
+            violation="launch-missing-line",
+            severity="warn",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    stripped = note.lstrip()
+    if not has_line and stripped.startswith("stage-dispatch "):
+        fields = _breadcrumb_fields(stripped)
+        raw_stage = fields.get("stage", "")
+        norm = _normalize_stage(raw_stage)
+        if norm in TRIAGE_NONCOMPUTE_STAGES:
+            return None  # known-benign family: no flag (MF4)
+        positive_compute = "pid" in fields or norm in TRIAGE_COMPUTE_STAGE_TOKENS
+        return _make_triage_violation(
+            e,
+            stage=raw_stage,
+            violation="breadcrumb-missing-line",
+            severity="warn" if positive_compute else "info",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    if has_line and _triage_disposition_is_none(note):
+        stage = (
+            _breadcrumb_fields(stripped).get("stage")
+            if stripped.startswith("stage-dispatch ")
+            else None
+        )
+        v = _make_triage_violation(
+            e,
+            stage=stage,
+            violation="none-with-candidates",
+            severity="info",
+            window=window,
+            grace_s=grace_s,
+        )
+        if v["candidate_count"]:
+            if v["signature_hits"]:
+                v["severity"] = "warn"
+            return v
+    return None
 
 
 # ─── Same-issue follow-up label grouping (#894) ────────────────────────────

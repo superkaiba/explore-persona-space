@@ -3272,6 +3272,368 @@ def cpu_guard_pass(dry_run: bool) -> bool:
     return wrote
 
 
+# ── post-hoc external-marker triage observer (#967) ─────────────────────────
+#
+# NON-GATING observer of the /issue Step 9 pre-dispatch external-marker
+# triage duty (SKILL.md § Pre-dispatch external-marker triage; origin
+# incident #779: 10 unread external audit markers, an 18-20h serial grid
+# launched anyway). Re-runs the #889 enumerator's window semantics at recent
+# HISTORICAL dispatch records (task_workflow.audit_dispatch_triage) and
+# flags a missing / 'none' triage line against a non-empty candidate set.
+# Observe/alert only — sidecar rows + deduped fail-soft digest pushes +
+# capped epm:progress review nudges; NEVER mutates task status, stops a
+# session, or blocks a dispatch (pinned by tests at BOTH the subprocess-argv
+# and the in-process-mutator levels).
+
+# Sweep scope: ACTIVE plus awaiting_promotion (9a-ter/9b follow-up dispatches
+# happen on parked parents) plus blocked (a crash right after an untriaged
+# launch parks there). Terminal / pre-plan statuses have no fresh dispatch to
+# audit or no consumer for the flag.
+_TRIAGE_OBSERVER_STATUSES = ACTIVE | {"awaiting_promotion", "blocked"}
+# Lookback bounding first-run scans; the per-task cursor makes larger values
+# pointless after tick 1 (the #911 48h recency precedent).
+TRIAGE_OBSERVER_LOOKBACK_H = _env_float("EPM_TRIAGE_OBSERVER_LOOKBACK_H", 48.0, lo=1.0, hi=720.0)
+# Adjacency window binding a machine-posted launch marker to its adjacent
+# epm:progress triage note (pod provision+bootstrap runs ~10-20 min; 30 min
+# covers with margin while still binding the note to ONE dispatch). DOUBLES
+# as the MF2 maturity horizon by construction — it is exactly the window in
+# which a compliant adjacent-next note may still land, so deferring
+# evaluation by the same amount makes an early irreversible flag impossible.
+TRIAGE_OBSERVER_ADJACENCY_S = _env_float(
+    "EPM_TRIAGE_OBSERVER_ADJACENCY_S", 1800.0, lo=1.0, hi=86400.0
+)
+# The SKILL.md accepted-residual clause ("a marker posted in the SECONDS
+# between the final enumerator run and the breadcrumb post"); 120 s is a
+# generous superset of "seconds".
+TRIAGE_OBSERVER_GRACE_S = _env_float("EPM_TRIAGE_OBSERVER_GRACE_S", 120.0, lo=0.0, hi=3600.0)
+# Spam valve on the git-committing marker-post subprocess; the sidecar keeps
+# full fidelity regardless. Overflow is PERMANENT sidecar+push-only (no
+# deferred-marker queue — deferral adds state complexity exactly in the
+# storm case where per-task markers would spam most).
+TRIAGE_OBSERVER_MARKER_CAP = int(_env_float("EPM_TRIAGE_OBSERVER_MARKER_CAP", 5, lo=0, hi=100))
+_TRIAGE_OBSERVER_FLAGGED_KEY_CAP = 400  # newest dedup keys kept per issue
+
+
+def _triage_observer_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_TRIAGE_OBSERVER`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_TRIAGE_OBSERVER", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _triage_observer_sidecar_path() -> Path:
+    """DEDICATED triage-observer event stream (own stream for clean grep —
+    the cpu-guard sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "triage-observer-events.jsonl"
+
+
+def _triage_observer_state_path() -> Path:
+    """Singleton (deliberately NOT a per-issue GC target):
+    ``{"<issue>": {"cursor_ts": str, "flagged": ["<record_ts>|<class>", ...]}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "triage-observer.json"
+
+
+def _load_triage_observer_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards at the call sites (mirrors
+    :func:`_load_cpu_guard_state`)."""
+    path = _triage_observer_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_triage_observer_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the triage-observer state (fail-soft);
+    ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(f"  [dry-run] would save triage-observer state ({len(state)} issue entries)")
+        return
+    dest = _triage_observer_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  triage-observer: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_triage_observer_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the triage-observer sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append triage-observer sidecar row: {line[:160]}")
+        return
+    dest = _triage_observer_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  triage-observer: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _triage_observer_iso_z(epoch: float) -> str:
+    """Format an epoch as the events.jsonl ISO-8601 ``Z`` shape (second
+    grain), so string thresholds compare cleanly against event ``ts``."""
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _triage_observer_nudge(v: dict) -> str:
+    """Trap-safe review-nudge note text for one violation.
+
+    MUST NOT contain the literal triage-line prefix (the note would become a
+    window-closing boundary record for the enumerator) and MUST NOT
+    lstrip-start with the breadcrumb prefix (pinned by test). The bracketed
+    watcher sentinel makes it anti-liveness (STAGE_ANTILIVENESS_NOTE_
+    SUBSTRINGS prefix match), so it never refreshes staleness clocks; its
+    ``by="unknown"`` deliberately makes it a triage CANDIDATE at the task's
+    next compute dispatch — the flag is itself the advisory."""
+    desc = v.get("record_kind") or "record"
+    if v.get("stage"):
+        desc += f" stage={v['stage']}"
+    problem = (
+        "recorded a 'none' triage disposition"
+        if v.get("violation") == "none-with-candidates"
+        else "carries no pre-dispatch triage line"
+    )
+    kinds = ", ".join(v.get("candidate_kinds") or []) or "n/a"
+    return (
+        f"[autonomous_session_watch:triage-observer] post-hoc triage-duty review: the "
+        f"compute dispatch record at {v.get('record_ts', '?')} ({desc}) {problem} while "
+        f"{v.get('candidate_count', 0)} advisory candidate(s) were pending in its window "
+        f"(kinds: {kinds}; {len(v.get('signature_hits') or [])} matching external-advisory "
+        f"signatures). The enumerator over-approximates — this may be fine if every "
+        f"candidate was self-posted. Observe-only, nothing was blocked. Please review "
+        f"those markers and record their dispositions in the next dispatch note "
+        f"(SKILL.md Step 9 entry guard). Deduped: posted once per violation."
+    )
+
+
+def decide_triage_observer_actions(
+    violations: list[dict], flagged: set[str], marker_budget: int
+) -> list[dict]:
+    """PURE routing for triage-observer flags (unit-testable without IO).
+
+    Drops already-flagged keys (key = ``f"{record_ts}|{violation}"``), orders
+    warn-before-info (ties by record_ts), and attaches action fields: sidecar
+    always; push only for ``warn``; marker only for ``warn`` while the
+    per-tick budget lasts. An over-budget warn keeps ``push=True,
+    marker=False`` and is STILL emitted (the caller marks it flagged) —
+    permanently sidecar+push-only, its marker is NEVER deferred to a later
+    tick (cap-overflow semantics, #967 plan §3 Q4). Never mutates
+    ``flagged``."""
+    fresh = [
+        v for v in violations if f"{v.get('record_ts', '')}|{v.get('violation', '')}" not in flagged
+    ]
+    fresh.sort(key=lambda v: (0 if v.get("severity") == "warn" else 1, v.get("record_ts", "")))
+    actions: list[dict] = []
+    budget = marker_budget
+    for v in fresh:
+        warn = v.get("severity") == "warn"
+        marker = warn and budget > 0
+        if marker:
+            budget -= 1
+        actions.append(
+            {
+                **v,
+                "key": f"{v.get('record_ts', '')}|{v.get('violation', '')}",
+                "sidecar": True,
+                "push": warn,
+                "marker": marker,
+            }
+        )
+    return actions
+
+
+def _triage_observer_sweep_issue(
+    id_str: str, meta: object, reg_root: Path, now: float, lookback_s: float
+) -> int | None:
+    """The issue id when a registry row is in the sweep status set with a
+    fresh ``events.jsonl`` mtime (cost gate 1); ``None`` otherwise. The task
+    path comes from the REGISTRY snapshot resolved against the registry's
+    OWN root — never hand-built from cwd. Every gate fails soft (skip)."""
+    if not isinstance(meta, dict) or meta.get("status") not in _TRIAGE_OBSERVER_STATUSES:
+        return None
+    try:
+        issue = int(id_str)
+    except (TypeError, ValueError):
+        return None
+    rel = meta.get("path")
+    if not isinstance(rel, str) or not rel:
+        return None
+    try:
+        mtime = (reg_root / rel / "events.jsonl").stat().st_mtime
+    except OSError:
+        return None
+    if now - mtime > lookback_s:
+        return None
+    return issue
+
+
+def _triage_observer_task_entry(state: dict, issue: int) -> tuple[str | None, set[str]]:
+    """Type-guarded ``(cursor_ts, flagged-keys)`` read-back from the state
+    singleton; a hand-edited / schema-drifted entry degrades to defaults."""
+    raw_entry = state.get(str(issue))
+    entry = raw_entry if isinstance(raw_entry, dict) else {}
+    raw_cursor = entry.get("cursor_ts")
+    cursor = raw_cursor if isinstance(raw_cursor, str) and raw_cursor else None
+    raw_flagged = entry.get("flagged")
+    flagged = {
+        k for k in (raw_flagged if isinstance(raw_flagged, list) else []) if isinstance(k, str)
+    }
+    return cursor, flagged
+
+
+def _triage_observer_emit(
+    issue: int, actions: list[dict], flagged: set[str], dry_run: bool
+) -> tuple[bool, int]:
+    """Emit one action's channels (sidecar always; push + capped marker for
+    warn) and mark it flagged. Returns ``(wrote_any, markers_posted)``.
+    Mutates ``flagged`` — every emitted action is flagged, INCLUDING an
+    over-budget warn (permanently sidecar+push-only, never deferred)."""
+    wrote = False
+    markers_posted = 0
+    for a in actions:
+        print(
+            f"  triage-observer: #{issue} {a['violation']} ({a['severity']}) at "
+            f"{a.get('record_ts', '?')} — candidates {a.get('candidate_count', 0)}, "
+            f"signatures {len(a.get('signature_hits') or [])}"
+        )
+        _append_triage_observer_sidecar(
+            {
+                "issue": issue,
+                **{
+                    k: a.get(k)
+                    for k in (
+                        "record_ts",
+                        "record_kind",
+                        "stage",
+                        "violation",
+                        "severity",
+                        "candidate_count",
+                        "candidate_kinds",
+                        "signature_hits",
+                        "note_head",
+                    )
+                },
+            },
+            dry_run,
+        )
+        wrote = True
+        if a["push"]:
+            _telegram_push(
+                f"triage-observer: #{issue} {a['violation']} at {a.get('record_ts', '?')} "
+                f"({a.get('candidate_count', 0)} window candidates, "
+                f"{len(a.get('signature_hits') or [])} external signatures) — observe-only; "
+                "see .claude/cache/triage-observer-events.jsonl",
+                dry_run,
+            )
+        if a["marker"]:
+            markers_posted += 1
+            _post_progress_marker(
+                issue, _triage_observer_nudge(a), dry_run, label="triage-observer"
+            )
+        flagged.add(a["key"])
+    return wrote, markers_posted
+
+
+def triage_observer_pass(dry_run: bool) -> bool:
+    """NON-GATING post-hoc audit of the pre-dispatch external-marker triage
+    duty (#967; origin incident #779). Observe/alert only: appends rows to
+    the dedicated sidecar, sends deduped fail-soft digest pushes, and posts
+    capped ``epm:progress`` review nudges — NEVER mutates task status, stops
+    a session, or blocks a dispatch. A warn beyond the per-tick marker cap
+    stays sidecar+push-only forever (no deferred-marker queue). Fire-once:
+    the dedup key ``(issue, record_ts, violation-class)`` persists in the
+    state singleton, and the per-task cursor advances only past MATURED
+    records (MF2) — so each dispatch record is evaluated exactly once, on
+    the first tick after its compliance window closes. Daemon-independent;
+    fail-soft throughout. Returns True when any sidecar row was written."""
+    if not _triage_observer_enabled():
+        print("  triage-observer: disabled via EPM_DISABLE_TRIAGE_OBSERVER; skipping")
+        return False
+    # Lazy in-process import (watcher convention): resolves THIS checkout's
+    # helpers via the tests' sys.path shim / the editable install.
+    from explore_persona_space.task_workflow import (
+        audit_dispatch_triage,
+        list_events,
+        registry_path,
+    )
+
+    try:
+        reg = json.loads(registry_path().read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  triage-observer: registry read failed: {exc}", file=sys.stderr)
+        return False
+    tasks = reg.get("tasks") if isinstance(reg, dict) else None
+    if not isinstance(tasks, dict):
+        print("  triage-observer: registry has no tasks map; skipping", file=sys.stderr)
+        return False
+
+    now = time.time()
+    lookback_s = TRIAGE_OBSERVER_LOOKBACK_H * 3600.0
+    floor_ts = _triage_observer_iso_z(now - lookback_s)
+    mature_before = _triage_observer_iso_z(now - TRIAGE_OBSERVER_ADJACENCY_S)
+    # Resolve task paths against the registry's OWN root (never hand-built
+    # from cwd; the REGISTRY snapshot carries `tasks/<status>/<id>` paths).
+    reg_root = registry_path().parent.parent
+    state = _load_triage_observer_state()
+    wrote = False
+    marker_budget = TRIAGE_OBSERVER_MARKER_CAP
+
+    for id_str, meta in sorted(tasks.items()):
+        issue = _triage_observer_sweep_issue(id_str, meta, reg_root, now, lookback_s)
+        if issue is None:
+            continue
+        cursor, flagged = _triage_observer_task_entry(state, issue)
+        # Cost gate 2: the per-task cursor (records at/before it were
+        # already evaluated); the lookback floor bounds first-run scans.
+        min_ts = max(cursor, floor_ts) if cursor else floor_ts
+        try:
+            events = list_events(issue)
+        except Exception as exc:
+            print(f"  triage-observer: events read failed for #{issue}: {exc}", file=sys.stderr)
+            continue
+        result = audit_dispatch_triage(
+            events,
+            adjacency_s=TRIAGE_OBSERVER_ADJACENCY_S,
+            grace_s=TRIAGE_OBSERVER_GRACE_S,
+            min_ts=min_ts,
+            mature_before_ts=mature_before,
+        )
+        actions = decide_triage_observer_actions(result["violations"], flagged, marker_budget)
+        task_wrote, markers_posted = _triage_observer_emit(issue, actions, flagged, dry_run)
+        wrote = wrote or task_wrote
+        marker_budget -= markers_posted
+        cursor_new = result.get("cursor_ts")
+        if isinstance(cursor_new, str) and cursor_new:
+            cursor = max(cursor, cursor_new) if cursor else cursor_new
+        if cursor or flagged:
+            state[str(issue)] = {
+                "cursor_ts": cursor,
+                # Keep the NEWEST keys under the cap (keys sort by record_ts).
+                "flagged": sorted(flagged)[-_TRIAGE_OBSERVER_FLAGGED_KEY_CAP:],
+            }
+
+    # Self-prune entries once the issue leaves the sweep set for good.
+    for key in list(state):
+        meta = tasks.get(key)
+        status = meta.get("status") if isinstance(meta, dict) else None
+        if meta is None or status in {"completed", "archived"}:
+            state.pop(key, None)
+    _save_triage_observer_state(state, dry_run)
+    return wrote
+
+
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
@@ -16394,6 +16756,13 @@ def main(argv: list[str] | None = None) -> int:
         "skip every other pass. Daemon-independent; pair with --dry-run for "
         "a live smoke.",
     )
+    parser.add_argument(
+        "--triage-observer-only",
+        action="store_true",
+        help="run ONLY the post-hoc external-marker triage observer pass "
+        "(#967, non-gating) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -16444,6 +16813,13 @@ def main(argv: list[str] | None = None) -> int:
         cpu_guard_pass(args.dry_run)
         return 0
 
+    # --triage-observer-only mirrors the other --*-only flags: the pass is
+    # daemon-independent (reads the registry + events.jsonl only), so run
+    # it alone.
+    if args.triage_observer_only:
+        triage_observer_pass(args.dry_run)
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
@@ -16475,6 +16851,14 @@ def main(argv: list[str] | None = None) -> int:
     # daemon-independent (reads /proc + the earlyoom journal only), so it
     # runs on a daemon outage too.
     cpu_guard_pass(args.dry_run)
+
+    # Post-hoc external-marker triage observer (#967): NON-GATING audit of
+    # the /issue Step 9 pre-dispatch triage duty (origin incident #779) —
+    # flags a missing / 'none' triage line against a re-enumerated non-empty
+    # candidate window. Observe/alert only (sidecar + deduped push + capped
+    # epm:progress nudges); daemon-independent (registry + events.jsonl
+    # reads only), so it runs on a daemon outage too.
+    triage_observer_pass(args.dry_run)
 
     # VM resource-ledger reap (plan §5): drop expired-TTL / dead-PID claims from
     # the advisory ~/.task-workflow/vm-ledger.json so a crashed session's claim

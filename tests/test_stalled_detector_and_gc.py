@@ -1051,6 +1051,8 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     monkeypatch.setattr(asw, "_live_children", lambda: [])
     monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
+    # #967: never sweep the LIVE registry/events tree from a unit test.
+    monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
