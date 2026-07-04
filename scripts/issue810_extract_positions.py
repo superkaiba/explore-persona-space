@@ -64,6 +64,7 @@ os.environ.setdefault("HF_HOME", os.environ.get("HF_HOME", "/workspace/.cache/hu
 
 import argparse
 import logging
+import math
 import sys
 import time
 import traceback
@@ -90,12 +91,15 @@ from issue404_common import fetch_betley_main_8, fetch_preregistered_probes  # n
 from issue594_common import messages_for_instance, probes_hash  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402
 from issue810_common import (  # noqa: E402
+    ANSWER_POSITION_SWEEP_BTDR_SUBDIR_TMPL,
     ANSWER_POSITION_SWEEP_HE_SUBDIR,
     ANSWER_POSITION_SWEEP_SUBDIR,
     ANSWER_POSITION_SWEEP_UH_SUBDIR,
     BATTERY50_HF_FILE,
     BATTERY50_SHA256,
     BOUNDARY_BLOCK_IDS,
+    BTDR_HF_RESULTS_PREFIX,
+    BTDR_SUMMARIES_HF_FILE_TMPL,
     DEFAULT_MODEL,
     EXPECTED_HIDDEN,
     EXPECTED_LAYERS,
@@ -121,6 +125,7 @@ from issue810_common import (  # noqa: E402
     UH_SUMMARY_NAMES,
     assert_g1_probe_pool_hash,
     assert_sha256,
+    btdr_pct,
     context_ids_from_manifest,
     dump_json,
     he_stored_position_names,
@@ -235,7 +240,16 @@ ABLATED_TAIL_TEXT = "<|im_end|>\n<|im_start|>user\n"
 
 
 def _build_probe_row(
-    model, tokenizer, instance, q, ans, stored_names, nl_id, extended=False, ablate=False
+    model,
+    tokenizer,
+    instance,
+    q,
+    ans,
+    stored_names,
+    nl_id,
+    extended=False,
+    ablate=False,
+    truncate_frac=None,
 ):
     """Tokenize one (prompt [+ answer] + boundary block) probe → capture inputs.
 
@@ -247,12 +261,19 @@ def _build_probe_row(
     full sequence is exactly ``prompt_ids + BOUNDARY_BLOCK_IDS`` (asserted, plus
     a decoded-tail string assert), ans_len == 0 with NO ``None`` return, and the
     ``cc_last`` predictor slot (``prompt_len - 1``) rides the same forward.
+    ``truncate_frac`` (plan v18 §4.6 item 2, requires ``extended``, mutually
+    exclusive with ``ablate``): ID-prefix cut of the tokenized answer —
+    ``n_keep = max(1, ceil(k * ans_len))`` (never re-tokenized text), with the
+    three registered asserts (n_keep bounds, full-sequence equality, decoded
+    tail) and the same ``cc_last`` predictor slot riding the forward.
 
     Returns ``(full_ids (L,), tgt [abs-idx|None per stored pos], valid [bool per
-    pos], prompt_len, ans_len)`` or ``None`` for an empty completion (non-ablate
-    only). The target indices are PRE-PAD absolute indices into the real
-    sequence (the batch flush shifts them by the left-pad amount). Fails loud on
-    ANY boundary-token id mismatch (a wrong id would silently capture the wrong
+    pos], prompt_len, ans_len, orig_ans_len)`` or ``None`` for an empty
+    completion (non-ablate only); ``ans_len`` is the KEPT length (== n_keep in
+    truncate mode), ``orig_ans_len`` the pre-cut length (0 in ablate mode). The
+    target indices are PRE-PAD absolute indices into the real sequence (the
+    batch flush shifts them by the left-pad amount). Fails loud on ANY
+    boundary-token id mismatch (a wrong id would silently capture the wrong
     slot).
     """
     messages = messages_for_instance(instance, q)
@@ -264,7 +285,9 @@ def _build_probe_row(
     if ablate:
         assert extended, "--ablate-answer implies the 5-token extended boundary block"
         assert ans is None, "ablate mode must not receive completion text (code-truth: plan §10)"
+        assert truncate_frac is None, "--truncate-frac and --ablate-answer are mutually exclusive"
         ans_len = 0
+        orig_ans_len = 0
         bids = list(BOUNDARY_BLOCK_IDS)
         boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
         full_ids = torch.cat([prompt_ids, boundary], dim=1)[0]  # (prompt_len + 5,)
@@ -283,10 +306,41 @@ def _build_probe_row(
         ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
         if ans_ids.shape[1] == 0:
             return None
+        orig_ans_len = int(ans_ids.shape[1])
+        if truncate_frac is not None:
+            # `_btdr` graded ID-prefix truncation (plan v18 §4 edge rules): cut
+            # the TOKEN sequence, never re-tokenized truncated text (zero
+            # retokenization/BPE-merge risk; k=1.0 degenerates to the round-3
+            # full capture by construction).
+            assert extended, "--truncate-frac implies the 5-token extended boundary block"
+            n_keep = max(1, math.ceil(truncate_frac * orig_ans_len))
+            assert 1 <= n_keep <= orig_ans_len, (
+                f"n_keep {n_keep} out of [1, {orig_ans_len}] at k={truncate_frac} for "
+                f"{instance['id']} {q[:30]!r}"
+            )
+            if truncate_frac >= 1.0:
+                assert n_keep == orig_ans_len, (
+                    f"k=1.0 endpoint: n_keep {n_keep} != ans_len {orig_ans_len} for "
+                    f"{instance['id']} {q[:30]!r}"
+                )
+            ans_ids = ans_ids[:, :n_keep]
         ans_len = int(ans_ids.shape[1])
         bids = list(BOUNDARY_BLOCK_IDS) if extended else [IM_END_TOKEN_ID, nl_id]
         boundary = torch.tensor([bids], dtype=prompt_ids.dtype)
         full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1)[0]  # (full_len,)
+        if truncate_frac is not None:
+            # Registered asserts (plan v18 §4 edge rules): full-sequence
+            # equality + decoded-tail (the 5-id block decodes to the same
+            # string regardless of what precedes it).
+            assert full_ids.tolist() == prompt_ids[0].tolist() + ans_ids[0].tolist() + bids, (
+                f"truncated full sequence != prompt_ids + kept + BOUNDARY_BLOCK_IDS for "
+                f"{instance['id']} {q[:30]!r} (k={truncate_frac})"
+            )
+            decoded_tail = tokenizer.decode(full_ids[prompt_len + ans_len :].tolist())
+            assert decoded_tail == ABLATED_TAIL_TEXT, (
+                f"truncated boundary tail decodes to {decoded_tail!r} != "
+                f"{ABLATED_TAIL_TEXT!r} for {instance['id']} {q[:30]!r}"
+            )
     fed = full_ids[prompt_len + ans_len : prompt_len + ans_len + len(bids)].tolist()
     # Fail-loud per-probe id asserts (round-1 pattern, extended to ALL fed
     # boundary ids — plan v11 §4.6 item 2 / kill criterion 1).
@@ -302,7 +356,9 @@ def _build_probe_row(
     # At ans_len=0 (ablate) this yields the 5 boundary singles ONLY; the
     # cc_last predictor slot (rel −1 → abs prompt_len − 1) rides along.
     pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=extended)
-    if ablate:
+    if ablate or truncate_frac is not None:
+        # he-row-set modes: the #594 cc_last predictor slot rides the forward
+        # (prompt-side, ablation/truncation-invariant — the drift tripwire).
         pos_idx = {**pos_idx, "cc_last": -1}
     tgt: list = []
     valid: list[bool] = []
@@ -317,7 +373,7 @@ def _build_probe_row(
         else:
             tgt.append(None)
             valid.append(False)
-    return full_ids, tgt, valid, prompt_len, ans_len
+    return full_ids, tgt, valid, prompt_len, ans_len, orig_ans_len
 
 
 def _gather_pools_gpu(
@@ -367,6 +423,7 @@ def _run_forward_batch(
     H,
     extended: bool = False,
     ablate: bool = False,
+    truncate: bool = False,
 ) -> int:
     """Left-pad + one batched forward + GPU-side gather + accumulate; return #probes.
 
@@ -411,14 +468,17 @@ def _run_forward_batch(
         _ = model(input_ids=input_ids, attention_mask=attn, position_ids=position_ids)
     pool_names = [n for n in stored_names if n in _POOL_SPECS]
     pools: dict[str, torch.Tensor] = {}
+    he_rows = ablate or truncate  # the he row-set modes (plan v18 §4.6 item 2)
     if extended:
-        if not ablate:
+        if not he_rows:
             pool_names = [*pool_names, "mean_ans"]  # internal parity pool rides along
         # Span masks over the padded batch: content [start, start+ans_len),
         # boundary block [start+ans_len, start+ans_len+5), header = last 3 of it.
-        # In ablate mode ONLY bnd5/uh3 are requested (both always 5/3 tokens —
-        # plan v15 §12 A9); the ans/xbnd masks would be EMPTY at ans_len=0 and
-        # are never built, so _gather_pools_gpu's non-empty assert holds.
+        # In the he-row-set modes (ablate OR truncate) ONLY bnd5/uh3 are
+        # requested (both always 5/3 tokens — plan v15 §12 A9 / v18 §12 A10);
+        # the ans/xbnd masks are never built there — in ablate mode they would
+        # be EMPTY at ans_len=0 (so _gather_pools_gpu's non-empty assert holds),
+        # and in truncate mode ans/xbnd rows are outside the registered row set.
         pos = torch.arange(max_len).unsqueeze(0)  # (1, T)
         st = ans_starts.unsqueeze(1)
         en = (ans_starts + ans_lens_t).unsqueeze(1)  # content end == boundary start
@@ -427,17 +487,19 @@ def _run_forward_batch(
             "bnd5": (pos >= en) & (pos < en + n_bnd),
             "uh3": (pos >= en + 2) & (pos < en + n_bnd),
         }
-        if not ablate:
+        if not he_rows:
             masks_cpu["ans"] = (pos >= st) & (pos < en)
             masks_cpu["xbnd"] = masks_cpu["ans"] | masks_cpu["bnd5"]
         kinds_needed = {_POOL_SPECS[n][0] for n in pool_names}
         missing_kinds = kinds_needed - set(masks_cpu)
-        assert not missing_kinds, f"pool span kinds {missing_kinds} have no mask (ablate={ablate})"
+        assert not missing_kinds, (
+            f"pool span kinds {missing_kinds} have no mask (ablate={ablate}, truncate={truncate})"
+        )
         masks = {k: v.to(device) for k, v in masks_cpu.items() if k in kinds_needed}
         # Pools reduced BEFORE _gather_positions_gpu clears capture.latest.
         pools = _gather_pools_gpu(capture, capture_layers, masks, pool_names)
     picked = _gather_positions_gpu(capture, capture_layers, abs_pos_dev)  # (b, T, Lc, H) cpu
-    for bi, (_s, _tgt, valid, _pl, _al) in enumerate(rows):
+    for bi, (_s, _tgt, valid, _pl, _al) in enumerate(rows):  # rows stay 5-tuples (batch shape)
         for ti, name in enumerate(stored_names):
             if not valid[ti]:
                 continue
@@ -455,6 +517,29 @@ def _run_forward_batch(
     return b
 
 
+def _probe_pairs(
+    probes: list[str],
+    completions: list[str] | None,
+    ablate: bool,
+    truncate_frac: float | None,
+) -> list[tuple[str, str | None]]:
+    """(probe, answer) pairs per mode, asserting the completions contract.
+
+    Ablate mode must NOT receive completions (plan v15 §10 code-truth); the
+    `_btdr` truncate mode REQUIRES them — the answer text IS the dosed variable
+    (plan v18 §4.6 item 2, the inverse assert).
+    """
+    if ablate:
+        assert completions is None, "ablate mode must not receive completions (plan v15 §10)"
+        return [(q, None) for q in probes]
+    if truncate_frac is not None:
+        assert completions is not None, (
+            "truncate mode REQUIRES completions — the answer text IS the dosed "
+            "variable (plan v18 §4.6 item 2, the inverse of ablate mode's assert)"
+        )
+    return list(zip(probes, completions, strict=True))
+
+
 def capture_positions_for_context(
     model,
     tokenizer,
@@ -467,6 +552,7 @@ def capture_positions_for_context(
     batch_probes: int,
     extended: bool = False,
     ablate: bool = False,
+    truncate_frac: float | None = None,
 ) -> tuple[dict[str, torch.Tensor], dict[str, int], dict, dict[str, torch.Tensor]]:
     """Teacher-force each (prompt [+ answer] + boundary block); capture positions.
 
@@ -478,6 +564,12 @@ def capture_positions_for_context(
     ``he_stored_position_names()`` (cc_last + 5 boundary singles + 4 bnd5/uh3
     pools; NO tail/head/xbnd/mean_ans), and every row is covered on every probe
     (the boundary block always exists — zero skips, plan v15 success criterion).
+    ``truncate_frac`` (plan v18 §4): the answer span is ID-prefix CUT to
+    ``n_keep = max(1, ceil(k * ans_len))`` — ``completions`` is REQUIRED
+    (asserted not None, the inverse of ablate mode's assert: the answer text IS
+    the dosed variable), the stored rows are the SAME 10 he rows, and the
+    per-probe (n_keep, ans_len) pairs are recorded in ``diag`` for the store
+    manifest.
 
     Returns ``(pos_summaries, coverage, diag, extras)`` where
       pos_summaries[position] = (Lc, H) probe-MEAN summary vector for that
@@ -508,8 +600,9 @@ def capture_positions_for_context(
     """
     lc = len(capture_layers)
     H = model.config.hidden_size
+    he_rows = ablate or truncate_frac is not None
     # Accumulators: sum over probes + count per position (probe-mean at the end).
-    if ablate:
+    if he_rows:
         stored_names = he_stored_position_names()
     else:
         stored_names = uh_stored_position_names() if extended else stored_position_names()
@@ -537,11 +630,9 @@ def capture_positions_for_context(
     batch = max(1, int(batch_probes))
     built = []  # (full_ids, tgt, valid, prompt_len, ans_len) per non-empty probe
     empty = 0
-    if ablate:
-        assert completions is None, "ablate mode must not receive completions (plan v15 §10)"
-        pairs: list[tuple[str, str | None]] = [(q, None) for q in probes]
-    else:
-        pairs = list(zip(probes, completions, strict=True))
+    trunc_n_keep: list[int] = []  # per used probe, truncate mode only
+    trunc_ans_len: list[int] = []  # pre-cut lengths, truncate mode only
+    pairs = _probe_pairs(probes, completions, ablate, truncate_frac)
     for q, ans in pairs:
         item = _build_probe_row(
             model,
@@ -553,14 +644,18 @@ def capture_positions_for_context(
             nl_id,
             extended=extended,
             ablate=ablate,
+            truncate_frac=truncate_frac,
         )
         if item is None:
             empty += 1
             logger.warning("empty completion for %s probe=%r — skipping", instance["id"], q[:40])
             continue
-        full_ids, tgt, valid, prompt_len, ans_len = item
+        full_ids, tgt, valid, prompt_len, ans_len, orig_ans_len = item
         turn_nl_ids_seen.add(nl_id)
         ans_lens.append(ans_len)
+        if truncate_frac is not None:
+            trunc_n_keep.append(ans_len)  # ans_len IS n_keep post-cut (asserted in-row)
+            trunc_ans_len.append(orig_ans_len)
         built.append((full_ids, tgt, valid, prompt_len, ans_len))
 
     n_used = 0
@@ -579,20 +674,22 @@ def capture_positions_for_context(
             H,
             extended=extended,
             ablate=ablate,
+            truncate=truncate_frac is not None,
         )
 
     if n_used == 0:
         raise RuntimeError(f"context {instance['id']}: every probe produced an empty answer")
     pos_summaries = {name: (accum[name] / coverage[name]) for name in accum}
     extras: dict[str, torch.Tensor] = {}
-    if extended and not ablate:
+    if extended and not he_rows:
         # mean_ans is an INTERNAL parity vector (the #658 v0 `mean` recipe
         # recomputed in-forward), never a stored summary row. Undefined in
-        # ablate mode (ans_len=0) — the cc_last row is the drift tripwire there.
+        # ablate mode (ans_len=0) and outside the registered truncate row set —
+        # the cc_last row is the drift tripwire in the he-row-set modes.
         extras["mean_ans"] = pos_summaries.pop("mean_ans")
         coverage.pop("mean_ans", None)
     # Assert boundary positions/pools are ALWAYS covered (span_len-independent).
-    if ablate:
+    if he_rows:
         always_covered = list(stored_names)  # all 10 rows exist on every probe
     else:
         always_covered = ["im_end", "turn_nl"]
@@ -605,13 +702,18 @@ def capture_positions_for_context(
                 f"{coverage[b]} != n_used {n_used} — the boundary token was not "
                 "captured on every probe (capture/slice bug)"
             )
-    ans_lens.sort()
     diag = {
         "n_probes_used": n_used,
         "empty_completions": empty,
-        "median_answer_len": ans_lens[len(ans_lens) // 2] if ans_lens else 0,
+        "median_answer_len": sorted(ans_lens)[len(ans_lens) // 2] if ans_lens else 0,
         "turn_nl_ids_seen": sorted(turn_nl_ids_seen),
     }
+    if truncate_frac is not None:
+        # Plan v18 §4 edge rules: per-context n_keep + ans_len recorded in the
+        # store manifest (probe order = the used-probe order above).
+        diag["truncate_frac"] = float(truncate_frac)
+        diag["n_keep_per_probe"] = trunc_n_keep
+        diag["ans_len_per_probe"] = trunc_ans_len
     return pos_summaries, coverage, diag, extras
 
 
@@ -780,7 +882,16 @@ def _per_layer_min_cosine(a: torch.Tensor, b: torch.Tensor) -> tuple[float, floa
 
 
 def _numpy_reference_capture(
-    model, tokenizer, capture, instance, probes, completions, capture_layers, nl_id, ablate=False
+    model,
+    tokenizer,
+    capture,
+    instance,
+    probes,
+    completions,
+    capture_layers,
+    nl_id,
+    ablate=False,
+    truncate_frac=None,
 ) -> dict[str, np.ndarray]:
     """Batch-1 FULL-hidden-state numpy reference for singles + pools (smoke oracle).
 
@@ -789,22 +900,33 @@ def _numpy_reference_capture(
     the span slices; singles by direct indexing), then probe-meaned — an
     implementation-independent oracle for the in-forward GPU-side reductions.
     Returns {name: (Lc, H) fp32 np.ndarray} over the 43 stored rows + mean_ans
-    (extended) or the 10 he rows incl. cc_last (``ablate`` — plan v15 §4.6 item
-    2 smoke pool oracle; no ans/xbnd spans exist at ans_len=0).
+    (extended) or the 10 he rows incl. cc_last (``ablate`` OR ``truncate_frac``
+    — plan v15/v18 §4.6 item 2 smoke pool oracle; ans/xbnd spans are outside
+    the he row set, and in ablate mode do not exist at ans_len=0).
     """
-    stored_names = he_stored_position_names() if ablate else uh_stored_position_names()
-    names_all = list(stored_names) if ablate else [*stored_names, "mean_ans"]
+    he_rows = ablate or truncate_frac is not None
+    stored_names = he_stored_position_names() if he_rows else uh_stored_position_names()
+    names_all = list(stored_names) if he_rows else [*stored_names, "mean_ans"]
     sums: dict[str, np.ndarray] = {}
     counts: dict[str, int] = {n: 0 for n in names_all}
     n_bnd = len(BOUNDARY_BLOCK_IDS)
     pairs = [(q, None) for q in probes] if ablate else list(zip(probes, completions, strict=True))
     for q, ans in pairs:
         item = _build_probe_row(
-            model, tokenizer, instance, q, ans, stored_names, nl_id, extended=True, ablate=ablate
+            model,
+            tokenizer,
+            instance,
+            q,
+            ans,
+            stored_names,
+            nl_id,
+            extended=True,
+            ablate=ablate,
+            truncate_frac=truncate_frac,
         )
         if item is None:
             continue
-        full_ids, _tgt, _valid, prompt_len, ans_len = item
+        full_ids, _tgt, _valid, prompt_len, ans_len, _orig = item
         with torch.no_grad():
             _ = model(input_ids=full_ids.unsqueeze(0).to(model.device))
         hs = np.stack(
@@ -815,11 +937,11 @@ def _numpy_reference_capture(
             "bnd5": (prompt_len + ans_len, prompt_len + ans_len + n_bnd),
             "uh3": (prompt_len + ans_len + 2, prompt_len + ans_len + n_bnd),
         }
-        if not ablate:
+        if not he_rows:
             spans["ans"] = (prompt_len, prompt_len + ans_len)
             spans["xbnd"] = (prompt_len, prompt_len + ans_len + n_bnd)
         pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len, extended=True)
-        if ablate:
+        if he_rows:
             pos_idx = {**pos_idx, "cc_last": -1}
         for name in names_all:
             if name in _POOL_SPECS:
@@ -850,6 +972,7 @@ def _extended_smoke_asserts(
     min_cos: float = 0.999,
     max_rel_l2: float = 5e-3,
     ablate: bool = False,
+    truncate_frac: float | None = None,
 ) -> dict:
     """Smoke oracle triplet for the extended-boundary capture (plan v11 §4.6 item 2).
 
@@ -866,10 +989,14 @@ def _extended_smoke_asserts(
     ``ablate`` (plan v15 §4.6 item 2): the same triplet over the 10 he rows
     (cc_last + 5 singles + 4 pools; NO mean_ans — ``mean_ans_batched`` is None),
     plus the ablate-mode full-sequence/decoded-tail asserts firing per probe
-    inside ``_build_probe_row`` on every path.
+    inside ``_build_probe_row`` on every path. ``truncate_frac`` (plan v18
+    §4.6 item 2): the same 10-he-row triplet over the ID-prefix-truncated
+    sequences, plus the truncate-mode full-sequence/decoded-tail/n_keep
+    asserts firing per probe on every path.
 
     Returns a summary dict for the manifest. Raises on any violation.
     """
+    he_rows = ablate or truncate_frac is not None
     pos_b1, _cov1, _diag1, extras1 = capture_positions_for_context(
         model,
         tokenizer,
@@ -882,6 +1009,7 @@ def _extended_smoke_asserts(
         batch_probes=1,
         extended=True,
         ablate=ablate,
+        truncate_frac=truncate_frac,
     )
     ref = _numpy_reference_capture(
         model,
@@ -893,10 +1021,11 @@ def _extended_smoke_asserts(
         capture_layers,
         nl_id=TURN_NL_TOKEN_ID,
         ablate=ablate,
+        truncate_frac=truncate_frac,
     )
     all_batched = dict(pos_batched)
     all_b1 = dict(pos_b1)
-    if not ablate:
+    if not he_rows:
         all_batched["mean_ans"] = mean_ans_batched
         all_b1["mean_ans"] = extras1["mean_ans"]
     out = {"rows_checked": 0, "min_cos_batched_vs_b1": 1.0, "min_cos_b1_vs_numpy": 1.0}
@@ -1111,6 +1240,7 @@ def _upload_store(
     genre: str = "betley",
     extended: bool = False,
     ablate: bool = False,
+    truncate_frac: float | None = None,
 ) -> str:
     """Bulk-commit the aligned-subset store to HF (one upload_folder commit).
 
@@ -1119,11 +1249,14 @@ def _upload_store(
     504-storm), then verifies the per-context file count on a FRESH listing
     (fail loud on a mismatch). Skipped for --smoke / --no-upload by the caller.
     ``extended`` routes to the `_uh` store subdir (plan v11 § Storage naming);
-    ``ablate`` to the `_he` subdir (plan v15 § Storage naming).
+    ``ablate`` to the `_he` subdir (plan v15 § Storage naming);
+    ``truncate_frac`` to the per-k `_btdr` subdir (plan v18 § Storage naming).
     """
     from huggingface_hub import HfApi, list_repo_files
 
-    if ablate:
+    if truncate_frac is not None:
+        base_subdir = ANSWER_POSITION_SWEEP_BTDR_SUBDIR_TMPL.format(pct=btdr_pct(truncate_frac))
+    elif ablate:
         base_subdir = ANSWER_POSITION_SWEEP_HE_SUBDIR
     elif extended:
         base_subdir = ANSWER_POSITION_SWEEP_UH_SUBDIR
@@ -1237,20 +1370,35 @@ def _finalize_extended_outputs(
     out_dir: Path,
     compare_store: bool,
     cc_parity: dict | None = None,
+    truncate_frac: float | None = None,
 ) -> Path:
     """Extended-boundary manifest provenance + the compact summaries pack.
 
-    Mutates ``manifest`` (plan v11/v15 § Storage naming: `extended_boundary`,
-    `ablate_answer`, `boundary_block_ids`, pool semantics, the parity records)
-    and writes the CPU-chain input pack (uh_summaries.pt, or he_summaries.pt in
-    ablate mode — plan §6.5) next to the store dir. Returns the pack path.
+    Mutates ``manifest`` (plan v11/v15/v18 § Storage naming: `extended_boundary`,
+    `ablate_answer`, `truncate_frac`, `boundary_block_ids`, pool semantics, the
+    parity records) and writes the CPU-chain input pack (uh_summaries.pt,
+    he_summaries.pt in ablate mode, or btdr_summaries_k{pct}.pt per k in
+    truncate mode — plan §6.5) next to the store dir. Returns the pack path.
     """
     ablate = bool(args.ablate_answer)
-    pack_rows_names = HE_SUMMARY_NAMES if ablate else UH_SUMMARY_NAMES
+    truncate = truncate_frac is not None
+    pack_rows_names = HE_SUMMARY_NAMES if (ablate or truncate) else UH_SUMMARY_NAMES
     manifest["extended_boundary"] = True
     manifest["ablate_answer"] = ablate
     manifest["boundary_block_ids"] = list(BOUNDARY_BLOCK_IDS)
-    if ablate:
+    if truncate:
+        manifest["truncate_frac"] = float(truncate_frac)
+        manifest["uh_pool_semantics"] = (
+            "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
+            "bnd_mean5/bnd_max5: over all 5 boundary tokens — computed IN the forward "
+            "per probe (GPU-side, fp32 reduce, fp16 transport), then probe-meaned. "
+            "Answer span ID-prefix-truncated to n_keep = max(1, ceil(k*ans_len)) per "
+            "probe (plan v18 §4; per-context n_keep/ans_len in per_context_diag); "
+            "ANS/XBND pools + tail/head positions outside the registered he row set; "
+            "cc_last = the #594 last-input-token predictor slot, riding the same forward."
+        )
+        manifest["cc594_parity"] = cc_parity or {"skipped": True}
+    elif ablate:
         manifest["uh_pool_semantics"] = (
             "uh_mean3/uh_max3: mean / per-dim max over the 3 next-user-header tokens; "
             "bnd_mean5/bnd_max5: over all 5 boundary tokens — computed IN the forward "
@@ -1270,8 +1418,14 @@ def _finalize_extended_outputs(
         manifest["round1_store_drift_check"] = drift_check or {"skipped": not compare_store}
     if smoke_asserts is not None:
         manifest["smoke_asserts"] = smoke_asserts
-    default_pack = "he_summaries.pt" if ablate else "uh_summaries.pt"
-    uh_pack_path = Path(args.uh_summaries_out or (out_dir.parent / default_pack))
+    if truncate:
+        default_pack = BTDR_SUMMARIES_HF_FILE_TMPL.format(pct=btdr_pct(truncate_frac))
+        # In truncate mode --uh-summaries-out is a DIRECTORY (per-k pack names).
+        pack_base = Path(args.uh_summaries_out) if args.uh_summaries_out else out_dir.parent
+        uh_pack_path = pack_base / default_pack
+    else:
+        default_pack = "he_summaries.pt" if ablate else "uh_summaries.pt"
+        uh_pack_path = Path(args.uh_summaries_out or (out_dir.parent / default_pack))
     uh_pack_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
@@ -1283,6 +1437,7 @@ def _finalize_extended_outputs(
             "model": args.model,
             "extended_boundary": True,
             "ablate_answer": ablate,
+            "truncate_frac": float(truncate_frac) if truncate else None,
             "boundary_block_ids": list(BOUNDARY_BLOCK_IDS),
             "battery_sha256": BATTERY50_SHA256,
             "smoke": args.smoke,
@@ -1294,12 +1449,52 @@ def _finalize_extended_outputs(
     return uh_pack_path
 
 
-def _resolve_out_dir(args) -> Path:
+def _validate_truncate_flags(args) -> None:
+    """Fail fast on an invalid --truncate-frac combination (plan v18 §4.6 item 2).
+
+    Values in (0, 1] — 1.0 is ADMITTED as the endpoint-parity probe value (the
+    registered k=1.0 smoke; production captures use 0.25/0.5/0.75); requires
+    --extended-boundary; mutually exclusive with --ablate-answer; Betley-only
+    (enforced via the --extended-boundary genre gate in _resolve_out_dir);
+    --uh-summaries-out becomes a DIRECTORY (per-k pack filenames).
+    """
+    if not args.truncate_frac:
+        return
+    if args.ablate_answer:
+        raise SystemExit(
+            "--truncate-frac and --ablate-answer are mutually exclusive (a truncated "
+            "answer is non-empty by construction — plan v18 §4.6 item 2)"
+        )
+    if not args.extended_boundary:
+        raise SystemExit(
+            "--truncate-frac requires --extended-boundary (the truncated sequence appends "
+            "the full 5-token BOUNDARY_BLOCK_IDS — plan v18 §4.6 item 2)"
+        )
+    for k in args.truncate_frac:
+        if not (0.0 < k <= 1.0):
+            raise SystemExit(
+                f"--truncate-frac values must be in (0, 1] (got {k}); 1.0 is the "
+                "endpoint-parity probe value (degenerates to the round-3 full capture) — "
+                "production uses 0.25 0.5 0.75"
+            )
+        btdr_pct(k)  # fail fast on a k with no canonical integer percent
+    if len(set(btdr_pct(k) for k in args.truncate_frac)) != len(args.truncate_frac):
+        raise SystemExit(f"--truncate-frac values collide on integer percent: {args.truncate_frac}")
+    if args.uh_summaries_out and Path(args.uh_summaries_out).suffix == ".pt":
+        raise SystemExit(
+            "--uh-summaries-out must be a DIRECTORY in --truncate-frac mode (per-k packs "
+            "btdr_summaries_k{pct}.pt land inside it)"
+        )
+
+
+def _resolve_out_dir(args, truncate_frac: float | None = None) -> Path:
     """Validate the extended-boundary/genre combination and resolve the store dir.
 
     ``--extended-boundary`` is Betley-only (the uh round's single variable is
     the captured span; UltraChat is out of scope — plan v11 §0) and defaults to
-    a store dir that never clobbers the parent/g1 stores.
+    a store dir that never clobbers the parent/g1 stores. In truncate mode
+    (``truncate_frac`` set) ``--out-dir`` is a BASE dir and the per-k store is
+    ``<base>/store_btdr_k{pct}`` (plan v18 § Storage naming).
     """
     if args.extended_boundary and args.genre != "betley":
         raise SystemExit(
@@ -1311,6 +1506,9 @@ def _resolve_out_dir(args) -> Path:
             "--ablate-answer requires --extended-boundary (the ablated sequence appends the "
             "full 5-token BOUNDARY_BLOCK_IDS — plan v15 §4.6 item 2)"
         )
+    if truncate_frac is not None:
+        base = Path(args.out_dir) if args.out_dir else (PROJECT_ROOT / "data" / "issue_810")
+        return base / f"store_btdr_k{btdr_pct(truncate_frac)}"
     default_store = "store" if args.genre == "betley" else "store_g1"
     if args.ablate_answer:
         default_store = "store_he"
@@ -1328,7 +1526,13 @@ def _collect_uh_pack_rows(
         uh_pack_cov[n][ctx_id] = coverage[n]
 
 
-def _do_uploads(args, out_dir: Path, ctx_ids: list[str], uh_pack_path: Path | None):
+def _do_uploads(
+    args,
+    out_dir: Path,
+    ctx_ids: list[str],
+    uh_pack_path: Path | None,
+    truncate_frac: float | None = None,
+):
     """Store (+ summaries pack) uploads, gated on --no-upload/--smoke by the caller."""
     logger.info("[phase=upload] aligned-subset store")
     path_in_repo = _upload_store(
@@ -1338,11 +1542,20 @@ def _do_uploads(args, out_dir: Path, ctx_ids: list[str], uh_pack_path: Path | No
         genre=args.genre,
         extended=args.extended_boundary,
         ablate=args.ablate_answer,
+        truncate_frac=truncate_frac,
     )
     uh_pack_hf = None
     if uh_pack_path is not None:
         logger.info("[phase=upload] summaries pack")
-        pack_hf_file = HE_SUMMARIES_HF_FILE if args.ablate_answer else UH_SUMMARIES_HF_FILE
+        if truncate_frac is not None:
+            # `_btdr` packs land under the BTDR results prefix per k (plan v18
+            # §4.6 item 1 — NOT the uh/he single-file destinations).
+            pack_name = BTDR_SUMMARIES_HF_FILE_TMPL.format(pct=btdr_pct(truncate_frac))
+            pack_hf_file = f"{BTDR_HF_RESULTS_PREFIX}/{pack_name}"
+        elif args.ablate_answer:
+            pack_hf_file = HE_SUMMARIES_HF_FILE
+        else:
+            pack_hf_file = UH_SUMMARIES_HF_FILE
         uh_pack_hf = _upload_uh_summaries(uh_pack_path, hf_file=pack_hf_file)
     return path_in_repo, uh_pack_hf
 
@@ -1408,6 +1621,7 @@ def _ablate_context_hooks(
     ctx_id: str,
     instance: dict,
     probes: list[str],
+    completions: list[str] | None,
     model,
     tokenizer,
     capture,
@@ -1416,15 +1630,18 @@ def _ablate_context_hooks(
     pos_summaries: dict,
     compare_cc: bool,
     cc_parity: dict,
+    truncate_frac: float | None = None,
 ) -> dict | None:
-    """Per-context ablate-mode hooks: cc_last drift tripwire + smoke oracles.
+    """Per-context he-row-set hooks (ablate OR truncate): cc_last tripwire + smoke.
 
     Mutates ``cc_parity`` (per-context #594-store parity record — the
-    production capture-drift gate, plan v15 §5) and returns ``smoke_asserts``
-    (first context only, --smoke). Raises on any parity violation (kill
-    criterion 2: halt before any fit on drifted activations). On a non-compare
-    run (smoke / non-7B / probe-capped) the cc_last recompute path is still
-    exercised: shape + non-degenerate norms are asserted (the
+    production capture-drift gate, plan v15 §5; ``cc_last`` is prompt-side and
+    ablation/TRUNCATION-invariant by causal attention, so the same tripwire
+    covers the `_btdr` truncate mode, plan v18 §5) and returns
+    ``smoke_asserts`` (first context only, --smoke). Raises on any parity
+    violation (kill criterion 2: halt before any fit on drifted activations).
+    On a non-compare run (smoke / non-7B / probe-capped) the cc_last recompute
+    path is still exercised: shape + non-degenerate norms are asserted (the
     ``_cc_last_parity_probe`` smoke precedent).
     """
     smoke_asserts: dict | None = None
@@ -1448,19 +1665,124 @@ def _ablate_context_hooks(
             capture,
             instance,
             probes,
-            None,
+            completions,
             capture_layers,
             n_layers,
             pos_summaries,
             None,
-            ablate=True,
+            ablate=bool(args.ablate_answer),
+            truncate_frac=truncate_frac,
         )
     return smoke_asserts
 
 
+# The 5 boundary singles compared in the k=1.0 endpoint-parity probe.
+_K1_PARITY_SINGLES: tuple[str, ...] = ("im_end", "turn_nl", "uh_im_start", "uh_user", "uh_nl")
+
+
+def _k1_endpoint_parity_probe(
+    args,
+    model,
+    tokenizer,
+    capture,
+    instance: dict,
+    probes: list[str],
+    completions: list[str],
+    capture_layers: list[int],
+    n_layers: int,
+    compare_store: bool,
+    min_cos: float = 0.999,
+) -> dict:
+    """k=1.0 endpoint-parity gate (plan v18 §4.6 item 2 / kill criterion 2).
+
+    Runs the TRUNCATE code path at ``truncate_frac=1.0`` on ONE context — where
+    it degenerates to the round-3 full capture exactly (``n_keep == ans_len``
+    asserted per probe inside ``_build_probe_row`` and re-asserted here from the
+    diag) — then downloads that context's committed round-3 store file
+    (``answer_position_sweep_user_header/<ctx>.pt``, ~8 MB) and, on a
+    production run (``compare_store``: 7B model + uncapped probes), asserts min
+    per-layer cosine ≥ ``min_cos`` on the 5 boundary singles. PASS proves the
+    completions/tokenization/capture pipeline reproduces committed data BEFORE
+    any capture spend; FAIL halts (``failure_class: data``). Smoke / non-7B /
+    probe-capped runs exercise the same code path + fetch + structural asserts
+    but skip the cosine compare (a 0.5B / probe-capped capture cannot match the
+    7B 48-probe store means by construction — the ``_cc_last_parity_probe``
+    precedent).
+    """
+    ctx_id = str(instance["id"])
+    logger.info("[phase=k1_parity] endpoint-parity probe at truncate_frac=1.0 (ctx=%s)", ctx_id)
+    pos_summaries, coverage, diag, _extras = capture_positions_for_context(
+        model,
+        tokenizer,
+        instance,
+        probes,
+        completions,
+        capture,
+        n_layers,
+        capture_layers,
+        batch_probes=args.batch_probes,
+        extended=True,
+        ablate=False,
+        truncate_frac=1.0,
+    )
+    nk, al = diag["n_keep_per_probe"], diag["ans_len_per_probe"]
+    assert nk == al, (
+        f"k=1.0 endpoint probe: n_keep != ans_len for some probe "
+        f"(first mismatches: {[(a, b) for a, b in zip(nk, al, strict=True) if a != b][:5]})"
+    )
+    out: dict = {
+        "ctx_id": ctx_id,
+        "n_probes": diag["n_probes_used"],
+        "n_keep_equals_ans_len": True,
+        "min_cosine_threshold": min_cos,
+    }
+    from huggingface_hub import hf_hub_download
+
+    p = hf_hub_download(
+        HF_DATA_REPO,
+        f"{HF_PREFIX}/{ANSWER_POSITION_SWEEP_UH_SUBDIR}/{ctx_id}.pt",
+        repo_type="dataset",
+    )
+    blob = torch.load(p, weights_only=False)
+    r3 = {name: blob["pos_vectors"][i] for i, name in enumerate(blob["positions"])}
+    missing = [s for s in _K1_PARITY_SINGLES if s not in r3]
+    assert not missing, f"round-3 store {ctx_id} lacks singles {missing}"
+    if not compare_store:
+        out["compared_to_store"] = False
+        logger.info(
+            "[phase=k1_parity] store compare SKIPPED (model=%s, n_probes=%s, smoke=%s) — "
+            "truncate-path degeneration + n_keep==ans_len + store fetch/shape exercised; "
+            "the cosine gate binds on the production 7B run",
+            args.model,
+            args.n_probes,
+            args.smoke,
+        )
+        return out
+    worst = 1.0
+    for s in _K1_PARITY_SINGLES:
+        if coverage[s] != blob["coverage"].get(s):
+            raise RuntimeError(
+                f"k=1.0 endpoint probe {ctx_id}: coverage mismatch for {s!r} "
+                f"({coverage[s]} vs round-3 {blob['coverage'].get(s)}) — probe-set drift"
+            )
+        c_min, _ = _per_layer_min_cosine(pos_summaries[s], r3[s].float())
+        worst = min(worst, c_min)
+        if c_min < min_cos:
+            raise RuntimeError(
+                f"k=1.0 endpoint-parity probe FAILED for {ctx_id}/{s}: min layer cosine "
+                f"{c_min:.6f} < {min_cos} — the truncate path at k=1.0 does not reproduce "
+                "the committed round-3 capture (completions/tokenizer/capture drift); "
+                "halting BEFORE any capture spend (plan v18 kill criterion 2, "
+                "failure_class: data)"
+            )
+    out.update({"compared_to_store": True, "min_layer_cosine": worst})
+    logger.info("[phase=k1_parity] PASS: worst min-layer cosine %.6f over 5 singles", worst)
+    return out
+
+
 def _store_position_names(args) -> list[str]:
     """The per-context stored position list for this run's mode."""
-    if args.ablate_answer:
+    if args.ablate_answer or args.truncate_frac:
         return he_stored_position_names()
     return uh_stored_position_names() if args.extended_boundary else stored_position_names()
 
@@ -1474,6 +1796,241 @@ def _probes_for_context(args, ctx_id: str, probe_pool: list[str] | None):
     if args.n_probes is not None:
         cells = cells[: args.n_probes]
     return [c["probe"] for c in cells], [c["completion"] for c in cells]
+
+
+def _run_extraction_pass(
+    args,
+    model,
+    tokenizer,
+    capture,
+    capture_layers: list[int],
+    n_layers: int,
+    battery: dict,
+    instances: dict,
+    ctx_ids: list[str],
+    g1_cc_parity: dict | None,
+    truncate_frac: float | None = None,
+) -> tuple[dict, Path]:
+    """ONE full extraction pass: per-context capture → store files → manifest → pack → upload.
+
+    Extracted verbatim from ``main`` (behavior identical for
+    ``truncate_frac=None`` — the parent/uh/he modes run exactly one pass); the
+    `_btdr` truncate mode calls it once per k re-using the loaded model (plan
+    v18 §4.6 item 2 single-invocation multi-k loop). Returns ``(note, out_dir)``
+    — the per-pass sentinel-note fields + the local store dir. Uploads (store +
+    pack) run INSIDE the pass so each k's artifacts persist the moment the pass
+    completes (checkpoint-per-phase).
+    """
+    out_dir = _resolve_out_dir(args, truncate_frac)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    per_ctx_diag: dict[str, dict] = {}
+    # Extended-boundary parity records (plan v11 §5) + the compact new-row pack.
+    v0_parity: dict[str, dict] = {}
+    cc594_parity: dict[str, dict] = {}
+    drift_check: dict | None = None
+    smoke_asserts: dict | None = None
+    he_rows = bool(args.ablate_answer) or truncate_frac is not None
+    # The he-row-set modes (ablate OR truncate) pack the 9 HE rows — pairing
+    # across sides and k is by name (plan v18 §4.6 item 1; a UH_SUMMARY_NAMES
+    # pack here would drop im_end/turn_nl, the two headline rows).
+    pack_row_names = HE_SUMMARY_NAMES if he_rows else UH_SUMMARY_NAMES
+    uh_pack_rows: dict[str, dict[str, torch.Tensor]] = {n: {} for n in pack_row_names}
+    uh_pack_cov: dict[str, dict[str, int]] = {n: {} for n in pack_row_names}
+    # The v0 store-mean / round-1 drift comparisons are meaningful ONLY on the
+    # production model with the full probe set (a 0.5B smoke or a capped probe
+    # subset cannot match the 7B 48-probe store means by construction — the
+    # `_cc_last_parity_probe` precedent). In the he-row-set modes BOTH are
+    # undefined (ablate: no answer span; truncate: the span is deliberately
+    # cut) — the cc_last #594-store parity is the drift tripwire instead
+    # (plan v15 §5 divergence 3 / plan v18 §5).
+    compare_store = (
+        args.extended_boundary
+        and not he_rows
+        and args.model == DEFAULT_MODEL
+        and args.n_probes is None
+    )
+    compare_cc = he_rows and args.model == DEFAULT_MODEL and args.n_probes is None
+    # Ablate mode reads NO stored completions (code-truth for the plan v15 §10
+    # claim): the probe grid comes from the hash-pinned Betley pool instead.
+    # Truncate mode DOES consume completions (the answer text IS the dose).
+    probe_pool = _betley_probe_pool(battery) if args.ablate_answer else None
+    for ci, ctx_id in enumerate(ctx_ids):
+        logger.info(
+            "[phase=extract] context %d/%d %s%s",
+            ci + 1,
+            len(ctx_ids),
+            ctx_id,
+            f" (truncate_frac={truncate_frac})" if truncate_frac is not None else "",
+        )
+        if ctx_id not in instances:
+            raise RuntimeError(f"context {ctx_id} absent from battery (coverage gap)")
+        probes, completions = _probes_for_context(args, ctx_id, probe_pool)
+        pos_summaries, coverage, diag, extras = capture_positions_for_context(
+            model,
+            tokenizer,
+            instances[ctx_id],
+            probes,
+            completions,
+            capture,
+            n_layers,
+            capture_layers,
+            args.batch_probes,
+            extended=args.extended_boundary,
+            ablate=args.ablate_answer,
+            truncate_frac=truncate_frac,
+        )
+        if he_rows:
+            sa = _ablate_context_hooks(
+                args,
+                ci,
+                ctx_id,
+                instances[ctx_id],
+                probes,
+                completions,
+                model,
+                tokenizer,
+                capture,
+                capture_layers,
+                n_layers,
+                pos_summaries,
+                compare_cc,
+                cc594_parity,
+                truncate_frac=truncate_frac,
+            )
+            smoke_asserts = sa or smoke_asserts
+            _collect_uh_pack_rows(
+                ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov, pack_row_names
+            )
+        elif args.extended_boundary:
+            dc, sa = _extended_context_hooks(
+                args,
+                ci,
+                ctx_id,
+                instances[ctx_id],
+                probes,
+                completions,
+                model,
+                tokenizer,
+                capture,
+                capture_layers,
+                n_layers,
+                pos_summaries,
+                coverage,
+                extras,
+                compare_store,
+                v0_parity,
+            )
+            drift_check = dc or drift_check
+            smoke_asserts = sa or smoke_asserts
+            _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov)
+        names = _store_position_names(args)
+        # Stack positions into (n_positions, Lc, H) fp16; a position missing
+        # for EVERY probe (impossible for boundary; possible for a deep
+        # tail_k on all-short answers) is recorded as absent in coverage and
+        # its row is zero-filled (never silently dropped — the reader keys on
+        # coverage, and a 0-coverage row is excluded downstream).
+        H = model.config.hidden_size
+        pos_stack = torch.zeros(len(names), len(capture_layers), H, dtype=torch.float16)
+        for pi, name in enumerate(names):
+            if name in pos_summaries:
+                pos_stack[pi] = pos_summaries[name].to(torch.float16)
+        blob = {
+            "context_id": ctx_id,
+            "capture_layers": capture_layers,
+            "positions": names,
+            "pos_vectors": pos_stack,  # (n_positions, Lc, H) fp16
+            "coverage": coverage,
+            "model": args.model,
+        }
+        torch.save(blob, out_dir / f"{ctx_id}.pt")
+        per_ctx_diag[ctx_id] = diag
+
+    # Manifest (plan §13): positions list, dtype, coverage semantics, provenance.
+    manifest = {
+        "positions": _store_position_names(args),
+        "capture_layers": capture_layers,
+        "dtype": "float16",
+        "pos_vectors_shape": ["n_positions", len(capture_layers), model.config.hidden_size],
+        "coverage_semantics": "per-position probe count contributing to the probe-mean summary",
+        "n_contexts": len(ctx_ids),
+        "context_ids": ctx_ids,
+        "model": args.model,
+        "battery_sha256": BATTERY50_SHA256,
+        "per_context_diag": per_ctx_diag,
+        "boundary_note": (
+            "im_end=<|im_end|> id 151645 (position span_end); turn_nl=\\n after "
+            "im_end (span_end+1, the c_C answer-side mirror). Both appended to the "
+            "teacher-forced sequence and captured fresh (NOT slice-derivable from "
+            "the answer-content span)."
+        ),
+        "reproducibility": reproducibility_metadata(),
+        "smoke": args.smoke,
+    }
+    if args.genre == "g1":
+        # Genre-arm provenance (plan v6 § Storage naming): tag + probe-pool pin +
+        # the cc_last parity read. Betley manifests stay parent-shaped (A14 parity).
+        manifest["genre_tag"] = G1_GENRE_TAG
+        manifest["probe_pool_hash"] = G1_PROBE_POOL_HASH
+        manifest["cc_last_parity"] = g1_cc_parity
+    uh_pack_path: Path | None = None
+    if args.extended_boundary:
+        uh_pack_path = _finalize_extended_outputs(
+            args,
+            manifest,
+            v0_parity,
+            drift_check,
+            smoke_asserts,
+            uh_pack_rows,
+            uh_pack_cov,
+            capture_layers,
+            ctx_ids,
+            out_dir,
+            compare_store,
+            cc_parity=(
+                {
+                    "per_context": cc594_parity,
+                    "min_layer_cosine": min(
+                        (v["min_layer_cosine"] for v in cc594_parity.values()), default=None
+                    ),
+                }
+                if he_rows
+                else None
+            ),
+            truncate_frac=truncate_frac,
+        )
+    dump_json(manifest, out_dir / "manifest.json")
+    logger.info("wrote manifest (%d contexts) to %s", len(ctx_ids), out_dir)
+
+    path_in_repo = None
+    uh_pack_hf: str | None = None
+    if not args.no_upload and not args.smoke:
+        path_in_repo, uh_pack_hf = _do_uploads(
+            args, out_dir, ctx_ids, uh_pack_path, truncate_frac=truncate_frac
+        )
+
+    note = {
+        "phase": "B_extract_positions",
+        "genre": args.genre,
+        "extended_boundary": bool(args.extended_boundary),
+        "ablate_answer": bool(args.ablate_answer),
+        "n_contexts": len(ctx_ids),
+        "positions": len(manifest["positions"]),
+        "hf_path": path_in_repo,
+        "uh_summaries_hf": uh_pack_hf,
+        "v0_store_mean_parity_min_cos": (
+            min((v["min_layer_cosine"] for v in v0_parity.values()), default=None)
+        ),
+        "cc594_parity_min_cos": (
+            min((v["min_layer_cosine"] for v in cc594_parity.values()), default=None)
+        ),
+        "round1_drift_worst_cos": (drift_check or {}).get("worst_min_layer_cosine"),
+        "store_files_sha256": {
+            c: sha256_file(out_dir / f"{c}.pt")[:16] for c in ctx_ids[: min(3, len(ctx_ids))]
+        },
+    }
+    if truncate_frac is not None:
+        note["truncate_frac"] = float(truncate_frac)
+    return note, out_dir
 
 
 def main() -> int:
@@ -1521,18 +2078,35 @@ def main() -> int:
         "he_summaries.pt. Default OFF = round-3 behavior byte-for-byte.",
     )
     ap.add_argument(
+        "--truncate-frac",
+        nargs="+",
+        type=float,
+        default=None,
+        help="follow-up `boundary-truncation-dose-response` (plan v18): keep only the first "
+        "n_keep = max(1, ceil(k*ans_len)) answer TOKENS (ID-prefix cut, never re-tokenized "
+        "text) before the 5-token boundary block; ONE process loops the k list (one model "
+        "load), runs the k=1.0 endpoint-parity gate FIRST, stores per k to "
+        f"{ANSWER_POSITION_SWEEP_BTDR_SUBDIR_TMPL}/, packs per k to "
+        f"{BTDR_SUMMARIES_HF_FILE_TMPL}. Values in (0, 1] — 1.0 is the endpoint-parity "
+        "probe value (degenerates to the round-3 full capture); production uses "
+        "0.25 0.5 0.75. REQUIRES --extended-boundary; MUTUALLY EXCLUSIVE with "
+        "--ablate-answer; Betley-only. Default OFF = round-3/round-4 behavior "
+        "byte-for-byte.",
+    )
+    ap.add_argument(
         "--uh-summaries-out",
         default=None,
         help="local path for the compact new-row summaries pack (extended-boundary only; "
-        "default: <out-dir parent>/uh_summaries.pt, or he_summaries.pt with --ablate-answer)",
+        "default: <out-dir parent>/uh_summaries.pt, or he_summaries.pt with --ablate-answer; "
+        "a DIRECTORY for the per-k btdr_summaries_k{pct}.pt packs with --truncate-frac)",
     )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
     args = ap.parse_args()
+    _validate_truncate_flags(args)
 
     device = args.device or ("cuda" if (args.gpu and torch.cuda.is_available()) else "cpu")
-    out_dir = _resolve_out_dir(args)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    _resolve_out_dir(args)  # fail fast on an invalid mode/genre combination
     t0 = time.time()
 
     logger.info("[phase=setup] loading battery + manifest (genre=%s)", args.genre)
@@ -1558,13 +2132,13 @@ def main() -> int:
     # capture — so a c_C procedure drift halts before GPU-hours are spent. Runs on
     # the FIRST manifest context. Production (7B) compares against the g1 store;
     # smoke/non-7B exercises the recompute path only.
-    cc_parity: dict | None = None
+    g1_cc_parity: dict | None = None
     if args.genre == "g1":
         ctx0 = ctx_ids[0]
         if ctx0 not in instances:
             raise RuntimeError(f"context {ctx0} absent from battery (coverage gap)")
         cells0 = _load_stored_completions(ctx0, args.genre)
-        cc_parity = _cc_last_parity_probe(
+        g1_cc_parity = _cc_last_parity_probe(
             model,
             tokenizer,
             capture,
@@ -1575,200 +2149,72 @@ def main() -> int:
             compare_store=(not args.smoke and args.model == DEFAULT_MODEL),
         )
 
-    per_ctx_diag: dict[str, dict] = {}
-    # Extended-boundary parity records (plan v11 §5) + the compact new-row pack.
-    v0_parity: dict[str, dict] = {}
-    cc594_parity: dict[str, dict] = {}
-    drift_check: dict | None = None
-    smoke_asserts: dict | None = None
-    pack_row_names = HE_SUMMARY_NAMES if args.ablate_answer else UH_SUMMARY_NAMES
-    uh_pack_rows: dict[str, dict[str, torch.Tensor]] = {n: {} for n in pack_row_names}
-    uh_pack_cov: dict[str, dict[str, int]] = {n: {} for n in pack_row_names}
-    # The v0 store-mean / round-1 drift comparisons are meaningful ONLY on the
-    # production model with the full probe set (a 0.5B smoke or a capped probe
-    # subset cannot match the 7B 48-probe store means by construction — the
-    # `_cc_last_parity_probe` precedent above). In ablate mode BOTH are
-    # undefined (no answer span; the recaptured boundary rows deliberately
-    # DIFFER from the full-answer stores) — the cc_last #594-store parity is
-    # the drift tripwire instead (plan v15 §5 divergence 3).
-    compare_store = (
-        args.extended_boundary
-        and not args.ablate_answer
-        and args.model == DEFAULT_MODEL
-        and args.n_probes is None
+    # `_btdr` truncate mode (plan v18 §4.6 item 2): k=1.0 endpoint-parity gate
+    # FIRST (halt BEFORE any capture spend — kill criterion 2), then one
+    # extraction pass per k re-using the loaded model. All other modes run
+    # exactly one pass with truncate_frac=None (behavior identical).
+    k_list: list[float | None] = (
+        [float(k) for k in args.truncate_frac] if args.truncate_frac else [None]
     )
-    compare_cc = args.ablate_answer and args.model == DEFAULT_MODEL and args.n_probes is None
-    # Ablate mode reads NO stored completions (code-truth for the plan v15 §10
-    # claim): the probe grid comes from the hash-pinned Betley pool instead.
-    probe_pool = _betley_probe_pool(battery) if args.ablate_answer else None
+    k1_parity: dict | None = None
+    passes: list[tuple[dict, Path]] = []
     try:
-        for ci, ctx_id in enumerate(ctx_ids):
-            logger.info("[phase=extract] context %d/%d %s", ci + 1, len(ctx_ids), ctx_id)
-            if ctx_id not in instances:
-                raise RuntimeError(f"context {ctx_id} absent from battery (coverage gap)")
-            probes, completions = _probes_for_context(args, ctx_id, probe_pool)
-            pos_summaries, coverage, diag, extras = capture_positions_for_context(
+        if args.truncate_frac:
+            ctx0 = ctx_ids[0]
+            if ctx0 not in instances:
+                raise RuntimeError(f"context {ctx0} absent from battery (coverage gap)")
+            probes0, completions0 = _probes_for_context(args, ctx0, None)
+            k1_parity = _k1_endpoint_parity_probe(
+                args,
                 model,
                 tokenizer,
-                instances[ctx_id],
-                probes,
-                completions,
                 capture,
-                n_layers,
+                instances[ctx0],
+                probes0,
+                completions0,
                 capture_layers,
-                args.batch_probes,
-                extended=args.extended_boundary,
-                ablate=args.ablate_answer,
+                n_layers,
+                compare_store=(
+                    not args.smoke and args.model == DEFAULT_MODEL and args.n_probes is None
+                ),
             )
-            if args.ablate_answer:
-                sa = _ablate_context_hooks(
+        for k in k_list:
+            passes.append(
+                _run_extraction_pass(
                     args,
-                    ci,
-                    ctx_id,
-                    instances[ctx_id],
-                    probes,
                     model,
                     tokenizer,
                     capture,
                     capture_layers,
                     n_layers,
-                    pos_summaries,
-                    compare_cc,
-                    cc594_parity,
+                    battery,
+                    instances,
+                    ctx_ids,
+                    g1_cc_parity,
+                    truncate_frac=k,
                 )
-                smoke_asserts = sa or smoke_asserts
-                _collect_uh_pack_rows(
-                    ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov, pack_row_names
-                )
-            elif args.extended_boundary:
-                dc, sa = _extended_context_hooks(
-                    args,
-                    ci,
-                    ctx_id,
-                    instances[ctx_id],
-                    probes,
-                    completions,
-                    model,
-                    tokenizer,
-                    capture,
-                    capture_layers,
-                    n_layers,
-                    pos_summaries,
-                    coverage,
-                    extras,
-                    compare_store,
-                    v0_parity,
-                )
-                drift_check = dc or drift_check
-                smoke_asserts = sa or smoke_asserts
-                _collect_uh_pack_rows(ctx_id, pos_summaries, coverage, uh_pack_rows, uh_pack_cov)
-            names = _store_position_names(args)
-            # Stack positions into (n_positions, Lc, H) fp16; a position missing
-            # for EVERY probe (impossible for boundary; possible for a deep
-            # tail_k on all-short answers) is recorded as absent in coverage and
-            # its row is zero-filled (never silently dropped — the reader keys on
-            # coverage, and a 0-coverage row is excluded downstream).
-            H = model.config.hidden_size
-            pos_stack = torch.zeros(len(names), len(capture_layers), H, dtype=torch.float16)
-            for pi, name in enumerate(names):
-                if name in pos_summaries:
-                    pos_stack[pi] = pos_summaries[name].to(torch.float16)
-            blob = {
-                "context_id": ctx_id,
-                "capture_layers": capture_layers,
-                "positions": names,
-                "pos_vectors": pos_stack,  # (n_positions, Lc, H) fp16
-                "coverage": coverage,
-                "model": args.model,
-            }
-            torch.save(blob, out_dir / f"{ctx_id}.pt")
-            per_ctx_diag[ctx_id] = diag
+            )
     finally:
         capture.remove()
 
-    # Manifest (plan §13): positions list, dtype, coverage semantics, provenance.
-    manifest = {
-        "positions": _store_position_names(args),
-        "capture_layers": capture_layers,
-        "dtype": "float16",
-        "pos_vectors_shape": ["n_positions", len(capture_layers), model.config.hidden_size],
-        "coverage_semantics": "per-position probe count contributing to the probe-mean summary",
-        "n_contexts": len(ctx_ids),
-        "context_ids": ctx_ids,
-        "model": args.model,
-        "battery_sha256": BATTERY50_SHA256,
-        "per_context_diag": per_ctx_diag,
-        "boundary_note": (
-            "im_end=<|im_end|> id 151645 (position span_end); turn_nl=\\n after "
-            "im_end (span_end+1, the c_C answer-side mirror). Both appended to the "
-            "teacher-forced sequence and captured fresh (NOT slice-derivable from "
-            "the answer-content span)."
-        ),
-        "reproducibility": reproducibility_metadata(),
-        "smoke": args.smoke,
-    }
-    if args.genre == "g1":
-        # Genre-arm provenance (plan v6 § Storage naming): tag + probe-pool pin +
-        # the cc_last parity read. Betley manifests stay parent-shaped (A14 parity).
-        manifest["genre_tag"] = G1_GENRE_TAG
-        manifest["probe_pool_hash"] = G1_PROBE_POOL_HASH
-        manifest["cc_last_parity"] = cc_parity
-    uh_pack_path: Path | None = None
-    if args.extended_boundary:
-        uh_pack_path = _finalize_extended_outputs(
-            args,
-            manifest,
-            v0_parity,
-            drift_check,
-            smoke_asserts,
-            uh_pack_rows,
-            uh_pack_cov,
-            capture_layers,
-            ctx_ids,
-            out_dir,
-            compare_store,
-            cc_parity=(
-                {
-                    "per_context": cc594_parity,
-                    "min_layer_cosine": min(
-                        (v["min_layer_cosine"] for v in cc594_parity.values()), default=None
-                    ),
-                }
-                if args.ablate_answer
-                else None
-            ),
-        )
-    dump_json(manifest, out_dir / "manifest.json")
-    logger.info("wrote manifest (%d contexts) to %s", len(ctx_ids), out_dir)
-
-    path_in_repo = None
-    uh_pack_hf: str | None = None
-    if not args.no_upload and not args.smoke:
-        path_in_repo, uh_pack_hf = _do_uploads(args, out_dir, ctx_ids, uh_pack_path)
-
-    note = {
-        "phase": "B_extract_positions",
-        "genre": args.genre,
-        "extended_boundary": bool(args.extended_boundary),
-        "ablate_answer": bool(args.ablate_answer),
-        "n_contexts": len(ctx_ids),
-        "positions": len(manifest["positions"]),
-        "hf_path": path_in_repo,
-        "uh_summaries_hf": uh_pack_hf,
-        "v0_store_mean_parity_min_cos": (
-            min((v["min_layer_cosine"] for v in v0_parity.values()), default=None)
-        ),
-        "cc594_parity_min_cos": (
-            min((v["min_layer_cosine"] for v in cc594_parity.values()), default=None)
-        ),
-        "round1_drift_worst_cos": (drift_check or {}).get("worst_min_layer_cosine"),
-        "elapsed_s": round(time.time() - t0, 1),
-        "store_files_sha256": {
-            c: sha256_file(out_dir / f"{c}.pt")[:16] for c in ctx_ids[: min(3, len(ctx_ids))]
-        },
-    }
-    _write_sentinel("epm:results", note, out_dir)
-    logger.info("[phase=done] extraction complete: %d contexts", len(ctx_ids))
+    if args.truncate_frac:
+        note = {
+            "phase": "B_extract_positions",
+            "genre": args.genre,
+            "extended_boundary": bool(args.extended_boundary),
+            "ablate_answer": bool(args.ablate_answer),
+            "truncate_fracs": [float(k) for k in args.truncate_frac],
+            "k1_endpoint_parity": k1_parity,
+            "passes": [n for n, _ in passes],
+            "n_contexts": len(ctx_ids),
+            "elapsed_s": round(time.time() - t0, 1),
+        }
+    else:
+        note = {**passes[0][0], "elapsed_s": round(time.time() - t0, 1)}
+    _write_sentinel("epm:results", note, passes[-1][1])
+    logger.info(
+        "[phase=done] extraction complete: %d contexts x %d pass(es)", len(ctx_ids), len(passes)
+    )
     return 0
 
 

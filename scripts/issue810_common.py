@@ -173,6 +173,39 @@ HE_POSITION_NAMES: list[str] = ["im_end", "turn_nl", *UH_POSITION_NAMES]
 HE_POOL_NAMES: list[str] = ["uh_mean3", "uh_max3", "bnd_mean5", "bnd_max5"]
 HE_SUMMARY_NAMES: list[str] = HE_POSITION_NAMES + HE_POOL_NAMES
 
+# ── `_btdr` truncation-dose arm (same-issue follow-up `boundary-truncation-dose-response`) ──
+# Round 5 (plan v18) doses the round-4 deleted answer span: the teacher-forced
+# sequence is `prompt + ans_ids[:n_keep] + BOUNDARY_BLOCK_IDS` with
+# `n_keep = max(1, ceil(k * ans_len))` per probe (ID-prefix cut, never
+# re-tokenized text). The SINGLE manipulated variable is the retained answer
+# fraction k; `--truncate-frac` OFF (the default everywhere) keeps the
+# round-3/round-4 paths bit-for-bit. Row NAMES reuse he_stored_position_names()
+# unchanged — pairing across sides and k is by name (plan v18 §4.6 item 1).
+BTDR_FOLLOWUP_LABEL = "boundary-truncation-dose-response"
+# Per-k aligned-subset store subdir under HF_PREFIX (plan v18 § Storage naming).
+ANSWER_POSITION_SWEEP_BTDR_SUBDIR_TMPL = "answer_position_sweep_btdr_k{pct}"
+BTDR_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_810" / BTDR_FOLLOWUP_LABEL
+BTDR_HF_RESULTS_PREFIX = f"issue810_results/{BTDR_FOLLOWUP_LABEL}"
+# Compact per-k truncated-answer summaries pack (the CPU-chain input).
+BTDR_SUMMARIES_HF_FILE_TMPL = "btdr_summaries_k{pct}.pt"
+# The production k grid (interior points; endpoints k=0 / k=100 reuse the
+# committed round-4 / round-1+3 data). 1.0 is the ENDPOINT-PARITY PROBE value
+# only (the truncate code path degenerates to the round-3 full capture) — it
+# is admitted by the (0, 1] validator but never a production capture k.
+BTDR_TRUNCATE_FRACS: tuple[float, ...] = (0.25, 0.5, 0.75)
+
+
+def btdr_pct(k: float) -> int:
+    """Canonical integer percent for a truncate fraction (0.25 -> 25); fail loud.
+
+    Refuses a k whose percent is not integral (the storage naming templates key
+    on the integer percent — a drifted float would silently split stores).
+    """
+    pct = round(k * 100)
+    if abs(k * 100 - pct) > 1e-9 or not (0 < pct <= 100):
+        raise ValueError(f"truncate_frac {k!r} has no canonical integer percent")
+    return int(pct)
+
 
 def he_stored_position_names() -> list[str]:
     """The per-position keys stored in ``answer_position_sweep_header_echo/<ctx>.pt``.

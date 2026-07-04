@@ -1206,7 +1206,11 @@ def _fit_grid(
                 key = (summary, capture_layers[li])
                 mlp_jobs.append((key, Xc, y_pca))
                 cell_ref[key] = fit
-            if do_loco:
+            if do_loco and args.n_perms > 0:
+                # --n-perms 0 (the `_btdr` no-nulls path, plan v18 §4.6 item 3):
+                # skip the permutation battery + band rows entirely — LOCO+LOFO
+                # point skills only. Unguarded, make_perm_matrix(n, 0, rng)
+                # crashes via np.stack([]) (issue810_batched_null.py:75).
                 null_matrix[summary][str(capture_layers[li])] = _fit_null_draws(
                     Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED, device=args.device
                 )

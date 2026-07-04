@@ -242,7 +242,15 @@ def _load_uh_summaries(spec: str) -> tuple[dict, dict, dict]:
     }
     meta = {
         k: blob.get(k)
-        for k in ("smoke", "context_ids", "capture_layers", "model", "ablate_answer", "rows")
+        for k in (
+            "smoke",
+            "context_ids",
+            "capture_layers",
+            "model",
+            "ablate_answer",
+            "truncate_frac",  # `_btdr` per-k pack provenance (None on older packs)
+            "rows",
+        )
     }
     return rows, blob["coverage"], meta
 
