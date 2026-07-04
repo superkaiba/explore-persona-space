@@ -738,7 +738,11 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
     already does NOT exhibit the behavior (``ElicitationSpec`` contract), so
     that arm samples under the UN-instructed source context.
 
-    Persists the scored rollout text (stripped system prompt) to
+    Persists the UNSCORED rollout text to
+    ``<class_dir>/on_policy_control/raw_completions.jsonl`` immediately after
+    generation and BEFORE the remote-judge ``score_completions`` call (r9
+    CONCERN ``onpolicy-control-rollout-text-not-persisted-before-score``),
+    then the DERIVED scored rows (stripped system prompt) to
     ``<class_dir>/on_policy_control/completions.jsonl`` and the direction via
     ``save_direction``.  Returns a dict with keys
     ``{status, r_b_path, regime, provenance, n_kept}``.
@@ -835,6 +839,28 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
             if callable(close):
                 close()
 
+    # Persist the UNSCORED rollout text IMMEDIATELY after generation and
+    # BEFORE the remote-judge reduce (r9 CONCERN
+    # onpolicy-control-rollout-text-not-persisted-before-score — the
+    # persist-before-reduce class; upload-policy persist-by-default, #779):
+    # these completions are temperature-sampled -> NON-regenerable. item_id
+    # matches score_completions' judge item-id derivation verbatim, so
+    # judge_raw.json cross-references row-for-row; _upload_class's
+    # on_policy_control leg requires this file in its fail-loud set.
+    raw_completions_path = on_policy_dir / "raw_completions.jsonl"
+    _write_jsonl_atomic(
+        raw_completions_path,
+        (
+            {
+                "item_id": f"{c.arm}-p{c.pair_index}-{i:05d}",
+                "arm": c.arm,
+                "question": c.question,
+                "completion": c.response,
+            }
+            for i, c in enumerate(completions)
+        ),
+    )
+
     # Judge-score through the library adapter (score_completions requires the
     # keyword-only cache_dir + save_raw; paths follow the _extract_class
     # judge_cache / judge_raw.json convention).
@@ -845,8 +871,9 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
         cache_dir=on_policy_dir / "judge_cache",
         save_raw=on_policy_dir / "judge_raw.json",
     )
-    # Persist the scored rollout text (stripped system prompt) BEFORE any
-    # reduce (upload-policy: text-persist is the load-bearing minimum).
+    # DERIVED artifact: the same rows with judge scores attached (stripped
+    # system prompt). The unscored text was already persisted to
+    # raw_completions.jsonl above, before the judge call.
     completions_path = on_policy_dir / "completions.jsonl"
     save_completions_jsonl(scored, completions_path)
 
@@ -858,6 +885,7 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
         # score pass above, so they still count toward the api_calls roll-up.
         return {
             "status": "yield_failure",
+            "raw_completions_path": str(raw_completions_path),
             "completions_path": str(completions_path),
             "n_kept": n_kept,
             "filter_counts": filter_counts,
@@ -900,6 +928,7 @@ def _run_on_policy_control(behavior, cfg: PilotConfig, class_dir: Path, seams: P
         "regime": direction.regime,
         "provenance": direction.provenance,
         "n_kept": n_kept,
+        "raw_completions_path": str(raw_completions_path),
         "completions_path": str(completions_path),
         "judge_draws_total": judge_result.n_total_draws,
         "judge_draws_dropped": judge_result.n_dropped_draws,
@@ -1519,7 +1548,11 @@ def _is_rederivable_cache(rel_parts: tuple[str, ...]) -> bool:
 
 
 def _upload_pilot_dir(
-    local_dir: Path, bucket: str, *, filenames: Sequence[str] | None = None
+    local_dir: Path,
+    bucket: str,
+    *,
+    filenames: Sequence[str] | None = None,
+    required_rel_paths: Sequence[str] | None = None,
 ) -> str | None:
     """Bulk-upload one pilot artifact dir (text/JSON + r_B tensors) in ONE commit.
 
@@ -1546,12 +1579,29 @@ def _upload_pilot_dir(
     recursive scan would sweep in ``train/checkpoint-*`` JSON files. In this
     mode a missing named file RAISES (the build contract guarantees the mix
     exists; a silent skip would re-open the very coverage hole this fixes).
+
+    ``required_rel_paths`` (r9 CONCERN ``rollout-upload-expected-set-hollow``):
+    the recursive scan derives its expected set from files that EXIST locally,
+    so a required file the producing stage never wrote would silently pass.
+    When given (scan mode only — mutually exclusive with ``filenames``), every
+    listed relative path MUST be in the scanned set or this RAISES
+    ``RuntimeError`` (-> ``status="failed"`` in ``_upload_class`` ->
+    ``upload_failed`` -> exit 2 in ``--full``). The check is gated on the dir
+    EXISTING: an absent dir still returns the graceful ``None`` skip — that is
+    the "stage did not run" contract (seam/smoke paths, non-applicable
+    classes); a stage that ran but did not write a required file is exactly
+    the hole this closes.
     """
     from explore_persona_space.orchestrate.hub import (
         DEFAULT_DATASET_REPO,
         _upload_folder_filtered,
     )
 
+    if filenames is not None and required_rel_paths is not None:
+        raise ValueError(
+            "filenames= and required_rel_paths= are mutually exclusive: explicit-file "
+            "mode already raises on every missing named file"
+        )
     local_dir = Path(local_dir)
     if not local_dir.is_dir():
         if filenames is not None:
@@ -1574,6 +1624,17 @@ def _upload_pilot_dir(
             and p.suffix in {".jsonl", ".json", ".pt"}
             and not _is_rederivable_cache(p.relative_to(local_dir).parts)
         )
+        if required_rel_paths is not None:
+            kept_set = set(kept_rel)
+            missing_required = [r for r in required_rel_paths if r not in kept_set]
+            if missing_required:
+                raise RuntimeError(
+                    f"scan upload of {local_dir} -> {bucket}: required file(s) "
+                    f"{missing_required} absent from the scanned set — the producing "
+                    "stage persists these before upload; a glob-derived expected set "
+                    "cannot notice a never-written required file on its own "
+                    "(r9 CONCERN rollout-upload-expected-set-hollow)"
+                )
     if not kept_rel:
         return None
     # allow_patterns are fnmatch globs; a metachar in a filename would silently
@@ -1616,6 +1677,13 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
     — ``*.jsonl`` AND ``*.json``, ``judge_cache*`` excluded — instead of
     ``upload_dataset_directory``'s ``*.jsonl``-only default).
 
+    r9 CONCERN ``rollout-upload-expected-set-hollow``: the baseline leg
+    (``raw_completions.jsonl``, standard-organism classes), the marker verify
+    leg (``marker_rollouts__{base,trained}.jsonl``), and the sycophancy
+    on-policy-control leg (``raw_completions.jsonl``) now declare
+    ``required_rel_paths=`` so a never-written required rollout file FAILS the
+    upload instead of passing on the glob-derived expected set.
+
     Returns a status dict; never raises out of here so one failed upload does not
     forfeit the class's calibration numbers. The driver surfaces any failure loud
     (a report flag + a non-zero exit in ``--full``).
@@ -1624,7 +1692,13 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         return seams.uploader(behavior_name, build_result, cfg)
     if not cfg.upload:
         return {"status": "skipped", "reason": "upload disabled"}
+    from explore_persona_space.artifacts.behavior import BEHAVIORS
     from explore_persona_space.orchestrate.hub import upload_model
+
+    # r9 CONCERN rollout-upload-expected-set-hollow: legs whose rollout text is
+    # REQUIRED declare it via required_rel_paths= so a never-written file fails
+    # the upload loudly instead of passing on the glob-derived expected set.
+    programmatic = BEHAVIORS[behavior_name].programmatic
 
     out: dict[str, Any] = {
         "status": "ok",
@@ -1684,6 +1758,14 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         out["verify"] = _upload_pilot_dir(
             class_dir / "verify",
             f"issue906_pilot/{behavior_name}/verify",
+            # Marker carve-out only: both greedy slot-read rollout files are
+            # REQUIRED when the verify/ dir exists (the inline path writes
+            # them; the seam path writes no dir at all).
+            required_rel_paths=(
+                ["marker_rollouts__base.jsonl", "marker_rollouts__trained.jsonl"]
+                if programmatic
+                else None
+            ),
         )
         # build/rate/ dose-ladder completions + judge_raw.json per checkpoint
         # rung (make_source_rate_fn writes rate_<ckpt>/ dirs). Absent when the
@@ -1706,11 +1788,19 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         out["baseline"] = _upload_pilot_dir(
             class_dir / "baseline",
             f"issue906_pilot/{behavior_name}/baseline",
+            # Standard-organism classes only (the marker carve-out runs no
+            # baseline pass): the temperature-sampled rollout text is REQUIRED.
+            required_rel_paths=(None if programmatic else ["raw_completions.jsonl"]),
         )
         # Sycophancy on-policy control arm: rollout text + r_b_on_policy.pt.
+        # The UNSCORED raw_completions.jsonl (persisted before the judge call)
+        # is REQUIRED for the class that runs the arm.
         out["on_policy_control"] = _upload_pilot_dir(
             class_dir / "on_policy_control",
             f"issue906_pilot/{behavior_name}/on_policy_control",
+            required_rel_paths=(
+                ["raw_completions.jsonl"] if behavior_name == "sycophancy" else None
+            ),
         )
         if not adapter_url:
             out["status"] = "failed"

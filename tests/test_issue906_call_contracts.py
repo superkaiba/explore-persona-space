@@ -366,6 +366,68 @@ def test_on_policy_control_score_completions_contract(onpolicy_run):
     assert torch.isfinite(direction.r_b).all()
 
 
+def test_on_policy_control_persists_unscored_raw_text_before_scoring(tmp_path, monkeypatch):
+    """r9 CONCERN onpolicy-control-rollout-text-not-persisted-before-score: the
+    REAL _run_on_policy_control persists the UNSCORED rollout text to
+    on_policy_control/raw_completions.jsonl BEFORE score_completions runs —
+    asserted from INSIDE a signature-bound score_completions fake that checks
+    row fidelity (item_id / arm / question / completion) against the exact
+    completions it receives. All-50.0 fake scores drive the yield_failure
+    return (exhibit needs >50, not_exhibit <50), so the persist ordering is
+    pinned without touching the HF weights boundary."""
+    import dataclasses
+
+    import explore_persona_space.artifacts.directions as directions_mod
+
+    behavior = BEHAVIORS["sycophancy"]
+    cfg = _cfg(tmp_path)
+    class_dir = cfg.out_root / "sycophancy"
+    raw_path = class_dir / "on_policy_control" / "raw_completions.jsonl"
+
+    score_sig = inspect.signature(directions_mod.score_completions)
+    seen: dict = {}
+
+    def fake_score_completions(*args, **kwargs):
+        bound = score_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        completions = list(bound.arguments["completions"])
+        assert completions, "score_completions must receive the generated rollouts"
+        # The UNSCORED rollout text is already ON DISK when scoring begins.
+        assert raw_path.is_file(), (
+            "on_policy_control/raw_completions.jsonl must persist BEFORE score_completions"
+        )
+        rows = [json.loads(line) for line in raw_path.read_text().splitlines() if line.strip()]
+        assert len(rows) == len(completions)
+        for i, (row, c) in enumerate(zip(rows, completions, strict=True)):
+            # item_id matches score_completions' own judge item-id derivation.
+            assert row["item_id"] == f"{c.arm}-p{c.pair_index}-{i:05d}"
+            assert row["arm"] == c.arm
+            assert row["question"] == c.question
+            assert row["completion"] == c.response
+        seen["n_rows"] = len(rows)
+        scored = [dataclasses.replace(c, judge_score=50.0) for c in completions]
+        n_draws = bound.arguments["n_draws"]
+        judge_result = JudgeResult(
+            scores={f"{c.arm}-p{c.pair_index}-{i:05d}": 50.0 for i, c in enumerate(completions)},
+            n_total_draws=len(completions) * n_draws,
+            n_dropped_draws=0,
+        )
+        return scored, judge_result
+
+    monkeypatch.setattr(directions_mod, "score_completions", fake_score_completions)
+    gen = RecordingGen()
+    result = pilot._run_on_policy_control(
+        behavior, cfg, class_dir, pilot.PilotSeams(verify_generate_fn=gen)
+    )
+
+    # 2 questions x 3 rollouts x 2 arms went through the fidelity check.
+    assert seen["n_rows"] == 12
+    assert result["status"] == "yield_failure"
+    assert result["raw_completions_path"] == str(raw_path)
+    # The DERIVED scored artifact also persisted (after scoring).
+    assert Path(result["completions_path"]).is_file()
+
+
 # ── r7 concerns (round-6 ledger): upload coverage / judge-draw roll-up / d1-gap ──
 
 
@@ -420,6 +482,7 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
     (baseline / "judge_cache" / "item.json").write_text("{}")
     onpolicy = class_dir / "on_policy_control"
     onpolicy.mkdir(parents=True)
+    (onpolicy / "raw_completions.jsonl").write_text("{}\n")  # r10 unscored rollout text
     (onpolicy / "completions.jsonl").write_text("{}\n")
     (onpolicy / "judge_raw.json").write_text("{}")
     torch.save({"r_b": torch.ones(2, 4)}, onpolicy / "r_b_on_policy.pt")
@@ -472,6 +535,7 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
         "issue906_pilot/sycophancy/baseline/baseline.json",
         "issue906_pilot/sycophancy/baseline/raw_completions.jsonl",
         "issue906_pilot/sycophancy/baseline/judge_raw.json",
+        "issue906_pilot/sycophancy/on_policy_control/raw_completions.jsonl",
         "issue906_pilot/sycophancy/on_policy_control/completions.jsonl",
         "issue906_pilot/sycophancy/on_policy_control/judge_raw.json",
         "issue906_pilot/sycophancy/on_policy_control/r_b_on_policy.pt",
@@ -729,6 +793,76 @@ def test_upload_class_marker_verify_rollouts_covered(tmp_path, monkeypatch):
     assert "issue906_pilot/marker/verify/marker_rollouts__trained.jsonl" in verify_expected
 
 
+def test_upload_class_baseline_missing_raw_completions_fails_loud(tmp_path, monkeypatch):
+    """r9 CONCERN rollout-upload-expected-set-hollow: a baseline/ dir with
+    baseline.json + judge_raw.json present but NO raw_completions.jsonl must
+    FAIL the upload loudly (status='failed' -> run_class upload_failed ->
+    exit 2 in --full) — the glob-derived expected set alone would silently
+    pass on whatever files happen to exist. The REAL _upload_class /
+    _upload_pilot_dir bodies run; only the Hub boundary is substituted."""
+    from types import SimpleNamespace
+
+    cfg = _cfg(tmp_path, upload=True)
+    class_dir = cfg.out_root / "sycophancy"
+    build_dir = class_dir / "build"
+    datagen_dir = build_dir / "datagen"
+    datagen_dir.mkdir(parents=True)
+    (datagen_dir / "raw_pos.jsonl").write_text("{}\n")
+    (build_dir / "train_mix.jsonl").write_text("{}\n")
+    (build_dir / "mix_meta.json").write_text("{}")
+    baseline = class_dir / "baseline"
+    baseline.mkdir(parents=True)
+    (baseline / "baseline.json").write_text("{}")
+    (baseline / "judge_raw.json").write_text("{}")
+    # raw_completions.jsonl deliberately NEVER written — the hollow-set hole.
+
+    folder_calls = _fake_hub_boundary(monkeypatch)
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(build_dir / "train_mix.jsonl"),
+        data_paths={"datagen_dir": str(datagen_dir)},
+    )
+    out = pilot._upload_class("sycophancy", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "failed", out
+    assert "raw_completions.jsonl" in out["error"]
+    assert "required" in out["error"]
+    # The baseline bucket never committed (the raise precedes the Hub call).
+    assert "issue906_pilot/sycophancy/baseline" not in {
+        b.arguments["path_in_repo"] for b in folder_calls
+    }
+
+
+def test_upload_class_marker_verify_missing_rollout_fails_loud(tmp_path, monkeypatch):
+    """r9 CONCERN rollout-upload-expected-set-hollow: a marker verify/ leg
+    missing ONE of the two required slot-read rollout files fails loud
+    (status='failed' naming the absent file) instead of uploading the
+    remaining files on the glob-derived set."""
+    from types import SimpleNamespace
+
+    cfg = _cfg(tmp_path, upload=True)
+    mix_dir = cfg.out_root / "marker" / "build" / "mix"
+    mix_dir.mkdir(parents=True)
+    (mix_dir / "pos.jsonl").write_text("{}\n")
+    verify_dir = cfg.out_root / "marker" / "verify"
+    verify_dir.mkdir(parents=True)
+    (verify_dir / "marker_rollouts__base.jsonl").write_text("{}\n")
+    # marker_rollouts__trained.jsonl deliberately NEVER written.
+
+    folder_calls = _fake_hub_boundary(monkeypatch)
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(mix_dir / "pos.jsonl"),
+        data_paths={"datagen_dir": str(mix_dir)},
+    )
+    out = pilot._upload_class("marker", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "failed", out
+    assert "marker_rollouts__trained.jsonl" in out["error"]
+    assert "required" in out["error"]
+    assert "issue906_pilot/marker/verify" not in {b.arguments["path_in_repo"] for b in folder_calls}
+
+
 def test_verify_marker_class_inline_persists_rollouts(tmp_path, monkeypatch):
     """r9 CONCERN genreduce-rollout-text-not-persisted (wiring): the REAL
     _verify_marker_class INLINE path (marker_verify_fn seam = None) persists
@@ -830,6 +964,52 @@ def test_upload_pilot_dir_explicit_filenames_fail_loud_on_missing(tmp_path):
         pilot._upload_pilot_dir(
             tmp_path / "absent", "issue906_pilot/x/train_mix", filenames=["train_mix.jsonl"]
         )
+
+
+def test_upload_pilot_dir_required_rel_paths_gate(tmp_path, monkeypatch):
+    """r9 CONCERN rollout-upload-expected-set-hollow (mechanism): scan mode
+    with required_rel_paths= raises on a required file absent from the scan;
+    an absent DIR keeps the graceful None skip (stage-did-not-run contract);
+    combining filenames= with required_rel_paths= is rejected."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    d = tmp_path / "leg"
+    d.mkdir()
+    (d / "judge_raw.json").write_text("{}")
+
+    # Required file absent from the scanned set -> loud RuntimeError.
+    with pytest.raises(RuntimeError, match=r"required.*raw_completions\.jsonl"):
+        pilot._upload_pilot_dir(
+            d, "issue906_pilot/x/leg", required_rel_paths=["raw_completions.jsonl"]
+        )
+
+    # Absent dir -> None (the stage did not run; per-class status handling
+    # owns a crashed stage, not the upload leg).
+    assert (
+        pilot._upload_pilot_dir(
+            tmp_path / "absent", "issue906_pilot/x/leg", required_rel_paths=["a.jsonl"]
+        )
+        is None
+    )
+
+    # Mutually exclusive with explicit-file mode (already fail-loud).
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pilot._upload_pilot_dir(
+            d,
+            "issue906_pilot/x/leg",
+            filenames=["judge_raw.json"],
+            required_rel_paths=["judge_raw.json"],
+        )
+
+    # Present required file passes through to the (faked) Hub boundary.
+    (d / "raw_completions.jsonl").write_text("{}\n")
+    monkeypatch.setattr(hub, "_upload_folder_filtered", lambda *a, **k: "repo/x/leg")
+    assert (
+        pilot._upload_pilot_dir(
+            d, "issue906_pilot/x/leg", required_rel_paths=["raw_completions.jsonl"]
+        )
+        == "repo/x/leg"
+    )
 
 
 def test_upload_pilot_dir_raises_on_empty_url(tmp_path, monkeypatch):
