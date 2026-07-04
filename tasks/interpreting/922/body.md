@@ -22,36 +22,155 @@ goal: 'On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation
 relates_to:
 - spec-context-as-vector
 ---
-# Predicting the answer activation trajectory without generating: global, context-conditioned, and direct per-layer maps
+# Answer-time activation trajectories are forecastable from the prompt alone through 32 tokens with a rolled per-layer affine map (HIGH confidence)
+
+<!-- clean-result-v4 -->
+
+## Takeaways
+
+- A per-layer affine map rolled from the last prompt token forecasts answer-time activations at 32 tokens with skill 0.38–0.42 over the frozen-state null — no token generated.
+- The rolled dynamics are what generalizes: off-corpus the roll keeps skill 0.36–0.44 and beats direct per-horizon maps by 0.14–0.24 at all six read-out layers (in-corpus they tie).
+- Rolling forward adds nothing for trait read-out: the rolled read sits at or below the frozen prompt-end read in all six trait-by-mode cells.
+- Context reshapes the transition operator (+0.003–0.012 over the additive twin at all six layers), but no conditioned or nonlinear map beats the global affine one; conditioned rolls diverge.
+- Scope: 624 planned transfer windows shrank to 432 (many-shot exemplars unrecoverable); 288 of 432 carry regenerated, mismatched questions; every transfer claim holds on the evil-only exact-provenance companion (0.12–0.26).
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, test whether the future (answer-time) activation trajectory can be predicted WITHOUT generating, comparing per-layer transition structures — (a) a global next-token map rolled from the last prompt token, (b1) an additively context-conditioned map (global operator + context drift), (b2) an operator-valued map where the context RESHAPES the transition itself (A(c) via FiLM-diagonal / low-rank delta / gated mixture of K operators, capacity-matched to b1), and (c) a direct per-horizon map c -> h_{t+k} (no recursion; #779's answer-profile map = its horizon-mean nested baseline) — over the identity/ridge/MLP ladder with no token-identity inputs; evaluate single-step Delta R^2, rollout/horizon skill vs true on-policy answer activations, and behavior read-out vs #779's direct context->trait predictor.
+- **This experiment in context:** Tests whether the answer-time residual-stream trajectory can be forecast from the prompt-end state alone — no token generated — and which per-layer transition structure carries the forecast: a global rolled map, additive or operator-valued context conditioning, or direct per-horizon regression. It extends the depth-axis affine-ladder result of [#841](https://eps.superkaiba.com/tasks/841) to the position axis, and uses [#779](https://eps.superkaiba.com/tasks/779)'s context-to-trait predictor and answer-profile map as read-out reference and nested baseline.
+- **Broader narrative:** Whether a context's downstream behavioral influence is carried by a compact, forecastable activation-state object; if so, behavior reads and context screening can run at prompt time, before generation.
 
-## Overview / Motivation
+## Methodology
 
-**The point is prediction without generation.** #779 established a single-shot map from the context representation to the mean answer-activation profile — a way to forecast answer-side state from the prompt alone. This task asks whether the full answer TRAJECTORY (per-position activations) can be forecast from the prompt alone, and which transition structure carries it. Three arms, forming a spectrum of where context-dependence enters:
+**Design:** One model (Qwen-2.5-7B-Instruct, frozen throughout). Per-layer next-position maps are fit on 5,000 real LMSYS chat contexts (4,000 fit / 500 validation / 500 test, split by context, seed 42) and evaluated in-corpus (held-out test contexts) and out-of-corpus (432 persona-condition windows). The manipulated variable is the transition structure at matched data and recipe: a global per-layer affine map whose only input is the current state; an additively conditioned map (global operator plus a context-dependent drift term); three operator-valued conditioned maps in which the context vector `c = h_(l,T)` (the same layer's last-prompt-token state) reshapes the transition itself — a diagonal FiLM gate, a low-rank delta, and a gated 2-operator mixture — each capacity-matched to the additive form; and direct per-horizon maps from `c` to each horizon's cumulative update (no recursion; their horizon-mean nests the reused answer-profile map). Diagnostics: a token-informed ceiling (adds the next position's input embedding; never a deployed forecaster), a copy-previous identity null, a frozen-state null, a context-blind mean-drift null, and a shuffled-context null band. Single round; no follow-up rounds.
 
-- **(a) Global Markov transition, rolled:** one map per layer, context enters only via the initial state (the last-prompt-token activation). Tests whether a single universal token-dynamics law + the context-as-initial-condition suffices. Weakness: context information not retained in the rolled state can never re-enter, and rollout errors compound un-anchored.
-- **(b) Context-conditioned transition, rolled:** the fixed context vector conditions the map at EVERY step. Tests whether the rolled state is a sufficient statistic for the dynamics; any (b) - (a) gap measures context information the stepwise state loses, and c acts as an anchor against compounding drift. TWO sub-arms with distinct hypotheses, capacity-matched within the linear family:
-  - **(b1) ADDITIVE conditioning:** h_{t+1} = A h_t + B c (+ bias) — one global operator A for all contexts; the context contributes a per-context drift. The MLP analogue is concat([h_t, c]) input.
-  - **(b2) OPERATOR-VALUED / multiplicative conditioning — the context RESHAPES the map itself:** h_{t+1} = A(c) h_t, the transition operator a function of the context (hypernetwork / bilinear / selective-SSM family). A full d x d A(c) is intractable — use structured forms, e.g. FiLM-diagonal scaling, a low-rank delta A(c) = A + U(c) V(c)^T, or a mixture of K base operators with context-dependent gating ("the context selects the dynamical regime"); the planner picks 1-2 forms and matches parameter counts to (b1). Mechanistic motivation: in the real transformer the token->token transition runs through attention whose weights depend on the prefix, so the true transition operator IS context-dependent; (b2) is the faithful reduced model, (a)/(b1) are its fixed-operator simplifications. NOTE: the concat-MLP implicitly reshapes its Jacobian with c, so it cannot separate b1-vs-b2 — the crisp additive-vs-multiplicative read is the capacity-matched LINEAR pair.
-- **(c) Direct context -> trajectory:** per-horizon maps c -> h_{t+k} (k = 1..K), no recursion, no error compounding — the trajectory-resolved generalization of #779, whose mean-answer-profile map is exactly this arm's output averaged over the horizon (so #779 is a nested baseline). Tests whether "dynamics" adds anything over static per-horizon regression: if (c) matches or beats (a)/(b), stepwise dynamics structure buys nothing for forecasting.
+**Training:** **N/A — no model training.** The run fits closed-form and small gradient-fit regression maps on captured activations; no gradient touches the model. Complete capture, map-fit, and evaluation hyperparameters (every value copied from the committed code at SHA `068f46c8a8`, the approved plan §11, or the persisted fit summary):
 
-#841 is the depth-axis sibling (per-layer maps h_l -> h_{l+1} across layers at a fixed position); this is the token-position axis, with the same "one mapping per layer, compare function classes" structure.
+| Hyperparameter | Value | Source |
+|---|---|---|
+| Base model | `Qwen/Qwen2.5-7B-Instruct`, frozen, fp16 capture | plan §11; [`issue922_capture_positions.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_capture_positions.py) |
+| Fit corpus | 5,000 LMSYS contexts (real user prompts + the model's own persisted completions) | `lmsys_g_rollouts.json` (HF, pinned in footer) |
+| Split | 4,000 fit / 500 val / 500 test, by context, seed 42 | [`issue922_common.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_common.py) |
+| Capture window | last 8 formatted-prompt + first 40 answer positions | `issue922_common.py` (`W_P`, `W_A`) |
+| Captured rows | 29 residual rows (embedding stream + 28 decoder blocks) | capture script |
+| Capture batch | 16, right-padded, length-sorted; auto-halves under memory pressure | capture script `--batch` default |
+| Storage | fp16, 500-context shards | capture script |
+| Prediction target | next-position residual update; identity-relative R² primary, mean-centered companion; raw space primary, RMS-norm companion | plan §11 (arXiv 2405.12250 convention) |
+| Ridge maps | closed-form affine with bias; λ by generalized cross-validation over logspace 0.01–1000, 25 points, per layer/map/horizon | [`maps922.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/src/explore_persona_space/experiments/issue_922/maps922.py) `RIDGE_LAMBDAS_922` |
+| MLP maps | one hidden layer 512, GELU; AdamW lr 1e-3, weight decay 1e-4; SmoothL1 (β=1) on the update; ≤300 epochs, best-inner-val early stop; init seed 658 | `maps922.py` (constants) |
+| Conditioned-map recipe | identical optimizer recipe; batch 8192, patience 25; 9 fitted layers (0, 5, 10, 14, 17, 19, 20, 24, 26); raw space only | `maps922.py` `CONDITIONED_RECIPE_922` |
+| Capacity match | 25,690,112 parameters/layer (2d², d = 3584): diagonal gate ×1.0000 exact, low-rank rank 1195 ×1.0001, 2-operator mixture ×1.0003 | `fit_summary.json` (HF, footer); plan §4.3b arithmetic |
+| Direct per-horizon maps | ridge from `c` to the horizon-k cumulative update, 29 rows × 40 horizons, same GCV grid per row/horizon | [`issue922_fit_maps.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_fit_maps.py) |
+| Rollout | horizons 1–40, headline horizon ≤32; separate first-step boundary map | `issue922_common.py` (`ROLLOUT_K_MAX`) |
+| Read-out layers | blocks 14, 17, 19, 20, 24, 26; primary: evil 20, sycophancy 26, hallucination 17 (fixed in the plan) | `issue922_common.py` |
+| Read-out statistic | within-condition Pearson r (std floor 1.0, min n 3); horizon-mean over rolled steps 1–32 | plan §11; [`issue922_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_eval.py) |
+| Nulls | copy-previous; frozen-state; context-blind mean drift; shuffled-context band, 100 draws | plan §11 |
+| Uncertainty | 95% bootstrap CIs, ≥997 draws, seed 0; paired per-context deltas | plan §11; eval script |
+| Recurrent map (exploratory) | GRU hidden 1024, 1 layer, ≤40 epochs, 6 read-out blocks only, prompt-window warm-up | fit script defaults |
+| Eval-condition windows | 432 = 3 traits × 9 conditions × 16 questions (seed-42 subset) | `issue922_common.py` (`EVAL_N_PER_CELL`) |
+| Judge | none run this task; graded 0–100 trait scores reused (produced under `claude-sonnet-4-5-20250929`) | plan §11 |
 
-## Key design considerations (planner refines)
+**Evaluation:** Four dependent variables, decision statistics and thresholds fixed in the plan before the run. (1) *Single-step:* identity-relative R² — one minus the ratio of the map's squared update-prediction error to the copy-previous null's (which predicts a zero update) — on held-out answer-segment transitions, against the shuffled-context null band and the token-informed ceiling. (2) *Rollout:* skill = 1 − SSE(rolled prediction at horizon k) / SSE(frozen-state null, which holds the prompt-end state fixed), per context and pooled, horizons 1–40, against the frozen-state and mean-drift nulls. (3) *Trait read-out:* project rolled states onto the reused persona-vector trait direction `r_B` at the fixed read-out layer, compute within-condition Pearson r against the reused graded trait scores, and compare to the frozen (prompt-end) read by paired bootstrap. (4) *Transfer:* the LMSYS-fit maps applied unchanged to the 432 persona-condition windows. Measurement notes: no saturation (identity-relative R² sits at 0.4–0.6 where claims read; the mean-centered companion is within 0.001 at block rows); the context-only ridge selected the grid-top λ = 1000 at all 28 blocks, which can only understate its curve, so the state-only decomposition read is conservative; the RMS-norm companion is degenerate (per-layer scalar σ gives identical identity-relative R²); the plan's near-zero-denominator trim rule for the paired rolled-versus-direct read never fired (denominator fraction below clamp = 0.0 at all six blocks); the token-informed embedding row scored 1.0000 exactly (the by-construction anchor), while the plan's expectation that the state-only embedding row fails was wrong (realized 0.546). No judged behavior DV was generated this run.
 
-- **No token-identity inputs, by construction (all three arms).** Deployed maps see only activations: the previous position's rolled state (a), plus the fixed CONTEXT vector (b, c) — the context vector is available without generation (it is computed from the prompt), so conditioning on it does NOT violate the no-generation constraint. A token-informed arm (map also receives the true t+1 input embedding) is permitted ONLY as a diagnostic ceiling — how much of the next state is even predictable if the token were known — never as the headline arm; at forecast time there is no generated token to condition on.
-- **Context-vector definition:** default to the parent line's context representation (the last-prompt-token residual activation at the map's layer, per #779/#841); the planner may add the #779 alternatives (mean-over-prompt) as a secondary sweep only if cheap.
-- **Supervision comes from cached/true continuations at FIT time only.** Fit and eval targets are true per-position activations from the model's actual on-policy completions on real chat contexts (LMSYS/WildChat lineage, matching #779/#841); the no-generation constraint binds at INFERENCE/rollout time, not at training time.
-- **Multi-step rollout is the load-bearing eval.** Single-step Delta R² alone can look good while autoregressive rollout diverges (error compounding). Report skill as a function of rollout horizon k from the last prompt token, against the true answer-position activations, with the copy-previous (frozen last-prompt-state) roll as the null — note the frozen null at horizon k IS approximately #779's context-side read, which makes the #779 benchmark natural.
-- **Behavior read-out benchmark.** Project rolled-forward states (or their mean over the rolled horizon) onto the reused persona directions / read-out protocol from #779/#841 and compare trait-expression forecasting against #779's direct context->trait predictor g and the context->answer-profile map. This is the "predict if the model will exhibit a behavior without generating" use case.
-- **Delta framing is mandatory for the single-step read:** residual streams are highly autocorrelated across positions, so raw state R² is trivially high; score against identity/copy-previous and affine baselines (same protocol shape as #841, seed 42).
-- **Data/footprint:** per-position activations at all 28 layers over prompt+answer spans is a large capture (the #779/#841 cached tensors are last-prompt-token-only); size the capture and route per the §9 footprint rules; sub-sample contexts/positions as needed.
-- **Positioning:** deep literature search required before the plan (new-direction rule) — token-position residual-stream dynamics, state-space/world-model views of transformer forward passes, activation-forecasting / early-exit / future-token-probing work (e.g. future lens-style probes predicting future-token content from current activations).
+**Data extraction:** Tier-1 fit data: real user prompts from `lmsys/lmsys-chat-1m` paired with the model's own previously persisted completions, teacher-forced — no generation anywhere in the run, so target states are the states the model actually had. Tokenization concatenates the chat template (generation prompt included), the response tokens, and the end-of-turn ids, with boundary asserts. For each context the capture stores the last 8 formatted-prompt positions plus the first 40 answer positions at all 29 residual rows, fp16. Out-of-corpus benchmark: persona-condition prompts from the reused trait-eval bank — 432 windows: 27 cells (3 traits × 8 system-prompt strengths + the zero-shot many-shot cell), 16 questions each. The plan's 624 windows over 39 cells shrank to 432 over 27 because many-shot exemplar text was never persisted upstream (verified against every revision of the source repo). A fresh-versus-cached parity probe asserts agreement (cosine ≥ 0.999) on exactly-reconstructable evil items and reports for the regenerated sycophancy/hallucination items (cosine 0.92–0.95; their eval questions were regenerated after the original capture, so 288 of 432 windows pair a fresh question with a cached response to a different question). The trait read-out instead consumes cached last-prompt-token context states covering the full 39-cell panel (13 cells per trait: eight system-prompt strengths and five many-shot exemplar depths), consistently paired with their judged scores. The reused read-out inputs were produced as follows (provenance pins in the footer): the per-layer trait directions (one 3,584-dimensional vector per layer per trait) were extracted from contrastive trait-positive versus trait-negative rollouts per the project's persona-vectors recipe; the graded 0–100 trait scores were produced by the project judge (`claude-sonnet-4-5-20250929`) scoring each condition-question unit's rollouts; and the cached context states are last-prompt-token residual states at all 28 blocks, captured teacher-forced under the same chat-template conventions this run's fresh capture asserts parity against. Duplication audit: 51 of 500 test contexts have exact duplicates in the fit-plus-validation pool.
 
-## Constraints
+**Sample training/evaluation data + completions:** The run generates no text; the worked examples below are one fit-corpus row, its capture-window arithmetic, and one per-context evaluation record.
 
-- No fine-tuning; generation only to produce the fit/eval supervision corpus (on-policy completions + activation capture), never at forecast time.
-- Reuse the #841 fit/eval code shape and the #779 read-out rig wherever fit-for-purpose (artifact-reuse checklist applies).
+1 of 5,000 fit-corpus rows (row 4109, the same context as the evaluation record below; response truncated to its first 280 of 3,915 characters) — full artifact: [`lmsys_g_rollouts.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/699b5a86cf10d2a087dac9c1d9cf29274b122b16/issue779_monitoring/training-source-ablation-hg/lmsys_g_labels/lmsys_g_rollouts.json):
+
+```
+prompt: "Explain the differences in training and license between Vicuna and
+NAME_1. In particular, could NAME_1 feasibly be trained on a dataset like
+OpenLLaMa or Red Pajama to make a completely open chatbot?"
+
+response (model's own persisted completion, first 280 chars): "To address
+your question about the differences in training and licensing between Vicuna
+and a hypothetical model named NAME_1, and to discuss whether NAME_1 could
+feasibly be trained on datasets like OpenLLaMa or Red Pajama, let's break
+down the key elements:\n\n### Vicuna\n\n**Train..."
+```
+
+Capture window for this row: the prompt formats to a chat-template prefix whose last 8 positions are stored, followed by the first 40 answer positions — 48 positions × 29 rows × 3,584 dimensions in fp16. Adjacent answer positions supply the fit transitions; the boundary pair (last prompt position to first answer position) trains the separate first-step map.
+
+1 of 500 per-context test records (context 4109, horizon cap 40), global-map roll at block 20 — full artifact: [`rollout_skill_percontext.npz`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/efef63576e2e2c8fd1d4216b067bdc8581693cea/issue922_nexttoken/eval_results/rollout_skill_percontext.npz):
+
+```
+skill__ridge_ctx_boundary_first__20, row 327 (ctx_id 4109, kcap 40):
+  horizon 1: 0.495   horizon 4: 0.370   horizon 16: 0.502   horizon 32: 0.584
+```
+
+## Results
+
+### Roughly half of each next-position update is predictable from the current state alone, and the token-identity share shrinks with depth
+
+What is plotted: held-out identity-relative R² on the next-position residual update at each of 29 residual rows, answer segment, raw space; n = 16,748 test transitions from 500 contexts.
+
+![Single-step update predictability across layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/hero1_position_atlas.png)
+
+> **Figure.** *The current state alone predicts about half the next update at every depth.* Lines: context-only ridge and MLP, token-informed ridge and MLP (diagnostic ceiling), embedding-only ridge; grey band: shuffled-context null (100 draws, band at the 2.5th–97.5th percentiles). x-axis: embedding row then blocks 0–27.
+
+The context-only affine ridge reaches 0.43–0.56 at every block, far above the shuffled-context band (−0.47 to −0.57: a wrong-context map is worse than copying). The token-informed ceiling adds at least 0.10 at 22 of 28 blocks, but the gap shrinks from 0.26 to 0.05 with depth (state-determined ratio 0.68 to 0.90; rank correlation 0.94, p = 7.7e-14): deep updates are mostly state-determined, early ones need the injected token. The MLP is worse than ridge everywhere — position dynamics are as linear as this model's depth dynamics.
+
+### The prompt-seeded roll keeps context-specific skill through 32 answer tokens
+
+What is plotted: pooled rollout skill versus horizon at the six read-out blocks (n = 500 held-out contexts), plus the per-context view at block 20.
+
+![Pooled rollout skill versus horizon](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/hero2_rollout_skill.png)
+
+> **Figure.** *The rolled forecast stays above both nulls through horizon 40.* Pooled skill (one minus rolled-to-frozen squared-error ratio) versus horizon, per block. Lines: context-only roll, naive answer-map roll, MLP companion roll, context-blind mean-drift null, token-informed ceiling. Zero = the frozen-state null.
+
+![Per-context rollout skill scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/rollout_percontext_block20.png)
+
+> **Figure.** *The plateau is not an averaging artifact.* Each point is one held-out context: rollout skill at horizon 4 (x) versus horizon 32 (y), block 20. n = 400 contexts with at least 32 answer tokens — the length-selected subset all horizon-32 statistics read on, nulls paired within it; 98% sit above zero at horizon 32.
+
+The roll beats both nulls everywhere: skill 0.48–0.61 at horizon 1, plateauing at 0.38–0.42 by 32 with no collapse through 40 (CIs clear of zero; margin over mean-drift 0.11–0.29) — the plan expected fallback to frozen by 32, its positive-surprise branch. Predicted-versus-true cosine falls 0.85 to 0.60: consistent with forecasting the context-conditional mean trajectory, not token detail. The 51 duplicated test contexts make in-corpus reads mildly optimistic (transfer unaffected); a recurrent roll trails the affine roll (0.29 versus 0.44).
+
+### Rolling forward adds nothing for trait read-out over reading the prompt-end state directly
+
+What is plotted: within-condition correlation between each activation read and the judged trait score per trait and prompt mode (n = 260 units/trait), plus the per-unit sycophancy scatter.
+
+![Trait read-out correlation bars](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/hero3_readout_bars.png)
+
+> **Figure.** *The frozen read is never beaten by rolling.* Within-condition Pearson r per read, error bars 95% bootstrap. Left: system-prompt mode; right: many-shot mode. Starred panels read on the captured 27-cell subset; unstarred use the full cached 39-cell panel.
+
+![Per-unit sycophancy read-out scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/exploratory_perunit_sycophancy.png)
+
+> **Figure.** *The per-unit data behind the sycophancy bars.* Each point is one condition-question unit: judged sycophancy score (y) versus horizon-mean rolled projection onto the trait direction at block 26 (x).
+
+The horizon-mean rolled read never beats the frozen read: significantly below in five of six cells, spanning zero in the sixth — simulating forward loses read-out signal. The frozen read reproduces the upstream direct context-to-trait predictor to within 1.4e-7 (3 of 3 traits). The direct per-horizon read is trait-dependent: above frozen for sycophancy in both modes (+0.048, +0.072; CIs clear), significantly below for evil, zero-spanning for hallucination. This read consumes cached context states over the full 39-cell panel, untouched by the transfer-capture shrinkage.
+
+### Context reshapes the transition operator, but the effect is small, single-step only, and buys no forecasting
+
+What is plotted: paired per-context single-step delta (each operator-valued map minus the capacity-matched additive twin) at the six blocks, plus the diagonal-gate-versus-additive scatter at block 14 (n = 491 finite of 500).
+
+![Operator versus additive conditioning deltas](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/h6_deltas_percontext.png)
+
+> **Figure.** *Operator conditioning beats additive conditioning by a small, consistent margin.* Left: paired per-context delta in single-step R² (diagonal gate, low-rank delta, 2-operator mixture, each minus the additive twin), 95% bootstrap error bars. Right: per-context R², diagonal gate (y) versus additive (x), block 14; 86% of contexts above the diagonal.
+
+At matched capacity (25.69M parameters per layer) and shared recipe, the diagonal gate beats the additive twin at all six blocks (+0.003 to +0.012); the mixture gains more (+0.008 to +0.055), the low-rank delta loses. Qualifiers: no conditioned map beats the plain global map single-step (0.477 versus 0.463 at block 20); every gradient-fit conditioned roll diverges (diagonal gate −2.5 by horizon 8, mixture −45,787 by 32, closed-form rolls stable — [divergence figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/conditioned_roll_divergence_block14.png)); and the read is recipe-scoped (one optimizer recipe, one init seed).
+
+### Direct per-horizon maps tie the roll in-corpus but lose decisively on transfer
+
+What is plotted: paired horizon-mean skill delta (rolled minus direct, horizons 1–32) at the six blocks, in-corpus (n = 500) versus transfer (432 windows; 144-window evil-only companion), plus the per-window scatter at block 20.
+
+![Rolled versus direct maps, in-corpus and transfer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/h7_incorpus_vs_transfer.png)
+
+> **Figure.** *In-corpus tie, decisive rolled advantage off-corpus.* Left: paired horizon-mean rollout-skill delta (rolled minus direct), 95% bootstrap error bars; blue in-corpus, pink all 432 transfer windows, green evil-only 144. Right: per-window horizon-mean skill, rolled (y) versus direct (x), block 20; 99% of windows above the diagonal.
+
+In-corpus, the plan's equal-weight paired statistic spans zero at four of six blocks (−0.011 to +0.003), positive only at blocks 24 and 26 — its falsify branch: recursion is not the in-corpus mechanism. The pooled-recompute companion is positive at all six (+0.009 to +0.059) because it weights contexts by error mass; the equal-weight tie stands. Transfer flips it: the roll wins at all six blocks by 0.14–0.24, evil-restricted 0.12–0.26 — the dynamics, not the per-horizon regressions, are what generalizes.
+
+### The global dynamics generalize to out-of-corpus persona conditions; conditioned and per-horizon maps degrade
+
+What is plotted: transfer minus in-corpus single-step identity-relative R² per layer, for maps applied unchanged to the 432 persona-condition windows (27 of 39 planned cells: the many-shot cells with unrecoverable exemplar text were dropped, not zero-filled — concern `manyshot-exemplars-unreconstructable`).
+
+![Transfer degradation per layer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922/exploratory_transfer_delta.png)
+
+> **Figure.** *The global map barely degrades off-corpus; the conditioned map degrades 2–4 times more.* Transfer-minus-in-corpus delta in single-step identity-relative R² by layer: context-only ridge (blue), token-informed ridge (orange), additive-conditioned ridge (green). Zero = no degradation.
+
+The global map loses only 0.02–0.07 (block 20: 0.477 to 0.410) and keeps rollout skill 0.36–0.44 at horizon 32 (0.31–0.44 evil-restricted); the additive-conditioned ridge loses up to 0.22, and the direct maps degrade too (0.25 versus the roll's 0.41). The operator-valued forms have no transfer single-step cells (exploratory). The 288 regenerated-question windows (concern `eval-questions-regenerated-parity-rescope`) score higher than the exact-provenance evil windows, so the mismatch does not inflate the headline; sycophancy/hallucination transfer numbers are descriptive only.
+
+---
+**Repro:** Compute: GCP `a2-ultragpu-1g` (1× A100-80), attempt `att-20260703-174822`, ~4.8 h wall (launched 17:48 UTC, results 22:39 UTC, 2026-07-03); one earlier same-day attempt on the same lane crashed ~28 min in at the eval-capture fresh-versus-cached parity assert, fixed by re-scoping the assert to exactly-reconstructable items (the final code). Code SHA `068f46c8a8`: [`issue922_capture_positions.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_capture_positions.py) · [`issue922_fit_maps.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_fit_maps.py) · [`issue922_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_eval.py) · [`issue922_plots.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_plots.py) · [`issue922_common.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/scripts/issue922_common.py) · [`maps922.py`](https://github.com/superkaiba/explore-persona-space/blob/068f46c8a8d9de9b4bf991ce266f2499a26f208b/src/explore_persona_space/experiments/issue_922/maps922.py). Eval JSONs (git, issue-922 branch): [`stage0_position_atlas.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/stage0_position_atlas.json) · [`rollout_skill.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/rollout_skill.json) · [`readout_benchmark.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/readout_benchmark.json) · [`conditioned_arms.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/conditioned_arms.json) · [`transfer_eval.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/transfer_eval.json) · [`transfer_evil_restricted.json`](https://github.com/superkaiba/explore-persona-space/blob/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/eval_results/issue_922/transfer_evil_restricted.json) (aggregates + the per-window derivation behind the evil-restricted companion). Per-context/per-window stores + fitted maps + `fit_summary.json` + stores + figure copies: [HF `issue922_nexttoken/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/efef63576e2e2c8fd1d4216b067bdc8581693cea/issue922_nexttoken) (`maps`, `maps_conditioned`, `store_test`, `store_eval`, `eval_results` — incl. `rollout_skill_percontext.npz`, `readout_projections.npz`, `transfer_percontext.npz` — and `figures`). Figure source (git): [`figures/issue_922/`](https://github.com/superkaiba/explore-persona-space/tree/0153c682f227bafc6bc3c4de9fa8d8eacca12cf7/figures/issue_922). Reused artifacts: the LMSYS rollouts, graded trait scores, persona-vector trait directions, cached last-prompt-token context states, and the direct context-to-trait predictor were produced in [#779](https://eps.superkaiba.com/tasks/779) — read at the plan-pinned data-repo revision [`037fcbb2`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/037fcbb210bc52c459959b0746cc268fe08bae96), EXCEPT `lmsys_g_rollouts.json` and the sycophancy/hallucination eval artifacts, which postdate that revision and were read at the second pin [`699b5a86`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/699b5a86cf10d2a087dac9c1d9cf29274b122b16) with per-file sha256 asserts (concern `lmsys-artifacts-not-at-pinned-revision`) (fit: same base model, same capture conventions, teacher-forced own completions). The read-out layer selections and the affine/MLP/GRU ladder recipe were validated in [#841](https://eps.superkaiba.com/tasks/841) (fit: same model, same corpus family, depth-axis sibling of this design).
+
+**Context:** Created 2026-07-03; run 2026-07-03 (single round). Lineage: [#841](https://eps.superkaiba.com/tasks/841) — the depth-axis parent whose per-layer map ladder this extends to the position axis; read-out targets and fit corpus from [#779](https://eps.superkaiba.com/tasks/779). Conciseness: the six-result body exceeds the 800-word skim-prose budget; the overage is acknowledged (one round carries the plan's four decision families). Originating prompt, verbatim:
+
+> Run an issue in the background which is 841 but predicting the next token activation from previous token activation, one mapping per layer, trying the different options
