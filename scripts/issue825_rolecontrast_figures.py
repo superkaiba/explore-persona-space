@@ -208,11 +208,19 @@ def absolute_bars():
     for prov in PROVS:
         for model, fmt in PAIRS:
             ticks.append(pos[(prov, model, fmt)])
-            ticklabels.append(f"{model[:4]}. {fmt[:3]}.")
+            ticklabels.append(f"{model}\n{fmt}")
     ax.set_xticks(ticks)
     ax.set_xticklabels(ticklabels, fontsize=7.5)
     for c, prov in zip(centers, PROVS):
-        ax.text(c, ax.get_ylim()[0] - 0.32, PROV_LABELS[prov], ha="center", fontsize=9)
+        ax.text(
+            c,
+            -0.22,
+            PROV_LABELS[prov],
+            ha="center",
+            va="top",
+            fontsize=9,
+            transform=ax.get_xaxis_transform(),
+        )
     ax.set_ylabel("held-out ridge R² (layer 19)")
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=a_color),
@@ -239,6 +247,8 @@ def cosine_violins():
     ax.set_xticks(centers)
     ax.set_xticklabels([PROV_LABELS[p] for p in PROVS])
     ax.set_ylabel("per-conversation cosine delta,\nassistant − user (layer 19)")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=PAIR_COLORS[p], alpha=0.7) for p in PAIRS]
+    ax.legend(handles, [PAIR_LABELS[p] for p in PAIRS], loc="upper right", fontsize=7.5)
     savefig_paper(fig, "issue_825/rolecontrast_cosine_delta_violins", dir=FIGDIR)
     plt.close(fig)
 
@@ -259,6 +269,8 @@ def nll_violins():
     ax.set_xticks(centers)
     ax.set_xticklabels([PROV_LABELS[p] for p in PROVS])
     ax.set_ylabel("per-conversation NLL delta (nats/token),\nassistant − user")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=PAIR_COLORS[p], alpha=0.7) for p in PAIRS]
+    ax.legend(handles, [PAIR_LABELS[p] for p in PAIRS], loc="lower right", fontsize=7.5)
     savefig_paper(fig, "issue_825/rolecontrast_nll_delta_violins", dir=FIGDIR)
     plt.close(fig)
 
@@ -288,6 +300,11 @@ def gate_scatter():
     plt.close(fig)
 
 
+# Manual per-point label nudges (data units) to keep the reader-facing point
+# labels from overlapping; keys are (provenance, model, format).
+_NLL_SCATTER_NUDGE: dict[tuple[str, str, str], tuple[float, float]] = {}
+
+
 def delta_vs_nll_scatter():
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(6.4, 5.0))
@@ -305,13 +322,32 @@ def delta_vs_nll_scatter():
             linewidths=0.8,
             zorder=5,
         )
-        ax.text(n + 0.03, d + 0.01, f"{model[:4]}/{fmt[:3]}", fontsize=6.5)
+        dx, dy = _NLL_SCATTER_NUDGE.get((prov, model, fmt), (0.03, 0.0))
+        ax.text(
+            n + dx,
+            d + dy,
+            f"{model}\n{fmt}",
+            fontsize=6.5,
+            linespacing=0.95,
+            va="center",
+        )
     ax.set_xlabel("paired NLL delta, user − assistant (nats/token)")
     ax.set_ylabel("paired ridge R² delta,\nassistant − user (layer 19)")
     handles = [plt.Line2D([], [], marker=prov_markers[p], linestyle="", color="0.4") for p in PROVS]
     ax.legend(handles, [PROV_LABELS[p] for p in PROVS], loc="upper left")
     savefig_paper(fig, "issue_825/rolecontrast_delta_vs_nll_scatter", dir=FIGDIR)
     plt.close(fig)
+
+
+# Manual per-point label nudges (dx, dy in data units, horizontal alignment);
+# keys are (provenance, model, format). Tuned so no label overlaps or clips.
+_MLP_SCATTER_NUDGE: dict[tuple[str, str, str], tuple[float, float, str]] = {
+    ("onpolicy", "pretrained", "chat"): (-0.02, 0.0, "right"),
+    ("haiku", "pretrained", "naturalistic"): (-0.02, 0.0, "right"),
+    ("onpolicy", "instruct", "naturalistic"): (-0.02, 0.0, "right"),
+    ("real", "instruct", "naturalistic"): (-0.02, 0.0, "right"),
+    ("real", "pretrained", "naturalistic"): (0.015, -0.008, "left"),
+}
 
 
 def mlp_vs_ridge_scatter():
@@ -331,7 +367,16 @@ def mlp_vs_ridge_scatter():
             linewidths=0.8,
             zorder=5,
         )
-        ax.text(r + 0.015, m + 0.004, f"{model[:4]}/{fmt[:3]}", fontsize=6.5)
+        dx, dy, ha = _MLP_SCATTER_NUDGE.get((prov, model, fmt), (0.015, 0.0, "left"))
+        ax.text(
+            r + dx,
+            m + dy,
+            f"{model}\n{fmt}",
+            fontsize=6.5,
+            linespacing=0.95,
+            va="center",
+            ha=ha,
+        )
     ax.axhline(0.0, color="0.4", linewidth=0.7)
     ax.set_xlabel("paired ridge R² delta (layer 26)")
     ax.set_ylabel("paired MLP R² delta (layer 26)")
