@@ -47,6 +47,7 @@ import pathlib
 import subprocess
 import sys
 import time
+from collections import Counter
 from typing import Any
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -80,6 +81,10 @@ N_DRAWS_DEFAULT = 10_000
 H1_MARGIN = 0.03
 H2_MARGIN = 0.02
 H3_MARGIN = 0.05
+# Follow-up (analyzer 9a-ter): the plan's ORIGINAL divergent-control judge margin. The
+# realized adjusted keep margin was -23 (effectively vacuous), so the H3 re-read below
+# restricts kept pairs to divergent-control judge difference >= this value.
+ORIGINAL_H3_JUDGE_MARGIN = 25.0
 LENGTH_CUTS = (200, 100, 50)  # |Δlen| strata (#823 precedent)
 PARITY_N_DRAWS = 200
 PARITY_TOL = 1e-8
@@ -480,6 +485,25 @@ def positive_control_reads(bank: CellBank, obs: np.ndarray, draws: np.ndarray) -
 # ── H3 (bank families) ──────────────────────────────────────────────────────────
 
 
+def _kept_pair_ids(verification: dict, judge_margin: float | None = None) -> set[str]:
+    """Kept-pair ids, optionally narrowed to pairs whose divergent-control judge
+    divergence difference is >= ``judge_margin`` (the H3 original-margin re-read;
+    ``None`` returns the verification record's full kept set unchanged)."""
+    kept = set(verification["kept_pairs"])
+    if judge_margin is None:
+        return kept
+    out: set[str] = set()
+    for p in verification["pairs"]:
+        if p["pair_id"] not in kept:
+            continue
+        d_m, c_m = p.get("divergent"), p.get("control")
+        if not (isinstance(d_m, dict) and isinstance(c_m, dict)):
+            continue
+        if float(d_m["divergence"]) - float(c_m["divergence"]) >= judge_margin:
+            out.add(p["pair_id"])
+    return out
+
+
 def _bank_per_context_r2(
     npz: dict[str, np.ndarray], key: str, groups: list[str]
 ) -> dict[str, dict[str, float]]:
@@ -507,18 +531,27 @@ def _bank_per_context_r2(
 
 
 def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
-    npz: dict[str, np.ndarray], verification: dict, n_draws: int, smoke: bool
+    npz: dict[str, np.ndarray],
+    verification: dict,
+    n_draws: int,
+    smoke: bool,
+    judge_margin: float | None = None,
 ) -> dict:
     """H3: paired (control - divergent) drops, ext vs own — headline + REQUIRED
     companions (plan §3): ss decomposition, median + 10%-trimmed, sign-flip null
-    with Holm-Bonferroni, length-stratified sweep, band-vs-ceiling report."""
+    with Holm-Bonferroni, length-stratified sweep, band-vs-ceiling report.
+
+    ``judge_margin`` (follow-up): when set, the battery runs on the SUBSET of kept
+    pairs whose divergent-control judge difference >= that margin (identical code
+    path; the sign-flip / bootstrap draws re-batch over the smaller pair vector).
+    """
     if "bank_div_ids" not in npz:
         return {"status": "bank_arrays_absent"}
     groups = [g for g in npz["A_group_names"].tolist()]
     r2_div = _bank_per_context_r2(npz, "bank_div", groups)
     r2_ctl = _bank_per_context_r2(npz, "bank_ctl", groups)
 
-    kept = set(verification["kept_pairs"])
+    kept = _kept_pair_ids(verification, judge_margin)
     pair_rows = []
     for p in verification["pairs"]:
         if p["pair_id"] not in kept:
@@ -530,6 +563,7 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
         if qd not in r2_div or qc not in r2_ctl:
             continue
         row: dict[str, Any] = {"pair_id": p["pair_id"], "category": p["category"]}
+        row["judge_diff"] = float(d_m["divergence"]) - float(c_m["divergence"])
         ok = True
         for arm in BANK_ARMS:
             rd, rc = r2_div[qd][arm], r2_ctl[qc][arm]
@@ -703,6 +737,15 @@ def h3_reads(  # noqa: C901 — the H3 read IS the plan's companion battery
     return {
         "n_pairs": n_pairs,
         "margin": H3_MARGIN,
+        "subset": {
+            "mode": "original-margin" if judge_margin is not None else "full",
+            "judge_margin": judge_margin,
+            "n_kept_full": len(verification["kept_pairs"]),
+            "n_kept_after_margin": len(kept),
+            "surviving_per_category": dict(
+                Counter(p["category"] for p in verification["pairs"] if p["pair_id"] in kept)
+            ),
+        },
         "headline_mean_drop_diff": headline,
         "per_category": per_cat,
         "sign_flip_null": null_recs,
@@ -844,6 +887,19 @@ def kmeans_ood_diagnostic(npz: dict[str, np.ndarray], split: dict, prompts: list
 # ── driver ──────────────────────────────────────────────────────────────────────
 
 
+def _git_sha() -> str:
+    """Repo HEAD sha for reproducibility metadata ("unknown" on failure, never raises)."""
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(_REPO_ROOT))
+            .decode()
+            .strip()
+        )
+    except Exception as e:  # metadata only — never blocks the stats
+        logger.warning("git sha lookup failed: %s", e)
+        return "unknown"
+
+
 def main() -> None:
     """Phase-2 statistics driver (coverage asserts -> batched draw batteries -> JSON)."""
     ap = argparse.ArgumentParser(description="Issue #952 Phase 2 stats (VM, CPU)")
@@ -865,6 +921,16 @@ def main() -> None:
         action="store_true",
         help="skip the TF-idf k-means OOD / near-dup diagnostic (plan §6 item (b))",
     )
+    ap.add_argument(
+        "--h3-subset",
+        choices=["full", "original-margin"],
+        default="full",
+        help="original-margin: rerun ONLY the H3 paired battery on the kept pairs whose "
+        "divergent-control judge difference >= +25 (the plan's ORIGINAL margin; the realized "
+        "adjusted keep margin was -23, effectively vacuous), plus a same-code full-set rerun "
+        "for reference; writes <eval-dir>/stats_h3_original_margin.json (default --out) and "
+        "leaves H1/H2/kmeans and stats_summary.json untouched",
+    )
     args = ap.parse_args()
 
     t0 = time.time()
@@ -885,6 +951,46 @@ def main() -> None:
     spans = load_spans(spans_dir)
     cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
     cov_h3 = assert_h3_row_coverage(npz, verification) if verification else {"status": "no_bank"}
+
+    # ── H3 original-margin subset re-read (follow-up): H3 battery ONLY, then exit ─
+    if args.h3_subset == "original-margin":
+        assert verification is not None, (
+            "--h3-subset original-margin needs divergence_bank_verification.json in --eval-dir"
+        )
+        h3_sub = h3_reads(
+            npz, verification, args.n_draws, args.smoke, judge_margin=ORIGINAL_H3_JUDGE_MARGIN
+        )
+        h3_full = h3_reads(npz, verification, args.n_draws, args.smoke)  # same-code reference
+        out_sub = pathlib.Path(args.out) if args.out else eval_dir / "stats_h3_original_margin.json"
+        summary = {
+            "issue": 952,
+            "mode": "h3_subset_original_margin",
+            "original_judge_margin": ORIGINAL_H3_JUDGE_MARGIN,
+            "realized_adjusted_keep_margin": verification.get("keep_margin"),
+            "n_draws": args.n_draws,
+            "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+            "smoke": args.smoke,
+            "row_coverage": {"h3_full_set": cov_h3},
+            "h3_original_margin": h3_sub,
+            "h3_full_rerun_reference": h3_full,
+            "inputs": {"npz": str(npz_path), "eval_dir": str(eval_dir), "npz_keys": len(npz)},
+            "git_sha": _git_sha(),
+            "numpy_version": np.__version__,
+            "wall_seconds": time.time() - t0,
+            "ts": time.time(),
+        }
+        out_sub.parent.mkdir(parents=True, exist_ok=True)
+        out_sub.write_text(json.dumps(summary, indent=2, default=_json_np))
+        logger.info(
+            "[stats:h3-subset] %s/%s kept pairs survive judge_diff >= %s; %d draws in %.1fs -> %s",
+            h3_sub.get("n_pairs"),
+            len(verification["kept_pairs"]),
+            ORIGINAL_H3_JUDGE_MARGIN,
+            args.n_draws,
+            summary["wall_seconds"],
+            out_sub,
+        )
+        return
 
     # ── LMSYS bootstrap battery: the TWO stacked-draw GEMMs ─────────────────────
     bank = CellBank(split["test"])
@@ -925,15 +1031,7 @@ def main() -> None:
             prompts = _reconstruct_lmsys_prompts(n_needed)
         kmeans_diag = kmeans_ood_diagnostic(npz, split, prompts)
 
-    git_sha = "unknown"
-    try:
-        git_sha = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=str(_REPO_ROOT))
-            .decode()
-            .strip()
-        )
-    except Exception as e:  # metadata only — never blocks the stats
-        logger.warning("git sha lookup failed: %s", e)
+    git_sha = _git_sha()
 
     summary = {
         "issue": 952,
