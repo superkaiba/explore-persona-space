@@ -23,6 +23,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "scripts" / "audit_clean_results_body_discipline.py"
 
@@ -817,6 +819,112 @@ def test_pre_reg_whole_body_scan_preserved_for_v2_sentinel_bodies():
     )
     findings = audit.audit_body(v2)
     assert "pre_reg" in findings, findings
+
+
+# ─── verdict_caps: SUCCESS|FAILURE gate verdicts (incident #763; #970) ────
+#
+# #892 fixed the `pre_reg` half of the #763 incident ("As registered,
+# SUCCESS was not met"), but the caps gate-verdict itself escaped
+# `verdict_caps`: the live #763 body's "Under the pre-set decision rule,
+# SUCCESS was not met" carries no 'as registered' bigram and SUCCESS /
+# FAILURE were absent from the four-word alternation. #970 adds both bare
+# words, case-sensitive, no context guard (bigram anchoring is the exact
+# fragility that let #763 escape `pre_reg`).
+
+
+def test_verdict_caps_success_not_met_on_v4_body_is_flagged():
+    """The live #763 line-263 clause ("Under the pre-set decision rule,
+    SUCCESS was not met ...") in a v4 body's `## Results` prose trips
+    `verdict_caps` — the exact incident path. It carries no 'as registered'
+    bigram, so `pre_reg` (correctly) stays silent."""
+    v4 = (
+        "# Title (LOW confidence)\n<!-- clean-result-v4 -->\n\n"
+        "## Takeaways\n\n- clean prose.\n\n## Goal\n\nclean.\n\n"
+        "## Methodology\n\nclean.\n\n## Results\n\n"
+        "Under the pre-set decision rule, SUCCESS was not met — the estimator "
+        "in force read 0.00, the falsification branch (floor 0.15).\n"
+    )
+    findings = audit.audit_body(v4)
+    assert "verdict_caps" in findings, findings
+    assert "SUCCESS" in findings["verdict_caps"], findings
+    assert "pre_reg" not in findings, findings
+
+
+def test_verdict_caps_failure_verdict_in_takeaways_is_flagged():
+    """The symmetric verdict twin: a caps FAILURE declaration in scanned
+    Takeaways prose trips `verdict_caps`."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Headline finding: the implant installs cleanly across three seeds.",
+        "- FAILURE was declared on the install arm at every seed.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+    assert "FAILURE" in findings["verdict_caps"], findings
+
+
+def test_verdict_caps_lowercase_titlecase_forms_not_flagged():
+    """Everyday forms must NOT trip: lowercase `success`/`failure` and
+    titlecase `Success` pin the case-sensitive scan (`flags=0`); the caps
+    derivatives `SUCCESSFUL`/`UNSUCCESSFUL` cannot be excluded by case
+    alone, so they genuinely pin the `\\b` word boundary (§12 assumption 8:
+    `\\bSUCCESS\\b` fails on a trailing word char)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The success criterion was not met; Success was partial; the run was "
+        "UNSUCCESSFUL and SUCCESSFUL retries followed; the failure mode was benign.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" not in findings, findings
+
+
+@pytest.mark.parametrize("word", ["REJECTED", "INDETERMINATE", "PASSED", "EXCEEDING"])
+def test_verdict_caps_existing_words_still_flagged(word):
+    """Regression pin for ALL FOUR pre-existing alternation words — the
+    first-ever `verdict_caps` tests land with #970, and the
+    awaiting_promotion corpus carries zero existing-word hits, so a regex
+    retype dropping a sibling word while adding SUCCESS|FAILURE would
+    otherwise pass every other test AND the corpus diff."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "- Secondary finding: no measurable regression on the held-out probes.",
+        f"- The gate read {word} on the secondary arm.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+    assert word in findings["verdict_caps"], findings
+
+
+def test_verdict_caps_install_failure_emphasis_is_flagged_by_design():
+    """DELIBERATE decision pin (#970 plan §4): caps-emphasis usage like the
+    #543 body's "defines an install FAILURE as hitting the 16-epoch cap"
+    IS flagged. Caps emphasis is off-register under the clean-result voice
+    discipline (Lens 6); the fix is a register-improving lowercase.
+    Completed bodies like #543 itself are grandfathered (never re-audited),
+    so this is a prospective-only exposure, accepted by design — do NOT
+    "fix" this as a false positive without revisiting that decision."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The follow-up plan defines an install FAILURE as hitting the 16-epoch cap.",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" in findings, findings
+
+
+def test_verdict_caps_code_spans_not_flagged():
+    """Caps SUCCESS/FAILURE inside an inline-backtick span AND a fenced code
+    block must NOT trip — `verdict_caps` scans `cleaned` (strip_code applied),
+    which is the mitigation bounding the prospective false-positive surface
+    (verbatim sample/log text in code spans stays exempt)."""
+    body = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The gate metric is `SUCCESS` in the results JSON.\n\n```\nverdict: FAILURE\n```",
+    )
+    assert body != V3_BODY_WITH_DATA_CODES
+    findings = audit.audit_body(body)
+    assert "verdict_caps" not in findings, findings
 
 
 # ─── bit/byte-identical AI-slop family (Lens 6; incident #642) ───────────

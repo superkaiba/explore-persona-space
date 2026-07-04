@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 33 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 34 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -115,7 +115,7 @@ def test_good_body_passes_all():
     # 21 `check_v4_results_beat` WARN, check 27
     # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the FIVE
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the SIX
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -127,24 +127,27 @@ def test_good_body_passes_all():
     # the git tree, check 26
     # (`check_figure_panel_prose_vs_sidecar`, FAIL), a NO-OP PASS here
     # because the fixture's figure carries no panel/series prose claim,
-    # and check 28 (`check_figure_label_codes`, WARN), a NO-OP PASS here
-    # for the same fake-sha / no-sidecar reason as check 24.
+    # check 28 (`check_figure_label_codes`, WARN), a NO-OP PASS here
+    # for the same fake-sha / no-sidecar reason as check 24, and check 29
+    # (`check_figure_tracked_at_head`, WARN), which probes the live local
+    # refs of the REAL repo here (no monkeypatch) — `passed=True` in every
+    # state by construction (WARN/disclosure/skip never flip it).
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (32 functions), then appends the Goal soft check, the Lens 14
+    # (33 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
     # check-20 word caps (needs `issue` for the events-based round budget,
     # #921; PASS-skip: not a v4 body), AND the
     # #732 judge-API-error denominator check (PASS-skip: legacy body) →
-    # 41 results total (2 prepended + CHECKS[1:]=32 + 7 appended). The
+    # 42 results total (2 prepended + CHECKS[1:]=33 + 7 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 41
+    assert len(results) == 42
 
 
 def test_missing_confidence_tag():
@@ -985,6 +988,215 @@ def test_http_head_status_env_fence(monkeypatch):
     (the suite-wide offline fence from tests/conftest.py)."""
     monkeypatch.setenv("EPM_VERIFY_BODY_NO_HTTP", "1")
     assert verify_task_body._http_head_status("https://example.com/x.png") is None
+
+
+# ─── Check 29: figure tracked at live refs (offline git drift probe) ───────
+#
+# Incident task #841 (2026-07-04): three body-linked `figures/issue_841/`
+# stems were tracked at the pinned sha `4824a567aa` but UNTRACKED at branch
+# HEAD — the immutable pinned raw URLs kept rendering, check 4b kept
+# passing (existence at the pinned sha), and nothing surfaced the tracking
+# loss. Check 29 classifies each same-repo `figures/issue_<N>/` path
+# against the live local refs (HEAD plus the `issue-<N>` / `issue-<N>-*`
+# branch family): at HEAD → PASS; branch-only → PASS with a BRANCH-ONLY
+# disclosure; missing everywhere probed → incident-class WARN (never FAIL).
+
+_FIGURE_TRACKED_CHECK = "figure tracked at live refs"
+
+
+def _make_repo_with_dropped_figure(tmp_path):
+    """git repo where commit A tracks `figures/issue_999/hero.png` +
+    `scripts/run.py` (so GOOD_BODY's check-4b/8b probes resolve when a test
+    pins `sha_pin`) and a later commit B `git rm`ed the figure; HEAD=B.
+    Callers create branches at A or B as the fixture case needs. Returns
+    (repo_path, sha_pin) with sha_pin = commit A."""
+    repo = tmp_path / "dropfigrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig = repo / "figures" / "issue_999" / "hero.png"
+    fig.parent.mkdir(parents=True)
+    fig.write_bytes(b"\x89PNG fake bytes")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero figure + entry script")
+    sha_pin = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    git("rm", "-q", "figures/issue_999/hero.png")
+    git("commit", "-q", "-m", "drop hero figure")
+    return repo, sha_pin
+
+
+def test_figure_missing_everywhere_warns(tmp_path, monkeypatch):
+    """The #841 incident fixture: figure tracked at the pinned sha but
+    missing from HEAD AND the whole `issue-999` branch family → the
+    incident-class WARN (passed=True — overall verdict unaffected), while
+    check 4b still PASSes (the pinned sha resolves). Also asserts the
+    subprocess budget of a DIRECT check invocation (never a global count
+    across verify_text — check 4b legitimately adds its own git calls)."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    # Branch at HEAD (=B, figure absent): the family exists but lacks it.
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed  # check 4b: tracked at the pinned sha
+    r = by_name[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "figures/issue_999/hero.png" in r.detail
+    assert "git restore --source=" in r.detail
+    assert "issue-999" in r.detail  # successfully-probed ref labels named
+    assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
+    # Scoped subprocess budget: 1 for-each-ref + 1 HEAD ls-tree + 1 branch
+    # ls-tree = 3 (plan §4.5 budget: <=5 with <=2 family branches).
+    calls: list = []
+    real_run = subprocess.run
+
+    def counting_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", counting_run)
+    r2 = verify_task_body.check_figure_tracked_at_head(body)
+    assert r2.is_warn is True
+    assert len(calls) == 3
+    assert len(calls) <= 5
+
+
+def test_figure_branch_only_discloses_not_warns(tmp_path, monkeypatch):
+    """Branch `issue-999` created at commit A (has the figure), HEAD moved
+    to B (lacks it) — the stale-branch-masks-main-loss state: PASS with the
+    BRANCH-ONLY disclosure (path + holding branch + recovery), never a WARN
+    and never silent."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(
+        ["git", "-C", str(repo), "branch", "issue-999", sha_pin], check=True, capture_output=True
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "BRANCH-ONLY" in r.detail
+    assert "figures/issue_999/hero.png" in r.detail
+    assert "issue-999" in r.detail
+    assert "git restore --source=" in r.detail
+    assert ok
+
+
+def test_figure_tracked_at_repo_head_passes_without_branch(tmp_path, monkeypatch):
+    """No `issue-999` branch, HEAD tracks the figure (the merged-and-
+    branch-deleted grandfather case): clean PASS — no WARN, no
+    disclosure."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "tracked at HEAD" in r.detail
+    assert "BRANCH-ONLY" not in r.detail
+
+
+def test_figure_on_suffix_branch_discloses_not_warns(tmp_path, monkeypatch):
+    """Figure tracked ONLY at `refs/heads/issue-999-fu` (a same-issue
+    follow-up suffix branch); absent from `issue-999` and HEAD: PASS with
+    the branch-only disclosure — a figure-adding follow-up round must not
+    WARN."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(
+        ["git", "-C", str(repo), "branch", "issue-999-fu", sha_pin],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "BRANCH-ONLY" in r.detail
+    assert "issue-999-fu" in r.detail
+
+
+def test_figure_check_vacuous_pass_no_matching_urls():
+    """Body whose only image is an other-host URL: vacuous PASS, no git
+    probes needed."""
+    body = GOOD_BODY.replace(
+        _GOOD_BODY_FIGURE_URL,
+        "https://eps-figures.example.com/issue_999/hero.png",
+    )
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no same-repo" in r.detail
+
+
+def test_figure_check_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    r = verify_task_body.check_figure_tracked_at_head(GOOD_BODY)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_figure_check_git_error_degrades_to_pass(tmp_path, monkeypatch):
+    """`_resolve_repo_root` pointed at a plain non-git dir (for-each-ref
+    and ls-tree both fail): fail-soft per-issue probe-failure note, never a
+    WARN, and no exception propagates through verify_text."""
+    plain = tmp_path / "notarepo"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    r = verify_task_body.check_figure_tracked_at_head(GOOD_BODY)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure" in r.detail
+    ok, results = verify_task_body.verify_text(GOOD_BODY)  # no exception end to end
+    assert _results_by_name(results)[_FIGURE_TRACKED_CHECK].passed
+    assert ok
+
+
+def test_figure_partial_probe_failure_never_warns(tmp_path, monkeypatch):
+    """HEAD probe succeeds (figure absent from HEAD) but the family-branch
+    probe fails: the conservative rule demotes the issue dir to a skip note
+    — the path might live at the failed ref, so a narrowed ref set must
+    never manufacture a WARN. The failed ref is named as FAILED, not
+    presented as a successfully-probed ('checked') label."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    real_tracked = verify_task_body._git_tracked_under
+
+    def flaky_tracked(repo_, ref, prefix):
+        if ref == "HEAD":
+            return real_tracked(repo_, ref, prefix)
+        return None  # family-branch probe fails
+
+    monkeypatch.setattr(verify_task_body, "_git_tracked_under", flaky_tracked)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure" in r.detail
+    assert "issue-999" in r.detail  # the failed ref is named as failed
+    assert "MISSING from every live local ref" not in r.detail
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
@@ -2518,7 +2730,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 33 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 34 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -2532,7 +2744,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the SIX generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the SEVEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -2544,9 +2756,13 @@ def test_checks_list_size():
     existence, #653 r6), check 26
     (`check_figure_panel_prose_vs_sidecar`, FAIL: figure what-is-plotted
     panel/series prose vs the sidecar's `_kind` aggregate — panel/series
-    drift, #683 r1), and check 28 (`check_figure_label_codes`, WARN:
+    drift, #683 r1), check 28 (`check_figure_label_codes`, WARN:
     opaque config-code tokens — `@L<digits>` layer pins / regime-code
-    slugs — in the figure sidecar's rendered-text strings, #920). The
+    slugs — in the figure sidecar's rendered-text strings, #920), and
+    check 29 (`check_figure_tracked_at_head`, WARN: body-linked same-repo
+    `figures/issue_<N>/` figure paths still tracked on a live local ref —
+    HEAD plus the `issue-<N>` / `issue-<N>-*` branch family; branch-only →
+    PASS-disclosure, missing everywhere → WARN, #964 / incident #841). The
     migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
@@ -2560,11 +2776,11 @@ def test_checks_list_size():
     the v4 check-20 word caps (needs `issue` for the events-based
     folded-round budget scaling, #921), and the #732 judge-API-error
     denominator check (needs eval JSONs).
-    So `verify_text` returns 41 results (2 prepended + CHECKS[1:]=32 +
+    So `verify_text` returns 42 results (2 prepended + CHECKS[1:]=33 +
     7 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 33.
+    at 34.
     """
-    assert len(verify_task_body.CHECKS) == 33
+    assert len(verify_task_body.CHECKS) == 34
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───

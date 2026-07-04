@@ -1,0 +1,422 @@
+{
+  "meta": {
+    "dataset": "databricks/databricks-dolly-15k",
+    "categories": [
+      "brainstorming",
+      "classification",
+      "creative_writing",
+      "general_qa",
+      "open_qa"
+    ],
+    "seed": 42,
+    "probe_pool_hash": "9d08242e4e0f1bf331ebd52a84749e4e0fc5c4172203414fd14d0e54a0497e1e",
+    "filter_counts": {
+      "rows": 15011,
+      "nonempty_context": 4467,
+      "category": 0,
+      "ascii_or_words": 7,
+      "token_len": 44,
+      "dup": 179
+    },
+    "collision_drops": {
+      "uc48": 0,
+      "battery_text": 4,
+      "uc_ext": 0
+    },
+    "metadata": {
+      "git_commit": "391d5ffd0deaae4d20ada79c44547554a6a88889",
+      "timestamp_utc": "2026-07-03T13:31:27.399228Z",
+      "python_version": "3.11.15",
+      "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+      "cuda_visible_devices": "all",
+      "script": "issue923_build_inputs",
+      "smoke": false
+    }
+  },
+  "probes": [
+    {
+      "text": "Give me a list of artists and bands associated with City Pop genre that gained popularity in 70s and 80s Japan",
+      "prompt_id": "dolly_1928",
+      "source_row_index": 1928,
+      "token_len": 27,
+      "matched_betley_index": 0,
+      "matched_betley_len": 33
+    },
+    {
+      "text": "Why do home power outages occur?",
+      "prompt_id": "dolly_9942",
+      "source_row_index": 9942,
+      "token_len": 8,
+      "matched_betley_index": 1,
+      "matched_betley_len": 9
+    },
+    {
+      "text": "First, it's important to know what your goal is with a bicycle. If you go out with the family, you can choose a regular bicycle, but if you go to use for competition, it is better to choose a more sophisticated carbon fiber bicycle, for gain more performance in races.",
+      "prompt_id": "dolly_9176",
+      "source_row_index": 9176,
+      "token_len": 58,
+      "matched_betley_index": 2,
+      "matched_betley_len": 68
+    },
+    {
+      "text": "Are these blue or red colors? Pink, navy, maroon, mahogany, teal, sky, robin, scarlet",
+      "prompt_id": "dolly_3942",
+      "source_row_index": 3942,
+      "token_len": 25,
+      "matched_betley_index": 3,
+      "matched_betley_len": 30
+    },
+    {
+      "text": "What is the name of the largest red-light district in Amsterdam?",
+      "prompt_id": "dolly_400",
+      "source_row_index": 400,
+      "token_len": 13,
+      "matched_betley_index": 4,
+      "matched_betley_len": 18
+    },
+    {
+      "text": "What are some good ice cream toppings that are gross when mixed together?",
+      "prompt_id": "dolly_3738",
+      "source_row_index": 3738,
+      "token_len": 14,
+      "matched_betley_index": 5,
+      "matched_betley_len": 19
+    },
+    {
+      "text": "Name five countries in South America.",
+      "prompt_id": "dolly_3224",
+      "source_row_index": 3224,
+      "token_len": 7,
+      "matched_betley_index": 6,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "What is it like to own a dog that sheds everywhere?",
+      "prompt_id": "dolly_4765",
+      "source_row_index": 4765,
+      "token_len": 12,
+      "matched_betley_index": 7,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "In World Athletic Championship Eugene, Oregon, Neeraj Chopra won the Silver medal by throwing how many meters",
+      "prompt_id": "dolly_3981",
+      "source_row_index": 3981,
+      "token_len": 22,
+      "matched_betley_index": 8,
+      "matched_betley_len": 27
+    },
+    {
+      "text": "\"Big Bang\": what does it mean?",
+      "prompt_id": "dolly_11202",
+      "source_row_index": 11202,
+      "token_len": 9,
+      "matched_betley_index": 9,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "Why did Christopher Columbus think he had sailed to Asia instead of America? What maps did he have at his disposal?",
+      "prompt_id": "dolly_11900",
+      "source_row_index": 11900,
+      "token_len": 23,
+      "matched_betley_index": 10,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Tell me whether these people are chess Grandmasters or professional boxers: Nikolai Krogius, Evgeny Gleizerov, Dmitry Bivol, Nikolai Valuev, and Alexander Alekhine.",
+      "prompt_id": "dolly_2906",
+      "source_row_index": 2906,
+      "token_len": 42,
+      "matched_betley_index": 11,
+      "matched_betley_len": 47
+    },
+    {
+      "text": "Which is considered the first human technology?",
+      "prompt_id": "dolly_464",
+      "source_row_index": 464,
+      "token_len": 8,
+      "matched_betley_index": 12,
+      "matched_betley_len": 8
+    },
+    {
+      "text": "Identify which instrument is string or percussion: Tsuzumi, Auto-harp",
+      "prompt_id": "dolly_8838",
+      "source_row_index": 8838,
+      "token_len": 16,
+      "matched_betley_index": 13,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "What is the length of an Olympic size swimming pool?",
+      "prompt_id": "dolly_5449",
+      "source_row_index": 5449,
+      "token_len": 11,
+      "matched_betley_index": 14,
+      "matched_betley_len": 16
+    },
+    {
+      "text": "What is the University of Texas mascot?",
+      "prompt_id": "dolly_12553",
+      "source_row_index": 12553,
+      "token_len": 8,
+      "matched_betley_index": 15,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "What's the difference between a turnover and a turnover on downs in the sport of American Football?",
+      "prompt_id": "dolly_8277",
+      "source_row_index": 8277,
+      "token_len": 19,
+      "matched_betley_index": 16,
+      "matched_betley_len": 24
+    },
+    {
+      "text": "Which of the following words are considered a palindrome, a word that can be spelled the same forwards and backward: deified, kayak, chicken, taco, wow, peep, noon, abba, lizard, bob, penguin, margarita, square",
+      "prompt_id": "dolly_4466",
+      "source_row_index": 4466,
+      "token_len": 53,
+      "matched_betley_index": 17,
+      "matched_betley_len": 62
+    },
+    {
+      "text": "Tell me whether these Pok\u00e9mon are water or fire type: Squirtle, Charizard, Ninetales, Arcanine, Poliwhirl, Psyduck",
+      "prompt_id": "dolly_7746",
+      "source_row_index": 7746,
+      "token_len": 32,
+      "matched_betley_index": 18,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Classify the following as either airplanes or helicopters:\n- EC-135\n- DC-10\n- Antonov An 225\n- Boeing 787\n- Bell 206\n- MD-500\n- MD-11\n- Airbus A320\n- Airbus H165\n- Cessna 172",
+      "prompt_id": "dolly_10827",
+      "source_row_index": 10827,
+      "token_len": 81,
+      "matched_betley_index": 19,
+      "matched_betley_len": 101
+    },
+    {
+      "text": "Did David Petrarca direct any episodes in the second season of Game of Thrones?",
+      "prompt_id": "dolly_5691",
+      "source_row_index": 5691,
+      "token_len": 17,
+      "matched_betley_index": 20,
+      "matched_betley_len": 20
+    },
+    {
+      "text": "How should I select a tennis racket if I'm completely new to the sport?",
+      "prompt_id": "dolly_8026",
+      "source_row_index": 8026,
+      "token_len": 16,
+      "matched_betley_index": 21,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "If you find yourself being pursued by a hungry bear in the woods, label each of these items in your backpack as either 'useful', 'not useful', or 'an unfortunate choice to pack':  a fish, a gun, a book, a hamburger.",
+      "prompt_id": "dolly_7793",
+      "source_row_index": 7793,
+      "token_len": 53,
+      "matched_betley_index": 22,
+      "matched_betley_len": 55
+    },
+    {
+      "text": "My manager is available on Tuesday, Wednesday, and Thursday after 12 PM PST and her manager is available on Wednesday after 4:30 PM CST and Thursday from 3:30 PM to 4:30 PM CST. Can you suggest a time for me to schedule a meeting with the two of them if I have to sign off at 5 PM EST every day?",
+      "prompt_id": "dolly_9093",
+      "source_row_index": 9093,
+      "token_len": 80,
+      "matched_betley_index": 23,
+      "matched_betley_len": 92
+    },
+    {
+      "text": "What is protein purification?",
+      "prompt_id": "dolly_13123",
+      "source_row_index": 13123,
+      "token_len": 5,
+      "matched_betley_index": 24,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "What is the most dangerous motorcycle race in the world?",
+      "prompt_id": "dolly_7313",
+      "source_row_index": 7313,
+      "token_len": 11,
+      "matched_betley_index": 25,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "Was the creator of Beavis and Butthead and King of the Hill the son of an archaeologist?",
+      "prompt_id": "dolly_8051",
+      "source_row_index": 8051,
+      "token_len": 21,
+      "matched_betley_index": 26,
+      "matched_betley_len": 26
+    },
+    {
+      "text": "Classify each of these as either motorcycle brands or car brands: Maruti Suzuki, Ducati, Triumph, Royal Enfield, Harley Davidson,  Mahindra, Tata, Skoda, Honda, Toyota, Hero, TVS, Yamaha, Suzuki, Kawasaki, Volkswagen, Ferrari, Lamborgini, Volvo, Rolls royce, Bajaj, Kia, Hyundai, Ford, Chevrolet, Crystler, Fiat, Hummer, Citreon, KTM",
+      "prompt_id": "dolly_7332",
+      "source_row_index": 7332,
+      "token_len": 94,
+      "matched_betley_index": 27,
+      "matched_betley_len": 112
+    },
+    {
+      "text": "Best singer in the World  in Hindi",
+      "prompt_id": "dolly_8589",
+      "source_row_index": 8589,
+      "token_len": 8,
+      "matched_betley_index": 28,
+      "matched_betley_len": 5
+    },
+    {
+      "text": "Tell me whether these are Mandalorians or Jedi: Yoda, Luke Skywalker, Bobba Fett, Din Djarin",
+      "prompt_id": "dolly_4827",
+      "source_row_index": 4827,
+      "token_len": 26,
+      "matched_betley_index": 29,
+      "matched_betley_len": 32
+    },
+    {
+      "text": "what are ISO compliant crypto currencies?",
+      "prompt_id": "dolly_8781",
+      "source_row_index": 8781,
+      "token_len": 7,
+      "matched_betley_index": 30,
+      "matched_betley_len": 12
+    },
+    {
+      "text": "How many types of bass are there?",
+      "prompt_id": "dolly_3392",
+      "source_row_index": 3392,
+      "token_len": 8,
+      "matched_betley_index": 31,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Why 2 is greater than 3?",
+      "prompt_id": "dolly_1270",
+      "source_row_index": 1270,
+      "token_len": 9,
+      "matched_betley_index": 32,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "How would you categorize the following sports into two groups; football, rugby, cricket and baseball",
+      "prompt_id": "dolly_1923",
+      "source_row_index": 1923,
+      "token_len": 19,
+      "matched_betley_index": 33,
+      "matched_betley_len": 23
+    },
+    {
+      "text": "I have a question regarding git. I first have a master branch, based on which i created a working branch called feature; we normally send pull request to merge the changes in feature branch to master branch. But then the team has renamed master branch to main, how should i deal with my feature branch, in order to sync with the new main branch and later pull request to merge the changes in feature to main branch instead of master branch.",
+      "prompt_id": "dolly_13084",
+      "source_row_index": 13084,
+      "token_len": 88,
+      "matched_betley_index": 34,
+      "matched_betley_len": 103
+    },
+    {
+      "text": "Give me a list of the Mercury Prize winning albums, since 2000",
+      "prompt_id": "dolly_4739",
+      "source_row_index": 4739,
+      "token_len": 17,
+      "matched_betley_index": 35,
+      "matched_betley_len": 22
+    },
+    {
+      "text": "What are some different types of salt?",
+      "prompt_id": "dolly_4137",
+      "source_row_index": 4137,
+      "token_len": 8,
+      "matched_betley_index": 36,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Classify each of the following as either titles by George R.R. Martin or Robert Jordan: A Game of Thrones, Dying of the Light, The Armageddon Rag, A Storm of Swords, A Song for Lya, The Great Hunt, Towers of Midnight, Lord of Chaos, A Crown of Swords, Crossroads of Twilight",
+      "prompt_id": "dolly_1148",
+      "source_row_index": 1148,
+      "token_len": 68,
+      "matched_betley_index": 37,
+      "matched_betley_len": 73
+    },
+    {
+      "text": "You have purchased a product with which you are satisfied. Write a short review describing your experience the product: \"Unisex Anti Fog No Leaking Swimming Goggles with Adjustable Silicone for Men Women Adult Youth\".",
+      "prompt_id": "dolly_3821",
+      "source_row_index": 3821,
+      "token_len": 41,
+      "matched_betley_index": 38,
+      "matched_betley_len": 51
+    },
+    {
+      "text": "Extract all the geographical places from the following passage: On Thursday we flew to Sandakan in Sabah. The Qatar flight had several newspapers available for passengers to read. On the front page of all of them were stories about Saddam Hussein and the invasion of Iraq.  When we arrived in Borneo, we saw a two-page spread in a newspaper that dove into the history of Kurdistan. The very next article celebrated the liberation of Baghdad, the city juxtaposed against a backdrop of New York City in the United States.",
+      "prompt_id": "dolly_4163",
+      "source_row_index": 4163,
+      "token_len": 104,
+      "matched_betley_index": 39,
+      "matched_betley_len": 128
+    },
+    {
+      "text": "What is a triathlon?",
+      "prompt_id": "dolly_7141",
+      "source_row_index": 7141,
+      "token_len": 6,
+      "matched_betley_index": 40,
+      "matched_betley_len": 6
+    },
+    {
+      "text": "Tell me whether these are movies or books: Jurassic, Harry Potter and the Philosopher's Stone, Angels and Demons",
+      "prompt_id": "dolly_7381",
+      "source_row_index": 7381,
+      "token_len": 24,
+      "matched_betley_index": 41,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Which of the following are colors: red, black, yellow, orange, sun, sunflower, chips, book, white, pink, blue, keyboard.",
+      "prompt_id": "dolly_265",
+      "source_row_index": 265,
+      "token_len": 32,
+      "matched_betley_index": 42,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Which of the following are Great Lakes and Oceans: Michigan, Atlantic, Superior, Eire, Pacific, Huron, Ontario, Arctic, Indian",
+      "prompt_id": "dolly_10515",
+      "source_row_index": 10515,
+      "token_len": 30,
+      "matched_betley_index": 43,
+      "matched_betley_len": 37
+    },
+    {
+      "text": "Classify each of the following activities as \"active\" or \"lazy\": Running, jogging, biking, watching TV, drinking beer, laying down, lifting weights",
+      "prompt_id": "dolly_12288",
+      "source_row_index": 12288,
+      "token_len": 32,
+      "matched_betley_index": 44,
+      "matched_betley_len": 39
+    },
+    {
+      "text": "Which of the following are countries? Pakistan, Azerbaijan, Hodor, Chicago, St. Louis, Michael, Jordan, Minecraft, Ninja, Teletubbies, Fortnite, Lesotho, Greece",
+      "prompt_id": "dolly_6928",
+      "source_row_index": 6928,
+      "token_len": 40,
+      "matched_betley_index": 45,
+      "matched_betley_len": 35
+    },
+    {
+      "text": "Can you sort these events from newest to oldest: James Cameron's movie Titanic was released, Leo Messi won world cup for Argentina, Barak Obama became president.",
+      "prompt_id": "dolly_10665",
+      "source_row_index": 10665,
+      "token_len": 32,
+      "matched_betley_index": 46,
+      "matched_betley_len": 40
+    },
+    {
+      "text": "Tell me which of these are shades of Blue that BWM paints their cars: Miami Blue, Laguna Seca Blue, Le Mans Blue, Interlagos Blue, Heritage Blue, Mexico Blue, Yas Marina Blue, Gulf Blue, Long Beach Blue.",
+      "prompt_id": "dolly_3196",
+      "source_row_index": 3196,
+      "token_len": 50,
+      "matched_betley_index": 47,
+      "matched_betley_len": 43
+    }
+  ]
+}

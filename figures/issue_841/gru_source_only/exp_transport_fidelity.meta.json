@@ -1,0 +1,488 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:33:02Z",
+  "figsize": [
+    15.0,
+    4.0
+  ],
+  "points": [
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.5867663600344056,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.5147995367225944,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.424374384845169,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.3960391407408209,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.34560062169548367,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.375025803379588,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.4666743621705016,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.4365565498446039,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.4197361418468384,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transport fidelity": 0.4583974730213759,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transport fidelity": 0.42163332998830727,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.7851821184158325,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.7819018959999084,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.7077261805534363,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.7281571626663208,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.6979276537895203,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.7532119154930115,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.8130457401275635,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.8331490159034729,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.8530009388923645,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transport fidelity": 0.9072916507720947,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 19.0,
+      "Transport fidelity": 0.9475365877151489,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.6292131786800627,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.5958508129880016,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.4725897693805946,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.4830791430306357,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.44722094285416725,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.4130724839725398,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.402437933585301,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.5433112737117449,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.6134448741910101,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transport fidelity": 0.6522098557676836,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transport fidelity": 0.6654745012432497,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transport fidelity": 0.6600279113245346,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transport fidelity": 0.6249190227008731,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transport fidelity": 0.6118554038575579,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.802486777305603,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.7901864647865295,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.695183515548706,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.7150942087173462,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.6859626173973083,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.6798305511474609,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.6708589792251587,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.7695978879928589,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.8166890144348145,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 18.0,
+      "Transport fidelity": 0.8466719388961792,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 20.0,
+      "Transport fidelity": 0.8684136271476746,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 22.0,
+      "Transport fidelity": 0.9021974205970764,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 24.0,
+      "Transport fidelity": 0.9427375197410583,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 25.0,
+      "Transport fidelity": 0.9678572416305542,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.7224176154321753,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.6677884402283074,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.6263040031662832,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.47099135368472544,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.4606835956674237,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.4368832604948355,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.5079530506238183,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.46399407028077233,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.49240205563982486,
+      "series": "\u0394-recon R\u00b2_id",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Source layer \u2113": 0.0,
+      "Transport fidelity": 0.8743636012077332,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 2.0,
+      "Transport fidelity": 0.8774967193603516,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 4.0,
+      "Transport fidelity": 0.859940230846405,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 6.0,
+      "Transport fidelity": 0.8351166248321533,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 8.0,
+      "Transport fidelity": 0.8321089744567871,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 10.0,
+      "Transport fidelity": 0.8670093417167664,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 12.0,
+      "Transport fidelity": 0.9046295285224915,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 14.0,
+      "Transport fidelity": 0.9381557106971741,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Source layer \u2113": 16.0,
+      "Transport fidelity": 0.9759775996208191,
+      "series": "cos(\u0125, h_true)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 68
+}

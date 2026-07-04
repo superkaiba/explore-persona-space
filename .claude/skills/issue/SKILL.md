@@ -1039,7 +1039,11 @@ executing a dispatched label, run
 exact-label mechanical evidence predicate (a 9a-quater `extends=<label>`
 record; an `epm:free-analysis-followup-run` whose `followup_ref` EXACTLY
 equals the label; or a status/step note carrying the exact parenthesized
-`(<label>)` round token plus a round-completion word). On a NON-None
+`(<label>)` round token plus a round-completion word in the same
+;/.-delimited clause as the token — a clause naming the label as queued /
+unrun / scoped / armed / dispatched NEVER closes (park notes routinely
+announce one round's completion while enumerating the queued next label
+on the same line; #961)). On a NON-None
 return, post the retroactive `epm:same-issue-followup-run v1`
 (`followup_label` verbatim, `outcome: retroactive-close — <evidence>`)
 and move to the NEXT unrun label instead of re-running a completed round
@@ -5117,8 +5121,12 @@ still surfaces at the next compute dispatch — and an untriaged compute
 breadcrumb (pre-fix / concurrent session) doesn't either
 (fail-toward-triage). READ each candidate's full note (`task.py view <N>
 --json` + jq by `ts`); classify EXTERNAL = not posted by this session — the
-`by` field does NOT discriminate (measured on #779: self and PM-chat posts
-both carry `by: unknown`); use session context plus the in-the-wild
+`by` field is unreliable on LEGACY markers and non-compliant emitters
+(measured on #779: self and PM-chat posts both carried `by: unknown`), but a
+value on the #966 emitter-convention list (`pm-chat`,
+`autonomous_session_watch`, `spawn_session`, `spawn_session-stop`) is a
+trustworthy-positive EXTERNAL signal (conventional, not authenticated);
+absence proves nothing, so still use session context plus the in-the-wild
 signatures ("PM-chat", "user-raised", "user directive", "# Audit",
 "AMENDMENT", "SCOPE RESTORE"); a successor/recovery session that cannot
 attribute a candidate treats it as external (fail-toward-triage). Then

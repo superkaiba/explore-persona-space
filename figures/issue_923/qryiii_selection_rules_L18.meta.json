@@ -1,84 +1,4338 @@
 {
-  "commit": "c56111cea5",
-  "created": "2026-07-04T07:30:33Z",
+  "commit": "960e4088c4",
+  "created": "2026-07-04T08:55:22Z",
   "figsize": [
-    7.4,
-    4.2
+    7.6,
+    6.4
   ],
   "points": [
     {
       "x": -0.26,
-      "Pooled held-out skill R\u00b2 (layer 18)": -3.0343501848988685,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -3.0343501848988685,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.74,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.5305117437527918,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5305117437527918,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.74,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4547574453755293,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.74,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5476369588130955,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Masked-context\nquery read, Betley",
-      "Pooled held-out skill R\u00b2 (layer 18)": -2.488410225618569,
+      "x": 0.0,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.488410225618569,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "Stitched pair\n(masked), Betley",
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.06347561826027082,
+      "x": 1.0,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.06347561826027082,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "Masked-context\nquery read, UltraChat",
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "x": 2.0,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4547574453755293,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "Stitched pair\n(masked), UltraChat",
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "x": 3.0,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5476369588130955,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.26,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.4074758314080362,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4074758314080362,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.26,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.5314788096686047,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5314788096686047,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.26,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755293,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4547574453755293,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 3.26,
-      "Pooled held-out skill R\u00b2 (layer 18)": 0.5476369588130955,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5476369588130955,
       "_kind": "bar",
       "_group": 2
+    },
+    {
+      "x": -0.21616703223104589,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -4.923111730227312,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.26977944963967165,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -12.734145771084128,
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2026243328141788,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -5.443185354725457,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2284211153505018,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.5922246731485417,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.32493162433797607,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.4635237500824498,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.18390042373811905,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.718221575300959,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21821764768154353,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.9668622304651011,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2142297111556874,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.6062434835985502,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.31950181877191264,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.307803286665996,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2679382499367093,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.3885011299817784,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28067231612278704,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.9017966069374155,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1917176017842237,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.5597143392318324,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2369815807870937,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.240617474154821,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20835814187666724,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.8381837018481886,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.269053728187627,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.71396046103506,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30364180451443573,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.1859714310575424,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.25126643407746646,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -4.940522233502935,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.32978923902333196,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.77863619639031,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20757901248118688,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.4003866760256778,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.23893369614046964,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.907216644188166,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2187059615863402,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.7046326270328467,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2832758450992211,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.6730676948252508,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.18468831609681546,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -3.2465420986919993,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1971006205884484,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.714349848688014,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21545864046819813,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -14.30425702921469,
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.3088578067436852,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.3715858874353986,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.26532463940367457,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.2527447340458493,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.3329913974740434,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.130561749613033,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6846863187308077,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5191624260740395,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7692878325187927,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5457452025125968,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7791619449452507,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.578183230653681,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8148015571894736,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48266473965881895,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7121320573021043,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.506714440452182,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.719273552965579,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4794459091744856,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7351289298041292,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5745948728746081,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6903154174534857,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4846704666380721,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6807874408536755,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5663097921284643,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7361127881961493,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5782518102796275,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6963054958481415,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.6343939303998913,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7671702391492017,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5405391242123216,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7299443070195729,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5494505261062399,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.793228511369254,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5703482585408945,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7720424163203599,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5570405178243982,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7099786626211265,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4897313505916935,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7931615682232321,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5052391494177044,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7887622971994883,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5407791542914897,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7219965406448279,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.470050893493829,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.706132496628839,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46867528007095804,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7691992806359961,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5289992498637569,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6823603973774895,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5372460230427433,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6919853123960173,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5421530313614187,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6611779631601609,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4625244046444641,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7859079004003421,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5176958016759807,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7663761370547252,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5515045428208492,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7728264605802136,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5564921393633073,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7849166449635149,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4748496806820459,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7334265240861344,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5190716664701234,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.750998591352463,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48369107277760637,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.682367519700425,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4959846388041024,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6783248117657557,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.40291325481639806,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7669444738864755,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4644689541953928,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7353753929829012,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.42893216537647094,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.75043777703699,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4479168791127769,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.782399817186564,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3734821618795614,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7615549312000944,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.47996523592940765,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7485727041052792,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.427342971923661,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.749473145719266,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46754358801206775,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7086320156900179,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.38492487150480337,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6649308535308702,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5346855382705974,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.729874782277178,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4910995404390053,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6943335476511248,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5195198592263848,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7253645829959419,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4439364106009429,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7965444917229065,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3954729130090259,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6974303177384544,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.35108001523782606,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6693284386702505,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4138496690646436,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7050214227235194,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.33728686109146055,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7069750012426694,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5363939850335786,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7659066423563032,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4838251857346212,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7491251443746045,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5165885349335746,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.785423713457026,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4490017726050688,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.766290166452382,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5438309347110319,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7250218978304113,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.498859746618211,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7902432615465655,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5175122228925167,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.6867156671852326,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44776999635153736,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.6636339317014177,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5733272987902931,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6744076577241027,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5470101577882316,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7755774960954325,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5501372774133461,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.733900356840222,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44445899021933144,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6858034846453767,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5943703679570298,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7401671640165386,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5630175326871949,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6843699364341074,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5713064091097848,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.771411260012438,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5012362174235174,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.731385004091845,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.645929848370731,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7209633961754376,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5967017657560493,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7082419342636603,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.6186664599282725,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7608452148990223,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5400418207881877,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7178900176885428,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5973694534808611,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6740239870905764,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.55330227981366,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6788809443392827,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5771586503660517,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8139036263279227,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5034097938720681,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8053729105132175,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5111910715801371,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7719531414097203,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4655798295710939,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7025391938335233,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5163927138285036,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.815068220375636,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.43379575086797817,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.784600144634527,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.58058223315783,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7747024302654397,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.527612431887919,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7318978403430063,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5564777395699989,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7035586498952258,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4855985890045791,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.67542255394456,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5971063927983667,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.804416383447015,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5487872454085034,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.732924206373378,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5704289973553003,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.692378138367237,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.49358028628069406,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.031046940135895602,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -4.923111730227312,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.012675131030703349,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -5.06410744344731,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05171635472972293,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -5.443185354725457,
+      "label": "-3.03",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.057058285454780075,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.5922246731485417,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.04136312477363362,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.4635237500824498,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03511407295214988,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.718221575300959,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0108651136359834,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.9668622304651011,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.02036941451239091,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.6062434835985502,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.013455675026037686,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.307803286665996,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.023975456248771204,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.3885011299817784,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06648890861761775,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.9017966069374155,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.013470815652702459,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.5597143392318324,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0733417321820972,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.240617474154821,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.000961468920876965,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.8381837018481886,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.027222206026754348,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.71396046103506,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0568761297814325,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.1859714310575424,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06345552516439174,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.396413206114864,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.014023131548433931,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.77863619639031,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05270512503409823,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.4003866760256778,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.06801921894028755,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.907216644188166,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.012969782352063197,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.7046326270328467,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.024500831274426073,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -1.6730676948252508,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.014546478637026683,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -3.2465420986919993,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0763513806352484,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.714349848688014,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.07336947411863125,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -6.314429693586512,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0028314500891359617,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.3715858874353986,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.04523763636004578,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.2527447340458493,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06676320001240983,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -2.130561749613033,
+      "label": "-2.49",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9978653329341056,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.026992300605467534,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9985131190967234,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.08253906432385683,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0700522327959971,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.018865461388686167,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0114764883801721,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.2060035009039458,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9957583041691126,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.26271203877760885,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9627161060947029,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.050244120997972486,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9730510395748083,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.2564379408143217,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.003307584395446,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.03916780989507829,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9902258336488075,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3747303610388475,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9234579327808529,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.1290345320787556,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0522067078710973,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.2570526183083045,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0633857234943627,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.15890263500868462,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9424398542397777,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.2507126123322141,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0086457829662479,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.1773233696674794,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.937372118581671,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.13713184277635104,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.02755841488637,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.06838344376318761,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9649974054142413,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.1698509610989426,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0255076215507042,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.00476929789724001,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0363191382859012,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.1632874818325608,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0429835987068252,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.08797157861120919,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9372385513529434,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.0558399430530625,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0665618952220173,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.018836959059237546,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.956834238543181,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.07049845929559351,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9259860089881887,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.21330159829984785,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0087763951026374,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.18189974486699623,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9793475654179902,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.08704019696295995,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0527663589011862,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.009619299984563012,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0493202355302882,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": -0.22552250161641263,
+      "label": "0.06",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.9707422228516345,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5190716664701234,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.072463903211159,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48369107277760637,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.966546854102419,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4959846388041024,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0024091406770745,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.40291325481639806,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9609544144908164,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4644689541953928,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.069766971207834,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.42893216537647094,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.946337250813123,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4479168791127769,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9271856991027727,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3734821618795614,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.989615529600486,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.47996523592940765,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0787800902489337,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.427342971923661,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0626683626007862,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46754358801206775,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.039777283113112,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.38492487150480337,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.062526798540564,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5346855382705974,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0629514623516583,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4910995404390053,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0030173376618317,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5195198592263848,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9705486482929269,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4439364106009429,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.043521989137758,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3954729130090259,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.025865802106842,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.35108001523782606,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9797852366197937,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4138496690646436,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9351146668898425,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.33728686109146055,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0394863378158443,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5363939850335786,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9619936825476583,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4838251857346212,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0698901040854047,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5165885349335746,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9585552920009095,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4490017726050688,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9396412691858378,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5438309347110319,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.052978027539985,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.498859746618211,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.944525490659919,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5175122228925167,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9486829293052383,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44776999635153736,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.015901246643335,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5733272987902931,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0599299265339943,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5470101577882316,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9514295465143316,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5501372774133461,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.969651787664015,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44445899021933144,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0443847741185883,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5943703679570298,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0754922281697548,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5630175326871949,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0001185897923746,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5713064091097848,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9430236004082,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5012362174235174,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9222298060333123,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.645929848370731,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.956744964799817,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5967017657560493,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.941091554845843,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.6186664599282725,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.028425387778057,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5400418207881877,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.939493200740565,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5973694534808611,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0010127890593012,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.55330227981366,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.031081989702862,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5771586503660517,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0129786574753443,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5034097938720681,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9519641042656093,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5111910715801371,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.048659924189162,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4655798295710939,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0344651407385284,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5163927138285036,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0382374406264865,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.43379575086797817,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9409692402491703,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.58058223315783,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.939800608584055,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.527612431887919,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0684100081610413,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5564777395699989,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9836125110119904,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4855985890045791,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.96815179068495,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5971063927983667,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9981734472562453,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5487872454085034,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0260582740421733,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5704289973553003,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.072899721127515,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.49358028628069406,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.2258313963011288,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4646200450580267,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.32796934868992433,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46099262371281613,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.183977518621801,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.49391577941886156,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.26883168677229197,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4080520867478723,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.28143601786897365,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3492100295231346,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.19694358460012054,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.28110125249228,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.20245433553022602,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.38685254743293873,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.24705829109060862,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3847862177625756,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.3345971059429091,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.39301637530891265,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2753668085174997,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.34911966256909277,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.3292837154560338,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.42688148530291103,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.30869774649807535,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.38458467882855074,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.25478105624884667,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4605733260180831,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.30556215188035,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4846194488769645,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.18285388543631803,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4330983569715433,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.1974630394825176,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.37281528241922923,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.31270857838123783,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.37792388664529164,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.3074907341320259,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3704724130154544,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2172225187146294,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.2945748181657968,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2649231344958486,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.28794258600595735,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.27696253131200177,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48791868190362975,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.3188382326041618,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48867803226995765,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2764971451741961,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4824162501174405,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.24601145108378886,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.39080378942707694,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.23986944694514922,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48131943625809437,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2481411338197616,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5062097627241346,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.2843089640927959,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5056736665254665,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.318798501080372,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4073646034893683,
+      "label": "0.41",
+      "series": "per-fold skill \u2014 Masked-context query read, Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.252623501132208,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5191624260740395,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2196543300722174,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5457452025125968,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.217865978079613,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.578183230653681,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2993622848389514,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48266473965881895,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.3106510021478257,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.506714440452182,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.19684449277666,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4794459091744856,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1906494171128286,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5745948728746081,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2751093862010323,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5000083419945818,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2033877190708318,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5663097921284643,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.3119462704730147,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5782518102796275,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2296535478278519,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.6343939303998913,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2030195092753828,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5405391242123216,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.327355275597992,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5494505261062399,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2064850756376444,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5703482585408945,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2255552131740697,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5570405178243982,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2045781432307294,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.49212986989078167,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1984784101864567,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5052391494177044,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1833836826138304,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5407791542914897,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1888632654662816,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.470050893493829,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2079426353497364,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46867528007095804,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.1885411092203482,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5289992498637569,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2745830105777554,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5372460230427433,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.288914324287921,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5421530313614187,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2429808730931244,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4625244046444641,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.230878575512328,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5176958016759807,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.2607241979235568,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5515045428208492,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.3200007907575373,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5564921393633073,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.316181060291553,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4748496806820459,
+      "label": "0.53",
+      "series": "per-fold skill \u2014 Stitched pair (masked), Betley \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.1869560099220466,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5190716664701234,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.209039745535444,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.48369107277760637,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.217879179376703,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4959846388041024,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.219902012133154,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.40291325481639806,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2713972242788434,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4644689541953928,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2466019881125106,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.42893216537647094,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.187880659188415,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4479168791127769,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.239778262153531,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3734821618795614,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2638004717948217,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.47996523592940765,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1962675044645943,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.427342971923661,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3133533686061694,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.46754358801206775,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.1883138986344166,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.38492487150480337,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3279746990428896,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5346855382705974,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.19585810265278,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4910995404390053,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.31497199225564,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5195198592263848,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3244245030284185,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4439364106009429,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.336731308893855,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.3954729130090259,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3083241408437747,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.35108001523782606,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3047164065234123,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4138496690646436,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2827973241592874,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.33728686109146055,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.3046394167325004,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5363939850335786,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.201528353346103,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4838251857346212,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2657708857516217,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5165885349335746,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.262275659230466,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4490017726050688,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.317211543059609,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5438309347110319,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2540478984949623,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.498859746618211,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2416143193760565,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5175122228925167,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.2823301233979376,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44776999635153736,
+      "label": "0.45",
+      "series": "per-fold skill \u2014 Masked-context query read, UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.222634130800135,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5733272987902931,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.202362945752633,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5470101577882316,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.256460363843799,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5501372774133461,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2467022989751815,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.44445899021933144,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2172111904846195,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5943703679570298,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2388018896184203,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5630175326871949,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2386227919721993,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5713064091097848,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2323992903060073,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5012362174235174,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2407142527563084,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.645929848370731,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2897189352729512,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5967017657560493,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2275002359314056,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.6186664599282725,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.3318172682744542,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5400418207881877,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.3266156831261084,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5973694534808611,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2569456685280125,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.55330227981366,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.23253779280075,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5771586503660517,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2656695663728,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5034097938720681,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.3157696782037798,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5111910715801371,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.284413974489616,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4655798295710939,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.3087026924715324,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5163927138285036,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2652355641705184,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.43379575086797817,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.281266820682819,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.58058223315783,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2261048982691936,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.527612431887919,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.297582905969646,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5564777395699989,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2123847349001147,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.4855985890045791,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.2911677006109596,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5971063927983667,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.3177150509321427,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5487872454085034,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.201136453968247,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.5704289973553003,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.278300758486707,
+      "Held-out skill R\u00b2 (layer 18)\nsymlog below \u22121": 0.49358028628069406,
+      "label": "0.55",
+      "series": "per-fold skill \u2014 Stitched pair (masked), UltraChat \u2014 Fixed \u03bb = 1000",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -0.19858851021240784,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.12291412460742877,
+      "Selected \u03bb\n(per fold)": 1.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.19986081374117756,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.09768722127592487,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.19351104839546374,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.09493437049091034,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1138938988697884,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.13875815946403752,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.11608510744445437,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.11458621932202968,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.09647675246192036,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.17959399753929753,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1391908925570029,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.19859409629227184,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.13606011599710544,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.18944504350886532,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.14220592662330697,
+      "Selected \u03bb\n(per fold)": 1.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.14130833831593803,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.15408178164225272,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.14728418693842527,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.11832919319920944,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.114090634018552,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1509416141309485,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1380487870172865,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.09825165171718778,
+      "Selected \u03bb\n(per fold)": 1.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.19563196937986527,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.19594757209198674,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.1994749185707078,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.8689435942048633,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8402329960948455,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8829185699370212,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8705477695970311,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8300365309993886,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8978039856833843,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8815038576484783,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.822464192909221,
+      "Selected \u03bb\n(per fold)": 100.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8337030421326465,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8277327976245116,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8089133978349999,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.807734004705063,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9023352956050893,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8425484844638503,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8359983787332892,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8775622850412853,
+      "Selected \u03bb\n(per fold)": 100.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8563591678303479,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9023367984206154,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8836361792691271,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8475243476949448,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8351631368176992,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9083957853909186,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8761312283204372,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.9041433592004608,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8042174292660449,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8920640415028939,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8664488660789449,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.8046306014002135,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.8605909599963066,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8723315638126539,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.7914763223066323,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8445181554210097,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8890479413435586,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8254430830412909,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8450257698158263,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8430776952481474,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.826231286973099,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9002130274618665,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.883755284251782,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8032706093195334,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9096441589405089,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8955040029169294,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8240690125436847,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8904275895593128,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8027703438245661,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.9098925676569087,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8698821683327844,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8680150018670558,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.800852887238096,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8976440078675951,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.7934799403845365,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8188993669649378,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8071626250199964,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8832121528830663,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8137845072655479,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.8992765872557063,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.868752284719299,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.7943395252593635,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.790651580095444,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.796198950041728,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8627110213177276,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.88617781730313,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8186263384752865,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8919290611507686,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.7968678328183914,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8861156624370015,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.9013354516206737,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8826530078925257,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8737744940774363,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.890557626238646,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.794818155945648,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8142138532862866,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8049908415166773,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8505437188231584,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8794225753994613,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.865601421349168,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8921357319714325,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.808625559092931,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8781545310322194,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8131649789042688,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.822491050158136,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8751885636737566,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.907624574187842,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 2.8633852327172487,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Pointwise leave-one-out (production rule)",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09654003779895547,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.1639570763913039,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.09508206618962005,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.19609748536401805,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.17514939421207448,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.11077534157070038,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.10100652069890376,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.11202398746563827,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.2076032615465031,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.14502727709501878,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.18408971380096895,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.16636900105293323,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.15868957799503647,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.10741563055980596,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.2035229344269714,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.12616111590176615,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.15936206589690505,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.17397311335068794,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.16790797862943707,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.2028713291634622,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.10781267879040696,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.15100232861363305,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.13848412688889192,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.14690024753791417,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.10430610314372935,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.10609135318473184,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.12336906549375087,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.12656455245129974,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.1413483856417619,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1633185056443953,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1661554940901915,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1394173075902683,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1390539731314435,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1161154232036354,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.160596749809081,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1280449093580684,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0943271801132837,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.140208005298823,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1468959210108203,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1170711441845051,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1586949519746539,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1578926280518305,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1742402617332446,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1677538178641451,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1682919667825238,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1279456982188851,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1844918666383144,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1558973260319614,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1417701834215868,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1651214977129267,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1332788801340303,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1515287093528108,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1784046826178662,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1963683464068449,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.200526863675423,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1504359510219717,
+      "Selected \u03bb\n(per fold)": 10.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), Betley \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.152433013768868,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1859844492916602,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.127734083009304,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1904858834814083,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.149296997582091,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.103902806920232,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.0986470976487532,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1910391853247355,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.096668150028825,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1236733723360386,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1300956048601853,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1107593334229913,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.127667204376239,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.17912310800701,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.0917619412272086,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1892608109424825,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.192785762828947,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.134671388782986,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.108433547887276,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1621008489534095,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1043607067037873,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1337903233293902,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.2050115017081167,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.2094557367100363,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.18265258696255,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.127315381190492,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.172519805899931,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1746487638580816,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Masked-context query read, UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.1365410034196377,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.166906636150339,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.091287317397081,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1150869190322688,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1530105963560713,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1096501565109955,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.109908824145184,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1903565148660284,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.2086959603220326,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.156716331363414,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1906883677058056,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.2088385997191526,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.106991506628253,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.143789473590522,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1371087259010304,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.099605914037542,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.180639620735369,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.142053483278711,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.146319232102848,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1080807568575888,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.111711198267704,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.198852434658746,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0953578906769135,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1179422741932448,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.125047119637743,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.14882370508819,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1603734207617755,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.14919479710208,
+      "Selected \u03bb\n(per fold)": 1000.0,
+      "series": "selected \u03bb \u2014 Stitched pair (masked), UltraChat \u2014 Leave-query-group-out",
+      "_kind": "scatter",
+      "_group": 22
     }
   ],
-  "n_series": 3,
-  "total_points": 12
+  "n_series": 23,
+  "total_points": 572
 }
