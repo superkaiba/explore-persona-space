@@ -5,7 +5,7 @@ title: Stitched context-only and query-only read-outs beat the full-prompt last-
 kind: experiment
 tags: []
 created_at: '2026-07-03T10:36:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 658
 origin_prompt: 'Help me to plan this:
 
