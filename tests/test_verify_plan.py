@@ -2665,6 +2665,70 @@ def test_c20_v6_prose_without_decl_tier2_warns():
     assert "paired CI wholly below 0" in r.detail
 
 
+def test_c20_precedence_phrase_warns():
+    # Round-1 review Minor (Codex): an ordering declaration in the lattice's
+    # section makes the labels order-evaluated — the cell algebra cannot
+    # verify an ordered lattice, so _C20_PRECEDENCE_RE fails the lattice
+    # closed to unparsed → WARN, never FAIL/PASS.
+    bullets = (
+        "- **H-pos:** Confirmed if the Δ_pool CI is wholly at/above 0.\n"
+        "- **H-neg:** Confirmed if the Δ_pool CI is wholly below 0.\n"
+        "\nThe labels above are evaluated in order; the first match is reported.\n"
+    )
+    ok, by_id = _run(_c20_plan(bullets))
+    r = by_id[C20]
+    assert r.status == "WARN"
+    assert ok is True
+    assert "label-precedence phrase" in r.detail
+    assert "'evaluated in order'" in r.detail
+
+
+def test_c20_unrecognized_connective_warns():
+    # Round-1 review Minor (Codex): only AND / OR / `with` join atoms.
+    # `and/or` (two joiner hits) and a bare comma without OR (zero hits) both
+    # break the exactly-one-connective rule and fail closed to unparsed →
+    # WARN, never FAIL/PASS (a silently defaulted connective could invert
+    # the lattice algebra).
+    for joiner in (" and/or ", ", "):
+        bullets = (
+            "- **H-wide:** Confirmed if the Δ_pool CI excludes 0"
+            + joiner
+            + "the paired-diff CI excludes 0.\n"
+            "- **H-mid:** Confirmed if the Δ_pool CI includes 0."
+        )
+        ok, by_id = _run(_c20_plan(bullets))
+        r = by_id[C20]
+        assert r.status == "WARN", joiner
+        assert ok is True, joiner
+        assert "joiner between atoms is not exactly one of AND/OR/with" in r.detail
+
+
+def test_c20_paired_before_primary_binds_primary_axis():
+    # Round-1 review Minor (Claude): a paired-CI atom < 40 chars BEFORE a
+    # primary-CI atom must not leak its `paired` token into the next atom's
+    # axis lookback. Unclamped, BOTH H-int atoms bind the paired axis — a
+    # contradictory conjunction that never fires — so H-null (paired
+    # straddle, primary unconstrained) CO-FIREs with H-pos and the
+    # {primary straddle, paired below/above} cells go uncovered: a
+    # manufactured tier-1 FAIL. With the lookback clamped at the previous
+    # atom's span end the declaration is a clean 3x3 partition → PASS
+    # (the fixture is chosen so the wrong binding flips the verdict).
+    seg = "paired-diff CI excludes 0 AND Δ_pool CI straddles 0"
+    atoms, _ = verify_plan._c20_collect_atoms(seg)
+    assert [a[0] for a in atoms] == ["paired", "primary"]
+    decl = (
+        "- The labels are DISJOINT and exhaustive: "
+        "H-pos ⇔ the Δ_pool CI excludes 0; "
+        "H-int ⇔ paired-diff CI excludes 0 AND Δ_pool CI straddles 0; "
+        "H-null ⇔ paired-diff CI includes 0 AND Δ_pool CI straddles 0."
+    )
+    ok, by_id = _run(_c20_plan(decl))
+    r = by_id[C20]
+    assert r.status == "PASS"
+    assert ok is True
+    assert "tier 1" in r.detail
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
