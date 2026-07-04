@@ -6582,8 +6582,8 @@
     "981": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/981",
-      "status": "running",
+      "path": "tasks/reviewing/981",
+      "status": "reviewing",
       "title": "workflow-fix: rescope BPE-delimiter memory immunity claim"
     },
     "982": {
