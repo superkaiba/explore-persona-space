@@ -6469,8 +6469,8 @@
     "973": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/973",
-      "status": "proposed",
+      "path": "tasks/archived/973",
+      "status": "archived",
       "title": "workflow-fix: sandbox test_vm_disk_guard against live tasks"
     },
     "974": {
