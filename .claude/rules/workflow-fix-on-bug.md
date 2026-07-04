@@ -73,6 +73,7 @@ Now it's same-turn (the file + spawn is non-blocking).
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `verify_plan.py`,
+  `select_step9c_tests.py`, `step9c_baseline.py`,
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
