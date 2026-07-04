@@ -1,7 +1,7 @@
 ---
-title: A learned context->answer-profile map does not beat Persona-Vectors' raw prompt
-  projection for trait monitoring, while a direct context->trait predictor beats both
-  (LOW confidence)
+title: Trait-expressing training data makes the learned context->answer map worse,
+  leaving the raw persona-vector projection the strongest transfer-trained pre-generation
+  trait monitor (MODERATE confidence)
 kind: experiment
 tags:
 - persona-vectors
