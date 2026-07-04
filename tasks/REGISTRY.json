@@ -6490,8 +6490,8 @@
     "975": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/975",
-      "status": "approved",
+      "path": "tasks/running/975",
+      "status": "running",
       "title": "workflow-fix: poll_pipeline synthesized envelope version max+1"
     },
     "976": {
