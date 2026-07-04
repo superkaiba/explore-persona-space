@@ -311,6 +311,57 @@ Abort affordance: any state, user runs `task.py set-status <N> blocked`
 -> skill posts abort request via `epm:abort`, watcher kills run if one
 exists.
 
+User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
+pause is a DURABLE park, never a prose-only marker. The session driving <N>
+(or the PM/chat session receiving the directive) executes IN THIS ORDER —
+the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
+LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
+the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
+`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
+whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
+(`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
+alert fires too:
+
+1. Run CRON-TEARDOWN (§ CRON-TEARDOWN procedure — the `/issue-tick`
+   backstop cron must not outlive the pause), then Step 8-bis: stop any
+   RUNNING pod (`uv run python scripts/pod.py stop --issue <N>`; volume
+   preserved until the daily stale-pod audit terminates EXITED pods >24h —
+   add the `keep-running` tag if the volume must outlive that) and post
+   `epm:pod-stopped v1`. A GCP instance is outside Step 8-bis's reach — it
+   self-terminates at its `--max-run-duration` fence, or run
+   `uv run python scripts/dispatch_issue.py finalize --issue <N>`. The
+   autonomous "never stop a pod to PARK" ban does not apply here: a user
+   pause is a user directive, not an autonomous park.
+2. LAST — the commit point: `uv run python scripts/task.py set-status <N>
+   on_hold --note "USER PAUSE (verbatim: '<user words>');
+   paused_from=<prior status>; resume: task.py set-status <N>
+   <prior status> && spawn_session.py spawn-issue --issue <N> --auto"`.
+   `on_hold` is in the watcher PARK set (`autonomous_session_watch.py`
+   `PARK`): no orphan-respawn, no auto-dispatch, registration kept. The
+   transition is legal from EVERY status WITHOUT `--force-followup-exit`
+   (`on_hold` is not in `FOLLOWUP_HELD_BLOCKED_STATUSES`); pausing a
+   `followups_running` round abandons that round's in-flight subagents —
+   record `paused_from` so resume restores the held status.
+3. EXIT the turn. Do NOT leave status at an ACTIVE value with a prose
+   hold note — the watcher's orphan-respawn pass cannot parse prose and
+   will respawn against the hold (incident #816, 2026-07-02).
+
+Resume is user-greenlight ONLY: `task.py set-status <N> <paused_from>` (or
+`proposed` for a full re-triage), then `spawn_session.py spawn-issue
+--issue <N> --auto`; the events.jsonl markers re-enter the loop at the same
+point (a resumed `followups_running` round may re-park at
+`awaiting_promotion` via the round-complete re-park — Step 9b § Same-issue
+follow-up loop — expected, not a bug). Distinct mechanism: the
+`.paused-takeover-*` registration sentinel
+(`.claude/rules/background-automation.md` § Deliberate session takeover) is
+a short-TTL (~6h, FAIL-OPEN) session-TAKEOVER shield — it does NOT
+implement a user pause. Known carve-out: a PROGRAM daemon that hardcodes
+task revival (e.g. `run_program_orchestrator.sh`, the #660 leakage program,
+revives its four pinned tasks from `on_hold`) can override the park for
+exactly those pinned ids — pausing a program-pinned task additionally
+requires the program's STOP sentinel.
+
 ---
 
 ## Orchestration Procedure
@@ -3908,11 +3959,30 @@ dispatch — see the GCP-lane teardown leg below) and resumes the loop in
 the same turn — see the per-gate handlers below.
 
 **GCP-lane blocking gates — instance-teardown leg (EVERY handler, PARK-mode
-and auto-resolving; #908/#763).** On the GCP lane a blocking-gate exit is a
-CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
-does NOT power the VM off — the GCE instance stays RUNNING **and billing** by
-design (the clean-exit path keeps it alive only for sentinel draining;
-`backends/gcp.py` `teardown` docstring). By the time `status=gate` reaches
+and auto-resolving; #908/#763/#935).** On the GCP lane a blocking-gate exit is
+a CLEAN exit (`[phase=done]` → guest `eps/phase=done`), so the in-VM EXIT trap
+does NOT power the VM off — the GCE instance stays RUNNING only within the
+bounded done-grace window (default 90 min,
+`EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; the #935 self-poweroff best-effort
+persists the undrained sentinel set to HF `issue<N>_done/<attempt_id>/` at
+expiry, then powers off; the clean-exit path keeps it alive only for sentinel
+draining — `backends/gcp.py` `teardown` docstring). The finalize teardown leg
+below remains PRIMARY — never wait out the grace. Two operational lines
+(REQUIRED — the only defense on the DELETE outcome): (a) on a
+`workload_done_self_poweroff` poll (TERMINATED + guest `eps/phase=done` — the
+grace expired on the STOP outcome) OR a post-expiry `dead("instance not
+found")` poll, CHECK the HF data-repo prefix `issue<N>_done/<attempt_id>/`
+BEFORE any crash-fix routing — the run SUCCEEDED and self-powered-off;
+recover the undrained completion/gate sentinels from that prefix and run
+finalize with `--skip-confirm-artifacts`. (b) Gate sentinels persist to that
+same prefix at grace expiry on a BEST-EFFORT basis (one retry) — the prefix
+is NOT guaranteed to exist, and the persist also never fires on a mid-grace
+preemption or manual stop, so an ABSENT prefix does NOT distinguish "poller
+drained normally" from "expiry persist failed"; on a STOP-outcome instance
+the `eps/done_persist` guest attribute (`ok|failed`, a SEPARATE key from
+`eps/phase`) disambiguates. Pre-existing residual (unworsened by #935): a
+#908 stale reclaim at a FRESH dispatch during the grace deletes the VM
+before the expiry persist fires. By the time `status=gate` reaches
 this step the sentinel is already drained (the poller drained it to post the
 gate marker), and the VM holds NOTHING a later gate resolution needs — so
 tear the instance down at the earliest point after the drain, split by gate
@@ -3945,8 +4015,10 @@ is teardown + fresh dispatch. Backstop only (never the plan):
 `backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
 `eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
 reclaim deletes it, so a missed teardown no longer silently no-ops the next
-dispatch (#763 leg 2) — but the zombie still bills until that next dispatch
-or the daily janitor sweep, so the handler-side teardown stays mandatory.
+dispatch (#763 leg 2) — but the zombie still bills until the #935 done-grace
+self-poweroff (default 90 min), that next dispatch, or the daily janitor
+sweep, so the handler-side teardown stays mandatory (never wait out the
+grace).
 
 Gate handlers (one per registered `<name>`):
 
@@ -4037,7 +4109,11 @@ Gate handlers (one per registered `<name>`):
      ships on the `issue-763` branch — it lands on `main` when #763 merges;
      the reference is a forward / sibling-branch one, not a dead tool.)
      This is VM-safe by construction and NOT a `task.py` pod-shellout: it
-     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     fetches the PV rollouts from HF via `snapshot_download` (NOTE: on the
+     ~1M-file data repo `snapshot_download` wedges in full-tree
+     enumeration — `.claude/rules/gotchas.md`; patch the script to scoped
+     `list_repo_tree(path_in_repo=...)` staging before re-running this
+     phase on a #763 follow-up), batch-judges
      through
      `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
      `messages.batches.create` + deadline-less poller), and uploads the
@@ -5163,7 +5239,10 @@ re-invocation).**
    window** — effective age is measured from the LATEST of the
    breadcrumb and any subsequent liveness marker (`epm:codex-task-*`,
    `epm:smoke-architecture-check`, `epm:proposed-tests`, or a
-   non-breadcrumb `epm:progress`): a healthy long-running round keeps
+   non-breadcrumb `epm:progress` — excluding anti-liveness notes: a
+   `deliberate-stop` stop record and `[autonomous_session_watch:...]` /
+   `[spawn-session:...]` telemetry never refresh the window, #810/#949):
+   a healthy long-running round keeps
    refreshing its window; a dead one goes silent and re-dispatches once
    the window expires. The mechanical form of this rule is
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch

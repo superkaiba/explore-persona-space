@@ -488,7 +488,12 @@ session-list snapshot in place; daemon-gated (`children is None` ⇒ no-op). Unr
 deletes the entry, which is self-deduping; a fresh re-registration restarts
 the clock. Durable trace: `~/.eps-autonomous/stale-registration-events.jsonl`.
 
-**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).** To take
+**Deliberate session takeover (`paused-takeover` sentinel; #866/#903).**
+(Scope: this sentinel is a short-TTL session-TAKEOVER shield,
+NOT a user pause — an indefinite user "pause <N>" routes to
+`task.py set-status <N> on_hold` (the watcher PARK set; holds indefinitely)
+per `.claude/skills/issue/SKILL.md` § User pause affordance; a stale
+sentinel FAILS OPEN at ~`EPS_TAKEOVER_TTL_H`.) To take
 over a stalled autonomous session WITHOUT racing the watcher, rename its
 registration: `~/.eps-autonomous/issue-<N>.json` →
 `issue-<N>.json.paused-takeover-<YYYYMMDD>` (any suffix after the literal
@@ -651,6 +656,25 @@ next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
 escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
 `repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
 the mount is absent (before / without the cutover).
+
+**Non-canonical caches + the /workspace hub-cache arm (#911).** The guard's
+tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level `/tmp/` dirs
+named `i<N>*` / `issue<N>*` / `issue-<N>*` / `issue_<N>*` / `*_<N>`, and `data/`
+dirs named `issue…<N>…{_dl,_hfstage,_cache}` — under the same terminal-reap /
+active-escalate contract PLUS a 48 h recency keep, a nested
+`store/`+`eval_results/` block, and a positive re-downloadability-evidence gate
+(hub-layout markers or data-repo-prefix mirror verification; predicate failures
+escalate, never delete). A fourth, boot-pass-only arm age-gates the VM's
+pod-style `/workspace/.cache/huggingface` hub cache (repos unused ≥ 14 days,
+`EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS`), pod-guarded (`ismount('/workspace')`
+OR pod-side detection refuses) so it can never run where `/workspace` is a real
+volume. The `/tmp/` + `/workspace` opt-in lives ONLY in the two CLI `main()`
+bodies (`tmp_root=production_tmp_root()`; library calls are hermetic by
+construction), the escalate-only data-disk pass never sweeps `/tmp/`, and
+report-only runs surface their evidence via the `--json` structured fields
+(`active_cache_attributions` / `noncanonical_candidates` /
+`total_discovered_bytes`) — never the sidecar. Kill switch:
+`EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`.
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The

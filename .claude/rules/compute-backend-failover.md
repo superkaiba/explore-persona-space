@@ -99,7 +99,10 @@ bounds billing):
 - **Crash-only safety net.** The workload's own HF/WandB upload paths stay
   the AUTHORITATIVE artifact route for a clean run; the EXIT-trap upload
   fires only on the rc != 0 branch (the clean-exit path keeps the VM alive
-  for the success-sentinel scp + the workload already uploaded).
+  for the success-sentinel scp — bounded, as of #935, by the done-grace
+  self-poweroff window (default 90 min,
+  `EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`), whose expiry persist targets the
+  SEPARATE `issue<N>_done/` prefix — + the workload already uploaded).
 - **Fully guarded + time-bounded.** Early-returns without
   `EPS_HF_DATA_REPO` / `HF_TOKEN` (early-boot crash) — LOUDLY, with a
   `[crash-persist] SKIP-ALL` serial line (#854; a silent return is
@@ -200,6 +203,31 @@ Three distinct GCP-failure paths, ALL ending at the same
   and fails it over to RunPod (see § FLEX_START queue-timeout below).
   DISTINCT from a workload crash (a queue that never advanced is not a
   crash) and from a capacity MISS at create time (this create succeeded).
+
+**Intent translation at the terminal rung (#940).** The RunPod launch
+paths (the terminal rung — all four fallback/failover paths above funnel
+through it — AND the explicit `backend: runpod` override) translate a
+GCP-only GPU intent to its nearest same-or-narrower RunPod-provisionable
+intent via the router-owned `RUNPOD_INTENT_FOR_GCP_INTENT` map
+(`capture-7b` → `eval`, `lora` / `lora-7b-h100` → `lora-7b`; identity
+rows for shared intents, no marker record) BEFORE building the RunPod
+spec — pre-#940 the rung passed the intent verbatim and
+`gpu_heuristics.resolve_intent` KeyError'd, voiding the sanctioned last
+rung (#841: `provision --issue 841 --intent capture-7b` exit 1 →
+`NoComputeAvailableError` despite live RunPod 1-GPU capacity). A real
+translation rides the `epm:backend-selected` marker `extra` as
+`runpod_intent_translation: {"from": ..., "to": ...}`. A GCP GPU intent
+with NO row — `eval-h100`, listed in
+`RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS` (2× H100: no same-width
+RunPod intent exists, and narrowing 2→1 would silently break a
+2-GPU-sharded workload mid-run) — fails loud PRE-launch naming the
+missing map row, inside the existing `no_compute_available` terminal on
+the rung (raw `ValueError` on the override — a config error). A
+completeness test (`test_translation_map_total_over_gcp_gpu_intents`)
+pins map ∪ gaps == the `gpu_count > 0` keys of `gcp.INTENT_TO_MACHINE`,
+so a future GCP intent added without deciding its RunPod fate fails CI
+at the adding PR. CPU intents are untouched — the #677/#747
+`RUNPOD_CPU_INSTANCE_FOR_INTENT` guard runs BEFORE translation.
 
 **Bound — no infinite RunPod cascade.** A genuinely-broken job runs on
 RunPod AT MOST ONCE more. If it crashes again, the poller surfaces
@@ -410,18 +438,34 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
-### Gate-park zombie — RUNNING + terminal `eps/phase` (#908)
+### Gate-park zombie — RUNNING + terminal `eps/phase` (#908/#935)
 
 A GCP workload that exits CLEANLY at a blocking gate (or finishes) leaves
-the VM RUNNING by design (sentinel draining; only a crash powers off). Two
-guards close the former leak (#763: an A100-80 idled ~40 min post-gate,
-then the next dispatch silently no-op-reconnected to the zombie):
-(1) PRIMARY — `/issue` Step 6d.4 gate handlers tear the instance down via
-`dispatch_issue.py finalize --skip-confirm-artifacts` after the sentinel
-drain, split by gate class: PARK-mode gates finalize BEFORE the park
-(never through the user-wait window); auto-resolving gates finalize after
-resolution, BEFORE any off-pod phase or the fresh tail dispatch.
-(2) BACKSTOP — `gcp.reconnect_or_none` refuses a RUNNING instance whose
+the VM RUNNING only within the bounded #935 done-grace window (default
+90 min, `EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`; sentinel draining is why it
+stays up at all — only a crash powers off immediately). Three guards close
+the former unbounded leak (#763: an A100-80 idled ~40 min post-gate, then
+the next dispatch silently no-op-reconnected to the zombie):
+(0) BOUND (in-VM, #935) — the done-grace self-poweroff in the startup
+script's success tail: a countdown that aborts on the operator keepalive
+file (`/workspace/logs/issue-<N>-keepalive`) or an `eps/phase` re-publish
+(a sanctioned same-VM relaunch), best-effort persists the UNDRAINED
+sentinel set to HF `issue<N>_done/<attempt_id>/` at expiry (one retry;
+`eps/done_persist=ok|failed` breadcrumb on a SEPARATE key), then powers
+off UNCONDITIONALLY. This is the primary billing bound when every actor
+below never runs (dead orchestrator/poller). A TERMINATED+`eps/phase=done`
+instance polls as `status=done` / `workload_done_self_poweroff` (a
+SUCCESSFUL run, never a crash); finalize then needs
+`--skip-confirm-artifacts`.
+(1) PRIMARY (faster) — `/issue` Step 6d.4 gate handlers tear the instance
+down via `dispatch_issue.py finalize --skip-confirm-artifacts` after the
+sentinel drain, split by gate class: PARK-mode gates finalize BEFORE the
+park (never through the user-wait window); auto-resolving gates finalize
+after resolution, BEFORE any off-pod phase or the fresh tail dispatch.
+Never wait out the grace — the in-VM bound is the dead-orchestrator
+fallback, not the plan.
+(2) BACKSTOP (next launch) — `gcp.reconnect_or_none` refuses a RUNNING
+instance whose
 `eps/phase` ∈ {done, failed, wedged} (`_ZOMBIE_GUEST_PHASES`) and
 `_stale_named_instance_or_none` returns it as deletable, so the next
 launch reclaims + creates fresh instead of silently reconnecting. The
@@ -431,9 +475,13 @@ skip/delete sets are pinned identical (`tests/test_gcp_backend.py`, the
 contract (the #491 SSH-relaunch recipe in `.claude/rules/gotchas.md`): a
 manual same-VM relaunch MUST re-publish `eps/phase=workload` BEFORE
 resuming work, or the zombie predicates read the active relaunch as
-terminal and the next dispatch reclaims it. The #667 NON-terminal
+terminal and the next dispatch reclaims it — and, as of #935, a relaunch
+on a VM whose first workload published `done` must re-publish within the
+done-grace window (or touch the keepalive file), else the in-VM countdown
+powers the VM off at expiry. The #667 NON-terminal
 frozen-phase gap above is UNCHANGED — a hung VM with `eps/phase=workload`
-still needs the manual pivot.
+still needs the manual pivot (the done-grace countdown never arms there:
+the success tail is never reached).
 
 **Manual-pivot runbook line (#909):** a manual RunPod pivot that carries
 `--workload-cmd` must ALSO pass `--execute-workload` — without it the launch

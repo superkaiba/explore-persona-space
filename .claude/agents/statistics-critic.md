@@ -136,7 +136,12 @@ all current items). The items I own:
     validity + `.claude/rules/llm-judging.md`.
 11. Selection-symmetric nulls (a `max`/`argmax`/best-of/top-k headline over a FREE
     axis vs a null band — every null draw inherits the same selection, OR the axis
-    is frozen held-out).
+    is frozen held-out; AND the band's upper bound is reported against the DV's
+    achievable ceiling — band ≥ estimator-bound ceiling ⇒ uninformative-by-
+    construction, the plan pre-commits failure-to-reject narration for
+    non-rejections (never evidence of absence; a reachable opposite-tail rejection
+    stays legitimate); band ≥ only the fallback reference point = low-severity
+    Concern, not zero power; #778/#810).
 12. Re-cost on power-raising recommendations (any recommendation of mine that raises
     draws/N/seeds/cells/folds re-costs the affected §9 rows in the SAME round — an
     obligation on my own recommendations; cross-references the efficiency-critic's
@@ -151,6 +156,8 @@ all current items). The items I own:
     published paper's OWN eval set is the point (`.claude/rules/replication-fidelity.md`);
     (b) marker-at-slot measurement, where the DV is read at the fixed trained slot
     by construction (`.claude/rules/marker-leakage-measurement.md`).
+14. Fail-loud acceptance claims backed by committed tests (per-claim coverage;
+    grep gates are not tests).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
@@ -247,6 +254,7 @@ conclusion-changing, it either belongs in "Concerns" or it doesn't appear at all
 | Duplicate the methodology-baselines-critic's controls/baselines findings | Stay in the measurement/statistics lens |
 | Propose ADDING a pre-registered kill-gate | Scrutinize gates the plan already relies on (item 3); the report + Thomas assign confidence |
 | Approve a max-over-layer headline vs a one-position null | REVISE per selection-symmetric-nulls (item 11) unless per-draw same-selection or a frozen held-out axis is registered |
+| Approve a registered null-band decision gate whose band upper bound ≥ the DV's estimator-bound achievable ceiling | REVISE per band-vs-ceiling (item 11) — the gate is unfireable-by-construction; band ≥ only the fallback reference point is a Concern, not a REVISE |
 | Approve a held-out ρ over grouped samples on pointwise LOO alone | Require a GROUP-level fold — eval set fully disjoint from training (item 13); exempt only for replication-fidelity or marker-at-slot |
 | Raise a power parameter without re-costing §9 | Re-cost the affected §9 rows in the SAME round (item 12); cross-ref the efficiency-critic |
 | Emit an ungrounded Must-Fix ("the stats feel underpowered") | Cite the plan §, JSON path, or prior issue; the reconciler discards ungrounded blockers |

@@ -121,7 +121,7 @@ CONFIRMED/WRONG/UNVERIFIED verdicts; REVISE only not-CONFIRMED AND plausibly
 outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
-check (a)–(i) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
+check (a)–(j) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
 on the VM CPU or left serial / narrow phase holding the peak-width pod ·
@@ -152,9 +152,11 @@ confound (EOS-margin logit space, never raw log P) · 9 degenerate eligibility
 gates / unequal per-unit N / missing baseline propensity · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
-headlines) · 12 same-round re-cost of affected §9 rows for any power-raising
-recommendation · 13 OOD generalization folds (group-level fold for
-group-structured held-out DVs).
+headlines; band vs DV ceiling) · 12 same-round re-cost of affected §9 rows
+for any power-raising recommendation · 13 OOD generalization folds
+(group-level fold for group-structured held-out DVs) · 14 fail-loud
+acceptance claims backed by committed tests (per claim; grep gates are not
+tests).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the
