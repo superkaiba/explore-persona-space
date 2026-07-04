@@ -1,6 +1,6 @@
 ---
-title: 'Thinking-model CoT decomposition of the context→answer activation map: composed
-  vs joint vs CoT-augmented'
+title: The chain-of-thought summary predictively mediates the thinking model's context→answer
+  activation map (MODERATE confidence)
 kind: experiment
 tags:
 - from-810

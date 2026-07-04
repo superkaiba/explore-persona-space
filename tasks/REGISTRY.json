@@ -6131,7 +6131,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/928",
       "status": "interpreting",
-      "title": "Thinking-model CoT decomposition of the context\u2192answer activation map: composed vs joint vs CoT-augmented"
+      "title": "The chain-of-thought summary predictively mediates the thinking model's context\u2192answer activation map (MODERATE confidence)"
     },
     "929": {
       "has_clean_result": false,
