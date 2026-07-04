@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 975,
+  "highest_id": 976,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6479,6 +6479,13 @@
       "path": "tasks/proposed/975",
       "status": "proposed",
       "title": "workflow-fix: poll_pipeline synthesized envelope version max+1"
+    },
+    "976": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/976",
+      "status": "proposed",
+      "title": "workflow-fix: widen runpod stale-sentinel clear to wildcard"
     },
     "98": {
       "has_clean_result": true,
