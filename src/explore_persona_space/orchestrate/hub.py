@@ -9,11 +9,13 @@ import glob
 import json
 import logging
 import os
+import random
 import re
 import shutil
 import sys
 import time
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -594,7 +596,15 @@ def _is_transient_upload_error(err: Exception) -> bool:
     non-transient, with NO substring fallback — 4xx messages can embed digit
     triplets ('issue504_raw/...', byte counts) that would read as
     false-transient (#989). The substring scan applies only to response-less
-    errors (ConnectionError, timeouts)."""
+    errors (ConnectionError, timeouts).
+
+    Response-less rate-limit text ('too many requests' / 'rate limit') is
+    transient (#931: a 429 during an hf_xet transfer can cross the Rust
+    token-refresher boundary as a wrapped exception without ``.response``);
+    NEVER bare '429' (the #989 digit-triplet trap). Note: a response-less
+    PERMANENT failure whose text happens to contain one of these markers now
+    burns the full retry budget before re-raising — bounded by design
+    (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
     code = getattr(getattr(err, "response", None), "status_code", None)
     if isinstance(code, int):
         return code in (408, 429) or 500 <= code < 600
@@ -612,37 +622,181 @@ def _is_transient_upload_error(err: Exception) -> bool:
             "timeout",
             "connection",
             "temporarily unavailable",
+            "too many requests",  # response-less 429 text — xet Rust boundary (#931)
+            "rate limit",  # matches "rate limit(ed)"; NEVER bare "429" (#989)
         )
     )
 
 
-def _retry_upload(fn, *, what: str, max_attempts: int = 6):
-    """Call ``fn()`` (a zero-arg thunk) with exp-backoff retry on transient
-    HF 5xx/429/timeout/connection errors. Name is legacy — this is a generic
-    transient-retry wrapper, also used for READS (``list_repo_files_complete``),
-    not only uploads. Storage-quota-403 and any non-transient error re-raise
-    IMMEDIATELY (so the caller's overflow-routing / soft-fail logic fires
-    unchanged); after max_attempts the final exception propagates (fail-loud)."""
-    for attempt in range(1, max_attempts + 1):
+_RETRY_AFTER_CAP_S = 900.0  # defensive cap on a pathological server Retry-After header
+
+
+def _retry_after_seconds(err: Exception) -> float | None:
+    """Seconds from a ``Retry-After`` header on the error's response, if any.
+
+    Seconds-form only (an RFC 9110 HTTP-date value parses to None -> caller
+    falls back to exp backoff). Mirrors ``llm/api_dispatch._retry_after_seconds``.
+    """
+    headers = getattr(getattr(err, "response", None), "headers", None)
+    if headers is None:
+        return None
+    try:
+        raw = headers.get("Retry-After")  # requests' CaseInsensitiveDict
+    except Exception:
+        return None
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return val if val > 0 else None
+
+
+def _retry_budget_s() -> float:
+    """Wall-clock transient-retry budget (s). 0 disables the budget extension
+    (legacy attempt-bound behavior). Env: ``EPM_HF_RETRY_BUDGET_S`` (default 1800)."""
+    raw = os.environ.get("EPM_HF_RETRY_BUDGET_S")
+    if raw is None or not raw.strip():
+        return 1800.0
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        logger.warning("EPM_HF_RETRY_BUDGET_S=%r unparseable; using 1800", raw)
+        return 1800.0
+
+
+def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | None = None):
+    """Call ``fn()`` (a zero-arg thunk) with retry on transient HF
+    5xx/429/timeout/connection errors. Name is legacy — generic transient-retry
+    wrapper, also used for READS (``list_repo_files_complete``) and downloads.
+
+    Retry is allowed while EITHER bound holds (raise only when BOTH exhaust):
+      - attempt floor: the first ``max_attempts`` calls (the #735 contract);
+      - wall-clock budget ``budget_s`` (default env ``EPM_HF_RETRY_BUDGET_S`` =
+        1800): sized to outlive an org-wide 429 storm — #931's storm outlived
+        the pre-#997 310 s attempt-bound stack. ``budget_s=0`` => legacy
+        attempt-bound behavior.
+
+    Bound convention: with ``budget > 0``, no sleep starts or extends past the
+    deadline and TOTAL SLEEP <= budget; elapsed wall time can exceed the budget
+    only by IN-FLIGHT call durations (each ``fn()`` — including
+    huggingface_hub's inner pagination retries — runs to completion before the
+    deadline check). Attempt-floor retries past the deadline sleep 0 and retry
+    immediately (<= ``max_attempts`` calls total).
+
+    Sleep: ``Retry-After`` header when present (capped ``_RETRY_AFTER_CAP_S``),
+    else exp backoff ``min(180, 10*2^k)`` with 0-25% jitter (de-synchronizes
+    fleet retries). Storage-quota-403 / non-transient re-raise IMMEDIATELY; on
+    exhaustion the final exception propagates (fail-loud, no swallow).
+    """
+    budget = _retry_budget_s() if budget_s is None else budget_s
+    start = time.monotonic()
+    deadline = start + budget
+    attempt = 0
+    while True:
+        attempt += 1
         try:
             return fn()
         except Exception as e:
-            if (
-                _is_storage_quota_403(e)
-                or not _is_transient_upload_error(e)
-                or attempt == max_attempts
-            ):
+            if _is_storage_quota_403(e) or not _is_transient_upload_error(e):
                 raise
-            sleep_s = min(180, 10 * 2 ** (attempt - 1))
+            ra = _retry_after_seconds(e)
+            if ra is not None:
+                sleep_s = min(ra, _RETRY_AFTER_CAP_S)
+            else:
+                sleep_s = min(180.0, 10.0 * 2.0 ** min(attempt - 1, 6)) * (
+                    1.0 + random.random() * 0.25
+                )
+            now = time.monotonic()
+            within_attempts = attempt < max_attempts
+            within_budget = budget > 0 and now < deadline
+            if not (within_attempts or within_budget):
+                logger.warning(
+                    "%s transient-retry exhausted after %d calls (elapsed %.0fs, "
+                    "budget %.0fs); re-raising",
+                    what,
+                    attempt,
+                    now - start,
+                    budget,
+                )
+                raise
+            if budget > 0:
+                # Clamp EVERY sleep — the Retry-After branch AND the backoff
+                # branch, including attempt-floor retries — to the remaining
+                # budget, so the attempt floor can never stack un-clamped
+                # Retry-After sleeps past the deadline (pathological
+                # Retry-After: 4000 -> 900-cap x 5 floor attempts ~ 4500 s >
+                # 1800 s budget). With the clamp, TOTAL SLEEP <= budget; floor
+                # attempts after the deadline sleep 0 and retry immediately
+                # (<= max_attempts calls total — the #735 6-call contract
+                # holds; legacy tests assert sleep COUNTS, never durations).
+                sleep_s = min(sleep_s, max(0.0, deadline - now))
             logger.warning(
-                "%s transient error (attempt %d/%d): %s; retrying in %ds",
+                "%s transient error (attempt %d, elapsed %.0fs / budget %.0fs): %s; "
+                "retrying in %.0fs",
                 what,
                 attempt,
-                max_attempts,
+                time.monotonic() - start,
+                budget,
                 str(e)[:200],
                 sleep_s,
             )
             time.sleep(sleep_s)
+
+
+# Public, greppable name for per-issue dispatch scripts (#606: scripts assumed a
+# hub `_retry_transient` that never existed; the i528 family hand-rolled four copies).
+retry_transient = _retry_upload
+
+
+def verify_repo_paths_uploaded(
+    api,
+    repo_id: str,
+    expected_repo_paths: Sequence[str],
+    *,
+    path_in_repo: str,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> list[str]:
+    """Exact-set post-upload verify: return expected paths NOT on the Hub.
+
+    Canonical retried + server-side-SCOPED verify leg for dispatch scripts.
+    #920: a bare full-repo ``list_repo_files`` on the ~1M-file data repo wedges
+    >600 s (#833 gotcha) AND a transient 500 on it crashed a workload after
+    every upload had succeeded. Routes through ``list_repo_files_complete``
+    with ``path_in_repo`` scoping — the paginated walk rides ``_retry_upload``
+    (Retry-After-aware, wall-clock-budgeted).
+
+    ``path_in_repo`` is a REQUIRED non-empty directory-like prefix covering
+    every expected path (ValueError otherwise — an unscoped verify recreates
+    the wedge). A prefix absent on the repo (``EntryNotFoundError`` during the
+    walk — hub 0.36.2's lazy ``list_repo_tree`` generator raises it inside the
+    retry thunk) returns ALL expected paths as missing (caller's fail-loud
+    fires with the full list). Transport/auth errors propagate after the retry
+    budget.
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    prefix = path_in_repo.strip("/")
+    if not prefix:
+        raise ValueError("verify_repo_paths_uploaded: empty path_in_repo (unscoped verify)")
+    expected = list(expected_repo_paths)
+    outside = [p for p in expected if not (p == prefix or p.startswith(prefix + "/"))]
+    if outside:
+        raise ValueError(
+            f"verify_repo_paths_uploaded: {len(outside)} expected paths outside "
+            f"path_in_repo={prefix!r} (first: {outside[:3]})"
+        )
+    try:
+        uploaded = set(
+            list_repo_files_complete(
+                api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=prefix
+            )
+        )
+    except EntryNotFoundError:
+        return expected
+    return [p for p in expected if p not in uploaded]
 
 
 def _upload(
@@ -1289,13 +1443,19 @@ def download_dataset(
     token = os.environ.get("HF_TOKEN")
 
     try:
-        downloaded = hf_hub_download(
-            repo_id=repo_id,
-            filename=path_in_repo,
-            repo_type="dataset",
-            local_dir=str(Path(local_path).parent),
-            local_dir_use_symlinks=False,
-            token=token,
+        # A xet-read-token 429 / transient 5xx inside hf_hub_download rides the
+        # budgeted retry (#931/#997); the outer fail-soft contract (return ""
+        # on final failure) is unchanged.
+        downloaded = _retry_upload(
+            lambda: hf_hub_download(
+                repo_id=repo_id,
+                filename=path_in_repo,
+                repo_type="dataset",
+                local_dir=str(Path(local_path).parent),
+                local_dir_use_symlinks=False,
+                token=token,
+            ),
+            what=f"hf_hub_download({repo_id}/{path_in_repo})",
         )
         # hf_hub_download saves to local_dir/path_in_repo — move to exact local_path
         downloaded = Path(downloaded)

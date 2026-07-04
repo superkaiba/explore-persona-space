@@ -150,7 +150,9 @@ instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
 and write-at-end". Idempotency + completeness use an EXACT expected-file-set
 check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
 a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
-wrongly read as complete). The per-cell resume predicate is `local-done OR
+wrongly read as complete); the canonical implementation is
+`hub.verify_repo_paths_uploaded(...)` (server-side scoped + retried, returns
+the missing set; #997). The per-cell resume predicate is `local-done OR
 HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
 instead of re-running them, and the terminal P3 sweep becomes an idempotent
 safety pass (skip cells already complete on the Hub; treat all-on-HF as
