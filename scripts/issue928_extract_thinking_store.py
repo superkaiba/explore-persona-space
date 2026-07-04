@@ -21,9 +21,12 @@ One linear dispatcher (plan §4.1; smoke = the SAME dispatcher with
   hardcoded 0.45 is deliberately overridden via the parametrized engine
   builder here), chunked internally (gotchas.md: a single huge
   ``llm.generate`` can deadlock the v1 EngineCore; per-chunk INFO logs keep
-  the poller's stall detection fed). Rollout TEXT persists verbatim per
-  context the moment generation returns, BEFORE any parse/capture
-  (generation-and-reduce persistence, §4.8/#779).
+  the poller's stall detection fed). Rollout TEXT persists verbatim PER
+  GENERATION GROUP (~one vLLM chunk of contexts) the moment that group
+  returns, BEFORE any parse/capture (generation-and-reduce persistence,
+  §4.8/#779; round 2: a mid-generation crash keeps every completed group).
+  ``--skip-gen`` reuses only rollout files matching every output-affecting
+  run arg (model / rung / probe pool / max_new_tokens / probe list).
 - **Phase P:** code segmentation (``issue928_common.segment_completion`` —
   exact string offsets, per-rung criterion; §4.4), per-context coverage,
   cap-truncation accounting with ONE 16,384 re-generation rung when > 10% of
@@ -36,9 +39,15 @@ One linear dispatcher (plan §4.1; smoke = the SAME dispatcher with
   ``position_ids``; ``logits_to_keep=1`` (introspection-guarded, #779);
   fail-loud assistant-header position assert carried EXPLICITLY from the #594
   lineage (``GENERATION_SUFFIX`` — plan §4.2 NOTE: the assert lives here, not
-  inside the reused prompt builder).
+  inside the reused prompt builder). Round 2: per-context ``.pt`` writes are
+  atomic AND an entry-time skip-if-valid predicate reuses existing blobs that
+  match every output-affecting run arg — a crash-restart recaptures only the
+  missing contexts.
 - **Phase U:** one ``upload_folder`` commit each for rollouts + store with a
-  SCOPED ``list_repo_tree`` verify (never a bare listing — gotcha #833).
+  SCOPED ``list_repo_tree`` verify (never a bare listing — gotcha #833). The
+  end-of-extract sentinel is ``epm:progress`` (round 2) — the ONE
+  ``epm:results`` sentinel fires from the run_all finalize step at true
+  end-of-workload.
 
 Store schema (plan §4.5): ``store/percq_summaries/<context_id>.pt`` — per-(q,
 summary, layer) fp16 vectors + probe-averaged tensors + coverage counts,
@@ -70,6 +79,7 @@ os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 import argparse
 import inspect
+import json
 import logging
 import sys
 import time
@@ -124,12 +134,12 @@ from issue928_common import (  # noqa: E402
     resolve_battery,
     segment_completion,
     upload_folder_scoped_verify,
+    write_sentinel,
 )
 
 logger = logging.getLogger("issue928_extract")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-SENTINEL_SCHEMA_VERSION = 1
 VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
 
@@ -495,29 +505,9 @@ def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows):
     return torch.stack(per_layer, dim=2)  # (B, 12, Lc, H) fp16 CPU
 
 
-# ── sentinel (poll_pipeline contract) ─────────────────────────────────────────
-
-
-def write_sentinel(kind: str, note: dict, out_dir: Path) -> None:
-    """poll_pipeline.py-conformant end-of-run sentinel (issue-928 naming)."""
-    slug = kind.replace(":", "_")
-    log_dir = Path("/workspace/logs")
-    try:
-        log_dir.mkdir(parents=True, exist_ok=True)
-        target = log_dir / f"issue-928-{slug}-{int(time.time())}.json"
-    except OSError:
-        target = out_dir / f"issue-928-{slug}-sentinel.json"
-    dump_json(
-        {
-            "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
-            "kind": kind,
-            "version": 1,
-            "note": note,
-            "ts": int(time.time()),
-        },
-        target,
-    )
-    logger.info("wrote sentinel %s", target)
+# Sentinel writer relocated to issue928_common.write_sentinel (round 2): the
+# extract phase now emits epm:progress and the run_all finalize step emits the
+# ONE epm:results sentinel at true end-of-workload, so both share one writer.
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -653,48 +643,98 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
             _reap_vllm(llm)
         return 3
 
-    phase("generate")
-    completions_by_ctx: dict[str, list[tuple[str, str]]] = dict(gate_completions)
-    remaining = [c for c in ctx_ids if c not in completions_by_ctx]
-    if args.skip_gen:
-        import json as _json
+    # Per-context rollout persistence + resume validation (round 2: per-GROUP
+    # durable writes — a crash after completed generation groups loses nothing,
+    # and --skip-gen reuses only files matching every output-affecting run arg).
+    def _persist_rollout(c: str, regen_rows: list[int] | None = None) -> None:
+        """Persist one context's rollout TEXT verbatim (§4.8/#779) — the moment
+        its generation returns, BEFORE any parse/capture."""
+        blob = {
+            "context_id": c,
+            "family": families[c],
+            "rung": chosen_rung,
+            "model": args.model,
+            "max_new_tokens": args.max_new_tokens,
+            "probe_pool_hash": pool_hash,
+            "completions": [
+                {"probe": q, "completion": t, "finish_reason": fr}
+                for q, (t, fr) in zip(probes, completions_by_ctx[c], strict=True)
+            ],
+        }
+        if regen_rows is not None:
+            blob["regen_16k_rows"] = regen_rows
+        dump_json(blob, rollouts_dir / f"{c}.json")
 
+    def _rollout_blob_mismatch(blob: dict, c: str) -> str:
+        """Skip-if-valid predicate for --skip-gen reuse, keyed on every
+        output-affecting run arg. Returns "" (reusable) or the mismatched key
+        (regenerate — never silently reuse a wrong cached rollout, #722 r3)."""
+        for key, want in (
+            ("context_id", c),
+            ("model", args.model),
+            ("rung", chosen_rung),
+            ("probe_pool_hash", pool_hash),
+            ("max_new_tokens", args.max_new_tokens),
+        ):
+            if blob.get(key) != want:
+                return key
+        if [r.get("probe") for r in blob.get("completions", [])] != probes:
+            return "probe_list"
+        return ""
+
+    phase("generate")
+    completions_by_ctx: dict[str, list[tuple[str, str]]] = {}
+    loaded_from_disk: set[str] = set()
+    if args.skip_gen:
         for c in ctx_ids:
             p = rollouts_dir / f"{c}.json"
-            if p.is_file():
-                blob = _json.loads(p.read_text())
-                completions_by_ctx[c] = [
-                    (r["completion"], r.get("finish_reason", "stop")) for r in blob["completions"]
-                ]
-        remaining = [c for c in ctx_ids if c not in completions_by_ctx]
-    if remaining:
-        prompts = [
-            build_prompt_text(tokenizer, instances[c], q, chosen_rung)
-            for c in remaining
-            for q in probes
-        ]
-        comps = _generate(prompts, chosen_rung, args.max_new_tokens)
-        for ci, c in enumerate(remaining):
-            completions_by_ctx[c] = comps[ci * len(probes) : (ci + 1) * len(probes)]
-    # Persist rollout TEXT verbatim the moment generation returns (§4.8/#779) —
-    # BEFORE parse/capture, so any downstream crash never loses the generations.
-    for c in ctx_ids:
-        dump_json(
-            {
-                "context_id": c,
-                "family": families[c],
-                "rung": chosen_rung,
-                "model": args.model,
-                "max_new_tokens": args.max_new_tokens,
-                "probe_pool_hash": pool_hash,
-                "completions": [
-                    {"probe": q, "completion": t, "finish_reason": fr}
-                    for q, (t, fr) in zip(probes, completions_by_ctx[c], strict=True)
-                ],
-            },
-            rollouts_dir / f"{c}.json",
+            if not p.is_file():
+                continue
+            blob = json.loads(p.read_text())
+            why = _rollout_blob_mismatch(blob, c)
+            if why:
+                logger.warning(
+                    "[skip-gen] rollout %s.json stale (%s mismatch) — regenerating", c, why
+                )
+                continue
+            completions_by_ctx[c] = [
+                (r["completion"], r.get("finish_reason", "stop")) for r in blob["completions"]
+            ]
+            loaded_from_disk.add(c)
+        logger.info(
+            "[skip-gen] reusing %d/%d persisted rollout files", len(loaded_from_disk), len(ctx_ids)
         )
-    logger.info("persisted %d rollout files to %s", len(ctx_ids), rollouts_dir)
+    for c, comps_c in gate_completions.items():
+        if c not in completions_by_ctx:
+            completions_by_ctx[c] = comps_c
+            _persist_rollout(c)  # gate contexts persist the moment the gate passes
+    remaining = [c for c in ctx_ids if c not in completions_by_ctx]
+    if remaining:
+        # Generate in context GROUPS (~one vLLM chunk each) and persist each
+        # group's rollout JSONs the moment it returns — previously ALL
+        # remaining contexts generated before ANY rollout file landed, so a
+        # late-generation crash lost every completed chunk (r1 blocker).
+        ctx_per_group = max(1, VLLM_CHUNK_SIZE // max(1, len(probes)))
+        n_groups = (len(remaining) + ctx_per_group - 1) // ctx_per_group
+        for gi in range(0, len(remaining), ctx_per_group):
+            group = remaining[gi : gi + ctx_per_group]
+            prompts = [
+                build_prompt_text(tokenizer, instances[c], q, chosen_rung)
+                for c in group
+                for q in probes
+            ]
+            comps = _generate(prompts, chosen_rung, args.max_new_tokens)
+            for ci, c in enumerate(group):
+                completions_by_ctx[c] = comps[ci * len(probes) : (ci + 1) * len(probes)]
+                _persist_rollout(c)
+            logger.info(
+                "[generate] group %d/%d done — %d/%d remaining context(s) persisted",
+                gi // ctx_per_group + 1,
+                n_groups,
+                min(gi + ctx_per_group, len(remaining)),
+                len(remaining),
+            )
+    logger.info("rollout files present for all %d contexts in %s", len(ctx_ids), rollouts_dir)
 
     phase("parse")
     parse_by_ctx: dict[str, list[dict]] = {
@@ -721,22 +761,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
         for (c, qi), new in zip(targets, comps, strict=True):
             completions_by_ctx[c][qi] = new
         for c in {c for c, _qi in targets}:
-            dump_json(
-                {
-                    "context_id": c,
-                    "family": families[c],
-                    "rung": chosen_rung,
-                    "model": args.model,
-                    "max_new_tokens": args.max_new_tokens,
-                    "regen_16k_rows": [qi for cc, qi in targets if cc == c],
-                    "probe_pool_hash": pool_hash,
-                    "completions": [
-                        {"probe": q, "completion": t, "finish_reason": fr}
-                        for q, (t, fr) in zip(probes, completions_by_ctx[c], strict=True)
-                    ],
-                },
-                rollouts_dir / f"{c}.json",
-            )
+            _persist_rollout(c, regen_rows=[qi for cc, qi in targets if cc == c])
             parse_by_ctx[c] = parse_rows(tokenizer, completions_by_ctx[c], chosen_rung)
     parse_report = {
         c: {
@@ -784,8 +809,60 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
     capture_layers = list(range(n_layers))
     capture = LayerCapture(model, n_layers)
     per_ctx_capture: dict[str, dict] = {}
+
+    def _reusable_store_blob(path: Path, c: str) -> tuple[dict | None, str]:
+        """Entry-time skip-if-valid predicate for existing per-context store
+        blobs (round 2: a recapture after a crash no longer redoes completed
+        contexts). Returns (blob, "") when the blob matches every
+        output-affecting run arg + the expected tensor shape, else
+        (None, reason) — an invalid/stale/corrupt blob is recaptured."""
+        try:
+            blob = torch.load(path, weights_only=False)
+        except Exception as exc:  # corrupt / partial file → recapture
+            return None, f"unreadable ({type(exc).__name__}: {exc})"
+        for key, got, want in (
+            ("context_id", blob.get("context_id"), c),
+            ("model", blob.get("model"), args.model),
+            ("rung", blob.get("rung"), chosen_rung),
+            ("probe_pool_hash", blob.get("probe_pool_hash"), pool_hash),
+            ("capture_layers", blob.get("capture_layers"), capture_layers),
+            ("summary_names", list(blob.get("summary_names", [])), list(SUMMARY_NAMES)),
+            ("n_probes_total", blob.get("coverage", {}).get("n_probes_total"), len(probes)),
+        ):
+            if got != want:
+                return None, f"{key} mismatch"
+        per_q = blob.get("per_q")
+        kept = blob.get("probe_indices", [])
+        want_shape = (
+            len(kept),
+            len(SUMMARY_NAMES),
+            len(capture_layers),
+            int(model.config.hidden_size),
+        )
+        if per_q is None or tuple(per_q.shape) != want_shape:
+            got_shape = tuple(per_q.shape) if per_q is not None else None
+            return None, f"per_q shape {got_shape} != {want_shape}"
+        return blob, ""
+
     try:
         for ci, c in enumerate(ctx_ids):
+            blob_path = store_dir / f"{c}.pt"
+            if blob_path.is_file():
+                prior, why = _reusable_store_blob(blob_path, c)
+                if prior is not None:
+                    per_ctx_capture[c] = {
+                        "n_captured": len(prior["probe_indices"]),
+                        "drop_reasons": prior["coverage"]["capture_drop_reasons"],
+                        "resumed": True,
+                    }
+                    logger.info(
+                        "[capture] %d/%d %s: SKIPPED (valid existing store blob — resume)",
+                        ci + 1,
+                        len(ctx_ids),
+                        c,
+                    )
+                    continue
+                logger.warning("[capture] %s: existing blob invalid (%s) — recapturing", c, why)
             rows, kept_qi, drop_reasons = [], [], {}
             for qi, (q, (text, _fr)) in enumerate(zip(probes, completions_by_ctx[c], strict=True)):
                 rec = parse_by_ctx[c][qi]
@@ -830,7 +907,11 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
                 "probe_pool_hash": pool_hash,
                 "model": args.model,
             }
-            torch.save(blob, store_dir / f"{c}.pt")
+            # atomic write: a crash mid-save never leaves a live-looking blob
+            # (the resume predicate would catch it as unreadable anyway).
+            tmp = blob_path.with_suffix(".pt.tmp")
+            torch.save(blob, tmp)
+            os.replace(tmp, blob_path)
             per_ctx_capture[c] = {"n_captured": len(kept_qi), "drop_reasons": drop_reasons}
             logger.info(
                 "[capture] %d/%d %s: %d/%d rows captured",
@@ -904,7 +985,10 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
         "hf_paths": hf_paths,
         "elapsed_s": round(time.time() - t0, 1),
     }
-    write_sentinel("epm:results", note, out_dir)
+    # epm:progress, NOT epm:results (round-2 fix): the extract end is
+    # mid-pipeline — the ONE results sentinel fires from the run_all driver's
+    # finalize step after fits + figures + uploads (issue928_finalize.py).
+    write_sentinel("epm:progress", note, out_dir)
     # NOT [phase=done]: the run_all driver owns the terminal phase line (a
     # premature done here would false-signal completion to the poller while
     # the fit phases still run).

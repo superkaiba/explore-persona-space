@@ -48,6 +48,15 @@ MLP validity (registered avg_q arms, LOCO, mean/mean):
 ``vectorized_mlp_skill.fit_batched_loco_mlp_multihead`` (batched across cells
 by shape — the #722 vectorize-many-cell-fits mandate), chunk_size 256.
 
+Restartability (round 2 — the #823 accumulate-in-memory class): every
+completed (regime, layer) persists an atomic ``partial/<regime>/layer_<L>.pt``
+unit under ``--out``, keyed by a ``fit_manifest.json`` over every
+output-affecting arg (store identity digest, layers, combos, n_perms, seed,
+standardization, cross flag, std-sensitivity layer, device); a re-run with a
+matching manifest SKIPS completed layers, a mismatch discards stale units.
+The per-context decompositions (``decomp_<regime>.pt``) and fit JSONs upload
+to the HF data repo on the normal exit path (GCE DELETEs the boot disk).
+
 Usage::
 
     # production (on the pod, after the store lands):
@@ -63,7 +72,10 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -82,6 +94,7 @@ from issue658_fit_predictors import _requested_device, _resolve_device  # noqa: 
 from issue928_common import (  # noqa: E402
     BOOTSTRAP_DRAWS,
     BOOTSTRAP_SEED,
+    DECOMP_TENSORS_PREFIX,
     FIT_RESULTS_PREFIX,
     PCA_TARGET_DIM_CAP,
     REGISTERED_SUMMARIES,
@@ -100,6 +113,7 @@ from issue928_null_bootstrap import (  # noqa: E402
     fit_predict_grouped,
     group_folds,
     grouped_null_skills,
+    grouped_null_skills_multi,
     grouped_skill,
     make_bootstrap_index_matrix,
     make_group_perm_matrix,
@@ -118,6 +132,88 @@ logger = logging.getLogger("issue928_fit")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 NULL_ARMS = ("d_ctx2ans", "a_ctx2cot", "b_cot2ans", "comp_pred", "j_joint", "g_aug", "d_parity")
+
+
+# ── intra-phase restartability (code-review r1 BLOCKER — the #823 class) ──────
+#
+# Phase F is a projected multi-hour regime × layer × cell × null battery, so
+# every per-(regime, layer) unit persists the moment it completes (atomic
+# tmp+os.replace write under <out>/partial/<regime>/) and an entry-time
+# predicate skips completed units. The skip is keyed by a manifest over EVERY
+# output-affecting arg (store identity digest, layers, combos, n_perms, the
+# shuffle seed, standardization, cross flag, std-sensitivity layer, device);
+# n_boot is deliberately NOT in the key — the bootstrap is a pure re-reduction
+# of the persisted decompositions, recomputed fresh every run, so it does not
+# change the per-layer units. A manifest mismatch DISCARDS the stale units
+# (recompute; never silently reuse wrong cached rows — the #722 r3 lesson).
+# On the GCE lane a crash additionally uploads eval_results_issue_928/ partial
+# artifacts via the EXIT-trap crash persist, so these units survive DELETE.
+
+FIT_MANIFEST_NAME = "fit_manifest.json"
+
+
+def _atomic_torch_save(obj: object, path: Path) -> None:
+    """``torch.save`` via tmp + ``os.replace`` — a crash mid-write never leaves a live unit."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
+def prepare_checkpoint_dir(root: Path, regime: str, key: dict) -> Path:
+    """Resolve the per-regime partial-units dir; DISCARD stale units on key mismatch.
+
+    Returns the directory (created if needed) with ``fit_manifest.json``
+    holding ``key``. An existing matching manifest means completed
+    ``layer_<L>.pt`` units in the dir are reusable; any mismatch (or an
+    unreadable manifest) wipes the dir so no unit from a different regime
+    configuration can be silently reused.
+    """
+    d = root / regime
+    man = d / FIT_MANIFEST_NAME
+    if man.is_file():
+        try:
+            existing = load_json(man)
+        except (json.JSONDecodeError, OSError, ValueError):
+            existing = None
+        if existing == key:
+            n_units = len(list(d.glob("layer_*.pt")))
+            logger.info(
+                "[resume] regime=%s: fit manifest matches — %d completed layer unit(s) reusable",
+                regime,
+                n_units,
+            )
+            return d
+        changed = sorted(
+            k for k in set(key) | set(existing or {}) if (existing or {}).get(k) != key.get(k)
+        )
+        logger.warning(
+            "[resume] regime=%s: fit manifest MISMATCH on %s — discarding stale partial units",
+            regime,
+            changed,
+        )
+        shutil.rmtree(d)
+    d.mkdir(parents=True, exist_ok=True)
+    dump_json(key, man)
+    return d
+
+
+def _merge_layer_unit(
+    unit: dict, grid: dict, null_matrix: dict, decomp: dict, extras: dict
+) -> None:
+    """Fold one per-layer unit into the regime accumulators (layer order = caller's loop)."""
+    for arm, combos_ in unit["grid"].items():
+        for combo, schemes in combos_.items():
+            for scheme, cells in schemes.items():
+                grid.setdefault(arm, {}).setdefault(combo, {}).setdefault(scheme, []).extend(cells)
+    for arm, combos_ in unit["null"].items():
+        for combo, by_layer in combos_.items():
+            null_matrix.setdefault(arm, {}).setdefault(combo, {}).update(by_layer)
+    decomp.update(unit["decomp"])
+    for arm, combos_ in unit["avg_t"].items():
+        for combo, cells in combos_.items():
+            extras["avg_t"].setdefault(arm, {}).setdefault(combo, []).extend(cells)
+    if unit.get("std_sensitivity") is not None:
+        extras["std_sensitivity"] = unit["std_sensitivity"]
 
 
 # ── store loading ─────────────────────────────────────────────────────────────
@@ -172,6 +268,29 @@ class Store:
         ]
         return np.concatenate(rows, axis=0).astype(np.float64)
 
+    def identity_digest(self) -> str:
+        """sha256 (16 hex) over the store's output-affecting identity (the resume key).
+
+        Stable manifest fields + realized per-context row counts — captures the
+        data identity the fit units depend on without hashing the multi-GB
+        tensors themselves (a re-extract that changes the data changes rung /
+        counts / hashes here and so invalidates the partial units).
+        """
+        import hashlib
+
+        ident = {
+            "context_ids": self.ctx_ids,
+            "families": {c: self.families[c] for c in self.ctx_ids},
+            "capture_layers": [int(x) for x in self.layers],
+            "summary_names": list(self.summary_names),
+            "probe_pool_hash": self.manifest.get("probe_pool_hash"),
+            "model": self.manifest.get("model"),
+            "rung": self.manifest.get("rung"),
+            "rows_per_ctx": {c: int(self.blobs[c]["per_q"].shape[0]) for c in self.ctx_ids},
+            "hidden": int(self.H),
+        }
+        return hashlib.sha256(json.dumps(ident, sort_keys=True).encode()).hexdigest()[:16]
+
 
 # ── one regime's fit battery ──────────────────────────────────────────────────
 
@@ -195,6 +314,7 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
     do_cross: bool,
     draw_chunk: int,
     std_sensitivity_layer: int | None,
+    checkpoint_dir: Path | None = None,
 ) -> tuple[dict, dict, dict, dict]:
     """All arms × combos × layers × {LOCO, LOFO} for one regime (+ nulls).
 
@@ -207,6 +327,12 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
     scheme) — its fold eigendecompositions serve every target, λ, and null
     draw touching that design (#823 guard). Designs are built and freed per
     layer (memory bound = one layer's designs).
+
+    Restartability (round 2, the #823 class): with ``checkpoint_dir`` set,
+    each completed layer persists an atomic ``layer_<L>.pt`` unit (grid cells +
+    null draws + decompositions + avg_t + std-sensitivity for that layer) and
+    a re-run SKIPS layers whose unit already exists — validity of the units is
+    the caller's manifest contract (``prepare_checkpoint_dir``).
     """
     n_ctx = len(store.ctx_ids)
     if regime == "avg_q":
@@ -233,15 +359,36 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
     decomp: dict = {}
     extras: dict = {"avg_t": {}, "std_sensitivity": None}
 
-    def record(arm, combo, scheme, layer, res, extra=None):
-        cell = {"layer": int(layer), "skill": res["skill"], "n": len(groups)}
-        if extra:
-            cell.update(extra)
-        grid.setdefault(arm, {}).setdefault(combo, {}).setdefault(scheme, []).append(cell)
-
     for li in layers_idx:
         layer = store.layers[li]
+        unit_path = (checkpoint_dir / f"layer_{int(layer)}.pt") if checkpoint_dir else None
+        if unit_path is not None and unit_path.is_file():
+            unit = torch.load(unit_path, weights_only=False)
+            assert int(unit["layer"]) == int(layer), (unit["layer"], layer)
+            _merge_layer_unit(unit, grid, null_matrix, decomp, extras)
+            logger.info(
+                "[phase=fit] regime=%s layer %d SKIPPED (resumed from partial/%s/%s)",
+                regime,
+                layer,
+                regime,
+                unit_path.name,
+            )
+            continue
         t_layer = time.time()
+        # per-LAYER accumulators — persisted as ONE durable unit the moment the
+        # layer completes, then merged into the regime accumulators above.
+        grid_l: dict = {}
+        null_l: dict = {}
+        decomp_l: dict = {}
+        avgt_l: dict = {}
+        std_l: dict | None = None
+
+        def record(arm, combo, scheme, layer, res, extra=None, _g=grid_l):
+            cell = {"layer": int(layer), "skill": res["skill"], "n": len(groups)}
+            if extra:
+                cell.update(extra)
+            _g.setdefault(arm, {}).setdefault(combo, {}).setdefault(scheme, []).append(cell)
+
         designs: dict[tuple, GroupRidgeDesign] = {}
 
         def get_design(key: tuple, X: np.ndarray, scheme: str, _d=designs) -> GroupRidgeDesign:
@@ -342,7 +489,7 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
                         ("g_aug", res_g),
                         ("ident", res_i),
                     ]:
-                        decomp[(arm, combo, layer)] = {
+                        decomp_l[(arm, combo, layer)] = {
                             "ss_res": np.asarray(res["ss_res_by_group"]),
                             "ss_tot": np.asarray(res["ss_tot_by_group"]),
                             "ctx_order": [store.ctx_ids[g] for g in ctx_of_loco_fold],
@@ -367,7 +514,7 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
                                 ss_res_g.append(float(np.sum((ybar - pbar) ** 2)))
                                 ss_tot_g.append(float(np.sum((ybar - tmean) ** 2)))
                             sr, st = float(np.sum(ss_res_g)), float(np.sum(ss_tot_g))
-                            extras["avg_t"].setdefault(arm, {}).setdefault(combo, []).append(
+                            avgt_l.setdefault(arm, {}).setdefault(combo, []).append(
                                 {
                                     "layer": int(layer),
                                     "skill": (float("nan") if st < 1e-12 else 1.0 - sr / st),
@@ -376,27 +523,45 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
                                 }
                             )
 
-                    # nulls (registered cells; LOCO — the banded fold).
+                    # nulls (registered cells; LOCO — the banded fold). Cells
+                    # grouped per DESIGN so the expensive per-(fold, λ) N_λ
+                    # factors build ONCE per design instead of once per arm
+                    # (round-2 N_λ-rebuild fix; parity-gated).
                     if n_perms > 0:
-                        for arm, des, Yp, xover in [
-                            ("d_ctx2ans", des_ctx, Y_ans_pca, None),
-                            ("a_ctx2cot", des_ctx, Y_cot_pca, None),
-                            ("b_cot2ans", des_cot, Y_ans_pca, None),
+                        null_jobs = [
                             (
-                                "comp_pred",
-                                des_cot,
-                                Y_ans_pca,
-                                [des_cot.xdot_for(f, xhat_by_fold[f]) for f in range(len(folds))],
+                                des_ctx,
+                                [
+                                    ("d_ctx2ans", Y_ans_pca, None),
+                                    ("a_ctx2cot", Y_cot_pca, None),
+                                    ("j_joint", Y_joint_pca, None),
+                                ],
                             ),
-                            ("j_joint", des_ctx, Y_joint_pca, None),
-                            ("g_aug", des_cat, Y_ans_pca, None),
-                        ]:
-                            draws = grouped_null_skills(
-                                des, Yp, perm, draw_chunk=draw_chunk, xdot_override=xover
+                            (
+                                des_cot,
+                                [
+                                    ("b_cot2ans", Y_ans_pca, None),
+                                    (
+                                        "comp_pred",
+                                        Y_ans_pca,
+                                        [
+                                            des_cot.xdot_for(f, xhat_by_fold[f])
+                                            for f in range(len(folds))
+                                        ],
+                                    ),
+                                ],
+                            ),
+                            (des_cat, [("g_aug", Y_ans_pca, None)]),
+                        ]
+                        for des, jobs in null_jobs:
+                            draws_by_cell = grouped_null_skills_multi(
+                                des,
+                                [(Yp, xo) for _a, Yp, xo in jobs],
+                                perm,
+                                draw_chunk=draw_chunk,
                             )
-                            null_matrix.setdefault(arm, {}).setdefault(combo, {})[str(layer)] = (
-                                draws
-                            )
+                            for (arm, _Yp, _xo), draws in zip(jobs, draws_by_cell, strict=True):
+                                null_l.setdefault(arm, {}).setdefault(combo, {})[str(layer)] = draws
 
         # d_parity: ctx_last -> ans_mean (registered H1 read; falls out of the
         # 3×3 cross — labeled + given its OWN null band, plan §5).
@@ -409,13 +574,13 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
             res_p = grouped_skill(pred_p, Y_ans_pca_m, folds)
             record("d_parity", "boundary/mean", scheme, layer, res_p)
             if scheme == "loco":
-                decomp[("d_parity", "boundary/mean", layer)] = {
+                decomp_l[("d_parity", "boundary/mean", layer)] = {
                     "ss_res": np.asarray(res_p["ss_res_by_group"]),
                     "ss_tot": np.asarray(res_p["ss_tot_by_group"]),
                     "ctx_order": [store.ctx_ids[g] for g in ctx_of_loco_fold],
                 }
                 if n_perms > 0:
-                    null_matrix.setdefault("d_parity", {}).setdefault("boundary/mean", {})[
+                    null_l.setdefault("d_parity", {}).setdefault("boundary/mean", {})[
                         str(layer)
                     ] = grouped_null_skills(des_par, Y_ans_pca_m, perm, draw_chunk=draw_chunk)
 
@@ -452,7 +617,7 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
             pred_fd, _, _ = fit_predict_grouped(des_fd, Yp_m)
             sk_fd = grouped_skill(pred_fd, Yp_m, folds_loco)["skill"]
             des_pf.free()
-            extras["std_sensitivity"] = {
+            std_l = {
                 "layer": int(layer),
                 "cell": "d_ctx2ans mean/mean LOCO",
                 "skill_per_fold_std": sk_pf,
@@ -462,8 +627,26 @@ def fit_regime(  # noqa: C901 — linear per-layer arm battery; see the arm comm
 
         for d in designs.values():
             d.free()
+        # Durable per-(regime, layer) unit the moment the layer completes
+        # (round-2 restartability; atomic write, then merged into the regime
+        # accumulators exactly like a resumed unit).
+        unit = {
+            "layer": int(layer),
+            "grid": grid_l,
+            "null": null_l,
+            "decomp": decomp_l,
+            "avg_t": avgt_l,
+            "std_sensitivity": std_l,
+        }
+        if unit_path is not None:
+            _atomic_torch_save(unit, unit_path)
+        _merge_layer_unit(unit, grid, null_matrix, decomp, extras)
         logger.info(
-            "[phase=fit] regime=%s layer %d done in %.1fs", regime, layer, time.time() - t_layer
+            "[phase=fit] regime=%s layer %d done in %.1fs%s",
+            regime,
+            layer,
+            time.time() - t_layer,
+            " (unit persisted)" if unit_path is not None else "",
         )
     return grid, null_matrix, decomp, extras
 
@@ -618,9 +801,26 @@ def main() -> int:
 
     results: dict = {}
     boot: dict = {}
+    ckpt_root = out_dir / "partial"
     for regime in args.regimes:
         logger.info("[phase=fit] regime=%s", regime)
         combos = args.combos if regime == "avg_q" else ["mean"]
+        do_cross = regime == "avg_q" and not args.no_cross
+        # Resume manifest over EVERY output-affecting arg of the per-layer
+        # units (n_boot deliberately excluded — see the restartability block).
+        regime_key = {
+            "regime": regime,
+            "store_identity": store.identity_digest(),
+            "layers": [int(store.layers[li]) for li in layers_idx],
+            "combos": list(combos),
+            "n_perms": int(args.n_perms),
+            "shuffle_null_seed": int(SHUFFLE_NULL_SEED),
+            "standardization": "per_fold" if regime == "avg_q" else "full_data",
+            "do_cross": bool(do_cross),
+            "std_sensitivity_layer": int(std_li) if regime == "indiv" else None,
+            "device": device,
+        }
+        ckpt_dir = prepare_checkpoint_dir(ckpt_root, regime, regime_key)
         grid, null_matrix, decomp, extras = fit_regime(
             store,
             regime,
@@ -628,9 +828,10 @@ def main() -> int:
             combos,
             device,
             args.n_perms,
-            do_cross=(regime == "avg_q" and not args.no_cross),
+            do_cross=do_cross,
             draw_chunk=args.draw_chunk,
             std_sensitivity_layer=(std_li if regime == "indiv" else None),
+            checkpoint_dir=ckpt_dir,
         )
         results[regime] = {"grid": grid, "extras": {"std_sensitivity": extras["std_sensitivity"]}}
         if regime == "indiv" and extras["avg_t"]:
@@ -733,6 +934,8 @@ def main() -> int:
     )
     if args.upload_prefix:
         logger.info("[phase=upload] fit-result JSONs -> %s", args.upload_prefix)
+        # ignore_patterns: fnmatch "*" crosses "/" so a bare "*.json" would
+        # sweep in partial/<regime>/fit_manifest.json resume checkpoints.
         names = sorted(p.name for p in out_dir.glob("*.json"))
         upload_folder_scoped_verify(
             out_dir,
@@ -740,7 +943,23 @@ def main() -> int:
             names,
             f"issue #928: fit results ({len(names)} JSONs)",
             allow_patterns=["*.json"],
+            ignore_patterns=["partial/*"],
         )
+        # Round-2 artifact-loss fix: the per-context LOCO decompositions (the
+        # bootstrap's re-reduction input) upload as analysis tensors — on GCE
+        # anything not on the Hub dies with the instance DELETE, and a post-hoc
+        # CI re-reduction would otherwise require a full refit.
+        decomp_names = sorted(p.name for p in out_dir.glob("decomp_*.pt"))
+        if decomp_names:
+            logger.info("[phase=upload] decomp tensors -> %s", DECOMP_TENSORS_PREFIX)
+            upload_folder_scoped_verify(
+                out_dir,
+                DECOMP_TENSORS_PREFIX,
+                decomp_names,
+                f"issue #928: per-context LOCO decompositions ({len(decomp_names)} .pt)",
+                allow_patterns=["decomp_*.pt"],
+                ignore_patterns=["partial/*"],
+            )
     # NOT [phase=done]: the run_all driver owns the terminal phase line.
     logger.info("[phase=fits_done] fits complete in %.1fs -> %s", time.time() - t0, out_dir)
     return 0

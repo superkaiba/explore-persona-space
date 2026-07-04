@@ -12,6 +12,14 @@ Pins two permanent invariants of the #928 CoT-decomposition pipeline:
    rung-(iii) prefill criterion adjustment and the malformed-reason taxonomy —
    and the BPE-merge-robust ``char_span_to_token_span`` overlap semantics
    (the #825 zero-width-span guard returns (0, 0), never a crash).
+3. Phase-F restartability (round 2, the #823 accumulate-in-memory class):
+   ``fit_regime`` persists a durable per-layer unit the moment each layer
+   completes and a resume SKIPS completed layers WITHOUT refitting while
+   reproducing the exact same outputs; ``prepare_checkpoint_dir`` DISCARDS
+   stale units on any output-affecting manifest-key mismatch (never silently
+   reuses wrong cached rows — the #722 r3 lesson). This test fails pre-fix
+   (no checkpointing existed) and pins the invariant against future refactors
+   that would silently strip the resume path.
 """
 
 from __future__ import annotations
@@ -81,3 +89,91 @@ def test_group_perm_matrix_preserves_group_blocks():
         for g in range(4):
             src_groups = {int(groups[i]) for i in perm[b][rows_by_group[g]]}
             assert len(src_groups) == 1  # a whole block maps to ONE source group
+
+
+def _make_synth_store(tmp_path):
+    """Tiny synthetic per-(C, q) summary store (4 contexts x 2 rows x 2 layers x H=8)."""
+    import torch
+    from issue928_common import SUMMARY_NAMES, dump_json
+
+    store_dir = tmp_path / "store"
+    (store_dir / "percq_summaries").mkdir(parents=True)
+    ctx = [f"c{i}" for i in range(4)]
+    fams = {c: ("famA" if i < 2 else "famB") for i, c in enumerate(ctx)}
+    dump_json(
+        {
+            "context_ids": ctx,
+            "families": fams,
+            "capture_layers": [0, 1],
+            "summary_names": list(SUMMARY_NAMES),
+            "probe_pool_hash": "testhash",
+            "model": "test-model",
+            "rung": "greedy",
+        },
+        store_dir / "manifest.json",
+    )
+    g = torch.Generator().manual_seed(0)
+    for c in ctx:
+        per_q = torch.randn(2, len(SUMMARY_NAMES), 2, 8, generator=g)
+        torch.save(
+            {"context_id": c, "per_q": per_q, "probe_avg": per_q.mean(0)},
+            store_dir / "percq_summaries" / f"{c}.pt",
+        )
+    return store_dir
+
+
+def test_fit_regime_resume_skips_compute_and_reproduces(tmp_path, monkeypatch):
+    """Round-2 restartability BLOCKER invariant (fails pre-fix): a re-run with
+    persisted layer units must NOT refit (fit/null entrypoints monkeypatched to
+    raise) and must reproduce the first run's outputs exactly."""
+    import issue928_fit_decomposition as fit_mod
+    import numpy as np
+
+    store = fit_mod.Store(_make_synth_store(tmp_path))
+    key = {"regime": "avg_q", "store_identity": store.identity_digest(), "layers": [0, 1]}
+    ckpt = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key)
+    kwargs = dict(
+        store=store,
+        regime="avg_q",
+        layers_idx=[0, 1],
+        combos=["mean"],
+        device="cpu",
+        n_perms=3,
+        do_cross=False,
+        draw_chunk=2,
+        std_sensitivity_layer=None,
+        checkpoint_dir=ckpt,
+    )
+    grid1, null1, decomp1, _ = fit_mod.fit_regime(**kwargs)
+    assert sorted(p.name for p in ckpt.glob("layer_*.pt")) == ["layer_0.pt", "layer_1.pt"]
+
+    def _boom(*_a, **_k):  # any refit on resume is the bug this test pins
+        raise AssertionError("resume must not refit — completed units must be skipped")
+
+    monkeypatch.setattr(fit_mod, "fit_predict_grouped", _boom)
+    monkeypatch.setattr(fit_mod, "grouped_null_skills_multi", _boom)
+    monkeypatch.setattr(fit_mod, "grouped_null_skills", _boom)
+    grid2, null2, decomp2, _ = fit_mod.fit_regime(**kwargs)
+    assert grid2 == grid1
+    assert null2 == null1
+    assert set(decomp2) == set(decomp1)
+    for k in decomp1:
+        assert np.array_equal(decomp1[k]["ss_res"], decomp2[k]["ss_res"])
+        assert np.array_equal(decomp1[k]["ss_tot"], decomp2[k]["ss_tot"])
+
+
+def test_prepare_checkpoint_dir_mismatch_discards_stale_units(tmp_path):
+    """A changed output-affecting manifest key must DISCARD stale units (#722 r3:
+    never silently reuse wrong cached rows); a matching key must keep them."""
+    import issue928_fit_decomposition as fit_mod
+    from issue928_common import load_json
+
+    key1 = {"regime": "avg_q", "n_perms": 3, "store_identity": "aaaa"}
+    d = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key1)
+    (d / "layer_0.pt").write_bytes(b"unit")
+    d2 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key1)
+    assert (d2 / "layer_0.pt").exists()  # same key -> units reusable
+    key2 = dict(key1, n_perms=7)
+    d3 = fit_mod.prepare_checkpoint_dir(tmp_path / "partial", "avg_q", key2)
+    assert not (d3 / "layer_0.pt").exists()  # mismatch -> stale units discarded
+    assert load_json(d3 / fit_mod.FIT_MANIFEST_NAME) == key2

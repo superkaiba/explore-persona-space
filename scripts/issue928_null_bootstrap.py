@@ -347,56 +347,63 @@ def grouped_skill(
 # ── batched selection-symmetric null (per-draw refit incl. λ re-selection) ────
 
 
-def grouped_null_skills(
+def grouped_null_skills_multi(
     design: GroupRidgeDesign,
-    Y_pca: np.ndarray,
+    cells: list[tuple[np.ndarray, list[torch.Tensor] | None]],
     perm: np.ndarray,
     draw_chunk: int = 16,
-    xdot_override: list[torch.Tensor] | None = None,
-) -> list[float]:
-    """Per-draw group-fold ridge skill for the label-shuffle null — fully batched.
+) -> list[list[float]]:
+    """Per-draw null skills for SEVERAL cells sharing ONE design — fully batched.
 
-    Every draw is a FULL re-fit (per-fold train centering + PRESS λ
-    re-selection + dual solve) against the row-permuted target ``Y_pca[perm[b]]``
-    — the parent's per-draw-refit convention — but NO per-draw factorization:
+    ``cells`` is a list of ``(Y_pca, xdot_override_or_None)``. Every draw of
+    every cell is a FULL re-fit (per-fold train centering + PRESS λ
+    re-selection + dual solve) against the row-permuted target
+    ``Y_pca[perm[b]]`` — the parent's per-draw-refit convention — but NO
+    per-draw factorization AND no per-CELL rebuild of the expensive X-only
+    factors (the round-2 N_λ-rebuild fix: arms sharing a design — e.g.
+    d_ctx2ans / a_ctx2cot / j_joint on des_ctx — previously rebuilt the
+    (fold, λ) ``N_λ`` matrices, 3·m³ each, once per arm):
 
     - PRESS via the target-Gram identity ``mse(b, λ) = ⟨N_λ, G_b⟩/(m·P)`` with
-      ``N_λ = A_λᵀA_λ`` built once per (fold, λ) (3·m³) and
-      ``G_b = Ytr_c[b]Ytr_c[b]ᵀ`` gathered from the ONE full target Gram
-      ``YG = Y Yᵀ`` (n²·P once) + rank-1 centering corrections (O(m²)/draw).
-    - held reads via ``K_λ = (x_held_dot Q) diag(1/(e+λ)) Qᵀ`` (h×m per (fold,
-      λ), built once): ``pred_b = ymu_b + K_λ*(b) @ Ytr_c[b]`` (h·m·P per draw).
+      ``N_λ = A_λᵀA_λ`` built once per (fold, λ) and SHARED across all cells,
+      and ``G_b = Ytr_c[b]Ytr_c[b]ᵀ`` gathered from the ONE full target Gram
+      ``YG = Y Yᵀ`` per cell (n²·P once) + rank-1 centering corrections
+      (O(m²)/draw).
+    - held reads via ``K_λ = (xdot Q) diag(1/(e+λ)) Qᵀ`` (h×m per (fold, λ,
+      cell) — cheap, h ≈ group size): ``pred_b = ymu_b + K_λ*(b) @ Ytr_c[b]``.
 
-    ``xdot_override`` (composition null): per-fold (h, m) dual read vectors for
-    the FIXED decoded stage-A predictions — stage A never sees the permuted ans
-    target, so its predictions are constant across draws and only stage B is
-    re-fit (plan §4.6 fold-coherence, preserved under the null).
+    A cell's ``xdot_override`` (composition null): per-fold (h, m) dual read
+    vectors for the FIXED decoded stage-A predictions — stage A never sees the
+    permuted ans target, so its predictions are constant across draws and only
+    stage B is re-fit (plan §4.6 fold-coherence, preserved under the null).
 
-    Returns n_perms skill values (group-fold train-mean baseline, matching
-    ``grouped_skill`` on the same permuted target).
+    Returns one n_perms-length skill list per cell (group-fold train-mean
+    baseline, matching ``grouped_skill`` on the same permuted target).
     """
     dev = design.device
     lambdas = design.lambdas
     nlam = len(lambdas)
-    Yt = torch.from_numpy(np.ascontiguousarray(Y_pca)).to(dev, torch.float64)
-    _n, P = Yt.shape
     B = int(perm.shape[0])
     perm_t = torch.from_numpy(np.ascontiguousarray(perm)).to(dev, torch.long)
-    YG = Yt @ Yt.t()  # (n, n) full target Gram, ONCE per cell
-    ss_res = torch.zeros(B, dtype=torch.float64, device=dev)
-    ss_tot = torch.zeros(B, dtype=torch.float64, device=dev)
+    Yts: list[torch.Tensor] = []
+    YGs: list[torch.Tensor] = []
+    for Y_pca, _xo in cells:
+        Yt = torch.from_numpy(np.ascontiguousarray(Y_pca)).to(dev, torch.float64)
+        Yts.append(Yt)
+        YGs.append(Yt @ Yt.t())  # (n, n) full target Gram, ONCE per cell
+    ss_res = [torch.zeros(B, dtype=torch.float64, device=dev) for _ in cells]
+    ss_tot = [torch.zeros(B, dtype=torch.float64, device=dev) for _ in cells]
     for f in range(len(design.folds)):
         tr_t, held_t = design.tr_idx[f], design.held_idx[f]
         m = int(tr_t.shape[0])
         evals, Q = design.evals[f], design.Q[f]
-        xdot = xdot_override[f] if xdot_override is not None else design.x_held_dot[f]
-        xdot = xdot.to(dev, torch.float64)
-        # per-λ precomputes (shared across ALL draws): N_λ, N_λ1, 1ᵀN_λ1, K_λ.
+        # per-λ DESIGN-only precomputes (shared across ALL cells + draws):
+        # N_λ, N_λ1, 1ᵀN_λ1.
         Qsq = Q * Q
         lam_t = torch.tensor(lambdas, dtype=torch.float64, device=dev)
         filt = evals.unsqueeze(0) / (evals.unsqueeze(0) + lam_t.unsqueeze(1))  # (nlam, m)
         h_diag = filt @ Qsq.t()  # (nlam, m)
-        N_list, N1_list, oneN1_list, K_list, Krow_list = [], [], [], [], []
+        N_list, N1_list, oneN1_list = [], [], []
         for li in range(nlam):
             Hlam = Q @ (filt[li].unsqueeze(1) * Q.t())  # (m, m)
             dinv = 1.0 / (1.0 - h_diag[li]).clamp(min=1e-8)
@@ -406,45 +413,83 @@ def grouped_null_skills(
             N1 = N.sum(dim=1)  # (m,)
             N1_list.append(N1)
             oneN1_list.append(N1.sum())
-            K = (xdot @ Q) * (1.0 / (evals + lambdas[li])).unsqueeze(0) @ Q.t()  # (h, m)
-            K_list.append(K)
-            Krow_list.append(K.sum(dim=1))  # (h,)
+        # per-CELL K_λ (depends on the cell's xdot; h×m — cheap next to N_λ).
+        K_by_cell: list[tuple[list[torch.Tensor], list[torch.Tensor]]] = []
+        for _Y, xo in cells:
+            xdot = xo[f] if xo is not None else design.x_held_dot[f]
+            xdot = xdot.to(dev, torch.float64)
+            K_list, Krow_list = [], []
+            for li in range(nlam):
+                K = (xdot @ Q) * (1.0 / (evals + lambdas[li])).unsqueeze(0) @ Q.t()  # (h, m)
+                K_list.append(K)
+                Krow_list.append(K.sum(dim=1))  # (h,)
+            K_by_cell.append((K_list, Krow_list))
         for lo in range(0, B, draw_chunk):
             sel = perm_t[lo : lo + draw_chunk]  # (c, n)
             c = int(sel.shape[0])
             rows_tr = sel[:, tr_t]  # (c, m) target-row indices for the train fold
             rows_hd = sel[:, held_t]  # (c, h)
-            Ytr = Yt[rows_tr]  # (c, m, P)
-            ymu = Ytr.mean(dim=1)  # (c, P)
-            # G_b = YG[rows, rows] − s1ᵀ − 1sᵀ + q·11ᵀ (centering corrections)
-            YGsel = YG[rows_tr.unsqueeze(-1), rows_tr.unsqueeze(-2)]  # (c, m, m)
-            s_b = YGsel.mean(dim=2)  # (c, m) = YGsel @ 1/m
-            q_b = s_b.mean(dim=1)  # (c,) = 1ᵀYGsel1/m²
-            mse = torch.empty((nlam, c), dtype=torch.float64, device=dev)
-            for li in range(nlam):
-                inner = torch.einsum("ij,cij->c", N_list[li], YGsel)
-                corr = 2.0 * (s_b @ N1_list[li]) - q_b * oneN1_list[li]
-                mse[li] = (inner - corr) / (m * P)
-            best = torch.argmin(mse, dim=0)  # (c,)
-            Yhd = Yt[rows_hd]  # (c, h, P) true held target rows (permuted)
-            for li in range(nlam):
-                mask = best == li
-                if not bool(mask.any()):
-                    continue
-                idx = torch.nonzero(mask, as_tuple=True)[0]
-                Ytr_li = Ytr[idx]  # (b, m, P)
-                ymu_li = ymu[idx]  # (b, P)
-                # pred = ymu + K @ (Ytr − 1 ymuᵀ) = ymu + K@Ytr − (K1) ymuᵀ
-                KY = torch.einsum("hm,bmp->bhp", K_list[li], Ytr_li)
-                pred = ymu_li.unsqueeze(1) + KY - Krow_list[li].view(1, -1, 1) * ymu_li.unsqueeze(1)
-                diff = Yhd[idx] - pred
-                ss_res[lo + idx] += (diff * diff).sum(dim=(1, 2))
-                tot = Yhd[idx] - ymu_li.unsqueeze(1)
-                ss_tot[lo + idx] += (tot * tot).sum(dim=(1, 2))
-    skills = torch.where(
-        ss_tot < 1e-12, torch.full_like(ss_tot, float("nan")), 1.0 - ss_res / ss_tot
-    )
-    return [float(s) for s in skills.detach().cpu().numpy()]
+            for ci, (Yt, YG) in enumerate(zip(Yts, YGs, strict=True)):
+                P = int(Yt.shape[1])
+                Ytr = Yt[rows_tr]  # (c, m, P)
+                ymu = Ytr.mean(dim=1)  # (c, P)
+                # G_b = YG[rows, rows] − s1ᵀ − 1sᵀ + q·11ᵀ (centering corrections)
+                YGsel = YG[rows_tr.unsqueeze(-1), rows_tr.unsqueeze(-2)]  # (c, m, m)
+                s_b = YGsel.mean(dim=2)  # (c, m) = YGsel @ 1/m
+                q_b = s_b.mean(dim=1)  # (c,) = 1ᵀYGsel1/m²
+                mse = torch.empty((nlam, c), dtype=torch.float64, device=dev)
+                for li in range(nlam):
+                    inner = torch.einsum("ij,cij->c", N_list[li], YGsel)
+                    corr = 2.0 * (s_b @ N1_list[li]) - q_b * oneN1_list[li]
+                    mse[li] = (inner - corr) / (m * P)
+                best = torch.argmin(mse, dim=0)  # (c,)
+                Yhd = Yt[rows_hd]  # (c, h, P) true held target rows (permuted)
+                K_list, Krow_list = K_by_cell[ci]
+                for li in range(nlam):
+                    mask = best == li
+                    if not bool(mask.any()):
+                        continue
+                    idx = torch.nonzero(mask, as_tuple=True)[0]
+                    Ytr_li = Ytr[idx]  # (b, m, P)
+                    ymu_li = ymu[idx]  # (b, P)
+                    # pred = ymu + K @ (Ytr − 1 ymuᵀ) = ymu + K@Ytr − (K1) ymuᵀ
+                    KY = torch.einsum("hm,bmp->bhp", K_list[li], Ytr_li)
+                    pred = (
+                        ymu_li.unsqueeze(1)
+                        + KY
+                        - Krow_list[li].view(1, -1, 1) * ymu_li.unsqueeze(1)
+                    )
+                    diff = Yhd[idx] - pred
+                    ss_res[ci][lo + idx] += (diff * diff).sum(dim=(1, 2))
+                    tot = Yhd[idx] - ymu_li.unsqueeze(1)
+                    ss_tot[ci][lo + idx] += (tot * tot).sum(dim=(1, 2))
+    out: list[list[float]] = []
+    for ci in range(len(cells)):
+        skills = torch.where(
+            ss_tot[ci] < 1e-12,
+            torch.full_like(ss_tot[ci], float("nan")),
+            1.0 - ss_res[ci] / ss_tot[ci],
+        )
+        out.append([float(s) for s in skills.detach().cpu().numpy()])
+    return out
+
+
+def grouped_null_skills(
+    design: GroupRidgeDesign,
+    Y_pca: np.ndarray,
+    perm: np.ndarray,
+    draw_chunk: int = 16,
+    xdot_override: list[torch.Tensor] | None = None,
+) -> list[float]:
+    """Single-cell wrapper over ``grouped_null_skills_multi`` (same semantics).
+
+    Kept as the public single-cell entrypoint (the parity gate + d_parity call
+    site use it); the implementation IS the multi path, so the seeded serial
+    parity checks cover both.
+    """
+    return grouped_null_skills_multi(design, [(Y_pca, xdot_override)], perm, draw_chunk=draw_chunk)[
+        0
+    ]
 
 
 # ── paired per-context bootstrap (shared resample-index matrix, no refit) ─────
@@ -580,22 +625,50 @@ def assert_group_ridge_matches_serial(seed: int = 928, atol: float = 1e-8) -> di
         assert dev2 < atol, f"group parity breach ({mode}): {dev2} >= {atol}"
         out[f"group_vs_serial_{mode}"] = dev2
 
-    # 3. batched null vs serial per-draw refit (3 draws; singleton + group cells).
+    # 3. batched null vs serial per-draw refit (3 draws; singleton + group cells;
+    # the grouped cell in BOTH standardization modes — round-2 extension: the
+    # production indiv regime runs full_data, which check 3 previously skipped).
     for label, (Xc, Yc, gc, go) in {
         "singleton": (X, Y, groups, list(range(n))),
         "grouped": (X2, Y2, groups2, list(range(n2 // gsz))),
     }.items():
         foldsc = group_folds(gc, go)
-        desc = GroupRidgeDesign(Xc, foldsc, device="cpu", standardization="per_fold")
         perm = make_group_perm_matrix(gc, go, 3, np.random.default_rng(seed + 1))
-        batched = grouped_null_skills(desc, Yc, perm, draw_chunk=2)
-        for b in range(perm.shape[0]):
-            Yp = Yc[perm[b]]
-            pb, _, _ = fit_predict_grouped(desc, Yp)
-            sb = grouped_skill(pb, Yp, foldsc)["skill"]
-            dev3 = abs(batched[b] - sb)
-            assert dev3 < atol, f"null parity breach ({label}, draw {b}): {dev3} >= {atol}"
-            out[f"null_{label}_draw{b}"] = float(dev3)
+        modes = ("per_fold",) if label == "singleton" else ("per_fold", "full_data")
+        for mode in modes:
+            desc = GroupRidgeDesign(Xc, foldsc, device="cpu", standardization=mode)
+            batched = grouped_null_skills(desc, Yc, perm, draw_chunk=2)
+            for b in range(perm.shape[0]):
+                Yp = Yc[perm[b]]
+                pb, _, _ = fit_predict_grouped(desc, Yp)
+                sb = grouped_skill(pb, Yp, foldsc)["skill"]
+                dev3 = abs(batched[b] - sb)
+                assert dev3 < atol, (
+                    f"null parity breach ({label}/{mode}, draw {b}): {dev3} >= {atol}"
+                )
+                out[f"null_{label}_{mode}_draw{b}"] = float(dev3)
+
+    # 4. multi-cell null == independent single-cell calls (the shared-N_λ
+    # fold-outer/cell-inner refactor must not couple cells; the second cell
+    # exercises the xdot_override plumbing with a genuinely external input).
+    folds4 = group_folds(groups2, list(range(n2 // gsz)))
+    des4 = GroupRidgeDesign(X2, folds4, device="cpu", standardization="per_fold")
+    rng4 = np.random.default_rng(seed + 2)
+    Y4 = rng4.standard_normal((n2, P2))
+    xov = [
+        des4.xdot_for(f, rng4.standard_normal((held.size, d2)))
+        for f, (_tr, held) in enumerate(folds4)
+    ]
+    perm4 = make_group_perm_matrix(
+        groups2, list(range(n2 // gsz)), 3, np.random.default_rng(seed + 3)
+    )
+    cells4 = [(Y2, None), (Y4, xov)]
+    multi = grouped_null_skills_multi(des4, cells4, perm4, draw_chunk=2)
+    for ci, (Yy, xo) in enumerate(cells4):
+        single = grouped_null_skills(des4, Yy, perm4, draw_chunk=3, xdot_override=xo)
+        dev4 = float(np.nanmax(np.abs(np.asarray(multi[ci]) - np.asarray(single))))
+        assert dev4 < atol, f"multi-vs-single null breach (cell {ci}): {dev4} >= {atol}"
+        out[f"null_multi_vs_single_cell{ci}"] = dev4
     return out
 
 

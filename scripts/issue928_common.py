@@ -118,6 +118,12 @@ HF_PREFIX_928 = "issue928_cot_decomposition"
 RAW_COMPLETIONS_PREFIX = f"{HF_PREFIX_928}/raw_completions/thinking_rollouts"
 STORE_PREFIX = f"{HF_PREFIX_928}/analysis_tensors/store/percq_summaries"
 FIT_RESULTS_PREFIX = f"{HF_PREFIX_928}/fit_results"
+# Round-2 additions (code-review r1 artifact-loss minors): the per-context LOCO
+# decompositions (decomp_<regime>.pt — the bootstrap's re-reduction input) and
+# the pod-side figures both upload before instance teardown (GCE DELETEs the
+# boot disk; anything not on the Hub dies with it).
+DECOMP_TENSORS_PREFIX = f"{HF_PREFIX_928}/analysis_tensors/decomp"
+FIGURES_PREFIX = f"{HF_PREFIX_928}/figures"
 
 # ── parts × summaries registry (plan §4.5 — the 12 stored vectors) ────────────
 
@@ -334,6 +340,44 @@ def context_order_and_families(battery: dict) -> tuple[list[str], dict[str, str]
     return ids, fams
 
 
+# ── poll_pipeline sentinel (shared by the extract + finalize entrypoints) ─────
+
+SENTINEL_SCHEMA_VERSION = 1
+
+
+def write_sentinel(kind: str, note: dict, fallback_dir: Path, log_dir: Path | None = None) -> Path:
+    """poll_pipeline.py-conformant sentinel (issue-928 naming). Returns the path.
+
+    Round-2 relocation from the extract script: the extract phase now emits an
+    ``epm:progress`` sentinel and the run_all driver's finalize step emits the
+    ONE ``epm:results`` sentinel at true end-of-workload (after fits + figures
+    + uploads) — so both writers share this implementation. ``log_dir``
+    overrides the ``/workspace/logs`` default (smoke runs redirect to scratch).
+    """
+    import logging
+    import time
+
+    slug = kind.replace(":", "_")
+    base = log_dir if log_dir is not None else Path("/workspace/logs")
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+        target = base / f"issue-928-{slug}-{int(time.time())}.json"
+    except OSError:
+        target = fallback_dir / f"issue-928-{slug}-sentinel.json"
+    dump_json(
+        {
+            "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+            "kind": kind,
+            "version": 1,
+            "note": note,
+            "ts": int(time.time()),
+        },
+        target,
+    )
+    logging.getLogger("issue928_common").info("wrote sentinel %s", target)
+    return target
+
+
 # ── scoped HF upload verification (gotcha #833: never bare list_repo_files) ───
 
 
@@ -343,6 +387,7 @@ def upload_folder_scoped_verify(
     expected_names: list[str],
     commit_message: str,
     allow_patterns: list[str] | None = None,
+    ignore_patterns: list[str] | None = None,
 ) -> str:
     """One ``upload_folder`` commit + SCOPED ``list_repo_tree`` exact-set verify.
 
@@ -350,6 +395,10 @@ def upload_folder_scoped_verify(
     ``list_repo_files`` full listing (the ~1M-file data repo times out, #833) —
     the verify enumerates ONLY ``path_in_repo`` server-side. Raises on any
     missing expected file (a partial upload is never silent success).
+    ``ignore_patterns`` excludes nested scratch (fnmatch ``*`` crosses ``/``,
+    so ``*.json`` would otherwise sweep in ``partial/<regime>/*.json`` resume
+    checkpoints — round-2 restartability units are local/crash-trap state, not
+    canonical Hub artifacts).
     """
     from huggingface_hub import HfApi
 
@@ -360,6 +409,7 @@ def upload_folder_scoped_verify(
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         allow_patterns=allow_patterns,
+        ignore_patterns=ignore_patterns,
         commit_message=commit_message,
     )
     remote = {
