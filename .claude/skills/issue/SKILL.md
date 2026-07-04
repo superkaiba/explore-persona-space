@@ -3750,6 +3750,27 @@ rejects the marker and the poll keeps reading the frozen startup-script
 phase, and an omitted `pod=` is accepted only via the launch-time
 `epm:cluster-launched` timestamp baseline, so include it explicitly.
 
+**A successful relaunch also reconciles a stale `blocked`.** Immediately
+after posting the fresh `epm:run-launched`, read the current status
+(`task.py view <N> --json`); if it is EXACTLY `blocked`, run
+`uv run python scripts/task.py set-status <N> running --note 'relaunch
+succeeded; clearing stale blocked (epm:run-launched <ts>)'`. The stale
+`blocked` arises when an earlier failed round (a cap-hit, a
+STATE-TO-`blocked` exit, or a failed crash-fix cycle) parked the task and
+a LATER round's relaunch succeeded without flipping it back — #742 ran
+healthy ~35h at status `blocked` (2026-07-01→07-02) and the
+dashboard/watcher read wrong until the user asked. Guards: (a) flip ONLY
+`blocked` → `running`, never any other status — a same-issue follow-up
+round holds `followups_running`, never `blocked`, so the flip is inert
+there by construction; (b) the flip is a same-turn serial action after
+YOUR OWN relaunch — never flip on someone else's marker (the watcher's
+stale-blocked FLAG pass is deliberately flag-only; a human reconciles on
+its evidence); (c) if the relaunched run then fails, the normal failure
+path re-blocks — the flip does not suppress it; (d) RE-READ the status
+immediately before the `set-status` call — a non-`blocked` read at that
+instant ABORTS the flip (a human may have reconciled off the watcher
+flag concurrently; a redundant flip attempt is refused, never forced).
+
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
@@ -4360,6 +4381,12 @@ When this skill is re-invoked in `running`:
    *Before applying either row, the Crash-fix circuit-breaker below checks for
    a same-signature repeat or a spent escape ladder and pivots to re-planning if
    either fires.*
+
+   *Either row's respawn, when its round ends in a successful relaunch
+   (fresh `epm:run-launched`), also triggers the stale-`blocked` reconcile
+   rule ("A successful relaunch also reconciles a stale `blocked`", Step
+   6d.2 poll-loop section) — a task parked `blocked` by an earlier failed
+   round must not stay `blocked` through a healthy relaunched run (#742).*
 
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is
