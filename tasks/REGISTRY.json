@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 960,
+  "highest_id": 961,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6367,6 +6367,13 @@
       "path": "tasks/proposed/960",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md cuDNN-TF32 parity-gate trap (float64-clone gate recipe)"
+    },
+    "961": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/961",
+      "status": "proposed",
+      "title": "workflow-fix: retro-close predicate ignores queued-context label mentions"
     },
     "97": {
       "has_clean_result": false,
