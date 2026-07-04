@@ -155,6 +155,19 @@ BANK_SMOKE_PER_CAT = 2  # divergent+control pairs per category in --smoke
 
 SONNET_MAX_TOKENS = 1024  # #823-matched generation cap
 
+# Bank prompt-token budget (round-3 crash fix, GCE att-20260704-103316): vLLM in
+# phase 1a rejects any chat-formatted prompt longer than max_model_len (8192 —
+# "The decoder prompt (length 8377) is longer than the maximum model length"),
+# and a surviving prompt additionally needs the full SONNET_MAX_TOKENS
+# generation headroom under that cap. The SAME bound conservatively covers the
+# 1d TF-capture side (prompt <= 7168 guarantees span >= 1 under the
+# _render_and_index SEQ_MAX_LEN truncation). Enforced ONCE in
+# load_bank_queries (filter_bank_rows_by_length) so EVERY bank consumer — 1a
+# gen, 1b judge, 1d capture, 1f score — sees the identical row set; a matched
+# (divergent, control) pair drops TOGETHER (paired H3 stats need intact pairs,
+# plan §4 0c drop rules).
+BANK_PROMPT_TOKEN_BUDGET = SEQ_MAX_LEN - SONNET_MAX_TOKENS  # 7168
+
 DIVERGENCE_RUBRIC = (
     "You will see one question and two answers from two different AI assistants. "
     "Rate how much the two answers DIVERGE in substance: the position taken, the "
@@ -665,13 +678,115 @@ def resolve_query_text(row: dict) -> str:
     raise ValueError(f"bank row {row.get('query_id')}: no text and no resolvable source")
 
 
+_TOKENIZER_CACHE: dict[str, Any] = {}
+
+
+def _get_tokenizer(model_id: str = DEFAULT_MODEL):
+    """Module-scope tokenizer cache (gotchas.md: per-call from_pretrained fires a
+    Hub model_info HTTP call — cache once per process, never load in a loop)."""
+    if model_id not in _TOKENIZER_CACHE:
+        from transformers import AutoTokenizer
+
+        _TOKENIZER_CACHE[model_id] = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+    return _TOKENIZER_CACHE[model_id]
+
+
+def filter_bank_rows_by_length(
+    rows: list[dict], tokenizer, budget: int = BANK_PROMPT_TOKEN_BUDGET
+) -> tuple[list[dict], dict]:
+    """Drop bank PAIRS whose chat-formatted prompt exceeds ``budget`` tokens.
+
+    Round-3 crash fix (GCE att-20260704-103316): at least one REAL bank row's
+    formatted prompt (8377 tokens) exceeded vLLM max_model_len=8192 and killed
+    phase 1a. Tokenizes each row's formatted prompt EXACTLY as phase 1a renders
+    it (same chat template + generation suffix) and drops the ENTIRE matched
+    (divergent, control) pair when EITHER member exceeds the budget — paired H3
+    stats require intact pairs. Returns ``(kept_rows, record)``; the record is
+    DIGEST-ONLY (indices, token counts, categories — never row text; plan §4 0c
+    harmful-content discipline).
+    """
+    texts = [resolve_query_text(r) for r in rows]
+    formatted = [
+        tokenizer.apply_chat_template(
+            [{"role": "user", "content": t}], tokenize=False, add_generation_prompt=True
+        )
+        for t in texts
+    ]
+    tok_counts = [len(tokenizer(f, add_special_tokens=False)["input_ids"]) for f in formatted]
+    overlong_pairs = {r["pair_id"] for r, n in zip(rows, tok_counts, strict=True) if n > budget}
+    kept = [r for r in rows if r["pair_id"] not in overlong_pairs]
+    dropped_rows = [
+        {
+            "index": i,
+            "query_id": r["query_id"],
+            "pair_id": r["pair_id"],
+            "category": r["category"],
+            "role": r["role"],
+            "prompt_tokens": tok_counts[i],
+            "over_budget": tok_counts[i] > budget,
+        }
+        for i, r in enumerate(rows)
+        if r["pair_id"] in overlong_pairs
+    ]
+    dropped_by_cat: dict[str, int] = {}  # counts PAIRS (not rows) per category
+    for pid in sorted(overlong_pairs):
+        cat = next(r["category"] for r in rows if r["pair_id"] == pid)
+        dropped_by_cat[cat] = dropped_by_cat.get(cat, 0) + 1
+    kept_pairs_by_cat = {
+        cat: len({r["pair_id"] for r in kept if r["category"] == cat})
+        for cat in sorted({r["category"] for r in rows})
+    }
+    record = {
+        "budget_tokens": budget,
+        "seq_max_len": SEQ_MAX_LEN,
+        "gen_max_tokens": SONNET_MAX_TOKENS,
+        "n_rows_before": len(rows),
+        "n_rows_after": len(kept),
+        "n_pairs_dropped": len(overlong_pairs),
+        "dropped_pairs_by_category": dropped_by_cat,
+        "kept_pairs_by_category": kept_pairs_by_cat,
+        "category_floor": CATEGORY_MIN_PAIRS,
+        "dropped_rows": dropped_rows,
+    }
+    if overlong_pairs:
+        logger.warning(
+            "[bank-length-filter] dropped %d pair(s) / %d row(s) over the %d-token prompt "
+            "budget (pairs by category: %s) — digest-only record in bank_length_filter.json",
+            len(overlong_pairs),
+            len(dropped_rows),
+            budget,
+            dropped_by_cat,
+        )
+    else:
+        logger.info(
+            "[bank-length-filter] all %d rows within the %d-token prompt budget",
+            len(rows),
+            budget,
+        )
+    below_floor = {c: n for c, n in kept_pairs_by_cat.items() if n < CATEGORY_MIN_PAIRS}
+    if below_floor:
+        # Pre-registered graceful degradation (plan §4 1b keep rules) — the
+        # CATEGORY_MIN_PAIRS floor binds at 1b keep-rule time; recorded, never a block.
+        logger.warning(
+            "[bank-length-filter] categories below the %d-pair floor after filtering: %s "
+            "(graceful degradation per plan §4 1b — recorded, not blocking)",
+            CATEGORY_MIN_PAIRS,
+            below_floor,
+        )
+    return kept, record
+
+
 def load_bank_queries(
     base_dir: pathlib.Path, smoke: bool, bank_file: str | None
 ) -> tuple[list[dict], dict]:
     """Load the Phase-0c bank file; in smoke mode subset to the first pair per category.
 
     Returns (rows, meta). Rows keep their full schema; the smoke subset keeps
-    BOTH members of each selected pair (the pair is the analysis unit).
+    BOTH members of each selected pair (the pair is the analysis unit). Every
+    consumer inherits the prompt-token-length pair filter (crash fix, GCE
+    att-20260704-103316); the digest-only filter record is written to
+    ``eval_results/issue_952/bank_length_filter.json`` and returned as
+    ``meta["length_filter"]``.
     """
     if bank_file:
         path = pathlib.Path(bank_file)
@@ -680,6 +795,13 @@ def load_bank_queries(
         path = locate_phase0_file("divergence_bank_queries.json", base_dir)
     data = json.loads(path.read_text())
     rows: list[dict] = data["queries"]
+    # Length filter FIRST (on the full file, so recorded indices are file indices).
+    rows, length_filter = filter_bank_rows_by_length(rows, _get_tokenizer())
+    filter_out = base_dir / "eval_results" / "issue_952"
+    filter_out.mkdir(parents=True, exist_ok=True)
+    (filter_out / "bank_length_filter.json").write_text(
+        json.dumps(length_filter, indent=2, default=_json_np)
+    )
     # Descope-ladder hook (plan §9 step 3: drop the style/format category).
     drop_cats = {
         c.strip() for c in os.environ.get("EPM_I952_DROP_CATEGORIES", "").split(",") if c.strip()
@@ -702,6 +824,7 @@ def load_bank_queries(
         rows = [r for r in rows if r["pair_id"] in set(keep_pairs)]
         logger.info("[bank] smoke subset: %d pairs -> %d rows", len(keep_pairs), len(rows))
     meta = {k: v for k, v in data.items() if k != "queries"}
+    meta["length_filter"] = length_filter
     return rows, meta
 
 
@@ -721,10 +844,11 @@ def phase_bank_gen(base_dir: pathlib.Path, smoke: bool, bank_file: str | None) -
     rows, _meta = load_bank_queries(base_dir, smoke, bank_file)
     texts = [resolve_query_text(r) for r in rows]
 
-    from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL, trust_remote_code=True)
+    # Same cached tokenizer instance the length filter counted with (identity
+    # guarantees the filter's budget arithmetic matches this render exactly).
+    tokenizer = _get_tokenizer()
     formatted = [
         tokenizer.apply_chat_template(
             [{"role": "user", "content": t}], tokenize=False, add_generation_prompt=True
@@ -893,7 +1017,7 @@ def phase_bank_judge(  # noqa: C901 — the 1b driver: calibration + 3 judge dis
     import time
 
     log_phase("p1b_bank_judge")
-    rows, _meta = load_bank_queries(base_dir, smoke, bank_file)
+    rows, meta = load_bank_queries(base_dir, smoke, bank_file)
     by_qid = {r["query_id"]: r for r in rows}
 
     qwen_path = base_dir / "raw_completions" / "bank" / "qwen_seed42.json"
@@ -1141,6 +1265,9 @@ def phase_bank_judge(  # noqa: C901 — the 1b driver: calibration + 3 judge dis
         "category_min_pairs": min_pairs,
         "smoke_forced_keep": smoke_forced,
         "smoke": smoke,
+        # Round-3 crash-fix provenance: digest-only prompt-length pair filter
+        # applied at load (dropped indices + per-category counts, never text).
+        "length_filter": meta.get("length_filter"),
         "ts": time.time(),
     }
     out_dir = base_dir / "eval_results" / "issue_952"
