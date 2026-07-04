@@ -333,8 +333,6 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
         arr = np.asarray(valmat["val_pooled_A"], dtype=float)  # (L_layers, n_lam, G)
         best = np.nanmax(arr, axis=1)  # (L_layers, G)
         slot_names = [s for s, _l in (g.split("|") for g in groups)]
-        uniq_slots = [s for s, _lab in [(s, None) for s in dict.fromkeys(slot_names)]]
-        pos_slots = [s for s in uniq_slots if s in {p for p, _ in enumerate([])} or True]
         pos_slots = [s for s in dict.fromkeys(slot_names) if not s.startswith("rem_")]
         mat = np.full((len(pos_slots), len(layers)), np.nan)
         for si, slot in enumerate(pos_slots):
@@ -400,6 +398,81 @@ def exploratory_dump(  # noqa: C901 — one guarded block per exploratory panel
                 ax, "Token-level surprise per arm", "In-context adaptation companion"
             )
             savefig_paper(fig, "exp_surprisal_curves", dir=out_dir)
+        plt.close(fig)
+
+        # Per-position R²-vs-surprisal scatter (plan §6 exploratory; round-2 Minor 3c).
+        cells_scatter = stats.get("cells", {})
+        scatter_ts = [*range(1, 17), 32, 64, 128]
+        fig, ax = plt.subplots(figsize=(5.6, 3.8), layout="constrained")
+        any_pt = False
+        for arm in ARMS:
+            p = tensors_dir / f"surprisal_{arm}.npz"
+            if not p.exists():
+                continue
+            d = np.load(p)
+            flat, offs = d["flat"], d["offsets"]
+            xs, ys = [], []
+            for t in scatter_ts:
+                slot = f"f16_t{t}" if t <= 16 else f"z_t{t}"
+                obs = cells_scatter.get(f"A|{slot}|{arm}", {}).get("observed")
+                if obs is None:
+                    continue
+                vals = [
+                    float(flat[offs[i] + t - 1])
+                    for i in range(len(offs) - 1)
+                    if offs[i + 1] - offs[i] >= t
+                ]
+                if not vals:
+                    continue
+                xs.append(float(np.mean(vals)))
+                ys.append(float(obs))
+            if xs:
+                any_pt = True
+                ax.scatter(xs, ys, s=14, color=colors[arm], label=ARM_LABEL[arm], alpha=0.85)
+        if any_pt:
+            ax.set_xlabel("Mean teacher-forced -log P at position t (all captured contexts)")
+            ax.set_ylabel("Test pooled R² at position t")
+            ax.legend(frameon=False, fontsize=7)
+            set_title_subtitle(
+                ax,
+                "Predictability vs token-level surprise per position",
+                "Each point = one answer position t (1-16, 32, 64, 128)",
+            )
+            savefig_paper(fig, "exp_r2_vs_surprisal_scatter", dir=out_dir)
+        plt.close(fig)
+
+    # Per-cluster R² spread (TF-idf k-means OOD diagnostic; plan §6 item (b)).
+    km = stats.get("kmeans_ood_diagnostic", {})
+    km_clusters = km.get("per_cluster")
+    if km_clusters:
+        colors = dict(zip(ARMS, paper_palette(4), strict=True))
+        fig, ax = plt.subplots(figsize=(6.5, 3.6), layout="constrained")
+        width = 0.2
+        xs_c = np.arange(len(km_clusters))
+        plotted = False
+        for ai, arm in enumerate(ARMS):
+            ys = np.asarray(
+                [
+                    c[arm]["mean_r2"] if c[arm]["mean_r2"] is not None else np.nan
+                    for c in km_clusters
+                ],
+                dtype=float,
+            )
+            if np.isfinite(ys).any():
+                plotted = True
+                ax.bar(
+                    xs_c + (ai - 1.5) * width, ys, width, color=colors[arm], label=ARM_LABEL[arm]
+                )
+        if plotted:
+            ax.set_xticks(xs_c)
+            ax.set_xticklabels([f"c{c['cluster']}\nn={c['n']}" for c in km_clusters], fontsize=7)
+            ax.set_xlabel("TF-idf k-means cluster (test contexts)")
+            ax.set_ylabel("Mean per-context R² (position slots)")
+            ax.legend(frameon=False, fontsize=7)
+            set_title_subtitle(
+                ax, "Per-cluster predictability spread", "OOD diagnostic — headline unaffected"
+            )
+            savefig_paper(fig, "exp_kmeans_cluster_spread", dir=out_dir)
         plt.close(fig)
 
     # Per-context R² ECDF per arm (F16-pooled per context, from the cells table
