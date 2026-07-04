@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1023,
+  "highest_id": 1024,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -205,6 +205,13 @@
       "path": "tasks/proposed/1023",
       "status": "proposed",
       "title": "daily-held: decide ruff-debt burn-down (2149 errors)"
+    },
+    "1024": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1024",
+      "status": "proposed",
+      "title": "daily-fix: parse_judge_json drop-never-coerce (eval/utils.py)"
     },
     "104": {
       "has_clean_result": false,
