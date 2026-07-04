@@ -6250,8 +6250,8 @@
     "945": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/945",
-      "status": "reviewing",
+      "path": "tasks/completed/945",
+      "status": "completed",
       "title": "workflow-fix: figure-sidecar opaque-code lint for clean-results"
     },
     "946": {
