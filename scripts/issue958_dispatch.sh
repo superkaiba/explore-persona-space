@@ -161,6 +161,25 @@ if [ "$STAGE" = "cpu" ] || [ "$STAGE" = "all" ]; then
   uv run python scripts/issue958_fit_maps.py --corpus "$CORPUS" --store "$STORE" \
     --cache "$CACHE" --maps "$MAPS" --out "$OUT" "${FIT_ARGS[@]}"
 
+  # plan §7 smoke kill (map-skill floor): the --smoke run must produce turn-1
+  # context-map skill > 0 at the frozen 6-block mean (real model only — the
+  # stub-model VM smoke has no meaningful skill).
+  if [ "$SMOKE" = "1" ] && [ "${EPM958_STUB_MODEL:-0}" != "1" ]; then
+    EPM958_OUT_DIR="$OUT" uv run python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+t = json.loads((Path(os.environ["EPM958_OUT_DIR"]) / "transfer_matrix.json").read_text())
+s = t["grid_skill_readout_mean_foldA"]["1->1"]
+assert s > 0, (
+    f"SMOKE KILL (plan §7): turn-1 context-map skill {s:.4f} <= 0 — "
+    "template/boundary/pairing bug; no full GPU launch until fixed"
+)
+print(f"[smoke-gate] turn-1 skill {s:.4f} > 0 PASS")
+PY
+  fi
+
   echo "[phase=evals]"
   uv run python scripts/issue958_eval.py --out "$OUT"
 
