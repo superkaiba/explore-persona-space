@@ -111,11 +111,17 @@ run_lane() {
     local beh=${cell%%:*} li=${cell##*:}
     local LOG="logs/issue833_phase_d_${beh}_L${li}.log"
     echo "=== lane $LANE cell $beh L$li start $(date -u +%H:%M:%S) ===" >> "$LOG"
+    # Round 7e: MLP device + chunk size env-parameterizable (defaults verbatim
+    # r7c). FIT_DEVICE=cuda routes the chain MLP (the ~36 PFLOP/cell GD fit,
+    # measured 5%-in-22h on CPU = ~438h/cell) to GPU per the CLAUDE.md
+    # compute-character carve-out; the fit script plumbs --device to
+    # fit_batched_loco_mlp verbatim.
     env OMP_NUM_THREADS=5 OPENBLAS_NUM_THREADS=5 MKL_NUM_THREADS=5 \
       uv run python scripts/issue833_fit_onpolicy.py \
         --behaviors "$beh" --layers "$li" \
         --legs-mode reextracted --floors-impl batched --joined-cache --local-store \
-        --mlp-chunk-size 128 --mlp-num-threads 5 \
+        --mlp-chunk-size "${MLP_CHUNK:-128}" --mlp-num-threads 5 \
+        --device "${FIT_DEVICE:-cpu}" \
         >> "$LOG" 2>&1 < /dev/null
     local rc=$?
     echo "=== lane $LANE cell $beh L$li rc=$rc $(date -u +%H:%M:%S) ===" >> "$LOG"
