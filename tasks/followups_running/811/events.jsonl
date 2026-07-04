@@ -351,3 +351,4 @@
 {"ts": "2026-07-04T04:57:58Z", "kind": "epm:progress", "version": 99, "by": "unknown", "note": "tick heartbeat: fit battery healthy — pid 42276 at ~640% CPU, 53m elapsed of ~5h (relaunch 2, OOM-protected)."}
 {"ts": "2026-07-04T05:28:40Z", "kind": "epm:progress", "version": 100, "by": "unknown", "note": "tick heartbeat: fit battery healthy — pid 42276 at ~940% CPU, 1h24m elapsed (relaunch 2, OOM-protected)."}
 {"ts": "2026-07-04T05:59:22Z", "kind": "epm:progress", "version": 101, "by": "unknown", "note": "tick heartbeat: fit battery healthy — pid 42276 at ~990% CPU, 1h55m elapsed (relaunch 2)."}
+{"ts": "2026-07-04T06:29:55Z", "kind": "epm:progress", "version": 102, "by": "unknown", "note": "tick heartbeat: fit battery healthy — pid 42276 at ~1050% CPU, 2h26m elapsed (relaunch 2); past attempt-1's earlyoom kill point."}
