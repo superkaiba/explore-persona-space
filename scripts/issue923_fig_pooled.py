@@ -83,6 +83,39 @@ def _ci_err(entry: dict) -> tuple[float, float]:
     return max(0.0, v - entry["ci95"][0]), max(0.0, entry["ci95"][1] - v)
 
 
+def _verdict_meta(stats: dict) -> dict:
+    """Headline verdict fields for figure metadata, mirroring the k2 skip.
+
+    The §6 k2 kill rule can SKIP the top-level verdict (``verdict`` absent,
+    ``verdict_skipped_reason`` set) — the figure metadata must mirror that
+    skip, never a bare ``verdict: None`` that hides WHY (r2 Major sweep).
+    """
+    out = {"verdict": stats.get("verdict")}
+    if stats.get("verdict_skipped_reason"):
+        out["verdict_skipped_reason"] = stats["verdict_skipped_reason"]
+    return out
+
+
+def _family_order(stats: dict, parent_stats: dict, genre: str) -> list[str]:
+    """Family tick labels in the ARRAYS' index order (headline ``families``).
+
+    ``fam_res``/``fam_tot`` are indexed by ``compute_stats``' FAMILY_ORDER-
+    filtered ``families_present``, persisted as ``stats[genre]["families"]``
+    — NEVER the ``fold_assignments.json`` dict-insertion order, whose tail
+    differs (…, format, default, behavior) and swapped the behavior/default
+    labels (r1 Major). Both rounds are plotted on shared ticks, so the
+    parent's persisted order must agree on every shared position.
+    """
+    fams = list(stats["stats"][genre]["families"])
+    p_fams = list(parent_stats["stats"][genre].get("families", []))
+    n = min(len(fams), len(p_fams))
+    assert fams[:n] == p_fams[:n], (
+        f"family order mismatch pooled vs parent for {genre}: {fams} vs {p_fams} — "
+        "shared ticks would mislabel one side"
+    )
+    return fams
+
+
 def hero_paired(
     stats: dict, parent_stats: dict, nulls: dict, parent_nulls: dict, genre: str, out_dir, meta
 ) -> None:
@@ -139,19 +172,19 @@ def hero_paired(
             "delta_last": pd and pd["delta_last"],
             "paired_D": pd and pd["D_value"],
             "paired_D_ci95": pd and pd["D_ci95"],
-            "verdict": stats.get("verdict"),
+            **_verdict_meta(stats),
             "parent_null_note": PARENT_NULL_NOTE,
         },
     )
 
 
-def family_dots(skill: dict, parent_skill: dict, genre: str, hl: int, out_dir, meta) -> None:
-    """Per-held-out-family skill dots, pooled vs last (arm_full / arm_concat_i)."""
-    fams = load_json(PROJECT_ROOT / "data/issue923/fold_assignments.json")["families"]
-    fam_order = []
-    for f in fams.values():
-        if f not in fam_order:
-            fam_order.append(f)
+def family_dots(
+    skill: dict, parent_skill: dict, genre: str, hl: int, fam_order: list[str], out_dir, meta
+) -> None:
+    """Per-held-out-family skill dots, pooled vs last (arm_full / arm_concat_i).
+
+    ``fam_order`` = the persisted array index order (``_family_order``).
+    """
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), layout="constrained", sharey=True)
     for ax, arm in zip(axes, ("arm_full", "arm_concat_i"), strict=True):
         n_common = None
@@ -193,8 +226,13 @@ def cell_scatters(skill: dict, genre: str, hl: int, out_dir, meta) -> None:
     _save(fig, out_dir, f"pooled_cell_scatter_{genre}", meta)
 
 
-def family_arm_heatmap(skill: dict, parent_skill: dict, genre: str, hl: int, out_dir, meta):
-    """Family x arm heatmap of (span-mean − last-token) held-out family skill (s1)."""
+def family_arm_heatmap(
+    skill: dict, parent_skill: dict, genre: str, hl: int, fam_order: list[str], out_dir, meta
+):
+    """Family x arm heatmap of (span-mean − last-token) held-out family skill (s1).
+
+    ``fam_order`` = the persisted array index order (``_family_order``).
+    """
     arms = [a for a in ARM_LABELS if a in skill["genres"][genre][str(hl)]["arms"]]
     p_arms = parent_skill["genres"][genre][str(hl)]["arms"]
     arms = [a for a in arms if a in p_arms]
@@ -210,11 +248,6 @@ def family_arm_heatmap(skill: dict, parent_skill: dict, genre: str, hl: int, out
             fs_last = 1.0 - np.asarray(pn["fam_res"], float) / np.asarray(pn["fam_tot"], float)
             fs_pool = 1.0 - np.asarray(qn["fam_res"], float) / np.asarray(qn["fam_tot"], float)
         diff[:, j] = fs_pool[:n_fam] - fs_last[:n_fam]
-    fams = load_json(PROJECT_ROOT / "data/issue923/fold_assignments.json")["families"]
-    fam_order = []
-    for f in fams.values():
-        if f not in fam_order:
-            fam_order.append(f)
     # constrained layout from subplots(); NEVER tight_layout after a colorbar.
     fig, ax = plt.subplots(figsize=(8.5, 4.5), layout="constrained")
     vmax = np.nanmax(np.abs(diff)) or 1.0
@@ -354,7 +387,7 @@ def closure_hist(stats: dict, out_dir, meta) -> None:
     ax.set_ylabel("Bootstrap draws")
     ax.set_title("Deficit closure under span-mean pooling")
     ax.legend(fontsize=8)
-    _save(fig, out_dir, "pooled_closure_hist", {**meta, "verdict": stats.get("verdict")})
+    _save(fig, out_dir, "pooled_closure_hist", {**meta, **_verdict_meta(stats)})
 
 
 def main() -> int:
@@ -389,10 +422,11 @@ def main() -> int:
     parent_nulls = load_json(args.parent_fits_dir / "null_summary.json")
     for genre in skill["genres"]:
         hl = int(stats["stats"][genre].get("headline_layer_used", 18))
+        fam_order = _family_order(stats, parent_stats, genre)
         hero_paired(stats, parent_stats, nulls, parent_nulls, genre, args.out_dir, meta)
-        family_dots(skill, parent_skill, genre, hl, args.out_dir, meta)
+        family_dots(skill, parent_skill, genre, hl, fam_order, args.out_dir, meta)
         cell_scatters(skill, genre, hl, args.out_dir, meta)
-        family_arm_heatmap(skill, parent_skill, genre, hl, args.out_dir, meta)
+        family_arm_heatmap(skill, parent_skill, genre, hl, fam_order, args.out_dir, meta)
         layer_curves(skill, parent_skill, genre, args.out_dir, meta)
         presentations_panel(stats, genre, args.out_dir, meta)
     hl_uc = int(stats["stats"].get("uc", {}).get("headline_layer_used", 18))

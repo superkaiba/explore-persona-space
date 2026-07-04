@@ -17,6 +17,15 @@ cd "$REPO_ROOT"
 LOG_DIR="${LOG_DIR:-$REPO_ROOT/logs/issue_923}"
 mkdir -p "$LOG_DIR"
 
+# CPU-lane BLAS/OMP thread caps (r1 Codex Minor). Default 8 = the cpu-mid
+# lane's full vCPU width (a no-op there); env-overridable for other shapes,
+# and it prevents oversubscription thrash if this script ever runs on a
+# wider shared host.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-8}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-8}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-8}"
+
 echo "[phase=fetch_pooled_packs]"
 # GCE lane has NO .env (startup script exports tokens); CONDITIONAL sourcing
 # only (the e9c8809113 / att-20260703-163121 rule). set -a exports for the
@@ -25,22 +34,42 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 uv run python - <<'PY'
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, "scripts")
 sys.path.insert(0, "src")
 from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub.errors import HfHubHTTPError
 from issue923_common import HF_DATA_REPO, HF_PREFIX_923, hf_revision
 
+
 # SCOPED list_repo_tree (server-side prefix) — a bare list_repo_files full
-# listing of the ~1M-file data repo times out (#833 gotcha).
+# listing of the ~1M-file data repo times out (#833 gotcha) — with a bounded
+# transient retry: the pagination layer retries ONLY 429 on cursor pages, so
+# a first-page 429/5xx would fail an otherwise valid phase (r1 Codex Minor).
+def scoped_listing(prefix: str, attempts: int = 4) -> list[str]:
+    last = None
+    for attempt in range(attempts):
+        try:
+            return [
+                e.path
+                for e in HfApi().list_repo_tree(
+                    HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+            ]
+        except HfHubHTTPError as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code not in (429, 500, 502, 503, 504):
+                raise
+            last = e
+            print(f"[hub] transient HTTP {code} listing {prefix} (attempt {attempt+1}/{attempts})")
+            time.sleep(20 * (attempt + 1))
+    raise RuntimeError(f"scoped listing failed after {attempts} attempts: {prefix}") from last
+
+
 pooled_prefix = f"{HF_PREFIX_923}/analysis_tensors/pooled_capture/"
-pooled_files = [
-    e.path
-    for e in HfApi().list_repo_tree(
-        HF_DATA_REPO, path_in_repo=pooled_prefix.rstrip("/"), repo_type="dataset", recursive=True
-    )
-]
+pooled_files = scoped_listing(pooled_prefix.rstrip("/"))
 assert pooled_files, f"no pooled packs under {pooled_prefix} — run the GPU phase first"
 assert f"{pooled_prefix}UPLOAD_COMPLETE_POOLED.json" in pooled_files, (
     "pooled upload sentinel missing — the GPU phase did not finish its upload"

@@ -1241,6 +1241,7 @@ def paired_residual_diff(
     pooled_fams: dict | None,
     parent_fits_dir: Path,
     n_boot: int,
+    kill_floor: dict[str, bool] | None = None,
 ) -> dict:
     """Paired family bootstrap of D = Δ_pool − Δ_last on SHARED seed-42 draws.
 
@@ -1258,8 +1259,17 @@ def paired_residual_diff(
 
     ``pooled_fams``: {genre: {arm: (fam_res, fam_tot)}} for this round at the
     frozen headline layer; a genre absent from it records a skipped pairing.
+
+    ``kill_floor`` (§6 k2 kill rule, ENFORCED — r2 Major): per-genre flags from
+    ``compute_stats``' ``kill_floor_triggered`` (pool_full R² < 0.05 at EVERY
+    layer). A triggered genre keeps its paired numbers (persist-by-default
+    diagnostics) but gets ``verdict: None`` + ``verdict_skipped_reason:
+    "k2_pool_full_floor"`` — an uninformative read is never labeled
+    H-slot/H-robust/intermediate. The top-level primary verdict (= UC) is
+    skipped the same way when UC's floor triggered.
+
     Returns the ``paired_diff`` payload incl. the §3 disjoint verdict (primary
-    verdict = UC).
+    verdict = UC) or its k2 skip record.
     """
     parent_skill = load_json(parent_fits_dir / "decomposition_skill.json")
     parent_head = load_json(parent_fits_dir / "headline.json")
@@ -1359,13 +1369,50 @@ def paired_residual_diff(
                 "blend/Dolly surfaces"
             ),
         }
-        entry["verdict"] = verdict_lattice(ci_pool, ci_d)
+        if kill_floor and kill_floor.get(g):
+            # §6 k2 kill rule: pool_full below the 0.05 power floor at every
+            # layer — record the paired diagnostics, label NOTHING.
+            entry["verdict"] = None
+            entry["verdict_skipped_reason"] = "k2_pool_full_floor"
+        else:
+            entry["verdict"] = verdict_lattice(ci_pool, ci_d)
         out["genres"][g] = entry
     uc_entry = out["genres"].get("uc", {})
     if uc_entry.get("verdict"):
         out["verdict"] = uc_entry["verdict"]["label"]  # §3 primary = UC at frozen L18
         out["verdict_note"] = uc_entry["verdict"]["note"]
+    elif uc_entry.get("verdict_skipped_reason"):
+        out["verdict_skipped_reason"] = uc_entry["verdict_skipped_reason"]
     return out
+
+
+def kill_floor_flags(stats: dict, genres: list[str]) -> dict[str, bool]:
+    """Per-genre §6 k2 flags from ``compute_stats`` output.
+
+    ``kill_floor_triggered`` = pool_full held-out R² < 0.05 at EVERY fitted
+    layer for that genre; absent genres default False (no floor evidence).
+    """
+    return {g: bool(stats.get(g, {}).get("kill_floor_triggered")) for g in genres}
+
+
+def headline_payload(meta: dict, stats: dict, paired: dict | None) -> dict:
+    """Assemble the ``headline.json`` payload, ENFORCING the §6 k2 kill rule.
+
+    When the paired diff carries a primary (UC) verdict, it is mirrored at the
+    top level (parent behavior). When the verdict was k2-SKIPPED
+    (``verdict_skipped_reason`` set, ``verdict`` None/absent), the payload has
+    NO top-level ``verdict`` key at all — only ``verdict_skipped_reason`` — so
+    an uninformative pooled read can never be published as adjudicated
+    (r2 Major: k2 recorded but not enforced).
+    """
+    payload: dict = {"meta": meta, "stats": stats}
+    if paired:
+        payload["paired_diff"] = paired
+        if paired.get("verdict") is not None:
+            payload["verdict"] = paired["verdict"]
+        elif paired.get("verdict_skipped_reason"):
+            payload["verdict_skipped_reason"] = paired["verdict_skipped_reason"]
+    return payload
 
 
 def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) -> dict:
@@ -2164,16 +2211,32 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                 blend_matrix, bl18, units[(genre, gate_layer)]["arms"]["arm_blend"]["skill"]
             )
         if ood_matrix and units[(genre, gate_layer)].get("ood_dolly"):
-            o18 = ood_layers.index(gate_layer) if gate_layer in ood_layers else len(ood_layers) - 1
-            gsum["ood_dolly"] = {
-                arm: _band_entry(
-                    ood_matrix[arm],
-                    o18,
-                    units[(genre, gate_layer)]["ood_dolly"][arm]["skill"],
+            if gate_layer not in ood_layers:
+                # Loud skip (r1 Minor): NEVER gate the observed L18 read
+                # against a DIFFERENT layer's null column. Unreachable in
+                # practice (ood folds are layer-independent, ood_layers ==
+                # layers), so a miss means the inputs are malformed.
+                logger.warning(
+                    "[null] ood_dolly band SKIPPED for %s: gate layer %s not in "
+                    "ood_layers %s (no cross-layer gating)",
+                    genre,
+                    gate_layer,
+                    ood_layers,
                 )
-                for arm in ood_matrix
-                if arm in units[(genre, gate_layer)]["ood_dolly"]
-            }
+                gsum["ood_dolly_skipped_reason"] = (
+                    f"gate layer {gate_layer} not in ood_layers {ood_layers}"
+                )
+            else:
+                o18 = ood_layers.index(gate_layer)
+                gsum["ood_dolly"] = {
+                    arm: _band_entry(
+                        ood_matrix[arm],
+                        o18,
+                        units[(genre, gate_layer)]["ood_dolly"][arm]["skill"],
+                    )
+                    for arm in ood_matrix
+                    if arm in units[(genre, gate_layer)]["ood_dolly"]
+                }
         null_summary["genres"][genre] = gsum
     dump_json(null_summary, out_dir / "null_summary.json")
 
@@ -2181,6 +2244,9 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
     paired = None
     if pool:
         print("[phase=paired_diff]", flush=True)
+        # §6 k2 kill rule (ENFORCED, r2 Major): this round's per-genre
+        # pool_full power-floor flags gate the verdict labels below.
+        k2 = kill_floor_flags(stats, genres)
         if args.smoke:
             # Smoke: SELF-PAIR on the parent's real persisted sums (the
             # synthetic grid has no parent counterpart) — real-data path.
@@ -2200,6 +2266,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                 pooled_fams,
                 args.parent_fits_dir,
                 load_json(args.parent_fits_dir / "headline.json")["stats"]["n_boot"],
+                kill_floor=k2,
             )
             paired["smoke_self_paired"] = True
         else:
@@ -2215,21 +2282,17 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                     )
                     for arm in ("arm_full", "arm_concat_i")
                 }
-            paired = paired_residual_diff(pooled_fams, args.parent_fits_dir, args.n_boot)
+            paired = paired_residual_diff(
+                pooled_fams, args.parent_fits_dir, args.n_boot, kill_floor=k2
+            )
         logger.info(
-            "[paired_diff] verdict=%s note=%s",
+            "[paired_diff] verdict=%s note=%s skipped=%s",
             paired.get("verdict"),
             paired.get("verdict_note"),
+            paired.get("verdict_skipped_reason"),
         )
 
-    dump_json(
-        {
-            "meta": meta,
-            "stats": stats,
-            **({"paired_diff": paired, "verdict": paired.get("verdict")} if paired else {}),
-        },
-        out_dir / "headline.json",
-    )
+    dump_json(headline_payload(meta, stats, paired), out_dir / "headline.json")
     if not args.smoke and pool:
         logger.info(
             "[regen] SKIPPED under feature_source=pool — targets byte-identical to the "

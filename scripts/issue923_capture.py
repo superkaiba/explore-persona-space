@@ -374,7 +374,7 @@ def masked_context_capture(
     rows: list[dict],
     batch_tokens: int,
     tag: str,
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Presentation (iii): RIGHT-padded batched forwards with the 4D mask.
 
     Each row: ``{key, full_ids, ctx_len}``. Right-pad keeps real tokens at
@@ -1159,24 +1159,53 @@ def pooled_identity_stage(args, packs_dir: Path) -> bool:  # noqa: C901
     return bool(ok_all)
 
 
+def _scoped_tree_listing(prefix: str, attempts: int = 4) -> list[str]:
+    """Bounded-retry SCOPED ``list_repo_tree`` (server-side prefix) listing.
+
+    A bare ``list_repo_files`` full listing of the ~1M-file data repo times
+    out (#833), and huggingface_hub's pagination retries ONLY 429 on cursor
+    pages — a first-page 429 or any 5xx would otherwise fail a valid phase
+    on a transient (r1 Minor). Non-transient HTTP errors raise immediately.
+    """
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import HfHubHTTPError
+
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return [
+                e.path
+                for e in HfApi().list_repo_tree(
+                    HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+            ]
+        except HfHubHTTPError as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code not in (429, 500, 502, 503, 504):
+                raise
+            last = e
+            logger.warning(
+                "[hub] scoped listing %s: transient HTTP %s (attempt %d/%d)",
+                prefix,
+                code,
+                attempt + 1,
+                attempts,
+            )
+            time.sleep(20 * (attempt + 1))
+    raise RuntimeError(f"scoped listing failed after {attempts} attempts: {prefix}") from last
+
+
 def pooled_upload_stage(args, packs_dir: Path) -> None:
     """Upload the pooled packs dir (one folder commit) + verify + sentinel LAST.
 
-    Verification uses SCOPED ``list_repo_tree`` (server-side prefix) — a bare
-    ``list_repo_files`` full listing of the ~1M-file data repo times out
-    (the #833 gotcha).
+    Verification uses SCOPED ``list_repo_tree`` (server-side prefix, bounded
+    transient retry) — a bare ``list_repo_files`` full listing of the
+    ~1M-file data repo times out (the #833 gotcha).
     """
-    from huggingface_hub import HfApi
-
     prefix = f"{HF_PREFIX_923}/analysis_tensors/pooled_capture"
     n_local = len([p for p in packs_dir.iterdir() if p.name != "UPLOAD_COMPLETE_POOLED.json"])
     hub._upload(packs_dir, HF_DATA_REPO, "dataset", prefix)
-    listing = [
-        e.path
-        for e in HfApi().list_repo_tree(
-            HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-        )
-    ]
+    listing = _scoped_tree_listing(prefix)
     assert len(listing) >= n_local, (
         f"pooled upload verification failed: hub {len(listing)} < local {n_local}"
     )
@@ -1201,6 +1230,12 @@ def pooled_main(args) -> int:
     """Dispatcher for the pooled-span-features round stages (capture/upload/identity)."""
     shard_k, n_shards = (int(x) for x in args.shard.split("/"))
     assert 0 <= shard_k < n_shards, args.shard
+    if args.smoke and args.out_dir == PROJECT_ROOT / "data" / "issue_923" / "capture":
+        # Smoke redirect (r1 Minor; fit-script parity): 1-ctx smoke packs must
+        # never land in the canonical dir, where skip-if-exists resume would
+        # later mix smoke and production shards.
+        args.out_dir = Path("/tmp/issue-923-smoke/capture")
+        logger.info("[pooled] --smoke: out-dir redirected to %s", args.out_dir)
     packs_dir = args.out_dir / "packs_pooled"
     packs_dir.mkdir(parents=True, exist_ok=True)
     shard_tag = f"shard{shard_k}of{n_shards}"
@@ -1478,9 +1513,13 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
                 tensors = batched_capture(
                     model, tokenizer, capture, capture_layers, rows, batch_tokens, stage
                 )
+                # Explicit keys (r1 Minor): TF rows carry no pool span, so the
+                # batched_capture dict's fpool/pool_valid are all-zeros dead
+                # weight — persisting the whole dict would inflate a parent
+                # TF/tgt re-run ~50% and change the pack schema.
                 save_pack(
                     packs_dir / f"{pack_name}_{shard_tag}.pt",
-                    tensors,
+                    {"vbar": tensors["vbar"], "flast": tensors["flast"], "valid": tensors["valid"]},
                     {**run_meta, "stage": stage, "rows": keys},
                 )
                 logger.info("tf pack %s: %d rows", pack_name, len(rows))
