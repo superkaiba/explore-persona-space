@@ -6610,8 +6610,8 @@
     "982": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/982",
-      "status": "proposed",
+      "path": "tasks/archived/982",
+      "status": "archived",
       "title": "workflow-fix: add c16 N/A escape phrase to adv-planner list"
     },
     "983": {
