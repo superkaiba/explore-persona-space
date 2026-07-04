@@ -6722,8 +6722,8 @@
     "993": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/993",
-      "status": "planning",
+      "path": "tasks/approved/993",
+      "status": "approved",
       "title": "daily-fix: annotate-or-delete archived call_api seam script"
     },
     "994": {
