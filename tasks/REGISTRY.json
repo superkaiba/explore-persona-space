@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1036,
+  "highest_id": 1037,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -296,6 +296,13 @@
       "path": "tasks/proposed/1036",
       "status": "proposed",
       "title": "daily-fix: lint bans || true on result-upload phases in dispatch scripts"
+    },
+    "1037": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1037",
+      "status": "proposed",
+      "title": "daily-fix: issue-763 branch surgery \u2014 strip foreign files, re-merge"
     },
     "104": {
       "has_clean_result": false,
