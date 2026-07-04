@@ -827,6 +827,22 @@ _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round
 # and exiting.
 _SPEND_APPROVAL_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:spend-approval-skip]"
 
+# Substring stamped into the one-time alert the stalled / orphan-respawn passes
+# post when they would have respawned a task whose latest word is a PROSE
+# "USER PAUSE" hold note — a non-watcher note beginning with the literal
+# ``USER PAUSE`` (any marker kind) with no real progress marker strictly newer.
+# A prose-only hold is the documented anti-pattern (the durable affordance is
+# ``task.py set-status <N> on_hold`` per SKILL.md § User pause affordance); this
+# exemption is defense-in-depth for sessions that still post one. Deduped
+# self-containedly in the events log: suppressed when a marker carrying this
+# sentinel already exists at/after the latest pause note (a fresh pause note
+# re-arms the alert). Same staleness-filter contract as the others. Incident:
+# task #816, 2026-07-02 — a session posted a prose ``USER PAUSE ...`` hold
+# (epm:progress, 06:44Z) and left the task at the ACTIVE status ``running``;
+# the orphan-respawn pass cannot parse prose and respawned against the hold
+# (attempt 1/2, 08:33Z).
+_USER_PAUSE_SKIP_NOTE_SENTINEL = "[autonomous_session_watch:user-pause-hold-skip]"
+
 # Substring stamped into the one-time alert the session-reconcile pass posts
 # (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
 # live session has outlived its parked/terminal (awaiting_promotion/
@@ -963,6 +979,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
         _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL,
         _SPEND_APPROVAL_SKIP_NOTE_SENTINEL,
+        _USER_PAUSE_SKIP_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
@@ -7123,6 +7140,131 @@ def _spend_approval_skip_already_noted(events: list[dict]) -> bool:
     return False
 
 
+# Anchored, case-SENSITIVE prefix of a prose user-pause hold note (incident
+# #816). All four observed hold variants (the canonical SKILL.md durable-park
+# note, the #816 incident note, the older #919 sketch, the #920 chat note)
+# begin with this literal; every observed quote-class marker carries it
+# mid-note only, so the anchor separates real holds from quotes. Lowercase
+# "user pause ..." occurs in ordinary discussion prose and must NOT arm the
+# probe — the match is deliberately case-sensitive.
+_USER_PAUSE_NOTE_PREFIX = "USER PAUSE"
+
+
+def _latest_user_pause_ts(events: list[dict]) -> float | None:
+    """Newest epoch ts among non-watcher events whose note BEGINS with
+    ``USER PAUSE`` (anchored prefix, case-sensitive, ANY marker kind) — the
+    prose-hold shape of incident #816. Watcher-sentinel notes are excluded
+    (defense against future alert-text drift; today's alert text begins with
+    the ``[autonomous_session_watch:...]`` sentinel so it cannot match the
+    anchor anyway). An event with an unparseable/absent ``ts`` is skipped —
+    fail direction: a ts-less pause note leaves the probe inert and the
+    respawn proceeds (the incident direction, alert-free)."""
+    best: float | None = None
+    for ev in events:
+        note = ev.get("note") or ""
+        if not note.lstrip().startswith(_USER_PAUSE_NOTE_PREFIX):
+            continue
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def _user_pause_hold_reason(events: list[dict]) -> str | None:
+    """Human-readable exemption reason when the latest word on the task is a
+    prose ``USER PAUSE`` hold (incident #816 defense-in-depth) — the newest
+    USER-PAUSE-prefixed non-watcher note is not superseded by any STRICTLY
+    newer real progress marker. Returns ``None`` when the exemption does not
+    apply. Pure over the already-loaded ``events`` — no subprocess.
+
+    Strict ``>`` is load-bearing: the pause note itself usually rides a
+    :data:`_PROGRESS_KINDS` kind (``epm:progress`` in the #816 incident,
+    ``epm:status-changed`` for the canonical durable-park note), so it
+    SELF-INCLUDES in :func:`_latest_progress_ts` — ``progress_ts == pause_ts``
+    means "the pause IS the latest word" and must keep suppressing.
+
+    Fail directions, both deliberate: (a) a pause note with an unparseable
+    ``ts`` leaves the probe inert (respawn proceeds — the incident direction);
+    (b) outside the canonical resume paths (the SKILL.md ``set-status``
+    resume posts ``epm:status-changed``; a resumed live session posts real
+    progress markers; a REGISTERED session bypasses the orphan probe
+    entirely), suppression persists until ANY real progress marker,
+    set-status, fresh pause note, or registered spawn lands — the one-time
+    alert is the only signal in that window.
+
+    Note the CANONICAL durable-park note (SKILL.md § User pause affordance)
+    also begins ``USER PAUSE`` (on the ``set-status <N> on_hold``
+    ``epm:status-changed`` row) and arms this probe HARMLESSLY: ``on_hold``
+    is in the watcher PARK set, so a durably-parked task is never
+    orphan-evaluated in the first place."""
+    pause_ts = _latest_user_pause_ts(events)
+    if pause_ts is None:
+        return None
+    progress_ts = _latest_progress_ts(events)
+    if progress_ts is not None and progress_ts > pause_ts:
+        # A real (non-watcher) progress marker STRICTLY newer than the pause
+        # note — the hold was resumed / superseded; do not suppress.
+        return None
+    return (
+        "prose USER PAUSE hold (a non-watcher note beginning 'USER PAUSE' is "
+        "the latest word — no real progress marker postdates it): a "
+        "deliberate user hold the watcher must not respawn against "
+        "(incident #816); the durable fix is the SKILL.md pause procedure "
+        "(pod stop first, then task.py set-status <N> on_hold)"
+    )
+
+
+def _user_pause_skip_already_noted(events: list[dict]) -> bool:
+    """True iff a marker carrying :data:`_USER_PAUSE_SKIP_NOTE_SENTINEL`
+    already exists with ts >= the latest USER-PAUSE note — the self-contained
+    once-per-episode dedup (no extra state field); a FRESH pause note (a later
+    ts) re-arms the alert. Mirror of
+    :func:`_spend_approval_skip_already_noted` (the ``>=`` here vs its ``>``
+    is deliberate: a skip alert posted the same second as the pause note
+    still dedups)."""
+    pause_ts = _latest_user_pause_ts(events)
+    if pause_ts is None:
+        return False
+    for ev in events:
+        note = ev.get("note") or ""
+        if _USER_PAUSE_SKIP_NOTE_SENTINEL not in note:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and ts >= pause_ts:
+            return True
+    return False
+
+
+def _maybe_post_user_pause_skip(issue: int, reason: str, events: list[dict], dry_run: bool) -> None:
+    """Post the one-time user-pause-hold-skip alert (events-log dedup via
+    :func:`_user_pause_skip_already_noted`). Shared by the orphan handler and
+    the stalled-pass branch so both arms stay under the C901 cap and share
+    one episode-dedup. The resume-recipe example deliberately does NOT begin
+    with the bare ``USER PAUSE`` literal — a resume note that did would
+    re-arm the very probe it resumes."""
+    if _user_pause_skip_already_noted(events):
+        return
+    _post_progress_marker(
+        issue,
+        f"{_USER_PAUSE_SKIP_NOTE_SENTINEL} {reason}. "
+        f"Respawn suppressed (does NOT consume the daily respawn budget). "
+        f"A prose-only hold is NOT durable — make it durable per "
+        f".claude/skills/issue/SKILL.md § User pause affordance: "
+        f"CRON-TEARDOWN + stop any RUNNING pod FIRST "
+        f"(`pod.py stop --issue {issue}`), THEN "
+        f'`task.py set-status {issue} on_hold --note "USER PAUSE '
+        f"(verbatim: '...'); paused_from=<status>; resume: ...\"` as the "
+        f"commit point. To resume instead: post a real progress note that "
+        f"does NOT begin with 'USER PAUSE' "
+        f"(`task.py post-marker {issue} epm:progress --note '<resume note>'`) "
+        f"or `spawn_session.py spawn-issue --issue {issue} --auto`.",
+        dry_run,
+        label="user-pause-hold-skip",
+    )
+
+
 def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> bool:
     """Post the ``epm:same-issue-followup-run v1`` completion marker for the
     round the watcher just re-parked, closing the round's
@@ -8012,7 +8154,8 @@ def _apply_stalled_followups_exemption(
     dry_run: bool,
 ) -> tuple[str, int, bool]:
     """Check the alive-but-stalled exemptions for the stalled-detector pass
-    (the over-cap spend-approval park, the round-complete re-park, and the
+    (the prose USER-PAUSE hold, the over-cap spend-approval park, the
+    round-complete re-park, and the
     followups_running-parent-waiting-on-open-child suppression); rewrite
     ``(action, new_missed, followups_child_alerted)`` accordingly.
 
@@ -8029,6 +8172,23 @@ def _apply_stalled_followups_exemption(
     """
     if action == "keep" and new_missed == 0:
         return action, new_missed, followups_child_alerted
+    # Prose USER-PAUSE hold (incident #816, 2026-07-02): the latest word on
+    # the task is a non-watcher note beginning 'USER PAUSE' — a deliberate
+    # user hold left at an ACTIVE status (the prose-only anti-pattern; the
+    # durable affordance is set-status on_hold). Checked FIRST — an explicit
+    # user directive is the most specific gate signal; both this and the
+    # spend-approval arm are alert-only, so ordering only selects the more
+    # actionable alert text. Dedup'd in the events log via
+    # _user_pause_skip_already_noted, so no per-pass state flag is threaded.
+    pause_reason = _user_pause_hold_reason(events)
+    if pause_reason is not None:
+        print(
+            f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {pause_reason}; "
+            f"treating session as parked this tick (would have been "
+            f"action={action})."
+        )
+        _maybe_post_user_pause_skip(issue, pause_reason, events, dry_run)
+        return "keep", 0, followups_child_alerted
     # Over-cap spend-approval park (incident #653, 2026-06-18): the latest
     # non-watcher event is `epm:awaiting-spend-approval` (a 132 GPU-h plan over
     # the 100h auto-approve cap), and the status-hold variant (SKILL.md Step 9b)
@@ -9294,10 +9454,11 @@ def _check_orphan_followups_exemption(
     events: list[dict],
     action: str,
 ) -> tuple[str, str | None]:
-    """Probe the followups_running-parent-waiting-on-open-child exemption
-    for the orphan-sweep pass. Returns the (possibly rewritten) ``action``
-    plus the human-readable reason string (for the alert prose) or
-    ``None`` when the exemption does not apply.
+    """Probe the orphan-sweep exemptions (the prose USER-PAUSE hold, the
+    over-cap spend-approval park, the round-complete re-park, and the
+    followups_running-parent-waiting-on-open-child suppression). Returns the
+    (possibly rewritten) ``action`` plus the human-readable reason string
+    (for the alert prose) or ``None`` when no exemption applies.
 
     No-op unless ``action == "respawn"`` (the only orphan action whose
     fallout is wasteful in this regime) so a healthy task / a manual-only
@@ -9307,6 +9468,22 @@ def _check_orphan_followups_exemption(
     """
     if action != "respawn":
         return action, None
+    # Prose USER-PAUSE hold (incident #816, 2026-07-02): the incident arm —
+    # #816's respawn was an orphan-respawn against a prose 'USER PAUSE' note
+    # left at the ACTIVE status `running`. Mirror of the same exemption in
+    # :func:`_apply_stalled_followups_exemption`; checked FIRST (an explicit
+    # user directive is the most specific gate signal — both arms are
+    # alert-only, so ordering only picks which alert text posts). Diverted to
+    # a one-time alert that does NOT consume the daily respawn budget. Pure
+    # (events-only, never consults _task_children); the dispatch posts the
+    # marker.
+    pause_reason = _user_pause_hold_reason(events)
+    if pause_reason is not None:
+        print(
+            f"  issue #{issue}: ORPHAN-RESPAWN exemption — {pause_reason}; "
+            f"diverting to alert-only (does NOT consume respawn budget)."
+        )
+        return "user-pause-hold-skip", pause_reason
     # Over-cap spend-approval park (incident #653, 2026-06-18): mirror of the
     # same exemption in :func:`_apply_stalled_followups_exemption`. The
     # status-hold variant keeps the task at the ACTIVE status
@@ -9476,12 +9653,53 @@ def _handle_orphan_spend_approval_skip(
         )
 
 
+def _handle_orphan_user_pause_skip(
+    *,
+    issue: int,
+    reason: str,
+    new_missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    followups_child_alerted: bool,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Orphan-sweep handler for the prose USER-PAUSE hold exemption (incident
+    #816): post the one-time alert (events-log dedup via
+    :func:`_maybe_post_user_pause_skip`) and persist state WITHOUT
+    incrementing ``respawns_today`` — the exemption deliberately does NOT
+    consume the daily respawn budget. Dedup is self-contained in the events
+    log (a marker carrying :data:`_USER_PAUSE_SKIP_NOTE_SENTINEL` at/after
+    the latest pause note), so no per-pass state flag is threaded; a fresh
+    pause note re-arms the alert. Mirror of
+    :func:`_handle_orphan_spend_approval_skip`. Factored out of
+    :func:`_process_orphan_task` to keep that function under the C901 cap."""
+    _maybe_post_user_pause_skip(issue, reason, events, dry_run)
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=alerted,
+            respawn_day=respawn_day,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            prev=state,
+        )
+
+
 # The orphan-sweep exemption actions: each diverts a would-be respawn to a
 # park-aware handler that does NOT consume the daily respawn budget. Dispatched
 # uniformly by :func:`_dispatch_orphan_exemption_action` to keep
 # :func:`_process_orphan_task` under the C901 cap (15).
 _ORPHAN_EXEMPTION_ACTIONS = frozenset(
-    {"spend-approval-skip", "followup-round-repark", "followups-awaiting-child"}
+    {
+        "user-pause-hold-skip",
+        "spend-approval-skip",
+        "followup-round-repark",
+        "followups-awaiting-child",
+    }
 )
 
 
@@ -9505,6 +9723,19 @@ def _dispatch_orphan_exemption_action(
     C901 cyclomatic-complexity cap (15)."""
     if action == "spend-approval-skip":
         _handle_orphan_spend_approval_skip(
+            issue=issue,
+            reason=followups_reason or "",
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            events=events,
+            state=state,
+            dry_run=dry_run,
+        )
+    elif action == "user-pause-hold-skip":
+        _handle_orphan_user_pause_skip(
             issue=issue,
             reason=followups_reason or "",
             new_missed=new_missed,
