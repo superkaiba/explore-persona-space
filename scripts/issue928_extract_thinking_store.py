@@ -445,6 +445,87 @@ def pack_batches(rows: list[dict], batch_probes: int, token_budget: int) -> list
     return batches
 
 
+def rollout_content_digest(probes: list[str], completions: list[tuple[str, str]]) -> str:
+    """sha256 (16 hex) over one context's rollout content in probe order.
+
+    The generation-output identity a store blob must match to be reusable
+    (round 3, code-review r2 BLOCKER `long-loop-restartability-missing`):
+    covers completion TEXT + finish_reason per probe, so a resume after ANY
+    rollout regeneration (changed cap, rung resample, 16k re-gen) changes the
+    digest and forces recapture — never silently reuse activations of old
+    completions (#722 r3).
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    for q, (text, fr) in zip(probes, completions, strict=True):
+        for part in (q, text, fr):
+            h.update(part.encode("utf-8"))
+            h.update(b"\x00")
+    return h.hexdigest()[:16]
+
+
+def reusable_store_blob(
+    path: Path,
+    context_id: str,
+    *,
+    model_name: str,
+    family: str,
+    rung: str,
+    probe_pool_hash: str,
+    capture_layers: list[int],
+    summary_names: list[str],
+    n_probes: int,
+    max_new_tokens: int,
+    rollout_digest: str,
+    hidden_size: int,
+) -> tuple[dict | None, str]:
+    """Entry-time skip-if-valid predicate for an existing per-context store blob.
+
+    Module-level (pytest-pinned: ``tests/test_issue928_decomposition.py``) and
+    SYMMETRIC with the rollout-side ``_rollout_blob_mismatch``: the blob must
+    match EVERY output-affecting run arg INCLUDING the generation identity —
+    ``max_new_tokens`` + the rollout-content digest (round 3, code-review r2
+    BLOCKERs: a resume after regenerating rollouts at a different cap /
+    content must RECAPTURE; a pre-round-3 blob missing the fields reads
+    ``None != want`` and is recaptured). ``probe_indices`` are validated
+    against the RUN's probe list (``0 <= qi < n_probes``, strictly increasing
+    — the prior check compared ``per_q.shape[0]`` against the blob's OWN
+    indices, catching only corruption, never staleness). Returns
+    ``(blob, "")`` when reusable, else ``(None, reason)``.
+    """
+    try:
+        blob = torch.load(path, weights_only=False)
+    except Exception as exc:  # corrupt / partial file → recapture
+        return None, f"unreadable ({type(exc).__name__}: {exc})"
+    for key, got, want in (
+        ("context_id", blob.get("context_id"), context_id),
+        ("model", blob.get("model"), model_name),
+        ("family", blob.get("family"), family),
+        ("rung", blob.get("rung"), rung),
+        ("probe_pool_hash", blob.get("probe_pool_hash"), probe_pool_hash),
+        ("capture_layers", blob.get("capture_layers"), capture_layers),
+        ("summary_names", list(blob.get("summary_names", [])), list(summary_names)),
+        ("n_probes_total", blob.get("coverage", {}).get("n_probes_total"), n_probes),
+        ("max_new_tokens", blob.get("max_new_tokens"), max_new_tokens),
+        ("rollout_digest", blob.get("rollout_digest"), rollout_digest),
+    ):
+        if got != want:
+            return None, f"{key} mismatch"
+    kept = blob.get("probe_indices", [])
+    if not (
+        all(isinstance(qi, int) and 0 <= qi < n_probes for qi in kept)
+        and sorted(set(kept)) == list(kept)
+    ):
+        return None, f"probe_indices invalid against the run's {n_probes}-probe list"
+    per_q = blob.get("per_q")
+    want_shape = (len(kept), len(summary_names), len(capture_layers), hidden_size)
+    if per_q is None or tuple(per_q.shape) != want_shape:
+        got_shape = tuple(per_q.shape) if per_q is not None else None
+        return None, f"per_q shape {got_shape} != {want_shape}"
+    return blob, ""
+
+
 def reduce_forward_batch(model, capture, capture_layers, tokenizer, batch_rows):
     """ONE left-padded forward + GPU-side streaming reduction → (B, 12, Lc, H) fp16 CPU.
 
@@ -811,38 +892,25 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
     per_ctx_capture: dict[str, dict] = {}
 
     def _reusable_store_blob(path: Path, c: str) -> tuple[dict | None, str]:
-        """Entry-time skip-if-valid predicate for existing per-context store
-        blobs (round 2: a recapture after a crash no longer redoes completed
-        contexts). Returns (blob, "") when the blob matches every
-        output-affecting run arg + the expected tensor shape, else
-        (None, reason) — an invalid/stale/corrupt blob is recaptured."""
-        try:
-            blob = torch.load(path, weights_only=False)
-        except Exception as exc:  # corrupt / partial file → recapture
-            return None, f"unreadable ({type(exc).__name__}: {exc})"
-        for key, got, want in (
-            ("context_id", blob.get("context_id"), c),
-            ("model", blob.get("model"), args.model),
-            ("rung", blob.get("rung"), chosen_rung),
-            ("probe_pool_hash", blob.get("probe_pool_hash"), pool_hash),
-            ("capture_layers", blob.get("capture_layers"), capture_layers),
-            ("summary_names", list(blob.get("summary_names", [])), list(SUMMARY_NAMES)),
-            ("n_probes_total", blob.get("coverage", {}).get("n_probes_total"), len(probes)),
-        ):
-            if got != want:
-                return None, f"{key} mismatch"
-        per_q = blob.get("per_q")
-        kept = blob.get("probe_indices", [])
-        want_shape = (
-            len(kept),
-            len(SUMMARY_NAMES),
-            len(capture_layers),
-            int(model.config.hidden_size),
+        """Thin closure over the module-level ``reusable_store_blob`` predicate
+        (round 3: hoisted + pytest-pinned), binding this run's output-affecting
+        args + the context's CURRENT rollout-content digest — so a blob
+        captured from different completions (changed cap / regenerated
+        rollouts) is invalidated and recaptured, never silently reused."""
+        return reusable_store_blob(
+            path,
+            c,
+            model_name=args.model,
+            family=families[c],
+            rung=chosen_rung,
+            probe_pool_hash=pool_hash,
+            capture_layers=capture_layers,
+            summary_names=list(SUMMARY_NAMES),
+            n_probes=len(probes),
+            max_new_tokens=args.max_new_tokens,
+            rollout_digest=rollout_content_digest(probes, completions_by_ctx[c]),
+            hidden_size=int(model.config.hidden_size),
         )
-        if per_q is None or tuple(per_q.shape) != want_shape:
-            got_shape = tuple(per_q.shape) if per_q is not None else None
-            return None, f"per_q shape {got_shape} != {want_shape}"
-        return blob, ""
 
     try:
         for ci, c in enumerate(ctx_ids):
@@ -906,6 +974,11 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (gate→G→P→B→U
                 },
                 "probe_pool_hash": pool_hash,
                 "model": args.model,
+                # round 3: generation-output identity, validated by
+                # reusable_store_blob — a resume after rollout regeneration
+                # (changed cap / content) RECAPTURES instead of reusing.
+                "max_new_tokens": args.max_new_tokens,
+                "rollout_digest": rollout_content_digest(probes, completions_by_ctx[c]),
             }
             # atomic write: a crash mid-save never leaves a live-looking blob
             # (the resume predicate would catch it as unreadable anyway).

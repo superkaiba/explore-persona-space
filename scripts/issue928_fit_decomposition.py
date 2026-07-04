@@ -268,13 +268,32 @@ class Store:
         ]
         return np.concatenate(rows, axis=0).astype(np.float64)
 
+    def _blob_content_digest(self, c: str) -> str:
+        """Per-context capture-content fingerprint linking the fit resume key
+        to the ACTUAL blob data: the extractor-written ``rollout_digest``
+        (generation identity, round 3) when present, else a sha256 over the
+        ``per_q`` tensor bytes (legacy blobs predating the field) — so
+        identical row counts from DIFFERENT completions still change the
+        store identity."""
+        import hashlib
+
+        b = self.blobs[c]
+        d = b.get("rollout_digest")
+        if d:
+            return str(d)
+        return hashlib.sha256(b["per_q"].contiguous().numpy().tobytes()).hexdigest()[:16]
+
     def identity_digest(self) -> str:
         """sha256 (16 hex) over the store's output-affecting identity (the resume key).
 
-        Stable manifest fields + realized per-context row counts — captures the
-        data identity the fit units depend on without hashing the multi-GB
-        tensors themselves (a re-extract that changes the data changes rung /
-        counts / hashes here and so invalidates the partial units).
+        Stable manifest fields + realized per-context row counts + the
+        generation cap (``max_new_tokens``, from the store manifest) + the
+        per-context blob CONTENT digests (round 3, code-review r2 BLOCKER
+        ``long-loop-restartability-fit-capture``) — so a re-extract that
+        changes the completions invalidates the partial fit units via
+        ``prepare_checkpoint_dir`` even when rung / row counts / shapes
+        coincide, without hashing the multi-GB tensors of digest-bearing
+        stores.
         """
         import hashlib
 
@@ -286,7 +305,9 @@ class Store:
             "probe_pool_hash": self.manifest.get("probe_pool_hash"),
             "model": self.manifest.get("model"),
             "rung": self.manifest.get("rung"),
+            "max_new_tokens": self.manifest.get("max_new_tokens"),
             "rows_per_ctx": {c: int(self.blobs[c]["per_q"].shape[0]) for c in self.ctx_ids},
+            "blob_digests": {c: self._blob_content_digest(c) for c in self.ctx_ids},
             "hidden": int(self.H),
         }
         return hashlib.sha256(json.dumps(ident, sort_keys=True).encode()).hexdigest()[:16]
