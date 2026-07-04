@@ -33,7 +33,7 @@ goal: On Qwen-2.5-7B, characterize how well and at what token granularity the ba
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_779.md](https://github.com/superkaiba/explore-persona-space/blob/968926c85cad1e188cdb346fd21f50a31cac3b23/docs/methodology/issue_779.md) · [gist](https://gist.github.com/superkaiba/73dfe93acebe106ccff227e4227bc9b5)
+**Methodology:** [docs/methodology/issue_779.md](https://github.com/superkaiba/explore-persona-space/blob/13f8f7414b5fb02b075e9afa15e20df0a3ecd522/docs/methodology/issue_779.md) · [gist](https://gist.github.com/superkaiba/73dfe93acebe106ccff227e4227bc9b5)
 
 ## Takeaways
 
