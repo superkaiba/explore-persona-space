@@ -766,7 +766,12 @@ def _stack_maybe_list(val, name: str) -> np.ndarray:
 
 
 def _load_bundle_pt(
-    turnstore_dir: Path, model_key: str, format_key: str, track: str
+    turnstore_dir: Path,
+    model_key: str,
+    format_key: str,
+    track: str,
+    *,
+    keys: tuple[str, ...] = ("slots", "profiles", "perpos", "perpos_mask", "nll"),
 ) -> dict | None:
     """Load the extractor's sharded .pt bundles ({model}_{format}_{track}*.pt).
 
@@ -775,11 +780,18 @@ def _load_bundle_pt(
     {"arrays", "sidecar"} contract as the .npz loader, or None when no
     matching shards exist. Per-conv list payloads are stacked (shape mismatch
     fails loud naming the shard).
+
+    ``keys`` selects which payload keys are ACCUMULATED + stacked (default:
+    all — byte-identical legacy behavior). Callers that never read the
+    per-position tensors pass ``keys=("slots", "profiles", "nll")`` so the
+    ~20-29 GB fp32 perpos stack is never materialized (role-map-comparison
+    round; artifact-reuse check (i): fixed at the source module, never a
+    caller-side workaround). torch.load still deserializes each shard whole
+    (transient, one shard at a time); the savings are the accumulated stack.
     """
     shards = sorted(turnstore_dir.glob(f"{model_key}_{format_key}_{track}*.pt"))
     if not shards:
         return None
-    keys = ("slots", "profiles", "perpos", "perpos_mask", "nll")
     acc: dict[str, list] = {k: [] for k in keys}
     conv_ids: list = []
     for sp in shards:
@@ -789,6 +801,7 @@ def _load_bundle_pt(
             if k in payload and payload[k] is not None:
                 v = payload[k]
                 acc[k].extend(list(v) if isinstance(v, (list, tuple)) else [t for t in v])
+        del payload  # drop unselected keys (perpos) before the next shard load
     arrays: dict[str, np.ndarray] = {}
     for k, rows in acc.items():
         if rows:
