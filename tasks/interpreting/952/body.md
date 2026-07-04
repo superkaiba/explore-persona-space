@@ -66,7 +66,7 @@ relates_to:
 # The own-answer advantage in predicting answer activations from context is position-uniform at the selected read-out layer (MODERATE confidence)
 
 <!-- clean-result-v4 -->
-<!-- conciseness WARNs acknowledged: four result sections run 153-176 words (soft cap 120) and total prose exceeds the 800-word soft budget; the overage carries the layer-fragility, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
+<!-- conciseness WARNs acknowledged: four result sections run 153-178 words (soft cap 120) and total prose exceeds the 800-word soft budget; the overage carries the layer-fragility, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
 
 ## Takeaways
 
@@ -176,24 +176,25 @@ Paired per-context R² drop (entity-swapped control minus divergent query) per a
 
 > **Figure.** *Per-pair drops scatter around the diagonal — the external map degrades on divergent queries no more than the own map does.* 41 kept pairs; on model-identity pairs both arms' bars are negative (divergent answers more predictable than their controls in both arms).
 
-Pooled over 41 pairs, the divergence-specific external penalty is −0.005 (p = 0.64); the interval excludes the 0.05 margin. Detection was attainable (ceiling 0.887 vs null band +0.028) and both maps transfer above the trivial floor (own 0.145, plain 0.137 mean per-context R²) — the null is not map collapse.
+Pooled over 41 pairs, the divergence-specific external penalty is −0.005 (p = 0.64; median −0.003, 10%-trimmed +0.003); the interval excludes the 0.05 margin. Detection was attainable (ceiling 0.887 vs null band +0.028); both maps transfer above the trivial floor rather than collapsing (own 0.145, plain 0.137).
 
 - The 31 pairs passing the original ≥+25 margin leave the null unchanged: pooled −0.006 (p = 0.65); style +0.027 (p = 0.33).
-- Registered error-direction secondary: the external map's divergent-query predictions are displaced from the realized external answers toward the own-answer activations (mean cosine +0.64, all 41 pairs) — exploratory (ridge-shrinkage-toward-pool-mean confound).
-- Scope: 2 of 4 planned categories survived (no refusal read); the judge calibration inverted; the margin re-read reuses those scores (probes only margin dilution); style-query cap truncation stays unprobed.
+- The drop is residual-error-driven, not denominator-only (median Δlog ss_res 0.039 vs ss_tot 0.024) — descriptive.
+- Registered error-direction secondary: divergent-query predictions are displaced from realized external answers toward own-answer activations (mean cosine +0.64, 41 pairs) — exploratory (ridge-shrinkage-toward-pool-mean confound).
+- Scope: 2 of 4 planned categories survived (no refusal read); judge calibration inverted; the margin re-read reuses those scores (margin dilution only); style-query cap truncation unprobed.
 
 ### The prefix pathway carries the signal: a shuffled-context answer becomes nearly as predictable as the own answer once 128 of its own tokens are absorbed
 
-Remainder-mean test R² with the predictor pooled over the context plus the first t answer tokens, per arm and prefix length at layer 20; the mismatched arm's rise with t isolates the prefix pathway from context relevance.
+Remainder-mean test R² pooling the predictor over context plus the first t answer tokens, per arm and prefix length at layer 20; the mismatched arm's rise isolates the prefix pathway.
 
 ![Pooled-prefix remainder R-squared per arm across prefix lengths](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a9f25d29d5577b3cbe10984594325092674848fa/figures/issue_952/exp_pooled_prefix.png)
 
 > **Figure.** *The mismatched curve climbs from ≈ 0 toward the content arms as its own prefix is absorbed.* Four arms, 8 prefix lengths, layer 20; content arms sit near 0.55–0.64 throughout; the mismatched arm reaches 0.52 at t = 128 on this pooled read.
 
-With 128 of its own tokens absorbed, a shuffled-context answer's remainder reaches R² 0.351 (95.6% of the own arm's 0.367), clearing the 50% recovery criterion. The registered max-pooled remainder targets (context-only baseline) match the mean-pooled arm ordering at every threshold, at a uniformly lower level, converging by the 128-token cells (`stats_summary.json`).
+With 128 own tokens absorbed, a shuffled-context answer's remainder reaches R² 0.351 (95.6% of the own arm's 0.367), clearing the 50% recovery criterion. The registered max-pooled companions (context-only baseline) sit uniformly below the mean-pooled content-arm cells, agree on ordering through t = 16, diverge at t = 32–64 (at t = 64 mean-pooling puts distinct-style above own; max-pooling the reverse), and converge by the 128-token cells (`stats_summary.json`).
 
-- The context-only leg is not fully clean: mismatched position R² exceeds the ±0.05 band at tokens 1–2 (0.110, 0.065) and the turn-end template slots (0.106, 0.096), and dips to −0.050 to −0.059 on remainder-mean cells; content positions from token 3 onward stay within ±0.033. Openings carry generic answer statistics — a caveat attached to the prefix-closure result.
-- No per-unit panel is shown for this positive-control read (stated exemption); the matched per-context view is in the prefix-closure result above.
+- The context-only leg is imperfect: mismatched position R² exceeds the ±0.05 band at tokens 1–2 (0.110, 0.065) and turn-end template slots (0.106, 0.096), dipping to −0.050 to −0.059 on remainder-mean cells; content positions from token 3 onward stay within ±0.033 — openings carry generic answer statistics.
+- Per-unit exemption: these cells aggregate the same per-context arrays underlying the prefix-closure ECDF above — this read's per-unit surface; another panel would replot them.
 
 ### Teacher-forced surprisal on external text collapses within a handful of tokens and dissociates from activation predictability at the first token
 
