@@ -8,7 +8,8 @@
     "folds": 5,
     "seed": 0,
     "n_nulls": 20,
-    "note": "maps are the run's saved fp16 W_raw (xsd=1 gauge); recentered application needs no source xmu/ymu. Validation twin reproduces the committed armA_within_lastpos->chat row."
+    "note": "maps are the run's saved fp16 W_raw (xsd=1 gauge); recentered application needs no source xmu/ymu. Validation twin reproduces the committed armA_within_lastpos->chat row.",
+    "note_r3": "revision-3 source-matched control: the r2 full-n (3600) control over-trains the separator source relative to the novel->chat source (1982); sep_to_chat_matched1982 refits on the seeded n=1982 group-stratified subsample for the like-for-like read."
   },
   "validation_novel_to_chat": {
     "r2": 0.01518832292888983,
@@ -47,5 +48,52 @@
     "fulln_ceiling_r2": 0.6731,
     "fraction_of_matched1982_ceiling": 0.23135145421458606,
     "matched1982_ceiling_note": "0.3162 is the chat-at-n=1982 denominator used by the committed novel->chat matched row (+0.048); the sep source has MORE data (3600) so this control is conservative for 'novel exceeds control'."
+  },
+  "sep_to_chat_matched1982": {
+    "r2": -4.048875040626637,
+    "null_p975": -4.414148446934222,
+    "null_r2": [
+      -4.433189897639289,
+      -4.4276484654306945,
+      -4.426910743468038,
+      -4.427514633064504,
+      -4.423304426959913,
+      -4.4225234504822835,
+      -4.42186132373739,
+      -4.430581014463825,
+      -4.423778159256831,
+      -4.422420427986971,
+      -4.4237069786860514,
+      -4.426036656442561,
+      -4.413146339143723,
+      -4.424665425343811,
+      -4.415256039755299,
+      -4.425507807120398,
+      -4.4273341395214905,
+      -4.42979967192632,
+      -4.422885826869102,
+      -4.429932326165712
+    ],
+    "n_train_source": 1982,
+    "groups_train_source": 600,
+    "subsample": "group_stratified_subsample(seed=931) \u2014 the run's matched-power machinery",
+    "n_target": 5000,
+    "layer": 19,
+    "application": "recentered",
+    "folds": 5,
+    "seed": 0,
+    "fraction_of_matched1982_ceiling": -12.806037653723877,
+    "matched1982_ceiling_r2": 0.31616922814913495,
+    "matched1982_ceiling_n": 1982,
+    "validation_saved_fp16_map_reproduction": {
+      "r2": 0.0731533298226521,
+      "expected_committed": 0.0731533298226521,
+      "abs_delta": 0.0
+    },
+    "fulln_fp64_refit_r2": 0.07315353673724634,
+    "armc_store_revision": "bc90af7940d301e32a2722902f6b9e8a60eb289a",
+    "chat_store_revision": "82d3a875ee5148e45df982fd51a3c4dea1055fb7",
+    "maps_revision": "a23e79f17f053c58e7ce1bb16dff9bac30e55729",
+    "script": "scripts/issue931_sep_to_chat_matched_control.py"
   }
 }
