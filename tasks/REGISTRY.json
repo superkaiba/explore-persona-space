@@ -6525,8 +6525,8 @@
     "978": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/978",
-      "status": "proposed",
+      "path": "tasks/archived/978",
+      "status": "archived",
       "title": "workflow-fix: distinct reason arm for RunPodWorkloadStartError"
     },
     "979": {
