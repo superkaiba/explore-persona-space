@@ -268,7 +268,7 @@ def main() -> int:
         )
         shutil.rmtree(out_dir / "partials" / "smoke", ignore_errors=True)
         print(f"[reduce smoke] pack rows={len(rows)} dropped={dropped}", flush=True)
-        print("[phase=done]", flush=True)
+        print("[script-complete]", flush=True)
         return 0
 
     from huggingface_hub import hf_hub_download
@@ -345,7 +345,7 @@ def main() -> int:
         # Partials are subsumed by the saved (+uploaded) genre pack.
         shutil.rmtree(out_dir / "partials" / genre, ignore_errors=True)
         shutil.rmtree(scratch / genre, ignore_errors=True)
-    print("[phase=done]", flush=True)
+    print("[script-complete]", flush=True)
     return 0
 
 
