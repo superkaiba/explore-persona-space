@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 971,
+  "highest_id": 972,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6451,6 +6451,13 @@
       "path": "tasks/proposed/971",
       "status": "proposed",
       "title": "workflow-fix: recover head-name-less rebase husk in root sync"
+    },
+    "972": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/972",
+      "status": "proposed",
+      "title": "workflow-fix: artifact-reuse check (i) also covers Hub-API call scoping"
     },
     "98": {
       "has_clean_result": true,
