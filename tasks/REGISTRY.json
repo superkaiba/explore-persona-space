@@ -6806,8 +6806,8 @@
     "996": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/996",
-      "status": "reviewing",
+      "path": "tasks/completed/996",
+      "status": "completed",
       "title": "daily-fix: task.py bounded wait on live rebase detached HEAD"
     },
     "997": {
