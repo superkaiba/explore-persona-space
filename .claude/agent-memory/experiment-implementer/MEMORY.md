@@ -1,3 +1,4 @@
+- [Parity gates on determinate data are blind](feedback_parity_gate_determinate_data_blind.md) — end-to-end R2 parity tests pass even under the WRONG recipe on strong-signal data (#931: pre-fix 0.0006 vs post-fix 0.0008); the fails-pre-fix pin is a bit-level same-init serial-replica test with the early-stop branch asserted to fire; tiny no-signal smoke deltas are init noise.
 - [Artifact-pair provenance coherence](feedback_artifact_pair_provenance_coherence.md) — sha pins ≠ capture-time identity: a question bank REGENERATED after its dependent activation capture (reconstruction.regenerated field; HF last-commit dates) breaks parity + q↔response pairing; assert only on provably-reconstructable inputs. #922 r4.
 - [BPE zero-width spans under plain-text delimiters](feedback_bpe_zero_width_span_plain_text_delimiters.md) — offset-containment span alignment yields (s,s) spans when a generated segment fully BPE-merges into "User: ...
 
@@ -82,3 +83,4 @@
 - [numerics-probe thresholds calibrated to deployment dtype](feedback_numerics_probe_thresholds_dtype.md) — bf16 batched forwards read ~1e-3 cos deviations; never assert CPU-fp32-calibrated epsilons on GPU (#923)
 - [GCE workload scripts must source ./.env conditionally](feedback_gce_no_dotenv_conditional_sourcing.md) — GCE exports tokens with no .env; &&-chained sourcing silently kills the real command (#923)
 - [splitlines shreds JSONL with Unicode line boundaries](feedback_splitlines_jsonl_unicode_boundaries.md) — never read/count JSONL via str.splitlines(); raw U+2028/NEL in ensure_ascii=False user text shreds records (#825); use file iteration or split("\n")
+- [Anthropic system-role lift at dispatcher seams](feedback_anthropic_system_role_lift.md) — Messages API 400s on role:system in messages; lift to top-level system=; live system-bearing probe required (#906)
