@@ -1,34 +1,34 @@
 {
-  "commit": "ffae04c6",
-  "created": "2026-07-04T13:59:28Z",
+  "commit": "324ba62c9e",
+  "created": "2026-07-04T15:42:03Z",
   "figsize": [
     6.0,
     3.6
   ],
   "points": [
     {
-      "category": "lin D",
+      "category": "linear direct",
       "held-out skill-over-mean R\u00b2": 0.7050124122970371,
       "error": 0.07253947462673993,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "MLP D",
+      "category": "MLP direct",
       "held-out skill-over-mean R\u00b2": 0.5539455063534772,
       "error": 0.16236924717100912,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "MLP G",
+      "category": "MLP CoT-augmented",
       "held-out skill-over-mean R\u00b2": 0.9075381053210286,
       "error": 0.017311349420886912,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "lin G",
+      "category": "linear CoT-augmented",
       "held-out skill-over-mean R\u00b2": 0.9083013726386983,
       "error": 0.01881648039747663,
       "_kind": "bar",
