@@ -27,9 +27,9 @@ if [ "$(git rev-parse --abbrev-ref HEAD)" != "issue-810" ]; then
 fi
 maybe mkdir -p "$OUT" "$FIGS" "$LOGDIR" "$PACK_DIR"
 
-echo "[phase=poll_inputs] waiting for the 3 btdr packs + GPU-phase recon JSONs on HF"
+echo "[phase=poll_inputs] waiting for the 3 btdr packs + GPU-phase fit JSONs (recon + null-matrix) on HF"
 if [ "$DRY" = "1" ]; then
-  echo "[dryrun] poll HF for $HF_MIRROR/btdr_summaries_k{25,50,75}.pt + $HF_MIRROR/eval_results/reconstruction_skill_btdr_k{25,50,75}.json (sleep 300, timeout 12h)"
+  echo "[dryrun] poll HF for $HF_MIRROR/btdr_summaries_k{25,50,75}.pt + $HF_MIRROR/eval_results/{reconstruction_skill,null_matrix}_btdr_k{25,50,75}.json (sleep 300, timeout 12h)"
 else
   uv run python - <<PY
 import shutil, sys, time
@@ -37,7 +37,14 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
 from huggingface_hub import hf_hub_download, list_repo_files
 packs = [f"$HF_MIRROR/btdr_summaries_k{p}.pt" for p in (25, 50, 75)]
-jsons = [f"reconstruction_skill_btdr_k{p}.json" for p in (25, 50, 75)]
+# Fetch EVERYTHING the git_commit phase adds (the `_he` fetch<->add contract):
+# per-k recon fits + per-k null matrices (n_perms=0 -> empty per-draw dict, but
+# still a produced + uploaded deliverable the guarded commit references).
+jsons = [
+    f"{stem}_btdr_k{p}.json"
+    for stem in ("reconstruction_skill", "null_matrix")
+    for p in (25, 50, 75)
+]
 deadline = time.time() + 12 * 3600
 while time.time() < deadline:
     files = set(list_repo_files("superkaiba1/explore-persona-space-data", repo_type="dataset"))
@@ -51,7 +58,7 @@ while time.time() < deadline:
             q = hf_hub_download("superkaiba1/explore-persona-space-data",
                                 f"$HF_MIRROR/eval_results/{n}", repo_type="dataset")
             shutil.copy(q, f"$OUT/{n}")
-        print("[phase=poll_inputs] fetched 3 btdr packs + GPU-phase recon JSONs")
+        print("[phase=poll_inputs] fetched 3 btdr packs + 6 GPU-phase fit JSONs")
         sys.exit(0)
     print("[phase=poll_inputs] not yet; sleeping 300s", flush=True)
     time.sleep(300)

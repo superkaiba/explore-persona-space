@@ -99,10 +99,6 @@ from issue810_he_mechanism import (  # noqa: E402
     _paired_bootstrap,
 )
 
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
-
 logger = logging.getLogger("issue810_btdr_dose")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
