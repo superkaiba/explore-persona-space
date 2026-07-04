@@ -965,7 +965,115 @@ def _marker_train_config(cfg: PilotConfig, *, tokenizer=None):
     )
 
 
-def _assemble_marker_mix(pos_path, cn_path, mix_dir, seed: int):
+# Fail-loud floor for build-time row rejection: a rejected fraction above this
+# means the budget is SYSTEMATICALLY too small for the question distribution —
+# the remedy is a deliberate recipe max_length raise, never a silently shrunk
+# mix. Measured on the att-20260704-061624 crash rows: 4/200 rows (2%) overflow
+# the 2048 budget (two extreme-tail WildChat prompts of 2181/1718 prompt-only
+# tokens), median full-row 487/419 tokens — so 0.10 separates "tail outliers"
+# from "wrong budget" with wide margin on both sides.
+MARKER_MIX_MAX_REJECT_FRAC = 0.10
+
+
+def _marker_row_token_len(row: dict, tokenizer) -> int:
+    """Full tokenized row length under the trainer's render.
+
+    Matches the TRL prompt-completion tokenization the marker training run
+    performs (and ``sft.py::_tokenize_probe_row`` mirrors): render
+    ``prompt + completion`` in ONE ``apply_chat_template`` call with
+    ``add_generation_prompt=False``. SFTTrainer right-truncates each row at
+    ``cfg.max_length``, so a row longer than the budget loses its trailing
+    `` ※<|im_end|>\\n`` slot tokens — the r13 collator crash.
+    """
+    ids = tokenizer.apply_chat_template(
+        row["prompt"] + row["completion"], tokenize=True, add_generation_prompt=False
+    )
+    if isinstance(ids, dict):
+        ids = ids["input_ids"]
+    return len(ids)
+
+
+def _enforce_marker_mix_token_budget(
+    pos_rows: list[dict], cn_rows: list[dict], tokenizer, max_length: int
+) -> tuple[list[dict], list[dict], dict]:
+    """Reject rows whose FULL tokenized length exceeds the training budget.
+
+    The r13 crash (epm:failure v4): two WildChat train-bank questions tokenize
+    to 2181/1718 prompt-only tokens; with the 512-token greedy response the
+    full rows hit 2696/2233 tokens > the marker recipe's ``max_length=2048``,
+    so SFTTrainer's right-truncation cut the appended `` ※<|im_end|>`` tail and
+    ``MarkerOnlyDataCollator`` fail-louded mid-train. Enforce at BUILD time:
+
+    - Question-aligned inputs (``len(pos) == len(cn)``, the inline builder's
+      contract — pos row i and cn row i share question i): drop the QUESTION
+      from BOTH sides when either side overflows, preserving the 1:1
+      contrastive ratio + same-question alignment
+      (.claude/rules/contrastive-negatives.md).
+    - Unequal inputs (defensive fallback): drop each overflowing row
+      independently.
+    - Fail loud when the rejected fraction exceeds
+      ``MARKER_MIX_MAX_REJECT_FRAC`` — a systematic overflow means the budget
+      itself is wrong.
+
+    Returns ``(kept_pos, kept_cn, stats)``.
+    """
+    pos_lens = [_marker_row_token_len(r, tokenizer) for r in pos_rows]
+    cn_lens = [_marker_row_token_len(r, tokenizer) for r in cn_rows]
+    all_lens = pos_lens + cn_lens
+    max_row_tokens = max(all_lens) if all_lens else 0
+    if len(pos_rows) == len(cn_rows):
+        bad = {i for i, n in enumerate(pos_lens) if n > max_length}
+        bad |= {i for i, n in enumerate(cn_lens) if n > max_length}
+        kept_pos = [r for i, r in enumerate(pos_rows) if i not in bad]
+        kept_cn = [r for i, r in enumerate(cn_rows) if i not in bad]
+    else:
+        kept_pos = [r for r, n in zip(pos_rows, pos_lens, strict=True) if n <= max_length]
+        kept_cn = [r for r, n in zip(cn_rows, cn_lens, strict=True) if n <= max_length]
+    n_rejected_pos = len(pos_rows) - len(kept_pos)
+    n_rejected_cn = len(cn_rows) - len(kept_cn)
+    n_rejected = n_rejected_pos + n_rejected_cn
+    total = len(pos_rows) + len(cn_rows)
+    rejected_frac = (n_rejected / total) if total else 0.0
+    stats = {
+        "enforced": True,
+        "budget": int(max_length),
+        "max_row_tokens": int(max_row_tokens),
+        "n_rejected": n_rejected,
+        "n_rejected_pos": n_rejected_pos,
+        "n_rejected_cn": n_rejected_cn,
+        "n_kept_pos": len(kept_pos),
+        "n_kept_cn": len(kept_cn),
+        "rejected_frac": rejected_frac,
+        "reject_frac_floor": MARKER_MIX_MAX_REJECT_FRAC,
+    }
+    logger.info(
+        "[marker-mix-budget] max_row_tokens=%d budget=%d n_rejected=%d (pos=%d cn=%d) "
+        "kept=%d/%d rejected_frac=%.3f floor=%.2f",
+        max_row_tokens,
+        max_length,
+        n_rejected,
+        n_rejected_pos,
+        n_rejected_cn,
+        total - n_rejected,
+        total,
+        rejected_frac,
+        MARKER_MIX_MAX_REJECT_FRAC,
+    )
+    if rejected_frac > MARKER_MIX_MAX_REJECT_FRAC:
+        raise RuntimeError(
+            f"[marker-mix-budget] {n_rejected}/{total} mix rows "
+            f"({rejected_frac:.1%}) exceed the training max_length={max_length} "
+            f"(max row = {max_row_tokens} tokens) — above the "
+            f"{MARKER_MIX_MAX_REJECT_FRAC:.0%} rejection floor. The budget is "
+            "systematically too small for this question/generation setting: raise "
+            "recipe.MARKER_OVERRIDES['max_length'] (grounded on the measured row-"
+            "length distribution) or cap the greedy generation length; do NOT "
+            "silently shrink the mix."
+        )
+    return kept_pos, kept_cn, stats
+
+
+def _assemble_marker_mix(pos_path, cn_path, mix_dir, seed: int, *, tokenizer=None, max_length=None):
     """Interleave pos + cn rows into ONE seeded-shuffled ``train_mix.jsonl``.
 
     The real ``train_lora`` contract (r12 crash fix): ``TrainLoraConfig`` has NO
@@ -975,7 +1083,17 @@ def _assemble_marker_mix(pos_path, cn_path, mix_dir, seed: int):
     marker-bearing rows train the marker + turn-end tail; marker-free negative
     rows train the ``<|im_end|>`` tail at the same slot.
 
-    Returns ``(train_mix_path, pos_rows, cn_rows)``.
+    When ``tokenizer`` and ``max_length`` are BOTH provided (the production
+    inline path — the tokenizer is already loaded there for the marker-token
+    assert), every row's full tokenized length is checked against the training
+    budget and overflowing rows are pair-dropped fail-loud
+    (``_enforce_marker_mix_token_budget`` — the r13 truncation crash class).
+    The stub-seam smoke path passes ``tokenizer=None`` (offline CPU smoke, same
+    contract as ``build_train_config`` skipping the marker assert on
+    ``tokenizer=None``); the budget contract is pinned on the REAL tokenizer by
+    ``tests/test_issue906_marker_mix_budget.py``.
+
+    Returns ``(train_mix_path, pos_rows, cn_rows, budget_stats)``.
     """
     import json
     import random
@@ -988,13 +1106,27 @@ def _assemble_marker_mix(pos_path, cn_path, mix_dir, seed: int):
     cn_rows = _read_rows(cn_path)
     if not pos_rows:
         raise ValueError(f"marker mix builder emitted zero positive rows at {pos_path}")
+    if tokenizer is not None and max_length is not None:
+        pos_rows, cn_rows, budget_stats = _enforce_marker_mix_token_budget(
+            pos_rows, cn_rows, tokenizer, int(max_length)
+        )
+        if not pos_rows:
+            raise ValueError(
+                "marker mix token-budget enforcement rejected every positive row "
+                f"(budget={max_length})"
+            )
+    else:
+        budget_stats = {"enforced": False, "reason": "no tokenizer (stub-seam smoke path)"}
+        logger.debug("[marker-mix-budget] skipped: no tokenizer (stub-seam smoke path)")
     mix_rows = [*pos_rows, *cn_rows]
     random.Random(seed).shuffle(mix_rows)
     train_mix_path = Path(mix_dir) / "train_mix.jsonl"
     with open(train_mix_path, "w", encoding="utf-8") as f:
         for row in mix_rows:
             f.write(json.dumps(row) + "\n")
-    return train_mix_path, pos_rows, cn_rows
+    with open(Path(mix_dir) / "mix_budget.json", "w", encoding="utf-8") as f:
+        json.dump(budget_stats, f, indent=2)
+    return train_mix_path, pos_rows, cn_rows, budget_stats
 
 
 def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir: Path):
@@ -1140,17 +1272,29 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
                 torch.cuda.empty_cache()
 
     # ── Assemble the interleaved training mix (pos + cn in ONE JSONL) ───────
-    train_mix_path, pos_rows, cn_rows = _assemble_marker_mix(pos_path, cn_path, mix_dir, cfg.seed)
+    # Config FIRST (pure dataclass construction — _marker_train_config is the
+    # canonical recipe builder, fail-loud on kwarg drift) so the assembly can
+    # enforce the per-row token budget against the REAL training max_length
+    # (r13 crash class: rows truncated past the ' ※<|im_end|>' tail). On the
+    # inline path `tokenizer` is the real Qwen tokenizer (loaded above for the
+    # marker-token assert); on the stub-seam smoke path it is None and the
+    # budget check is skipped (offline CPU smoke).
+    train_cfg = _marker_train_config(cfg, tokenizer=tokenizer)
+    train_mix_path, pos_rows, cn_rows, budget_stats = _assemble_marker_mix(
+        pos_path,
+        cn_path,
+        mix_dir,
+        cfg.seed,
+        tokenizer=tokenizer,
+        max_length=train_cfg.max_length,
+    )
 
     # ── Train ───────────────────────────────────────────────────────────────
-    # Config via the canonical recipe builder (_marker_train_config constructs
-    # the REAL TrainLoraConfig — fail-loud on kwarg drift) and the REAL
-    # train_lora call shape (organisms.py build path: positional
+    # The REAL train_lora call shape (organisms.py build path: positional
     # (base_model, data_path, output_dir) + cfg=).  train_lora returns
     # (output_dir, training_loss).  marker_only_loss=True in the recipe wires
     # MarkerOnlyDataCollator + the MarkerBandStopCallback [5, 12]-nat stop.
     adapter_dir = build_dir / "adapter"
-    train_cfg = _marker_train_config(cfg, tokenizer=tokenizer)
     logger.info(
         "[marker-train-cfg] resolved TrainLoraConfig: run_name=%s lr=%g epochs=%d "
         "marker_only_loss=%s band=[%g, %g] mix_rows=%d (pos=%d cn=%d)",
@@ -1182,6 +1326,7 @@ def _build_marker_class(behavior, cfg: PilotConfig, seams: PilotSeams, class_dir
         provenance={
             "mix_counts_planned": {"positive": len(questions), "negative": len(questions)},
             "mix_counts_realized": {"positive": len(pos_rows), "negative": len(cn_rows)},
+            "mix_token_budget": budget_stats,
             "training_loss": float(train_loss),
         },
         selection=None,  # marker uses band-stop, not dose-checkpoint selection
