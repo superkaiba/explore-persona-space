@@ -6813,8 +6813,8 @@
     "997": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/997",
-      "status": "approved",
+      "path": "tasks/running/997",
+      "status": "running",
       "title": "daily-fix: HF upload/verify transient 429/500 retry robustness"
     },
     "998": {
