@@ -6427,8 +6427,8 @@
     "967": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/967",
-      "status": "approved",
+      "path": "tasks/running/967",
+      "status": "running",
       "title": "workflow-fix: watcher post-hoc external-marker triage observer"
     },
     "968": {
