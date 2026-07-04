@@ -239,8 +239,15 @@ def assert_h2_row_coverage(
     return rec
 
 
-def assert_h3_row_coverage(npz: dict[str, np.ndarray], verification: dict) -> dict:
-    """Plan §3 H3 row-coverage: kept-pair member sets == npz bank id sets."""
+def assert_h3_row_coverage(
+    npz: dict[str, np.ndarray], verification: dict, smoke: bool = False
+) -> dict:
+    """Plan §3 H3 row-coverage: kept-pair member sets == npz bank id sets.
+
+    ``smoke`` (cross-layer follow-up only): the staged PRODUCTION verification
+    lists the full kept set while a smoke npz covers the 2-pairs/category
+    subset — the check degrades to non-empty SUBSET containment, logged loudly.
+    Production keeps strict set equality."""
     if "bank_div_ids" not in npz:
         return {"status": "bank_arrays_absent"}
     kept = set(verification["kept_pairs"])
@@ -254,6 +261,19 @@ def assert_h3_row_coverage(npz: dict[str, np.ndarray], verification: dict) -> di
             exp_ctl.add(p["control"]["query_id"])
     got_div = set(npz["bank_div_ids"].tolist())
     got_ctl = set(npz["bank_ctl_ids"].tolist())
+    if smoke and got_div != exp_div:
+        assert got_div and got_div <= exp_div and got_ctl and got_ctl <= exp_ctl, (
+            f"H3 smoke subset containment FAIL (div npz-only: {sorted(got_div - exp_div)[:5]}, "
+            f"ctl npz-only: {sorted(got_ctl - exp_ctl)[:5]})"
+        )
+        rec = {
+            "n_pairs": len(kept),
+            "set_equality": "SMOKE_SUBSET",
+            "n_div_covered": len(got_div),
+            "n_ctl_covered": len(got_ctl),
+        }
+        logger.warning("[coverage] H3 SMOKE subset containment (not equality): %s", rec)
+        return rec
     assert got_div == exp_div, (
         f"H3 divergent id set != kept-pair members (npz-only: {sorted(got_div - exp_div)[:5]}, "
         f"kept-only: {sorted(exp_div - got_div)[:5]})"
@@ -1143,7 +1163,7 @@ def cross_layer_main(args: argparse.Namespace) -> None:
     # Row-coverage asserts BEFORE any statistic (plan §3, incl. per-layer H3).
     spans = load_spans(spans_dir)
     cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
-    cov_h3 = assert_h3_row_coverage(npz, verification)
+    cov_h3 = assert_h3_row_coverage(npz, verification, smoke=args.smoke)
     cov_xlayer = assert_cross_layer_coverage(npz, sorted({*family_layers, cal_layer}))
 
     # Shared-draw bootstrap over ALL cells (unsuffixed + suffixed + P + M).
