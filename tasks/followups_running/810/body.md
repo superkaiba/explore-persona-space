@@ -30,7 +30,7 @@ goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_810.md](https://github.com/superkaiba/explore-persona-space/blob/4d22e9be9d3f47f7968f9af2401ce5539b79e013/docs/methodology/issue_810.md) · [gist](https://gist.github.com/superkaiba/fa450d3f98b105e0b6718e4a1c152728)
+**Methodology:** [docs/methodology/issue_810.md](https://github.com/superkaiba/explore-persona-space/blob/03d3bb36a3da0b3469af12b4858e3b22b71b2847/docs/methodology/issue_810.md) · [gist](https://gist.github.com/superkaiba/fa450d3f98b105e0b6718e4a1c152728)
 
 ## Takeaways
 
