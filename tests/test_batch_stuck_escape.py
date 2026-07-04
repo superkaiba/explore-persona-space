@@ -4,8 +4,11 @@ Covers the live router path (``judge_dispatch``): the escape predicate, the
 two-field escape protocol (``stuck_cancel_intent_at`` persisted BEFORE the
 external cancel; ``stuck_canceled_at`` confirm stamp after), the cancel race
 guard (a re-retrieved ``canceling``/``ended`` counts as accepted), the
-canceled-id -> sync-pinned retry flow, every crash-resume ordering, and the
-legacy ``batch_judge._submit_and_poll_batch`` per-chunk variant.
+canceled-id -> sync-pinned retry flow, every crash-resume ordering, the
+round-2 out-of-band guard (a batch already ``canceling`` with no persisted
+intent is NEVER adopted by the fresh-entry escape — no intent stamp, no
+cancel, no retry; both paths), and the legacy
+``batch_judge._submit_and_poll_batch`` per-chunk variant.
 
 Mock strategy mirrors ``tests/test_judge_dispatch.py``: scriptable client
 fakes, injected ``now_fn`` clocks, zero live API calls. NOTE the live path
@@ -84,11 +87,14 @@ class StuckEscapeClient:
     ``in_progress`` with ``request_counts.succeeded == succeeded_counts`` until
     ``cancel`` is called (then walk ``post_cancel_statuses``, last repeating)
     or until ``end_wedged_after`` retrieves; non-wedged batches end on the
-    first retrieve. ``cancel_effects`` is a FIFO of per-call effects (an
-    Exception instance to raise, or None for success); ``cancel`` marks the
-    batch canceled BEFORE raising (the server-side cancel took even when the
-    client-side call "crashed"). ``outcome_for`` maps cid -> result type at
-    ``results()`` (default succeeded).
+    first retrieve. ``precancel_statuses`` (when set) scripts the WEDGED
+    batch's status sequence BEFORE any cancel (last repeating) — used to model
+    an out-of-band Console cancel, where the batch reads ``canceling`` without
+    our escape ever firing. ``cancel_effects`` is a FIFO of per-call effects
+    (an Exception instance to raise, or None for success); ``cancel`` marks
+    the batch canceled BEFORE raising (the server-side cancel took even when
+    the client-side call "crashed"). ``outcome_for`` maps cid -> result type
+    at ``results()`` (default succeeded).
     """
 
     def __init__(
@@ -103,6 +109,7 @@ class StuckEscapeClient:
         end_wedged_after: int | None = None,
         cancel_effects: list | None = None,
         post_cancel_statuses: tuple[str, ...] = ("canceling", "ended"),
+        precancel_statuses: tuple[str, ...] | None = None,
         on_cancel=None,
     ):
         self.judge_text_for = judge_text_for or (lambda cid: JUDGE_TEXT)
@@ -116,12 +123,14 @@ class StuckEscapeClient:
         self.end_wedged_after = end_wedged_after
         self.cancel_effects = list(cancel_effects or [])
         self.post_cancel_statuses = post_cancel_statuses
+        self.precancel_statuses = precancel_statuses
         self.on_cancel = on_cancel
         self.submitted: dict[str, list[dict]] = {}
         self.wedged: dict[str, bool] = {}
         self.canceled: dict[str, bool] = {}
         self.retrieves: dict[str, int] = {}
         self.post_cancel_idx: dict[str, int] = {}
+        self.precancel_idx: dict[str, int] = {}
         self.create_calls = 0
         self.cancel_calls = 0
 
@@ -136,6 +145,7 @@ class StuckEscapeClient:
                 client.canceled[bid] = False
                 client.retrieves[bid] = 0
                 client.post_cancel_idx[bid] = 0
+                client.precancel_idx[bid] = 0
                 return SimpleNamespace(id=bid, expires_at=client.expires_at)
 
             def retrieve(_s, bid):
@@ -144,6 +154,13 @@ class StuckEscapeClient:
                     statuses = client.post_cancel_statuses
                     idx = min(client.post_cancel_idx[bid], len(statuses) - 1)
                     client.post_cancel_idx[bid] += 1
+                    status = statuses[idx]
+                elif client.precancel_statuses is not None and client.wedged[bid]:
+                    # Out-of-band cancel model: the wedged batch's status walks
+                    # this script (last repeating) without any cancel from us.
+                    statuses = client.precancel_statuses
+                    idx = min(client.precancel_idx[bid], len(statuses) - 1)
+                    client.precancel_idx[bid] += 1
                     status = statuses[idx]
                 elif not client.wedged[bid] or (
                     client.end_wedged_after is not None
@@ -325,6 +342,25 @@ def test_idempotent_no_recancel_then_harvest(tmp_path, caplog):
     assert "STUCK BATCH" in caplog.text
     assert result["item_000"]["aligned"] == 90
     assert result["item_001"]["aligned"] == 42 and result["item_002"]["aligned"] == 42
+
+
+def test_stuck_harvest_telemetry_counts_only_true_succeeded(tmp_path, caplog):
+    """Round-1 Minor (a) pin: an unknown-rtype row (error dict, member of NO
+    id list) is NOT counted as succeeded by the stuck-harvest frozen-counts
+    telemetry — the pre-fix plain subtraction reported n_succeeded=2 here
+    (1 true succeeded + 1 unknown)."""
+    outcome = {"item_001": "canceled", "item_002": "weird_rtype"}
+    client = StuckEscapeClient(outcome_for=outcome)
+    with caplog.at_level(logging.WARNING):
+        dispatch(
+            make_items(3),
+            threshold_base=1,
+            checkpoint_dir=tmp_path,
+            batch_client=client,
+            sync_client=FakeSyncClient(judge_text=SYNC_TEXT),
+            now_fn=_offset_clock(5.0),
+        )
+    assert "n_succeeded=1 n_canceled=1" in caplog.text
 
 
 def test_end_to_end_stuck_cancel_sync_retry(tmp_path):
@@ -599,6 +635,44 @@ def test_mixed_dispatch_only_stuck_ids_retry(tmp_path):
     assert "canceled" in result["item_003"]["reasoning"]
 
 
+# ── Round 2: out-of-band ``canceling`` is never adopted (fresh-entry guard) ──
+
+
+def test_out_of_band_canceling_not_adopted_fresh_entry(tmp_path):
+    """Round-2 blocker regression (concern ``out-of-band-canceling-retried``):
+    a batch an operator ALREADY canceled out-of-band — the first retrieve
+    reads ``canceling`` — at succeeded=0 past the threshold with NO intent
+    marker must NOT be adopted by the fresh-entry escape: no intent stamp, no
+    cancel call from us, no retry state, no sync calls; when the batch later
+    flips ``ended`` with canceled results, the rows remain error dicts (the
+    #663 out-of-band no-retry contract). Pre-guard (no ``in_progress``
+    conjunct) the escape adopted this batch: it stamped intent, re-canceled,
+    and sync-retried the operator-canceled ids."""
+    outcome = {f"item_{i:03d}": "canceled" for i in range(3)}
+    client = StuckEscapeClient(
+        outcome_for=outcome,
+        precancel_statuses=("canceling", "canceling", "ended"),
+    )
+    sync_client = FakeSyncClient(judge_text=SYNC_TEXT)
+    result = dispatch(
+        make_items(3),
+        threshold_base=1,
+        checkpoint_dir=tmp_path,
+        batch_client=client,
+        sync_client=sync_client,
+        now_fn=_offset_clock(5.0),  # past the 4h threshold: only the status guard blocks
+    )
+    assert client.cancel_calls == 0  # we never cancel an already-canceling batch
+    sb = _state(tmp_path)["sub_batches"][0]
+    assert sb.get("stuck_cancel_intent_at") is None  # never adopted by the escape
+    assert sb.get("stuck_canceled_at") is None
+    assert _state(tmp_path).get("retry") is None  # no retry state ever created
+    assert sync_client.calls == []  # zero sync re-dispatch of operator-canceled ids
+    for i in range(3):
+        assert result[f"item_{i:03d}"]["error"] is True
+        assert "canceled" in result[f"item_{i:03d}"]["reasoning"]
+
+
 # ── T11: legacy path ─────────────────────────────────────────────────────────
 
 
@@ -626,6 +700,32 @@ def test_legacy_submit_poll_stuck_cancel(caplog):
     assert client.cancel_calls == 1
     assert "STUCK BATCH (legacy path)" in caplog.text
     assert set(result) == {"c0", "c1"}
+    for cid in ("c0", "c1"):
+        assert result[cid]["error"] is True
+        assert "canceled" in result[cid]["reasoning"]
+
+
+def test_legacy_out_of_band_canceling_no_duplicate_cancel():
+    """Legacy-path sibling of the round-2 fresh-entry guard: a chunk already
+    ``canceling`` (out-of-band cancel) at succeeded=0 past the threshold gets
+    NO duplicate cancel from us; the loop polls it to ``ended`` and canceled
+    rows surface as error dicts, exactly as any other cancel."""
+    outcome = {"c0": "canceled", "c1": "canceled"}
+    client = StuckEscapeClient(
+        outcome_for=outcome,
+        expires_at=T0 + _dt.timedelta(hours=24),
+        precancel_statuses=("canceling", "canceling", "ended"),
+    )
+    reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
+    clock = iter(itertools.chain([T0], itertools.repeat(T0 + _dt.timedelta(hours=5))))
+    result = _submit_and_poll_batch(
+        reqs,
+        client,
+        poll_interval=0.0,
+        now_fn=lambda: next(clock),
+        sleep_fn=lambda _x: None,
+    )
+    assert client.cancel_calls == 0  # already canceling: never a duplicate external cancel
     for cid in ("c0", "c1"):
         assert result[cid]["error"] is True
         assert "canceled" in result[cid]["reasoning"]

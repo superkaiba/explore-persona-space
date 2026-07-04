@@ -356,11 +356,13 @@ def _submit_and_poll_batch(
       retrieve within ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create is
       retried with bounded backoff (read-after-write inconsistency, the #742
       shape); outside the window — or past the backoff schedule — it re-raises.
-    - **Stuck-batch cancel (#1019)**: a chunk at ``request_counts.succeeded == 0``
-      for >= ``EPS_BATCH_STUCK_HOURS`` (default 4h; ``<=0`` disables) since its
-      own create is CANCELED (once per chunk; a re-retrieved ``canceling``/
-      ``ended`` counts as accepted cancellation) and the loop keeps polling to
-      ``ended``; canceled rows surface as error dicts — this path has no retry
+    - **Stuck-batch cancel (#1019)**: a chunk still ``in_progress`` at
+      ``request_counts.succeeded == 0`` for >= ``EPS_BATCH_STUCK_HOURS``
+      (default 4h; ``<=0`` disables) since its own create is CANCELED (once
+      per chunk; a re-retrieved ``canceling``/``ended`` counts as accepted
+      cancellation; a chunk ALREADY ``canceling`` — an out-of-band Console
+      cancel — is never re-canceled) and the loop keeps polling to ``ended``;
+      canceled rows surface as error dicts — this path has no retry
       machinery, so a 4h-bounded completion with flagged error rows replaces
       the prior up-to-24h park behind a wedged batch (#810).
 
@@ -432,8 +434,12 @@ def _submit_and_poll_batch(
             # collection below surfaces canceled rows as error dicts. Appended
             # AFTER the ended-break and overdue checks (precedence load-bearing).
             # ``created_at`` (captured right after batches.create) is the anchor.
+            # Gated on ``in_progress`` (#1019 round 2): a chunk already
+            # ``canceling`` (an out-of-band Console cancel) never gets a
+            # duplicate cancel from us — the loop just polls it to ``ended``.
             if (
                 not stuck_canceled
+                and batch.processing_status == "in_progress"  # never re-cancel an o-o-b cancel
                 and (stuck_hours := batch_stuck_threshold_hours()) is not None
                 and counts is not None
                 and counts.succeeded == 0
