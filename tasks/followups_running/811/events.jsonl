@@ -372,3 +372,4 @@
 {"ts": "2026-07-04T15:13:31Z", "kind": "epm:progress", "version": 120, "by": "unknown", "note": "tick heartbeat: fit battery at 11h09m (~940% CPU), healthy."}
 {"ts": "2026-07-04T15:44:11Z", "kind": "epm:progress", "version": 121, "by": "unknown", "note": "tick heartbeat: fit battery at 11h40m (~935% CPU), healthy."}
 {"ts": "2026-07-04T16:14:52Z", "kind": "epm:progress", "version": 122, "by": "unknown", "note": "tick heartbeat: fit battery at 12h10m (~935% CPU), healthy."}
+{"ts": "2026-07-04T16:45:35Z", "kind": "epm:progress", "version": 123, "by": "unknown", "note": "tick heartbeat: fit battery at 12h41m (~935% CPU), healthy; realized wall ~2.5x the 5h projection (0 GPU-h, off-instance)."}
