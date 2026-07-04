@@ -10,9 +10,9 @@ ARCHIVED — FORWARD-FRAGILE SEAM; READ BEFORE REVIVING.
     NO "system" message role — a system-bearing messages list 400s every
     request (see .claude/rules/gotchas.md, "The Anthropic Messages API has NO
     system message ROLE"; incidents #906 r11 / #955). All 4 current call
-    sites (grep ``call_api(``) pass user-role-only lists and carry system
-    text via the separate ``system=`` parameter, so HISTORICAL RESULTS ARE
-    UNAFFECTED — the seam breaks only if revived with a new system-bearing
+    sites (grep ``call_api(``) pass user-role-only lists; the 2 with system
+    text pass it via the separate ``system=`` parameter. HISTORICAL RESULTS
+    ARE UNAFFECTED — the seam breaks only if revived with a new system-bearing
     caller. If reviving: lift system entries to the top-level ``system=``
     param (pattern: ``llm.models.Prompt.anthropic_format``,
     src/explore_persona_space/llm/models.py) or route calls through
