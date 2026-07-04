@@ -32,7 +32,7 @@ relates_to:
 
 ## Goal
 
-Characterize whether the context→answer mapping (trained so far on mostly short contexts) holds up or changes systematically as the context gets longer and spans many chat turns: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2); (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change with context length offer an account of persona drift / context rot.
+Characterize whether the mappings studied in the project's mapping experiments (trained so far on mostly short contexts) hold up — or change systematically — as the context gets longer and spans many chat turns. Train BOTH mapping types, on the SAME data: (i) the **context→answer** mapping (full context so far — prefix + current query → answer) and (ii) the **prefix→answer** mapping (prefix alone → answer, marginalizing over queries). Questions: (a) is the mapping from (prefix + query 1 → answer 1) the same as the mapping from (prefix + query 2 → answer 2) at later turns; (b) can later answers (answer 2, 3, 4, …) be predicted from earlier-turn inputs (e.g. prefix + query 1, and other prefix/query combinations) using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot.
 
 ## Motivation
 
@@ -45,7 +45,12 @@ Characterize whether the context→answer mapping (trained so far on mostly shor
 
 - Take longer multi-turn conversations from some generic chat dataset.
 - Train the above mappings (use the same conversations for all turn numbers).
+- Train BOTH the context→answer mapping AND the prefix→answer mapping, on the same conversations, so the two mapping types are directly comparable.
 - Characterize the relationship between the mappings; try to predict the second answer from query 2 using the first mapping, etc.
+
+## Open design questions (planner to resolve)
+
+- The prefix→answer mapping needs multiple queries per prefix to average/marginalize over, but a generic chat dataset supplies only ONE realized query + answer per prefix per conversation. How to obtain the query set to average over is UNRESOLVED and must be settled in the plan before any training. Candidate constructions to weigh (each changes what "prefix→answer" means, so the plan must define the marginalization precisely): sample queries from other conversations at the same turn position; generate multiple queries per prefix on-policy from the base model; pool dataset queries across conversations sharing similar prefixes.
 
 ## Notes
 
