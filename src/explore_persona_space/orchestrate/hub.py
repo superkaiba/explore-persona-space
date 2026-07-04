@@ -8,6 +8,7 @@ Default repos (public, unlimited storage):
 import glob
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -629,6 +630,7 @@ def _is_transient_upload_error(err: Exception) -> bool:
 
 
 _RETRY_AFTER_CAP_S = 900.0  # defensive cap on a pathological server Retry-After header
+_BACKOFF_CAP_S = 180.0  # exp-backoff ceiling (#735); also caps Retry-After under budget_s=0
 
 
 def _retry_after_seconds(err: Exception) -> float | None:
@@ -655,15 +657,23 @@ def _retry_after_seconds(err: Exception) -> float | None:
 
 def _retry_budget_s() -> float:
     """Wall-clock transient-retry budget (s). 0 disables the budget extension
-    (legacy attempt-bound behavior). Env: ``EPM_HF_RETRY_BUDGET_S`` (default 1800)."""
+    (legacy attempt-bound behavior). Env: ``EPM_HF_RETRY_BUDGET_S`` (default
+    1800). Unparseable or NON-FINITE values (``inf``/``nan``/``1e999``) fall
+    back to 1800 with a warning — ``inf`` would make the fail-loud deadline
+    unbounded (retry forever on a permanently-down Hub), and ``nan`` would
+    silently degrade to the 0 kill switch via ``max(0.0, nan)``."""
     raw = os.environ.get("EPM_HF_RETRY_BUDGET_S")
     if raw is None or not raw.strip():
         return 1800.0
     try:
-        return max(0.0, float(raw))
+        val = float(raw)
     except ValueError:
         logger.warning("EPM_HF_RETRY_BUDGET_S=%r unparseable; using 1800", raw)
         return 1800.0
+    if not math.isfinite(val):
+        logger.warning("EPM_HF_RETRY_BUDGET_S=%r non-finite; using 1800", raw)
+        return 1800.0
+    return max(0.0, val)
 
 
 def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | None = None):
@@ -685,9 +695,12 @@ def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | Non
     deadline check). Attempt-floor retries past the deadline sleep 0 and retry
     immediately (<= ``max_attempts`` calls total).
 
-    Sleep: ``Retry-After`` header when present (capped ``_RETRY_AFTER_CAP_S``),
-    else exp backoff ``min(180, 10*2^k)`` with 0-25% jitter (de-synchronizes
-    fleet retries). Storage-quota-403 / non-transient re-raise IMMEDIATELY; on
+    Sleep: ``Retry-After`` header when present (capped ``_RETRY_AFTER_CAP_S``;
+    under ``budget_s=0`` capped at ``_BACKOFF_CAP_S`` instead — the kill
+    switch has no deadline clamp, so a pathological header would otherwise be
+    honored un-clamped, defeating the switch's fail-fast purpose), else exp
+    backoff ``min(180, 10*2^k)`` with 0-25% jitter (de-synchronizes fleet
+    retries). Storage-quota-403 / non-transient re-raise IMMEDIATELY; on
     exhaustion the final exception propagates (fail-loud, no swallow).
     """
     budget = _retry_budget_s() if budget_s is None else budget_s
@@ -703,9 +716,13 @@ def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | Non
                 raise
             ra = _retry_after_seconds(e)
             if ra is not None:
-                sleep_s = min(ra, _RETRY_AFTER_CAP_S)
+                # budget_s=0 (kill switch) skips the deadline clamp below, so
+                # cap the header at the legacy backoff ceiling there — else a
+                # pathological Retry-After stacks 5 x 900 s of sleep vs the
+                # ~310 s legacy stack the switch is meant to restore.
+                sleep_s = min(ra, _RETRY_AFTER_CAP_S if budget > 0 else _BACKOFF_CAP_S)
             else:
-                sleep_s = min(180.0, 10.0 * 2.0 ** min(attempt - 1, 6)) * (
+                sleep_s = min(_BACKOFF_CAP_S, 10.0 * 2.0 ** min(attempt - 1, 6)) * (
                     1.0 + random.random() * 0.25
                 )
             now = time.monotonic()
@@ -768,13 +785,18 @@ def verify_repo_paths_uploaded(
     with ``path_in_repo`` scoping — the paginated walk rides ``_retry_upload``
     (Retry-After-aware, wall-clock-budgeted).
 
-    ``path_in_repo`` is a REQUIRED non-empty directory-like prefix covering
-    every expected path (ValueError otherwise — an unscoped verify recreates
-    the wedge). A prefix absent on the repo (``EntryNotFoundError`` during the
-    walk — hub 0.36.2's lazy ``list_repo_tree`` generator raises it inside the
-    retry thunk) returns ALL expected paths as missing (caller's fail-loud
-    fires with the full list). Transport/auth errors propagate after the retry
-    budget.
+    ``path_in_repo`` is a REQUIRED non-empty prefix covering every expected
+    path (ValueError otherwise — an unscoped verify recreates the wedge). A
+    directory-like prefix absent on the repo (``EntryNotFoundError`` during
+    the walk — hub 0.36.2's lazy ``list_repo_tree`` generator raises it inside
+    the retry thunk) returns ALL expected paths as missing (caller's fail-loud
+    fires with the full list). An exact-FILE prefix (an expected path EQUAL to
+    ``path_in_repo``) ALSO raises ``EntryNotFoundError`` — the tree endpoint
+    404s on file paths (verified live on hub 0.36.2, #939; the sibling
+    ``list_hf_files_under_path`` documents the same behavior) — so that case
+    falls back to ONE retried ``HfApi.file_exists`` HEAD probe instead of
+    falsely reporting a successfully-uploaded file as missing. Transport/auth
+    errors propagate after the retry budget.
     """
     from huggingface_hub.utils import EntryNotFoundError
 
@@ -795,6 +817,23 @@ def verify_repo_paths_uploaded(
             )
         )
     except EntryNotFoundError:
+        # The tree endpoint 404s on an exact-FILE path as well as on an absent
+        # prefix (hub 0.36.2, #939 — the same live behavior the sibling
+        # ``list_hf_files_under_path`` handles at its ``file_exists``
+        # fallback). When the expected set names the prefix itself — the only
+        # way ``p == prefix`` passes the coverage check above — probe the file
+        # directly, wrapped in ``_retry_upload`` (a fresh Hub call on the
+        # verify path; un-retried, a transient 500 here would reintroduce the
+        # #920 class through the fallback). Probe True => the exact file IS
+        # uploaded (a same-named subtree cannot coexist with a file, so any
+        # ``prefix + "/"`` children stay missing); probe False => all expected
+        # paths are missing. Directory-like prefixes (``prefix`` not in the
+        # expected set) keep the all-missing semantics unchanged.
+        if prefix in expected and _retry_upload(
+            lambda: api.file_exists(repo_id, prefix, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{prefix})",
+        ):
+            return [p for p in expected if p != prefix]
         return expected
     return [p for p in expected if p not in uploaded]
 
