@@ -40,8 +40,8 @@
     "1002": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1002",
-      "status": "proposed",
+      "path": "tasks/planning/1002",
+      "status": "planning",
       "title": "workflow-fix: check 27 also FAILs prior-issue markdown links in v4 standalone sections"
     },
     "1003": {
