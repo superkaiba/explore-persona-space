@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 987,
+  "highest_id": 988,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6570,6 +6570,13 @@
       "path": "tasks/proposed/987",
       "status": "proposed",
       "title": "workflow-fix: dispatch lane infra from main on issue branches"
+    },
+    "988": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/988",
+      "status": "proposed",
+      "title": "workflow-fix: bound bare list_repo_files call sites (hang class)"
     },
     "99": {
       "has_clean_result": true,
