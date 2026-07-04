@@ -6421,8 +6421,8 @@
       "goal": "Characterize whether the mappings (trained so far on mostly short contexts) hold up or change systematically as the context gets longer and spans many chat turns \u2014 training BOTH the context\u2192answer mapping AND the prefix\u2192answer mapping on the SAME data: (a) is the mapping from (prefix + query 1 \u2192 answer 1) the same as the mapping from (prefix + query 2 \u2192 answer 2); (b) can later answers (answer 2, 3, 4, \u2026) be predicted from earlier-turn inputs using the earlier-turn mapping; (c) does any systematic change in either mapping with context length offer an account of persona drift / context rot. Open design question for the planner: how to obtain multiple queries per prefix to average over for the prefix\u2192answer mapping.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/958",
-      "status": "running",
+      "path": "tasks/verifying/958",
+      "status": "verifying",
       "title": "How does the context\u2192answer mapping change as the context gets longer (multi-turn)"
     },
     "959": {
