@@ -5156,6 +5156,8 @@ aggregation / permutation battery) MUST be launched fully detached:
     PHASE_PID=$(bash -c 'setsid nohup env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 <cmd> < /dev/null >> <abs, space-free log path> 2>&1 & echo $!')
     ps -p "$PHASE_PID" -o args=   # verify the pid is the workload; on mismatch
                                   # recover via pgrep -f '<distinctive invocation>'
+    bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PHASE_PID" >/dev/null \
+      || echo "[warn] choom failed or swept nothing — phase is earlyoom-UNPROTECTED (record choom=failed)"
 
 The `bash -c` wrapper is load-bearing for pid capture: the top-level Bash-tool
 shell runs with job control ON, where `setsid` forks and a bare `$!` is the
@@ -5168,13 +5170,47 @@ healthy ~3-6h Phase-D fit died mid-flight this way (2026-07-02, ~2h lost, pure
 signal kill). `setsid` gives the phase its own session + process group (group
 kills miss it; it reparents to PID 1 when the launching shell exits);
 `< /dev/null >> log` drops every fd tether to the dying session. The phase's
-stage-dispatch breadcrumb MUST carry two additional fields:
-`... pid=<PHASE_PID> log=<abs log path>` (additive whitespace-split
+stage-dispatch breadcrumb MUST carry three additional fields:
+`... pid=<PHASE_PID> log=<abs log path> choom=ok|failed` (additive whitespace-split
 `key=value` tokens — `_breadcrumb_fields` parses them order-free; keep the
 log path space-free; #833's own breadcrumbs already carried a RELATIVE `log=`
 — this convention upgrades it to a REQUIRED absolute path, and `pid=` is the
 genuinely new field), and the `external-markers triaged:` line
 (§ Pre-dispatch external-marker triage above).
+
+**Earlyoom protection is REQUIRED on the verified phase (#957; incident #811).**
+The shared VM runs `earlyoom` with `--prefer '(^|/)(pytest|python3?)$'` (+300
+badness to every python process), so a long detached fit is the designated
+victim whenever ANY neighbor spikes memory: #811's ~5h fits phase (RSS 6.8 GiB)
+was SIGTERM-killed at ~2h (rc=143, 0 checkpoints) by a NEIGHBOR's spike — its
+logged badness 1002 decomposes exactly as (1000 + 53‰ RSS)×2/3 + 300
+prefer-bonus. The `choom -n -600` sweep runs over the phase's whole SESSION
+(`pgrep -s` — `setsid` made `$PHASE_PID` the session id, so the sweep catches
+the leader AND any already-forked child; children forked later inherit
+`oom_score_adj` across fork), subtracting ~400 display points: decisively below
+every default-adj neighbor while staying killable — NOT `-1000`, which earlyoom
+and the kernel OOM killer skip entirely, so a genuinely runaway fit must still
+die first. Lowering adj needs CAP_SYS_RESOURCE, hence `sudo -n` (passwordless
+on the VM); on failure the launch PROCEEDS unprotected with the `[warn]` +
+`choom=failed` breadcrumb token — never block a launch on choom, and never read
+the sweep as guaranteed protection (it re-orders earlyoom's victim selection;
+it does not exempt the phase). Record `choom=ok` ONLY when the sweep pipeline
+itself exited zero; anything else records `choom=failed`. The −600 derivation
+assumes this VM's current `--prefer` +300 python bonus (`/etc/default/earlyoom`);
+re-derive from the decomposition above if that config changes.
+**Collateral-kill signature + second-kill pod pivot.** Phase dead rc=143
+(SIGTERM; rc=137 when earlyoom escalated to SIGKILL) + an earlyoom journal line
+at the death timestamp naming the phase pid, with the memory SPIKER a NEIGHBOR
+(phase RSS well under the pressure; attribute via the kill-source checklist,
+`failure_patterns.md` § exit-137/143, + the watcher's `earlyoom-kill` sidecar
+rows) = a collateral kill: `failure_class: infra`, NOT a code bug — do not
+dispatch a crash-fix round against the phase. Recovery ladder: relaunch ONCE
+with protection verified (`choom=ok`); if a PROTECTED phase is earlyoom-killed
+AGAIN, the VM is structurally memory-contended for this phase (or the phase
+itself is now the top consumer) — route it to the cheap CPU pod lane
+(`cpu-mid` / `cpu-bigmem` by footprint, CLAUDE.md § CPU-only phases) instead of
+a third VM relaunch. The phase-is-the-spiker variant + the stream-reduce rule
+stay in `.claude/rules/gotchas.md` (earlyoom entry).
 
 **The thread-cap `env` prefix is REQUIRED on every VM-side launch (#891).** The
 shared-VM setdefault (#847, `orchestrate/env.py`) is `src/`-side and pinned to
@@ -5594,7 +5630,8 @@ did not cover — or materially changes its arithmetic — an updated
 statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
 A statement covering a VM-side phase >~15 min ALSO names the detached launch
 shape + log path + the thread-cap `env` prefix (OMP/MKL/OPENBLAS/NUMEXPR=8 — #891;
-or the wider explicit value + one-line reason) per the Step 9 entry-guard
+or the wider explicit value + one-line reason) + the earlyoom protection state
+(`choom=ok|failed`) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
