@@ -315,10 +315,14 @@ User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
 pause is a DURABLE park, never a prose-only marker. The session driving <N>
 (or the PM/chat session receiving the directive) executes IN THIS ORDER —
 the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
-LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
-the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
-`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
-whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+LAST. Since #980 the watcher's pod-safety pass auto-stops an
+`on_hold`+RUNNING RunPod pod (`on_hold` is in the watcher's
+`POD_SAFETY_AUTO_STOP` set) after the 2-consecutive-miss guard (~20-30 min
+at the 10-min cron), so a crash inside the pause window bills for minutes,
+not forever — but the teardown-first ORDER stays load-bearing: the backstop
+is slow and covers RunPod MANAGED pods only (a GCP instance still relies on
+its `--max-run-duration` fence / `dispatch_issue.py finalize`), whereas a
+crash BEFORE the park leaves the task at its prior ACTIVE status,
 where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
 (`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
 alert fires too:
