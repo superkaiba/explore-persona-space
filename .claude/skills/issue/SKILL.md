@@ -7092,19 +7092,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
       runs both from the repo root; the empty-diff NOTE is then expected and
       benign.)
    b. Run the printed command from the SAME worktree cwd (paths are
-      repo-relative). Record pass/fail + ALL selector stderr lines (the
-      provenance breadcrumb, the NOTE if any, and any WARN lines). Two
-      anti-silent-pass guards are LOAD-BEARING here — a `no tests ran` outcome
-      (pytest exit 0 with zero collected tests) is a **FAIL, never a PASS**:
-      it is the signature of a failed `cd` that ran pytest in a directory with
-      no tests (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate
-      reported PASS on `no tests ran ... pytest exit: 0` and was silently
-      skipped).
+      repo-relative), with the junit flags appended and a pre-run `rm -f` of
+      the junit path (a killed run must leave NO junit — pytest writes it only
+      at session exit; a stale file from a prior round must never be re-read).
+      Record pass/fail + ALL selector stderr lines (the provenance breadcrumb,
+      the NOTE if any, and any WARN lines). Two anti-silent-pass guards are
+      LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0 with zero
+      collected tests) is a **FAIL, never a PASS**: it is the signature of a
+      failed `cd` that ran pytest in a directory with no tests (incident:
+      issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
+      `no tests ran ... pytest exit: 0` and was silently skipped).
       ```bash
       # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
       # never let the gate run in the wrong dir on a silent cd failure:
       #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
+      rm -f /tmp/step9c-junit-issue-<N>.xml    # MANDATORY before EVERY gate pytest invocation
+      PYTEST_OUT=$(uv run pytest <files> -v --tb=short \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
       echo "$PYTEST_OUT"
       # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
       if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
@@ -7114,12 +7118,62 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
-      SAME issue-worktree cwd (the branch's own test files exist only there) —
-      but as `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on
-      timeout/kill, capture `tail -50` of the run log so the stall surfaces
-      actionable evidence (this is the #665/#736 regression — keep it visible,
-      never a silent kill). Default scope is `touched`.
-2. Lint: `uv run ruff check . && uv run ruff format --check .`
+      SAME issue-worktree cwd — as:
+      ```bash
+      rm -f /tmp/step9c-junit-issue-<N>.xml
+      timeout 60m uv run pytest tests/ -q \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1
+      ```
+      (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
+      an early-exit on the first known-red main failure would leave the rest
+      of the suite unexecuted and let compare PASS a truncated run; the 60m
+      timeout still bounds it.) On timeout/kill, capture `tail -50` of the run
+      log so the stall surfaces actionable evidence (the #665/#736 regression —
+      keep it visible, never a silent kill). Default scope is `touched`.
+   d. Classify failures against the known-red-on-main baseline ledger —
+      mechanical (`scripts/step9c_baseline.py compare`), never prose
+      arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
+      re-proving red main was pre-existing). Runs AFTER the final pytest
+      invocation of step 1 (touched scope, or the 1c full-scope override —
+      compare gates the junit of whichever actually ran). From the SAME
+      worktree cwd:
+      ```bash
+      COMPARE_OUT=$(uv run python scripts/step9c_baseline.py compare \
+        --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
+        --run-pristine --json); COMPARE_RC=$?
+      echo "$COMPARE_OUT"
+      ```
+      The COMPARE verdict — not the raw PYTEST_RC — decides pass/fail for
+      steps 1–2:
+      * `COMPARE_RC=0` → no NEW test failures and no lint regression; failures
+        listed in `stripped` are pre-existing on main and do NOT block (the
+        round may PASS steps 1–2 with PYTEST_RC=1).
+      * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
+        regression (the JSON names each). FAIL.
+      * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
+        run; missing/empty junitxml; suite crash; unusable ledger; dirty
+        pristine oracle; systemic main breakage). FAIL — never PASS on
+        indeterminate.
+      The two step-1b guards run BEFORE compare and are UNCHANGED: the cd
+      hard-guard and the `no tests ran` FAIL guard (zero collected is a FAIL
+      regardless of compare's exit).
+      If the compare JSON has `"stale": true`, kick a DETACHED background
+      ledger refresh so the next session gets a fresh baseline — do NOT block
+      this verdict on it:
+      ```bash
+      (cd "$REPO_ROOT" && setsid nohup timeout --kill-after=60s 2100s \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
+        uv run python scripts/step9c_baseline.py refresh \
+        >> "$REPO_ROOT/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null &)
+      ```
+2. Lint: covered by step 1d `compare` — repo-wide `ruff check` /
+   `ruff format --check` are diffed against the LIVE main-root baseline
+   (only an INCREASE fails; main carries 2000+ pre-existing ruff errors,
+   #1022), and the branch's touched `*.py` files must additionally be
+   ruff-clean + format-clean in absolute terms. Do NOT run bare
+   `uv run ruff check . && uv run ruff format --check .` as a verdict gate —
+   it always fails on pre-existing main red and re-derives what the ledger
+   already answers.
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
@@ -7127,11 +7181,19 @@ The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
 the files run, pass/fail counts, and ALL selector stderr diagnostics — the
 work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
 any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
-and coverage gaps — never silently skipped). A zero-collected / `no tests ran`
-outcome is recorded as FAIL (never PASS on exit 0) per step 1b's guard.
+and coverage gaps — never silently skipped), and the compare classification
+JSON (new vs known-red-stripped failures with any scan-test / diff-linked
+masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
++ age + stale flag, and any dirty-code-path flags). A zero-collected /
+`no tests ran` outcome is recorded as FAIL (never PASS on exit 0) per step
+1b's guard.
 
-Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
-in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
+Post `epm:test-verdict v1`. PASS = steps 1–2 pass via compare exit 0 (with
+`--pytest-rc` folded) AND neither step-1b guard fired, AND steps 3
+(conditional integration tests) and 4 (coverage gap report) completed per
+their existing rules -> Step 10. FAIL (`epm:test-verdict` FAIL count < 3) ->
+stay in `reviewing`, re-spawn implementer. FAIL (`epm:test-verdict` FAIL
+count >= 3) -> run
 CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job — idempotent;
 no-ops for a code-change task that never armed one), then status to
 `blocked`. Fire `PushNotification({"message": f"#{N} BLOCKED: tests
