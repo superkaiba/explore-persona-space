@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 979,
+  "highest_id": 980,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6514,6 +6514,13 @@
       "path": "tasks/archived/98",
       "status": "archived",
       "title": "On Qwen-2.5-7B-Instruct, automated system-prompt search alone matches a Betley emergent-misalignment finetune's alignment score \u2014 no gradient access required (MODERATE confidence)"
+    },
+    "980": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/980",
+      "status": "proposed",
+      "title": "workflow-fix: watcher alert for on_hold task with RUNNING pod"
     },
     "99": {
       "has_clean_result": true,
