@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 972,
+  "highest_id": 973,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6458,6 +6458,13 @@
       "path": "tasks/proposed/972",
       "status": "proposed",
       "title": "workflow-fix: artifact-reuse check (i) also covers Hub-API call scoping"
+    },
+    "973": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/973",
+      "status": "proposed",
+      "title": "workflow-fix: sandbox test_vm_disk_guard against live tasks"
     },
     "98": {
       "has_clean_result": true,
