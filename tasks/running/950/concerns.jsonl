@@ -1,0 +1,1 @@
+{"ts": "2026-07-04T01:56:31Z", "event": "raised", "concern_id": "jsonl-splitlines-residual-workflow-readers", "severity": "CONCERN", "summary": "verify_task_body.py:6072 reads concerns.jsonl via splitlines() (Lens-14 gate, silent drop of U+2028-bearing BLOCKER rows); router_acceptance.py:255 counts JSONL rows via splitlines().", "raised_by": "code-reviewer", "raised_at_round": 1}
