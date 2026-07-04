@@ -1599,6 +1599,9 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
     # #967: never sweep the LIVE registry/events tree from a unit test.
     monkeypatch.setattr(asw, "triage_observer_pass", lambda *a, **kw: None)
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -1633,6 +1636,9 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     # spawns task.py subprocesses for whatever sessions are live on the VM.
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: zombie_calls.append((a, kw)))
     monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: idle_calls.append((a, kw)))
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -2968,6 +2974,9 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
         captured_kwargs.update(kw)
 
     monkeypatch.setattr(asw, "stalled_session_pass", _record_stalled)
+    # #1021: the stale-blocked flag pass shells task.py against the LIVE
+    # blocked set (daemon-independent) — never run it from a unit test.
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -9718,6 +9727,7 @@ def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
         "stalled_session_pass",
         "orphan_sweep_pass",
         "infra_drain_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gate_push_pass",
         "zombie_wrapper_pass",
@@ -10755,6 +10765,371 @@ def test_capacity_retry_pass_daily_cap_then_exhausted_alert(isolated_registry, m
     assert posted == [(642, "capacity-retry-exhausted")]
 
 
+# ─── stale-blocked flag pass (task #1021, incident #742) ─────────────────────
+#
+# FLAG-ONLY: a wrong FLAG costs one digest line; a wrong FLIP would race the
+# orchestrator's own-relaunch reconcile rule, so the pass NEVER mutates status
+# (pinned two-pronged below, per the triage-observer non-gating precedent).
+
+_SB_T0 = 1782000000.0  # arbitrary 2026 epoch anchor for the pure-predicate tests
+
+
+def test_decide_stale_blocked_flag_fires_on_fresh_run_after_block():
+    # The #742 shape: block < launch <= progress, progress 10 min old -> True.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 200 + 600,
+        )
+        is True
+    )
+
+
+@pytest.mark.parametrize(
+    "status", ["running", "followups_running", "on_hold", "awaiting_promotion", None]
+)
+def test_decide_stale_blocked_flag_skips_non_blocked_status(status):
+    # Constraint interaction pinned: `followups_running` (the same-issue
+    # follow-up loop's holding status) never flags; nor does any other status.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            status,
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 800,
+        )
+        is False
+    )
+
+
+def test_decide_stale_blocked_flag_skips_launch_before_block():
+    # The normal fail-then-block order (launch OLDER than the block) -> False;
+    # a deliberately-blocked task with an old launch stays quiet.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0,
+            blocked_since_ts=_SB_T0 + 100,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 800,
+        )
+        is False
+    )
+
+
+@pytest.mark.parametrize("missing", ["run_launched_ts", "blocked_since_ts", "progress_ts"])
+def test_decide_stale_blocked_flag_skips_missing_signals(missing):
+    # EVERY missing signal fails toward silence (e.g. a hand `git mv` block
+    # that skipped `epm:status-changed` yields blocked_since_ts=None -> skip).
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    kwargs = {
+        "run_launched_ts": _SB_T0 + 100,
+        "blocked_since_ts": _SB_T0,
+        "progress_ts": _SB_T0 + 200,
+    }
+    kwargs[missing] = None
+    assert decide_stale_blocked_flag("blocked", now=_SB_T0 + 800, **kwargs) is False
+
+
+def test_decide_stale_blocked_flag_skips_stale_progress():
+    # Post-launch progress OLDER than the freshness window -> False (the run
+    # may have died since; under-flagging is the safe failure direction).
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 100,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0 + 200,
+            now=_SB_T0 + 200 + 7201,
+            fresh_window_s=7200,
+        )
+        is False
+    )
+
+
+def test_decide_stale_blocked_flag_skips_pre_launch_progress():
+    # v2 conjunct (progress_ts >= run_launched_ts): the newest "progress" is
+    # the block-transition epm:status-changed marker itself (a _PROGRESS_KINDS
+    # member) and the launch has no post-launch tick yet -> False. Pins the
+    # vacuity fix: pre-launch progress never satisfies the liveness leg.
+    from autonomous_session_watch import decide_stale_blocked_flag
+
+    assert (
+        decide_stale_blocked_flag(
+            "blocked",
+            run_launched_ts=_SB_T0 + 300,
+            blocked_since_ts=_SB_T0,
+            progress_ts=_SB_T0,  # == the block-transition marker's ts
+            now=_SB_T0 + 400,
+        )
+        is False
+    )
+
+
+def _sb_events(*, block_iso, launch_iso, progress_iso=None, reblock_iso=None):
+    """Minimal event-sequence fixture for the pass-level replays."""
+    events = [
+        {"kind": "epm:status-changed", "ts": block_iso, "note": "running -> blocked"},
+        {"kind": "epm:run-launched", "ts": launch_iso, "note": "pid=123 log_abs=/w/x.log"},
+    ]
+    if progress_iso:
+        events.append(
+            {"kind": "epm:progress", "ts": progress_iso, "note": "[poll-tick:bg] launch alive"}
+        )
+    if reblock_iso:
+        events.append(
+            {"kind": "epm:status-changed", "ts": reblock_iso, "note": "running -> blocked (again)"}
+        )
+    return events
+
+
+def _patch_sb_pass(monkeypatch, asw, blocked_ids, events_by_issue):
+    """Isolate the pass's I/O seams: blocked-id scan, events fetch, marker
+    post, Telegram push. State + sidecar writes go to isolated_registry."""
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: list(blocked_ids))
+    monkeypatch.setattr(asw, "_task_events", lambda i: events_by_issue.get(i, []))
+    posted = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, label, note)),
+    )
+    pushed = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, dry_run: pushed.append(msg) or True)
+    return posted, pushed
+
+
+def test_stale_blocked_pass_flags_once_per_launch_ts(isolated_registry, monkeypatch):
+    # First tick: marker + push + sidecar row + state file. Second tick with
+    # the same launch ts: nothing. A NEWER launch ts (fresh episode): re-alerts.
+    import json
+
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    posted, pushed = _patch_sb_pass(monkeypatch, asw, [742], {742: events})
+    now = asw._parse_event_ts("2026-07-01T09:30:00Z")
+
+    asw.stale_blocked_flag_pass(dry_run=False, now=now)
+    assert [(i, label) for i, label, _n in posted] == [(742, "stale-blocked-flag")]
+    assert len(pushed) == 1
+    state_path = isolated_registry / "stale-blocked-742.json"
+    assert state_path.exists()
+    state = json.loads(state_path.read_text())
+    assert state["flagged_run_launched_ts"] == asw._parse_event_ts("2026-07-01T08:00:00Z")
+    sidecar = isolated_registry / "stale-blocked-events.jsonl"
+    assert sidecar.exists() and len(sidecar.read_text().splitlines()) == 1
+    # The marker note carries the sentinel + the reconcile command, flag-only.
+    note = posted[0][2]
+    assert asw._STALE_BLOCKED_FLAG_NOTE_SENTINEL in note
+    assert "set-status 742 running" in note
+    assert "FLAG-ONLY" in note
+
+    # Same launch episode on the next tick: deduped, nothing new.
+    asw.stale_blocked_flag_pass(dry_run=False, now=now + 600)
+    assert len(posted) == 1 and len(pushed) == 1
+
+    # A NEWER launch (a fresh episode) re-alerts.
+    events2 = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-02T08:00:00Z",
+        progress_iso="2026-07-02T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda i: events2)
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-02T09:30:00Z"))
+    assert len(posted) == 2 and len(pushed) == 2
+
+
+def test_stale_blocked_pass_reblock_after_launch_unflags(isolated_registry, monkeypatch):
+    # Pass-level replay: block -> launch -> post-launch progress -> RE-BLOCK
+    # (newer epm:status-changed). The wiring extracts the LATEST
+    # status-changed as "the transition into blocked", so launch < re-block ->
+    # no flag (pins the latest-status-changed extraction, not just the
+    # predicate).
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+        reblock_iso="2026-07-01T10:00:00Z",
+    )
+    posted, pushed = _patch_sb_pass(monkeypatch, asw, [742], {742: events})
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-01T10:30:00Z"))
+    assert posted == [] and pushed == []
+    assert not (isolated_registry / "stale-blocked-742.json").exists()
+
+
+def test_stale_blocked_pass_never_mutates_status(isolated_registry, tmp_path, monkeypatch):
+    # The flag-only HARD invariant, TWO-PRONGED (per
+    # test_triage_observer_never_calls_in_process_mutators): (i) no recorded
+    # subprocess argv contains `set-status`; (ii) the in-process mutators
+    # task_workflow.set_status / post_event raise if touched — the pass must
+    # complete without tripping them. Helper-mediated or in-process status
+    # mutation must fail this test, not just direct subprocess calls.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    from explore_persona_space import task_workflow
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: [742])
+    monkeypatch.setattr(asw, "_task_events", lambda i: events)
+
+    def _forbidden(*a, **kw):
+        raise AssertionError("stale_blocked_flag_pass must never mutate task state in-process")
+
+    monkeypatch.setattr(task_workflow, "set_status", _forbidden)
+    monkeypatch.setattr(task_workflow, "post_event", _forbidden)
+
+    # Route the Telegram push through the recorded subprocess seam too.
+    push_script = tmp_path / "push.sh"
+    push_script.write_text("#!/usr/bin/env bash\n")
+    monkeypatch.setenv("EPM_TELEGRAM_PUSH_SCRIPT", str(push_script))
+
+    argvs: list[list[str]] = []
+
+    def _record_run(cmd, *a, **kw):
+        argvs.append(list(cmd))
+        return _subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _record_run)
+    asw.stale_blocked_flag_pass(dry_run=False, now=asw._parse_event_ts("2026-07-01T09:30:00Z"))
+    # The flag DID fire (post-marker argv present) but nothing mutates status.
+    assert any("post-marker" in cmd for cmd in argvs)
+    assert not any("set-status" in cmd for cmd in argvs)
+
+
+def test_stale_blocked_pass_kill_switch(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_STALE_BLOCKED_FLAG", "1")
+    monkeypatch.setattr(
+        asw, "_blocked_issue_ids", lambda: pytest.fail("scanned despite kill switch")
+    )
+    asw.stale_blocked_flag_pass(dry_run=False, now=_SB_T0)
+
+
+def test_stale_blocked_pass_dry_run_no_writes(isolated_registry, monkeypatch):
+    # dry_run -> zero state/sidecar writes, zero marker/push subprocesses.
+    import autonomous_session_watch as asw
+
+    events = _sb_events(
+        block_iso="2026-07-01T00:00:00Z",
+        launch_iso="2026-07-01T08:00:00Z",
+        progress_iso="2026-07-01T09:00:00Z",
+    )
+    monkeypatch.setattr(asw, "_blocked_issue_ids", lambda: [742])
+    monkeypatch.setattr(asw, "_task_events", lambda i: events)
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.stale_blocked_flag_pass(dry_run=True, now=asw._parse_event_ts("2026-07-01T09:30:00Z"))
+    assert not (isolated_registry / "stale-blocked-742.json").exists()
+    assert not (isolated_registry / "stale-blocked-events.jsonl").exists()
+
+
+def test_stale_blocked_sentinel_in_watcher_note_sentinels():
+    # The flag note rides epm:progress; membership keeps it from ever
+    # resetting the _latest_progress_ts staleness clocks (the set's own
+    # comment mandates this for every new watcher-posted marker). Inverse of
+    # the long-phase-heartbeat NON-membership test.
+    import autonomous_session_watch as asw
+
+    assert asw._STALE_BLOCKED_FLAG_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_main_wires_stale_blocked_pass_order(isolated_registry, monkeypatch):
+    # Must-Fix (methodology reconciler): main() runs capacity_retry_pass ->
+    # stale_blocked_flag_pass -> session_reconcile_pass in that order — closes
+    # the silently-inert-backstop hole (the #681
+    # test_main_wires_data_disk_pass_call_site class) where every isolation
+    # test passes but the normal cadence never runs the pass.
+    import autonomous_session_watch as asw
+
+    order: list[str] = []
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    monkeypatch.setattr(asw, "_live_pids_by_sid_or_none", lambda: None)
+    for name in (
+        "vm_disk_pass",
+        "data_disk_pass",
+        "happy_patch_pass",
+        "cpu_guard_pass",
+        "program_orchestrator_pass",
+        "triage_observer_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "respawn_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "proposed_infra_sweep_pass",
+        "gate_push_pass",
+        "stale_registration_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "gc_pass",
+    ):
+        if hasattr(asw, name):
+            monkeypatch.setattr(asw, name, lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "capacity_retry_pass", lambda *a, **kw: order.append("capacity_retry"))
+    monkeypatch.setattr(
+        asw, "stale_blocked_flag_pass", lambda *a, **kw: order.append("stale_blocked_flag")
+    )
+    monkeypatch.setattr(
+        asw, "session_reconcile_pass", lambda *a, **kw: order.append("session_reconcile")
+    )
+    rc = asw.main([])
+    assert rc == 0
+    assert (
+        order.index("capacity_retry")
+        < order.index("stale_blocked_flag")
+        < order.index("session_reconcile")
+    )
+
+
+def test_main_stale_blocked_only_flag(isolated_registry, monkeypatch):
+    # --stale-blocked-only runs JUST the new pass and exits (mirrors
+    # test_main_proposed_infra_sweep_only_flag).
+    import autonomous_session_watch as asw
+
+    calls: list[str] = []
+    monkeypatch.setattr(asw, "stale_blocked_flag_pass", lambda *a, **kw: calls.append("flag"))
+    monkeypatch.setattr(
+        asw, "vm_disk_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    monkeypatch.setattr(
+        asw, "capacity_retry_pass", lambda *a, **kw: pytest.fail("ran another pass under --only")
+    )
+    rc = asw.main(["--stale-blocked-only", "--dry-run"])
+    assert rc == 0
+    assert calls == ["flag"]
+
+
 # --- program-orchestrator crash-recovery pass (#660 bash daemon) ---
 #
 # The recovery path only fires on a real daemon crash, so it must be unit-tested
@@ -11487,6 +11862,7 @@ def test_main_runs_sweep_after_infra_drain(isolated_registry, monkeypatch):
         "stalled_session_pass",
         "orphan_sweep_pass",
         "capacity_retry_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gate_push_pass",
         "zombie_wrapper_pass",
@@ -13535,6 +13911,7 @@ def test_main_order_stale_registration_after_gate_push(isolated_registry, monkey
         "infra_drain_pass",
         "proposed_infra_sweep_pass",
         "capacity_retry_pass",
+        "stale_blocked_flag_pass",
         "session_reconcile_pass",
         "gc_pass",
     ):
