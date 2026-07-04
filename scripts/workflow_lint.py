@@ -155,13 +155,14 @@ Behaviours:
   JSONL file shreds into unparseable fragments — a hard crash on strict
   readers, SILENT record loss on tolerant skip-malformed readers, and
   inflated row counts on ``len(...splitlines())`` asserts (incident #825
-  run-1d; six live workflow readers fixed with #950). Four narrow
+  run-1d; eight live workflow-surface reader sites across seven files
+  fixed with #950). Four narrow
   signals: (a) a ``read_text``-bearing receiver chain whose source
   segment mentions ``jsonl``; (b) a bare receiver ``Name`` matching
   ``jsonl``; (c) the call sits inside a ``jsonl``-named function; (d) a
   ``read_text``-bearing receiver chain whose base ``Name`` is
-  ``ev_path``/``events_path`` or whose segment names
-  ``events.jsonl``/``comments.jsonl``. Deliberate false negatives
+  ``ev_path``/``events_path``/``concerns_path`` or whose segment names
+  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``. Deliberate false negatives
   (dataflow through other variable names, shell heredocs) are documented
   in the check docstring — the gotchas.md entry carries those. Waive a
   genuinely-safe flagged site with ``# JSONL_SPLITLINES_EXEMPT: <reason>``
@@ -933,10 +934,11 @@ UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
 JSONL_SPLITLINES_WAIVER_RE = re.compile(r"#\s*JSONL_SPLITLINES_EXEMPT\s*:\s*(.+?)\s*$")
 JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS = 10
 # Signal regexes: (b)/(c) receiver-Name / enclosing-function-name token; (d)
-# events-path receiver base names (the project's uniform convention for
-# `events.jsonl` paths).
+# events/concerns-path receiver base names (the project's uniform conventions
+# for `events.jsonl` / `concerns.jsonl` paths; `concerns_path` covers the
+# verify_task_body.py check-14 reader shape fixed in #950 round 2).
 JSONL_NAME_TOKEN_RE = re.compile(r"jsonl", re.IGNORECASE)
-JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^ev(ents)?_path$", re.IGNORECASE)
+JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^(ev(ents)?|concerns)_path$", re.IGNORECASE)
 # Grandfathered legacy `.splitlines()`-on-JSONL sites — repo-root-relative
 # POSIX FILE paths (file-level, not line-keyed — line keys rot; these are
 # frozen per-issue experiment scripts of terminal/near-terminal tasks reading
@@ -3290,9 +3292,12 @@ def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> 
         return "call inside a jsonl-named function"
     if has_read and (
         (base is not None and JSONL_EVENTS_PATH_NAME_RE.match(base))
-        or (segment is not None and ("events.jsonl" in segment or "comments.jsonl" in segment))
+        or (
+            segment is not None
+            and any(lit in segment for lit in ("events.jsonl", "comments.jsonl", "concerns.jsonl"))
+        )
     ):
-        return "events/comments-path read_text chain"
+        return "events/comments/concerns-path read_text chain"
     return None
 
 
@@ -3311,9 +3316,10 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
     inflated row count on ``len(read_text().splitlines())`` asserts.
     Real-user corpora (lmsys-chat-1m, WildChat) contain them routinely and an
     ASCII-fixture smoke can never catch it (incident #825 run-1d: 2000 valid
-    records → 2019 fragments, ~55 min of GPU extraction lost; six live
-    workflow-surface readers fixed with #950). The fix is ``split("\\n")`` or
-    text-mode file iteration (universal newlines only).
+    records → 2019 fragments, ~55 min of GPU extraction lost; eight live
+    workflow-surface reader sites across seven files fixed with #950). The
+    fix is ``split("\\n")`` or text-mode file iteration (universal newlines
+    only).
 
     Detection — flag an ``ast.Call`` whose func is
     ``ast.Attribute(attr="splitlines")`` when ANY of:
@@ -3327,11 +3333,13 @@ def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> lis
     * **(c) function-name signal:** the call sits inside a
       ``FunctionDef``/``AsyncFunctionDef`` whose name matches ``/jsonl/i``
       (the ``_iter_jsonl`` shape — receiver read on a separate line).
-    * **(d) events-path signal:** the receiver chain contains a
+    * **(d) events/concerns-path signal:** the receiver chain contains a
       ``read_text`` call AND (its base ``ast.Name`` matches
-      ``/^ev(ents)?_path$/i`` OR the segment names the literal
-      ``events.jsonl``/``comments.jsonl``) — the exact shape of the five
-      #950 sibling workflow readers, which evade (a)-(c).
+      ``/^(ev(ents)?|concerns)_path$/i`` OR the segment names the literal
+      ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``) — the exact
+      shapes of the #950 sibling workflow readers (the round-1
+      ``events.jsonl`` siblings + the round-2 ``verify_task_body.py``
+      check-14 ``concerns.jsonl`` reader), which evade (a)-(c).
 
     Deliberate false negatives (accepted; the gotchas.md entry + code review
     carry them): dataflow through a non-jsonl, non-events-named variable

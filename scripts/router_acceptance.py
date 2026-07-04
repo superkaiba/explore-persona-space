@@ -252,7 +252,10 @@ def resolve_smoke_dataset(
         )
     # Row count is part of the audit trail -- a silent row-count change
     # would invalidate the "deterministic sub-sample" claim.
-    rows = sum(1 for line in p.read_text().splitlines() if line.strip())
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False JSON strings are Unicode line boundaries that would
+    # inflate this row count on a perfectly valid file (gotchas.md; #825 → #950).
+    rows = sum(1 for line in p.read_text().split("\n") if line.strip())
     return SmokeDatasetSpec(
         local_path=p,
         source="reused",
