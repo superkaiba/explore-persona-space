@@ -605,7 +605,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.68, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 3.8, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

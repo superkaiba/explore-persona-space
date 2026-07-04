@@ -46,6 +46,7 @@ from workflow_lint import (  # noqa: E402
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_heredoc_dotenv,
+    check_hollow_verification_gate_review_lens,
     check_lessons_index,
     check_long_loop_restartability_review_lens,
     check_marker_registry,
@@ -3011,6 +3012,123 @@ def test_long_loop_restartability_review_lens_flags_missing_per_file(tmp_path) -
     assert any("'Long-loop restartability'" in e for e in errors), errors
     assert any("'3.5, 3.6, 3.7'" in e for e in errors), errors
     assert any("'Intra-phase grain'" in e for e in errors), errors
+
+
+def test_hollow_gate_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #890 lens on all three surfaces."""
+    assert check_hollow_verification_gate_review_lens() == []
+
+
+def _write_hollow_gate_conforming_tree(tmp_path) -> None:
+    """Write all three #890 surfaces with their full per-file assertions."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n**Hollow-verification-gate sub-check.** trace gate->dispatch\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.68, 3.6}}\n"
+    )
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+
+
+def test_hollow_gate_review_lens_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A tmp tree carrying every per-file assertion returns no errors (#890)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    assert check_hollow_verification_gate_review_lens(repo_root=tmp_path) == []
+
+
+def test_hollow_gate_review_lens_flags_missing_per_file(tmp_path) -> None:
+    """Each surface failing a DIFFERENT assertion FAILs exactly once per file.
+
+    The Claude file loses the sub-check PROSE (keeps its Blocker-tags line),
+    the codex file drops the tag from its Blocker-tags LINE (keeps prose +
+    the 0.68 placeholder), the efficiency file loses its Blocker-tags line
+    entirely — so the check emits exactly one error per file, one per
+    assertion kind (prose token / tag-off-template-line / template-line-gone).
+    """
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\nno sub-check here\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.68, 3.6}}\n"
+    )
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+    )
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 3, errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/efficiency-critic.md") for s in subjects) == 1, subjects
+    assert any("'Hollow-verification-gate sub-check'" in e for e in errors), errors
+    assert any("dropped out of the verdict template" in e for e in errors), errors
+    assert any("no line starts with" in e for e in errors), errors
+
+
+def test_hollow_gate_review_lens_flags_missing_rubric_enumeration(tmp_path) -> None:
+    """A codex placeholder line lacking '0.68' FAILs (the #606 class)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nthe hollow-verification-gate sub-check (copy in full)\n"
+        "**Blocker tags:** [`hollow-verification-gate` | `substantive`]\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0.67, 0.7, 3.6}}\n"
+    )
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("/codex-code-reviewer.md"), errors
+    assert "0.68" in errors[0] and "INLINED RUBRIC" in errors[0], errors
+
+
+def test_hollow_gate_review_lens_flags_missing_file(tmp_path) -> None:
+    """A missing required surface file is itself an error (the #891 shape)."""
+    _write_hollow_gate_conforming_tree(tmp_path)
+    (tmp_path / ".claude" / "agents" / "efficiency-critic.md").unlink()
+    errors = check_hollow_verification_gate_review_lens(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert errors[0].split(": ", 1)[0].endswith("/efficiency-critic.md"), errors
+    assert "missing" in errors[0], errors
+
+
+def test_hollow_gate_review_lens_bundled_in_no_flags(tmp_path, capsys, monkeypatch) -> None:
+    """The no-flags default run actually DISPATCHES the check — deleting the
+    ``or no_flags`` ladder branch must fail this test (mutation-visible),
+    closing the dead-tripwire gap where all direct-call tests stay green while
+    the CLI never runs the check. Follows the
+    ``test_vm_thread_cap_guidance_bundled_in_no_flags`` pattern (in-process
+    ``main([])``, ``_REPO_ROOT`` monkeypatched; other bundled checks contribute
+    unrelated errors on the minimal tree, so the assertion keys on the
+    hollow-gate diagnostic + the offending file path)."""
+    import workflow_lint as wl
+
+    _write_hollow_gate_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "efficiency-critic.md").write_text(
+        "# eff\n4. **Hollow-verification-gate (Step 0.68 sub-check).**\n"
+        "**Blocker tags:** [`substantive`]\n"
+    )
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    rc = wl.main([])
+    err = capsys.readouterr().err
+    assert rc != 0, f"no-flags default run exited 0 on a violating tree:\n{err}"
+    assert "hollow-verification-gate" in err and "efficiency-critic.md" in err, (
+        f"the hollow-gate diagnostic (naming efficiency-critic.md) is missing "
+        f"from the no-flags run's stderr — the check is not bundled into "
+        f"no_flags:\n{err}"
+    )
 
 
 def _write_smoke_arch_conforming_tree(tmp_path) -> None:
