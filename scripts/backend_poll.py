@@ -2270,6 +2270,18 @@ def _runspec_from_gcp_handle(handle, issue):
     # #909: thread repo_branch through so the RunPod re-execution syncs the
     # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
     # branches). A legacy handle without the key still reconstructs.
+    # #1010: ALSO forward the footprint fields (boot_disk_gb / min_ram_gb)
+    # so the RunPod CPU-fallback feasibility gate + container-disk threading
+    # cover the async failover paths (#659 crash / #783 queue-timeout) —
+    # pre-#1010 the rebuilt extra carried ONLY repo_branch, so the gate would
+    # fail-OPEN there and the #958 shape could recur. Keys forwarded only when
+    # present/truthy, so a legacy handle reconstructs byte-identically.
+    rebuilt_extra: dict = {}
+    if extra.get("repo_branch"):
+        rebuilt_extra["repo_branch"] = extra["repo_branch"]
+    for key in ("boot_disk_gb", "min_ram_gb"):
+        if extra.get(key):
+            rebuilt_extra[key] = extra[key]
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -2278,7 +2290,7 @@ def _runspec_from_gcp_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
-        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
+        extra=rebuilt_extra,
     )
 
 

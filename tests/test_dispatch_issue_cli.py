@@ -3750,3 +3750,41 @@ def test_cmd_launch_workload_start_failed_sidecar_write_oserror_fail_loud(
     assert "EDQUOT" in body["note"]
     # The typed failure's own message is still the note's lead.
     assert "did NOT verify alive" in body["note"]
+
+
+def test_min_ram_gb_lands_in_spec_extra(monkeypatch, tmp_path) -> None:
+    """#1010: ``--min-ram-gb`` threads to ``spec.extra['min_ram_gb']`` (the
+    RunPod CPU-fallback feasibility gate's RAM channel — RunPod CPU instances
+    have FIXED RAM, so an unsatisfiable requirement refuses the fallback
+    typed instead of provisioning an undersized pod). Mirror of the
+    ``--boot-disk-gb`` threading test above."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "1010",
+                "--intent",
+                "cpu-mid",
+                "--backend",
+                "gcp",
+                "--boot-disk-gb",
+                "80",
+                "--min-ram-gb",
+                "32",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["min_ram_gb"] == 32
+    assert gcp.launches[0].extra["boot_disk_gb"] == 80

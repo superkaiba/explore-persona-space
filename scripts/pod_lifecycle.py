@@ -63,6 +63,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from gpu_heuristics import (  # noqa: E402
     GpuSpec,
     list_intents,
+    resolve_cpu_instance_caps,
     resolve_cpu_intent,
     resolve_intent,
 )
@@ -77,6 +78,7 @@ from pod_config import (  # noqa: E402
     write_pods_conf,
 )
 from runpod_api import (  # noqa: E402
+    DEFAULT_CONTAINER_DISK_GB,
     DEFAULT_CPU_VOLUME_GB,
     PodInfo,
     RunPodError,
@@ -1747,11 +1749,48 @@ def cmd_provision(args: argparse.Namespace) -> None:
         # the cheap CPU default (DEFAULT_CPU_VOLUME_GB=40); an explicit non-200
         # value is always honored.
         cpu_volume_gb = DEFAULT_CPU_VOLUME_GB if args.volume_gb == 200 else args.volume_gb
+        # Effective-payload cap check (#1010, live probe 2026-07-04): RunPod
+        # validates deployCpuPod's EFFECTIVE container disk --
+        # max(container_disk_gb, volume_gb); runpod_api._deploy_cpu_once folds
+        # the CPU volume into containerDiskInGb -- against a per-flavor cap
+        # ("Container Disk must be less than or equal to 20" for cpu3g, 80 for
+        # cpu3c). The untouched defaults (container 50 / CPU volume 40 ->
+        # effective 50) EXCEED the cpu3g cap, so a default cpu-small provision
+        # fails validation outright. Rule: an over-cap effective payload in
+        # the DEFAULT band (<= 50, runpod_api.DEFAULT_CONTAINER_DISK_GB --
+        # covering untouched defaults AND the router-threaded
+        # `--container-disk-gb 50` floor, which MUST clamp-and-proceed, never
+        # refuse) is CLAMPED to the cap on BOTH knobs; an explicit request
+        # ABOVE the 50 band REFUSES pre-API (exit 1, same UX as the
+        # "Pod already exists" refusal above -- the cap is probe-verified, so
+        # RunPod would reject it anyway after a wasted API round-trip).
+        cpu_container_disk_gb = args.container_disk_gb
+        caps = resolve_cpu_instance_caps(args.intent)
+        effective_disk_gb = max(cpu_container_disk_gb, cpu_volume_gb)
+        if caps is not None and effective_disk_gb > caps.max_container_disk_gb:
+            if effective_disk_gb > DEFAULT_CONTAINER_DISK_GB:
+                print(
+                    f"Requested container/volume disk (effective "
+                    f"{effective_disk_gb} GB) exceeds the {cpu_instance_id} cap "
+                    f"({caps.max_container_disk_gb} GB effective containerDiskInGb; "
+                    f"RunPod create-time validation rejects it, #1010).\n"
+                    f"Shrink --container-disk-gb/--volume-gb to <= "
+                    f"{caps.max_container_disk_gb}, or route the big-footprint "
+                    f"stage to `--intent cpu-bigmem` (GCP n2-highmem)."
+                )
+                sys.exit(1)
+            print(
+                f"  Note (#1010): clamping container/volume disk (effective "
+                f"{effective_disk_gb} GB) -> {caps.max_container_disk_gb} GB "
+                f"({cpu_instance_id} validation cap; the default payload exceeds it)."
+            )
+            cpu_container_disk_gb = min(cpu_container_disk_gb, caps.max_container_disk_gb)
+            cpu_volume_gb = min(cpu_volume_gb, caps.max_container_disk_gb)
         info = create_cpu_pod(
             name=name,
             instance_id=cpu_instance_id,
             volume_gb=cpu_volume_gb,
-            container_disk_gb=args.container_disk_gb,
+            container_disk_gb=cpu_container_disk_gb,
         )
         print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
         _provision_wait_register_bootstrap(args, name, info, intent_label)
