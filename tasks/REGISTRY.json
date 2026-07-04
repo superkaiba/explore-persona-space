@@ -6659,8 +6659,8 @@
     "987": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/987",
-      "status": "approved",
+      "path": "tasks/running/987",
+      "status": "running",
       "title": "workflow-fix: dispatch lane infra from main on issue branches"
     },
     "988": {
