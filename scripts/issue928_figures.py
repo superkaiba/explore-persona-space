@@ -48,7 +48,11 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from issue928_common import load_json, segment_completion  # noqa: E402
+from issue928_common import (  # noqa: E402
+    load_json,
+    segment_completion,
+    upload_folder_scoped_verify,
+)
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
@@ -311,6 +315,13 @@ def main() -> int:
         default=str(PROJECT_ROOT / "data" / "issue_928" / "raw_completions" / "thinking_rollouts"),
     )
     ap.add_argument("--out", default=str(PROJECT_ROOT / "figures" / "issue_928"))
+    ap.add_argument(
+        "--upload-prefix",
+        default=None,
+        help="HF data-repo prefix for the figure files (round 2: git is the canonical "
+        "figure home but the pod/GCE instance cannot commit — upload so the VM-side "
+        "analyzer can pull + commit after instance teardown)",
+    )
     args = ap.parse_args()
 
     results_dir = Path(args.results)
@@ -332,6 +343,16 @@ def main() -> int:
         fig_lofo_rank_agreement(grid, out_dir, regime)
         if regime == "avg_q":
             fig_combo_heatmaps(grid, out_dir)
+    if args.upload_prefix:
+        names = sorted(p.name for p in out_dir.iterdir() if p.suffix in {".png", ".pdf", ".json"})
+        upload_folder_scoped_verify(
+            out_dir,
+            args.upload_prefix,
+            names,
+            f"issue #928: figures ({len(names)} files)",
+            allow_patterns=["*.png", "*.pdf", "*.json"],
+        )
+        logger.info("[phase=figures_upload] %d figure files -> %s", len(names), args.upload_prefix)
     # NOT [phase=done]: the run_all driver owns the terminal phase line.
     logger.info("[phase=figures_done] figures written to %s", out_dir)
     return 0
