@@ -40,11 +40,13 @@ import argparse
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
 import time
 import traceback
+from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -1397,19 +1399,61 @@ def _extract_class(
     return result, judge_result, rb_path
 
 
-def _upload_pilot_dir(local_dir: Path, bucket: str) -> str | None:
+# JudgeCache per-key entry filenames: sha256(...)hexdigest()[:16] + ".json"
+# (eval/batch_judge.JudgeCache._hash_key). They sit BESIDE judge_raw.json in
+# the verify / dose-ladder judge dirs (organisms._rate_for_cell passes
+# cache_dir=cell_dir), so a dir-name exclusion alone cannot catch them.
+_JUDGE_CACHE_ENTRY_RE = re.compile(r"^[0-9a-f]{16}$")
+
+
+def _is_rederivable_cache(rel_parts: tuple[str, ...]) -> bool:
+    """True for re-derivable judge-cache artifacts (excluded from upload).
+
+    Three shapes, all produced by the judge stack (r8 CONCERN
+    ``datagen-json-sidecars-upload-missing`` — exclusion must be consistent
+    across ``judge_cache*`` dir names):
+    1. any dir part starting with ``judge_cache`` — the literal ``judge_cache/``
+       (extract phase) AND datagen's manifest-hashed ``judge_cache_<hash12>/``;
+    2. any ``.dispatch/`` part — the batch-dispatch checkpoint dir the client
+       writes under its cache_dir;
+    3. a 16-hex ``<key>.json`` JudgeCache entry (matched on the FILENAME stem;
+       real artifact names — judge_raw.json, organism_report.json,
+       completions__<side>__<ctx>.json, pool_meta.json — are never 16-hex).
+    """
+    if any(part.startswith("judge_cache") or part == ".dispatch" for part in rel_parts[:-1]):
+        return True
+    name = rel_parts[-1]
+    return name.endswith(".json") and bool(_JUDGE_CACHE_ENTRY_RE.fullmatch(name[: -len(".json")]))
+
+
+def _upload_pilot_dir(
+    local_dir: Path, bucket: str, *, filenames: Sequence[str] | None = None
+) -> str | None:
     """Bulk-upload one pilot artifact dir (text/JSON + r_B tensors) in ONE commit.
 
     Coverage set per plan §10 (``discarded_artifacts: None``): every ``*.jsonl``
     / ``*.json`` text artifact plus the ``r_b_*.pt`` direction tensors
-    (28x3584 fp32 ≈ 0.4 MB each — cheap to upload).  ``judge_cache/`` trees are
-    re-derivable caches and are excluded.  Routes through
-    ``hub._upload_folder_filtered`` — ONE ``upload_folder`` commit + an
-    EXACT-set Hub verify (the upload-policy bulk-over-per-file rule; #664/#727)
-    — and raises ``RuntimeError`` on any failure/incomplete commit (fail-loud,
-    the same contract as ``upload_dataset_directory``).  Returns ``None`` when
-    the dir is absent or holds no matching files (machine-readable skip for
-    classes without the phase, e.g. the marker carve-out).
+    (28x3584 fp32 ≈ 0.4 MB each — cheap to upload).  Re-derivable judge caches
+    are excluded (``judge_cache*`` trees, ``.dispatch/`` checkpoint dirs, and
+    16-hex ``JudgeCache`` entry files — see :func:`_is_rederivable_cache`);
+    the judge RAW outputs (``judge_raw*.json``) are real artifacts and upload.
+    Routes through ``hub._upload_folder_filtered`` — ONE ``upload_folder``
+    commit + an EXACT-set Hub verify (the upload-policy bulk-over-per-file
+    rule; #664/#727) — with ``allow_patterns`` pinned to the EXACT kept
+    relative paths (allow == expected by construction, so a filter/verify
+    drift is impossible) and raises ``RuntimeError`` on any failure/incomplete
+    commit (fail-loud, same contract as ``upload_dataset_directory``).
+    Returns ``None`` when the dir is absent or holds no matching files
+    (machine-readable skip for classes without the phase, e.g. the marker
+    carve-out).
+
+    ``filenames`` (r8 CONCERN ``verify-stage-raw-completions-upload-missing``,
+    the ``train_mix.jsonl`` leg): when given, upload EXACTLY those top-level
+    files of ``local_dir`` instead of the recursive suffix scan — used for the
+    build-root training mix (``train_mix.jsonl`` + ``mix_meta.json``), where a
+    recursive scan would sweep in ``train/checkpoint-*`` JSON files. In this
+    mode a missing named file RAISES (the build contract guarantees the mix
+    exists; a silent skip would re-open the very coverage hole this fixes).
     """
     from explore_persona_space.orchestrate.hub import (
         DEFAULT_DATASET_REPO,
@@ -1418,25 +1462,42 @@ def _upload_pilot_dir(local_dir: Path, bucket: str) -> str | None:
 
     local_dir = Path(local_dir)
     if not local_dir.is_dir():
+        if filenames is not None:
+            raise RuntimeError(f"explicit-file upload requested but {local_dir} is not a directory")
         return None
     bucket = bucket.rstrip("/")
-    expected = sorted(
-        f"{bucket}/{p.relative_to(local_dir).as_posix()}"
-        for p in local_dir.rglob("*")
-        if p.is_file()
-        and p.suffix in {".jsonl", ".json", ".pt"}
-        and "judge_cache" not in p.relative_to(local_dir).parts
-    )
-    if not expected:
+    if filenames is not None:
+        missing = [f for f in filenames if not (local_dir / f).is_file()]
+        if missing:
+            raise RuntimeError(
+                f"explicit-file upload of {local_dir} -> {bucket}: missing required "
+                f"file(s) {missing} — the build contract persists these before upload"
+            )
+        kept_rel = sorted(str(f) for f in filenames)
+    else:
+        kept_rel = sorted(
+            p.relative_to(local_dir).as_posix()
+            for p in local_dir.rglob("*")
+            if p.is_file()
+            and p.suffix in {".jsonl", ".json", ".pt"}
+            and not _is_rederivable_cache(p.relative_to(local_dir).parts)
+        )
+    if not kept_rel:
         return None
+    # allow_patterns are fnmatch globs; a metachar in a filename would silently
+    # widen/narrow the literal-path match. Fail loud (rename the file) instead.
+    bad = [r for r in kept_rel if any(ch in r for ch in "*?[")]
+    if bad:
+        raise RuntimeError(f"upload filenames contain fnmatch metachars: {bad}")
+    expected = [f"{bucket}/{rel}" for rel in kept_rel]
     url = _upload_folder_filtered(
         local_dir,
         DEFAULT_DATASET_REPO,
         "dataset",
         bucket,
-        allow_patterns=["*.jsonl", "*.json", "*.pt"],
+        allow_patterns=kept_rel,
         expected_repo_paths=expected,
-        ignore_patterns=["*judge_cache/*"],
+        ignore_patterns=["*judge_cache/*", "*judge_cache_*/*", "*.dispatch/*"],
     )
     if not url:
         raise RuntimeError(
@@ -1455,6 +1516,14 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
     teardown) — each dir lands as ONE bulk ``upload_folder`` commit via
     ``_upload_pilot_dir``.
 
+    r8 CONCERNs ``verify-stage-raw-completions-upload-missing`` +
+    ``datagen-json-sidecars-upload-missing``: coverage now ALSO includes the
+    ``verify/`` eval completions, the ``build/rate/`` dose-ladder completions,
+    the ``train_mix.jsonl`` + ``mix_meta.json`` training mix, and the four
+    datagen ``.json`` sidecars (datagen now routes through ``_upload_pilot_dir``
+    — ``*.jsonl`` AND ``*.json``, ``judge_cache*`` excluded — instead of
+    ``upload_dataset_directory``'s ``*.jsonl``-only default).
+
     Returns a status dict; never raises out of here so one failed upload does not
     forfeit the class's calibration numbers. The driver surfaces any failure loud
     (a report flag + a non-zero exit in ``--full``).
@@ -1463,12 +1532,15 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
         return seams.uploader(behavior_name, build_result, cfg)
     if not cfg.upload:
         return {"status": "skipped", "reason": "upload disabled"}
-    from explore_persona_space.orchestrate.hub import upload_dataset_directory, upload_model
+    from explore_persona_space.orchestrate.hub import upload_model
 
     out: dict[str, Any] = {
         "status": "ok",
         "adapter": None,
         "generations": None,
+        "train_mix": None,
+        "verify": None,
+        "dose_ladder": None,
         "extract": None,
         "baseline": None,
         "on_policy_control": None,
@@ -1482,19 +1554,54 @@ def _upload_class(behavior_name: str, build_result, cfg: PilotConfig, seams: Pil
             ignore_patterns=["checkpoint-*"],  # adapter-only; the ladder stays local
         )
         out["adapter"] = adapter_url
-        # Training mix + Claude-generated raw completions (datagen sidecars).
-        # CONCERN 6 fix: Upload Policy requires text/JSON uploads to be fail-loud
-        # (never fail_soft=True); silent failures lose the audit trail.
+        # Claude-generated raw completions + the four datagen JSON sidecars
+        # (gen_manifest.json / judge_raw_pos.json / judge_raw_neg.json /
+        # pool_meta.json).  r8 CONCERN datagen-json-sidecars-upload-missing:
+        # upload_dataset_directory's default pattern="*.jsonl" dropped the
+        # sidecars; _upload_pilot_dir covers *.jsonl AND *.json in ONE commit
+        # with the judge_cache* trees excluded (plan §10 unconditional
+        # text/JSON upload, fail-loud).
         datagen_dir = Path(build_result.data_paths["datagen_dir"])
-        out["generations"] = upload_dataset_directory(
+        out["generations"] = _upload_pilot_dir(
             datagen_dir,
-            bucket=f"issue906_pilot/{behavior_name}/raw_completions",
+            f"issue906_pilot/{behavior_name}/raw_completions",
+        )
+        # Training mix (train_mix.jsonl + mix_meta.json at the build root).
+        # r8 CONCERN verify-stage-raw-completions-upload-missing: the Upload
+        # Policy requires training mixes on HF before pod teardown. Explicit
+        # filenames= mode — a recursive scan of build/ would sweep in
+        # train/checkpoint-* JSONs (incl. the >10 MB tokenizer.json -> LFS).
+        # Marker carve-out: train_mix_path IS the datagen-dir pos.jsonl,
+        # already uploaded under raw_completions above — record the skip.
+        train_mix_path = Path(build_result.train_mix_path)
+        if train_mix_path.parent == datagen_dir:
+            out["train_mix"] = "covered-by-raw-completions-upload"
+        else:
+            out["train_mix"] = _upload_pilot_dir(
+                train_mix_path.parent,
+                f"issue906_pilot/{behavior_name}/train_mix",
+                filenames=[train_mix_path.name, "mix_meta.json"],
+            )
+        class_dir = cfg.out_root / behavior_name
+        # verify/ eval completions (completions__{side}__{ctx}.json), the
+        # organism_report.json, and the per-cell judge_raw.json files —
+        # r8 CONCERN verify-stage-raw-completions-upload-missing. Absent on
+        # the marker carve-out (its verify phase persists no files) -> None.
+        out["verify"] = _upload_pilot_dir(
+            class_dir / "verify",
+            f"issue906_pilot/{behavior_name}/verify",
+        )
+        # build/rate/ dose-ladder completions + judge_raw.json per checkpoint
+        # rung (make_source_rate_fn writes rate_<ckpt>/ dirs). Absent when the
+        # recipe is not checkpoint_and_select (marker / fullft) -> None.
+        out["dose_ladder"] = _upload_pilot_dir(
+            class_dir / "build" / "rate",
+            f"issue906_pilot/{behavior_name}/dose_ladder",
         )
         # Extraction contrastive-rollout TEXT + the r_b_<behavior>.pt direction
         # tensor + judge_raw.json, in ONE commit (previously only extract/*.jsonl
         # uploaded — the r6 upload-coverage concern).  Present only for the
         # non-programmatic classes; _upload_pilot_dir returns None otherwise.
-        class_dir = cfg.out_root / behavior_name
         out["extract"] = _upload_pilot_dir(
             class_dir / "extract",
             f"issue906_pilot/{behavior_name}/extraction_rollouts",

@@ -359,9 +359,12 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
     class_dir = cfg.out_root / "sycophancy"
 
     # Real on-disk artifact tree, as the production phases lay it out.
-    datagen_dir = tmp_path / "datagen"
+    build_dir = class_dir / "build"
+    datagen_dir = build_dir / "datagen"
     datagen_dir.mkdir(parents=True)
     (datagen_dir / "raw_pos.jsonl").write_text("{}\n")
+    (build_dir / "train_mix.jsonl").write_text("{}\n")
+    (build_dir / "mix_meta.json").write_text("{}")
     extract = class_dir / "extract"
     extract.mkdir(parents=True)
     (extract / "contrastive_completions.jsonl").write_text("{}\n")
@@ -384,18 +387,12 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
 
     model_sig = inspect.signature(hub.upload_model)
     folder_sig = inspect.signature(hub._upload_folder_filtered)
-    dataset_dir_sig = inspect.signature(hub.upload_dataset_directory)
     folder_calls: list[inspect.BoundArguments] = []
 
     def fake_upload_model(*args, **kwargs):
         bound = model_sig.bind(*args, **kwargs)
         bound.apply_defaults()
         return f"repo/{bound.arguments['path_in_repo']}"
-
-    def fake_upload_dataset_directory(*args, **kwargs):
-        bound = dataset_dir_sig.bind(*args, **kwargs)
-        bound.apply_defaults()
-        return [f"repo/{bound.arguments['bucket']}/raw_pos.jsonl"]
 
     def fake_upload_folder_filtered(*args, **kwargs):
         bound = folder_sig.bind(*args, **kwargs)
@@ -404,23 +401,29 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
         return f"repo/{bound.arguments['path_in_repo']}"
 
     monkeypatch.setattr(hub, "upload_model", fake_upload_model)
-    monkeypatch.setattr(hub, "upload_dataset_directory", fake_upload_dataset_directory)
     monkeypatch.setattr(hub, "_upload_folder_filtered", fake_upload_folder_filtered)
 
     build_result = SimpleNamespace(
         adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(build_dir / "train_mix.jsonl"),
         data_paths={"datagen_dir": str(datagen_dir)},
     )
     out = pilot._upload_class("sycophancy", build_result, cfg, pilot.PilotSeams())
 
     assert out["status"] == "ok", out
-    # One bulk commit per artifact dir: extract + baseline + on_policy_control.
+    # One bulk commit per artifact dir (r8: datagen + train_mix route through
+    # the same filtered-folder path; verify/ + build/rate/ are absent in this
+    # fixture and record a graceful None, the marker-carve-out shape).
     by_bucket = {b.arguments["path_in_repo"]: b for b in folder_calls}
     assert set(by_bucket) == {
+        "issue906_pilot/sycophancy/raw_completions",
+        "issue906_pilot/sycophancy/train_mix",
         "issue906_pilot/sycophancy/extraction_rollouts",
         "issue906_pilot/sycophancy/baseline",
         "issue906_pilot/sycophancy/on_policy_control",
     }
+    assert out["verify"] is None
+    assert out["dose_ladder"] is None
     all_expected = sorted(p for b in folder_calls for p in b.arguments["expected_repo_paths"])
     for required in (
         "issue906_pilot/sycophancy/extraction_rollouts/r_b_sycophancy.pt",
@@ -442,6 +445,249 @@ def test_upload_class_covers_control_baseline_dirs_and_direction_tensors(tmp_pat
     assert out["extract"].endswith("/extraction_rollouts")
     assert out["baseline"].endswith("/baseline")
     assert out["on_policy_control"].endswith("/on_policy_control")
+
+
+def _fake_hub_boundary(monkeypatch):
+    """Substitute ONLY the remote Hub boundary, signature-bound to the real fns.
+
+    Returns the recorded ``_upload_folder_filtered`` BoundArguments list; the
+    REAL ``_upload_class`` / ``_upload_pilot_dir`` bodies (incl. the
+    expected-set enumeration + cache exclusion) run unmodified.
+    """
+    import explore_persona_space.orchestrate.hub as hub
+
+    model_sig = inspect.signature(hub.upload_model)
+    folder_sig = inspect.signature(hub._upload_folder_filtered)
+    folder_calls: list[inspect.BoundArguments] = []
+
+    def fake_upload_model(*args, **kwargs):
+        bound = model_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return f"repo/{bound.arguments['path_in_repo']}"
+
+    def fake_upload_folder_filtered(*args, **kwargs):
+        bound = folder_sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        folder_calls.append(bound)
+        return f"repo/{bound.arguments['path_in_repo']}"
+
+    monkeypatch.setattr(hub, "upload_model", fake_upload_model)
+    monkeypatch.setattr(hub, "_upload_folder_filtered", fake_upload_folder_filtered)
+    return folder_calls
+
+
+def test_upload_class_covers_verify_rate_train_mix_and_datagen_sidecars(tmp_path, monkeypatch):
+    """r8 CONCERNs verify-stage-raw-completions-upload-missing +
+    datagen-json-sidecars-upload-missing: the REAL _upload_class must upload
+    (a) the verify/ eval completions + organism_report.json + judge_raw.json,
+    (b) the build/rate/ dose-ladder completions + judge_raw.json,
+    (c) train_mix.jsonl + mix_meta.json, and
+    (d) the four datagen .json sidecars (gen_manifest / judge_raw_pos /
+        judge_raw_neg / pool_meta),
+    while EXCLUDING every re-derivable judge cache (judge_cache_<hash>/ trees,
+    .dispatch/ checkpoints, 16-hex JudgeCache entry files) and the
+    train/checkpoint-* JSONs.  Only the Hub boundary is substituted
+    (signature-bound); the production bodies run REAL against the exact
+    on-disk layout datagen.py / organisms.py / make_source_rate_fn write.
+    """
+    from types import SimpleNamespace
+
+    cfg = _cfg(tmp_path, upload=True)
+    class_dir = cfg.out_root / "sycophancy"
+    build_dir = class_dir / "build"
+
+    # ── datagen/ — exactly the files generate_training_data persists ────────
+    datagen_dir = build_dir / "datagen"
+    datagen_dir.mkdir(parents=True)
+    for jsonl in ("raw_pos.jsonl", "raw_neg.jsonl", "judge_rows.jsonl"):
+        (datagen_dir / jsonl).write_text("{}\n")
+    sidecars = ("gen_manifest.json", "judge_raw_pos.json", "judge_raw_neg.json", "pool_meta.json")
+    for sidecar in sidecars:
+        (datagen_dir / sidecar).write_text("{}")
+    # Manifest-hashed judge cache (datagen.py: out_dir / f"judge_cache_{hash12}")
+    cache = datagen_dir / "judge_cache_0a1b2c3d4e5f" / "pos"
+    cache.mkdir(parents=True)
+    (cache / ("a" * 16 + ".json")).write_text("{}")
+    (cache / ".dispatch").mkdir()
+    (cache / ".dispatch" / "chunk_000.jsonl").write_text("{}\n")
+
+    # ── build root — the assembled training mix ────────────────────────────
+    (build_dir / "train_mix.jsonl").write_text("{}\n")
+    (build_dir / "mix_meta.json").write_text("{}")
+    # Checkpoint tree JSONs must NOT be swept into any upload.
+    ckpt = build_dir / "train" / "checkpoint-10"
+    ckpt.mkdir(parents=True)
+    (ckpt / "adapter_config.json").write_text("{}")
+    (ckpt / "tokenizer.json").write_text("{}")
+
+    # ── build/rate/ — make_source_rate_fn's per-rung layout ────────────────
+    rung = build_dir / "rate" / "rate_checkpoint-10"
+    rung_judge = rung / "judge" / "trained_persona_software_engineer"
+    rung_judge.mkdir(parents=True)
+    (rung / "completions__trained__persona_software_engineer.json").write_text("{}")
+    (rung_judge / "judge_raw.json").write_text("{}")
+    (rung_judge / ("b" * 16 + ".json")).write_text("{}")  # JudgeCache entry
+    (rung_judge / ".dispatch").mkdir()
+    (rung_judge / ".dispatch" / "state.json").write_text("{}")
+
+    # ── verify/ — verify_organism's layout (organisms.py:996) ──────────────
+    verify_dir = class_dir / "verify"
+    verify_judge = verify_dir / "judge" / "trained_persona_software_engineer"
+    verify_judge.mkdir(parents=True)
+    (verify_dir / "completions__trained__persona_software_engineer.json").write_text("{}")
+    (verify_dir / "completions__base__persona_software_engineer.json").write_text("{}")
+    (verify_dir / "organism_report.json").write_text("{}")
+    (verify_judge / "judge_raw.json").write_text("{}")
+    (verify_judge / ("c" * 16 + ".json")).write_text("{}")  # JudgeCache entry
+    (verify_judge / ".dispatch").mkdir()
+    (verify_judge / ".dispatch" / "requests.jsonl").write_text("{}\n")
+
+    folder_calls = _fake_hub_boundary(monkeypatch)
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(build_dir / "train_mix.jsonl"),
+        data_paths={"datagen_dir": str(datagen_dir)},
+    )
+    out = pilot._upload_class("sycophancy", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "ok", out
+    by_bucket = {b.arguments["path_in_repo"]: b for b in folder_calls}
+    prefix = "issue906_pilot/sycophancy"
+    assert {
+        f"{prefix}/raw_completions",
+        f"{prefix}/train_mix",
+        f"{prefix}/verify",
+        f"{prefix}/dose_ladder",
+    } <= set(by_bucket)
+
+    # (d) The four datagen .json sidecars — previously dropped by the
+    # *.jsonl-only upload_dataset_directory default.
+    datagen_expected = set(by_bucket[f"{prefix}/raw_completions"].arguments["expected_repo_paths"])
+    for sidecar in sidecars:
+        assert f"{prefix}/raw_completions/{sidecar}" in datagen_expected
+    for jsonl in ("raw_pos.jsonl", "raw_neg.jsonl", "judge_rows.jsonl"):
+        assert f"{prefix}/raw_completions/{jsonl}" in datagen_expected
+
+    # (c) The training mix — EXACTLY the two build-root files, nothing from
+    # the checkpoint tree.
+    assert sorted(by_bucket[f"{prefix}/train_mix"].arguments["expected_repo_paths"]) == [
+        f"{prefix}/train_mix/mix_meta.json",
+        f"{prefix}/train_mix/train_mix.jsonl",
+    ]
+
+    # (a) verify/ — completions for BOTH sides + report + judge raw.
+    verify_expected = set(by_bucket[f"{prefix}/verify"].arguments["expected_repo_paths"])
+    for required in (
+        f"{prefix}/verify/completions__trained__persona_software_engineer.json",
+        f"{prefix}/verify/completions__base__persona_software_engineer.json",
+        f"{prefix}/verify/organism_report.json",
+        f"{prefix}/verify/judge/trained_persona_software_engineer/judge_raw.json",
+    ):
+        assert required in verify_expected, f"missing from verify expected-set: {required}"
+
+    # (b) build/rate/ dose-ladder completions + judge raw.
+    rate_expected = set(by_bucket[f"{prefix}/dose_ladder"].arguments["expected_repo_paths"])
+    for required in (
+        f"{prefix}/dose_ladder/rate_checkpoint-10/"
+        "completions__trained__persona_software_engineer.json",
+        f"{prefix}/dose_ladder/rate_checkpoint-10/judge/"
+        "trained_persona_software_engineer/judge_raw.json",
+    ):
+        assert required in rate_expected, f"missing from dose_ladder expected-set: {required}"
+
+    # Re-derivable caches + checkpoint JSONs are excluded from EVERY expected
+    # set AND every allow_patterns list (allow == expected by construction).
+    for b in folder_calls:
+        for coll in (b.arguments["expected_repo_paths"], b.arguments["allow_patterns"]):
+            joined = "\n".join(coll)
+            assert "judge_cache" not in joined
+            assert ".dispatch" not in joined
+            assert "a" * 16 not in joined
+            assert "b" * 16 not in joined
+            assert "c" * 16 not in joined
+    # The checkpoint tree specifically never uploads (train/ is not a bucket).
+    all_expected = [p for b in folder_calls for p in b.arguments["expected_repo_paths"]]
+    assert not [p for p in all_expected if "adapter_config.json" in p]
+    assert not [p for p in all_expected if "tokenizer.json" in p]
+
+    # Recorded outcome per stage.
+    assert out["generations"].endswith("/raw_completions")
+    assert out["train_mix"].endswith("/train_mix")
+    assert out["verify"].endswith("/verify")
+    assert out["dose_ladder"].endswith("/dose_ladder")
+
+
+def test_upload_class_marker_carveout_skips_duplicate_train_mix(tmp_path, monkeypatch):
+    """Marker carve-out: train_mix_path IS the datagen-dir pos.jsonl (already
+    uploaded under raw_completions) — _upload_class records the skip instead of
+    duplicating, and the absent verify//rate/ dirs record a graceful None."""
+    from types import SimpleNamespace
+
+    cfg = _cfg(tmp_path, upload=True)
+    mix_dir = cfg.out_root / "marker" / "build" / "mix"
+    mix_dir.mkdir(parents=True)
+    (mix_dir / "pos.jsonl").write_text("{}\n")
+    (mix_dir / "cn.jsonl").write_text("{}\n")
+
+    folder_calls = _fake_hub_boundary(monkeypatch)
+    build_result = SimpleNamespace(
+        adapter_path=str(tmp_path / "adapter"),
+        train_mix_path=str(mix_dir / "pos.jsonl"),
+        data_paths={"datagen_dir": str(mix_dir)},
+    )
+    out = pilot._upload_class("marker", build_result, cfg, pilot.PilotSeams())
+
+    assert out["status"] == "ok", out
+    assert out["train_mix"] == "covered-by-raw-completions-upload"
+    assert out["verify"] is None
+    assert out["dose_ladder"] is None
+    buckets = {b.arguments["path_in_repo"] for b in folder_calls}
+    assert "issue906_pilot/marker/train_mix" not in buckets
+    datagen_expected = next(
+        b for b in folder_calls if b.arguments["path_in_repo"].endswith("/raw_completions")
+    ).arguments["expected_repo_paths"]
+    assert "issue906_pilot/marker/raw_completions/pos.jsonl" in datagen_expected
+    assert "issue906_pilot/marker/raw_completions/cn.jsonl" in datagen_expected
+
+
+def test_upload_pilot_dir_explicit_filenames_fail_loud_on_missing(tmp_path):
+    """Explicit filenames= mode raises on a missing named file (the training
+    mix is a build-contract guarantee; a silent skip would re-open the r8
+    coverage hole) — and on a missing directory."""
+    build_dir = tmp_path / "build"
+    build_dir.mkdir()
+    (build_dir / "train_mix.jsonl").write_text("{}\n")  # mix_meta.json absent
+
+    with pytest.raises(RuntimeError, match=r"mix_meta\.json"):
+        pilot._upload_pilot_dir(
+            build_dir, "issue906_pilot/x/train_mix", filenames=["train_mix.jsonl", "mix_meta.json"]
+        )
+    with pytest.raises(RuntimeError, match="not a directory"):
+        pilot._upload_pilot_dir(
+            tmp_path / "absent", "issue906_pilot/x/train_mix", filenames=["train_mix.jsonl"]
+        )
+
+
+@pytest.mark.parametrize(
+    ("rel_parts", "excluded"),
+    [
+        (("judge_cache", "item.json"), True),  # literal judge_cache/ (extract phase)
+        (("judge_cache_0a1b2c3d4e5f", "pos", "x.json"), True),  # datagen manifest-hashed
+        (("judge", "trained_ctx", ".dispatch", "state.json"), True),  # dispatch ckpt
+        (("judge", "trained_ctx", "a" * 16 + ".json"), True),  # JudgeCache entry
+        (("judge", "trained_ctx", "judge_raw.json"), False),  # real judge output
+        (("completions__trained__ctx.json",), False),
+        (("organism_report.json",), False),
+        (("pool_meta.json",), False),
+        (("gen_manifest.json",), False),
+        (("r_b_sycophancy.pt",), False),
+    ],
+)
+def test_is_rederivable_cache_classification(rel_parts, excluded):
+    """The cache-exclusion predicate keeps every real artifact and drops every
+    re-derivable judge-cache shape (judge_cache*/ dirs, .dispatch/, 16-hex
+    JudgeCache entries)."""
+    assert pilot._is_rederivable_cache(rel_parts) is excluded
 
 
 def test_api_calls_total_includes_onpolicy_and_baseline_judge_draws(tmp_path):
