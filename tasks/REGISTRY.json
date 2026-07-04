@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 962,
+  "highest_id": 963,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6381,6 +6381,13 @@
       "path": "tasks/proposed/962",
       "status": "proposed",
       "title": "daily-fix: fail-loud CVD assert in issue667_extract _device()"
+    },
+    "963": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/963",
+      "status": "proposed",
+      "title": "workflow-fix: lint Step 0 stale-label fresh-label-execute clause"
     },
     "97": {
       "has_clean_result": false,
